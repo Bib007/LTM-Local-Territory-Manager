@@ -10,4 +10,4 @@
 - Original form backgrounds are bundled separately from the application's MIT code. They do not imply affiliation or endorsement. The PDF renderer has limited font support; browser printing supports more Unicode.
 - HA's own backups exclude app data. Export private backups within the app.
 - The ZIP upgrade test skips if the previous private release ZIP is unavailable. CI reports skipped checks explicitly.
-- GitHub Pages hosts static files; it cannot run this Python/SQLite backend. The separate browser-only demo is implemented with fictional data and Danish/English UI. Its automated checks pass, but live browser/mobile/print layout verification and public hosting setup are still pending. See [demo publication](DEMO-HOSTING.en.md).
+- GitHub Pages hosts static files; it cannot run this Python/SQLite backend. The separate browser-only demo is implemented with fictional data and Danish/English UI. Its automated checks pass. The public root URL and static assets have been verified without login; live browser/mobile/print layout verification remains separate. See [demo publication](DEMO-HOSTING.en.md).

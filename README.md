@@ -17,7 +17,7 @@ Har du allerede fordelt adresser på kort og områder, kan du hente Excel-skabel
 
 ## Kom i gang
 
-**Udviklingsudgave: 1.12.0-beta.1.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. [Køreplan: 20 %](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
+**Udviklingsudgave: 1.12.0-beta.5.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. [Køreplan: 20 %](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
 
 [![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
@@ -39,7 +39,7 @@ Home Assistant kan holde appen tændt hjemme, mens den samme installation åbnes
 - Print af forsider, bagsider, S-13 og rapporter efter tjenesteår: 1. september–31. august.
 - Valgfri Google Drive-deling af et gennemgået PNG-kort med stabil QR-kode.
 
-[Den særskilte webdemo](demo/README.md) bruger udelukkende opdigtede data. Der er endnu ingen offentlig demoadresse. Den kan ikke åbne eller importere installationens private data.
+[Åbn webdemoen direkte](https://bib007.github.io/LTM-Local-Territory-Manager/) uden installation eller GitHub-login. Den bruger udelukkende opdigtede data og kan ikke åbne eller importere installationens private data. [Om demoen](demo/README.md).
 
 ## Data bliver på eget system
 

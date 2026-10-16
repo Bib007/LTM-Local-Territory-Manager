@@ -19,7 +19,7 @@ Already divided your addresses into cards? Download the Excel template from **Se
 
 ## Start here
 
-**Development version: 1.12.0-beta.1.** This branch prepares the next version. Use [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) for stable installations. The ordinary HA link below follows main. [Readiness plan: 20%](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
+**Development version: 1.12.0-beta.5.** This branch prepares the next version. Use [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) for stable installations. The ordinary HA link below follows main. [Readiness plan: 20%](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
 
 [Add LTM to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
@@ -70,3 +70,5 @@ python3 scripts/build_release.py
 ```
 
 Python is the only runtime requirement; Node is used for development checks. Tests use isolated fictional data. [Contributing](CONTRIBUTING.en.md).
+
+[Open the fictional web demo](https://bib007.github.io/LTM-Local-Territory-Manager/) without installation or a GitHub account. [Demo details](demo/README.md).
