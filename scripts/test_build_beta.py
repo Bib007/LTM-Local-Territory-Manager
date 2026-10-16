@@ -15,7 +15,7 @@ class BetaBuildTests(unittest.TestCase):
         self.add('distrikt/app/server.py',"VERSION='9.9.0-beta.1'\n")
         self.add('distrikt/config.yaml','name: Distrikt\nversion: "9.9.0-beta.1"\nslug: distrikt\nboot: auto\nports:\n  8787/tcp: 8787\nwebui: "http://[HOST]:[PORT:8787]/"\n')
         self.add('distrikt/run.sh','#!/bin/sh\nset -euo pipefail\npython app/server.py --port 8787 --data-dir /data/distrikt\n')
-        self.add('distrikt/app/index.html','<title>Local Territory Manager – JW</title><b>LTM</b>')
+        self.add('distrikt/app/index.html','<title>Local Territory Manager – JW</title><body><b>LTM</b>')
         self.add('docs/BETA.md','# Fiktiv betavejledning\n')
     def tearDown(self):self.fixture.tearDown()
     def build(self,name):
@@ -27,6 +27,8 @@ class BetaBuildTests(unittest.TestCase):
         self.assertIn('8788/tcp: 8788',cfg);self.assertIn('[PORT:8788]',cfg);self.assertIn('--port 8788',run)
         self.assertIn('/data/distrikt-beta',run);self.assertIn('export LTM_CHANNEL=beta',run)
         self.assertIn('#beta',files['repository.yaml'][0].decode());self.assertIn(b'LTM Beta',files['distrikt/app/index.html'][0])
+        self.assertIn(b'betaChannel',files['distrikt/app/index.html'][0])
+        self.assertIn('distrikt/icon.png',files);self.assertIn('distrikt/logo.png',files)
         self.assertEqual((self.root/'distrikt/config.yaml').read_bytes(),before)
     def test_reproducible_program_only_archive(self):
         first=self.build('first');second=self.build('second')

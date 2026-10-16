@@ -147,6 +147,10 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  assert(!get('nav').innerHTML.includes('<details'));assert(get('nav').innerHTML.includes('Forside'));assert(get('nav').innerHTML.includes('Idéer og feedback'));assert(get('nav').innerHTML.includes('issues/new?template=idea.yml'));assert(get('nav').innerHTML.includes('rel="noopener noreferrer"'));assert(get('nav').innerHTML.includes('Distriktskort'));assert(!get('nav').innerHTML.includes('Printprofiler'));assert(run("table(state.cards).includes('tabindex=\"0\"')"));
  run("rowEvent={type:'click',preventDefault(){this.prevented=true;}};rowTarget={closest(selector){return selector==='[data-card-row]'?{dataset:{cardRow:'c4'}}:null;}};Navigation.selectRow(rowTarget,rowEvent)");assert.equal(run('selected'),'c4');assert.equal(run('rowEvent.prevented'),true);
  run("rowEvent.prevented=false;buttonTarget={closest(){return {}}};Navigation.selectRow(buttonTarget,rowEvent)");assert.equal(run('rowEvent.prevented'),false);
+ // The header logo uses the same guarded home navigation as the sidebar.
+ const shell=fs.readFileSync(path.join(__dirname,'../app/index.html'),'utf8');assert(/<button class="brand" data-navigation="0:0"/.test(shell));
+ run("page='Kortopsætning';GeoUI.dirty=true;window.confirm=()=>false");await run("Navigation.go('0:0')");assert.equal(run('page'),'Kortopsætning');
+ run("window.confirm=()=>true;state.notes=[]");await run("Navigation.go('0:0')");assert.equal(run('page'),'Forside');
  // An ordinary local mount cannot cause a tile request; road mode preserves zoom.
  run("MapBackground.mode='local';tileCalls=[];fitCalls=0;L={tileLayer:(url,options)=>{tileCalls.push({url,options});return {on(){return this;},addTo(){return this;}}}};fakeMap={removeLayer(){}};MapBackground.attach('testMap',fakeMap,()=>{},()=>{fitCalls++})");assert.equal(run('tileCalls.length'),0);
  await run("MapBackground.change('testMap','road')");assert.equal(run('tileCalls.length'),1);assert.equal(run('fitCalls'),0);assert(run("tileCalls[0].url.startsWith('https://tile.openstreetmap.org/')"));assert(!run("tileCalls[0].url.includes('TEST')"));

@@ -11,7 +11,7 @@ const c={console,Date,Intl,Math,Number,String,Map,Set,Array,Object,JSON,Promise,
 vm.createContext(c);for(const name of ['i18n.js','workspace.js','navigation.js','transfer-ui.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);
 const run=s=>vm.runInContext(s,c);
-run(`ShareUI={html:()=>''};GeoUI={load:async()=>{}};state={today:'2026-10-16',version:'1.12.0-beta.2',
+run(`ShareUI={html:()=>''};GeoUI={load:async()=>{}};state={today:'2026-10-16',version:'1.12.0-beta.3',
  settings:{congregation:'Områder <invented> & Kort',folder_minimum:30,rural_mode:'manual',rural_minimum:7,require_revision:true,print_profiles:{back:{width:94,height:146,orientation:'portrait',x:1,y:-2}}},
  areas:[{id:'area-1',name:'Menighed og mappe <invented>'}],cards:[],publishers:[],loans:[],completions:[],ib:[],notes:[],recovery:[{label:'Gendan <invented>',batch:'batch-1',count:2,at:'2026-10-15T12:00:00Z'}]};
  mutate=async(action,data,options)=>writes.push({action,data,options});refresh=async()=>{};loadMap=async()=>{};`);

@@ -24,7 +24,7 @@ from portable import Restores, snapshot, MAX_ARCHIVE
 from sharing import Publications
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.2'
+VERSION='1.12.0-beta.3'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -108,7 +108,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
-            if path=='/brand-mark.svg':return self.send((APP/'brand-mark.svg').read_bytes(),'image/svg+xml')
+            if path in ('/brand-mark.svg','/brand-logo.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
             if path=='/s12-template.png':return self.send((APP.parent/'templates'/'S-12-source.png').read_bytes(),'image/png')
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
