@@ -37,6 +37,27 @@ class PortableTests(unittest.TestCase):
         before=digest(self.t)
         with self.assertRaisesRegex(ValueError,'ændret'):self.restore.apply(result['token'])
         self.assertEqual(digest(self.t),before)
+    def test_preview_visible_counts_match_restored_lists_and_preserve_history(self):
+        self.s.mutate('note.save',{'card_id':self.card,'text':'Fiktiv kortnote'})
+        self.s.mutate('note.save',{'text':'Fiktiv generel opgave','task':True})
+        deleted=self.s.mutate('note.save',{'text':'Fiktiv slettet note'})['id']
+        self.s.mutate('delete',{'module':'notes','id':deleted})
+        with self.s.transaction():self.s.put('cards',{'id':'archived-fictional','number':'99','archived':True,'addresses':[]})
+        before=digest(self.t);preview=self.restore.preview(snapshot(self.s,'1.12.0-beta.1'))
+        self.assertEqual(digest(self.t),before,'A preview must not replace target data')
+        self.assertEqual(preview['counts']['cards'],2)
+        self.assertGreater(preview['counts']['notes'],2,'The original raw count still includes activity')
+        source=self.s.state()
+        for key in ('cards','publishers','loans','ib','completions','notes'):
+            self.assertEqual(preview['visible_counts'][key],len(source[key]),key)
+        self.assertEqual(preview['visible_counts']['cards'],1)
+        self.assertEqual(preview['visible_counts']['notes'],2)
+        self.restore.apply(preview['token']);restored=self.t.state()
+        for key in ('cards','publishers','loans','ib','completions','notes'):
+            self.assertEqual(preview['visible_counts'][key],len(restored[key]),key)
+        self.assertEqual(restored['archived_cards'][0]['id'],'archived-fictional')
+        self.assertTrue(any(n.get('entity')=='activity' for n in self.t.all('notes')))
+        self.assertEqual(digest(self.s),digest(self.t),'Archived cards and activity must still be restored')
     def test_expired_or_unknown_confirmation_rejected(self):
         with self.assertRaises(ValueError):self.restore.apply('wrong')
         p=self.restore.preview(self.backup);self.restore.pending[p['token']]['expires']=0

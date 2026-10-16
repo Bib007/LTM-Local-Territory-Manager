@@ -29,6 +29,17 @@ class HTTPTests(unittest.TestCase):
             self.assertEqual(response.status,200)
             self.assertIn(b'function printOptions',response.read())
             self.assertIn("script-src 'self'",response.headers['Content-Security-Policy'])
+
+    def test_navigation_language_asset_and_desktop_stop_control(self):
+        with self.request('/i18n.js') as response:
+            self.assertEqual(response.status,200)
+            self.assertIn(b'const I18n=',response.read())
+            self.assertIn("script-src 'self'",response.headers['Content-Security-Policy'])
+        with self.request('/') as response:
+            html=response.read().decode()
+            self.assertIn('data-action="stop" data-ui="Luk den lokale app"',html)
+            self.assertIn('/i18n.js',html)
+            self.assertNotIn('Lokalt på din Mac',html)
     def test_large_private_payload_is_gzipped_without_public_cache(self):
         import gzip
         with self.store.transaction():
