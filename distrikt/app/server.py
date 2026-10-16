@@ -24,7 +24,7 @@ from portable import Restores, snapshot, MAX_ARCHIVE
 from sharing import Publications
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.1'
+VERSION='1.12.0-beta.2'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -37,6 +37,7 @@ class Server(ThreadingHTTPServer):
     def __init__(self, address, store, access_host=None, password=None):
         super().__init__(address,Handler)
         self.store=store
+        self.beta=os.environ.get('LTM_CHANNEL')=='beta'
         self.downloads=Downloads(store)
         self.token=secrets.token_urlsafe(32)
         self.origin='http://127.0.0.1:%s'%self.server_port
@@ -126,7 +127,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/state':
                 self.server.store.purge_expired()
                 with self.server.store.lock:
-                    result=self.server.store.state();result['public_maps']=self.server.sharing.front_links()
+                    result=self.server.store.state();result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links()
                 return self.send(result)
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/activity':return self.send({'items':self.server.store.activity()})
@@ -143,7 +144,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/share/qr':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0]),'image/svg+xml')
             if path=='/api/restore/safety':
                 name=q.get('name',[''])[0]
-                if not name.startswith('foer-import-') or Path(name).name!=name or not name.endswith('.zip'):raise ValueError('Ukendt sikkerhedskopi.')
+                if not name.startswith(('foer-import-','foer-beta-nulstilling-')) or Path(name).name!=name or not name.endswith('.zip'):raise ValueError('Ukendt sikkerhedskopi.')
                 return self.send((self.server.store.root/'backups'/name).read_bytes(),'application/zip')
             if path=='/api/data-info':return self.send({'path':str(self.server.store.root),'cutoff':self.server.store.history_cutoff(),'server_mode':bool(self.server.access),'address':self.server.public_url})
             return self.send({'error':'Siden findes ikke.'},status=404)
@@ -178,6 +179,15 @@ class Handler(BaseHTTPRequestHandler):
                 if self.server.access:self.server.access.logout(self.headers.get('Cookie'))
                 cookie_name=self.server.access.cookie_name if self.server.access else 'distrikt_session'
                 return self.send({'ok':True},headers={'Set-Cookie':cookie_name+'=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'})
+            if self.path=='/api/beta/reset':
+                if not self.server.beta:return self.send({'error':'Nulstilling findes kun i betakanalen.'},status=404)
+                # Hold this lock until commit: a concurrent request cannot start a download.
+                with self.server.downloads.lock:
+                    if self.server.downloads.active:raise ValueError('Vent på adressehentningen, eller sæt den på pause før nulstilling.')
+                    with self.server.sharing.lock:
+                        result=self.server.restores.reset_beta(data.get('confirmation'),data.get('revision'))
+                    self.server.downloads.jobs.clear();self.server.downloads.suggestion_cache.clear()
+                return self.send(result)
             if self.path=='/api/restore/apply':
                 if self.server.downloads.status().get('status')=='running':raise ValueError('Sæt adressehentningen på pause før import.')
                 with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))

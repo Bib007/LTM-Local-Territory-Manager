@@ -22,6 +22,42 @@ class PortableTests(unittest.TestCase):
         (self.s.root/'access.json').write_text('PRIVATE_FAKE_PASSWORD')
         self.backup=snapshot(self.s,'1.9.0');self.restore=Restores(self.t,'1.9.0')
     def tearDown(self):self.s.close();self.t.close();self.temp.cleanup()
+    def test_beta_reset_backups_roundtrip_and_preserves_credentials(self):
+        resets=Restores(self.s,'1.12.0-beta.2');preview=resets.preview(self.backup)
+        before=digest(self.s);old_revision=self.s.revision
+        result=resets.reset_beta('NULSTIL BETA',old_revision)
+        self.assertNotEqual(old_revision,self.s.revision)
+        for module in MODULES:self.assertEqual(len(self.s.all(module)),1 if module=='settings' else 0)
+        self.assertFalse(self.s.state()['undo_available']);self.assertEqual(self.s._setup_previews,{})
+        self.assertEqual(resets.pending,{})
+        self.assertEqual((self.s.root/'drive-auth.json').read_text(),'PRIVATE_FAKE_SECRET')
+        self.assertEqual((self.s.root/'access.json').read_text(),'PRIVATE_FAKE_PASSWORD')
+        backup=self.s.root/'backups'/result['safety_backup']
+        data=resets.preview(backup.read_bytes());self.assertEqual(data['counts']['cards'],1)
+        resets.apply(data['token']);self.assertEqual(digest(self.s),before)
+
+    def test_beta_reset_refuses_invalid_confirmation_stale_data_or_shared_maps(self):
+        resets=Restores(self.s,'1.12.0-beta.2');before=digest(self.s)
+        for confirmation,revision in [('yes',self.s.revision),('NULSTIL BETA','old')]:
+            with self.assertRaises(ValueError):resets.reset_beta(confirmation,revision)
+            self.assertEqual(before,digest(self.s))
+        for status in ('published','ready','withdraw_failed'):
+            with self.s.transaction():self.s.put('maps',{'id':'p','entity':'publication','file_id':'FAKE','status':status})
+            before=digest(self.s)
+            with self.assertRaisesRegex(ValueError,'offentlig'):resets.reset_beta('NULSTIL BETA',self.s.revision)
+            self.assertEqual(before,digest(self.s))
+        with self.s.transaction():self.s.put('maps',{'id':'p','entity':'publication','file_id':'FAKE','status':'private'})
+        resets.reset_beta('NULSTIL BETA',self.s.revision)
+
+    def test_beta_reset_preserves_data_if_backup_or_transaction_fails(self):
+        resets=Restores(self.s,'1.12.0-beta.2');before=digest(self.s)
+        with patch('portable.snapshot',side_effect=OSError('fictional disk full')):
+            with self.assertRaises(OSError):resets.reset_beta('NULSTIL BETA',self.s.revision)
+        self.assertEqual(before,digest(self.s))
+        with patch.object(self.s,'put',side_effect=RuntimeError('fictional transaction failure')):
+            with self.assertRaises(RuntimeError):resets.reset_beta('NULSTIL BETA',self.s.revision)
+        self.assertEqual(before,digest(self.s))
+
     def test_roundtrip_all_modules_and_credentials_stay_out(self):
         with zipfile.ZipFile(io.BytesIO(self.backup)) as z:
             self.assertEqual(len([n for n in z.namelist() if n.endswith('.sqlite3')]),11)
@@ -43,7 +79,7 @@ class PortableTests(unittest.TestCase):
         deleted=self.s.mutate('note.save',{'text':'Fiktiv slettet note'})['id']
         self.s.mutate('delete',{'module':'notes','id':deleted})
         with self.s.transaction():self.s.put('cards',{'id':'archived-fictional','number':'99','archived':True,'addresses':[]})
-        before=digest(self.t);preview=self.restore.preview(snapshot(self.s,'1.12.0-beta.1'))
+        before=digest(self.t);preview=self.restore.preview(snapshot(self.s,'1.12.0-beta.2'))
         self.assertEqual(digest(self.t),before,'A preview must not replace target data')
         self.assertEqual(preview['counts']['cards'],2)
         self.assertGreater(preview['counts']['notes'],2,'The original raw count still includes activity')

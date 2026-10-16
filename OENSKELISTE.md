@@ -4,6 +4,9 @@ Den faste klargøringsplan står fortsat på 20 %. Nye ønsker udvider ikke auto
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
+| W20 | Ret opsætningsguidens valgfelter, hvor teksten står ved siden af boksen med knapper | 5 | Registreret; efter prioritet 4 | Valg og forklaring holder sig i samme boks ved mobil- og skrivebordsbredder. |
+| W21 | Nulstil betadata, så en test kan begynde forfra | 2 | Implementeret til beta.2; lokale prøver består, CI/udgivelse kontrolleres nu | Tydelig bekræftelse, sikkerhedskopi og ny opstart; stabil installation berøres ikke, og offentlige kort må ikke efterlades uden registrering. |
+| W22 | Fast topbar under rulning og logo som link til forsiden | 4 | Næste, samlet med W04/W03 | Topbaren bliver på plads, indhold dækkes ikke, og logoet åbner forsiden med appens sædvanlige kontrol af ugemte ændringer. |
 | W19 | Små løbende betaudgivelser, som kan testes i HA efter nye funktioner | -1 · kritisk | Færdig: HA-beta 1.12.0-beta.1 er udgivet; program-, Mac-, Windows- og HA-betagates består; løbende små betaer er nu fast aftale | Kontrollerede betaer kan installeres/opdateres i HA ved siden af stabil udgave. Hver beta har fast version og kort testliste; main forbliver stabil. |
 | W14 | KTM-rapportens distriktskort tilpasses automatisk til geografiens højde/bredde, evt. egen side, og distriktnumre vises på kortet | 3 | Implementeret og afprøvet på develop: læsbare etiketter, forbindelsesstreger, automatisk stående/liggende A4 og visuelt kontrollerede fiktive PDF-rapporter; levende browser/OSM står særskilt | Kortet bruger dynamisk format/udsnit og læsbare distriktnumre ved både smalle og brede distriktsgrænser. |
 | W15 | Forbedr autofuldførelse af forkyndere ved udlevering | 6 | Planlagt til betjeningsforbedringer | En tydelig, relevant forslagsliste erstatter browserlignende autofyld; tastatur og mobil fungerer. |
@@ -66,3 +69,9 @@ W19-lokalkontrol: 252 Python-prøver (1 oversprunget), 3 betapakkeprøver, almin
 W19-udgivelse bekræftet: v1.12.0-beta.1 er en GitHub-prerelease med HA-ZIP og SHA-256. Den kontrollerede kilde er 5b6ec28; den genererede HA-beta er på beta-grenen. Installer via https://github.com/Bib007/LTM-Local-Territory-Manager#beta som Distrikt Beta på 8788. Seneste stabile release er fortsat v1.11.1. Checks, Platformskontrol og HA beta release er grønne. Ejerens HA-test og Google-prøve er endnu ikke udført.
 
 Fremover: afslut én lille funktion eller et sammenhængende sæt, ret relevante prøver, opdater alle versionssteder og BETA-NOTES til beta.2/beta.3 osv., og udgiv efter grønne gates. Flyt ikke beta-grenen direkte fra almindelige develop-commits. Næste udviklingsopgaver er W04/W03 og W13; den faste køreplan står fortsat på 20 %. W14's kode og offline PDF-kontrol er med i beta.1.
+
+## W20–W22 · nye ønsker og beta.2
+
+W21 (prioritet 2) er implementeret først. Kun betakanalen har nulstillingsknappen og API-adgangen. Den kræver teksten NULSTIL BETA, uændret datarevision, afsluttet adressehentning og fjernet offentlig adgang til kort. Alle lokale registreringer erstattes i én transaktion af tom førstegangsopsætning; login, Google-forbindelse og sikkerhedskopier bevares. Ingen Google-filer slettes. Automatisk sikkerhedskopi før nulstilling kan hentes og importeres. Ny opstart fjerner guidens lokale kladde i den aktuelle browser; andre betafaner skal genindlæses.
+
+Lokalt: 256 Python-prøver (1 forventet overspringning), samtlige JavaScript-prøver, 7 almindelige og 3 betapakkeprøver består. Fiktive prøver dækker forkert bekræftelse, ændrede data, disk-/transaktionsfejl, offentlig deling, login/token og beta/stabil på samme vært. Version 1.12.0-beta.2 sendes gennem CI før udgivelse. Næste er W22/W04/W03 (prioritet 4 samlet med branding), derefter W13 (4) og W20 (5). Fast køreplan fortsat 20 %.
