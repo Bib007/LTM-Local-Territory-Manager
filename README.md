@@ -53,6 +53,10 @@ Lokal drift giver kontrol over data og adgang. Den er ikke i sig selv en garanti
 
 Har du de rette tilladelser i JW HUB, kan du ifølge mine erfaringer hente en KML-fil over menighedens samlede distrikt. Brug eksportmuligheden med din egen autoriserede adgang, og kontrollér grænsen efter import. Den virkelige fil skal blive privat.
 
+## Idéer og feedback
+
+Har du et forslag eller en kommentar til LTM? Åbn [Idéer og feedback på GitHub](https://github.com/Bib007/LTM-Local-Territory-Manager/issues/new?template=idea.yml). Forslag, billeder og kommentarer håndteres direkte af GitHub og gemmes ikke i LTM. GitHub kræver login for at oprette et issue. Alt indsendt er offentligt: brug kun opdigtede eller anonymiserede eksempler.
+
 ## Åbent projekt
 
 Det hele er vibe coded med Codex. Jeg lover ikke, at alt virker; input og fejlmeldinger er velkomne. Brug opdigtede eksempler i issues. Vedhæft aldrig rigtige databaser, forkyndernavne, IB-adresser, adgangskoder, forbindelsesfiler eller sikkerhedskopier.
