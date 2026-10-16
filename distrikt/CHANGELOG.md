@@ -1,5 +1,10 @@
 # Ændringsliste
 
+## 1.12.0-beta.7
+
+- Kortdata får trinvis vejledning til egen Datafordeler-konto og API-key, lokal lagring og eksplicit forbindelseskontrol. Nøglen udelades fra portable sikkerhedskopier.
+- Dette klargør DAR v3-forbindelsen; selve adresseimporten flyttes i et efterfølgende trin.
+
 ## 1.12.0-beta.6
 
 - Den ekstra opfølgningsliste er fjernet fra KTM-rapporten og samlet PDF efter ejerens ønske. De øvrige rapportoversigter og original S-13 bevares.

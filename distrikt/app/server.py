@@ -22,9 +22,10 @@ from geodata import Downloads
 from access import Access, LOGIN, private_client, write_private
 from portable import Restores, snapshot, MAX_ARCHIVE
 from sharing import Publications
+from address_source import Datafordeler
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.6'
+VERSION='1.12.0-beta.7'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -58,6 +59,7 @@ class Server(ThreadingHTTPServer):
             self.hosts.add('%s:%s'%(host,self.server_port))
             self.public_url='http://%s:%s'%(host,self.server_port)
         self.restores=Restores(store,VERSION)
+        self.address_source=Datafordeler(store.root)
         self.sharing=Publications(store)
 
 class Handler(BaseHTTPRequestHandler):
@@ -104,7 +106,7 @@ class Handler(BaseHTTPRequestHandler):
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.token)
                 if self.server.access:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -140,6 +142,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not 2000<=year<=2200:raise ValueError('Ugyldigt tjenesteår.')
                 return self.send(s13_pdf(self.server.store.state(),year),'application/pdf')
             if path=='/api/export/backup':return self.send(snapshot(self.server.store,VERSION),'application/zip',headers={'Content-Disposition':'attachment; filename="Distrikt-sikkerhedskopi.zip"'})
+            if path=='/api/address-source/status':return self.send(self.server.address_source.status())
             if path=='/api/share/status':return self.send(self.server.sharing.status())
             if path=='/api/share/qr':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0]),'image/svg+xml')
             if path=='/api/restore/safety':
@@ -191,6 +194,9 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/restore/apply':
                 if self.server.downloads.status().get('status')=='running':raise ValueError('Sæt adressehentningen på pause før import.')
                 with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))
+            if self.path=='/api/address-source/connect':return self.send(self.server.address_source.connect(data.get('api_key')))
+            if self.path=='/api/address-source/check':return self.send(self.server.address_source.check())
+            if self.path=='/api/address-source/disconnect':return self.send(self.server.address_source.disconnect())
             if self.path=='/api/share/connect':
                 with self.server.sharing.lock:
                     before=self.server.sharing.drive.status();old_auth=json.loads(self.server.sharing.drive.path.read_text()) if self.server.sharing.drive.connected() else None
