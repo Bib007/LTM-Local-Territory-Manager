@@ -25,7 +25,9 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  const submitted={};
  for(const language of ['da','en']){
   run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'})");
-  assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],/s13-background.jpg/);assert.match(print[language],/Hus til hus/);assert.doesNotMatch(print[language],/data-ui/);
+  assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],/s13-background.jpg/);assert.match(print[language],/Hus til hus/);
+  const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage">([\s\S]*?)<\/section>/g),m=>m[1]);
+  assert.equal(mapPages.length,2);assert.match(mapPages[0],/Tjenesteår 2026\/2027/);assert.match(mapPages[0],/FIXED_SERVICE_MAP/);assert.doesNotMatch(mapPages[0],/FIXED_ROLLING_MAP|reportchart/);assert.match(mapPages[1],/Seneste 12 måneder/);assert.match(mapPages[1],/FIXED_ROLLING_MAP/);assert.doesNotMatch(mapPages[1],/FIXED_SERVICE_MAP|reportchart/);assert.doesNotMatch(print[language],/data-ui/);
   const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.match(summary,/<strong>20<\/strong>/);assert.match(summary,/<strong>50%<\/strong>/);
   assert.match(summary,language==='en'?/>Coverage of current cards<\//:/>Dækning af aktuelle kort<\//);
   const service=counts(run("Workspace.reportChart('2026-09-01','2027-08-31')"));assert.equal(service.length,12);assert.equal(service.reduce((a,b)=>a+b,0),3);assert.equal(service[0],2);assert.equal(service[1],1);
@@ -35,11 +37,23 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);contracts[language]=[formContract(visits)];
   run("editVisit('v')");assert.equal(get('dialog').lang,language);assert.match(get('dialog').innerHTML,/value="KTM-besøg &lt;invented&gt; &amp; Kort"/);contracts[language].push(formContract(get('dialog').innerHTML));
   const fields=[['date','2026-09-11'],['note','KTM-besøg <invented> & Kort']];await submit({target:{id:'visitForm',dataset:{id:'v'},fields,reportValidity(){return true;},querySelector(){return {disabled:false};}},preventDefault(){}});submitted[language]=JSON.parse(JSON.stringify(writes.at(-1)));
-  const details=run('reportDetails(true)');assert.doesNotMatch(details,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO/);assert.match(details,/Kort &lt;invented&gt;/);assert.match(details,/class="tablewrap"/);
+  const details=run('reportDetails(true)');assert.doesNotMatch(details,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|Midlertidige kort|Temporary cards/);assert.match(details,/Kort &lt;invented&gt;/);assert.match(details,/class="tablewrap"/);
   assert.equal(run('JSON.stringify(state)'),original);
  }
  assert.equal(print.en,print.da,'Language switching must leave the complete original Danish print document unchanged');assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
+ // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
+ const geometry=run('JSON.stringify(state.cards)');
+ run('GeoUI.data.main_boundary={points:[[10,55],[10.01,55],[10.01,55.12],[10,55.12]]}');
+ assert(run('ReportMap.aspectRatio()')<1,'A north/south boundary needs a portrait viewport');
+ assert.match(run('ReportMap.html()'),/aspect-ratio:0\.6000/);
+ run('GeoUI.data.main_boundary={points:[[10,55],[10.2,55],[10.2,55.01],[10,55.01]]}');
+ assert(run('ReportMap.aspectRatio()')>2,'An east/west boundary needs a landscape viewport');
+ run('GeoUI.data.main_boundary={points:[]};state.cards[0].geo_polygon=[[10,55],[10.02,55],[10.02,55.08],[10,55.08]]');
+ assert(run('ReportMap.aspectRatio()')<1,'Card boundaries work without an outer boundary');
+ run('state.cards[0].geo_polygon=[[10,55],[10,55],[10,55]]');assert(Number.isFinite(run('ReportMap.aspectRatio()')));
+ run('state.cards[0].geo_polygon=[]');assert.equal(run('ReportMap.aspectRatio()'),1.4);
+ assert.equal(run('JSON.stringify(state.cards)'),geometry);
  const notices=[],tileErrors=[];c.notices=notices;c.L={map(){return {remove(){},attributionControl:{setPrefix(){}},on(){}};},tileLayer(){return {addTo(){return this;},on(name,fn){tileErrors.push(fn);}};},layerGroup(){return {addTo(){return this;}};}};
  run('toast=message=>notices.push(message);ReportMap.points=()=>[[10,55]];ReportMap.fit=()=>{};ReportMap.draw=()=>{};ReportMap.mount()');tileErrors[0]();tileErrors[0]();assert.equal(notices.length,1,'Repeated tile failures show one notice for the current map');run('ReportMap.mount()');tileErrors[0]();assert.equal(notices.length,1,'A removed map must not show a stale failure');tileErrors[1]();assert.equal(notices.length,2);
  console.log('Report language: service/rolling boundary counts, repeats, archived coverage, chart/table equality, private DNC omission, visit save payloads and unchanged original Danish print document passed.');

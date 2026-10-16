@@ -2,7 +2,7 @@ name: Distrikt
 version: "1.12.0-beta.1"
 slug: distrikt
 init: false
-description: "Privat distriktsadministration på hjemmenetværk og VPN"
+description: "Lokalt overblik over distriktskort, udleveringer, gennemgange og print"
 url: https://github.com/Bib007/LTM-Local-Territory-Manager
 arch:
   - amd64
