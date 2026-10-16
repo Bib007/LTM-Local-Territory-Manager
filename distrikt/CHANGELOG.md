@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.6
+
+- Den ekstra opfølgningsliste er fjernet fra KTM-rapporten og samlet PDF efter ejerens ønske. De øvrige rapportoversigter og original S-13 bevares.
+
 ## 1.12.0-beta.5
 
 - Opsætningsguidens radioknapper arver ikke længere tekstfelters fulde bredde. Valgtekst og forklaring holdes inden for deres boks på smalle skærme.
