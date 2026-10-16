@@ -25,6 +25,14 @@ Ejeren har valgt egen API-nøgle med guidning. Beta.7 tilføjer lokal opsætning
 
 Denne overgang er endnu ikke færdig. Der er ingen ændring af eksisterende adressehentning i dette dokumentationsarbejde. De næste kodeændringer bør bevare lokale data og en tydelig fejl ved utilgængelig kilde.
 
+## Afsluttet byggesten · komplet sidehentning
+
+`distrikt/app/dar_paging.py` har nu `collect_pages(fetch_page, entity, ...)`, som samler et helt resultat i hukommelsen, før det kan gives videre til en lokal import. Den kontrollerer GraphQL-fejl, nodes/pageInfo, boolsk hasNextPage, endCursor, tomme fortsættelsessider, cursor-cyklusser og dublerede/manglende entitets-ID’er. Grænser for sider og antal resultater giver fejl frem for afkortning. Afbrydelse kontrolleres før og efter hvert opslag. Fejltekster gengiver ikke upstream-svar.
+
+Byggestenen har ingen netværksadgang, credentials eller databaseskrivning og er endnu ikke koblet til Downloads. Den kommende adapter skal levere `fetch_page(after)` med uændrede felter/filtre og samme faste registrerings-/virkningstidspunkt på alle sider samt redigerede transportfejl. Hele resultatet returneres først efter en gyldig slutsides angivelse; fuldstændighed afhænger fortsat af kildens korrekte sideoplysninger. Dette er ikke en kontrol af endnu uimplementerede relationer eller den samlede adresseimport.
+
+12 fiktive prøver dækker sidefølge, tomt resultat, deldata med GraphQL-fejl, manglende felter, ugyldige cursors, cyklusser, dubletter, ID’er, grænser, afbrydelse og netfejl efter første side. Næste del er transport/forespørgsler og lokale DAR-joins, derefter integration i vej-, postnummer- og grænsehentning med separate checkpoints. Ingen ny brugerfunktion er aktiveret; beta.7 og dens tag bevares, og næste funktionelle udgivelse er beta.8.
+
 ## Primære kilder
 
 - [DAR REST: udfases 15. januar 2027](https://confluence.kds.dk/pages/viewpage.action?pageId=16056323).
