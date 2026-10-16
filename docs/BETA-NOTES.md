@@ -1,21 +1,13 @@
-# LTM 1.12.0-beta.4
+# LTM 1.12.0-beta.5
 
-## Nyt siden beta.3
+## Nyt siden beta.4
 
-Rapporter får **Kort til opfølgning** både på skærmen og i samlet PDF:
-
-- Kort uden kendt gennemgang vises særskilt som manglende historik.
-- Kort med kendt seneste gennemgang for over 12 måneder siden.
-- Aktuel gennemgang udleveret over fire måneder. Ved beholdt kort regnes fra den nye gennemgang, ikke det oprindelige udlån.
-- Ét kort pr. række med område, datoer og alle relevante årsager. Arkiverede kort udelades. Listen tilføjer ingen personnavne, noter eller IB-adresser.
-
-Listen er et arbejdsredskab til lokal opfølgning, ikke nye krav. Den er altid et aktuelt øjebliksbillede med dagens dato, også når den øvrige rapport handler om et tidligere tjenesteår. Eksisterende månedstal, dækningsgrad, områdeoversigt, kort og original S-13 er bevaret.
+Opsætningsguidens valgfelter er rettet. En fælles dialogregel gav radioknapper samme fulde bredde som tekstfelter og skubbede teksten uden for boksen. Radioknapper har nu fast lille bredde, og teksten kan ombrydes inde i boksen.
 
 ## Prøv især
 
-1. Opret fiktive kort med ukendt, gammel og nyere gennemgang. Kontrollér antal og kortlisten.
-2. Sammenlign et gammelt udlån med et beholdt kort, der netop er begyndt en ny gennemgang.
-3. Skift rapportperiode og tjenesteår. Opfølgningen skal stadig tydeligt være aktuel.
-4. Print en samlet rapport med mange kort. Kontrollér tabeldeling og den originale S-13 bagefter.
+1. Vælg **Indstillinger → Åbn opsætningsguiden**, eller brug betaens nulstilling til at begynde forfra.
+2. Gennemgå alle fem trin på computer og en smal telefon. Tekst og forklaring skal være inde i samme boks som radioknappen.
+3. Skift mellem dansk og engelsk og mellem enkel brug og kortarbejde. Valg og næste/tilbage skal fungere som før.
 
-Nulstilling fra beta.2 og fast topbar/logo/HA-billeder fra beta.3 er fortsat med. Live HA/browser og Google-konto afprøves hos ejeren.
+Beta.4's aktuelle opfølgningsliste på skærm og i PDF, beta.3's faste topbar/logo/HA-billeder og beta.2's nulstilling er fortsat med. Stabil udgave er fortsat 1.11.1. Egen HA/browser og Google-konto afprøves hos ejeren.

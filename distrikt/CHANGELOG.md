@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.5
+
+- Opsætningsguidens radioknapper arver ikke længere tekstfelters fulde bredde. Valgtekst og forklaring holdes inden for deres boks på smalle skærme.
+
 ## 1.12.0-beta.4
 
 - Rapporten får en aktuel opfølgningsliste med manglende historik, gennemgange over 12 måneder og aktuelle udlån over fire måneder.

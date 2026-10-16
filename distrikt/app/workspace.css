@@ -68,3 +68,7 @@ header #saveState{min-width:0;overflow-wrap:anywhere}
 html{scroll-padding-top:calc(var(--shell-height) + 15px)}
 @media(max-width:750px){:root{--shell-height:60px}.brand .brandWordmark{display:none}.brand .brandCompact,.brand b{display:block}.brand .brandCompact{width:34px;height:34px}.brand{gap:8px;flex-shrink:0}.brand b{font-size:18px}.betaChannel .brand b{font-size:16px}header #saveState{max-width:none;flex:1;text-align:right}.mobileMenu{flex-shrink:0}.menuBackdrop{top:var(--shell-height)}}
 @media print{body{padding-top:0}}
+
+/* Choice radios must not inherit the full-width text-field rule in dialogs. */
+.welcomeChoice>input[type=radio]{width:18px;height:18px;min-height:18px;flex:0 0 18px;margin:3px 0 0;accent-color:var(--accent)}
+.welcomeChoice>span{min-width:0;flex:1;overflow-wrap:anywhere}

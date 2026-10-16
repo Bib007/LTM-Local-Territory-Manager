@@ -4,7 +4,8 @@ Den faste klargøringsplan står fortsat på 20 %. Nye ønsker udvider ikke auto
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
-| W20 | Ret opsætningsguidens valgfelter, hvor teksten står ved siden af boksen med knapper | 5 | Registreret; efter prioritet 4 | Valg og forklaring holder sig i samme boks ved mobil- og skrivebordsbredder. |
+| W23 | Undersøg idéer og feedback uden krav om GitHub-konto | 10 | Registreret fra ejerens dokument; afklar mulige kanaler efter de højere prioriteter | Beskriv en enkel mulighed uden GitHub-login, dens modtager og håndtering af bilag/persondata. Ingen ny offentlig indsendelsestjeneste oprettes automatisk. |
+| W20 | Ret opsætningsguidens valgfelter, hvor teksten står ved siden af boksen med knapper | 5 | Implementeret til beta.5; offline layout og eksisterende guideprøver består | Valg og forklaring holder sig i samme boks ved mobil- og skrivebordsbredder. |
 | W21 | Nulstil betadata, så en test kan begynde forfra | 2 | Færdig og udgivet i beta.2; program-, platform- og HA-kontroller består | Tydelig bekræftelse, sikkerhedskopi og ny opstart; stabil installation berøres ikke, og offentlige kort må ikke efterlades uden registrering. |
 | W22 | Fast topbar under rulning og logo som link til forsiden | 4 | Implementeret til beta.3, samlet med W04/W03; lokale prøver består | Topbaren bliver på plads, indhold dækkes ikke, og logoet åbner forsiden med appens sædvanlige kontrol af ugemte ændringer. |
 | W19 | Små løbende betaudgivelser, som kan testes i HA efter nye funktioner | -1 · kritisk | Færdig: HA-beta 1.12.0-beta.1 er udgivet; program-, Mac-, Windows- og HA-betagates består; løbende små betaer er nu fast aftale | Kontrollerede betaer kan installeres/opdateres i HA ved siden af stabil udgave. Hver beta har fast version og kort testliste; main forbliver stabil. |
@@ -89,3 +90,11 @@ Den eksisterende rapport er gennemgået: månedstal, dækningsgrad, gentagne gen
 Listen er dateret med dagens dato og bevarer dette aktuelle grundlag ved valg af et ældre rapportår. Begge rapportperioder og original S-13 bevares i samlet PDF. Kalendergrænser, fremtidige poster, nyeste kendte dato, gentagne årsager, beholdte kort, escaping og privat IB er afprøvet. 256 Python-prøver (1 forventet overspringning), alle JavaScript-prøver og begge pakkekontroller består. Fiktive rapporter har 7, 7 og 10 sider; tæt eksempel med 60 kort og 30 opfølgningsrækker er kontrolleret visuelt, inklusive tabeldeling og gentaget overskrift. Opfølgningslisten bruger 9 pt tabeltekst. Ingen rigtige data eller netkort er brugt.
 
 Beta.3 er udgivet fra 59c0b63 med grøn Checks, Platformskontrol og HA beta release, ZIP og checksum. Beta.4 sendes gennem samme gates. Næste udvikling er W20's opsætningsguide (prioritet 5), efterfulgt af adressekilde/januarfrist og demo. Den faste køreplan er fortsat 20 %.
+
+## W20 · opsætningsguidens valgfelter
+
+Årsagen var dialogens fælles fuldbredde-regel for input, som også ramte radiofelter med højere CSS-specificitet end guidens lokale width:auto. Radiofelter er nu udeladt af tekstfeltreglen og har fast 18 px bredde; tekstkolonnen kan krympe og ombryde inde i valgboksen. Selve valg, plan og gemning er uændrede.
+
+Offline layoutkontrol med produktions-HTML/CSS omfatter 80 valgbokse på tværs af dansk/engelsk, alle guidetrin og bredder 320/390/768/1440 px. Radiofelters og tekstkolonners grænser er kontrolleret programmatisk; en 320 px prøve er også gennemset visuelt. Renderingen bruger WeasyPrint med dialogen gjort synlig til QA, ikke en levende browser; HA-/browserprøven står særskilt. 256 Python-prøver (1 forventet overspringning), alle JavaScript-prøver, 7 normale og 3 betapakkeprøver består.
+
+Beta.4 med W13's opfølgning er udgivet fra 8589264; Checks, Platformskontrol og HA beta release består, og HA-ZIP/checksum er tilgængelige. Beta.5 med W20 sendes nu gennem samme gates. W23 er overført fra ejerens indbakke med prioritet 10, uden at oprette en ny feedbacktjeneste. Næste fokus er W07's dokumenterede kildefrist og dernæst W12. Stabil main 1.11.1 og den faste plans 20 % er bevaret.
