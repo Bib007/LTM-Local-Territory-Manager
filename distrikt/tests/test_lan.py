@@ -66,7 +66,7 @@ class LANTests(unittest.TestCase):
             cookie=r.headers['Set-Cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('SameSite=Strict',cookie)
         with self.req('/') as r:
             html=r.read().decode();self.assertIn(self.server.token,html);self.assertIn('Log ud',html);self.assertNotIn('data-action="stop"',html)
-        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.12.0-beta.4')
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.12.0-beta.5')
         with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/state')
         self.assertEqual(error.exception.code,403)
     def test_wrong_password_and_foreign_origin_are_rejected(self):
