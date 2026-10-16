@@ -1,0 +1,23 @@
+const assert=require('node:assert/strict'),M=require('./model.js');
+const s=M.seed('2026-10-15');
+assert.equal(s.fictional,true);assert.equal(s.cards.length,24);assert.equal(s.publishers.length,6);
+assert.deepEqual([M.stats(s).assigned,M.stats(s).folder,M.stats(s).box],[8,6,10]);
+assert.equal(M.year('2026-08-31'),2026);assert.equal(M.year('2026-09-01'),2027);
+assert.deepEqual(M.period('2026-10-15','service'),{start:'2026-09-01',end:'2027-09-01'});
+assert.deepEqual(M.period('2026-10-15','rolling'),{start:'2025-10-15',end:'2026-10-16'});
+assert.deepEqual(M.period('2028-02-29','rolling'),{start:'2027-02-28',end:'2028-03-01'});
+const c=s.cards[8],before=M.stats(s).events,visits=M.stats(s).visits;
+const loan=M.assign(s,c.id,s.publishers[0].id,'2026-10-14');assert.equal(M.position(s,c),'assigned');assert.equal(c.in_folder,false);
+assert.throws(()=>M.assign(s,c.id,s.publishers[1].id,'2026-10-15'),/already/);assert.throws(()=>M.move(s,c.id,true),/available/);
+const snap=JSON.stringify(s);assert.throws(()=>M.finish(s,c.id,'2026-10-13',true),/return date/);assert.equal(JSON.stringify(s),snap);
+M.finish(s,c.id,'2026-10-15',true,'Demo: tilføj IB ved nr. 4',true);assert.equal(M.position(s,c),'box');assert.equal(c.last_completed,'2026-10-15');assert.equal(s.notes.at(-1).task,true);assert.equal(s.notes.at(-1).card_id,c.id);assert.equal(loan.returned,'2026-10-15');
+assert.equal(M.stats(s).events,before+1);assert.equal(M.stats(s).visits,visits+12);
+M.assign(s,c.id,s.publishers[1].id,'2026-10-15');M.finish(s,c.id,'2026-10-15',true);assert.equal(M.stats(s).events,before+2);assert.equal(M.stats(s).visits,visits+24);
+M.assign(s,c.id,s.publishers[2].id,'2026-10-15');M.finish(s,c.id,'2026-10-15',false);assert.equal(M.stats(s).events,before+2);
+M.move(s,c.id,true);assert.equal(M.position(s,c),'folder');
+const protectedCard=s.cards[0];assert.equal(M.count(protectedCard),12);assert.equal(M.members(protectedCard).length,11);assert.equal(M.members(protectedCard).some(a=>a.dnc),false);
+const added=M.create(s,'D999','Demo temporary',s.areas[0].id,'By');assert.equal(added.temporary,true);assert.equal(added.polygon.length,0);assert.equal(M.position(s,added),'box');assert.throws(()=>M.create(s,'d999','Duplicate',s.areas[0].id,'By'),/exists/);
+assert.throws(()=>M.assign(s,added.id,s.publishers[0].id,'2026-02-30'),/valid/);assert.throws(()=>M.assign(s,added.id,s.publishers[0].id,'2027-01-01'),/valid/);
+const reset=M.seed('2026-10-15');assert.equal(reset.cards.length,24);assert.equal(reset.cards.some(c=>c.number==='D999'),false);assert.equal(reset.notes.length,2);
+for(const c of reset.cards){const active=M.active(reset,c.id);if(active)assert(active.assigned>=c.last_completed);}
+console.log('Fictional demo model: assignments, returns to box, repeated counts, date boundaries, notes/tasks, DNC map filtering and reset passed.');
