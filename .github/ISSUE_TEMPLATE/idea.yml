@@ -1,0 +1,9 @@
+name: Idea / idé
+description: Suggest an improvement.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this help you do? / Hvad vil det hjælpe dig med?
+    validations:
+      required: true

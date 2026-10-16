@@ -1,0 +1,39 @@
+name: Platformskontrol
+on:
+  pull_request:
+    paths: ['distrikt/**', '.github/workflows/platforms.yml']
+  push:
+    branches: [main, develop]
+    paths: ['distrikt/**', '.github/workflows/platforms.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    name: Desktop (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s distrikt/tests -p test_portable.py -v
+      - run: python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+      - run: python -m unittest discover -s distrikt/tests -p test_lan.py -v
+  home-assistant:
+    name: Home Assistant amd64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Byg appens Dockerfile
+        run: docker build --build-arg BUILD_VERSION=ci --build-arg BUILD_ARCH=amd64 --tag ltm-ha-smoke distrikt
+      - name: Kontrollér programstart
+        run: docker run --rm --entrypoint python3 ltm-ha-smoke /opt/distrikt/app/server.py --help
+      - name: Kontrollér medfølgende QR-bibliotek
+        run: docker run --rm --entrypoint python3 ltm-ha-smoke -c "import sys; sys.path.insert(0, '/opt/distrikt/app/vendor_py'); import qrcode; code=qrcode.QRCode(); code.add_data('https://example.invalid/fictional-demo'); code.make(); assert code.get_matrix()"
