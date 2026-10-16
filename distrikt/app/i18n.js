@@ -709,7 +709,7 @@ const I18n={
   "Tekst":"Text",
   "Opgave, som skal udføres":"Task to be completed",
   'Forside':'Home','Daglig brug':'Territory desk','Overblik':'Overview',
-  'Administration':'Administration','Distriktskort':'Territory cards',
+  'Administration':'Administration','Hjælp':'Help','Idéer og feedback':'Ideas and feedback','Distriktskort':'Territory cards',
   'Kortoversigt':'Map overview','Forkyndere':'Publishers','Opgaver og noter':'Tasks and notes',
   'Rapporter og historik':'Reports and history','Kort og adresser':'Maps and addresses',
   'Indstillinger':'Settings','Opsæt distrikter':'Set up territories','Kortopsætning':'Card setup',
