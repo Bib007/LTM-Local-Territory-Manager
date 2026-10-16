@@ -4,6 +4,12 @@
 
 The demo is a static browser application. It never runs the private Python/SQLite server online. Only the allowlisted demo assets are published.
 
+## Verified public address
+
+[Open the web demo](https://bib007.github.io/LTM-Local-Territory-Manager/). Checked without login on 16 October 2026: the landing page and all six JavaScript/CSS/logo assets returned HTTP 200. Use this root address; adding `/demo/` returns 404. The build serves demo files at the Pages artifact root even though source files live in the repository's demo folder.
+
+Live first-load behavior, OSM tiles, mobile and print still need browser/device verification. HTTP success alone does not verify those behaviors.
+
 ## One-time GitHub setup
 
 1. The demo pull request must first be merged into `main`, with **Demo checks** passing.
