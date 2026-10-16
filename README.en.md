@@ -9,15 +9,15 @@
 
 **Private territory administration, on your own computer.** An unofficial, community-built tool for Jehovah’s Witnesses. Vibe coded with **OpenAI Codex**, shaped by practical use at the territory desk.
 
-[Dansk](README.md) · [Installation](docs/INSTALL.en.md) · [Privacy](docs/PRIVACY.en.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Manual help checklist](Dette-skal-hjaelpes-manuelt.md)
+[Dansk](README.md) · [Installation](docs/INSTALL.en.md) · [Privacy](docs/PRIVACY.en.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md)
 
 ## Start here
 
-**Stable baseline: 1.11.0.** All blank forms are included and the program, form, packaging and platform checks pass. The automated release build publishes the desktop ZIP under Releases. The default README and standard guides are Danish; English is optional.
+**Stable version: 1.11.1.** Install directly in Home Assistant or download the [Mac / Windows package](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest). Blank territory card, do-not-call and S-13 forms are included. Standard documentation is Danish, with English as an additional option.
 
 [Add LTM to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
-The stable baseline is **1.11.0**. The installed application interface is currently Danish. A separate Danish/English browser demo is now in the repository; [publishing instructions](docs/DEMO-HOSTING.en.md) explain the remaining hosting setup. The demo has no public URL yet. Guided onboarding is prepared on a development branch; full app translation remains in progress. Read [the known limitations](docs/LIMITATIONS.en.md) before relying on a feature.
+The installed application interface is Danish. The separate [browser demo](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/demo/README.md) supports Danish and English and uses fictional data. It cannot access or import your installation’s private records. See the [known limitations](docs/LIMITATIONS.en.md) for feature details.
 
 - **Mac / Windows:** download the packaged ZIP from [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases), extract it, install Python 3.9+ once, then open the matching `Start-Distrikt` launcher in `Distrikt-lokal`. No Docker or pip packages needed.
 - **From source:** open `distrikt/Start-Distrikt.command` on Mac or `distrikt/Start-Distrikt.cmd` on Windows. Alternatively: `python3 distrikt/app/server.py`. Use a verified release when updating a working installation.

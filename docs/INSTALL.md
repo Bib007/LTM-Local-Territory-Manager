@@ -2,7 +2,7 @@
 
 [English](INSTALL.en.md) · [Kom i gang](FIRST-STEPS.md)
 
-**Stabil grundudgave: 1.11.0.** Brug den almindelige repositoryadresse til HA; `develop` er til næste version og er ikke en almindelig opdateringskilde.
+**Stabil grundudgave: 1.11.1.** Brug den almindelige repositoryadresse til HA; `develop` er til næste version og er ikke en almindelig opdateringskilde.
 
 ## Home Assistant OS
 

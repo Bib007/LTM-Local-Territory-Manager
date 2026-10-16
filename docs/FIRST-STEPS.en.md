@@ -50,5 +50,3 @@ Each recorded completion counts, including repeated completions of the same card
 - Google Drive is optional. Follow [Drive and QR setup](GOOGLE-DRIVE.en.md) only if you want approved public map images.
 
 Download a private backup after the initial setup. Keep a copy outside the app's machine, somewhere only the responsible operator can access. Keep credentials and backups out of GitHub and AI conversations.
-
-For owner actions still pending in this project, see [Dette skal hjælpes manuelt](../Dette-skal-hjaelpes-manuelt.md). Those publication/setup tasks are separate from your ordinary daily work.
