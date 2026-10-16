@@ -6,7 +6,7 @@
 
 - Selvstændigt link til idéer og feedback via GitHub med valgfrie bilag og tydelig oplysning om offentligt indhold; aktiveres med næste stabile udgivelse.
 - HA-installationssiden forklarer funktioner, første start, lokal adgang og backup.
-- KTM-rapportens kortformat følger geografien, og hver periode får sin egen kortside ved print. Visuel kontrol udestår.
+- KTM-kort får læsbare distriktnumre med forbindelsesstreger, når der er trangt. Kortets egen printside bliver automatisk stående eller liggende efter geografien; fiktive PDF-rapporter er kontrolleret visuelt.
 - Det overflødige tal for midlertidige kort er fjernet fra distriktets oplysninger.
 
 - Spørgsmål ved første start med personlig opsætningsplan og en valgfri rundtur i de rigtige sider.

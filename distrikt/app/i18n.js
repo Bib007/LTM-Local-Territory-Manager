@@ -3,6 +3,7 @@
 const I18n={
  current:'da',
  english:{
+  "Kortnumre uden plads på kortet:":"Card numbers without room on the map:",
   "Mangler på kort":"Missing from cards",
   "Inden for kortgrænse":"Inside a card boundary",
   "På kort":"On a card",
