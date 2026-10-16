@@ -1,0 +1,99 @@
+name: HA beta release
+on:
+  push:
+    branches: [develop]
+    paths: ['distrikt/**', 'scripts/**', 'docs/BETA*.md', '.github/workflows/beta.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ha-beta-release
+  cancel-in-progress: false
+jobs:
+  checks:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: python -m unittest discover -s distrikt/tests -v
+      - run: for testfile in distrikt/tests/test_*.cjs; do TZ=Europe/Copenhagen node "$testfile" || exit 1; done
+      - run: python scripts/test_build_release.py
+      - run: python -m unittest discover -s scripts -p test_build_beta.py -v
+  desktop:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s distrikt/tests -p test_portable.py -v
+      - run: python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+      - run: python -m unittest discover -s distrikt/tests -p test_lan.py -v
+  home-assistant:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python scripts/build_beta.py --output /tmp/ha-beta
+      - run: docker build --build-arg BUILD_VERSION=beta-ci --build-arg BUILD_ARCH=amd64 --tag ltm-ha-beta /tmp/ha-beta/distrikt
+      - run: docker run --rm --entrypoint python3 ltm-ha-beta /opt/distrikt/app/server.py --help
+      - run: docker run --rm --env LTM_CHANNEL=beta --entrypoint python3 ltm-ha-beta -c "import sys,tempfile; sys.path.insert(0, '/opt/distrikt/app'); from access import Access,LOGIN; assert 'Beta' in LOGIN; d=tempfile.TemporaryDirectory(); assert Access(d.name,'Fictional-pass-123').cookie_name=='distrikt_beta_session'"
+  publish:
+    if: github.ref == 'refs/heads/develop'
+    needs: [checks, desktop, home-assistant]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Publish immutable prerelease and isolated HA channel
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BETA_VERSION=$(python -c "import sys; sys.path.insert(0,'scripts'); import build_beta; build_beta.entries(); print(build_beta.release.version())")
+          if gh release view "v$BETA_VERSION" >/dev/null 2>&1; then
+            BETA_TARGET=$(gh release view "v$BETA_VERSION" --json targetCommitish --jq .targetCommitish)
+            if [[ "$BETA_TARGET" != "$GITHUB_SHA" ]]; then
+              echo "This beta version already exists for different code. Bump the version for the next small beta. Keeping the current HA beta unchanged."
+              exit 0
+            fi
+          fi
+          python scripts/build_beta.py --output "$RUNNER_TEMP/ha-beta"
+          gh auth setup-git
+          git -C "$RUNNER_TEMP/ha-beta" init
+          git -C "$RUNNER_TEMP/ha-beta" remote add origin "https://github.com/$GH_REPO.git"
+          if git -C "$RUNNER_TEMP/ha-beta" fetch --depth=1 origin beta; then
+            git -C "$RUNNER_TEMP/ha-beta" reset --soft FETCH_HEAD
+          fi
+          git -C "$RUNNER_TEMP/ha-beta" config user.name 'github-actions[bot]'
+          git -C "$RUNNER_TEMP/ha-beta" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$RUNNER_TEMP/ha-beta" add -A
+          git -C "$RUNNER_TEMP/ha-beta" diff --cached --quiet || git -C "$RUNNER_TEMP/ha-beta" commit -m "HA beta $BETA_VERSION from $GITHUB_SHA"
+          git -C "$RUNNER_TEMP/ha-beta" push origin HEAD:beta
+          if ! gh release view "v$BETA_VERSION" >/dev/null 2>&1; then
+            gh release create "v$BETA_VERSION" "dist/LTM-HA-v$BETA_VERSION.zip" "dist/LTM-HA-v$BETA_VERSION.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "LTM $BETA_VERSION · HA-beta" --notes-file docs/BETA-NOTES.md
+          fi

@@ -23,6 +23,7 @@ def write_private(path,value):
 
 class Access:
     def __init__(self,root,password=None):
+        self.cookie_name='distrikt_beta_session' if os.environ.get('LTM_CHANNEL')=='beta' else 'distrikt_session'
         self.path=Path(root)/'access.json';self.sessions={};self.attempts={};self.lock=threading.RLock()
         self.secret=json.loads(self.path.read_text()) if self.path.exists() else None
         if password is not None:
@@ -50,10 +51,12 @@ class Access:
         with self.lock:return self.sessions.get(token,0)>time.monotonic()
     def logout(self,cookie):
         with self.lock:self.sessions.pop(self.cookie(cookie),None)
-    @staticmethod
-    def cookie(value):
+    def cookie(self,value):
         try:
-            cookies=SimpleCookie();cookies.load(value or '');return cookies['distrikt_session'].value if 'distrikt_session' in cookies else ''
+            cookies=SimpleCookie();cookies.load(value or '');return cookies[self.cookie_name].value if self.cookie_name in cookies else ''
         except Exception:return ''
 
 LOGIN='''<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LTM · Log ind</title><link rel="stylesheet" href="/style.css"><script src="/login.js" defer></script></head><body class="loginPage"><main><section class="panel"><h1>Local Territory Manager</h1><p>Privat adgang · hjemmenetværk og VPN</p><form id="loginForm"><label>Adgangskode</label><input name="password" type="password" autocomplete="current-password" maxlength="1024" required autofocus><p id="loginError" role="alert"></p><button class="primary">Log ind</button></form></section></main></body></html>'''
+
+if os.environ.get('LTM_CHANNEL')=='beta':
+    LOGIN=LOGIN.replace('<title>LTM · Log ind</title>','<title>LTM Beta · Log ind</title>').replace('<h1>Local Territory Manager</h1>','<h1>Local Territory Manager · Beta</h1>')
