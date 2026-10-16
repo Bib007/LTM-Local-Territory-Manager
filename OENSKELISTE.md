@@ -4,7 +4,7 @@ Den faste klargøringsplan står fortsat på 20 %. Nye ønsker udvider ikke auto
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
-| W14 | KTM-rapportens distriktskort tilpasses automatisk til geografiens højde/bredde, evt. egen side, og distriktnumre vises på kortet | 3 | Implementeret på develop: geografisk format og egne kortsider; automatiske prøver består; visuel kontrol og små distriktnumre udestår | Kortet bruger dynamisk format/udsnit og læsbare distriktnumre ved både smalle og brede distriktsgrænser. |
+| W14 | KTM-rapportens distriktskort tilpasses automatisk til geografiens højde/bredde, evt. egen side, og distriktnumre vises på kortet | 3 | Implementeret og afprøvet på develop: læsbare etiketter, forbindelsesstreger, automatisk stående/liggende A4 og visuelt kontrollerede fiktive PDF-rapporter; levende browser/OSM står særskilt | Kortet bruger dynamisk format/udsnit og læsbare distriktnumre ved både smalle og brede distriktsgrænser. |
 | W15 | Forbedr autofuldførelse af forkyndere ved udlevering | 6 | Planlagt til betjeningsforbedringer | En tydelig, relevant forslagsliste erstatter browserlignende autofyld; tastatur og mobil fungerer. |
 | W16 | Automatisk distriktsinddeling skal følge meningsfulde vej- og områdegrænser, ikke firkanter | 7 | Planlagt til korteditor og automatisk inddeling | Forslag følger veje og naturlige områder og kan kontrolleres/redigeres før gemning. |
 | W17 | Fjern tallet 'midlertidige kort' fra KTM-rapportens 'Distriktets oplysninger' | Ikke angivet | Færdig på develop; rapportprøver består | Tallet vises ikke længere i rapporten; underliggende kortdata bevares. |
@@ -30,7 +30,7 @@ Den faste klargøringsplan står fortsat på 20 %. Nye ønsker udvider ikke auto
 - Stabil `main`: 1.11.1. `develop`: 1.12.0-beta.1; ingen stabil udgivelse i denne omgang.
 - W10: frontendtesten består lokalt; Checks og Platformskontrol for b0b5d42 består på GitHub. Formularen ligger kun på develop og er derfor endnu ikke aktiv som standardgrenens GitHub-formular. Browserkontrol mislykkedes på grund af en utilgængelig browserforbindelse/timeout; ingen test-issues er oprettet.
 - W05 er klar i udviklingskoden; præsentationen på en faktisk HA-installation kontrolleres ved udgivelsen.
-- W14: formatet følger geografien, tilpasses ved vinduesændring og bruger egne printkort til tjenesteår og rullende periode. Bred/høj geografi, periodernes adskillelse og bevarede originalformularer er afprøvet med opdigtede data. Visuel browser/PDF-kontrol og læsbarhed for de mindste distriktnumre udestår; ønsket markeres ikke færdigt endnu.
+- W14: formatet følger geografien, tilpasses ved vinduesændring og bruger egne printkort til tjenesteår og rullende periode. Bred/høj geografi, periodernes adskillelse og bevarede originalformularer er afprøvet med opdigtede data. Nummerplacering og offline PDF-layout er efterfølgende implementeret og kontrolleret; se W14-kontrollen nedenfor. Levende browser/OSM er ikke verificeret i dette miljø.
 - W17 er løst uden ændring af kortdata; ejerprioritet var ikke angivet og er rettet fra det tidligere tildelte 7-tal.
 - Fortsæt først med W10/W14-kontrollen, derefter logo/ikon (W04/W03) og rapportoversigter (W13) efter ejerprioritet. Fortsæt den faste køreplans opgave 3 og 4 efter de højere prioriterede ønsker. Den faste fremdrift er fortsat 20 %.
 
@@ -42,4 +42,12 @@ Ejerens færdige ønske er læst med prioritet 2. Appen bruger den eksisterende 
 
 Samme QR giver ikke individuel kortholderadgang og forhindrer ikke en tidligere kortholder i at åbne under et nyt udlån. Googles adgangsside ændres ikke; en særlig forklarende offentlig side kræver en ny løsning og er ikke tilføjet. Ingen forkyndernavne, udlån, noter eller IB sendes til Google. Der arbejdes kun med programkode og fiktiv Google-service i prøverne. Egen Google-konto/inkognitotest er et separat ejertrin.
 
-W18-verifikation: 251 Python-prøver (én forventet overspringning), samtlige JavaScript-prøver, 7 programpakkeprøver og arkivbygning består. 32 delingsprøver omfatter netfejl, genstart, delvist udførte Google-anmodninger og køafhængigheder; private HTTP-endpoints er også afprøvet. Ingen rigtige Google-filer eller private databaser er åbnet. Næste udviklingsfokus er fortsat W14-kort/PDF-kontrol og små distriktnumre, derefter W04/W03 og W13. W18-kontrollen med egen konto følger installations-/ejertrinnene.
+W18-verifikation: 251 Python-prøver (én forventet overspringning), samtlige JavaScript-prøver, 7 programpakkeprøver og arkivbygning består. 32 delingsprøver omfatter netfejl, genstart, delvist udførte Google-anmodninger og køafhængigheder; private HTTP-endpoints er også afprøvet. Ingen rigtige Google-filer eller private databaser er åbnet. Næste udviklingsfokus er W04/W03 (logo og ikon) og W13 (rapportoversigter); W14 har nu bestået nummer- og PDF-kontrollen, mens levende browser/OSM står særskilt. W18-kontrollen med egen konto følger installations-/ejertrinnene.
+
+## W14 · numre og rapportformat kontrolleret
+
+Små kortnumre skjules ikke længere automatisk. Der bruges læsbare etiketter og forbindelsesstreger, placering uden overlap samt et indvendigt anker ved indadbuede grænser. Skærmvisningen bruger mindst 11 px; printet sigter efter ca. 9 pt uafhængigt af skærmens størrelse. Hvis et ekstremt tæt/lille udsnit ikke har plads til alle etiketter, nævnes de resterende numre udtrykkeligt under kortet.
+
+Høje kort bruger stående A4-kortsider, brede kort liggende A4-kortsider. De øvrige rapportsider og den originale S-13 bevarer stående format og 15 mm margener. Tre fiktive rapporter er renderet og kontrolleret visuelt: højt kort (6 sider), bredt kort (6 sider) og 60 tætte distrikter (8 sider, heraf 3 originale S-13-sider). Alle forventede numre er fundet på begge perioders kortsider med 8,98–9,04 pt i kontrollen.
+
+Automatiske prøver dækker også 30 tætte distrikter ved 320 × 260 px, 60 ved 800 × 640 px, kanter, indadbuede grænser, HTML-escaping, reproducerbar placering, overfyldte udsnit og valg af sideformat. PDF-kontrollen er udført offline med WeasyPrint 70 og fiktiv baggrund; den er ikke en påstand om test af levende OSM-fliser eller browserens printdialog. Ingen private kort eller registreringer er brugt.

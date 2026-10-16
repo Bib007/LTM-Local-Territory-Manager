@@ -26,7 +26,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  for(const language of ['da','en']){
   run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'})");
   assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],/s13-background.jpg/);assert.match(print[language],/Hus til hus/);
-  const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage">([\s\S]*?)<\/section>/g),m=>m[1]);
+  const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage[^"]*">([\s\S]*?)<\/section>/g),m=>m[1]);
   assert.equal(mapPages.length,2);assert.match(mapPages[0],/Tjenesteår 2026\/2027/);assert.match(mapPages[0],/FIXED_SERVICE_MAP/);assert.doesNotMatch(mapPages[0],/FIXED_ROLLING_MAP|reportchart/);assert.match(mapPages[1],/Seneste 12 måneder/);assert.match(mapPages[1],/FIXED_ROLLING_MAP/);assert.doesNotMatch(mapPages[1],/FIXED_SERVICE_MAP|reportchart/);assert.doesNotMatch(print[language],/data-ui/);
   const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.match(summary,/<strong>20<\/strong>/);assert.match(summary,/<strong>50%<\/strong>/);
   assert.match(summary,language==='en'?/>Coverage of current cards<\//:/>Dækning af aktuelle kort<\//);
@@ -54,6 +54,39 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  run('state.cards[0].geo_polygon=[[10,55],[10,55],[10,55]]');assert(Number.isFinite(run('ReportMap.aspectRatio()')));
  run('state.cards[0].geo_polygon=[]');assert.equal(run('ReportMap.aspectRatio()'),1.4);
  assert.equal(run('JSON.stringify(state.cards)'),geometry);
+ run('GeoUI.data.main_boundary={points:[[10,55],[10.2,55],[10.2,55.01],[10,55.01]]}');
+ assert.match(run('reportPrintDocument()'),/reportMapPage reportMapLandscape/);
+ run('GeoUI.data.main_boundary={points:[[10,55],[10.01,55],[10.01,55.2],[10,55.2]]}');
+ assert.doesNotMatch(run('reportPrintDocument()'),/class="report reportMapPage reportMapLandscape"/);
+ run('GeoUI.data.main_boundary={points:[]}');
+ // Narrow and concave districts retain readable numbers anchored to their own polygon.
+ const concave=[[0,0],[100,0],[100,20],[20,20],[20,100],[0,100]];
+ c.concaveFixture=concave;
+ assert(run("ReportMap.inside([ReportMap.label(concaveFixture,'120').x,ReportMap.label(concaveFixture,'120').y],concaveFixture)"));
+ assert.equal(run("ReportMap.label([[0,0],[2,0],[2,100],[0,100]],'120').size"),11);
+ for(const [width,height,count] of [[800,640,60],[320,260,30]]){
+  const cards=Array.from({length:count},(_,i)=>({id:'label-'+i,number:String(101+i),points:[[100+i%10,100+Math.floor(i/10)],[101+i%10,100+Math.floor(i/10)],[101+i%10,101+Math.floor(i/10)],[100+i%10,101+Math.floor(i/10)]]}));
+  c.labelFixtures=cards;const labels=JSON.parse(run(`JSON.stringify(ReportMap.labels(labelFixtures,${width},${height}))`));
+  assert.equal(labels.length,count);assert(labels.every(l=>!l.overflow&&l.size>=11&&l.size<=13));
+  for(let i=0;i<labels.length;i++){const a=labels[i];assert(a.x-a.width/2>=3&&a.x+a.width/2<=width-3);assert(a.y-a.height/2>=3&&a.y+a.height/2<=height-3);
+   for(const b of labels.slice(i+1))assert(Math.abs(a.x-b.x)>=(a.width+b.width)/2||Math.abs(a.y-b.y)>=(a.height+b.height)/2,'Number labels must not overlap');
+  }
+  assert.equal(run(`JSON.stringify(ReportMap.labels(labelFixtures,${width},${height}))`),JSON.stringify(labels),'Placement must be repeatable');
+ }
+ const packed=JSON.parse(run('JSON.stringify(ReportMap.labels(labelFixtures,90,60))'));
+ assert(packed.some(l=>l.overflow),'Overcrowded viewports must report numbers without room instead of painting overlapping labels');
+ const savedCards=run('JSON.stringify(state.cards)');
+ run("state.cards=[{id:'escaped',number:'<unsafe>',geo_polygon:[[10,10],[11,10],[11,100]]}]");
+ const overlay=run('ReportMap.overlays(p=>p,320,260,new Set())');
+ assert.match(overlay.markup,/&lt;unsafe&gt;/);assert.doesNotMatch(overlay.markup,/<unsafe>/);assert.match(overlay.markup,/<line/);
+ assert(overlay.markup.lastIndexOf('<line')<overlay.markup.indexOf('<text'),'All leader lines are painted behind every number');
+ c.savedCardsFixture=savedCards;run('state.cards=JSON.parse(savedCardsFixture)');
+ const markers=[],leaders=[],layer=()=>({addTo(){return this;},bindTooltip(){return this;}});
+ c.L={polygon:layer,divIcon:options=>options,marker(at,options){markers.push({at,options});return layer();},polyline(points){leaders.push(points);return layer();}};
+ run("state.cards=[{id:'small',number:'120',geo_polygon:[[10,10],[11,10],[11,100]]}];ReportMap.map={getSize:()=>({x:320,y:260}),latLngToContainerPoint:p=>({x:p[1],y:p[0]}),containerPointToLatLng:p=>({lng:p[0],lat:p[1]})};ReportMap.layer={clearLayers(){}};ReportMap.draw()");
+ assert.equal(markers.length,1);assert.match(markers[0].options.icon.html,/>120</);assert.equal(leaders.length,1);
+ assert(leaders[0][0].lng>=10&&leaders[0][0].lng<=11,'The leader must start inside its own narrow district');
+ run('state.cards=JSON.parse(savedCardsFixture);ReportMap.map=null;ReportMap.layer=null');
  const notices=[],tileErrors=[];c.notices=notices;c.L={map(){return {remove(){},attributionControl:{setPrefix(){}},on(){}};},tileLayer(){return {addTo(){return this;},on(name,fn){tileErrors.push(fn);}};},layerGroup(){return {addTo(){return this;}};}};
  run('toast=message=>notices.push(message);ReportMap.points=()=>[[10,55]];ReportMap.fit=()=>{};ReportMap.draw=()=>{};ReportMap.mount()');tileErrors[0]();tileErrors[0]();assert.equal(notices.length,1,'Repeated tile failures show one notice for the current map');run('ReportMap.mount()');tileErrors[0]();assert.equal(notices.length,1,'A removed map must not show a stale failure');tileErrors[1]();assert.equal(notices.length,2);
  console.log('Report language: service/rolling boundary counts, repeats, archived coverage, chart/table equality, private DNC omission, visit save payloads and unchanged original Danish print document passed.');

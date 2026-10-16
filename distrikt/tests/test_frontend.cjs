@@ -194,7 +194,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  // Report labels fit polygon area/width and OSM snapshot is embedded in print without private notes.
  assert(run("ReportMap.label([[0,0],[100,0],[100,100],[0,100]],'120').size")<=13);
  assert(run("ReportMap.label([[0,0],[30,0],[30,30],[0,30]],'120').size")<run("ReportMap.label([[0,0],[100,0],[100,100],[0,100]],'120').size"));
- assert.equal(run("ReportMap.label([[0,0],[2,0],[2,100],[0,100]],'120').size"),0);
+ assert.equal(run("ReportMap.label([[0,0],[2,0],[2,100],[0,100]],'120').size"),11);
  run("savedReportCards=state.cards;savedReportCompletions=state.completions;savedReportYear=year;state.cards=[{id:'report-test',number:'120',geo_polygon:[[10,55],[10.015,55],[10.015,55.015],[10,55.015]]}];state.completions=[{card_id:'report-test',date:state.today}];year=serviceYear(state.today);ReportMap.map=captureMap;ReportMap.tiles={isLoading:()=>false};document.createElement=()=>({getContext:()=>({drawImage(){}}),toDataURL:()=> 'data:image/png;base64,AAAA'})");
  run("savedMainBoundary=GeoUI.data.main_boundary;GeoUI.data.main_boundary={points:[[9.995,54.995],[10.019,54.995],[10.019,55.019],[9.995,55.019]]};ReportMap.fit()");
  assert.equal(run('fitArgs.bounds.length'),8);assert.equal(run('fitArgs.bounds[0][1]'),9.995);

@@ -26,7 +26,7 @@
 @media(max-width:750px){nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.navGroup button{width:100%}.navGroup summary{padding:12px 6px;letter-spacing:0;white-space:normal}.mapBackground>*{flex:1 1 100%}.mapExpanded{height:70vh!important}}
 @media print{.mapBackground,[id$=BackgroundStatus]{display:none!important}}
 
-.reportDistrictMap{height:auto;aspect-ratio:1.4;min-height:260px;max-height:900px;width:100%;background:#edf1ed;border-radius:6px}.reportMapLabel span{position:absolute;transform:translate(-50%,-50%);font-family:Arial,sans-serif;font-weight:bold;color:#183746;text-shadow:0 0 2px white,0 0 2px white;white-space:nowrap}.reportMapSnapshot svg{width:100%;height:auto;display:block}
+.reportDistrictMap{height:auto;aspect-ratio:1.4;min-height:260px;max-height:900px;width:100%;background:#edf1ed;border-radius:6px}.reportMapLabel span{position:absolute;transform:translate(-50%,-50%);font-family:Arial,sans-serif;font-weight:bold;line-height:1.2;padding:3px;background:rgba(255,255,255,.92);border-radius:3px;color:#183746;text-shadow:0 0 2px white,0 0 2px white;white-space:nowrap}.reportMapSnapshot svg{width:100%;height:auto;display:block}
 
 .leaflet-control-attribution svg.leaflet-attribution-flag{display:inline;width:1em;height:.6667em;vertical-align:baseline}
 input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
