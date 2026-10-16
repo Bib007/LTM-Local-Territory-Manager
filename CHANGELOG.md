@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.11.1 · dokumentation og installationspakke
+
+- README og kom i gang-guiden er rettet mod nye brugere med direkte installationsvalg.
+- Installationspakken indeholder kun bruger- og projektdokumentation.
+- Startvejledningen i ZIP beskriver installation fra HA-repositoriet.
+- Programmets funktioner og dataformat er uændrede.
+
 ## 1.11.0 · første offentlige kildekodeudgave
 
 - Lokal distriktsadministration til Mac, Windows og Home Assistant OS.

@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.11.1
+
+Dansk brugerdokumentation og opdateret installationspakke med direkte HA-installation. Programmets funktioner og dataformat er uændrede.
+
 ## 1.11.0
 
 - Første offentlige repositoryudgave til Home Assistant OS.

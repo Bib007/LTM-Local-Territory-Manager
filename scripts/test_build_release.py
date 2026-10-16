@@ -54,7 +54,6 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertIn('README.en.md',names)
             self.assertIn('ROADMAP.md',names)
             self.assertIn('CONTRIBUTING.md',names)
-            self.assertIn('Dette-skal-hjaelpes-manuelt.md',names)
             self.assertIn('assets/brand/logo-light.svg',names)
             self.assertIn('assets/brand/logo-dark.svg',names)
             self.assertIn('docs/INSTALL.md',names)
@@ -71,6 +70,18 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertEqual(mode&0o777,0o755)
         self.assertEqual((self.root/'data/kort.sqlite3').read_text(),'DO_NOT_PACKAGE_PRIVATE_TEST_RECORD')
 
+    def test_portable_guide_links_reach_included_documents(self):
+        self.add('README.md','[Notices](distrikt/THIRD-PARTY.md)\n')
+        self.add('docs/INSTALL.md','[Sharing](../distrikt/GOOGLE-DRIVE-OPSAETNING.md)\n')
+        self.add('distrikt/THIRD-PARTY.md','# Fictional notices\n')
+        self.add('distrikt/GOOGLE-DRIVE-OPSAETNING.md','# Fictional sharing guide\n')
+        with zipfile.ZipFile(self.build('links')) as archive:
+            import posixpath,re
+            for name in ('README.md','docs/INSTALL.md'):
+                for target in re.findall(r'\]\(([^)]+)\)',archive.read(name).decode()):
+                    resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
+                    self.assertIn(resolved,archive.namelist())
+
     def test_identical_inputs_make_identical_zip_bytes(self):
         self.assertEqual(self.build('first').read_bytes(),self.build('second').read_bytes())
 
@@ -83,7 +94,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Private/runtime file'):self.build('output')
 
     def test_missing_linked_document_blocks_release(self):
-        (self.root/'Dette-skal-hjaelpes-manuelt.md').unlink()
+        (self.root/'README.en.md').unlink()
         with self.assertRaisesRegex(ValueError,'Missing release document'):self.build('output')
 
 
