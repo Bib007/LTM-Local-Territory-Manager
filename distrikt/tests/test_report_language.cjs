@@ -41,6 +41,16 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.equal(run('JSON.stringify(state)'),original);
  }
  assert.equal(print.en,print.da,'Language switching must leave the complete original Danish print document unchanged');assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
+ // Current follow-up uses known dates, current cycle, strict calendar thresholds and active cards only.
+ const saved=run('JSON.stringify(state)');
+ run(`state.cards=[{id:'unknown',number:'<101>',area_id:'a',addresses:[]},{id:'old',number:'102',last_completed:'2025-10-15',addresses:[]},{id:'edge',number:'103',last_completed:'2025-10-16',addresses:[]},{id:'recent',number:'104',last_completed:'2024-01-01',addresses:[]},{id:'retained',number:'105',last_completed:'2026-10-01',addresses:[]}];
+ state.completions=[{card_id:'recent',date:'2026-10-01'},{card_id:'unknown',date:'2026-10-17'},{card_id:'archived',date:'2024-01-01'}];
+ state.loans=[{card_id:'old',assigned:'2026-01-01',cycle_start:'2026-06-15',returned:null},{card_id:'edge',assigned:'2026-01-01',cycle_start:'2026-06-16',returned:null},{card_id:'retained',assigned:'2026-01-01',cycle_start:'2026-10-01',returned:null}];`);
+ const follow=JSON.parse(run('JSON.stringify(Workspace.followUpData())'));
+ assert.equal(follow.unknown,1);assert.equal(follow.old,1);assert.equal(follow.long,1);assert.equal(follow.rows.length,2);assert.equal(follow.cutoff,'2025-10-16');
+ run("I18n.set('da')");const followHTML=run('Workspace.reportFollowUp(true)');assert.match(followHTML,/&lt;101&gt;/);assert.match(followHTML,/Kort &lt;invented&gt;/);assert.doesNotMatch(followHTML,/Forkynder &lt;invented&gt;|DO_NOT_INCLUDE_ROAD|PRIVATE_NO/);
+ run("year=2025;Workspace.reportPeriod='service'");assert.equal(run('Workspace.followUpData().today'),'2026-10-16','The current snapshot must not pretend to be a historical period');
+ run('state='+saved+';year=2027');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
  // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
  const geometry=run('JSON.stringify(state.cards)');
