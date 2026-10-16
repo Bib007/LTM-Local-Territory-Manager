@@ -24,3 +24,7 @@ Fysisk print, eget Google-samtykke og hjemmenetværket er særskilte ejertrin. U
 ## Nye ønsker
 
 Se [ønskelisten](OENSKELISTE.md) for førstegangsopsætning, guidet rundtur, Excel-import og ejerprioriteter. Opstart og eksisterende kortimport er færdige på develop. Feedback, HA-præsentation og rapportønsker følger ejerprioriteterne; se næste arbejdssession i ønskelisten. De nye ønsker ændrer ikke automatisk procentberegningen.
+
+## Løbende betaprøver
+
+Små afsluttede funktioner skal fremover udgives som nummererede HA-betaer med en kort konkret testliste. Det nye ejerønske W19 har prioritet -1. Betakanalen er adskilt fra stabil; betaudgivelser ændrer ikke i sig selv de faste ti opgavers procenttal.

@@ -53,6 +53,25 @@ class LANTests(unittest.TestCase):
     def test_logout_revokes_session(self):
         self.login().close();self.req('/api/logout',{}).close()
         with self.assertRaises(urllib.error.HTTPError):self.req('/api/state',headers={'X-Distrikt-Token':self.server.token})
+    def test_beta_and_stable_cookies_work_together_on_the_same_host(self):
+        with tempfile.TemporaryDirectory() as folder:
+            beta_store=Store(folder)
+            with patch.dict('os.environ',{'LTM_CHANNEL':'beta'}):beta=Server(('127.0.0.1',0),beta_store,access_host='192.168.1.77',password='Fiktiv-beta-12345')
+            thread=threading.Thread(target=beta.serve_forever,daemon=True);thread.start()
+            def beta_req(path,data=None):
+                headers={'Host':'192.168.1.77:'+str(beta.server_port),'X-Distrikt-Token':beta.token}
+                if data is not None:headers['Content-Type']='application/json'
+                return self.client.open(urllib.request.Request(beta.origin+path,json.dumps(data).encode() if data is not None else None,headers),timeout=5)
+            try:
+                with self.login() as response:self.assertIn('distrikt_session=',response.headers['Set-Cookie'])
+                with beta_req('/api/login',{'password':'Fiktiv-beta-12345'}) as response:self.assertIn('distrikt_beta_session=',response.headers['Set-Cookie'])
+                self.s.mutate('card.save',{'number':'120','temporary':True})
+                with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(len(json.load(response)['cards']),1)
+                with beta_req('/api/state') as response:self.assertEqual(json.load(response)['cards'],[])
+                with beta_req('/api/logout',{}) as response:self.assertIn('distrikt_beta_session=',response.headers['Set-Cookie'])
+                with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(response.status,200)
+                with self.assertRaises(urllib.error.HTTPError):beta_req('/api/state')
+            finally:beta.shutdown();beta.server_close();thread.join();beta_store.close()
     def test_no_ingress_or_proxy_trust(self):
         with self.assertRaises(urllib.error.HTTPError):self.req('/',headers={'Host':'ha.ui.nabu.casa'})
         with self.assertRaises(urllib.error.HTTPError):self.req('/api/state',headers={'X-Forwarded-For':'127.0.0.1','X-Ingress-Path':'/api/hassio_ingress/x','X-Distrikt-Token':self.server.token})

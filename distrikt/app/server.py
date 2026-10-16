@@ -158,7 +158,7 @@ class Handler(BaseHTTPRequestHandler):
                 length=int(self.headers.get('Content-Length',0))
                 if not 0<length<4096:raise ValueError('Ugyldigt login.')
                 data=json.loads(self.rfile.read(length));session=self.server.access.login(data.get('password'),self.client_address[0])
-                return self.send({'ok':True},headers={'Set-Cookie':'distrikt_session='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
+                return self.send({'ok':True},headers={'Set-Cookie':self.server.access.cookie_name+'='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
             except (ValueError,TypeError,AttributeError):return self.send({'error':'Forkert adgangskode eller for mange forsøg. Vent fem minutter efter gentagne forsøg.'},status=401)
         if not self.allowed(token=True):return
         if self.path=='/api/restore/preview':
@@ -176,7 +176,8 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
             if self.path=='/api/logout':
                 if self.server.access:self.server.access.logout(self.headers.get('Cookie'))
-                return self.send({'ok':True},headers={'Set-Cookie':'distrikt_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'})
+                cookie_name=self.server.access.cookie_name if self.server.access else 'distrikt_session'
+                return self.send({'ok':True},headers={'Set-Cookie':cookie_name+'=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'})
             if self.path=='/api/restore/apply':
                 if self.server.downloads.status().get('status')=='running':raise ValueError('Sæt adressehentningen på pause før import.')
                 with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))

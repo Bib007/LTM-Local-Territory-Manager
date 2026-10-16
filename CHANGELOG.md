@@ -1,6 +1,8 @@
 # Ændringsliste
 
-## 1.12.0-beta.1 · under klargøring
+## 1.12.0-beta.1 · HA-beta under klargøring
+
+- Separat HA-betakanal med port 8788, egne data og egen login-cookie. Små nummererede prereleases udgives først efter program-, Mac-, Windows- og HA-kontrol.
 
 - Google Drive-billeder er private mellem udlån og åbnes automatisk ved udlevering. QR-linket bevares; afventende/fejlede adgangsændringer og nyt forsøg vises. Ingen udlåns- eller personoplysninger uploades.
 
