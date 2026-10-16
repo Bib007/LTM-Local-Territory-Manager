@@ -1,17 +1,18 @@
-# LTM 1.12.0-beta.2
+# LTM 1.12.0-beta.3
 
-## Nyt siden beta.1
+## Nyt siden beta.2
 
-- **Indstillinger → Backup og vedligeholdelse → Nulstil betadata** starter en ny test med tomme registreringer og opsætningsguide.
-- Skriv `NULSTIL BETA` for at bekræfte. En lokal sikkerhedskopi gemmes før nulstilling og kan hentes bagefter.
-- Login, Google-forbindelse og tidligere sikkerhedskopier bevares. Ingen Google-filer slettes. Fjern offentlig adgang til kort under Deling og QR først. Aktive adressehentninger og ændrede data blokerer nulstillingen.
-- Funktionen og API-adgangen findes kun i betakanalen. Stabil installation bevarer sine data.
+- Topbaren bliver øverst ved rulning på computer og mobil. Logoet åbner forsiden gennem den sædvanlige kontrol af ugemte ændringer.
+- Projektets fulde logo vises på computer; mobil bruger et kompakt mærke og LTM-navn. Beta er tydeligt mærket.
+- Home Assistant får eget ikon og logo fra den eksisterende projektidentitet. Begge billeder følger programpakken og den genererede betakanal.
 
 ## Prøv især
 
-1. Opret et opdigtet kort og en forkynder i betaen. Kontrollér at stabil stadig er separat.
-2. Annuller først en nulstilling. Bekræft derefter en nulstilling, hent sikkerhedskopien og vælg Start forfra.
-3. Kontrollér tomme data, opstartsguiden og bevaret login. Genindlæs øvrige åbne betafaner.
-4. Kontrollér at sikkerhedskopien kan forhåndsvises under import, hvis du vil gendanne testen.
+1. Opdater Distrikt Beta, og kontrollér ikon og logo i HA-appbutikken og på appens side.
+2. Rul en lang side på computer og mobil. Topbaren skal blive øverst, mens indhold og mobilmenu starter nedenunder.
+3. Klik eller tast Enter på logoet. Forsiden skal åbne; en ugyldig, ugemt kortændring skal stadig blive vist til rettelse.
+4. Åbn et kort og en rapport med kort: kortlag må ikke tegne oven på topbaren. Print/PDF skal være uden topbar og ekstra topafstand.
 
-Beta.1's Drive-adgang, KTM-kort/print, Excel-import og opstartsguide er fortsat med. Egen HA-visning, browserprint og Google-konto afprøves hos ejeren.
+Nulstilling af betadata fra beta.2 er fortsat under Indstillinger → Backup og vedligeholdelse, med bekræftelse og automatisk sikkerhedskopi. Beta.1's Drive-adgang, KTM-kort/print, Excel-import og opstartsguide er også bevaret.
+
+Pakke- og programprøver kontrolleres før udgivelse. Visning/rulning i ejerens HA/browser og egen Google-konto står særskilt.

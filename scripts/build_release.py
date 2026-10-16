@@ -37,7 +37,7 @@ def files():
     for p in sorted(SRC.iterdir()):
         if p.is_file() and p.suffix in ('.cmd','.command','.md'):
             result['Distrikt-lokal/'+p.name]=(p.read_bytes(),0o755 if p.suffix=='.command' else 0o644)
-    for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md'):
+    for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md','icon.png','logo.png'):
         p=SRC/n;result['Home-Assistant/distrikt/'+n]=(p.read_bytes(),0o755 if n=='run.sh' else 0o644)
     for n in ROOT_DOCS:
         p=ROOT/n

@@ -66,7 +66,7 @@ class LANTests(unittest.TestCase):
             cookie=r.headers['Set-Cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('SameSite=Strict',cookie)
         with self.req('/') as r:
             html=r.read().decode();self.assertIn(self.server.token,html);self.assertIn('Log ud',html);self.assertNotIn('data-action="stop"',html)
-        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.12.0-beta.2')
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.12.0-beta.3')
         with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/state')
         self.assertEqual(error.exception.code,403)
     def test_wrong_password_and_foreign_origin_are_rejected(self):
@@ -122,6 +122,9 @@ class LANTests(unittest.TestCase):
         with self.req('/i18n.js') as response:
             self.assertIn(b'const I18n=',response.read())
             self.assertEqual(response.headers['Cache-Control'],'no-store')
+        with self.req('/brand-logo.svg') as response:
+            self.assertEqual(response.headers['Content-Type'],'image/svg+xml')
+            self.assertIn(b'Local Territory Manager',response.read())
         with self.req('/') as response:
             html=response.read().decode()
             self.assertIn('data-action="logout" data-ui="Log ud"',html)

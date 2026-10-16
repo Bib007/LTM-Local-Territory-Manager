@@ -32,6 +32,7 @@ def entries():
     files['distrikt/run.sh']=(run,mode)
     index,mode=files['distrikt/app/index.html']
     index=changed(index,'<b>LTM</b>','<b>LTM Beta</b>')
+    index=changed(index,'<body>','<body class="betaChannel">')
     index=changed(index,'<title>Local Territory Manager – JW</title>','<title>LTM Beta – Local Territory Manager</title>')
     files['distrikt/app/index.html']=(index,mode)
     guide=(release.ROOT/'docs/BETA.md').read_bytes()
