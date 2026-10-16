@@ -11,9 +11,15 @@
 
 [Dansk](README.md) · [Installation](docs/INSTALL.en.md) · [Privacy](docs/PRIVACY.en.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Manual help checklist](Dette-skal-hjaelpes-manuelt.md)
 
+## New setup and card import on develop
+
+First launch asks about assignments only or maps, KML, existing card divisions and do-not-call records. Your answers create a personal plan and an optional tour through the real application pages. Reopen it from Settings.
+
+Already divided your addresses into cards? Download the Excel template from **Settings → Advanced → Import existing territory cards**. XLSX and CSV are reviewed locally; every error must be fixed before creating cards together. [Card import guide](docs/KORTIMPORT.en.md).
+
 ## Start here
 
-**Development version: 1.12.0-beta.1.** This branch prepares the next version. Use [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) for stable installations. The ordinary HA link below follows main. [Readiness plan: 20%](KOREPLAN.md).
+**Development version: 1.12.0-beta.1.** This branch prepares the next version. Use [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) for stable installations. The ordinary HA link below follows main. [Readiness plan: 20%](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
 
 [Add LTM to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 

@@ -14,3 +14,5 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Google/QR, fælles fejl, login og printbetjening | Afventer |
 
 [Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
+
+Førstegangsopsætningen, den personlige plan, rundturen og Excel-/CSV-importens betjening kan vælges på dansk eller engelsk. XLSX-skabelonens kolonneoverskrifter er danske på begge sprog, så filformatet er entydigt. Importfejl fra serveren vises som dansk tekst; resten af avanceret opsætning hører fortsat til klargøringsopgave 4.

@@ -103,7 +103,7 @@ class Handler(BaseHTTPRequestHandler):
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.token)
                 if self.server.access:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/app.js','/i18n.js','/welcome.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -112,6 +112,11 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
             if path.startswith('/api/') and not self.allowed(token=True):return
+            if path=='/api/setup/card-template.xlsx':
+                return self.send((APP/'kort-import-skabelon.xlsx').read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=LTM-kort-import-skabelon.xlsx'})
+            if path=='/api/setup/card-template.csv':
+                from card_import import template_csv
+                return self.send(template_csv(),'text/csv',headers={'Content-Disposition':'attachment; filename=LTM-kort-import-skabelon.csv'})
             if path=='/api/setup/ib-template.csv':
                 from setup_store import ib_template
                 return self.send(ib_template(),'text/csv',headers={'Content-Disposition':'attachment; filename=IB-import-skabelon.csv'})

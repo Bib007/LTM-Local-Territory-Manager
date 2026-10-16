@@ -2,7 +2,7 @@
 
 **Samlet færdig: 20 % · 2 af 10 opgaver afsluttet.**
 
-Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prøver og lagring på GitHub. Procenten gælder denne plan. Stabil grundudgave 1.11.0 og almindelig HA-installation følger main.
+Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prøver og lagring på GitHub. Procenten gælder denne plan. Stabil grundudgave 1.11.1 og almindelig HA-installation følger main.
 
 | Nr. | Opgave | Status | Samlet efter opgaven |
 | --- | --- | --- | --- |
@@ -20,3 +20,7 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 Opgave 1 kontrolleres med `test_map_overview_language.cjs`; opgave 2 med `test_address_workflow_language.cjs`. Fiktive Chromium-arbejdsgange har prøvet bevaret kortinstans, søgning, faner og 320/390/768/1440 pixels. Der er ikke brugt private registreringer.
 
 Fysisk print, eget Google-samtykke og hjemmenetværket er særskilte ejertrin. Udviklingsprøver bruger opdigtede data og offentliggør ikke rigtige kort.
+
+## Nye ønsker
+
+Se [ønskelisten](OENSKELISTE.md) for førstegangsopsætning, guidet rundtur, Excel-import og ejerprioriteter. Opstart og eksisterende kortimport udvikles nu før resten af opgave 4. De nye ønsker ændrer ikke automatisk procentberegningen.

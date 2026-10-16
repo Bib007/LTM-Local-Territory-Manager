@@ -2,6 +2,12 @@
 
 ## 1.12.0-beta.1 · under klargøring
 
+- Spørgsmål ved første start med personlig opsætningsplan og en valgfri rundtur i de rigtige sider.
+- Lokal Excel-/CSV-import af allerede fordelte kort, områder, kortnavne og adresser med kontrol før oprettelse.
+- Præcise importerede lejligheder kan bruges til lokal IB-import; besøgstal bevares.
+- Regnearksskabelon med dansk vejledning og udfyldningsfelter.
+
+
 - Blå identitet og valgfri velkomstguide.
 - Dansk/engelsk navigation, centrale kort-/udleveringsformularer, forkyndere, opgaver, indstillinger, rapportskærme, kortoversigt og adresselister.
 - Kladder bevares ved sprogskift og flere forsinkede forhåndsvisninger.

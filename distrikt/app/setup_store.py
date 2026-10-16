@@ -115,6 +115,18 @@ class SetupStore:
         payload={'areas':areas,'cards':proposed,'options':options,'uncovered':uncovered,'excluded':dict(excluded),'visits':sum(c['visits'] for c in proposed)}
         return dict(payload,token=self.setup_remember('cards',payload))
     def setup_mutate(self,action,data):
+        if action=='setup.card-import.preview':
+            from card_import import preview
+            return preview(self,data)
+        if action=='setup.card-import.apply':
+            from card_import import apply
+            return apply(self,data)
+        if action=='setup.onboarding.save':
+            answers=data.get('answers')
+            choices={'mode':('desk','map'),'boundary':('yes','later'),'cards':('numbers','excel','auto','manual'),'ib':('yes','later')}
+            if not isinstance(answers,dict) or set(answers)!=set(choices) or any(answers[k] not in allowed for k,allowed in choices.items()):raise ValueError('Vælg et svar på alle spørgsmål.')
+            if answers['mode']=='desk' and (answers['boundary']!='later' or answers['cards']=='auto'):raise ValueError('Automatisk inddeling kræver kortfunktion.')
+            config=dict(self.require('settings','config'));config['onboarding']={'version':1,'answers':dict(answers),'completed':True};self.put('settings',config);return {}
         if action=='setup.preview':return self.setup_plan(data)
         if action=='setup.adjust.preview':
             import copy
@@ -213,7 +225,7 @@ class SetupStore:
         default_day=valid_day(data.get('date') or date.today().isoformat())
         cards=[c for c in self.all('cards') if not c.get('archived')];by_number={clean(c['number']):c for c in cards};lookup=defaultdict(list)
         for c in cards:
-            for a in c.get('geo_addresses') or [self.get('geo',i) for i in c.get('address_ids',[])]:
+            for a in c.get('geo_addresses') or c.get('imported_addresses') or [self.get('geo',i) for i in c.get('address_ids',[])]:
                 if a:lookup[(clean(a['road']),clean(a['number']),str(a['postcode']))].append((c,a))
         ibs=self.all('ib');seen=set();rows=[]
         for line,values in enumerate(reader,2):

@@ -2,6 +2,10 @@
 
 [English](FIRST-STEPS.en.md) · [Installation](INSTALL.md)
 
+Ved en tom førstegangsinstallation åbnes spørgsmålsguiden automatisk. Vælg enkel udlevering eller kortfunktion, KML/GeoJSON, din måde at oprette kort på og eventuel IB-import. Gem svarene for at få en personlig plan, og vælg eventuelt **Gem og vis mig rundt**. Rundturen åbner de faktiske sider og opretter ingen registreringer. Guiden kan springes over og åbnes igen under **Indstillinger → Generelt**.
+
+Har du adresserne fordelt i forvejen, vælg **Adresserne er allerede fordelt på kort**, eller åbn importen under **Indstillinger → Avanceret**. [Excel og CSV](KORTIMPORT.md) forklarer skabelonen.
+
 Alle papirkort behøver ikke være digitaliseret, før LTM tages i brug. Begynd med kortnumre og eksisterende udleveringer, og tilføj adresser, grænser og print senere på de samme kort.
 
 ## 1. Brug én hovedinstallation
