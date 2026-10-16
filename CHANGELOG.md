@@ -2,6 +2,11 @@
 
 ## 1.12.0-beta.1 · under klargøring
 
+- Selvstændigt link til idéer og feedback via GitHub med valgfrie bilag og tydelig oplysning om offentligt indhold; aktiveres med næste stabile udgivelse.
+- HA-installationssiden forklarer funktioner, første start, lokal adgang og backup.
+- KTM-rapportens kortformat følger geografien, og hver periode får sin egen kortside ved print. Visuel kontrol udestår.
+- Det overflødige tal for midlertidige kort er fjernet fra distriktets oplysninger.
+
 - Spørgsmål ved første start med personlig opsætningsplan og en valgfri rundtur i de rigtige sider.
 - Lokal Excel-/CSV-import af allerede fordelte kort, områder, kortnavne og adresser med kontrol før oprettelse.
 - Præcise importerede lejligheder kan bruges til lokal IB-import; besøgstal bevares.

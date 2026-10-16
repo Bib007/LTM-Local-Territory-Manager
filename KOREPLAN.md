@@ -23,4 +23,4 @@ Fysisk print, eget Google-samtykke og hjemmenetværket er særskilte ejertrin. U
 
 ## Nye ønsker
 
-Se [ønskelisten](OENSKELISTE.md) for førstegangsopsætning, guidet rundtur, Excel-import og ejerprioriteter. Opstart og eksisterende kortimport udvikles nu før resten af opgave 4. De nye ønsker ændrer ikke automatisk procentberegningen.
+Se [ønskelisten](OENSKELISTE.md) for førstegangsopsætning, guidet rundtur, Excel-import og ejerprioriteter. Opstart og eksisterende kortimport er færdige på develop. Feedback, HA-præsentation og rapportønsker følger ejerprioriteterne; se næste arbejdssession i ønskelisten. De nye ønsker ændrer ikke automatisk procentberegningen.

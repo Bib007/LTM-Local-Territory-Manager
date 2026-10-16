@@ -1,6 +1,6 @@
 # Udviklingsplan
 
-Dansk er hovedsprog. Den offentlige grundudgave er 1.11.0. Videre udvikling omfatter tydeligere betjening, valgfrit engelsk i flere arbejdsgange, bedre kladdebevaring og samlet udgivelseskontrol.
+Dansk er hovedsprog. Den offentlige grundudgave er 1.11.1. Videre udvikling omfatter tydeligere betjening, valgfrit engelsk i flere arbejdsgange, bedre kladdebevaring og samlet udgivelseskontrol.
 
 ## Ét repository
 
