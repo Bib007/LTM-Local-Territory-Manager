@@ -42,12 +42,26 @@ Slet forbindelsesfilen fra Downloads bagefter. Google-klientfilen kan hentes ige
 2. I den geografiske visning: vælg Publicér / opdater på Google Drive.
 3. Appen indlæser OpenStreetMap, tilpasser udsnittet og viser et preview. Kontroller det.
 4. Marker godkendelse, og publicér. HA gemmer billedet i køen og håndterer upload og rettigheder.
-5. Under Deling og QR vises kortet som Publiceret. QR-koden vises nu automatisk nederst til højre på kortets forside, også ved print på fortrykte kort. Åbn kortet → Print forside. Du kan desuden hente QR-koden eller printe et særskilt mærke.
+5. Under Deling og QR vises kortet som åbent, når det er udleveret, eller lukket og klar til næste udlevering. QR-koden vises nu automatisk nederst til højre på kortets forside, også ved print på fortrykte kort. Åbn kortet → Print forside. Du kan desuden hente QR-koden eller printe et særskilt mærke.
 6. Test preview-linket i et privat browservindue uden Google-login, og scan QR-koden fra telefonen. Dette er den afsluttende kontrol med din rigtige konto.
 
 Deling sættes til enhver med linket, kun læseadgang, uden offentlig søgbarhed slået til i Drive. Et link kan stadig videresendes, og modtageren kan gemme billedet. Google Drive bruges som billedvisning; det er ikke en interaktiv distriktsapp med vej-dropdown.
 
 Appen opdaterer den eksisterende Google-fil ved næste publicering og beholder dens filnummer/link. Slet ikke filen manuelt i Drive, hvis en trykt QR-kode skal blive ved med at virke. Filerne har genererede navne; find et kort via appens link frem for filnavnet.
+
+## Adgang følger udleveringen
+
+Et godkendt kortbillede kan uploades og få en trykbar QR-kode, før kortet udleveres. Billedet opbevares da privat på din valgte Drive-konto. Når kortet udleveres i LTM, åbner appen offentlig læseadgang. Ved aflevering lukkes den igen. Gennemgået med **behold kort** holder adgangen åben. Ved genudlevering genåbnes samme godkendte fil uden nyt upload, så den trykte QR-kode bevares. Hvis Google ændrer selve visningslinket, markeres forsiden til genprint; kontrollér derfor QR efter første åbning.
+
+Styringen sender kun anmodninger om filrettigheder til Google; den uploader ikke udlånsregistre eller kortholderens navn. Forældede billeder genåbnes ikke, før et nyt preview er godkendt. **Fjern offentlig adgang** er et manuelt stop, som forbliver aktivt indtil ny publicering.
+
+Appen skal køre og kunne nå Google for at ændre adgangen. Kontrollen foregår i baggrunden, og netfejl eller afbrudt Google-forbindelse kan forsinke ændringen. Status viser afventende lukning og mislykkede forsøg; efter fem fejl bruges **Prøv adgangsændring igen**. En forsinket upload af et nyt billede udsætter ikke forsøget på at lukke det gamle billede ved aflevering. Lukninger prioriteres før genåbninger.
+
+**Samme link gælder for alle, der har det.** Det virker også for en tidligere kortholder, når kortet genudleveres. Funktionen lukker mellem udlån; den giver ikke personlig adgang til kun den aktuelle kortholder. Allerede gemte billeder kan ikke trækkes tilbage. Kontoens ejer og personer med særskilt Google-adgang kan fortsat have adgang; læg ikke filen i en offentligt delt mappe eller giv adgang manuelt, hvis den skal følge LTM-styringen.
+
+Når linket er lukket, vises Googles egen adgangsside. Modtageren kan muligvis anmode om adgang via Google. LTM ændrer ikke denne side eller dens tekst og godkender ikke anmodninger. En særlig side med beskeden om et ikke-udleveret kort kræver et særskilt offentligt indgangspunkt og er ikke indført her.
+
+Afprøv med egen konto: klargør kortet, kontrollér QR før udlevering, udlever og kontrollér adgang i privat browser, aflever og kontrollér lukning, og genudlever med samme QR. Testen bruger kun et ufølsomt prøvebillede.
 
 ## Automatisk upload og ændringer
 
@@ -55,7 +69,7 @@ Billedet dannes og godkendes i browseren. Derefter foregår upload og genforsøg
 
 Relevante kortændringer, bl.a. adressevalg og IB, gør det publicerede billede forældet. HA fjerner den offentlige adgang til det gamle billede ved næste kontrol, hvis Google kan nås. Der kan gå lidt tid, og downloadede kopier kan ikke trækkes tilbage. Fejl ved fjernelse vises; efter fem mislykkede forsøg skal forbindelsen kontrolleres og fjernelsen prøves manuelt.
 
-Dan og godkend et nyt billede fra kortvisningen. Det genåbner samme fil/link. Automatisk generering af nye OpenStreetMap-billeder uden en åben browser er ikke implementeret. Der foretages ingen skjult massehentning af OSM-kortfliser.
+Dan og godkend et nyt billede fra kortvisningen. Det opdaterer samme fil/link og åbner først offentlig adgang, når kortet er udleveret. Automatisk generering af nye OpenStreetMap-billeder uden en åben browser er ikke implementeret. Der foretages ingen skjult massehentning af OSM-kortfliser.
 
 ## Afbrydelse, overdragelse og flytning
 

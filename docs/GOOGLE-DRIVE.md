@@ -14,6 +14,21 @@ Gennemgå samtykkeskærm, målgruppe, testbrugere og publiceringsstatus efter Go
 
 Forbindelsen bruger **drive.file** til filer, som appen opretter eller får adgang til. Den beder ikke om at læse alle kontoens filer. Projektets OAuth-status offentliggør ikke appens lokale databaser.
 
+## Adgang følger udleveringen
+
+Et godkendt kortbillede kan uploades og få en trykbar QR-kode, før kortet udleveres. Billedet opbevares da privat på din valgte Drive-konto. Når kortet udleveres i LTM, åbner appen offentlig læseadgang. Ved aflevering lukkes den igen. Gennemgået med **behold kort** holder adgangen åben. Ved genudlevering genåbnes samme godkendte fil uden nyt upload, så den trykte QR-kode bevares. Hvis Google ændrer selve visningslinket, markeres forsiden til genprint; kontrollér derfor QR efter første åbning.
+
+Styringen sender kun anmodninger om filrettigheder til Google; den uploader ikke udlånsregistre eller kortholderens navn. Forældede billeder genåbnes ikke, før et nyt preview er godkendt. **Fjern offentlig adgang** er et manuelt stop, som forbliver aktivt indtil ny publicering.
+
+Appen skal køre og kunne nå Google for at ændre adgangen. Kontrollen foregår i baggrunden, og netfejl eller afbrudt Google-forbindelse kan forsinke ændringen. Status viser afventende lukning og mislykkede forsøg; efter fem fejl bruges **Prøv adgangsændring igen**. En forsinket upload af et nyt billede udsætter ikke forsøget på at lukke det gamle billede ved aflevering. Lukninger prioriteres før genåbninger.
+
+**Samme link gælder for alle, der har det.** Det virker også for en tidligere kortholder, når kortet genudleveres. Funktionen lukker mellem udlån; den giver ikke personlig adgang til kun den aktuelle kortholder. Allerede gemte billeder kan ikke trækkes tilbage. Kontoens ejer og personer med særskilt Google-adgang kan fortsat have adgang; læg ikke filen i en offentligt delt mappe eller giv adgang manuelt, hvis den skal følge LTM-styringen.
+
+Når linket er lukket, vises Googles egen adgangsside. Modtageren kan muligvis anmode om adgang via Google. LTM ændrer ikke denne side eller dens tekst og godkender ikke anmodninger. En særlig side med beskeden om et ikke-udleveret kort kræver et særskilt offentligt indgangspunkt og er ikke indført her.
+
+Afprøv med egen konto: klargør kortet, kontrollér QR før udlevering, udlever og kontrollér adgang i privat browser, aflever og kontrollér lukning, og genudlever med samme QR. Testen bruger kun et ufølsomt prøvebillede.
+
+
 ## 2. Forbind fra Mac eller Windows
 
 Start `Forbind-Google-Drive.command` på Mac eller `Forbind-Google-Drive.cmd` på Windows fra programpakken. Vælg klientfilen. Log ind hos Google, vælg den rigtige konto, og godkend filadgangen. Google-adgangskoden indtastes kun hos Google.

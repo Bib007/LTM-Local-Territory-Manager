@@ -18,13 +18,16 @@ def png(extra=False):
     if extra:raw+=chunk(b'tEXt',b'note\0PRIVATE_METADATA')
     return raw+chunk(b'IDAT',zlib.compress((b'\x00'+b'\xff'*8800)*1560))+chunk(b'IEND',b'')
 class FakeDrive:
-    def __init__(self):self.uploads=[];self.withdrawals=[];self.fail=False
+    def __init__(self):self.uploads=[];self.withdrawals=[];self.shares=[];self.fail=False
     def connected(self):return True
     def status(self):return {'connected':True,'account':'fake@example.invalid'}
     def upload(self,data,file_id=None):
         if self.fail:raise ValueError('Simuleret netfejl')
         self.uploads.append((data,file_id));return file_id or 'TEST_FILE_12345'
-    def share(self,file_id):return 'https://drive.google.com/file/d/'+file_id+'/view'
+    def link(self,file_id):return 'https://drive.google.com/file/d/'+file_id+'/view'
+    def share(self,file_id):
+        if self.fail:raise ValueError('Simuleret netfejl')
+        self.shares.append(file_id);return self.link(file_id)
     def unshare(self,file_id):
         if self.fail:raise ValueError('Simuleret netfejl')
         self.withdrawals.append(file_id)
@@ -37,9 +40,99 @@ class SharingTests(unittest.TestCase):
         with self.s.transaction():
             c=self.s.get('cards',self.c);c.update(geo_addresses=a,geo_polygon=[[10,55],[10.02,55],[10.02,55.02]]);self.s.put('cards',c)
         self.p=Publications(self.s);self.p.drive=FakeDrive()
+        self.publisher=self.s.mutate('publisher.save',{'name':'Fiktiv kortholder'})['id']
+        self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-01','initial':True})['id']
     def tearDown(self):self.s.close();self.temp.cleanup()
     def enqueue(self):return self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
     def row(self):return self.s.get('maps',self.p.key(self.c))
+    def finish(self,retain=False):
+        return self.s.mutate('loan.finish',{'id':self.loan,'date':'2026-01-02','complete':retain,'retain':retain})
+    def issue_again(self):
+        self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-03','initial':True})['id']
+    def test_upload_before_issue_is_private_but_qr_is_printable(self):
+        self.finish();self.enqueue();self.p.process_one()
+        row=self.row();self.assertEqual(row['status'],'ready');self.assertEqual(row['url'],'')
+        self.assertTrue(row['front_url']);self.assertEqual(self.p.drive.shares,[])
+        self.assertIn(b'viewBox',self.p.qr(self.c,require_current=True))
+        self.assertEqual(self.p.front_links(),[{'card_id':self.c,'url':row['front_url']}])
+        self.issue_again();self.assertTrue(self.p.status()['cards'][0]['access_pending'])
+        self.p.process_one();self.assertEqual(self.row()['status'],'published');self.assertEqual(len(self.p.drive.uploads),1)
+    def test_return_closes_and_reissue_reopens_same_file_without_reupload(self):
+        self.enqueue();self.p.process_one();link=self.row()['url'];svg=self.p.qr(self.c)
+        self.finish();pending=self.p.status()['cards'][0]
+        self.assertFalse(pending['issued']);self.assertTrue(pending['access_pending'])
+        self.p.process_one();self.assertEqual(self.row()['status'],'ready');self.assertEqual(self.row()['url'],'')
+        self.assertEqual(self.p.qr(self.c),svg)
+        self.issue_again();self.p.process_one()
+        self.assertEqual(self.row()['url'],link);self.assertEqual(len(self.p.drive.uploads),1);self.assertEqual(self.p.qr(self.c),svg)
+    def test_retained_card_and_undo_before_sync_keep_access_open(self):
+        self.enqueue();self.p.process_one();self.finish(retain=True);self.p.process_one()
+        self.assertEqual(self.row()['status'],'published');self.assertEqual(self.p.drive.withdrawals,[])
+        self.finish();self.s.mutate('workflow.undo',{});self.p.process_one()
+        self.assertEqual(self.row()['status'],'published')
+    def test_closed_card_is_not_reopened_after_ib_change(self):
+        self.enqueue();self.p.process_one();self.finish();self.p.process_one()
+        self.s.mutate('ib.save',{'card_id':self.c,'road':'Fiktiv vej','number':'3','date':'2026-01-02'})
+        shares=len(self.p.drive.shares);self.issue_again();self.p.process_one()
+        self.assertEqual(len(self.p.drive.shares),shares);self.assertEqual(self.p.front_links(),[])
+    def test_failed_return_close_is_visible_bounded_and_retryable(self):
+        self.enqueue();self.p.process_one();self.finish();self.p.drive.fail=True
+        for _ in range(5):
+            with self.s.transaction():r=self.row();r['next_try']=0;self.s.put('maps',r)
+            self.p.process_one()
+        self.assertEqual(self.row()['status'],'access_failed');self.assertTrue(self.row()['url'])
+        self.assertTrue(self.p.status()['cards'][0]['access_pending'])
+        self.p.drive.fail=False;self.p.retry(self.c);self.p.process_one()
+        self.assertEqual(self.row()['status'],'ready');self.assertFalse(self.row()['possibly_public'])
+    def test_return_during_share_is_closed_before_success(self):
+        share=self.p.drive.share
+        def delayed(file_id):
+            url=share(file_id);self.finish();return url
+        self.p.drive.share=delayed;self.enqueue();self.p.process_one()
+        self.assertEqual(self.row()['status'],'ready');self.assertFalse(self.row()['possibly_public'])
+        self.assertEqual(self.p.drive.withdrawals,['TEST_FILE_12345'])
+    def test_lost_share_response_then_return_still_withdraws(self):
+        share=self.p.drive.share
+        def lost_response(file_id):share(file_id);raise ValueError('Simuleret tabt svar')
+        self.p.drive.share=lost_response;self.enqueue();self.p.process_one()
+        self.assertEqual(self.row()['status'],'access_retry');self.assertTrue(self.row()['possibly_public'])
+        self.finish();self.p.process_one() # A new target bypasses the old retry delay.
+        self.assertEqual(self.row()['status'],'ready');self.assertFalse(self.row()['possibly_public'])
+    def test_private_manual_withdrawal_does_not_auto_reopen(self):
+        self.enqueue();self.p.process_one();self.p.withdraw(self.c)
+        count=len(self.p.drive.shares);self.finish();self.issue_again();self.p.process_one()
+        self.assertEqual(self.row()['status'],'private');self.assertEqual(len(self.p.drive.shares),count)
+    def test_restart_reconciles_return_without_browser(self):
+        self.enqueue();self.p.process_one();self.finish()
+        other=Publications(self.s);other.drive=self.p.drive;other.process_one()
+        self.assertEqual(self.row()['status'],'ready')
+    def test_disconnected_return_stays_pending_until_reconnected(self):
+        self.enqueue();self.p.process_one();self.finish()
+        self.p.drive.connected=lambda:False
+        self.p.process_one();self.assertTrue(self.p.status()['cards'][0]['access_pending'])
+        self.assertEqual(self.row()['status'],'published')
+        self.p.drive.connected=lambda:True
+        self.p.process_one();self.assertEqual(self.row()['status'],'ready')
+    def test_card_deleted_during_share_never_finishes_public(self):
+        share=self.p.drive.share
+        def deleted(file_id):
+            url=share(file_id);self.s.mutate('delete',{'module':'cards','id':self.c});return url
+        self.p.drive.share=deleted;self.enqueue();self.p.process_one()
+        self.assertEqual(self.row()['status'],'review');self.assertFalse(self.row()['possibly_public'])
+        self.assertEqual(self.row()['url'],'')
+    def test_return_closes_old_image_while_replacement_upload_is_delayed(self):
+        self.enqueue();self.p.process_one();self.enqueue()
+        with self.s.transaction():
+            row=self.row();row.update(status='retry',next_try=10**12);self.s.put('maps',row)
+        self.finish();self.p.process_one()
+        self.assertEqual(self.row()['url'],'');self.assertEqual(self.row()['status'],'retry')
+        self.assertTrue(self.row()['queued_png']);self.assertEqual(len(self.p.drive.uploads),1)
+    def test_queued_withdraw_failure_keeps_png_and_manual_retry_only_closes(self):
+        self.enqueue();self.p.process_one();self.enqueue();self.finish();self.p.drive.fail=True
+        self.p.process_one();self.assertTrue(self.row()['close_error']);self.assertTrue(self.row()['queued_png'])
+        self.assertTrue(self.p.status()['cards'][0]['close_pending'])
+        self.p.drive.fail=False;self.p.retry(self.c);self.p.process_one()
+        self.assertEqual(self.row()['url'],'');self.assertTrue(self.row()['queued_png'])
     def test_only_public_recipe_not_ib_names_or_notes(self):
         self.s.mutate('ib.save',{'card_id':self.c,'address_id':'a2','road':'Fiktiv vej','number':'3','date':'2026-01-01'})
         self.s.mutate('publisher.save',{'name':'PRIVATE_PUBLISHER'})
@@ -94,7 +187,7 @@ class SharingTests(unittest.TestCase):
         def api(path,data=None,method=None,content_type=None,upload=False):
             calls.append((path,data,method,content_type,upload))
             if 'permissions?' in path:return {'permissions':[]}
-            if 'fields=id,webViewLink' in path:return {'id':'FILE123','webViewLink':'https://drive.google.com/file/d/FILE123/view','resourceKey':'secretkey'}
+            if 'fields=id,webViewLink' in path:return {'id':'FILE123','webViewLink':'https://drive.google.com/file/d/FILE123/view','resourceKey':'secretkey' if any(c[2]=='POST' for c in calls) else ''}
             return {'id':'FILE123'}
         d.api=api;ident=d.upload(self.png,'FILE123');self.assertEqual(ident,'FILE123');self.assertTrue(calls[0][-1]);self.assertIn('uploadType=media',calls[0][0]);self.assertEqual(calls[0][1],self.png)
         self.assertIn('resourcekey=secretkey',d.share(ident));permission=[c[1] for c in calls if c[2]=='POST'][0];self.assertEqual(permission,{'type':'anyone','role':'reader','allowFileDiscovery':False})

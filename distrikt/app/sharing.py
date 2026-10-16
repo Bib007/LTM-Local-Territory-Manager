@@ -84,6 +84,9 @@ class Drive:
         self.valid_id(file_id)
         permissions=self.api('/files/'+file_id+'/permissions?fields=permissions(id,type,role)')['permissions']
         if not any(p['type']=='anyone' and p['role']=='reader' for p in permissions):self.api('/files/'+file_id+'/permissions',{'type':'anyone','role':'reader','allowFileDiscovery':False},'POST')
+        return self.link(file_id)
+    def link(self,file_id):
+        self.valid_id(file_id)
         info=self.api('/files/'+file_id+'?fields=id,webViewLink,resourceKey')
         link=info.get('webViewLink','')
         parsed=urllib.parse.urlsplit(link)
@@ -164,6 +167,9 @@ class Publications:
                 c=self.store.get('cards',row['card_id']);r={k:v for k,v in row.items() if k not in ('png','queued_png')}
                 r['number']=c['number'] if c else 'Slettet kort'
                 r['outdated']=not c or r.get('fingerprint')!=fingerprint(self.store,c)
+                r['issued']=self.issued(row['card_id'])
+                r['close_pending']=not r['issued'] and bool(row.get('file_id') and (row.get('url') or row.get('possibly_public')))
+                r['access_pending']=r['close_pending'] or row.get('status') in ('published','ready','access_retry','access_failed') and (row.get('status') not in ('published','ready') or r['issued']!=(row.get('status')=='published'))
                 rows.append(r)
             return dict(self.drive.status(),cards=rows)
     def front_links(self):
@@ -171,9 +177,54 @@ class Publications:
             links=[]
             for row in self.rows():
                 c=self.store.get('cards',row['card_id'])
-                if row.get('status')=='published' and row.get('url') and c and fingerprint(self.store,c)==row.get('fingerprint'):
-                    links.append({'card_id':c['id'],'url':row['url']})
+                if row.get('status') in ('published','ready','access_retry','access_failed') and (row.get('front_url') or row.get('url')) and c and fingerprint(self.store,c)==row.get('fingerprint'):
+                    links.append({'card_id':c['id'],'url':row.get('front_url') or row['url']})
             return links
+
+    def issued(self,card_id):
+        c=self.store.get('cards',card_id)
+        return bool(c and not c.get('archived') and self.store.active_loan(card_id))
+
+    def current(self,row):
+        c=self.store.get('cards',row['card_id'])
+        return bool(c and fingerprint(self.store,c)==row.get('fingerprint'))
+
+    def sync_access(self,row):
+        """Reconcile only an approved image; no loan or person data is sent to Drive."""
+        with self.store.transaction():
+            target='published' if self.current(row) and self.issued(row['card_id']) else 'ready'
+            if row.get('access_target')!=target:row['access_attempts']=0
+            row.update(status='access_retry',access_target=target)
+            # A permission POST can succeed even if its response is lost.
+            if target=='published':row['possibly_public']=True
+            self.store.put('maps',row)
+        try:
+            if target=='published':link=self.drive.share(row['file_id'])
+            else:
+                self.drive.unshare(row['file_id'])
+                link=row.get('front_url') or self.drive.link(row['file_id'])
+            # Do not leave access open if a return/deletion/edit arrived during the request.
+            with self.store.lock:current=self.current(row);still_issued=self.issued(row['card_id'])
+            if target=='published' and (not current or not still_issued):
+                self.drive.unshare(row['file_id']);target='ready'
+            with self.store.transaction():
+                # Hold the store lock for this final check and state transition.
+                current=self.current(row)
+                if target=='published' and (not current or not self.issued(row['card_id'])):
+                    # The worker retries the withdrawal; never report this as closed.
+                    row.update(status='access_retry',access_target='ready',next_try=0)
+                    self.store.put('maps',row);return
+                c=self.store.get('cards',row['card_id'])
+                if current and c and row.get('front_url')!=link:
+                    c['front_revision']=True;self.store.put('cards',c)
+                row.update(status=target if current else 'review',url=link if target=='published' else '',front_url=link,error='' if current else 'Kortet er ændret. Dan et nyt kortbillede.',possibly_public=target=='published',next_try=0,access_attempts=0,withdraw_attempts=0,close_attempts=0,next_close=0,close_error='')
+                if target=='published':row['published']=datetime.now(timezone.utc).isoformat()
+                row.pop('queued_png',None);self.store.put('maps',row)
+        except Exception:
+            with self.store.transaction():
+                attempts=row.get('access_attempts',0)+1
+                row.update(status='access_failed' if attempts>=5 else 'access_retry',access_attempts=attempts,next_try=time.time()+min(300,15*2**attempts),error='Google-adgangen er ikke bekræftet. Billedet kan stadig være offentligt. Kontrollér forbindelsen, og prøv adgangsændringen igen.')
+                self.store.put('maps',row)
 
     def prepare(self,card_id):
         with self.store.lock:
@@ -187,7 +238,7 @@ class Publications:
             c=self.store.require('cards',data['card_id']);fp=fingerprint(self.store,c)
             if data.get('fingerprint')!=fp:raise ValueError('Kortet er ændret, mens billedet blev dannet. Åbn kortet igen og publicér på ny.')
             old=self.store.get('maps',self.key(c['id'])) or {}
-            row=dict(old,id=self.key(c['id']),entity='publication',card_id=c['id'],fingerprint=fp,status='queued',render_refresh=False,error='',attempts=0,withdraw_attempts=0,next_try=0,queued_png=base64.b64encode(png).decode(),generation=os.urandom(12).hex())
+            row=dict(old,id=self.key(c['id']),entity='publication',card_id=c['id'],fingerprint=fp,status='queued',render_refresh=False,error='',attempts=0,withdraw_attempts=0,access_attempts=0,access_target='',close_attempts=0,next_close=0,close_error='',next_try=0,queued_png=base64.b64encode(png).decode(),generation=os.urandom(12).hex())
             self.store.put('maps',row)
         return {'ok':True,'status':'queued'}
     def process_one(self):
@@ -195,16 +246,39 @@ class Publications:
             if not self.drive.connected():return
             with self.store.lock:
                 rows=self.rows()
-                stale=next((r for r in rows if r.get('file_id') and (r.get('url') or r.get('queued_png') or r.get('status')=='withdraw_retry') and r.get('status') not in ('private','withdraw_failed') and r.get('next_try',0)<=time.time() and (not self.store.get('cards',r['card_id']) or fingerprint(self.store,self.store.get('cards',r['card_id']))!=r.get('fingerprint'))),None)
+                stale=next((r for r in rows if r.get('file_id') and (r.get('url') or r.get('queued_png') or r.get('possibly_public') or r.get('status')=='withdraw_retry') and r.get('status') not in ('private','withdraw_failed') and r.get('next_try',0)<=time.time() and not self.current(r)),None)
             if stale:
                 try:
                     self.drive.unshare(stale['file_id'])
                     with self.store.transaction():
-                        stale.update(status='review',url='',error='Kortet er ændret eller slettet. Offentlig adgang er fjernet; dan et nyt billede.',next_try=0);stale.pop('queued_png',None);self.store.put('maps',stale)
+                        stale.update(status='review',url='',possibly_public=False,error='Kortet er ændret eller slettet. Offentlig adgang er fjernet; dan et nyt billede.',next_try=0);stale.pop('queued_png',None);self.store.put('maps',stale)
                 except Exception:
                     with self.store.transaction():
                         attempts=stale.get('withdraw_attempts',0)+1;stale.update(status='withdraw_failed' if attempts>=5 else 'withdraw_retry',withdraw_attempts=attempts,next_try=time.time()+60,error='Kunne ikke fjerne offentlig adgang til det gamle billede. Kontrollér Google-forbindelsen.');self.store.put('maps',stale)
                 return
+            # A delayed/failed replacement upload must not keep the OLD image open
+            # until its next upload attempt. Close it without discarding the new PNG.
+            with self.store.lock:
+                closing=next((r for r in rows if r.get('status') in ('queued','retry','failed') and r.get('file_id') and (r.get('url') or r.get('possibly_public')) and not self.issued(r['card_id']) and r.get('close_attempts',0)<5 and r.get('next_close',0)<=time.time()),None)
+            if closing:
+                try:
+                    self.drive.unshare(closing['file_id'])
+                    with self.store.transaction():closing.update(url='',possibly_public=False,close_attempts=0,next_close=0,close_error='');self.store.put('maps',closing)
+                except Exception:
+                    with self.store.transaction():
+                        attempts=closing.get('close_attempts',0)+1
+                        closing.update(close_attempts=attempts,next_close=time.time()+60,close_error='Google-adgangen kunne ikke lukkes. Det gamle billede kan stadig være offentligt. Prøv adgangsændringen igen.');self.store.put('maps',closing)
+                return
+            with self.store.lock:
+                access_row=None
+                for r in sorted(rows,key=lambda r:self.issued(r['card_id'])):
+                    if r.get('status') not in ('published','ready','access_retry','access_failed') or not r.get('file_id') or not self.current(r):continue
+                    target='published' if self.issued(r['card_id']) else 'ready'
+                    changed=r.get('access_target',r.get('status'))!=target
+                    if r.get('status') in ('published','ready') and r['status']==target:continue
+                    if not changed and (r.get('status')=='access_failed' or r.get('next_try',0)>time.time()):continue
+                    access_row=r;break
+            if access_row:self.sync_access(access_row);return
             with self.store.lock:
                 row=next((r for r in rows if r.get('status') in ('queued','retry') and r.get('next_try',0)<=time.time()),None)
                 if not row:return
@@ -213,23 +287,16 @@ class Publications:
                     with self.store.transaction():row.update(status='review',error='Kortet er ændret. Dan et nyt kortbillede.');row.pop('queued_png',None);self.store.put('maps',row)
                     return
             try:
+                # Replacing an existing public file must not briefly publish an unassigned card.
+                with self.store.lock:issued=self.issued(row['card_id'])
+                if not issued and (row.get('url') or row.get('possibly_public')):
+                    self.drive.unshare(row['file_id'])
+                    with self.store.transaction():row.update(url='',possibly_public=False);self.store.put('maps',row)
                 file_id=self.drive.upload(base64.b64decode(row['queued_png']),row.get('file_id'))
                 # Persist the created ID before sharing so retries update the same file.
                 with self.store.transaction():row['file_id']=file_id;self.store.put('maps',row)
                 if self.stop.is_set():return
-                link=self.drive.share(file_id)
-                with self.store.transaction():
-                    c=self.store.get('cards',row['card_id'])
-                    if not c or fingerprint(self.store,c)!=row['fingerprint']:
-                        row.update(status='review',error='Kortet blev ændret under upload. Dan et nyt billede.')
-                    else:
-                        if row.get('front_url')!=link:
-                            c['front_revision']=True;self.store.put('cards',c)
-                        row.update(status='published',error='',next_try=0,withdraw_attempts=0,url=link,front_url=link,published=datetime.now(timezone.utc).isoformat())
-                    row.pop('queued_png',None);self.store.put('maps',row)
-                if row['status']=='review':
-                    self.drive.unshare(file_id)
-                    with self.store.transaction():row['url']='';self.store.put('maps',row)
+                self.sync_access(row)
             except Exception as exc:
                 with self.store.transaction():
                     row['attempts']=row.get('attempts',0)+1;row.update(status=('failed' if row['attempts']>=5 else 'retry') if row.get('queued_png') else 'review',error=str(exc) if isinstance(exc,ValueError) else 'Upload mislykkedes. Prøv igen.',next_try=time.time()+min(300,15*2**row['attempts']));self.store.put('maps',row)
@@ -246,21 +313,30 @@ class Publications:
         with self.lock:
             with self.store.lock:row=self.store.require('maps',self.key(card_id))
             if row.get('file_id'):self.drive.unshare(row['file_id'])
-            with self.store.transaction():row.update(status='private',url='',error='');row.pop('queued_png',None);self.store.put('maps',row)
+            with self.store.transaction():row.update(status='private',url='',possibly_public=False,close_error='',error='');row.pop('queued_png',None);self.store.put('maps',row)
             return {'ok':True}
     def retry(self,card_id):
         with self.lock,self.store.transaction():
             row=self.store.require('maps',self.key(card_id))
+            if row.get('close_error'):
+                row.update(close_attempts=0,next_close=0,close_error='');self.store.put('maps',row)
+                return {'ok':True}
+            if row.get('status') in ('access_retry','access_failed'):
+                row.update(status='access_retry',next_try=0,access_attempts=0,error='');self.store.put('maps',row)
+                return {'ok':True}
+            if row.get('status') in ('withdraw_retry','withdraw_failed'):
+                row.update(status='withdraw_retry',next_try=0,withdraw_attempts=0,error='');self.store.put('maps',row)
+                return {'ok':True}
             if not row.get('queued_png'):raise ValueError('Åbn kortet og dan et nyt kortbillede.')
             row.update(status='queued',next_try=0,attempts=0,error='');self.store.put('maps',row)
         return {'ok':True}
     def qr(self,card_id,require_current=False):
         with self.store.lock:
-            row=self.store.require('maps',self.key(card_id));url=row.get('url')
+            row=self.store.require('maps',self.key(card_id));url=row.get('front_url') or row.get('url')
             if require_current:
                 c=self.store.get('cards',card_id)
                 if not c or fingerprint(self.store,c)!=row.get('fingerprint'):raise ValueError('Kortbilledet er ændret. Publicér igen før QR-print.')
-        if row.get('status')!='published' or not url:raise ValueError('Publicér kortet før QR-koden dannes.')
+        if row.get('status') not in ('published','ready','access_retry','access_failed') or not url:raise ValueError('Upload og kontrollér kortet før QR-koden dannes.')
         code=qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M,box_size=1,border=4);code.add_data(url);code.make(fit=True);matrix=code.get_matrix();size=len(matrix)
         path=''.join('M%d %dh1v1h-1z'%(x,y) for y,line in enumerate(matrix) for x,value in enumerate(line) if value)
         return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" shape-rendering="crispEdges"><rect width="100%%" height="100%%" fill="white"/><path d="%s" fill="black"/></svg>'%(size,size,path)).encode()

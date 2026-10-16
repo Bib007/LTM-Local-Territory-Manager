@@ -2,6 +2,8 @@
 
 ## 1.12.0-beta.1 · under klargøring
 
+- Google Drive-billeder er private mellem udlån og åbnes automatisk ved udlevering. QR-linket bevares; afventende/fejlede adgangsændringer og nyt forsøg vises. Ingen udlåns- eller personoplysninger uploades.
+
 - Selvstændigt link til idéer og feedback via GitHub med valgfrie bilag og tydelig oplysning om offentligt indhold; aktiveres med næste stabile udgivelse.
 - HA-installationssiden forklarer funktioner, første start, lokal adgang og backup.
 - KTM-rapportens kortformat følger geografien, og hver periode får sin egen kortside ved print. Visuel kontrol udestår.

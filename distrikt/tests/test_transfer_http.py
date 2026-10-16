@@ -38,6 +38,27 @@ class TransferHTTPTests(unittest.TestCase):
             with self.assertRaises(urllib.error.HTTPError) as error:self.req(path,token=False)
             self.assertEqual(error.exception.code,403)
         with self.assertRaises(urllib.error.HTTPError):self.req('/api/restore/preview',b'fake','application/zip',token=False)
+    def test_loan_driven_sharing_endpoints_keep_printable_qr_while_private(self):
+        import base64
+        from test_sharing import FakeDrive,png
+        sharing=self.server.sharing;sharing.drive=FakeDrive()
+        c=self.store.mutate('card.save',{'number':'120','temporary':True})['id']
+        with self.store.transaction():
+            card=self.store.get('cards',c);card['geo_polygon']=[[10,55],[10.02,55],[10.02,55.02]];self.store.put('cards',card)
+        with self.req('/api/share/prepare',{'card_id':c}) as r:prepared=json.load(r)
+        with self.req('/api/share/publish',{'card_id':c,'fingerprint':prepared['fingerprint'],'png':'data:image/png;base64,'+base64.b64encode(png()).decode()}) as r:self.assertTrue(json.load(r)['ok'])
+        sharing.process_one()
+        with self.req('/api/state') as r:state=json.load(r)
+        self.assertEqual(len(state['public_maps']),1);link=state['public_maps'][0]['url']
+        with self.req('/api/share/qr?card_id='+c) as r:qr=r.read()
+        with self.req('/api/mutate',{'action':'loan.issue','data':{'card_id':c,'publisher_name':'Fiktiv person','date':'2026-01-01','initial':True}}) as r:loan=json.load(r)['result']['id']
+        sharing.process_one()
+        with self.req('/api/share/status') as r:self.assertEqual(json.load(r)['cards'][0]['status'],'published')
+        with self.req('/api/mutate',{'action':'loan.finish','data':{'id':loan,'date':'2026-01-02','complete':False,'retain':False}}) as r:self.assertTrue(json.load(r)['ok'])
+        sharing.process_one()
+        with self.req('/api/share/status') as r:self.assertEqual(json.load(r)['cards'][0]['status'],'ready')
+        with self.req('/api/state') as r:self.assertEqual(json.load(r)['public_maps'],[{'card_id':c,'url':link}])
+        with self.req('/api/share/qr?card_id='+c) as r:self.assertEqual(r.read(),qr)
     def test_static_credentials_and_traversal_inaccessible(self):
         (Path(self.temp.name)/'drive-auth.json').write_text('FAKE_PRIVATE_SECRET')
         for path in ('/drive-auth.json','/access.json','/portable.py','/api/restore/safety?name=../drive-auth.json'):
