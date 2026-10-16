@@ -13,6 +13,7 @@ import urllib.request
 import webbrowser
 import ipaddress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from socketserver import TCPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from store import Store, MODULES
@@ -28,6 +29,10 @@ DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.plat
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
+    def server_bind(self):
+        # Explicit IP listeners do not need reverse DNS during local startup.
+        TCPServer.server_bind(self)
+        self.server_name,self.server_port=self.socket.getsockname()[:2]
     def __init__(self, address, store, access_host=None, password=None):
         super().__init__(address,Handler)
         self.store=store

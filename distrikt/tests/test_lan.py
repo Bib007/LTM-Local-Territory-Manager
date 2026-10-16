@@ -7,6 +7,7 @@ import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from server import Server, acquire_lock
@@ -26,6 +27,13 @@ class LANTests(unittest.TestCase):
         req=urllib.request.Request(self.server.origin+path,json.dumps(data).encode() if data is not None else None,h)
         return (client or self.client).open(req,timeout=5)
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
+    def test_ip_binding_never_needs_reverse_dns(self):
+        with patch('socket.getfqdn',side_effect=RuntimeError('DNS must not be needed')):
+            local=Server(('127.0.0.1',0),self.s)
+        try:
+            self.assertEqual(local.server_name,'127.0.0.1')
+            self.assertGreater(local.server_port,0)
+        finally:local.server_close()
     def test_login_page_does_not_expose_token(self):
         with self.req('/') as r:
             html=r.read().decode();self.assertIn('loginForm',html);self.assertNotIn(self.server.token,html)
