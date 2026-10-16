@@ -144,7 +144,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  await run("Navigation.go('2:0')");assert.equal(run('reportTab'),'Rapport');
  run("page='Kortopsætning';GeoUI.dirty=true;window.confirm=()=>false");await run("Navigation.go('1:0')");assert.equal(run('page'),'Kortopsætning');assert.equal(run('GeoUI.dirty'),true);
  run("window.confirm=()=>true;GeoUI.dirty=false;page='Distrikter';status='Alle';render()");
- assert(!get('nav').innerHTML.includes('<details'));assert(get('nav').innerHTML.includes('Forside'));assert(get('nav').innerHTML.includes('Distriktskort'));assert(!get('nav').innerHTML.includes('Printprofiler'));assert(run("table(state.cards).includes('tabindex=\"0\"')"));
+ assert(!get('nav').innerHTML.includes('<details'));assert(get('nav').innerHTML.includes('Forside'));assert(get('nav').innerHTML.includes('Idéer og feedback'));assert(get('nav').innerHTML.includes('issues/new?template=idea.yml'));assert(get('nav').innerHTML.includes('rel="noopener noreferrer"'));assert(get('nav').innerHTML.includes('Distriktskort'));assert(!get('nav').innerHTML.includes('Printprofiler'));assert(run("table(state.cards).includes('tabindex=\"0\"')"));
  run("rowEvent={type:'click',preventDefault(){this.prevented=true;}};rowTarget={closest(selector){return selector==='[data-card-row]'?{dataset:{cardRow:'c4'}}:null;}};Navigation.selectRow(rowTarget,rowEvent)");assert.equal(run('selected'),'c4');assert.equal(run('rowEvent.prevented'),true);
  run("rowEvent.prevented=false;buttonTarget={closest(){return {}}};Navigation.selectRow(buttonTarget,rowEvent)");assert.equal(run('rowEvent.prevented'),false);
  // An ordinary local mount cannot cause a tile request; road mode preserves zoom.
