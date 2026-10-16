@@ -1,6 +1,10 @@
 # Ændringsliste
 
-## 1.12.0-beta.1 · under klargøring
+## 1.12.0-beta.2
+
+- Betaen kan nulstille testdata med bekræftelse, automatisk lokal sikkerhedskopi og kontrol af delte kort. Login og forbindelser bevares.
+
+## 1.12.0-beta.1
 
 Spørgsmål ved første start, personlig opsætningsplan, guidet rundtur og lokal XLSX-/CSV-import af allerede fordelte kort med adresser og områder. Præcise lejligheder kan bruges til lokal IB-import.
 
