@@ -4,7 +4,7 @@ Den faste klargøringsplan står fortsat på 20 %. Nye ønsker udvider ikke auto
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
-| W19 | Små løbende betaudgivelser, som kan testes i HA efter nye funktioner | -1 · kritisk | Implementeret: isoleret HA-betapakke og udgivelsesflow; lokale program-/pakkeprøver består; første udgivelse afventer CI | Kontrollerede betaer kan installeres/opdateres i HA ved siden af stabil udgave. Hver beta har fast version og kort testliste; main forbliver stabil. |
+| W19 | Små løbende betaudgivelser, som kan testes i HA efter nye funktioner | -1 · kritisk | Færdig: HA-beta 1.12.0-beta.1 er udgivet; program-, Mac-, Windows- og HA-betagates består; løbende små betaer er nu fast aftale | Kontrollerede betaer kan installeres/opdateres i HA ved siden af stabil udgave. Hver beta har fast version og kort testliste; main forbliver stabil. |
 | W14 | KTM-rapportens distriktskort tilpasses automatisk til geografiens højde/bredde, evt. egen side, og distriktnumre vises på kortet | 3 | Implementeret og afprøvet på develop: læsbare etiketter, forbindelsesstreger, automatisk stående/liggende A4 og visuelt kontrollerede fiktive PDF-rapporter; levende browser/OSM står særskilt | Kortet bruger dynamisk format/udsnit og læsbare distriktnumre ved både smalle og brede distriktsgrænser. |
 | W15 | Forbedr autofuldførelse af forkyndere ved udlevering | 6 | Planlagt til betjeningsforbedringer | En tydelig, relevant forslagsliste erstatter browserlignende autofyld; tastatur og mobil fungerer. |
 | W16 | Automatisk distriktsinddeling skal følge meningsfulde vej- og områdegrænser, ikke firkanter | 7 | Planlagt til korteditor og automatisk inddeling | Forslag følger veje og naturlige områder og kan kontrolleres/redigeres før gemning. |
@@ -61,4 +61,8 @@ Betakanalen bruger repositoryadressen med #beta, appnavnet Distrikt Beta, slug d
 
 Første beta 1.12.0-beta.1 fokuserer testlisten på adskilt installation, Drive-adgang og KTM-kort/print. Næste små funktioner får nye beta-numre; samme versionsnummer overskrives ikke med ændret kode. Se docs/BETA.md og docs/BETA-NOTES.md.
 
-W19-lokalkontrol: 252 Python-prøver (1 oversprunget), 3 betapakkeprøver, almindelige pakkeprøver og workflow-/shellsyntaks består. Prøven med stabil og beta på samme vært bekræfter forskellige cookies, uafhængige sessioner og separate data. ZIP bygges deterministisk fra samme programmanifest uden brugerfiler. Første publicering afventer CI-gaten.
+W19-lokalkontrol: 252 Python-prøver (1 oversprunget), 3 betapakkeprøver, almindelige pakkeprøver og workflow-/shellsyntaks består. Prøven med stabil og beta på samme vært bekræfter forskellige cookies, uafhængige sessioner og separate data. ZIP bygges deterministisk fra samme programmanifest uden brugerfiler. Første publicering er efterfølgende godkendt af hele CI-gaten og gennemført.
+
+W19-udgivelse bekræftet: v1.12.0-beta.1 er en GitHub-prerelease med HA-ZIP og SHA-256. Den kontrollerede kilde er 5b6ec28; den genererede HA-beta er på beta-grenen. Installer via https://github.com/Bib007/LTM-Local-Territory-Manager#beta som Distrikt Beta på 8788. Seneste stabile release er fortsat v1.11.1. Checks, Platformskontrol og HA beta release er grønne. Ejerens HA-test og Google-prøve er endnu ikke udført.
+
+Fremover: afslut én lille funktion eller et sammenhængende sæt, ret relevante prøver, opdater alle versionssteder og BETA-NOTES til beta.2/beta.3 osv., og udgiv efter grønne gates. Flyt ikke beta-grenen direkte fra almindelige develop-commits. Næste udviklingsopgaver er W04/W03 og W13; den faste køreplan står fortsat på 20 %. W14's kode og offline PDF-kontrol er med i beta.1.
