@@ -27,13 +27,13 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'})");
   assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],/s13-background.jpg/);assert.match(print[language],/Hus til hus/);
   const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage[^"]*">([\s\S]*?)<\/section>/g),m=>m[1]);
-  assert.equal(mapPages.length,2);assert.match(mapPages[0],/Tjenesteår 2026\/2027/);assert.match(mapPages[0],/FIXED_SERVICE_MAP/);assert.doesNotMatch(mapPages[0],/FIXED_ROLLING_MAP|reportchart/);assert.match(mapPages[1],/Seneste 12 måneder/);assert.match(mapPages[1],/FIXED_ROLLING_MAP/);assert.doesNotMatch(mapPages[1],/FIXED_SERVICE_MAP|reportchart/);assert.doesNotMatch(print[language],/data-ui/);
+  assert.equal(mapPages.length,2);assert.match(mapPages[0],/Tjenesteår 2026\/2027/);assert.match(mapPages[0],/FIXED_SERVICE_MAP/);assert.doesNotMatch(mapPages[0],/FIXED_ROLLING_MAP|reportchart/);assert.match(mapPages[1],/Seneste 12 måneder/);assert.match(mapPages[1],/FIXED_ROLLING_MAP/);assert.doesNotMatch(mapPages[1],/FIXED_SERVICE_MAP|reportchart/);assert.doesNotMatch(print[language],/data-ui|Kort til opfølgning|AKTUEL OPFØLGNING/);
   const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.match(summary,/<strong>20<\/strong>/);assert.match(summary,/<strong>50%<\/strong>/);
   assert.match(summary,language==='en'?/>Coverage of current cards<\//:/>Dækning af aktuelle kort<\//);
   const service=counts(run("Workspace.reportChart('2026-09-01','2027-08-31')"));assert.equal(service.length,12);assert.equal(service.reduce((a,b)=>a+b,0),3);assert.equal(service[0],2);assert.equal(service[1],1);
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
   const rolling=run("Workspace.periodBounds('rolling')");assert.equal(rolling[0],'2025-10-16');assert.equal(rolling[1],'2026-10-16');const monthly=counts(run('Workspace.reportChart(...Workspace.periodBounds("rolling"))'));assert.equal(monthly.length,13);assert.equal(monthly.reduce((a,b)=>a+b,0),4);
-  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg/);assert.match(screen,/<strong>24<\/strong>/);assert.match(screen,/<strong>100%<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
+  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg|Kort til opfølgning|AKTUEL OPFØLGNING/);assert.match(screen,/<strong>24<\/strong>/);assert.match(screen,/<strong>100%<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);contracts[language]=[formContract(visits)];
   run("editVisit('v')");assert.equal(get('dialog').lang,language);assert.match(get('dialog').innerHTML,/value="KTM-besøg &lt;invented&gt; &amp; Kort"/);contracts[language].push(formContract(get('dialog').innerHTML));
   const fields=[['date','2026-09-11'],['note','KTM-besøg <invented> & Kort']];await submit({target:{id:'visitForm',dataset:{id:'v'},fields,reportValidity(){return true;},querySelector(){return {disabled:false};}},preventDefault(){}});submitted[language]=JSON.parse(JSON.stringify(writes.at(-1)));
@@ -41,16 +41,6 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.equal(run('JSON.stringify(state)'),original);
  }
  assert.equal(print.en,print.da,'Language switching must leave the complete original Danish print document unchanged');assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
- // Current follow-up uses known dates, current cycle, strict calendar thresholds and active cards only.
- const saved=run('JSON.stringify(state)');
- run(`state.cards=[{id:'unknown',number:'<101>',area_id:'a',addresses:[]},{id:'old',number:'102',last_completed:'2025-10-15',addresses:[]},{id:'edge',number:'103',last_completed:'2025-10-16',addresses:[]},{id:'recent',number:'104',last_completed:'2024-01-01',addresses:[]},{id:'retained',number:'105',last_completed:'2026-10-01',addresses:[]}];
- state.completions=[{card_id:'recent',date:'2026-10-01'},{card_id:'unknown',date:'2026-10-17'},{card_id:'archived',date:'2024-01-01'}];
- state.loans=[{card_id:'old',assigned:'2026-01-01',cycle_start:'2026-06-15',returned:null},{card_id:'edge',assigned:'2026-01-01',cycle_start:'2026-06-16',returned:null},{card_id:'retained',assigned:'2026-01-01',cycle_start:'2026-10-01',returned:null}];`);
- const follow=JSON.parse(run('JSON.stringify(Workspace.followUpData())'));
- assert.equal(follow.unknown,1);assert.equal(follow.old,1);assert.equal(follow.long,1);assert.equal(follow.rows.length,2);assert.equal(follow.cutoff,'2025-10-16');
- run("I18n.set('da')");const followHTML=run('Workspace.reportFollowUp(true)');assert.match(followHTML,/&lt;101&gt;/);assert.match(followHTML,/Kort &lt;invented&gt;/);assert.doesNotMatch(followHTML,/Forkynder &lt;invented&gt;|DO_NOT_INCLUDE_ROAD|PRIVATE_NO/);
- run("year=2025;Workspace.reportPeriod='service'");assert.equal(run('Workspace.followUpData().today'),'2026-10-16','The current snapshot must not pretend to be a historical period');
- run('state='+saved+';year=2027');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
  // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
  const geometry=run('JSON.stringify(state.cards)');

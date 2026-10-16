@@ -1,13 +1,12 @@
-# LTM 1.12.0-beta.5
+# LTM 1.12.0-beta.6
 
-## Nyt siden beta.4
+## Nyt siden beta.5
 
-Opsætningsguidens valgfelter er rettet. En fælles dialogregel gav radioknapper samme fulde bredde som tekstfelter og skubbede teksten uden for boksen. Radioknapper har nu fast lille bredde, og teksten kan ombrydes inde i boksen.
+Den ekstra liste **Kort til opfølgning** er fjernet fra både skærmrapporten og den samlede PDF efter ejerens ønske. Dens tre særlige opfølgningstal er også fjernet. Eksisterende rapporttal, månedsgraf, områdeoversigt, distriktskort og original S-13 bevares.
 
 ## Prøv især
 
-1. Vælg **Indstillinger → Åbn opsætningsguiden**, eller brug betaens nulstilling til at begynde forfra.
-2. Gennemgå alle fem trin på computer og en smal telefon. Tekst og forklaring skal være inde i samme boks som radioknappen.
-3. Skift mellem dansk og engelsk og mellem enkel brug og kortarbejde. Valg og næste/tilbage skal fungere som før.
+1. Åbn tjenesteårsrapport og seneste 12 måneder. Den ekstra opfølgningsliste skal være væk.
+2. Print samlet rapport/PDF. Begge perioders rapporter og kort samt original S-13 skal stadig være med, uden ekstra opfølgningssider.
 
-Beta.4's aktuelle opfølgningsliste på skærm og i PDF, beta.3's faste topbar/logo/HA-billeder og beta.2's nulstilling er fortsat med. Stabil udgave er fortsat 1.11.1. Egen HA/browser og Google-konto afprøves hos ejeren.
+Opsætningsguidens rettelse, fast topbar/logo/HA-billeder og betaens nulstilling er fortsat med. Stabil udgave er fortsat 1.11.1.
