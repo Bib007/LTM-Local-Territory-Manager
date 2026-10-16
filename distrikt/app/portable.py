@@ -115,3 +115,25 @@ class Restores:
                         item.pop('queued_png',None);self.store.put('maps',item)
             self.pending.clear()
             return {'ok':True,'safety_backup':filename}
+
+    def reset_beta(self,confirmation,revision):
+        """Called only by the beta-gated HTTP route, under the sharing lock."""
+        with self.store.lock:
+            if confirmation!='NULSTIL BETA':raise ValueError('Skriv NULSTIL BETA for at bekræfte.')
+            if revision!=self.store.revision:raise ValueError('Data er ændret. Genindlæs og kontrollér nulstillingen igen.')
+            if any(r.get('entity')=='publication' and r.get('file_id') and
+                   (r.get('status')!='private' or r.get('possibly_public') or r.get('url'))
+                   for r in self.store.all('maps')+self.store.all('maps',deleted=True)):
+                raise ValueError('Fjern først offentlig adgang til kortene under Deling og QR. Nulstilling må ikke efterlade offentlige billeder uden registrering.')
+            folder=self.store.root/'backups';folder.mkdir(mode=0o700,exist_ok=True)
+            filename='foer-beta-nulstilling-'+datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+secrets.token_hex(3)+'.zip'
+            target=folder/filename
+            target.write_bytes(snapshot(self.store,self.version));os.chmod(target,0o600)
+            with self.store.transaction():
+                self.store._dirty_modules.update(MODULES)
+                for module in MODULES:self.store.db.execute('DELETE FROM '+self.store.alias(module)+'.records')
+                self.store.put('settings',{'id':'config','congregation':'','folder_minimum':30,
+                    'rural_mode':'auto','rural_minimum':5,'require_revision':False,'schema':1})
+            self.store.workflow_init()
+            self.pending.clear()
+            return {'ok':True,'safety_backup':filename}

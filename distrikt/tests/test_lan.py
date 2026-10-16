@@ -27,6 +27,28 @@ class LANTests(unittest.TestCase):
         req=urllib.request.Request(self.server.origin+path,json.dumps(data).encode() if data is not None else None,h)
         return (client or self.client).open(req,timeout=5)
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
+    def test_beta_reset_endpoint_requires_beta_login_token_and_idle_downloads(self):
+        self.login().close();self.s.mutate('card.save',{'number':'FAKE','temporary':True})
+        payload={'confirmation':'NULSTIL BETA','revision':self.s.revision}
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload)
+        self.assertEqual(error.exception.code,404)
+        self.assertEqual(len(self.s.state()['cards']),1)
+        self.server.beta=True
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertTrue(json.load(response)['beta'])
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload,{'X-Distrikt-Token':'wrong'})
+        self.assertEqual(error.exception.code,403)
+        self.server.downloads.active='FAKE_DOWNLOAD'
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload)
+        self.assertEqual(error.exception.code,400)
+        self.server.downloads.active=None
+        with self.req('/api/beta/reset',payload) as response:result=json.load(response)
+        self.assertEqual(self.s.state()['cards'],[])
+        with self.req('/api/restore/safety?name='+result['safety_backup'],headers={'X-Distrikt-Token':self.server.token}) as response:self.assertTrue(response.read().startswith(b'PK'))
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(response.status,200)
+        self.req('/api/logout',{}).close()
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload)
+        self.assertEqual(error.exception.code,401)
+
     def test_ip_binding_never_needs_reverse_dns(self):
         with patch('socket.getfqdn',side_effect=RuntimeError('DNS must not be needed')):
             local=Server(('127.0.0.1',0),self.s)
@@ -44,7 +66,7 @@ class LANTests(unittest.TestCase):
             cookie=r.headers['Set-Cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('SameSite=Strict',cookie)
         with self.req('/') as r:
             html=r.read().decode();self.assertIn(self.server.token,html);self.assertIn('Log ud',html);self.assertNotIn('data-action="stop"',html)
-        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.12.0-beta.1')
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.12.0-beta.2')
         with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/state')
         self.assertEqual(error.exception.code,403)
     def test_wrong_password_and_foreign_origin_are_rejected(self):
@@ -68,6 +90,9 @@ class LANTests(unittest.TestCase):
                 self.s.mutate('card.save',{'number':'120','temporary':True})
                 with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(len(json.load(response)['cards']),1)
                 with beta_req('/api/state') as response:self.assertEqual(json.load(response)['cards'],[])
+                beta_store.mutate('card.save',{'number':'BETA-FAKE','temporary':True})
+                with beta_req('/api/beta/reset',{'confirmation':'NULSTIL BETA','revision':beta_store.revision}) as response:self.assertEqual(response.status,200)
+                self.assertEqual(beta_store.state()['cards'],[]);self.assertEqual(len(self.s.state()['cards']),1)
                 with beta_req('/api/logout',{}) as response:self.assertIn('distrikt_beta_session=',response.headers['Set-Cookie'])
                 with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(response.status,200)
                 with self.assertRaises(urllib.error.HTTPError):beta_req('/api/state')

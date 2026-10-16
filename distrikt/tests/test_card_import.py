@@ -93,11 +93,11 @@ class CardImportTests(unittest.TestCase):
         self.assertEqual(digest(self.s),before)
     def test_private_backup_round_trip_keeps_precise_addresses_and_setup_choices(self):
         self.apply(self.preview());answers={'mode':'desk','boundary':'later','cards':'excel','ib':'yes'};self.s.mutate('setup.onboarding.save',{'answers':answers})
-        payload=snapshot(self.s,'1.12.0-beta.1')
+        payload=snapshot(self.s,'1.12.0-beta.2')
         with tempfile.TemporaryDirectory() as directory:
             target=Store(directory)
             try:
-                restores=Restores(target,'1.12.0-beta.1');p=restores.preview(payload);restores.apply(p['token'])
+                restores=Restores(target,'1.12.0-beta.2');p=restores.preview(payload);restores.apply(p['token'])
                 self.assertEqual(target.all('cards'),self.s.all('cards'));self.assertEqual(target.state()['settings']['onboarding']['answers'],answers)
             finally:target.close()
 

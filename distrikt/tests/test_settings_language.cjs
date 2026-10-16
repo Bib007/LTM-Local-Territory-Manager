@@ -11,7 +11,7 @@ const c={console,Date,Intl,Math,Number,String,Map,Set,Array,Object,JSON,Promise,
 vm.createContext(c);for(const name of ['i18n.js','workspace.js','navigation.js','transfer-ui.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);
 const run=s=>vm.runInContext(s,c);
-run(`ShareUI={html:()=>''};GeoUI={load:async()=>{}};state={today:'2026-10-16',version:'1.12.0-beta.1',
+run(`ShareUI={html:()=>''};GeoUI={load:async()=>{}};state={today:'2026-10-16',version:'1.12.0-beta.2',
  settings:{congregation:'Områder <invented> & Kort',folder_minimum:30,rural_mode:'manual',rural_minimum:7,require_revision:true,print_profiles:{back:{width:94,height:146,orientation:'portrait',x:1,y:-2}}},
  areas:[{id:'area-1',name:'Menighed og mappe <invented>'}],cards:[],publishers:[],loans:[],completions:[],ib:[],notes:[],recovery:[{label:'Gendan <invented>',batch:'batch-1',count:2,at:'2026-10-15T12:00:00Z'}]};
  mutate=async(action,data,options)=>writes.push({action,data,options});refresh=async()=>{};loadMap=async()=>{};`);
@@ -61,5 +61,17 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
  const cleanup=click(action('cleanup'));run("openDialog('<form>NEWER UNSAVED NOTE</form>')");releaseCleanup({cutoff:'2024-10-16'});await cleanup;assert.match(get('dialog').innerHTML,/NEWER UNSAVED NOTE/);
  let releaseActivity;c.pendingActivity=new Promise(resolve=>releaseActivity=resolve);run('api=async()=>({json:()=>pendingActivity})');const activity=run("Workspace.handle('activity',{})");run("openDialog('<form>NEWER UNSAVED VISIT</form>')");releaseActivity({items:[]});await activity;assert.match(get('dialog').innerHTML,/NEWER UNSAVED VISIT/);
  assert.equal(run('JSON.stringify(state)'),original);
+ // Real beta UI gates and request payload; only invented records and backup names.
+ assert.equal(run('TransferUI.betaHTML()'),'');run('TransferUI.resetOpen()');assert.match(get('dialog').innerHTML,/NEWER UNSAVED VISIT/);
+ run("state.beta=true;state.revision='FICTIONAL-REVISION';Onboarding={answers:{mode:'map'}}");
+ assert.match(run('TransferUI.betaHTML()'),/betaResetOpen/);run('TransferUI.resetOpen()');assert.match(get('dialog').innerHTML,/NULSTIL BETA/);
+ const resetButton={disabled:false},resetForm={dataset:{revision:'FICTIONAL-REVISION'},reportValidity(){return false;},querySelector(){return resetButton;}};
+ c.removedKeys=[];c.localStorage={removeItem:key=>c.removedKeys.push(key)};
+ run(`api=async(url,payload)=>{applyRequests.push({url,payload});return {json:async()=>({safety_backup:'foer-beta-nulstilling-FAKE.zip'})};}`);
+ const beforeReset=applyRequests.length;await run('TransferUI.reset').call(run('TransferUI'),resetForm);assert.equal(applyRequests.length,beforeReset);
+ resetForm.reportValidity=()=>true;get('betaResetConfirmation').value='NULSTIL BETA';await run('TransferUI.reset').call(run('TransferUI'),resetForm);
+ assert.equal(applyRequests.at(-1).url,'/api/beta/reset');assert.equal(applyRequests.at(-1).payload.revision,'FICTIONAL-REVISION');assert.equal(applyRequests.at(-1).payload.confirmation,'NULSTIL BETA');
+ assert.equal(get('betaResetError').textContent,'');assert.match(get('dialog').innerHTML,/foer-beta-nulstilling-FAKE.zip/);assert.match(get('dialog').innerHTML,/betaResetRestart/);
+ assert.deepEqual(c.removedKeys,['ltm-welcome-seen','ltm-onboarding-draft']);assert.equal(run('Onboarding.answers'),null);
  console.log('Settings language: equal real save payloads, stable options/limits, escaped names, backup consent/token gates and abandoned/out-of-order preview protection passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
