@@ -1,0 +1,9 @@
+configuration:
+  access_host:
+    name: Private address
+    description: The HA machine's fixed private IP or local hostname, without http://, port or slash. Open this same address in your browser.
+  password:
+    name: App password
+    description: At least 12 characters. This is Distrikt's own login. The password stays on your installation.
+network:
+  8787/tcp: Private website with its own login, LAN/VPN only

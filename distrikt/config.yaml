@@ -1,0 +1,29 @@
+name: Distrikt Beta
+version: "1.12.0-beta.1"
+slug: distrikt_beta
+init: false
+description: "Lokalt overblik over distriktskort, udleveringer, gennemgange og print"
+url: https://github.com/Bib007/LTM-Local-Territory-Manager
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: manual
+timeout: 180
+backup_exclude:
+  - "*"
+ingress: false
+host_network: false
+hassio_api: false
+homeassistant_api: false
+ports:
+  8788/tcp: 8788
+ports_description:
+  8788/tcp: "Privat webside med eget login — kun LAN/VPN"
+webui: "http://[HOST]:[PORT:8788]/"
+options:
+  access_host: "homeassistant.local"
+  password: ""
+schema:
+  access_host: str
+  password: password
