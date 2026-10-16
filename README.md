@@ -9,9 +9,15 @@
 
 [English](README.en.md) · [Installation](docs/INSTALL.md) · [Kom i gang](docs/FIRST-STEPS.md) · [Privatliv](docs/PRIVACY.md) · [Udviklingsplan](ROADMAP.md) · [Manuelle punkter](Dette-skal-hjaelpes-manuelt.md)
 
+## Ny opstart og kortimport på develop
+
+Første start spørger til enkel udlevering eller kortfunktion, KML, eksisterende kortfordeling og IB. Svarene giver en personlig plan og en valgfri rundtur i appen. Guiden kan åbnes igen under Indstillinger.
+
+Har du allerede fordelt adresser på kort og områder, kan du hente Excel-skabelonen i **Indstillinger → Avanceret → Importér eksisterende distriktskort**. XLSX og CSV kontrolleres lokalt; alle fejl skal rettes før samlet oprettelse. [Kortimport](docs/KORTIMPORT.md) og [nye ønsker](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/OENSKELISTE.md).
+
 ## Kom i gang
 
-**Udviklingsudgave: 1.12.0-beta.1.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. [Køreplan: 20 %](KOREPLAN.md).
+**Udviklingsudgave: 1.12.0-beta.1.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. [Køreplan: 20 %](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
 
 [![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 

@@ -1,7 +1,7 @@
 'use strict';
 // IB suggestions never use a remote address service.
 const IBUI={
- addresses(id){const c=card(id);if(!c)return [];return (c.geo_addresses?.length?c.geo_addresses:GeoUI.addresses().filter(a=>c.address_ids?.includes(a.id))).slice().sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.floor,b.floor)||cmp(a.door,b.door));},
+ addresses(id){const c=card(id);if(!c)return [];return (c.geo_addresses?.length?c.geo_addresses:c.imported_addresses?.length?c.imported_addresses:GeoUI.addresses().filter(a=>c.address_ids?.includes(a.id))).slice().sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.floor,b.floor)||cmp(a.door,b.door));},
  unit(a){return a.number+(a.floor||a.door?', '+[a.floor,a.door].filter(Boolean).join(' '):'');},
  find(a,id){const clean=s=>String(s||'').toLowerCase().replace(/[\s.,]+/g,'');return state.ib.find(i=>i.card_id===id&&(i.address_id?i.address_id===a.id:RoadSearch.normalize(i.road)===RoadSearch.normalize(a.road)&&(clean(i.number)===clean(a.number)||clean(i.number)===clean(this.unit(a)))));},
  roads(id){return [...new Set([...this.addresses(id).map(a=>a.road),...(card(id)?.addresses||[]).map(a=>a.road)])].filter(Boolean).sort(cmp);},

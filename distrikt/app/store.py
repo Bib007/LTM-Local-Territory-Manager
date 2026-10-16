@@ -281,6 +281,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Tilføj en vejliste eller behold kortet som midlertidigt.')
             if old and (old.get('address_ids') or old.get('geo_addresses')) and normalized != old.get('addresses', []) and not geographic:
                 raise ValueError('Vejlisten følger de valgte huse. Brug Tegn og vælg adresser for at ændre den.')
+            if old and old.get('imported_addresses') and normalized!=old.get('addresses',[]):
+                by_unit={(a['road'],a['numbers']):a for a in normalized}
+                card['imported_addresses']=[dict(a,count=by_unit[(a['road'],a['numbers'])]['count'],type=by_unit[(a['road'],a['numbers'])]['type']) for a in old['imported_addresses'] if (a['road'],a['numbers']) in by_unit]
             card['addresses'] = normalized
             if old and (old.get('addresses', []) != normalized or old['number'] != number or old.get('name') != card['name'] or (old.get('area_id') != card['area_id'] and not card['name'])):
                 card['front_revision'] = True
@@ -481,7 +484,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             payload = dict(data)
             address_id = clean_text(payload.get('address_id'), 160)
             if address_id:
-                addresses = c.get('geo_addresses') or [self.get('geo', ident) for ident in c.get('address_ids', [])]
+                addresses = c.get('geo_addresses') or c.get('imported_addresses') or [self.get('geo', ident) for ident in c.get('address_ids', [])]
                 address = next((a for a in addresses if a and a.get('id') == address_id), None)
                 if not address:
                     raise ValueError('Adressen er ikke på dette distriktskort. Vælg en adresse fra kortets liste.')

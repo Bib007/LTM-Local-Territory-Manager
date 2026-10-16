@@ -42,6 +42,7 @@ jobs:
           node-version: '24'
       - run: node distrikt/tests/test_frontend.cjs
       - run: node distrikt/tests/test_welcome.cjs
+      - run: node distrikt/tests/test_onboarding.cjs
       - run: node distrikt/tests/test_i18n.cjs
       - run: node distrikt/tests/test_desk_language.cjs
       - run: node distrikt/tests/test_work_lists_language.cjs

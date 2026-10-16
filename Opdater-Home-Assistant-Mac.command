@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run from the unpacked release. Only program files are copied; no database access.
 set -euo pipefail
-release_version='1.11.0'
+release_version='1.11.1'
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 source_dir="$script_dir/Home-Assistant/distrikt"
 manifest="$script_dir/Home-Assistant/SHA256SUMS.txt"

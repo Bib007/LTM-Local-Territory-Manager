@@ -2,6 +2,9 @@
 
 ## 1.12.0-beta.1 · under klargøring
 
+Spørgsmål ved første start, personlig opsætningsplan, guidet rundtur og lokal XLSX-/CSV-import af allerede fordelte kort med adresser og områder. Præcise lejligheder kan bruges til lokal IB-import.
+
+
 - Blå identitet og valgfri velkomstguide.
 - Dansk/engelsk navigation, centrale kort-/udleveringsformularer, forkyndere, opgaver, indstillinger, rapportskærme, kortoversigt og adresselister.
 - Kladder bevares ved sprogskift og flere forsinkede forhåndsvisninger.

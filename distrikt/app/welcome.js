@@ -3,7 +3,7 @@
 const Welcome={step:0,
  language(){return I18n.language();},
  text(da,en){return this.language()==='en'?en:da;},
- auto(){if(state.cards.length||state.publishers.length||state.loans.length)return;try{if(localStorage.getItem('ltm-welcome-seen'))return;}catch{}this.open();},
+ auto(){if(state.cards.length||state.publishers.length||state.loans.length||state.settings?.onboarding?.completed)return;try{if(localStorage.getItem('ltm-welcome-seen'))return;}catch{}Onboarding.open();},
  open(step=0){this.step=Math.max(0,Math.min(4,Number(step)||0));openDialog(this.html());},
  html(){const t=(a,b)=>this.text(a,b),labels=[t('Velkommen','Welcome'),t('Kortnumre','Card numbers'),t('Grænser og adresser','Boundaries and addresses'),t('IB og print','Do-not-call and printing'),t('Valgfri deling','Optional sharing')];let content='';
  if(this.step===0)content=`<h2>${t('Velkommen til LTM','Welcome to LTM')}</h2><p>${t('Begynd småt med kortnumre og udlevering. Tilføj grænser, adresser og print, når du er klar.','Start with card numbers and assignments. Add boundaries, addresses and printing when you are ready.')}</p><div class="welcomeFacts"><div><b>${t('Dine data, lokalt','Your data, locally')}</b><p>${t('Registreringer gemmes på computeren eller din HA-server. Appen kræver ingen udviklerkonto.','Records stay on this computer or your HA server. No developer account is required.')}</p></div><div><b>${t('Én fælles database','One authoritative installation')}</b><p>${t('Bruger du HA, åbner alle enheder samme lokale webadresse. Udefra kan du forbinde telefonen via VPN til din egen router.','With HA, all devices open the same private address. Away from home, connect your phone through a VPN to your own router.')}</p></div></div><p>${t('Alle trin kan springes over og åbnes igen fra Indstillinger. Kort og adresseopslag bruger eksterne tjenester.','Every step can be skipped and reopened from Settings. Maps and address lookups use external services.')}</p>`;
@@ -18,5 +18,5 @@ const Welcome={step:0,
   switch(action){case 'numbers':AdminUI.quick();break;case 'boundary':if(!GeoUI.loaded)await GeoUI.load();MainBoundaryUI.open();break;case 'setup':await SetupUI.open();break;case 'ib':await SetupUI.open(4);break;case 'printing':case 'sharing':case 'backup':page='Indstillinger';Navigation.settingsSection={printing:'printing',sharing:'sharing',backup:'data'}[action];render();break;}
  }
 };
-document.addEventListener('click',async e=>{const n=e.target.closest('[data-welcome]');if(!n)return;e.preventDefault();try{if(n.dataset.welcome==='open')Welcome.open();else await Welcome.handle(n.dataset.welcome,n.dataset.step);}catch(error){toast(error.message);}});
+document.addEventListener('click',async e=>{const n=e.target.closest('[data-welcome]');if(!n)return;e.preventDefault();try{if(n.dataset.welcome==='open')Onboarding.open();else await Welcome.handle(n.dataset.welcome,n.dataset.step);}catch(error){toast(error.message);}});
 document.addEventListener('change',e=>{if(e.target.id!=='welcomeLanguage')return;I18n.set(e.target.value);Navigation.localize();Welcome.open(Welcome.step);});
