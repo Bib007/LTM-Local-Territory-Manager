@@ -24,6 +24,19 @@ class HTTPTests(unittest.TestCase):
         h.update(headers or {})
         req=urllib.request.Request(self.server.origin+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
         return urllib.request.urlopen(req,timeout=3)
+    def test_address_source_api_keeps_key_private_and_requires_token(self):
+        schema=b'type Query { DAR_Adresse: String DAR_Husnummer: String DAR_Postnummer: String }'
+        fake_key='FICTIONAL_ADDRESS_KEY_123456'
+        for path,body in [('/api/address-source/status',None),('/api/address-source/connect',{'api_key':fake_key}),('/api/address-source/check',{}),('/api/address-source/disconnect',{})]:
+            with self.assertRaises(urllib.error.HTTPError) as error:self.request(path,body,token=False)
+            self.assertEqual(error.exception.code,403)
+        with patch.object(self.server.address_source,'_request',side_effect=[schema,b'{"data":{"__typename":"Query"}}']):
+            with self.request('/api/address-source/connect',{'api_key':fake_key}) as response:self.assertTrue(json.load(response)['configured'])
+        for path in ['/api/address-source/status','/api/state','/api/geo']:
+            with self.request(path) as response:self.assertNotIn(fake_key,response.read().decode())
+        with self.request('/api/address-source/disconnect',{}) as response:self.assertFalse(json.load(response)['configured'])
+        with self.request('/address-source-ui.js') as response:self.assertIn(b'AddressSourceUI',response.read())
+
     def test_local_printing_code_is_available_with_app_security_policy(self):
         with self.request('/printing.js') as response:
             self.assertEqual(response.status,200)

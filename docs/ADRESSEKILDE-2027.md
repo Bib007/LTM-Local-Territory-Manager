@@ -1,6 +1,6 @@
 # Adressekilde før januar 2027
 
-Kontrolleret 16.10.2026. Dette er en konkret overgangsplan, ikke en gennemført kildeændring.
+Kontrolleret 16.10.2026. Dette er en konkret overgangsplan. Lokal nøgleopsætning og forbindelseskontrol er implementeret til beta.7; selve adresseimportens overgang er endnu ikke gennemført.
 
 ## Hvad rammer LTM?
 
@@ -11,7 +11,11 @@ Kontrolleret 16.10.2026. Dette er en konkret overgangsplan, ikke en gennemført 
 | Hele postnumre og samlet grænse | `postcode.py`, `boundary_download.py`: DAR REST 3.0.0 | Officiel udfasningsdato er 15. januar 2027. Disse forløb kræver en reel erstatning; et skift af baggrund eller værtsnavn er utilstrækkeligt. |
 | Lokale adresser og reservekort | SQLite og lokalt tegnede veje/bygninger | Bevares. Fjernelse af reservevisningen ville fjerne muligheden for at orientere sig ved flisefejl og løser ikke kildefristen. |
 
-## Næste implementering
+## Ejerbeslutning og første trin
+
+Ejeren har valgt egen API-nøgle med guidning. Beta.7 tilføjer lokal opsætning, kontrol af DAR v3-skema og GraphQL-forbindelse samt fjernelse/genkontrol af nøglen. Se [trinvis vejledning](DATAFORDELER.md). Nøglen ligger separat fra SQLite, udelades fra portable backups og bevares ved beta-nulstilling. Afviste forbindelser og rå fejltekster med URL/nøgle vises ikke videre.
+
+## Implementeringstrin
 
 1. Ny lokal kildeopsætning til Datafordelerens IT-system/API-key. Hold nøglen ude af browsertilstand, log, offentlige fejl og portable sikkerhedskopier, ligesom eksisterende Google-login. Ingen fælles nøgle indbygges.
 2. Indlæs og fastlås det aktuelle DAR v3-skema. Det dokumenterede skema-endpoint gav HTTP 401 uden autentifikation i kontrollen; datakald er derfor ikke afprøvet, og der er ikke søgt efter ejerens credentials.
