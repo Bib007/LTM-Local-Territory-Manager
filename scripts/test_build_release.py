@@ -54,7 +54,6 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertIn('README.en.md',names)
             self.assertIn('ROADMAP.md',names)
             self.assertIn('CONTRIBUTING.md',names)
-            self.assertIn('Dette-skal-hjaelpes-manuelt.md',names)
             self.assertIn('assets/brand/logo-light.svg',names)
             self.assertIn('assets/brand/logo-dark.svg',names)
             self.assertIn('docs/INSTALL.md',names)
@@ -83,7 +82,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Private/runtime file'):self.build('output')
 
     def test_missing_linked_document_blocks_release(self):
-        (self.root/'Dette-skal-hjaelpes-manuelt.md').unlink()
+        (self.root/'README.en.md').unlink()
         with self.assertRaisesRegex(ValueError,'Missing release document'):self.build('output')
 
 

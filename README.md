@@ -7,18 +7,18 @@
 
 **Distriktsadministration på din egen computer eller Home Assistant.** Et uofficielt værktøj til Jehovas Vidner, vibe coded med **OpenAI Codex** og udviklet med udgangspunkt i arbejdet ved distriktsdisken.
 
-[English](README.en.md) · [Installation](docs/INSTALL.md) · [Kom i gang](docs/FIRST-STEPS.md) · [Privatliv](docs/PRIVACY.md) · [Udviklingsplan](ROADMAP.md) · [Manuelle punkter](Dette-skal-hjaelpes-manuelt.md)
+[English](README.en.md) · [Installation](docs/INSTALL.md) · [Kom i gang](docs/FIRST-STEPS.md) · [Privatliv](docs/PRIVACY.md) · [Udviklingsplan](ROADMAP.md)
 
 ## Kom i gang
 
-**Stabil grundudgave: 1.11.0.** Kilden indeholder alle de tomme formularer. Program-, formular-, pakke- og platformskontroller består. Mac-/Windows-pakken udgives af den automatiske udgivelsesbygning under [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases).
+**Stabil version: 1.11.1.** Installer direkte i Home Assistant, eller hent [Mac-/Windows-pakken](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest). Tomme formularer til distriktskort, IB og S-13 følger med.
 
 [![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
-**1.11.0** er det stabile udgangspunkt. Den videre udvikling følger [udviklingsplanen](ROADMAP.md).
+Dansk er programmets hovedsprog. Den videre udvikling følger [udviklingsplanen](ROADMAP.md).
 
 - **Home Assistant OS:** Brug knappen ovenfor, og vælg **Distrikt → Installer** i HA. Senere programopdateringer hentes direkte i HA. [Dansk installationsguide](docs/INSTALL.md).
-- **Mac / Windows:** Når udgivelsen er klar, hentes den komplette ZIP fra [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases). Installer Python 3.9 eller nyere én gang, og åbn den relevante `Start-Distrikt`-fil i `Distrikt-lokal`. Docker og pip-pakker er ikke nødvendige.
+- **Mac / Windows:** Hent den komplette ZIP fra [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases). Installer Python 3.9 eller nyere én gang, og åbn den relevante `Start-Distrikt`-fil i `Distrikt-lokal`. Docker og pip-pakker er ikke nødvendige.
 - **Eksisterende installation:** Bevar den fungerende app og dens data. Følg [opdateringsvejledningen](docs/INSTALL.md), og tag en privat sikkerhedskopi først.
 
 Home Assistant kan holde appen tændt hjemme, mens den samme installation åbnes fra telefon, iPad eller computer. Udefra forbindes enheden til **VPN på egen router**, hvorefter appens private adresse åbnes. Appen har eget login og egen port; den bruger ikke Ingress eller Nabu Casa.
@@ -33,7 +33,7 @@ Home Assistant kan holde appen tændt hjemme, mens den samme installation åbnes
 - Print af forsider, bagsider, S-13 og rapporter efter tjenesteår: 1. september–31. august.
 - Valgfri Google Drive-deling af et gennemgået PNG-kort med stabil QR-kode.
 
-[Den særskilte webdemo](demo/README.md) bruger udelukkende opdigtede data. Der er endnu ingen offentlig demoadresse. Den kan ikke åbne eller importere installationens private data.
+[Webdemoen](demo/README.md) viser arbejdsgangene med opdigtede data. Den er adskilt fra din installation og kan ikke åbne eller importere dine private data.
 
 ## Data bliver på eget system
 

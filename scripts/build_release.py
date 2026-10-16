@@ -11,7 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
 REQUIRED=('S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
-ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','Dette-skal-hjaelpes-manuelt.md')
+ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 
 def version():
@@ -51,7 +51,7 @@ def files():
     prefix='Home-Assistant/distrikt/'
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))
     result['Home-Assistant/SHA256SUMS.txt']=(manifest.encode(),0o644)
-    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: privat backup først; stop kun appen, brug kopieringshjælpen og opdater eksisterende installation.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
+    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
     return result
 
 def build(output):
