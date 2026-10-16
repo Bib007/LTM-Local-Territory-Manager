@@ -41,5 +41,15 @@ jobs:
         with:
           node-version: '24'
       - run: node distrikt/tests/test_frontend.cjs
+      - run: node distrikt/tests/test_welcome.cjs
+      - run: node distrikt/tests/test_i18n.cjs
+      - run: node distrikt/tests/test_desk_language.cjs
+      - run: node distrikt/tests/test_work_lists_language.cjs
+      - run: node distrikt/tests/test_dashboard_controls.cjs
+      - run: node distrikt/tests/test_card_workflow_language.cjs
+      - run: node distrikt/tests/test_settings_language.cjs
+      - run: node distrikt/tests/test_report_language.cjs
+      - run: node distrikt/tests/test_map_overview_language.cjs
+      - run: node distrikt/tests/test_address_workflow_language.cjs
       - name: Syntax check
         run: find distrikt/app -maxdepth 1 -name '*.js' -exec node --check {} \;

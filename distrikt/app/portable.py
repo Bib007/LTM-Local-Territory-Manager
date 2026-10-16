@@ -83,10 +83,15 @@ class Restores:
                         if module=='loans' and row[2] is None and item.get('publisher_id') not in publishers:raise ValueError('Sikkerhedskopien har udlån uden tilhørende forkynder.')
         except (zipfile.BadZipFile,sqlite3.Error,json.JSONDecodeError,RuntimeError,UnicodeError) as exc:
             raise ValueError('Sikkerhedskopien er ugyldig eller beskadiget.') from exc
+        # Match the lists shown by Store.state(); retain raw counts for callers
+        # that inspect all stored records, including archived cards and activity.
+        visible_counts=dict(counts)
+        visible_counts['cards']=sum(r[2] is None and not json.loads(r[1]).get('archived') for r in rows['cards'])
+        visible_counts['notes']=sum(r[2] is None and json.loads(r[1]).get('entity')!='activity' for r in rows['notes'])
         token=secrets.token_urlsafe(32)
         with self.store.lock:
             self.pending={token:{'rows':rows,'expires':time.monotonic()+600,'digest':digest(self.store)}}
-        return {'token':token,'counts':counts,'warning':'Import erstatter alle lokale registreringer. Der gemmes automatisk en sikkerhedskopi af de nuværende data først. Hvis denne installation allerede har delte kort, skal deres offentlige adgang fjernes under Deling og QR før import.'}
+        return {'token':token,'counts':counts,'visible_counts':visible_counts,'warning':'Import erstatter alle lokale registreringer. Der gemmes automatisk en sikkerhedskopi af de nuværende data først. Hvis denne installation allerede har delte kort, skal deres offentlige adgang fjernes under Deling og QR før import.'}
     def apply(self,token):
         with self.store.lock:
             if any(r.get('entity')=='publication' and r.get('file_id') and r.get('status')!='private' for r in self.store.all('maps')):

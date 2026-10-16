@@ -1,5 +1,14 @@
 # Ændringsliste
 
+## 1.12.0-beta.1 · under klargøring
+
+- Blå identitet og valgfri velkomstguide.
+- Dansk/engelsk navigation, centrale kort-/udleveringsformularer, forkyndere, opgaver, indstillinger, rapportskærme, kortoversigt og adresselister.
+- Kladder bevares ved sprogskift og flere forsinkede forhåndsvisninger.
+- Forbindelseskontrol bekræfter ikke en usikker gemning.
+- Backupoversigten sammenligner synlige kort og noter korrekt og bevarer arkiverede poster.
+- Originalt dansk print, gemte værdier og datastier bevares.
+
 ## 1.11.0
 
 - Første offentlige repositoryudgave til Home Assistant OS.

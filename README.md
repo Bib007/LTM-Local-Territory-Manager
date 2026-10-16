@@ -11,7 +11,7 @@
 
 ## Kom i gang
 
-**Stabil grundudgave: 1.11.0.** Kilden indeholder alle de tomme formularer. Program-, formular-, pakke- og platformskontroller består. Mac-/Windows-pakken udgives af den automatiske udgivelsesbygning under [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases).
+**Udviklingsudgave: 1.12.0-beta.1.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. [Køreplan: 20 %](KOREPLAN.md).
 
 [![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 

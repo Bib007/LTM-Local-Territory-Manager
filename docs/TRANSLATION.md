@@ -1,5 +1,16 @@
-# Sprog
+# Sprog og dækning
 
-Programudgaven 1.11.0 har dansk betjening og dansk print. Webdemoen kan vælges på dansk eller engelsk. README, installation og standardguider vises på dansk med engelske `.en.md`-filer som ekstra valg.
+Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne, noter, søgninger og opbevarede værdier bevares. Originale formularer og print er danske.
 
-En bredere oversættelse af appens betjening udvikles løbende. Brugerens navne, noter og gemte værdier oversættes ikke.
+| Område | Status på develop |
+| --- | --- |
+| Velkomst, navigation og forside | Dansk/engelsk klargjort |
+| Kortregister, udlevering, aflevering og historik | Dansk/engelsk klargjort |
+| Forkyndere, opgaver, noter og kortets IB | Dansk/engelsk klargjort |
+| Indstillinger, backup og rapportskærme | Dansk/engelsk klargjort |
+| Kortoversigt, adresselister og kortkontrol | Dansk/engelsk klargjort og prøvet |
+| Geografisk editor, grænser og import | Næste opgave |
+| Avanceret opsætning og lokal IB-import | Afventer |
+| Google/QR, fælles fejl, login og printbetjening | Afventer |
+
+[Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
