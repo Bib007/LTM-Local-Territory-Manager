@@ -262,3 +262,15 @@ setImmediate(()=>{
  assert(run("SetupUI.ibPage().includes('IMPORTÉR IB')"));assert(!run("SetupUI.ibPage().includes('<test>')"));
  console.log('Hidden setup, number standards, escaped previews and typed creation/IB confirmations passed.');
 });
+
+// Closed maps keep a printable QR; pending Google requests must never look closed.
+{
+ const snapshot=run('JSON.stringify(state)');
+ run("state.cards=[{id:'shared-test',number:'120',name:'Fiktivt kort',geo_polygon:[[10,55],[10.1,55],[10.1,55.1]]}];ShareUI.data={connected:true,account:'fictional@example.invalid',cards:[{card_id:'shared-test',status:'ready',front_url:'https://drive.google.com/file/d/FICTIONAL/view',url:'',issued:false,access_pending:false}]}");
+ let content=run('ShareUI.content()');assert(content.includes('QR-kode'));assert(!content.includes('Åbn preview'));assert(content.includes('Lukket · kortet er ikke udleveret'));
+ run("ShareUI.data.cards[0]={...ShareUI.data.cards[0],status:'access_retry',url:ShareUI.data.cards[0].front_url,access_pending:true,error:'SIMULATED <failure>'}");
+ content=run('ShareUI.content()');assert(content.includes('Afventer lukning hos Google'));assert(content.includes('billedet kan stadig være offentligt'));assert(content.includes('Prøv adgangsændring igen'));assert(content.includes('SIMULATED &lt;failure&gt;'));assert(!content.includes('Åbn preview'));assert(!content.includes('Lukket · kortet er ikke udleveret'));
+ run("ShareUI.data.cards[0].status='access_failed'");assert(run('ShareUI.content()').includes('Adgangsændring stoppet'));
+ context.shareStateSnapshot=snapshot;run('state=JSON.parse(shareStateSnapshot);ShareUI.data=null');
+ console.log('Loan-driven sharing: closed/pending/failed access labels, stable QR and escaped errors passed.');
+}
