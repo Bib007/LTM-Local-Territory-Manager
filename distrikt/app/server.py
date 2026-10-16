@@ -24,7 +24,7 @@ from portable import Restores, snapshot, MAX_ARCHIVE
 from sharing import Publications
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.5'
+VERSION='1.12.0-beta.6'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
