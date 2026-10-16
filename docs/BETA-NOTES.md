@@ -1,18 +1,21 @@
-# LTM 1.12.0-beta.3
+# LTM 1.12.0-beta.4
 
-## Nyt siden beta.2
+## Nyt siden beta.3
 
-- Topbaren bliver øverst ved rulning på computer og mobil. Logoet åbner forsiden gennem den sædvanlige kontrol af ugemte ændringer.
-- Projektets fulde logo vises på computer; mobil bruger et kompakt mærke og LTM-navn. Beta er tydeligt mærket.
-- Home Assistant får eget ikon og logo fra den eksisterende projektidentitet. Begge billeder følger programpakken og den genererede betakanal.
+Rapporter får **Kort til opfølgning** både på skærmen og i samlet PDF:
+
+- Kort uden kendt gennemgang vises særskilt som manglende historik.
+- Kort med kendt seneste gennemgang for over 12 måneder siden.
+- Aktuel gennemgang udleveret over fire måneder. Ved beholdt kort regnes fra den nye gennemgang, ikke det oprindelige udlån.
+- Ét kort pr. række med område, datoer og alle relevante årsager. Arkiverede kort udelades. Listen tilføjer ingen personnavne, noter eller IB-adresser.
+
+Listen er et arbejdsredskab til lokal opfølgning, ikke nye krav. Den er altid et aktuelt øjebliksbillede med dagens dato, også når den øvrige rapport handler om et tidligere tjenesteår. Eksisterende månedstal, dækningsgrad, områdeoversigt, kort og original S-13 er bevaret.
 
 ## Prøv især
 
-1. Opdater Distrikt Beta, og kontrollér ikon og logo i HA-appbutikken og på appens side.
-2. Rul en lang side på computer og mobil. Topbaren skal blive øverst, mens indhold og mobilmenu starter nedenunder.
-3. Klik eller tast Enter på logoet. Forsiden skal åbne; en ugyldig, ugemt kortændring skal stadig blive vist til rettelse.
-4. Åbn et kort og en rapport med kort: kortlag må ikke tegne oven på topbaren. Print/PDF skal være uden topbar og ekstra topafstand.
+1. Opret fiktive kort med ukendt, gammel og nyere gennemgang. Kontrollér antal og kortlisten.
+2. Sammenlign et gammelt udlån med et beholdt kort, der netop er begyndt en ny gennemgang.
+3. Skift rapportperiode og tjenesteår. Opfølgningen skal stadig tydeligt være aktuel.
+4. Print en samlet rapport med mange kort. Kontrollér tabeldeling og den originale S-13 bagefter.
 
-Nulstilling af betadata fra beta.2 er fortsat under Indstillinger → Backup og vedligeholdelse, med bekræftelse og automatisk sikkerhedskopi. Beta.1's Drive-adgang, KTM-kort/print, Excel-import og opstartsguide er også bevaret.
-
-Pakke- og programprøver kontrolleres før udgivelse. Visning/rulning i ejerens HA/browser og egen Google-konto står særskilt.
+Nulstilling fra beta.2 og fast topbar/logo/HA-billeder fra beta.3 er fortsat med. Live HA/browser og Google-konto afprøves hos ejeren.
