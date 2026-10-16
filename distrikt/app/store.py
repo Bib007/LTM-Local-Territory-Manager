@@ -149,7 +149,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             result['maps'] = [{k: v for k, v in m.items() if k != 'image'} for m in self.all('maps') if m.get('entity')!='publication']
             result['recovery'] = self.recovery()
             result['today'] = today()
-            result['version'] = '1.12.0-beta.1'
+            result['version'] = '1.12.0-beta.2'
             result['geo_info'] = self.geo_info()
             return result
 
