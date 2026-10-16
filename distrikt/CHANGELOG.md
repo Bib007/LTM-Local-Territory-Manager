@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.3
+
+- Fast topbar ved rulning på computer og mobil; logoet åbner forsiden med kontrol af ugemte ændringer.
+- Fuldt projektlogo i topbaren på computer, kompakt mærke på mobil og tydelig beta-identitet.
+- HA-ikon og logo følger nu både normal programpakke og betapakke.
+
 ## 1.12.0-beta.2
 
 - Betaen kan nulstille testdata med bekræftelse, automatisk lokal sikkerhedskopi og kontrol af delte kort. Login og forbindelser bevares.
