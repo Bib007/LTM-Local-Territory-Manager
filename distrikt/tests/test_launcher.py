@@ -55,7 +55,7 @@ class LauncherTests(unittest.TestCase):
                 mutate('print.profile.save',{'side':'back','profile':{'orientation':'portrait','paper':'cut','mode':'full','width':94,'height':146,'x':1,'y':-1}})
                 before=request('/api/state');old_pid=info['pid'];files=set(f.name for f in data.glob('*.sqlite3'))
                 info=launch(SERVER);after=request('/api/state')
-                self.assertEqual(after['version'],'1.12.0-beta.6');self.assertNotEqual(info['pid'],old_pid)
+                self.assertEqual(after['version'],'1.12.0-beta.7');self.assertNotEqual(info['pid'],old_pid)
                 for key in ('cards','publishers','loans','ib','completions','visits','ignored','settings','areas'):self.assertEqual(before[key],after[key],key)
                 self.assertEqual(files|{'kortnoter.sqlite3'},set(f.name for f in data.glob('*.sqlite3')));self.assertEqual(len(files),11)
                 self.assertEqual(after['loans'][0]['id'],l)
