@@ -2,7 +2,7 @@
 
 [English](CONTRIBUTING.en.md)
 
-Små, forståelige ændringer er velkomne. Opret en fejlmelding med et opdigtet eksempel, eller en pull request, der forklarer den ændrede adfærd og kontrollen af den.
+Har du en idé eller feedback? Brug [GitHubs idéformular](https://github.com/Bib007/LTM-Local-Territory-Manager/issues/new?template=idea.yml). Du kan beskrive dit forslag, kommentere på eksisterende idéer og vedhæfte anonymiserede billeder eller skitser. Ved fejl kan du oprette en fejlmelding med et opdigtet eksempel. Udviklere kan desuden indsende kodeændringer som pull requests.
 
 ## Dansk først
 
