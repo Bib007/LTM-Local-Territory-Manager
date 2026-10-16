@@ -17,7 +17,7 @@
 
 [Add LTM to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
-The installed application interface is Danish. The separate [browser demo](demo/README.md) supports Danish and English and uses fictional data. It cannot access or import your installation’s private records. See the [known limitations](docs/LIMITATIONS.en.md) for feature details.
+The installed application interface is Danish. The separate [browser demo](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/demo/README.md) supports Danish and English and uses fictional data. It cannot access or import your installation’s private records. See the [known limitations](docs/LIMITATIONS.en.md) for feature details.
 
 - **Mac / Windows:** download the packaged ZIP from [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases), extract it, install Python 3.9+ once, then open the matching `Start-Distrikt` launcher in `Distrikt-lokal`. No Docker or pip packages needed.
 - **From source:** open `distrikt/Start-Distrikt.command` on Mac or `distrikt/Start-Distrikt.cmd` on Windows. Alternatively: `python3 distrikt/app/server.py`. Use a verified release when updating a working installation.

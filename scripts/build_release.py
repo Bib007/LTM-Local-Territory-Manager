@@ -47,6 +47,12 @@ def files():
         if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe brand asset: '+n)
         result['assets/brand/'+n]=(p.read_bytes(),0o644)
     for p in sorted((ROOT/'docs').glob('*.md')):result['docs/'+p.name]=(p.read_bytes(),0o644)
+    # Shared guides use repository paths; portable copies use the desktop folder.
+    for name,(raw,mode) in list(result.items()):
+        if name in ROOT_DOCS or name.startswith('docs/'):
+            if name.endswith('.md'):
+                text=raw.decode().replace('](distrikt/','](Distrikt-lokal/').replace('](../distrikt/','](../Distrikt-lokal/')
+                result[name]=(text.encode(),mode)
     p=ROOT/'Opdater-Home-Assistant-Mac.command';result[p.name]=(p.read_bytes(),0o755)
     prefix='Home-Assistant/distrikt/'
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))

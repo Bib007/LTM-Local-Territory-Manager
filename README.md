@@ -33,7 +33,7 @@ Home Assistant kan holde appen tændt hjemme, mens den samme installation åbnes
 - Print af forsider, bagsider, S-13 og rapporter efter tjenesteår: 1. september–31. august.
 - Valgfri Google Drive-deling af et gennemgået PNG-kort med stabil QR-kode.
 
-[Webdemoen](demo/README.md) viser arbejdsgangene med opdigtede data. Den er adskilt fra din installation og kan ikke åbne eller importere dine private data.
+[Webdemoen](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/demo/README.md) viser arbejdsgangene med opdigtede data. Den er adskilt fra din installation og kan ikke åbne eller importere dine private data.
 
 ## Data bliver på eget system
 
