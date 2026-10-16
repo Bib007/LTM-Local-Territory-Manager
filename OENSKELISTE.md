@@ -4,6 +4,7 @@ Den faste klargøringsplan står fortsat på 20 %. Nye ønsker udvider ikke auto
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
+| W11 | Visuel statusoversigt med korte felter og farvekoder | -1 · kritisk | Færdig i ejerens statusdokument | Tre statusfelter, separate færdig-/næste-felter og kompakte tabeller erstatter den lange statusprosa. Den eksporterede visning er kontrolleret visuelt. |
 | W09 | Spejl arbejdsplan og fremdrift i ejerens statusdokument | -1 · kritisk | Færdig: statusfanen er oprettet og læst tilbage | Aktuelle opgaver, næste rækkefølge, prioriteter og procenttal er synlige i fanen Hvor langt er vi? og opdateres ved afsluttede opgaver, mens vi arbejder på LTM. |
 | W10 | Erstat opfordring til kodebidrag med idéer og feedback, gerne med bilag | 2 | Efter igangværende opstart/import; før HA-præsentation | En tydelig feedbackindgang samler forslag og kommentarer med mulighed for billeder/tegninger. Opfordringer til kodeforslag fjernes. Afklar konkret placering af fanen før større navigation ændres. |
 | W01 | Førstegangsopsætning med spørgsmål og guidet rundtur | Ikke angivet | Færdig på develop; program- og platformskontroller består | Valg af enkel udlevering/kort, KML, IB og manuel/automatisk inddeling giver en personlig plan; rundtur kan springes over og genåbnes uden at oprette data. |
