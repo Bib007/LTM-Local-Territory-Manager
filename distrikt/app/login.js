@@ -1,0 +1,2 @@
+'use strict';
+document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.target,button=form.querySelector('button');button.disabled=true;try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:new FormData(form).get('password')})});const result=await r.json();if(!r.ok)throw Error(result.error||'Login mislykkedes.');location.replace('/');}catch(error){document.getElementById('loginError').textContent=error.message;}finally{button.disabled=false;}});
