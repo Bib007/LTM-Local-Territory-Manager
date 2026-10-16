@@ -13,7 +13,9 @@
 
 ## Start here
 
-**Stable baseline candidate: 1.11.0.** The original blank `distrikt/templates/S-13-background.jpg` is still pending. Do not install or release this incomplete candidate. The original form and packaging checks must pass before a stable version is offered. The default README and standard guides are Danish; English is optional.
+**Stable baseline: 1.11.0.** All blank forms are included and the program, form, packaging and platform checks pass. The automated release build publishes the desktop ZIP under Releases. The default README and standard guides are Danish; English is optional.
+
+[Add LTM to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
 The stable baseline is **1.11.0**. The installed application interface is currently Danish. A separate Danish/English browser demo is now in the repository; [publishing instructions](docs/DEMO-HOSTING.en.md) explain the remaining hosting setup. The demo has no public URL yet. Guided onboarding is prepared on a development branch; full app translation remains in progress. Read [the known limitations](docs/LIMITATIONS.en.md) before relying on a feature.
 

@@ -2,7 +2,7 @@
 
 ## Ved første installation
 
-1. Tilføj repositoryet i HA, når den verificerede udgave er klar, og vælg Installer.
+1. [Tilføj repositoryet i HA](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager), og vælg **Distrikt → Installer**.
 2. Vælg privat HA-adresse og appens egen adgangskode lokalt. Del ikke adgangskoder eller forbindelsesfiler i fejlmeldinger.
 3. Ved flytning fra en lokal HA-app: hent privat backup, stop den gamle app, og importér gennem den nye. Behold den gamle installation stoppet, indtil flytningen er bekræftet. Det er et engangsskift mellem forskellige HA-appidentiteter.
 

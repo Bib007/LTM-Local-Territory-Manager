@@ -7,4 +7,4 @@
 - Kort, forkyndere, udleveringer, gennemgange, IB, lokale backups og dansk print.
 - Gennemgået programkode og tomme S-12/S-13-formularer; ingen brugerregistreringer eller private kørselsfiler.
 - Dansk README og opsætningsguider med engelsk som ekstra valg.
-- Installation via HA-repository klargøres og kontrolleres før installationslinket aktiveres.
+- Installation og senere programopdateringer via HA-repository uden manuel kopiering af programfiler.

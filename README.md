@@ -11,11 +11,13 @@
 
 ## Kom i gang
 
-**Kandidat til stabil grundudgave: 1.11.0.** Kilden afventer den originale, tomme `distrikt/templates/S-13-background.jpg`. Den ufuldstændige kandidat skal ikke installeres eller udgives. De oprindelige formular- og pakkekontroller skal bestå, før en stabil udgave tilbydes.
+**Stabil grundudgave: 1.11.0.** Kilden indeholder alle de tomme formularer. Program-, formular-, pakke- og platformskontroller består. Mac-/Windows-pakken udgives af den automatiske udgivelsesbygning under [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases).
+
+[![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
 **1.11.0** er det stabile udgangspunkt. Den videre udvikling følger [udviklingsplanen](ROADMAP.md).
 
-- **Home Assistant OS:** Når den komplette udgave er verificeret, tilføjes repositoryet én gang i HA. Programmet installeres og opdateres derefter i HA uden at kopiere programfiler. [Dansk installationsguide](docs/INSTALL.md).
+- **Home Assistant OS:** Brug knappen ovenfor, og vælg **Distrikt → Installer** i HA. Senere programopdateringer hentes direkte i HA. [Dansk installationsguide](docs/INSTALL.md).
 - **Mac / Windows:** Når udgivelsen er klar, hentes den komplette ZIP fra [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases). Installer Python 3.9 eller nyere én gang, og åbn den relevante `Start-Distrikt`-fil i `Distrikt-lokal`. Docker og pip-pakker er ikke nødvendige.
 - **Eksisterende installation:** Bevar den fungerende app og dens data. Følg [opdateringsvejledningen](docs/INSTALL.md), og tag en privat sikkerhedskopi først.
 
