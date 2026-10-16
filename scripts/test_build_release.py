@@ -1,0 +1,90 @@
+"""Distribution contracts with a fully invented source tree; no user files opened."""
+import contextlib
+import io
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+import zipfile
+
+import build_release as release
+
+
+class ReleaseArchiveTests(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory()
+        self.root=Path(self.temp.name)
+        self.source=self.root/'distrikt'
+        self.source.mkdir()
+        self.root_patch=patch.object(release,'ROOT',self.root)
+        self.src_patch=patch.object(release,'SRC',self.source)
+        self.root_patch.start();self.src_patch.start()
+        self.add('distrikt/app/server.py',"VERSION='9.9.0'\n")
+        self.add('distrikt/config.yaml','version: "9.9.0"\n')
+        self.add('distrikt/Dockerfile','FROM fictional-image\n')
+        self.add('distrikt/run.sh','#!/bin/sh\n')
+        self.add('distrikt/DOCS.md','# Fictional instructions\n')
+        self.add('distrikt/README.md','# Fictional app introduction\n')
+        self.add('distrikt/CHANGELOG.md','# Fictional app changes\n')
+        self.add('distrikt/translations/da.yaml','configuration: {}\n')
+        self.add('distrikt/Start-Distrikt.command','#!/bin/bash\n')
+        self.add('Opdater-Home-Assistant-Mac.command','#!/bin/bash\n')
+        for name in release.REQUIRED:self.add('distrikt/templates/'+name,'invented form fixture')
+        for name in release.ROOT_DOCS:self.add(name,'# Fictional project document\n')
+        for name in release.BRAND_FILES:self.add('assets/brand/'+name,'invented vector fixture')
+        self.add('docs/INSTALL.md','# Fictional installation guide\n')
+        self.add('data/kort.sqlite3','DO_NOT_PACKAGE_PRIVATE_TEST_RECORD')
+
+    def tearDown(self):
+        self.src_patch.stop();self.root_patch.stop();self.temp.cleanup()
+
+    def add(self,name,text):
+        path=self.root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(text)
+
+    def build(self,folder):
+        with contextlib.redirect_stdout(io.StringIO()):return release.build(self.root/folder)
+
+    def test_complete_portable_docs_and_no_data(self):
+        output=self.build('first')
+        with zipfile.ZipFile(output) as archive:
+            names=set(archive.namelist())
+            self.assertIn('README.md',names)
+            self.assertIn('repository.yaml',names)
+            self.assertIn('README.da.md',names)
+            self.assertIn('README.en.md',names)
+            self.assertIn('ROADMAP.md',names)
+            self.assertIn('CONTRIBUTING.md',names)
+            self.assertIn('Dette-skal-hjaelpes-manuelt.md',names)
+            self.assertIn('assets/brand/logo-light.svg',names)
+            self.assertIn('assets/brand/logo-dark.svg',names)
+            self.assertIn('docs/INSTALL.md',names)
+            self.assertIn('Distrikt-lokal/app/server.py',names)
+            self.assertIn('Home-Assistant/distrikt/app/server.py',names)
+            self.assertIn('Home-Assistant/distrikt/README.md',names)
+            self.assertIn('Home-Assistant/distrikt/CHANGELOG.md',names)
+            self.assertIn('Home-Assistant/distrikt/translations/da.yaml',names)
+            self.assertIn('CONTRIBUTING.en.md',names)
+            self.assertIn('Home-Assistant/SHA256SUMS.txt',names)
+            self.assertFalse(any(n.startswith('data/') or n.endswith('.sqlite3') for n in names))
+            self.assertFalse(any(b'DO_NOT_PACKAGE_PRIVATE_TEST_RECORD' in archive.read(n) for n in names))
+            mode=archive.getinfo('Distrikt-lokal/Start-Distrikt.command').external_attr>>16
+            self.assertEqual(mode&0o777,0o755)
+        self.assertEqual((self.root/'data/kort.sqlite3').read_text(),'DO_NOT_PACKAGE_PRIVATE_TEST_RECORD')
+
+    def test_identical_inputs_make_identical_zip_bytes(self):
+        self.assertEqual(self.build('first').read_bytes(),self.build('second').read_bytes())
+
+    def test_missing_original_form_blocks_release(self):
+        (self.source/'templates/S-13-background.jpg').unlink()
+        with self.assertRaisesRegex(ValueError,'missing blank form assets'):self.build('output')
+
+    def test_accidental_database_in_program_tree_blocks_release(self):
+        self.add('distrikt/app/accidental.sqlite3','fake private test record')
+        with self.assertRaisesRegex(ValueError,'Private/runtime file'):self.build('output')
+
+    def test_missing_linked_document_blocks_release(self):
+        (self.root/'Dette-skal-hjaelpes-manuelt.md').unlink()
+        with self.assertRaisesRegex(ValueError,'Missing release document'):self.build('output')
+
+
+if __name__=='__main__':unittest.main(verbosity=2)

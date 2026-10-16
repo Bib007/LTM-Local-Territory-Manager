@@ -1,0 +1,45 @@
+name: Stable release
+on:
+  push:
+    branches: [main]
+    paths: ['distrikt/app/server.py', '.github/workflows/release.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stable-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: python -m unittest discover -s distrikt/tests -v
+      - run: TZ=Europe/Copenhagen node distrikt/tests/test_frontend.cjs
+      - run: python scripts/test_build_release.py
+      - run: python scripts/build_release.py
+      - name: Create versioned release once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          VERSION=$(python -c "import sys; sys.path.insert(0,'scripts'); from build_release import version; print(version())")
+          if [[ "$VERSION" == *-* ]]; then
+            echo "Pre-release version: this stable-release workflow will not publish it."
+            exit 0
+          fi
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists; keeping its assets unchanged."
+            exit 0
+          fi
+          gh release create "v$VERSION" "dist/LTM-v$VERSION.zip" "dist/LTM-v$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "LTM $VERSION" --notes-file CHANGELOG.md

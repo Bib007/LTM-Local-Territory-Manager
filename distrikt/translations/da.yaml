@@ -1,0 +1,9 @@
+configuration:
+  access_host:
+    name: Privat adresse
+    description: HA-maskinens faste private IP eller lokale værtsnavn, uden http://, port eller skråstreg. Brug samme adresse i browseren.
+  password:
+    name: Appens adgangskode
+    description: Mindst 12 tegn. Dette er Distrikts eget login. Adgangskoden bliver på din installation.
+network:
+  8787/tcp: Privat webside med eget login, kun LAN/VPN

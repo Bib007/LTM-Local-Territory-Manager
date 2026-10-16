@@ -1,0 +1,29 @@
+name: Distrikt
+version: "1.11.0"
+slug: distrikt
+init: false
+description: "Privat distriktsadministration på hjemmenetværk og VPN"
+url: https://github.com/Bib007/LTM-Local-Territory-Manager
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+timeout: 180
+backup_exclude:
+  - "*"
+ingress: false
+host_network: false
+hassio_api: false
+homeassistant_api: false
+ports:
+  8787/tcp: 8787
+ports_description:
+  8787/tcp: "Privat webside med eget login — kun LAN/VPN"
+webui: "http://[HOST]:[PORT:8787]/"
+options:
+  access_host: "homeassistant.local"
+  password: ""
+schema:
+  access_host: str
+  password: password
