@@ -43,7 +43,7 @@ class SharingTests(unittest.TestCase):
         self.publisher=self.s.mutate('publisher.save',{'name':'Fiktiv kortholder'})['id']
         self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-01','initial':True})['id']
     def tearDown(self):self.s.close();self.temp.cleanup()
-    def enqueue(self):return self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
+    def enqueue(self):return self.p.enqueue({'render_revision':2,'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
     def row(self):return self.s.get('maps',self.p.key(self.c))
     def finish(self,retain=False):
         return self.s.mutate('loan.finish',{'id':self.loan,'date':'2026-01-02','complete':retain,'retain':retain})
@@ -231,6 +231,34 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':link}])
         self.assertTrue(self.row()['render_refresh']);self.assertFalse(upgraded.status()['cards'][0]['outdated'])
         self.enqueue();self.assertFalse(self.row()['render_refresh'])
+    def test_old_layout_keeps_qr_and_access_until_owner_approves_new_image(self):
+        self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
+        self.p.process_one();before=self.row();link=before['front_url']
+        upgraded=Publications(self.s)
+        self.assertTrue(upgraded.status()['cards'][0]['render_refresh'])
+        self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':link}])
+        self.assertEqual(self.row()['file_id'],before['file_id'])
+        self.assertEqual(self.row()['status'],'published')
+        self.assertEqual(self.p.prepare(self.c)['render_revision'],2)
+        self.enqueue();self.p.process_one()
+        self.assertEqual(self.row()['front_url'],link)
+        self.assertEqual(self.row()['render_revision'],2)
+        self.assertFalse(Publications(self.s).status()['cards'][0]['render_refresh'])
+    def test_unknown_stored_layout_metadata_is_preserved_and_requests_review(self):
+        self.enqueue();self.p.process_one()
+        with self.s.transaction():
+            row=self.row();row['render_revision']='future-layout';self.s.put('maps',row)
+        upgraded=Publications(self.s)
+        self.assertTrue(upgraded.status()['cards'][0]['render_refresh'])
+        self.assertEqual(self.row()['render_revision'],'future-layout')
+        self.assertTrue(upgraded.front_links())
+
+    def test_unknown_layout_revision_is_rejected_without_writes(self):
+        for revision in ('2',True,0,3):
+            with self.subTest(revision=revision),self.assertRaises(ValueError):
+                self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':revision})
+        self.assertIsNone(self.row())
+
     def test_legacy_migration_does_not_bypass_address_changes(self):
         self.enqueue();self.p.process_one()
         with self.s.transaction():

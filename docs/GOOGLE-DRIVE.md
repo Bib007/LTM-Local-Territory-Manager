@@ -6,6 +6,12 @@ LTM fungerer uden Google. Forbindelsen er kun nødvendig, hvis gennemgåede PNG-
 
 Databaser, forkyndere, udleveringer, noter og IB-liste uploades ikke af funktionen. Kortets synlige geografi og tilladte besøgspunkter er en del af billedet. Gennemgå derfor hele previewet.
 
+## Digitalt kort i beta.12
+
+Fra beta.12 har kortbilledet et nyt layout med tydeligt kortnummer/navn, stor kortflade og en lille miniature af printforsiden i hjørnet. Miniaturen bruger den samme blanke S-12-forside og samme vejlinjeformatering som printet, men bygges kun af de offentligt godkendte adresser. Den kopierer ikke et billede af dit private kort. IB-oplysninger, noter og kortholderdata indgår ikke.
+
+Eksisterende QR-links og adgangscyklus bevares. Et ældre layout markeres under Deling og QR; vælg **Opdater Google Drive-upload**, kontrollér hele billedet og miniaturen, og godkend publicering. Layoutopdateringen starter ikke upload af sig selv. QR-linket åbner fortsat et PNG-billede på Google Drive; der oprettes ingen ny offentlig hjemmeside.
+
 ## 1. Opret egen Google-klient
 
 Brug [Google Cloud Console](https://console.cloud.google.com/) med den ønskede konto. Opret et projekt, aktivér **Google Drive API**, og opret en OAuth-klient af typen **Desktop app**. Hent klientens JSON-fil. En webklient eller servicekonto er ikke den forbindelse, LTM bruger.

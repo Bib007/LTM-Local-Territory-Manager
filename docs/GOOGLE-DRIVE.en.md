@@ -8,6 +8,12 @@ The private databases, publishers, assignments, notes and do-not-call list are n
 
 The installed app is currently Danish. The menu and file names below are the actual Danish names, not labels that depend on a future full English translation.
 
+## Digital card in beta.12
+
+From beta.12 the shared image has a new layout with a clear card number/name, a large map and a small printed-front miniature in the corner. The miniature reuses the blank S-12 front and the physical front’s road-row formatter, but is built only from approved public addresses. It does not copy an image of the private card. DNC details, notes and holder records are excluded.
+
+Existing QR links and the loan-driven access cycle are preserved. Older layouts are marked under Sharing and QR. Choose **Opdater Google Drive-upload**, review the entire image and miniature, and explicitly approve publication. A layout update does not upload anything by itself. The QR still opens a PNG image on Google Drive; no new public website is created.
+
 ## 1. Create your own Google client
 
 1. Sign in to [Google Cloud Console](https://console.cloud.google.com/) with your chosen account and create a project. A dedicated account makes later handover easier.
