@@ -13,6 +13,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from address_source import Datafordeler,NoRedirect,MAX_SCHEMA
 from portable import snapshot,Restores
 from store import Store
+from postcode import SourceTimeout
 
 SCHEMA=b'type Query { DAR_Adresse: String DAR_Husnummer: String DAR_Postnummer: String }'
 KEY='FICTIONAL_KEY_123456789'
@@ -28,7 +29,7 @@ class AddressSourceTests(unittest.TestCase):
 
     def test_check_persists_only_local_credential_and_public_schema(self):
         self.assertFalse(self.client.status()['configured'])
-        result=self.connect();self.assertTrue(result['configured']);self.assertFalse(result['import_ready'])
+        result=self.connect();self.assertTrue(result['configured']);self.assertTrue(result['import_ready'])
         self.assertNotIn(KEY,json.dumps(result));self.assertEqual(self.client._auth()['api_key'],KEY)
         if os.name!='nt':self.assertEqual(os.stat(self.client.path).st_mode&0o777,0o600)
         schema=self.client.cache/('schema-'+result['schema_sha256']+'.graphql');self.assertEqual(schema.read_bytes(),SCHEMA)
@@ -90,3 +91,12 @@ class AddressSourceTests(unittest.TestCase):
             self.assertFalse(any(KEY.encode() in archive.read(n) for n in archive.namelist()))
         Restores(store,'FICTIONAL').reset_beta('NULSTIL BETA',store.revision)
         self.assertEqual(self.client._auth()['api_key'],KEY)
+
+    def test_timeouts_are_typed_for_bounded_tile_splitting_without_echoing_key(self):
+        errors = [TimeoutError(KEY), urllib.error.URLError(TimeoutError(KEY))]
+        errors += [urllib.error.HTTPError('https://example.invalid/?apiKey='+KEY, code, KEY, {}, None) for code in (408,504)]
+        for failure in errors:
+            with patch('address_source.urllib.request.build_opener') as make:
+                make.return_value.open.side_effect=failure
+                with self.assertRaises(SourceTimeout) as error:self.client._request(KEY,query='query { __typename }')
+                self.assertNotIn(KEY,str(error.exception));self.assertNotIn('example.invalid',str(error.exception))

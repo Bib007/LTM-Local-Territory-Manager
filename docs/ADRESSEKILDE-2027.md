@@ -1,65 +1,49 @@
 # Adressekilde før januar 2027
 
-Kontrolleret 16.10.2026. Dette er en konkret overgangsplan. Lokal nøgleopsætning og forbindelseskontrol er implementeret til beta.7; selve adresseimportens overgang er endnu ikke gennemført.
+Status 17.10.2026: overgangen er implementeret til beta.8. En gemt egen Datafordeler-nøgle aktiverer DAR GraphQL til vej-, postnummer- og grænsehentning. Programkontrollen bruger fiktive svar; levende skema/data med ejerens nøgle og HA/browser kontrolleres særskilt i den lokale installation.
 
-## Hvad rammer LTM?
+## Kilder og frist
 
-| Del | Nuværende kode | Fund og beslutning |
-| --- | --- | --- |
-| Kortbaggrund | `basemaps.js`: OpenStreetMap er standard | Fliser er et baggrundsbillede; de erstatter ikke præcise adresser med ID, etage og dør. OSM bevares som standard. |
-| Søgning og enkeltvej | `geodata.py`: Adressevælger; DAR REST som støtte ved store veje | Adressevælger er en særskilt officiel tjeneste. Den anbefalede fælles token er fortsat dokumenteret; fremtidig brugerstyring er varslet ultimo 2026/primo 2027, uden fast dato i den læste vejledning. |
-| Hele postnumre og samlet grænse | `postcode.py`, `boundary_download.py`: DAR REST 3.0.0 | Officiel udfasningsdato er 15. januar 2027. Disse forløb kræver en reel erstatning; et skift af baggrund eller værtsnavn er utilstrækkeligt. |
-| Lokale adresser og reservekort | SQLite og lokalt tegnede veje/bygninger | Bevares. Fjernelse af reservevisningen ville fjerne muligheden for at orientere sig ved flisefejl og løser ikke kildefristen. |
+| Del | Aktuel kode og beslutning |
+| --- | --- |
+| Kortbaggrund | OpenStreetMap er standard. Fliser erstatter ikke strukturerede adresser. Lokale data og reservevisning bevares. |
+| Adresseforslag | Adressevælger er stadig en særskilt tjeneste. Dens varslede brugerstyring ultimo 2026/primo 2027 kræver særskilt opfølgning. |
+| Vej, postnummer og grænse | Med egen nøgle: DAR GraphQL v3. Uden nøgle: hidtidig Adressevælger/DAR REST. REST er varslet udfaset 15.01.2027. |
+| Credentials | Egen nøgle indtastes kun i lokal LTM. Ingen fælles nøgle, credentials i GitHub eller AI-adgang til ejerens konto. |
 
-## Ejerbeslutning og første trin
+Se [egen nøgle og brugervejledning](DATAFORDELER.md), [English](DATAFORDELER.en.md) og [betaens testliste](BETA-NOTES.md).
 
-Ejeren har valgt egen API-nøgle med guidning. Beta.7 tilføjer lokal opsætning, kontrol af DAR v3-skema og GraphQL-forbindelse samt fjernelse/genkontrol af nøglen. Se [trinvis vejledning](DATAFORDELER.md). Nøglen ligger separat fra SQLite, udelades fra portable backups og bevares ved beta-nulstilling. Afviste forbindelser og rå fejltekster med URL/nøgle vises ikke videre.
+## Implementerede dele
 
-## Implementeringstrin
+- `address_source.Datafordeler`: fast officiel vært, afviste redirects, timeout og begrænset svarstørrelse. Nøgle gemmes separat fra SQLite/portable backups efter kontrol. Providerfejl gengives ikke råt. HTTP 408/504 og forbindelsestimeout har særskilt type til den eksisterende afgrænsede opdeling af grænseudsnit.
+- `dar_paging.collect_pages`: kræver komplette nodes/pageInfo, terminal side, gyldige og forskellige ID'er samt cursors uden cyklusser. Deldata med GraphQL-fejl, grænseoverskridelse og afbrydelse returnerer ikke et halvt resultat.
+- `dar_query.DarQuery`: eksplicitte flade projektioner af Adresse, Husnummer, Adressepunkt, NavngivenVej og Postnummer. Alle opslag bruger status 3 og samme registrerings-/virkningstidspunkt. Filterværdier og cursors escapes som strengliteraler. Svar skal svare til forespørgslens scope.
+- `collect_many`: op til ti lighedsopslag grupperes med aliases; hver alias beholder egen komplet paginering. 25 enkelt-ID-opslag kræver tre anmodninger i prøven. Manglende aliases/obligatoriske ID'er, dubletter og samlede grænser giver fejl. Der antages ikke udokumenterede IN-filtre.
+- `collect_bbox`: afgrænsede rektangler på højst 9 km² i EPSG:25832. Den dokumenterede within-operator bruges med én centimeters udvidelse for at medtage kantpunkter; der filtreres lokalt tilbage til det oprindelige inklusive rektangel. Ukendt CRS, ugyldig dimension/geometri og punkter uden for det forespurgte område afvises.
+- `dar_join.join_addresses`: komplette flade lister sammenkobles lokalt via ID'er. Normaliseret adresseformat, `dar:`-ID'er, adgangsadresse-ID, etage/dør og XY/XYZ-punkter bevares. Manglende/inaktive relationer og ugyldige koordinater afviser resultatet før import.
+- `dar_adapter.DarAdapter`: finder postnummerets veje via husnumre og vej-ID'er; samler komplette veje og geografiske udsnit. Flere officielle vej-ID'er med samme navn/postnummer behandles som én lokal kontrol af udgåede adresser. Husnumre uden aktuelle adresser får ikke opdigtede boliger.
+- `dar_download.DarDownload`: kobler adapteren til eksisterende transaktioner, fremdrift, pause og genstart. Officielle vejlinjer konverteres lokalt i XY/XYZ. En komplet vej/et komplet udsnit og dets checkpoint gemmes samlet.
 
-1. Ny lokal kildeopsætning til Datafordelerens IT-system/API-key. Hold nøglen ude af browsertilstand, log, offentlige fejl og portable sikkerhedskopier, ligesom eksisterende Google-login. Ingen fælles nøgle indbygges.
-2. Indlæs og fastlås det aktuelle DAR v3-skema. Det dokumenterede skema-endpoint gav HTTP 401 uden autentifikation i kontrollen; datakald er derfor ikke afprøvet, og der er ikke søgt efter ejerens credentials.
-3. Byg en særskilt GraphQL-adapter med eksplicitte felter og relationer, stabile DAR-ID'er, koordinatkonvertering, statusfilter og ét fast registrerings-/virkningstidspunkt pr. hentning. Vælg flat entitetsopslag og lokale joins, hvor den officielle vejledning oplyser manglende relationer.
-4. Erstat postnummer-, vej- og grænsehentning samlet med paginering, kontrol af fuldstændighed, timeout, pause/genoptagelse og eksisterende kontrol før ændringer af lokale kort. Gemte REST-checkpoints må ikke lydløst blandes med en ny kildes svar.
-5. Test med fiktive svar: etage/dør, postnummerkrydsende veje, flere sider, manglende join, gentaget cursor, ufuldstændige svar, 401, netfejl og genstart. Sammenlign normaliserede adresser før skift. Egen nøgle og et offentligt ufølsomt prøveområde verificeres som separat lokalt ejertrin.
+## Checkpoints og lokale ændringer
 
-Denne overgang er endnu ikke færdig. Der er ingen ændring af eksisterende adressehentning i dette dokumentationsarbejde. De næste kodeændringer bør bevare lokale data og en tydelig fejl ved utilgængelig kilde.
+Kildemarkøren er `dar-graphql-v3` eller `dar-rest-v3`. Et ældre checkpoint uden markør behandles som REST. Genoptagelse kræver samme kilde og kontrollerede skemafingeraftryk; ellers gives en fejl før ændring af checkpoint eller lokale adresser. Brugeren kan vælge ny opdatering eller gendanne forbindelsen. Skemaændring under et opslag afviser også det igangværende svar.
 
-## Afsluttet byggesten · komplet sidehentning
+Færdige veje/udsnit springes over ved genstart; ufærdige dele bruger det gemte tidspunkt. Kilde-/adgangsfejl stopper ved den aktuelle del. Grænsetimeout kan bruge den eksisterende begrænsede opdeling til mindre udsnit. Der foretages ingen lydløs tilbagevenden til REST efter en fejlet GraphQL-hentning.
 
-`distrikt/app/dar_paging.py` har nu `collect_pages(fetch_page, entity, ...)`, som samler et helt resultat i hukommelsen, før det kan gives videre til en lokal import. Den kontrollerer GraphQL-fejl, nodes/pageInfo, boolsk hasNextPage, endCursor, tomme fortsættelsessider, cursor-cyklusser og dublerede/manglende entitets-ID’er. Grænser for sider og antal resultater giver fejl frem for afkortning. Afbrydelse kontrolleres før og efter hvert opslag. Fejltekster gengiver ikke upstream-svar.
+Postnummeropdateringer og grænseopdateringer bevarer den eksisterende kontrol af nye, ændrede og udgåede adresser. Private kort, udlån, forkyndere og IB berøres ikke af kildeopslagene. Den præcise distriktsgrænse sendes ikke; kun rektangulære udsnit bruges eksternt, og polygonfiltreringen sker lokalt.
 
-Byggestenen har ingen netværksadgang, credentials eller databaseskrivning og er endnu ikke koblet til Downloads. Den kommende adapter skal levere `fetch_page(after)` med uændrede felter/filtre og samme faste registrerings-/virkningstidspunkt på alle sider samt redigerede transportfejl. Hele resultatet returneres først efter en gyldig slutsides angivelse; fuldstændighed afhænger fortsat af kildens korrekte sideoplysninger. Dette er ikke en kontrol af endnu uimplementerede relationer eller den samlede adresseimport.
+GraphQL-fuldstændighed afhænger af kildens korrekte sideoplysninger og reference-ID'er; der er ikke tilføjet et uafhængigt GraphQL-kontroltal svarende til REST-count. Alle efterspurgte nødvendige relationer kontrolleres, før enhedens resultat returneres.
 
-12 fiktive prøver dækker sidefølge, tomt resultat, deldata med GraphQL-fejl, manglende felter, ugyldige cursors, cyklusser, dubletter, ID’er, grænser, afbrydelse og netfejl efter første side. Transport/forespørgsler og lokale DAR-joins er nu også implementeret som beskrevet nedenfor. Ingen ny brugerfunktion er aktiveret; beta.7 og dens tag bevares, og næste funktionelle udgivelse er beta.8.
+## Verifikation og resterende ejertrin
 
-## Afsluttede byggesten · forespørgsler og lokale joins
+Fiktive prøver omfatter flere sider, aliases, etage/dør, postnummerkrydsende veje, samme navn med flere vej-ID'er, manglende relationer, ukendte koordinater, delvise fejl, timeout, netfejl, ændret skema, gamle checkpoints, transaktionsfejl, kantpunkter, lokal polygonfiltrering og pause/genstart. REST-normalisering og den nye normalisering sammenlignes med opdigtede adresser.
 
-`address_source.Datafordeler.query` sender interne GraphQL-forespørgsler med den lokalt gemte nøgle gennem den eksisterende begrænsede transport. JSON-fejl, GraphQL-fejl med delresultater og manglende data afvises uden at gengive rå providersvar. Den læser ikke lokale kort eller IB.
-
-`dar_query.DarQuery` fastlåser ét UTC-tidspunkt for registrering og virkning på tværs af de fem flade entiteter og alle sider. De eksplicitte projektioner og lighedsfiltre følger de officielle DAR-eksempler læst 16.10.2026. Status 3 kræves; uafgrænsede landsopslag tillades ikke. Alle værdier og cursors escapes som GraphQL-strengliteraler. Den eksisterende sidehenter kræver en gyldig sidste side, og hvert svar kontrolleres også mod forespørgslens scope.
-
-`dar_join.join_addresses` kræver komplette inputs fra samme snapshot og samler dem lokalt via ID-referencer. Resultatet sammenlignes med det eksisterende normaliserede REST-format i fiktive prøver: `dar:`-ID, adgangsadresse-ID, vej, husnummer/bogstav, postnummer, etage/dør og koordinater. Manglende eller inaktive relationer, dublerede ID'er, manglende etage/dør-felter, ukendt CRS, ugyldig dimension/WKT og ikke-endelige koordinater afviser hele resultatet. Punktgeometri i EPSG:25832 og XY/XYZ behandles; højden bruges ikke. Postnummerfilter anvendes før punktopslag uden for scope, fordi en navngiven vej kan krydse flere postnumre.
-
-14 nye fiktive prøver dækker disse dele, inklusive en samlet transport/side/join-prøve med seks svar. Det er ikke en live skemavalidering, effektiv masseadapter eller aktivering af den nye adressekilde. Den autentificerede skemakontrol med egen lokal nøgle står stadig særskilt.
-
-## Afsluttet byggesten · samlet adapter med aliasbatching
-
-`DarQuery.collect_many` grupperer op til ti uafhængige lighedsopslag i én GraphQL-anmodning med aliases. Hver alias kontrolleres med den samme komplette sidehenter og samme tidspunkt; efterfølgende sider hentes kun for de scopes, der faktisk har flere sider. Dermed kræver 25 enkelt-ID-opslag tre anmodninger i prøven. Der indføres ingen antagelse om IN-filtre i et endnu ikke live-verificeret skema. For mange anmodninger/resultater, manglende aliases, deldata med fejl eller manglende obligatoriske ID'er giver fejl før returnering.
-
-`dar_adapter.DarAdapter.discover_postcode` finder postnummeret, dets husnumre og de nødvendige navngivne veje via ID-opslag. `road` finder husnumre, samtlige adresser samt nødvendige punkter og postnumre og samler dem med den afprøvede normalisering. Et valgfrit postnummer afgrænser husnummeropslaget før adressers og punkters hentning. Den returnerede kilde er `dar-graphql-v3`, og alle dele bruger samme snapshot. Adapteren har ingen forbindelse til databasen. 10 nye fiktive prøver dækker hele forløbet og fejl efter første side.
-
-### Næste konkrete integration
-
-1. Den samlede vej-/postnummeradapter er implementeret med aliasbatching og fuldstændighedskontrol. Næste kildeopslag er afgrænsede geografiske udsnit til den samlede grænse. Det konkrete skema og et ufølsomt prøveområde kontrolleres i ejerens lokale installation; nøglen sendes ikke til AI.
-2. Vej-, postnummer- og grænsehentning skal bruge adapteren med samme snapshot, fremdrift, pause/genoptagelse og særskilt GraphQL-kildemarkør i checkpoints. REST-checkpoints må ikke genoptages som GraphQL.
-3. Import/retirement skal først ske efter en komplet vej/et komplet udsnit og bevare eksisterende transaktioner. Skemafejl, 401, netfejl eller manglende joins må ikke markere lokale adresser udgået.
-4. Afslut fiktive integrationsprøver og program/platform/HA-gates; udgiv først da næste funktionelle beta. Egen lokal nøgle og et offentligt ufølsomt område er separat ejerprøve.
+Nøglen er ikke hentet fra ejerens installation, og der er ikke hentet autentificerede live data gennem AI. Næste særskilte ejertrin er en lille offentlig vej, derefter et postnummer/et lille grænseudsnit, med kontrol af husnumre, bogstaver og etage/dør. HA/browser og reelle servicebegrænsninger testes der. Adressevælgerens særskilte adgangsændring følges fortsat; W07 er derfor ikke markeret fuldt afsluttet alene på grund af kode og fiktive prøver.
 
 ## Primære kilder
 
 - [DAR REST: udfases 15. januar 2027](https://confluence.kds.dk/pages/viewpage.action?pageId=16056323).
 - [DAR GraphQL og adgang via IT-system/API-key eller OAuth](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/).
-- [DAR GraphQL-felter, version og kendte relationer](https://confluence.kds.dk/pages/viewpage.action?pageId=187105632).
+- [DAR GraphQL-felter, geografi og kendte relationer](https://confluence.kds.dk/pages/viewpage.action?pageId=187105632).
 - [GraphQL: endepunkter, paging og autentifikation](https://confluence.kds.dk/pages/viewpage.action?pageId=187105434).
 - [Adressevælgerens brugerstyring og token](https://confluence.kds.dk/display/ADV/Brugerstyring).

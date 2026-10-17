@@ -1,18 +1,21 @@
-# LTM 1.12.0-beta.7
+# LTM 1.12.0-beta.8
 
-## Nyt siden beta.6
+## Nyt siden beta.7
 
-**Kortdata → Datafordeleren · egen API-nøgle** har en trinvis vejledning til at oprette konto, IT-system og API-key. Forbindelsen kontrolleres mod DAR v3, før en ny nøgle gemmes lokalt. Du kan kontrollere en gemt forbindelse eller fjerne nøglen igen.
+En gemt Datafordeler-nøgle bruges nu til **vej-, postnummer- og grænsehentning via DAR GraphQL**. Adresse-ID'er, husnumre og etage/dør bevares. Komplette sider og lokale sammenkoblinger kontrolleres før en vej/et udsnit gemmes. Grupperede lighedsopslag giver færre netkald.
 
-Nøglen vises ikke i appens status eller adresse-/kortdata og følger ikke med portable sikkerhedskopier. Den sendes kun fra din lokale app til den faste officielle Datafordeler-adresse for autentifikation. Hvis en ny nøgle eller kontrol fejler, bevares den tidligere gemte nøgle. Beta-nulstilling bevarer forbindelsen.
+Pause og genstart bevarer afsluttede dele og samme tidspunkt. Netfejl stopper ved den aktuelle del. Checkpoints har kilde og skemafingeraftryk, så gamle REST-resultater ikke blandes med GraphQL. Ved skift af kilde eller skema vælges en ny opdatering; færdige lokale adresser bevares. Flere officielle vej-ID'er med samme navn og postnummer behandles samlet.
 
-Dette er første del af kildeovergangen. **Adresseimporten bruger fortsat den hidtidige kilde.** En kontrolleret DAR v3-forbindelse betyder endnu ikke, at importen er flyttet.
+Uden nøgle bruges den hidtidige kilde. Adresseforslag i søgefeltet kommer stadig fra den særskilte Adressevælger. Nøglen indtastes kun i den lokale app og følger ikke med portable sikkerhedskopier. Præcise distriktsgrænser, kort, forkyndere og IB uploades ikke til Datafordeleren.
 
 ## Prøv især
 
-1. Åbn Kortdata og følg vejledningen under Datafordeleren. Opret en API-key på dit eget IT-system, og indtast den lokalt i LTM.
-2. Vælg Kontrollér og gem nøgle. Kontrollér den tydelige status og at feltet bliver tomt efter indsendelse.
-3. Genåbn appen, og kontrollér den gemte forbindelse. Prøv eventuelt en forkert erstatningsnøgle: den gamle forbindelse skal bevares.
-4. Eksportér en privat sikkerhedskopi. Forbindelsen skal sættes op igen på en anden installation; nøglen følger ikke med.
+1. Opdater **Distrikt Beta**, og tag først privat backup af dine betadata. Stabil 1.11.1 fortsætter separat.
+2. Gem eller kontrollér egen nøgle under Kortdata. Status skal nu oplyse, at nye adressehentninger bruger DAR GraphQL.
+3. Hent først en enkelt offentlig vej. Kontrollér bogstaver, etage/dør og adresseantal. Prøv derefter et lille postnummer eller en lille samlet grænse.
+4. Sæt en større hentning på pause, genstart appen, og fortsæt. Færdige dele skal springes over. Ved netfejl kan du fortsætte senere.
+5. Hvis du har en gammel REST-hentning, skal fortsættelse med GraphQL give en tydelig besked. Vælg en ny opdatering; eksisterende adresser skal bevares og ændringer gennemgås som hidtil.
 
-Den uønskede ekstra KTM-opfølgningsliste er fjernet siden beta.6. De øvrige rapporttal og original S-13 bevares. Stabil udgave er fortsat 1.11.1.
+Programkontrollen bruger fiktive GraphQL-svar og midlertidige databaser. Levende Datafordeler med din egen nøgle og visningen i din HA/browser er særskilte ejerprøver. En grøn forbindelseskontrol er ikke en påstand om, at dit prøveområde allerede er hentet og sammenlignet.
+
+Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.

@@ -1,4 +1,4 @@
-"""Read-only DAR road/postcode adapter. Not activated in Downloads yet.
+"""Read-only DAR road/postcode/tile adapter used by Downloads.
 
 Queries, aliases and joins share one snapshot. No local store or checkpoint is
 read or changed here; callers must only import a complete returned result.
@@ -6,8 +6,9 @@ read or changed here; callers must only import a complete returned result.
 import re
 from dar_join import join_addresses
 from dar_paging import IncompleteResult
+from address_checkpoint import GRAPHQL_SOURCE
 
-SOURCE = 'dar-graphql-v3'
+SOURCE = GRAPHQL_SOURCE
 
 
 def _ids(rows, field):
@@ -70,3 +71,52 @@ class DarAdapter:
         self.query.check_cancel()
         return {'source': SOURCE, 'snapshot': self.query.snapshot, 'road_id': road_id,
                 'road': name, 'addresses': result, 'roads': roads}
+
+    def named_road(self, name, postcode):
+        posts = self._post(postcode)
+        roads = self.query.collect('DAR_NavngivenVej', {'vejnavn': name})
+        matches = []
+        for road in roads:
+            houses = self.query.collect('DAR_Husnummer', {
+                'navngivenVej': road['id_lokalId'], 'postnummer': posts[0]['id_lokalId']})
+            if houses:
+                matches.append(road['id_lokalId'])
+        if not matches:
+            raise IncompleteResult('Vejnavn og postnummer kunne ikke findes entydigt i DAR.')
+        return self.road_group(matches, postcode=postcode)
+
+    def road_group(self, road_ids, *, postcode):
+        """One local name/postcode can contain several official named-road IDs.
+
+        Return the full name scope together so retirement never compares just one
+        ID's addresses against all other addresses with the same name/postcode.
+        """
+        results = [self.road(ident, postcode=postcode) for ident in road_ids]
+        if not results or len({result['road'] for result in results}) != 1:
+            raise IncompleteResult('Den samlede DAR-vej havde forskellige vejnavne.')
+        addresses = [row for result in results for row in result['addresses']]
+        if len({row['id'] for row in addresses}) != len(addresses):
+            raise IncompleteResult('DAR gentog en adresse i den samlede vej.')
+        return {'source': SOURCE, 'snapshot': self.query.snapshot, 'road': results[0]['road'],
+                'addresses': addresses, 'roads': [row for result in results for row in result['roads']]}
+
+    def tile(self, bbox):
+        """Join an entire rectangular public-data tile before any store mutation.
+
+        Exact private district polygon filtering remains the caller's local job.
+        Public street points that aren't access points have no attached houses and
+        are harmless; they must not become fictional addresses.
+        """
+        points = self.query.collect_bbox(bbox)
+        houses = self.query.collect_many('DAR_Husnummer', 'adgangspunkt', _ids(points, 'id_lokalId'))
+        addresses = self.query.collect_many('DAR_Adresse', 'husnummer', _ids(houses, 'id_lokalId'))
+        needed = set(_ids(addresses, 'husnummer'))
+        used = [house for house in houses if house['id_lokalId'] in needed]
+        roads = self.query.collect_many('DAR_NavngivenVej', 'id_lokalId', _ids(used, 'navngivenVej'), require_all=True)
+        posts = self.query.collect_many('DAR_Postnummer', 'id_lokalId', _ids(used, 'postnummer'), require_all=True)
+        result = join_addresses(addresses, houses, points, roads, posts)
+        for address in result:
+            address['source'] = 'DAR / Datafordeleren'
+        self.query.check_cancel()
+        return {'source': SOURCE, 'snapshot': self.query.snapshot, 'bbox': list(bbox),
+                'addresses': result, 'roads': roads}

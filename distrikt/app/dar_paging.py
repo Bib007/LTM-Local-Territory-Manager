@@ -3,7 +3,7 @@
 The caller supplies fetch_page(after), retaining the same entity, fields, filters
 and fixed registration/effect timestamp for every request. It returns a decoded
 GraphQL envelope and sanitizes transport errors. No credentials or queries live
-here. This building block is not yet connected to Downloads.
+here. Downloads uses this building block through the DAR query adapter.
 """
 
 

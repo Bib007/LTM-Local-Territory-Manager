@@ -12,13 +12,17 @@ import uuid
 from geography import decode_dar, valid_coordinate
 from postcode import PostcodeDownload, Paused, SourceUnavailable, SourceTimeout
 from boundary_download import BoundaryDownload
+from dar_download import DarDownload
+from address_source import Datafordeler
+from address_checkpoint import GRAPHQL_SOURCE
 
 PUBLIC_TOKEN='adressevaelger123'  # Public token recommended by KDS as of 6 Oct 2026.
 
-class Downloads(PostcodeDownload,BoundaryDownload):
-    def __init__(self,store):
+class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
+    def __init__(self,store,address_source=None):
         self.store=store;self.jobs={};self.lock=threading.Lock();self.active=None;self.cancel_event=threading.Event()
         self.suggestion_cache={}
+        self.address_source=address_source if address_source is not None else (Datafordeler(store.root) if store is not None else None)
     def start(self,kind,data):
         if kind not in ('road','area','osm','postcode','boundary'):raise ValueError('Ukendt hentning.')
         with self.lock:
@@ -158,26 +162,31 @@ class Downloads(PostcodeDownload,BoundaryDownload):
         chosen=exact if len(exact)==1 else suggestions
         if len(chosen)!=1:raise ValueError('Vælg det officielle vejnavn i forslagene under søgefeltet.')
         road=chosen[0]['road']
-        token=self.token();params={'vejnavn':road,'postnummer':post,'maksimum':200,'token':token};source='DAR / Adressevælger'
-        progress(message='Finder gældende DAR-adresser på vejen…')
-        found=self.request('adressevaelger.dk','/adresser/soeg',params).get('fund',[])
-        addresses=[]
-        if found and len(found)<200 and all(x.get('type')=='adresse' for x in found):
-            ids=[x['id'] for x in found];progress(total=len(ids))
-            for offset in range(0,len(ids),30):
-                result=self.request('adressevaelger.dk','/adresser',{'id_lokalids':','.join(ids[offset:offset+30]),'token':token})
-                items=result.get('adresser',[])
-                if {a.get('id_lokalid') for a in items}!={a for a in ids[offset:offset+30]}:raise ValueError('Adressekilden returnerede et ufuldstændigt opslag. Prøv igen senere.')
-                addresses += decode_dar(items);progress(completed=min(offset+30,len(ids)),message='Henter adresser og kendte lejligheder…')
+        if self.source_id()==GRAPHQL_SOURCE:
+            progress(message='Henter den komplette vej via DAR GraphQL…')
+            loaded=self.graph_adapter().named_road(road,post)
+            addresses=loaded['addresses'];source='DAR / Datafordeleren'
         else:
-            houses=self.request('adressevaelger.dk','/husnumre/soeg',params).get('fund',[])
-            if not houses or len(houses)>=200 or not all(h.get('type')=='husnummer' for h in houses):
-                addresses=self.bulk_road(road,post,progress);source='DAR / Datafordeleren'
+            token=self.token();params={'vejnavn':road,'postnummer':post,'maksimum':200,'token':token};source='DAR / Adressevælger'
+            progress(message='Finder gældende DAR-adresser på vejen…')
+            found=self.request('adressevaelger.dk','/adresser/soeg',params).get('fund',[])
+            addresses=[]
+            if found and len(found)<200 and all(x.get('type')=='adresse' for x in found):
+                ids=[x['id'] for x in found];progress(total=len(ids))
+                for offset in range(0,len(ids),30):
+                    result=self.request('adressevaelger.dk','/adresser',{'id_lokalids':','.join(ids[offset:offset+30]),'token':token})
+                    items=result.get('adresser',[])
+                    if {a.get('id_lokalid') for a in items}!={a for a in ids[offset:offset+30]}:raise ValueError('Adressekilden returnerede et ufuldstændigt opslag. Prøv igen senere.')
+                    addresses += decode_dar(items);progress(completed=min(offset+30,len(ids)),message='Henter adresser og kendte lejligheder…')
             else:
-                progress(total=len(houses))
-                for i,h in enumerate(houses):
-                    items=self.request('adressevaelger.dk','/husnumre/'+h['id']+'/adresser',{'token':token}).get('adresser',[])
-                    addresses+=decode_dar(items);progress(completed=i+1,message='Henter husnumre med alle kendte lejligheder…')
+                houses=self.request('adressevaelger.dk','/husnumre/soeg',params).get('fund',[])
+                if not houses or len(houses)>=200 or not all(h.get('type')=='husnummer' for h in houses):
+                    addresses=self.bulk_road(road,post,progress);source='DAR / Datafordeleren'
+                else:
+                    progress(total=len(houses))
+                    for i,h in enumerate(houses):
+                        items=self.request('adressevaelger.dk','/husnumre/'+h['id']+'/adresser',{'token':token}).get('adresser',[])
+                        addresses+=decode_dar(items);progress(completed=i+1,message='Henter husnumre med alle kendte lejligheder…')
         # Reject fuzzy neighbouring streets/postcodes rather than silently choose one.
         roads=sorted({a['road'] for a in addresses if a['postcode']==post})
         if len(roads)!=1:raise ValueError('Søgningen matcher flere eller ingen veje. Brug det præcise vejnavn og postnummer.')

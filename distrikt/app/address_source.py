@@ -12,6 +12,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from access import write_private
+from postcode import SourceTimeout
 
 BASE='https://graphql.datafordeler.dk/DAR/v3'
 MAX_SCHEMA=8*1024*1024
@@ -32,7 +33,7 @@ class Datafordeler:
         with self.lock:
             auth=self._auth()
             return {'configured':bool(auth.get('api_key')),'checked_at':auth.get('checked_at'),
-                    'schema_sha256':auth.get('schema_sha256'),'import_ready':False}
+                    'schema_sha256':auth.get('schema_sha256'),'import_ready':bool(auth.get('api_key'))}
 
     def _request(self,key,suffix='',query=None):
         url=BASE+suffix+'?'+urllib.parse.urlencode({'apiKey':key})
@@ -46,9 +47,12 @@ class Datafordeler:
             if len(raw)>MAX_SCHEMA:raise ValueError('Datafordeleren gav et for stort svar. Nøglen er ikke ændret.')
             return raw
         except urllib.error.HTTPError as error:
+            if error.code in (408,504):raise SourceTimeout('Datafordeleren svarede ikke inden for tidsgrænsen. Prøv et mindre område eller fortsæt senere.') from None
             if error.code in (401,403):raise ValueError('Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system.') from None
             raise ValueError('Datafordeleren svarede med HTTP '+str(error.code)+'. Prøv igen senere.') from None
-        except (OSError,TimeoutError,http.client.HTTPException):
+        except (OSError,TimeoutError,http.client.HTTPException) as error:
+            if isinstance(error,TimeoutError) or isinstance(getattr(error,'reason',None),TimeoutError):
+                raise SourceTimeout('Datafordeleren svarede ikke inden for tidsgrænsen. Prøv et mindre område eller fortsæt senere.') from None
             raise ValueError('Forbindelsen til Datafordeleren mislykkedes. Den gemte nøgle er ikke ændret.') from None
 
     def _check(self,key):
