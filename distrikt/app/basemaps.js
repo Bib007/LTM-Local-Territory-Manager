@@ -14,5 +14,5 @@ const MapBackground={
  },
  async change(id,mode){if(!['local','road'].includes(mode))return;this.mode=mode;for(const [key,entry] of this.instances){this.apply(key);entry.redraw();}}
 };
-document.addEventListener('change',async e=>{if(!e.target.dataset.basemap)return;try{await MapBackground.change(e.target.dataset.basemap,e.target.value);}catch(err){e.target.value=MapBackground.mode;toast(err.message);}});
+document.addEventListener('change',async e=>{if(!e.target.dataset.basemap)return;try{await MapBackground.change(e.target.dataset.basemap,e.target.value);}catch(err){e.target.value=MapBackground.mode;toast(err);}});
 document.addEventListener('click',e=>{const fit=e.target.closest('[data-map-fit]'),expand=e.target.closest('[data-map-expand]');if(fit){MapBackground.instances.get(fit.dataset.mapFit)?.fit();return;}if(expand){const entry=MapBackground.instances.get(expand.dataset.mapExpand),node=el(expand.dataset.mapExpand);const enlarged=node.classList.toggle('mapExpanded');const key=enlarged?'Normal størrelse':'Større kort';expand.dataset.ui=key;expand.lang=I18n.language();expand.textContent=I18n.text(key);expand.setAttribute('aria-pressed',String(enlarged));entry?.map.invalidateSize();}});
