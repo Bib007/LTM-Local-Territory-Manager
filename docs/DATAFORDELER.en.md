@@ -11,6 +11,8 @@ From beta.8, a saved key routes new road, postcode and boundary downloads throug
 
 Development tests use fictional responses. First try one public road in your own installation and check house numbers and apartment units before downloading a larger area. Testing your real account and HA installation remains a separate owner step.
 
+**Can I create a key after 15 January 2027? Yes.** The date closes the old REST access; it is not a deadline for creating API keys. API-key/OAuth access and GraphQL continue afterwards, and new users register in Datafordeler Administration. Connect the new access before the closure to avoid an interruption to new address downloads. An expired or lost key can be replaced in Administration and saved in LTM. See the [official transition description](https://datafordeler.dk/vejledning/transitionsnetvaerk/).
+
 ## Current status
 
 DAR GraphQL import is implemented and uses your own API key. From beta.23, the setup plan links directly to the local key guide. Create an account, an IT system and an API key in Datafordeler Administration, then enter the key in your local LTM. There is no shared application key.

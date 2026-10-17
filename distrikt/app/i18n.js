@@ -3,7 +3,7 @@
 const I18n={
  current:'da',
  english:{
-  "DAR REST udfases 15. januar 2027. Opret din egen API-nøgle til DAR GraphQL før fristen. Dine allerede hentede adresser bliver på installationen.":"DAR REST retires on 15 January 2027. Create your own API key for DAR GraphQL before the deadline. Previously downloaded addresses stay on this installation.",
+  "Den gamle DAR REST-adgang lukker 15. januar 2027. Du kan også oprette en API-nøgle til DAR GraphQL efter den dato. Tilslut gerne den nye adgang nu, så adressehentning kan fortsætte efter lukningen. Dine gemte adresser bliver på installationen.":"The old DAR REST access closes on 15 January 2027. You can also create an API key for DAR GraphQL after that date. Connect the new access now so address downloads can continue after the closure. Saved addresses stay on this installation.",
   "Kortinddeling og nummerering":"Card division and numbering",
   "Ugyldig status for rundtur.":"Invalid tour status.",
   "Forskåret kort":"Precut card",

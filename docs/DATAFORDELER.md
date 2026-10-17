@@ -10,6 +10,8 @@ Ja: adresseimport via DAR GraphQL er implementeret og kan bruges med din egen n�
 
 Klimadatastyrelsens frist er fortsat **15. januar 2027** for de gamle REST-tjenester. [Officiel meddelelse](https://www.klimadatastyrelsen.dk/om-klimadatastyrelsen/nyheder/nyhedsarkiv/2026/jun/paralleldrift-paa-datafordeleren-ophoerer-den-15-januar-2027) og [DAR GraphQL-adgang](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/) er genkontrolleret 17.10.2026. Adressevælgerens søgeforslag er en særskilt tjeneste; en fungerende GraphQL-nøgle er ikke i sig selv en prøve af den.
 
+**Kan nøglen oprettes efter 15. januar 2027? Ja.** Datoen er lukningen af den gamle REST-adgang, ikke en sidste frist for at oprette API-nøgler. Den nye adgang med API-key/OAuth og GraphQL fortsætter efter datoen, og nye brugere opretter sig i Datafordeler Administration. Tilslut gerne den nye adgang før lukningen for at undgå en pause i nye adressehentninger. En udløbet eller mistet nøgle kan erstattes via Administration og gemmes i LTM. Se [Datafordelerens overgangsbeskrivelse](https://datafordeler.dk/vejledning/transitionsnetvaerk/).
+
 Lokal administration og gemte adresser kan bruges uden en ny hentning. Det udestående ejertrin er at prøve egen nøgle på én offentlig vej og derefter et lille område på egen HA. Send ikke nøglen i chatten.
 
 ## Opret din nøgle

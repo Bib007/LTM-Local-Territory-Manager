@@ -7,7 +7,7 @@ Seneste verificerede beta er 1.12.0-beta.23 fra d006deb, med grønne program-, M
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
 | W34 | Afsluttelig opgaveliste efter guiden med overstregning og spring over | 3 | Planlagt | Hvert punkt kan udføres eller springes over. Listen skjules, når alle punkter er afsluttet; genåbning og eksisterende opsætning bevares. |
-| W35 | Forklar januarfristen korrekt: kan API-nøgler oprettes bagefter? | 1 | I gang; går foran W31 | Officielle kilder efterprøves. App og vejledning skelner mellem lukning af gammel REST-adgang og fortsat oprettelse af GraphQL-nøgler. |
+| W35 | Forklar januarfristen korrekt: kan API-nøgler oprettes bagefter? | 1 | Forklaring rettet til beta.25; officielle kilder kontrolleret | Officielle kilder efterprøves. App og vejledning skelner mellem lukning af gammel REST-adgang og fortsat oprettelse af GraphQL-nøgler. |
 | W36 | Forklar Adressevælger og dens særskilte token forståeligt | 5 | Planlagt | Formål, valgfrihed og forskel fra Datafordeler-nøglen beskrives konkret; uklare tekniske menutekster forbedres. |
 | W37 | Bring webdemo i overensstemmelse med den udgivne app | 9 | Planlagt til sidst i funktionsforløbet | Demo følger kontrolleret produktudgave med udelukkende fiktive data og tydelige begrænsninger. |
 | W38 | Farver efter kortstatus og direkte indlever/udlever i daglig brug | 3 | Planlagt | Status og primære handlinger får læsbare farver og direkte adgang; eksisterende sidemenu med flere handlinger bevares. |
@@ -282,3 +282,7 @@ W29 er bekræftet som fast kritisk procedure: develop gemmes, hver færdig kodeo
 ## W34–W39 · nye ønsker gemt før rydning
 
 17.10.2026: Opgaveliste efter guiden (3), præcis forklaring af API-fristen (1), Adressevælger-vejledning (5), demo-opdatering (9), farver/direkte udlånsknapper (3) og aflevering pr. forkynder (5) er registreret fra ejerens ønskefane. W35 behandles først. W31 er bevaret som igangværende arbejde. W33 er udført og statusfanen læst tilbage. Ingen private registreringer indgår i planen.
+
+## W35 · fristen gælder gammel adgang
+
+17.10.2026: Datafordelerens officielle overgangsbeskrivelse fastslår API-key/OAuth-adgang og registrering af nye anvendere efter 15.01.2027. Fristen gælder gammel REST/Webbruger/Tjenestebruger-adgang. Appens danske og engelske nøglevejledning, guideplan og dokumentation skelner nu tydeligt mellem de to. Ingen ændring af autentifikation eller adressehentning. Kilder: https://datafordeler.dk/vejledning/transitionsnetvaerk/ og https://confluence.kds.dk/pages/viewpage.action?pageId=187105503 .
