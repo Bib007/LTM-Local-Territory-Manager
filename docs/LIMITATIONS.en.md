@@ -5,7 +5,7 @@
 - The stable baseline interface is Danish. English is planned, not complete.
 - Automated tests use fictional data. Real Google publication, physical card/printer alignment, Windows hardware and your HA installation need local verification.
 - Automatically proposed territories are geographical suggestions, not walking routes or cadastral boundaries. Review access, roads, disconnected features and card membership before creation.
-- Address imports are Danish. The existing DAR REST source is documented as scheduled for retirement on 15 January 2027. Its replacement requires a separate implementation; saved local data remains available.
+- Address imports are Danish. From beta.8, a saved personal key enables DAR GraphQL; without a key, the existing source is used. DAR REST is scheduled to retire on 15 January 2027. Testing a real Datafordeler account/HA installation and the separate Adressevælger access change remain outstanding. Saved local data remains available.
 - OSM tiles require internet access and service policy compliance. No offline tile pack, unrestricted bulk download or automatic mass image export is provided.
 - Original form backgrounds are bundled separately from the application's MIT code. They do not imply affiliation or endorsement. The PDF renderer has limited font support; browser printing supports more Unicode.
 - HA's own backups exclude app data. Export private backups within the app.
