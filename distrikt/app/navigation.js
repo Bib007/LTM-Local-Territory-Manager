@@ -32,5 +32,5 @@ const Navigation={
  selectRow(target,event){if(target.closest('button,input,select,textarea,a,label,[data-action]'))return false;const row=target.closest('[data-card-row]');if(!row)return false;if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return false;if(event.type==='click'&&window.getSelection?.().toString())return false;event.preventDefault();selected=row.dataset.cardRow;render();if(event.type==='keydown')document.querySelector(`[data-card-row="${CSS.escape(selected)}"]`)?.focus();return true;}
 };
 document.addEventListener('toggle',e=>{if(e.target.dataset?.navGroup!==undefined)Navigation.opened[e.target.dataset.navGroup]=e.target.open;},true);
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-navigation]');if(b){e.preventDefault();try{await Navigation.go(b.dataset.navigation);}catch(err){toast(err.message);}return;}Navigation.selectRow(e.target,e);});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-navigation]');if(b){e.preventDefault();try{await Navigation.go(b.dataset.navigation);}catch(err){toast(err);}return;}Navigation.selectRow(e.target,e);});
 document.addEventListener('keydown',e=>Navigation.selectRow(e.target,e));
