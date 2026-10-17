@@ -128,7 +128,11 @@ class SetupStore:
             choices={'mode':('desk','map'),'boundary':('yes','later'),'cards':('numbers','excel','auto','manual'),'ib':('yes','later')}
             if not isinstance(answers,dict) or set(answers)!=set(choices) or any(answers[k] not in allowed for k,allowed in choices.items()):raise ValueError('Vælg et svar på alle spørgsmål.')
             if answers['mode']=='desk' and (answers['boundary']!='later' or answers['cards']=='auto'):raise ValueError('Automatisk inddeling kræver kortfunktion.')
-            config=dict(self.require('settings','config'));config['onboarding']={'version':1,'answers':dict(answers),'completed':True};self.put('settings',config);return {}
+            tour=data.get('tour_completed',False)
+            if not isinstance(tour,bool):raise ValueError('Ugyldig status for rundtur.')
+            config=dict(self.require('settings','config'));previous=config.get('onboarding') or {}
+            config['onboarding']={**previous,'version':2,'answers':dict(answers),'completed':bool(previous.get('completed')) or tour,'tour_completed':bool(previous.get('tour_completed')) or tour}
+            self.put('settings',config);return {}
         if action=='setup.preview':return self.setup_plan(data)
         if action=='setup.adjust.preview':
             import copy

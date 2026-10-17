@@ -12,6 +12,7 @@ const Navigation={
   const restoreFocus=document.activeElement?.id==='navigationLanguage';
   if(typeof GeoUI!=='undefined'&&typeof GeoUI.localize==='function')GeoUI.localize();
   I18n.applyShell();
+  if(typeof GuidedTour!=='undefined')GuidedTour.localize();
   if(typeof BoundaryImportUI!=='undefined')BoundaryImportUI.localize();
   if(typeof PublisherSearch!=='undefined')PublisherSearch.localize();
   if(typeof SaveStatus!=='undefined')SaveStatus.paint();

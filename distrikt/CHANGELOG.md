@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.23 · Samlet opsætning og obligatorisk rundtur
+
+- Én normal opsætningsguide med introduktion til lokal drift, fælles HA-installation, backup og valgfri deling. Den parallelle detaljerede guide er samlet ind i forløbet.
+- Svar gemmes først som uafsluttet. Rundturens sidste trin afslutter opsætningen og åbner forsiden med den personlige plan; guiden genåbnes ikke. Afbrydelse kan genoptages, og tidligere fuldførte installationer bevares.
+- Sprogskift i rundturen bevarer trin og fokus. Afvist/sen afslutning og dobbeltklik håndteres uden ekstra skrivning eller lukning af nyere dialoger.
+- Kortplanen har en direkte indgang til egen Datafordeler-nøgle. Officiel REST-frist 15.01.2027 er genkontrolleret; den eksisterende GraphQL-import bevares. Egen konto er et ejertrin.
+
+
 ## 1.12.0-beta.22 · Fast punkt 8–10: print, programpakke og slutkontrol
 
 - Dansk/engelsk printdialog og printknapper med bevarede felter, profilværdier og uændrede originalformularer/rapportindhold.
