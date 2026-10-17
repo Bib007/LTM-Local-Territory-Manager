@@ -72,3 +72,7 @@ Se [ønskelisten](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/dev
 Små afsluttede funktioner skal fremover udgives som nummererede HA-betaer med en kort konkret testliste. Det nye ejerønske W19 har prioritet -1. Betakanalen er adskilt fra stabil; betaudgivelser ændrer ikke i sig selv de faste ti opgavers procenttal.
 
 Den faktiske pakkestart afslørede en gammel versionsetiket i API-svaret. Appens viste version følger nu den kørende servers version; HTTP-prøven kontrollerer begge kanaler mod ping.
+
+## Efter fast plan · ønskelisten genoptaget
+
+17.10.2026: Ejeren har godkendt fortsættelse på ønskelisten. W25/W26 (prioritet 2) samler den normale guide og obligatorisk rundtur med afslutning. W27 (prioritet 3) følger op på adresseimport, januarfrist og egen API-nøgle. Se OENSKELISTE.md. De nye ønsker ændrer ikke den afsluttede faste plans 100 %.

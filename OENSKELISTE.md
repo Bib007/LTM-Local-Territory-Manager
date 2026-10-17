@@ -1,11 +1,14 @@
 # Ønskeliste og nye opgaver
 
-**Aktuel aftale 17.10.2026: Den faste køreplan prioriteres nu. Ønskelisten sættes på pause; der påbegyndes ikke flere ønskefunktioner, mens de faste punkter færdiggøres. Nummererede betaer og statusopdateringer fortsætter som aftalt.**
+**Aktuel aftale 17.10.2026: Den faste udviklingsplan er afsluttet (100 %, 10/10). Ejeren har nu genoptaget ønskelisten. W25 og W26 (prioritet 2) udføres først; W27 følger op på W07 med ejerprioritet 3. Små nummererede betaer fortsætter, og main er stabil 1.11.1.**
 
-Den faste klargøringsplan står på 70 % (7/10). Punkt 6 og 7 er afsluttet med sikre skriveforløb samt login, tastatur og fokus; se KOREPLAN.md. Beta.20 er verificeret udgivet; beta.21 skal gennem de samme gates før udgivelse. Næste er printbetjening med uændrede originalformularer. Nye ønsker udvider ikke automatisk procenttallet. Dansk er hovedsprog, og ændringer udvikles på develop før en stabil udgivelse.
+Seneste verificerede beta er 1.12.0-beta.22 fra ada704e, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
+| W25 | Én samlet opsætningsguide med information om fordelene ved lokal drift | 2 | Overført fra ejerens dokument; næste sammen med W26 | Den normale spørgsmålsguide er den eneste guideindgang. Information om lokal computer/HA, valgfri kort/Drive og privat backup er integreret. Geografi- og importværktøjer bevares som handlinger i den personlige plan; ingen parallel avanceret velkomstguide. |
+| W26 | Rundturen er en obligatorisk del af opsætningen, og opsætningen lukkes efter fuldført rundtur | 2 | Overført fra ejerens dokument; udføres med W25 | Førstegangsforløbet kan ikke markeres fuldført ved kun at gemme svar. Rundturens sidste trin afslutter forløbet og viser appen/den personlige opgaveliste uden at genåbne guiden. Afbrydelse kan genoptages; eksisterende registreringer og tidligere fuldført opsætning bevares. |
+| W27 | Følg op på adresseimport, januarfristen og egen API-nøgle | 3 | Overført fra ejerens dokument; opfølgning på W07 efter W25/W26 | Genkontrollér aktuelle officielle kilder og den eksisterende GraphQL-import/nøglevejledning. Forklar konkret hvad der er klar, hvad ejeren skal oprette, og hvilke kontoprøver der udestår. Ingen adgangsnøgler indsamles i chat/GitHub. |
 | W24 | Redesign af det digitale QR-kort med moderne udseende og lille miniature af kortets printforside | 3 | Udgivet i beta.12; fiktiv visuel SVG/PNG-kontrol og program-/platform-/HA-gates består; egen HA/Drive-prøve udestår | QR-kortet får en tydelig moderne præsentation og en lille visning af det tilsvarende printkort i hjørnet. Vejnavne/layout genbruges fra printforsiden. Ingen IB eller andre private registreringer må indgå. |
 | W23 | Undersøg idéer og feedback uden krav om GitHub-konto | 10 | Registreret fra ejerens dokument; afklar mulige kanaler efter de højere prioriteter | Beskriv en enkel mulighed uden GitHub-login, dens modtager og håndtering af bilag/persondata. Ingen ny offentlig indsendelsestjeneste oprettes automatisk. |
 | W20 | Ret opsætningsguidens valgfelter, hvor teksten står ved siden af boksen med knapper | 5 | Udgivet i beta.5 med grønne program/platform/HA-gates; offline layout og guideprøver består | Valg og forklaring holder sig i samme boks ved mobil- og skrivebordsbredder. |
@@ -35,13 +38,10 @@ Den faste klargøringsplan står på 70 % (7/10). Punkt 6 og 7 er afsluttet med 
 
 ## Aktuel status og næste arbejdssession · 17.10.2026
 
-- Stabil main og seneste stabile release: 1.11.1. Seneste verificerede HA-beta: 1.12.0-beta.20 fra 2fce50a med grøn Checks, Platformskontrol og HA beta release. Tidligere betaer har separate HA-ZIP/checksummer og er bevaret. Beta.21 afslutter den faste plans punkt 7 og afventer sine gates.
-- Udgivet: betanulstilling (W21, beta.2), topbar/forsidelink/logo/HA-billeder (W22/W03/W04, beta.3) og guide-layout (W20, beta.5). Rapportopfølgningslisten fra beta.4 er efterfølgende afvist af ejeren og fjernet i beta.6 og senere. Testlisten følger docs/BETA-NOTES.md. Virkelig HA, browserrulning, OSM, printdialog og Google-konto er fortsat ejerprøver.
-- W07 (5): GraphQL-import er nu koblet på vej-, postnummer- og grænsehentning til beta.8, når egen nøgle er gemt. Komplette sider/joins, aliasbatching, kantpunkter, lokale transaktioner, pause/genstart og separate kilde-/skemacheckpoints er implementeret og afprøvet med fiktive svar. Beta.8 er udgivet fra c0528c9 efter grønne gates. Egen Datafordeler-/HA-prøve er særskilt; ingen ejercredentials eller private data er åbnet. Adressevælgerens varslede brugerstyring og dens rolle som søgeforslag kræver fortsat opfølgning. Se docs/ADRESSEKILDE-2027.md. W07 markeres ikke fuldt afsluttet før de udestående kontroller.
-- W12 (5): det rigtige direkte demo-link og alle statiske JS/CSS/logo-aktiver svarer 200 uden login og matcher kontrolleret kilde. Links er rettet i develop-dokumentationen. Browserens første åbning/mobil/print står særskilt.
-- Ejeren har 17.10.2026 skiftet fokus til den faste køreplan. Punkt 3–7 er afsluttet. Næste er punkt 8: printbetjening med uændrede originalformularer; derefter 9–10 i rækkefølge. Ønskefunktioner, herunder resten af W16, er på pause. Tidligere udgivne funktioner bevares.
-- W10-formularen er fortsat kun på develop og aktiveres først som GitHubs standardformular via main. Ingen test-issues er oprettet. W18's egen Google-/inkognitotest udestår.
-- Den faste køreplans opgave 3–7 er implementeret og prøvet; punkt 8 går nu først. Procenten er 70 % (7/10). Brug denne oversigt frem for de historiske næste-trin i kontroljournalen nedenfor.
+- Fast plan afsluttet: 100 % (10/10), beta.22 udgivet, main stabil 1.11.1.
+- Ejeren har genoptaget ønskelisten. W25/W26 er næste kodeopgave: én normal guide med lokal introduktion og obligatorisk rundtur; bagefter W27 om adressekilde/API-nøgle med prioritet 3.
+- W18 kræver fortsat egen Google-kontoprøve. W10's GitHub-issueformular aktiveres i standardbranchen ved en særskilt stabil udgivelse. Disse ejer-/udgivelsestrin er ikke en blokering for de nye guideønsker.
+- Nye ønsker nedenfor fjernes først fra Google-dokumentet efter denne plan er gemt på GitHub. Historiske næste-trin i kontroljournalen er ikke den aktuelle rækkefølge.
 
 ## W18 · beslutninger og afgrænsning
 
@@ -244,3 +244,7 @@ Google Drive-/QR-betjening har dansk/engelsk med bevaret preview, checkbox, offe
 Et forsinket preview/QR-svar erstatter ikke en nyere dialog eller side. Godkendt publicering er låst mod dobbeltklik og sender kun det samme offentlige PNG/fingeraftryk/layoutversion. Ændret revision kræver et nyt kontrolleret preview. Et sent publiceringssvar tvinger ikke navigation eller lukker en nyere dialog. Forbindelsesfilen læses kun til den aktuelle kontekst; polling genopbygger ikke inputtet under indlæsning. Ugyldig JSON giver en neutral fejl uden filindhold. Alle program-/browserprøver bruger opdigtede svar og forbindelsesfixture; ingen rigtig nøgle, Google-konto eller privat fil er åbnet eller uploadet.
 
 Nye kontrakt-/hændelsesprøver dækker ens godkendelses-payload på begge sprog, sene svar, annullering og fejl. Chromium ved 320/390/768/1440 pixels dækker app/Leaflet, opsætning/IB samt samtykke og QR med et genereret prøve-PNG; selve billedgeneratoren kontrolleres særskilt i billedprøverne. Beta.15 afventer GitHub-gates. Fast køreplan er 50 % (5/10); næste er punkt 6. Ønskelisten venter fortsat, og virkeligt HA/telefon/Google/Datafordeler/print er særskilte ejerprøver.
+
+## W25–W27 · ønskelisten genoptaget
+
+17.10.2026: Ejeren ønsker nu videre arbejde efter afsluttet fast plan. Samlet guide, obligatorisk rundtur med afslutning og opfølgning på adresseimport er registreret med de oplyste prioriteter. Der åbnes ikke private data eller credentials. W25/W26 implementeres som ét sammenhængende førstegangsforløb; administrationsværktøjer og eksplicit import-/oprettelsesgodkendelse bevares.
