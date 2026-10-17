@@ -43,9 +43,15 @@ Byggestenen har ingen netværksadgang, credentials eller databaseskrivning og er
 
 14 nye fiktive prøver dækker disse dele, inklusive en samlet transport/side/join-prøve med seks svar. Det er ikke en live skemavalidering, effektiv masseadapter eller aktivering af den nye adressekilde. Den autentificerede skemakontrol med egen lokal nøgle står stadig særskilt.
 
+## Afsluttet byggesten · samlet adapter med aliasbatching
+
+`DarQuery.collect_many` grupperer op til ti uafhængige lighedsopslag i én GraphQL-anmodning med aliases. Hver alias kontrolleres med den samme komplette sidehenter og samme tidspunkt; efterfølgende sider hentes kun for de scopes, der faktisk har flere sider. Dermed kræver 25 enkelt-ID-opslag tre anmodninger i prøven. Der indføres ingen antagelse om IN-filtre i et endnu ikke live-verificeret skema. For mange anmodninger/resultater, manglende aliases, deldata med fejl eller manglende obligatoriske ID'er giver fejl før returnering.
+
+`dar_adapter.DarAdapter.discover_postcode` finder postnummeret, dets husnumre og de nødvendige navngivne veje via ID-opslag. `road` finder husnumre, samtlige adresser samt nødvendige punkter og postnumre og samler dem med den afprøvede normalisering. Et valgfrit postnummer afgrænser husnummeropslaget før adressers og punkters hentning. Den returnerede kilde er `dar-graphql-v3`, og alle dele bruger samme snapshot. Adapteren har ingen forbindelse til databasen. 10 nye fiktive prøver dækker hele forløbet og fejl efter første side.
+
 ### Næste konkrete integration
 
-1. En samlet adapter skal finde postnummer og husnumre/veje, hente adresser og relaterede entiteter i afgrænsede opslag og kontrollere, at alle efterspurgte ID'er findes. Undgå ét netkald pr. adresse ved større områder; afprøv den konkrete batchfiltrering mod skemaet før aktivering.
+1. Den samlede vej-/postnummeradapter er implementeret med aliasbatching og fuldstændighedskontrol. Næste kildeopslag er afgrænsede geografiske udsnit til den samlede grænse. Det konkrete skema og et ufølsomt prøveområde kontrolleres i ejerens lokale installation; nøglen sendes ikke til AI.
 2. Vej-, postnummer- og grænsehentning skal bruge adapteren med samme snapshot, fremdrift, pause/genoptagelse og særskilt GraphQL-kildemarkør i checkpoints. REST-checkpoints må ikke genoptages som GraphQL.
 3. Import/retirement skal først ske efter en komplet vej/et komplet udsnit og bevare eksisterende transaktioner. Skemafejl, 401, netfejl eller manglende joins må ikke markere lokale adresser udgået.
 4. Afslut fiktive integrationsprøver og program/platform/HA-gates; udgiv først da næste funktionelle beta. Egen lokal nøgle og et offentligt ufølsomt område er separat ejerprøve.
