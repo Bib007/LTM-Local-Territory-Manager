@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.0-beta.24 · Læsbare lokale navneforslag
+
+- Navneforslag ved udlevering har lys tekst på mørkegrå baggrund. Hover og tastaturmarkering har en lysere mørk tone og tydelig kant.
+- Den fejlagtige hvide fallback er fjernet. Lokale navne, søgning, valg og udleveringspayload er uændrede.
+- Browserkontrol bruger opdigtede navne, kontrollerer høj kontrast i den normale tilstand, tastaturmarkering/valg og smal/bred visning.
+
+
 ## 1.12.0-beta.23 · Samlet opsætning og obligatorisk rundtur
 
 - Én normal opsætningsguide med introduktion til lokal drift, fælles HA-installation, backup og valgfri deling. Den parallelle detaljerede guide er samlet ind i forløbet.
