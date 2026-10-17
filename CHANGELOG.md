@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.0-beta.19 · Forståelige domænefejl på dansk og engelsk
+
+- Faste fejl fra kort, adresser, udlån, IB, opsætning, administration og backup følger valgt sprog. Ukendte diagnostikker vises fortsat uændret og HTML-escaped.
+- Parameteriserede fejl får valgfrie skabelon-/parametermetadata. Den oprindelige danske fejltekst og ValueError-kontrakt bevares. Brugerens navne, kortnumre, interne filnavne og talgrænser ændres ikke.
+- Dato-/IB-linjefejl og backupforhåndsvisning bruger samme sikre renderer. Sprogskift bevarer felter og opdaterer beskeden på stedet; ukendte eller ugyldige metadata falder tilbage til originalen.
+- JSON-læsning har nu også tidsgrænse efter modtagne HTTP-headere. Nye kildekatalog-, HTTP-, fiktive UI- og Chromium-prøver dækker fejlforløbene. Fast punkt 6 er fortsat i gang; 50 %.
+
 ## 1.12.0-beta.18 · Sene svar bevarer nyere arbejde
 
 - Opfølgning efter noter, IB og omstrukturering kan ikke åbne gamle dialoger eller skifte væk fra nyere arbejde. Sene formularfejl overskriver ikke en nyere fejlbesked.

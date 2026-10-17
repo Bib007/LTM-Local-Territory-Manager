@@ -26,7 +26,15 @@ const SaveStatus={kind:'loading',message:'Åbner dine data…',detail:'',
  paint(){const node=el('saveState');if(!node)return;node.className=this.kind==='error'?'error':'';node.dataset.saveKind=this.kind;node.title=I18n.text(this.message)+(this.detail?' · '+I18n.errorText(this.detail):'');node.innerHTML=ui(this.message)+(this.detail?`<span class="saveDetail"> · ${I18n.errorHTML(this.detail)}</span>`:'');},
  set(kind,message,detail=''){this.kind=kind;this.message=message;this.detail=detail;this.paint();}
 };
-class RequestError extends Error{constructor(key,kind='rejected',status=0,detail='',writing=false){super(I18n.text(key)+(detail?' '+detail:''));this.name='RequestError';this.uiKey=key;this.uiDetail=detail;this.kind=kind;this.status=status;this.writing=writing;}}
+class RequestError extends Error{
+ constructor(key,kind='rejected',status=0,detail='',writing=false){super(I18n.text(key)+(detail?' '+detail:''));this.name='RequestError';this.uiKey=key;this.uiDetail=detail;this.kind=kind;this.status=status;this.writing=writing;}
+ static fromResponse(data,kind='rejected',status=0,writing=false){
+  const error=new RequestError(typeof data?.error==='string'?data.error:'Forespørgslen kunne ikke gennemføres. Prøv igen, når forbindelsen svarer.',kind,status,'',writing),info=data?.ui_error,params=info?.params;
+  // Only known templates with scalar parameters may replace the original diagnostic.
+  if(typeof info?.key==='string'&&Object.prototype.hasOwnProperty.call(I18n.english,info.key)&&params&&typeof params==='object'&&!Array.isArray(params)&&Object.keys(params).length<=20&&[...info.key.matchAll(/\{([a-zA-Z]+)\}/g)].every(match=>Object.prototype.hasOwnProperty.call(params,match[1]))&&Object.entries(params).every(([key,value])=>/^[a-zA-Z]+$/.test(key)&&(typeof value==='string'||typeof value==='number'&&Number.isFinite(value)))){error.uiKey=info.key;error.uiParams={...params};error.message=I18n.format(error.uiKey,error.uiParams);}
+  return error;
+ }
+}
 const WriteGuard={uncertain:false,needsReview:false,loginExpired:false,error:null,epoch:0,
  writes(path,body){return !!body&&!(path==='/api/mutate'&&typeof body.action==='string'&&body.action.endsWith('.preview'))&&!['/api/share/prepare','/api/restore/preview','/api/address-source/check','/api/open-data','/api/logout','/api/shutdown','/api/geo/pause'].includes(path);},
  assert(epoch=this.epoch){if(this.uncertain||this.needsReview||epoch!==this.epoch)throw new RequestError('Kontrollér den tidligere ændring med Opdater, før du gemmer igen.','blocked',0,'',true);if(this.loginExpired)throw new RequestError('Login er udløbet · log ind igen.','login',401,'',true);},
@@ -51,10 +59,10 @@ async function api(path,body){
   const data=await r.json().catch(()=>({}));
   if(writing&&(r.status>=500||r.status===408)){const failure=problem('Serveren kunne ikke bekræfte ændringen. Kontrollér de gemte data med Opdater før et nyt forsøg.','uncertain',r.status);WriteGuard.mark(failure);throw failure;}
   const key=r.status===401?'Login er udløbet · log ind igen.':typeof data?.error==='string'?data.error:'Forespørgslen kunne ikke gennemføres. Prøv igen, når forbindelsen svarer.';
-  const failure=problem(key,r.status===401?'login':'rejected',r.status);if(r.status===401){WriteGuard.loginExpired=true;WriteGuard.epoch++;clearTimeout(autosaveTimer);failed(failure);}throw failure;
+  const failure=r.status===401?problem(key,'login',r.status):RequestError.fromResponse(data,'rejected',r.status,writing);if(r.status===401){WriteGuard.loginExpired=true;WriteGuard.epoch++;clearTimeout(autosaveTimer);failed(failure);}throw failure;
  }
- if(body){
-  let payload;try{payload=await r.clone().json();if(!payload||typeof payload!=='object'||Array.isArray(payload)||(path==='/api/mutate'&&(typeof payload.revision!=='string'||!payload.revision)))throw Error('Invalid response');}
+ if(body||r.headers?.get?.('content-type')?.includes('application/json')){
+  let payload;try{payload=await r.clone().json();if(body&&(!payload||typeof payload!=='object'||Array.isArray(payload)||(path==='/api/mutate'&&(typeof payload.revision!=='string'||!payload.revision))))throw Error('Invalid response');}
   catch(error){const failure=problem(writing?'Svaret på ændringen kunne ikke læses. Kontrollér de gemte data med Opdater før et nyt forsøg.':'Svaret kunne ikke læses. Prøv kontrollen igen.',writing?'uncertain':'response');if(writing)WriteGuard.mark(failure);throw failure;}
   if(path==='/api/mutate'&&state===previousState&&state?.revision===previousRevision)state.revision=payload.revision;
  }

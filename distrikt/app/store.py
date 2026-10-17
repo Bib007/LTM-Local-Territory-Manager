@@ -12,6 +12,7 @@ from geo_store import GeoStore
 from admin_store import AdminStore
 from workflow_store import WorkflowStore
 from setup_store import SetupStore
+from ui_errors import UIError
 
 MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkyndere',
            'loans': 'udleveringer', 'completions': 'gennemgange', 'ib': 'ib',
@@ -28,9 +29,9 @@ def valid_day(value, field='Dato', future=False):
     try:
         d = date.fromisoformat(str(value))
     except (ValueError, TypeError):
-        raise ValueError(field + ' skal være en gyldig dato.')
+        raise UIError('{field} skal være en gyldig dato.',field=field)
     if not future and d > date.today():
-        raise ValueError(field + ' må ikke ligge i fremtiden.')
+        raise UIError('{field} må ikke ligge i fremtiden.',field=field)
     return d.isoformat()
 
 def new_id():
