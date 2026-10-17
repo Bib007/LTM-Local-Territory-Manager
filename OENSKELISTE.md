@@ -6,7 +6,13 @@ Seneste verificerede beta er 1.12.0-beta.23 fra d006deb, med grønne program-, M
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
-| W33 | Statusfanen skal kun vise det, der mangler; færdige punkter fjernes | -1 · kritisk | I gang; går foran ny kode | Afsluttede lister og historiske statusreferater fjernes fra ejerens statusfane. Kun udestående udvikling, blokeringer og ejer-/udgivelsestrin vises. Nye ønsker ryddes først efter planlagring. |
+| W34 | Afsluttelig opgaveliste efter guiden med overstregning og spring over | 3 | Planlagt | Hvert punkt kan udføres eller springes over. Listen skjules, når alle punkter er afsluttet; genåbning og eksisterende opsætning bevares. |
+| W35 | Forklar januarfristen korrekt: kan API-nøgler oprettes bagefter? | 1 | I gang; går foran W31 | Officielle kilder efterprøves. App og vejledning skelner mellem lukning af gammel REST-adgang og fortsat oprettelse af GraphQL-nøgler. |
+| W36 | Forklar Adressevælger og dens særskilte token forståeligt | 5 | Planlagt | Formål, valgfrihed og forskel fra Datafordeler-nøglen beskrives konkret; uklare tekniske menutekster forbedres. |
+| W37 | Bring webdemo i overensstemmelse med den udgivne app | 9 | Planlagt til sidst i funktionsforløbet | Demo følger kontrolleret produktudgave med udelukkende fiktive data og tydelige begrænsninger. |
+| W38 | Farver efter kortstatus og direkte indlever/udlever i daglig brug | 3 | Planlagt | Status og primære handlinger får læsbare farver og direkte adgang; eksisterende sidemenu med flere handlinger bevares. |
+| W39 | Aflever pr. forkynder med navnesøgning og sortering efter antal kort | 5 | Planlagt | Alle udleverede kort grupperes tydeligt efter forkynder; flest tildelte først. Søgning og normal aflevering fungerer fra oversigten. |
+| W33 | Statusfanen skal kun vise det, der mangler; færdige punkter fjernes | -1 · kritisk | Færdig: statusfanen viser kun udestående punkter | Afsluttede lister og historiske statusreferater fjernes fra ejerens statusfane. Kun udestående udvikling, blokeringer og ejer-/udgivelsestrin vises. Nye ønsker ryddes først efter planlagring. |
 | W31 | Importér de seneste to års gennemgange fra en skabelon eller udfyldt S-13 | 6 | Planlagt efter W33; ejer ønsker både digital PDF og scanning/foto hvis muligt | Lokal forhåndsvisning matcher kortnumre, datoer og dubletter før udtrykkelig godkendelse. Ingen eksisterende udlån eller registreringer overskrives. Digital S-13 læses lokalt; lokal OCR undersøges. Eksternt værktøj er kun et frivilligt alternativ med tydelig besked om, at tredjeparts privatlivssikkerhed ikke kan garanteres. |
 | W32 | Sammenlign månedlige gennemgange med samme måned sidste år på forsiden | 8 | Planlagt efter højere prioriteter | Graf/tabel viser sammenlignelige månedstal og manglende historik tydeligt; indeværende måned sammenlignes til samme dato. Eksisterende optælling og privatlivsgrænse bevares. |
 | W29 | Opdatér develop og beta løbende, og main ved stabil udgivelse | -1 · kritisk | Bekræftet som fast procedure; featureændringer gemmes på develop og udgives som immutable beta efter gates; main ændres først ved stabil udgivelse | Status, udviklingskode og kontrolleret betakanal følger hinanden, uden at en allerede udgivet beta overskrives eller main opdateres ved en beta. |
@@ -272,3 +278,7 @@ W29 er bekræftet som fast kritisk procedure: develop gemmes, hver færdig kodeo
 ## W31–W33 · næste ønsker
 
 17.10.2026: Ejerens kritiske statusoprydning udføres før ny kode. Historikimport (6) og månedssammenligning (8) er gemt inden rydning af deres indbakkefelter. Ejeren har afklaret S-13: helst digitale PDF'er samt scanning/foto; ved for kompliceret billedaflæsning kan der henvises til et frivilligt eksternt værktøj med udtrykkelig besked om, at dets privatlivssikkerhed ikke kan garanteres. Der uploades aldrig ejerfiler automatisk. Prioritet 11 betyder fremover altid sidst; -1 forbliver kritisk.
+
+## W34–W39 · nye ønsker gemt før rydning
+
+17.10.2026: Opgaveliste efter guiden (3), præcis forklaring af API-fristen (1), Adressevælger-vejledning (5), demo-opdatering (9), farver/direkte udlånsknapper (3) og aflevering pr. forkynder (5) er registreret fra ejerens ønskefane. W35 behandles først. W31 er bevaret som igangværende arbejde. W33 er udført og statusfanen læst tilbage. Ingen private registreringer indgår i planen.
