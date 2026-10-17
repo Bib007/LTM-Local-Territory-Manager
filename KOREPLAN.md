@@ -1,6 +1,6 @@
 # Køreplan · næste version
 
-**Samlet færdig: 30 % · 3 af 10 opgaver afsluttet.**
+**Samlet færdig: 40 % · 4 af 10 opgaver afsluttet.**
 
 Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prøver og lagring på GitHub. Procenten gælder denne plan. Stabil grundudgave 1.11.1 og almindelig HA-installation følger main.
 
@@ -9,13 +9,15 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 1 | Kortoversigt og filtre med bevaret kortposition | Færdig og prøvet | 10 % |
 | 2 | Adresser, IB/genprintlister og kortkontrol | Færdig og prøvet | 20 % |
 | 3 | Kortredigering, samlet grænse og import | Færdig og prøvet | 30 % |
-| 4 | Avanceret opsætning og lokal IB-import | Næste | 40 % |
-| 5 | Google Drive og QR med opdigtede svar | Afventer | 50 % |
+| 4 | Avanceret opsætning og lokal IB-import | Færdig og prøvet | 40 % |
+| 5 | Google Drive og QR med opdigtede svar | Næste | 50 % |
 | 6 | Fælles fejl, bekræftelser og usikker gemning | Afventer | 60 % |
 | 7 | Login, tastatur og fokus | Afventer | 70 % |
 | 8 | Printbetjening med uændrede originalformularer | Afventer | 80 % |
 | 9 | Samlet programpakke og verifikation | Afventer | 90 % |
 | 10 | Samlet kontrol, dokumentation og manuel restliste | Afventer | 100 % |
+
+Opgave 4 kontrolleres med `test_setup_workflow_language.cjs` og samme offline-browserprøve: uændrede typer/nummerering, samme skrivepayload og danske bekræftelsesord på begge sprog, bevaret opsætningskort/kladdenavne og IB-kontrol ved sprogskift, ombyttede filindlæsninger samt ugyldiggørelse ved ændret dato, område, revision eller navigation. IB-fejl spærrer godkendelse. Ingen privat fil er brugt.
 
 Opgave 3 kontrolleres med `test_geo_workflow_language.cjs` og den gentagelige offline-browserprøve `scripts/check_geo_browser.cjs` (Playwright som isoleret udviklingsværktøj). Prøverne dækker kanoniske formularværdier, uændrede brugerdata, kort/zoom/fokus/indtastninger ved sprogskift, importfil/valg, sene og ombyttede svar, annullering, kopierede gemmepayloads og nyere tegninger under gemning. Browserprøven kræves også af HA-beta-gaten. Mobilbredt kortvalg er rettet efter visuel kontrol.
 

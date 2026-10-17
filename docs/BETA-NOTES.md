@@ -1,19 +1,19 @@
-# LTM 1.12.0-beta.13
+# LTM 1.12.0-beta.14
 
-## Nyt siden beta.12
+## Nyt siden beta.13
 
-Korteditor, samlet distriktsgrænse og KML/GeoJSON-import kan betjenes på dansk og engelsk. Sprogskift bevarer kortudsnit, adressevalg, ugemt tegning, formularindtastninger og valgt importfil. Kortnumre, vejnavne og gemte typer ændres ikke. Kortvælgeren er tilpasset smalle skærme.
+Avanceret opsætning har dansk/engelsk i alle fire trin: ydergrænse/adresser, områder/nummerering, kontrol/oprettelse og lokal IB-import. Sprogskift bevarer kort, kladdenavne/-numre, geometri og IB-kontrol. Type- og nummereringsværdier samt CSV-format bevares. Bekræftelsesordene er fortsat **OPRET KORT** og **IMPORTÉR IB** på begge sprog.
 
-Sene forhåndsvisninger og importsvar erstatter ikke en nyere kladde eller dialog. En gemning bruger det kontrollerede valg, og nyere ændringer under gemning bevares som ugemt tegning. Dobbeltgemning blokeres. En afsluttet kortdatahentning genopbygger ikke editorens formular.
+Langsomme forslag og filindlæsninger kan ikke erstatte nyere kontrol. En ny fil, ændret dato eller fejl ugyldiggør ældre IB-kontrol. Felter er spærret under selve oprettelsen. Eksisterende kort, historik og IB overskrives ikke.
 
 ## Prøv især
 
-1. Opdater **Distrikt Beta**. Stabil 1.11.1 kører separat. Brug opdigtede oplysninger i betaen.
-2. Åbn en kortgrænse, flyt et hjørne og udfyld vej-/nummerfelter. Skift dansk/engelsk; kontrollér at tegning, zoom, valg og felter bevares. Gem og genåbn.
-3. Åbn samlet grænse. Ret et hjørne og skift sprog. Gem og kontrollér den genåbnede grænse.
-4. Importér en ufølsom KML/GeoJSON med flere grænser. Vælg grænse, skift sprog, kontrollér previewet og annullér først. Importér igen, læg grænsen i tegningen, ret og gem den udtrykkeligt. Filvalg alene gemmer intet.
-5. Prøv på telefonen, at kortvalg, tegneknapper og import kan betjenes uden afskåret indhold.
+1. Opdater **Distrikt Beta**. Brug opdigtede kort og IB i denne prøve. Stabil installation fortsætter separat.
+2. Åbn **Indstillinger → Avanceret → Opsæt distrikter**. Udfyld område, type, nummerering og forbogstaver. Skift sprog og kontrollér, at værdierne bevares.
+3. Lav et forslag. Ret navn og nummer, se kortet, og skift sprog. Kontrollér igen før udtrykkelig oprettelse med **OPRET KORT**.
+4. Hent IB-skabelonen, og prøv en ufølsom CSV med én gyldig og én ugyldig adresse. Kontrollér, at fejl spærrer import. Skift sprog under kontrolvisningen.
+5. Vælg en rettet fil. Ændr standarddatoen og kontrollér, at en ny kontrol kræves. Godkend kun korrekte rækker med **IMPORTÉR IB**. Kontrollér berørte bagsider; forsiders besøgstal skal være uændrede.
 
-Program- og Chromium-prøver bruger fiktive data/svar og lokal Leaflet. Browserprøver dækker 320/390/768/1440 pixels, kort-/felt-/fokusbevaring og import; asynkrone programprøver dækker sene/ombyttede svar og redigering under gemning. Egen HA/telefon, Datafordeler, Google og fysisk print er særskilte ejerprøver.
+Fiktive programprøver kontrollerer samme payload på begge sprog, ugyldige bekræftelser, sene forslag, ombyttede filer og dato-/navigationsskift. Offline Chromium kontrollerer rigtig app/Leaflet ved 320/390/768/1440 pixels. Egne private filer er ikke åbnet. Egen HA/telefon, konti og fysisk print er særskilte prøver.
 
-Den faste køreplan er nu 30 % (3/10). Næste er avanceret opsætning og lokal IB-import. Ønskelisten er sat på pause efter ejerens aftale; KTM-opfølgningslisten er fortsat fjernet.
+Den faste køreplan er 40 % (4/10); næste er Google/QR med opdigtede svar. Ønskelisten venter fortsat.
