@@ -76,5 +76,8 @@ const reset=()=>run("WriteGuard.reviewed();state=JSON.parse(JSON.stringify(fixtu
  answer=(request,options)=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Error('Invented timeout'))));
  const timeoutWrite=capture(run("api('/api/mutate',{action:'note.save',data:{text:'Invented timeout'}})"));const timeout=timers.at(-1);assert.equal(timeout.delay,60000);timeout.fn();assert.equal((await timeoutWrite).kind,'uncertain');assert.equal(timeout.cleared,true);assert.equal(run('WriteGuard.uncertain'),true);
  reset();const timeoutRead=capture(run("api('/api/state')")),readTimer=timers.at(-1);assert.equal(readTimer.delay,30000);readTimer.fn();assert.equal((await timeoutRead).writing,false);assert.equal(readTimer.cleared,true);assert.equal(run('WriteGuard.uncertain'),false);assert.equal(run('SaveStatus.kind'),'saved');
+ // A GET timeout also covers a JSON body that stalls after successful HTTP headers.
+ reset();answer=async(request,options)=>({ok:true,status:200,headers:{get:()=> 'application/json'},clone:()=>({json:()=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Error('Invented stalled body'))))})});
+ const stalledBody=capture(run("api('/api/state')"));await new Promise(resolve=>setImmediate(resolve));const bodyTimer=timers.at(-1);bodyTimer.fn();assert.equal((await stalledBody).kind,'response');assert.equal(bodyTimer.cleared,true);assert.equal(run('WriteGuard.uncertain'),false);
  console.log('Request safety: read-only previews, rejection/login distinction, unknown/invalid acknowledgements, cancelled queued writes, paused autosave, explicit snapshot review, known-save refresh failures and preserved newer dialogs passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -24,6 +24,18 @@ class HTTPTests(unittest.TestCase):
         h.update(headers or {})
         req=urllib.request.Request(self.server.origin+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
         return urllib.request.urlopen(req,timeout=3)
+    def test_parameterized_validation_metadata_keeps_original_error_and_does_not_write(self):
+        before=self.store.revision
+        cases=[
+            ({'action':'setup.preview','data':{'target':0}},'Besøg pr. kort skal være mellem 1 og 1000.','{label} skal være mellem {low} og {high}.',{'label':'Besøg pr. kort','low':1,'high':1000}),
+            ({'action':'setup.ib.preview','data':{'content':'vejnavn;husnummer;postnummer\nFiktiv;1;9999','date':'not-a-date'}},'Dato skal være en gyldig dato.','{field} skal være en gyldig dato.',{'field':'Dato'}),
+        ]
+        for payload,original,key,params in cases:
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/mutate',payload)
+            self.assertEqual(caught.exception.code,400)
+            body=json.load(caught.exception)
+            self.assertEqual(body,{'error':original,'ui_error':{'key':key,'params':params}})
+            self.assertEqual(self.store.revision,before)
     def test_address_source_api_keeps_key_private_and_requires_token(self):
         schema=b'type Query { DAR_Adresse: String DAR_Husnummer: String DAR_Postnummer: String }'
         fake_key='FICTIONAL_ADDRESS_KEY_123456'

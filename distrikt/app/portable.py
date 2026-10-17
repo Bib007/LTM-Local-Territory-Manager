@@ -11,6 +11,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from store import MODULES
+from ui_errors import UIError
 
 MAX_ARCHIVE=100*1024*1024
 MAX_EXPANDED=512*1024*1024
@@ -61,15 +62,15 @@ class Restores:
                             db=sqlite3.connect(p.as_uri()+'?mode=ro&immutable=1',uri=True)
                             try:
                                 db.execute('PRAGMA trusted_schema=OFF')
-                                if db.execute('PRAGMA user_version').fetchone()[0]!=1:raise ValueError('Ukendt databaseversion: '+name)
+                                if db.execute('PRAGMA user_version').fetchone()[0]!=1:raise UIError('Ukendt databaseversion: {file}',file=name)
                                 objects=db.execute("SELECT type,name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").fetchall()
-                                if objects!=[('table','records')]:raise ValueError('Ugyldig databasestruktur: '+name)
+                                if objects!=[('table','records')]:raise UIError('Ugyldig databasestruktur: {file}',file=name)
                                 columns=[r[1] for r in db.execute('PRAGMA table_info(records)')]
-                                if columns!=['id','payload','deleted_at','batch']:raise ValueError('Ugyldigt databaseformat: '+name)
-                                if db.execute('PRAGMA quick_check').fetchone()[0]!='ok':raise ValueError('Beskadiget database: '+name)
+                                if columns!=['id','payload','deleted_at','batch']:raise UIError('Ugyldigt databaseformat: {file}',file=name)
+                                if db.execute('PRAGMA quick_check').fetchone()[0]!='ok':raise UIError('Beskadiget database: {file}',file=name)
                                 for row in db.execute('SELECT id,payload,deleted_at,batch FROM records'):
                                     item=json.loads(row[1])
-                                    if not isinstance(item,dict) or item.get('id')!=row[0]:raise ValueError('Ugyldig post i '+name)
+                                    if not isinstance(item,dict) or item.get('id')!=row[0]:raise UIError('Ugyldig post i {file}',file=name)
                                     items.append(tuple(row))
                             finally:db.close()
                         rows[module]=items;counts[module]=sum(r[2] is None for r in items)

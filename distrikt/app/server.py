@@ -23,9 +23,10 @@ from access import Access, LOGIN, private_client, write_private
 from portable import Restores, snapshot, MAX_ARCHIVE
 from sharing import Publications
 from address_source import Datafordeler
+from ui_errors import error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.18'
+VERSION='1.12.0-beta.19'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -151,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send((self.server.store.root/'backups'/name).read_bytes(),'application/zip')
             if path=='/api/data-info':return self.send({'path':str(self.server.store.root),'cutoff':self.server.store.history_cutoff(),'server_mode':bool(self.server.access),'address':self.server.public_url})
             return self.send({'error':'Siden findes ikke.'},status=404)
-        except (ValueError,KeyError,TypeError) as e:self.send({'error':str(e)},status=400)
+        except (ValueError,KeyError,TypeError) as e:self.send(error_payload(e),status=400)
         except Exception:self.send({'error':'Lokal læsefejl. Data er ikke sendt nogen steder.'},status=500)
     def do_POST(self):
         if self.path=='/api/login':
@@ -171,7 +172,7 @@ class Handler(BaseHTTPRequestHandler):
                 length=int(self.headers.get('Content-Length',0))
                 if not 0<length<=MAX_ARCHIVE:raise ValueError('Sikkerhedskopien må højst fylde 100 MB.')
                 return self.send(self.server.restores.preview(self.rfile.read(length)))
-            except ValueError as error:return self.send({'error':str(error)},status=400)
+            except ValueError as error:return self.send(error_payload(error),status=400)
         if self.headers.get('Content-Type','').split(';')[0]!='application/json':return self.send({'error':'Ugyldigt format.'},status=415)
         try:
             length=int(self.headers.get('Content-Length',0))
@@ -233,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
                 if self.server.access:raise ValueError('Stop serverversionen fra Home Assistant.')
                 self.send({'ok':True});threading.Thread(target=self.server.shutdown,daemon=True).start();return
             return self.send({'error':'Ukendt handling.'},status=404)
-        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send({'error':str(e)},status=400)
+        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send(error_payload(e),status=400)
         except Exception:self.send({'error':'Ændringen blev ikke gemt. Prøv igen; eksisterende data er bevaret.'},status=500)
 
 def running(data):

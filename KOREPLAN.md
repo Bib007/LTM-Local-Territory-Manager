@@ -11,7 +11,7 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 3 | Kortredigering, samlet grænse og import | Færdig og prøvet | 30 % |
 | 4 | Avanceret opsætning og lokal IB-import | Færdig og prøvet | 40 % |
 | 5 | Google Drive og QR med opdigtede svar | Færdig og prøvet | 50 % |
-| 6 | Fælles fejl, bekræftelser og usikker gemning | I gang · beta.18 | 60 % |
+| 6 | Fælles fejl, bekræftelser og usikker gemning | I gang · beta.19 | 60 % |
 | 7 | Login, tastatur og fokus | Afventer | 70 % |
 | 8 | Printbetjening med uændrede originalformularer | Afventer | 80 % |
 | 9 | Samlet programpakke og verifikation | Afventer | 90 % |
@@ -37,7 +37,9 @@ Beta.16 (`456f327`) og beta.17 (`0b3f715`) er verificeret udgivet med grøn Chec
 
 Beta.18 beskytter de efterfølgende dialog-/navigationshandlinger ved noter, IB og omstrukturering. Previewet bindes til formularens værdier, alle valgte adresser og revisionen; bekræftelsen kræver uændret kontrol og blokerer dobbeltklik. Nyere lokale tegninger og filtervalg bevares også ved sene gemmesvar. `test_write_followups.cjs` og offline Chromium dækker normale og forsinkede forløb.
 
-Punktet er ikke færdigt: næste er faste og parameteriserede domænefejl og den resterende samlede kontrol. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
+Beta.19 lokaliserer faste og parameteriserede fejl fra kort, adresser, udlån, IB, opsætning, administration og backup. Oprindelig dansk fejltekst bevares; navne, numre og talgrænser behandles som data og oversættes ikke. Kildekataloget kontrolleres mod Python-raises i de syv kernemoduler. HTTP-/UI-/Chromium-prøver kontrollerer afvisning uden skrivning, sprogskift, IB-linjefejl og sikre fallback-beskeder. Tekniske fejl fra eksterne tjenester kan fortsat vises uændret som diagnostik.
+
+Punktet er ikke færdigt: næste er afsluttende kontrol af særskilte opsætnings-, kortimport- og delingsskrivninger, især gennemført skrivning med fejlet efterfølgende læsning. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
 
 ## Aktuel arbejdsrækkefølge · 17.10.2026
 
