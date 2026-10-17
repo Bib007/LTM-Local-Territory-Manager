@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.0-beta.21 · Fast punkt 7: login, tastatur og fokus
+
+- Login kan vælges på dansk/engelsk uden at genskabe felter. Indsendelse kræver én bekræftet anmodning, har timeout og blokerer dobbeltklik. Fejl bevarer indtastning og passende fokus; kun sprogvalget gemmes som præference.
+- Loginets lille oversættelse ligger i den allerede offentlige loginfil. Generel app-sprogfil, øvrige programfiler og data kræver fortsat login; cookie, adgangskodekontrol, netværks-/oprindelseskontrol og rategrænse er uændrede.
+- Dialoger får navngivning fra overskrift, sammenknyttede feltlabels og meningsfuldt startfokus. Tab/Shift+Tab bliver i dialogen, Escape bevarer den eksisterende gemmekontrol, og lukning returnerer til åbneren, også efter genoptegning.
+- Fiktive login-/fokusprøver, LAN-grænser og offline Chromium dækker begge loginvarianter ved fire bredder samt appens native dialog- og Escape-forløb. Fast køreplan: 70 % (7/10). Næste er printbetjening med uændrede originalformularer.
+
 ## 1.12.0-beta.20 · Fast punkt 6 afsluttet
 
 - Særskilte skrivninger i opsætning, IB-/kortimport, deling og førstegangsopsætning bruger nu samme tydelige faser: usikker kvittering, kendt afvisning eller bekræftet skrivning med behov for genindlæsning. En læsefejl udløser aldrig automatisk gentagelse.

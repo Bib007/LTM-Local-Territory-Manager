@@ -18,6 +18,12 @@ Use the search control at the top or **Ctrl K / Command K** outside a text field
 
 On a phone, the menu button announces whether the menu is open. Tap the backdrop or press Escape to close it. The blue logo and the dark interface remain the same across screen sizes; reduced-motion preferences disable the menu transition.
 
+### Sign-in and keyboard
+
+Sign-in supports Danish/English. Changing language preserves the field and does not change the password. Only the language choice is saved as a preference; enter your password in your local app, never in chat or feedback. Sign-in errors appear in the form, and interrupted requests are not automatically repeated.
+
+Inside dialogs, Tab and Shift+Tab move between available controls. Escape follows the normal save/close checks; decline closing to keep the fields when saving is uncertain. After closing, focus returns to the control that opened the dialog when it is still available.
+
 ### Connection is not the same as saving
 
 - **All changes saved** means the normal app operation completed successfully.

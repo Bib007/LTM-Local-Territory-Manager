@@ -116,6 +116,18 @@ class LANTests(unittest.TestCase):
         self.assertEqual(error.exception.code,401)
 
     def test_navigation_language_asset_keeps_lan_login_boundary(self):
+        with self.req('/') as response:
+            login=response.read().decode()
+            self.assertIn('id="loginPassword"',login)
+            self.assertIn('for="loginPassword"',login)
+            self.assertIn('id="loginLanguage"',login)
+            self.assertIn('src="/login.js"',login)
+            self.assertNotIn('src="/i18n.js"',login)
+        with self.req('/login.js') as response:
+            self.assertIn(b'const LoginText=',response.read())
+            self.assertEqual(response.headers['Cache-Control'],'no-store')
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/app.js')
+        self.assertEqual(error.exception.code,401)
         with self.assertRaises(urllib.error.HTTPError) as error:self.req('/i18n.js')
         self.assertEqual(error.exception.code,401)
         self.login().close()

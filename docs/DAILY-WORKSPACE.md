@@ -16,6 +16,12 @@ Brug søgningen øverst eller **Ctrl K / Command K**, når du ikke skriver i et 
 
 På telefonen kan menuen lukkes ved at trykke uden for den eller med Escape. Menuens åbne/lukkede tilstand følger knappen. Systemets ønske om reduceret bevægelse respekteres.
 
+### Login og tastatur
+
+Login kan vælges på dansk/engelsk. Sprogskift bevarer feltet og ændrer ikke adgangskoden. Kun sprogvalget gemmes som præference; indtast koden i din lokale app, aldrig i chat eller feedback. En loginfejl vises i formularen, og en afbrudt anmodning gentages ikke automatisk.
+
+I dialoger flytter Tab og Shift+Tab mellem tilgængelige kontroller. Escape følger den normale gemme-/lukningskontrol; afvis lukning for at beholde felter ved usikker gemning. Efter lukning returneres fokus til kontrollen, der åbnede dialogen, når den stadig findes.
+
 ### Forbindelse er ikke det samme som gemning
 
 - **Alle ændringer er gemt:** Den normale apphandling er gennemført uden fejl.

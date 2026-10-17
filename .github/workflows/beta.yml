@@ -29,6 +29,8 @@ jobs:
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
       - name: Offline geographic editor browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
+      - name: Offline login and keyboard workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - run: python scripts/test_build_release.py
       - run: python -m unittest discover -s scripts -p test_build_beta.py -v
   desktop:

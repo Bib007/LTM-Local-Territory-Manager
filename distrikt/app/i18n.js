@@ -3,6 +3,16 @@
 const I18n={
  current:'da',
  english:{
+  "Dialog":"Dialog",
+  "Privat adgang · hjemmenetværk og VPN":"Private access · home network and VPN",
+  "Adgangskode":"Password",
+  "Log ind":"Sign in",
+  "Logger ind…":"Signing in…",
+  "Svaret kunne ikke læses. Prøv at logge ind igen.":"The response could not be read. Try signing in again.",
+  "Login mislykkedes.":"Sign-in failed.",
+  "Login blev ikke bekræftet. Genindlæs siden og kontrollér adgangen.":"Sign-in was not confirmed. Reload the page and check access.",
+  "Ingen forbindelse til login. Kontrollér Wi-Fi / VPN, og prøv igen.":"Cannot reach sign-in. Check Wi-Fi / VPN and try again.",
+  "Forkert adgangskode eller for mange forsøg. Vent fem minutter efter gentagne forsøg.":"Incorrect password or too many attempts. Wait five minutes after repeated attempts.",
   "Ukendt lokal vært. Brug den konfigurerede lokale adresse.":"Unknown local host. Use the configured local address.",
   "Kun den lokale app har adgang.":"Only the local app has access.",
   "Kun hjemmenetværk og VPN har adgang.":"Access is limited to the home network and VPN.",
