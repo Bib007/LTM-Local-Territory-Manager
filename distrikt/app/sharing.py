@@ -98,6 +98,8 @@ class Drive:
         for p in self.api('/files/'+file_id+'/permissions?fields=permissions(id,type)')['permissions']:
             if p['type']=='anyone':self.api('/files/'+file_id+'/permissions/'+p['id'],method='DELETE')
 
+RENDER_REVISION=2
+
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
     ignored={a['address_id'] for a in store.all('ignored')}
@@ -151,6 +153,8 @@ class Publications:
         with store.transaction():
             for row in self.rows():
                 c=store.get('cards',row['card_id'])
+                if c and row.get('render_revision')!=RENDER_REVISION and not row.get('render_refresh'):
+                    row['render_refresh']=True;store.put('maps',row)
                 # Preserve unchanged existing links while their layout awaits manual refresh.
                 if c and row.get('status')=='published' and row.get('fingerprint')==fingerprint(store,c,legacy=True):
                     row.update(fingerprint=fingerprint(store,c),render_refresh=True);store.put('maps',row)
@@ -230,15 +234,17 @@ class Publications:
         with self.store.lock:
             c=self.store.require('cards',card_id)
             if not c.get('geo_polygon') and not c.get('geo_addresses') and not c.get('address_ids'):raise ValueError('Tilføj kortets grænse og adresser først.')
-            return {'fingerprint':fingerprint(self.store,c),'card':dict({k:c.get(k) for k in ('id','number','map_color','geo_polygon')},name=public_name(self.store,c)),'members':public_members(self.store,c)}
+            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'card':dict({k:c.get(k) for k in ('id','number','map_color','geo_polygon')},name=public_name(self.store,c)),'members':public_members(self.store,c)}
     def enqueue(self,data):
+        revision=data.get('render_revision',1)
+        if type(revision) is not int or revision not in (1,RENDER_REVISION):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
         png=png_bytes(data.get('png'))
         if not self.drive.connected():raise ValueError('Forbind Google Drive først.')
         with self.lock,self.store.transaction():
             c=self.store.require('cards',data['card_id']);fp=fingerprint(self.store,c)
             if data.get('fingerprint')!=fp:raise ValueError('Kortet er ændret, mens billedet blev dannet. Åbn kortet igen og publicér på ny.')
             old=self.store.get('maps',self.key(c['id'])) or {}
-            row=dict(old,id=self.key(c['id']),entity='publication',card_id=c['id'],fingerprint=fp,status='queued',render_refresh=False,error='',attempts=0,withdraw_attempts=0,access_attempts=0,access_target='',close_attempts=0,next_close=0,close_error='',next_try=0,queued_png=base64.b64encode(png).decode(),generation=os.urandom(12).hex())
+            row=dict(old,id=self.key(c['id']),entity='publication',card_id=c['id'],fingerprint=fp,status='queued',render_revision=revision,render_refresh=revision<RENDER_REVISION,error='',attempts=0,withdraw_attempts=0,access_attempts=0,access_target='',close_attempts=0,next_close=0,close_error='',next_try=0,queued_png=base64.b64encode(png).decode(),generation=os.urandom(12).hex())
             self.store.put('maps',row)
         return {'ok':True,'status':'queued'}
     def process_one(self):
