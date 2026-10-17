@@ -3,6 +3,10 @@
 const I18n={
  current:'da',
  english:{
+  "Distrikt":"Territory",
+  "Indstil tryk":"Set up printing",
+  "Gem printvalg":"Save print choice",
+  "Er papiret allerede fortrykt? Vælg kun oplysninger. På blankt papir vælger du med titler og linjer. Gemning ændrer ikke kortets godkendelse og åbner ikke print.":"Is the paper already preprinted? Choose data only. For blank paper choose headings and lines. Saving does not change card approval or open printing.",
   "○ markerer en opgave eller note som udført. Find den igen under Udførte. ✓ genåbner den uden at slette teksten.":"○ marks a task or note as done. Find it again under Completed. ✓ reopens it without deleting the text.",
   "Aflever pr. forkynder":"Return by publisher",
   "Flest udleverede kort først. Søg på forkynderens navn, og aflever hvert kort fra listen.":"Most assigned cards first. Search by publisher name and return each card from the list.",
