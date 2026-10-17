@@ -12,7 +12,7 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Geografisk editor, grænser og import | Dansk/engelsk klargjort og prøvet |
 | Avanceret opsætning og lokal IB-import | Dansk/engelsk klargjort og prøvet |
 | Google/QR | Dansk/engelsk klargjort og prøvet med fiktive svar |
-| Fælles fejl og usikker gemning | Fælles fejl og kernemodulernes faste/parameteriserede domænefejl er prøvet; afsluttende kontrol af særskilte skriveforløb udestår |
+| Fælles fejl og usikker gemning | Fælles fejl, kernemodulernes domænefejl og særskilte skriveforløb er klargjort og prøvet; tekniske kildediagnostikker bevares |
 | Login og printbetjening | Afventer |
 
 [Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
