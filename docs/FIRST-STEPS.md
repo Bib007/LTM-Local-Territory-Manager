@@ -2,7 +2,11 @@
 
 [English](FIRST-STEPS.en.md) · [Installation](INSTALL.md)
 
-Ved en tom førstegangsinstallation åbnes spørgsmålsguiden automatisk. Vælg enkel udlevering eller kortfunktion, KML/GeoJSON, din måde at oprette kort på og eventuel IB-import. Gem svarene for at få en personlig plan, og vælg eventuelt **Gem og vis mig rundt**. Rundturen åbner de faktiske sider og opretter ingen registreringer. Guiden kan springes over og åbnes igen under **Indstillinger → Generelt**.
+Fra beta.23 er der én samlet opsætningsguide. På en tom installation åbnes den automatisk og forklarer lokal drift, én fælles HA-installation, backup og valgfri Google-deling. Vælg enkel udlevering eller kortfunktion, KML/GeoJSON, din måde at oprette kort på og eventuel IB-import.
+
+Vælg **Gem og start rundtur** efter spørgsmålene. Svarene gemmes, men først **Afslut rundtur** markerer opsætningen som fuldført. Derefter lukkes guiden, og forsiden viser din personlige plan med genveje til de rigtige værktøjer. Rundturen opretter ingen kort, adresser eller IB. **Fortsæt senere** eller lukning afbryder uden at fuldføre; en gemt, uafsluttet plan genåbnes ved næste start. Tidligere fuldførte installationer tvinges ikke gennem rundturen igen. Genåbn samme guide under **Indstillinger → Generelt**.
+
+Har du valgt kortfunktion, er **Forbind adressekilden · egen API-nøgle** en del af planen. Se [Datafordeler-vejledningen](DATAFORDELER.md); nøglen oprettes hos Datafordeleren og indtastes kun i din lokale app.
 
 Har du adresserne fordelt i forvejen, vælg **Adresserne er allerede fordelt på kort**, eller åbn importen under **Indstillinger → Avanceret**. [Excel og CSV](KORTIMPORT.md) forklarer skabelonen.
 

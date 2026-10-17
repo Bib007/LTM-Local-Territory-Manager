@@ -3,6 +3,9 @@
 const I18n={
  current:'da',
  english:{
+  "DAR REST udfases 15. januar 2027. Opret din egen API-nøgle til DAR GraphQL før fristen. Dine allerede hentede adresser bliver på installationen.":"DAR REST retires on 15 January 2027. Create your own API key for DAR GraphQL before the deadline. Previously downloaded addresses stay on this installation.",
+  "Kortinddeling og nummerering":"Card division and numbering",
+  "Ugyldig status for rundtur.":"Invalid tour status.",
   "Forskåret kort":"Precut card",
   "A4 · prøve i rigtig størrelse":"A4 · actual-size test",
   "Med titler og linjer":"With headings and lines",

@@ -12,7 +12,7 @@ function environment(storedLanguage,blocked=false){
   document:{activeElement:{id:'navigationLanguage'},addEventListener(k,f){(listeners[k]??=[]).push(f);},querySelectorAll(q){return q==='[data-ui]'?[nodes.brand]:[];},querySelector(q){return q==='[data-ui-title]'?nodes.title:q==='[data-ui-subtitle]'?nodes.subtitle:null;}},
   openDialog(html){opened.push(html);},closeDialog(){}};
  vm.createContext(context);
- for(const file of ['i18n.js','navigation.js','workspace.js','welcome.js'])vm.runInContext(source(file),context);
+ for(const file of ['i18n.js','navigation.js','workspace.js','onboarding.js','welcome.js'])vm.runInContext(source(file),context);
  return {context,nodes,listeners,stored,writes,opened,run:s=>vm.runInContext(s,context)};
 }
 const e=environment();assert.equal(e.run('I18n.language()'),'da');
@@ -32,8 +32,8 @@ assert.equal(e.run("I18n.set('<script>')"),false);assert.equal(e.run('I18n.langu
 const englishTargets=e.run('Navigation.html().match(/data-navigation="[^"]+"/g).join()');
 e.run("I18n.set('da');Navigation.localize()");assert.equal(e.run('Navigation.html().match(/data-navigation="[^"]+"/g).join()'),englishTargets);
 assert.equal(e.nodes.title.textContent,'Distriktskort');
-e.run('Welcome.step=2');e.listeners.change.forEach(fn=>fn({target:{id:'welcomeLanguage',value:'en'}}));
-assert.equal(e.run('Welcome.step'),2);assert.match(e.opened.at(-1),/Add geography when you are ready/);assert.match(e.opened.at(-1),/lang="en"/);
+e.run('Onboarding.open(2)');e.listeners.change.forEach(fn=>fn({target:{id:'onboardingLanguage',value:'en',dataset:{}}}));
+assert.equal(e.run('Onboarding.step'),2);assert.match(e.opened.at(-1),/How would you like to create cards/);assert.match(e.opened.at(-1),/lang="en"/);
 assert.match(e.nodes.nav.innerHTML,/Territory cards/);assert.equal(JSON.stringify(e.context.state),before);
 assert.equal(environment('en').run('Welcome.language()'),'en');
 assert.equal(environment('unsupported').run('I18n.language()'),'da');

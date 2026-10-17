@@ -2,9 +2,15 @@
 
 [Dansk](FIRST-STEPS.md)
 
+From beta.23 there is one unified setup guide. An empty installation opens it automatically. It explains local data, one shared HA installation, private backups and optional Google sharing. Answer the questions, then choose **Save and start tour**.
+
+Answers are saved first; **Finish tour** marks setup complete. The guide closes and the overview displays your plan with direct links to the actual tools. The tour creates no cards, addresses or do-not-call records. **Continue later** or closing interrupts without completing setup; a saved unfinished plan resumes on the next start. Existing completed installations are not forced through the tour again. Reopen the same guide under **Settings → General**.
+
+With maps selected, the plan includes **Connect the address source · your own API key**. Follow the [Datafordeler guide](DATAFORDELER.en.md) and enter your key only in your local app.
+
 You do not need to digitise every paper card before using LTM. Begin with the card numbers and existing assignments. Add geography and printing later, on those same records.
 
-These instructions describe the installed app. The browser demo uses invented records and does not import your data. The installed interface is currently Danish, so the button names below match what you actually see.
+These instructions describe the installed app. The browser demo uses invented records and does not import your data. The app defaults to Danish and offers English controls. Original forms and report content remain Danish.
 
 ## 1. Start the right installation
 

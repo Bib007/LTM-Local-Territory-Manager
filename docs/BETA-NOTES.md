@@ -1,22 +1,18 @@
-# LTM 1.12.0-beta.22
+# LTM 1.12.0-beta.23
 
-## Nyt siden beta.21
+## Nyt siden beta.22
 
-Den faste udviklingsplan er afsluttet: 100 % (10/10). Printbetjeningen er dansk/engelsk med bevaret indtastning. Originale S-12/S-13-formularer, kortmål og danske rapporter er bevaret. Dobbeltklik, sene svar og ændret grundlag beskyttes; manglende billeder spærrer print.
+W25/W26: én samlet spørgsmålsguide med lokal introduktion og obligatorisk afsluttende rundtur. Afslut rundtur lukker guiden og åbner forsiden med din plan. Afbrydelse kan genoptages; eksisterende fuldført opsætning tvinges ikke gennem en ny tur. Import og kortinddeling er bevaret som værktøjer.
 
-Den samlede programpakke indeholder nu alle linkede vejledninger. Brudte lokale vejledningslinks og manglende original S-12-PDF stopper pakningen. Der følger en dansk/engelsk printguide og slutkontrol med tydelig ejerrestliste.
+W27: direkte trin til egen Datafordeler-nøgle fra kortplanen og tydelig REST-frist 15. januar 2027. GraphQL-importen er allerede implementeret; egen konto og lille prøvehentning står særskilt.
 
 ## Prøv især
 
-1. Opdater Distrikt Beta på port 8788. Main er fortsat stabil 1.11.1.
-2. Åbn et opdigtet kort → Print forside. Vælg A4, fuldt tryk og mål/placering. Skift dansk/engelsk: værdierne skal bevares.
-3. Vælg Fremvis og print. Se originalkortet og vælg 100 % uden sidehoved/sidefod. Kontroller fysisk A4 først og derefter rigtige kort. Gentag med bagside.
-4. Prøv samlet rapport samt separat original S-13. Kontroller tjenesteår, kortudsnit, navne/datoer, sideskift og fortsættelser.
-5. En preview/PDF/profilgemning må aldrig godkende genprint. Godkend først den ændrede side, når det fysiske resultat er kontrolleret.
-6. Ved fejlet profilgemning: læs gemmestatus og brug Opdater, når appen kræver det. Gentag ikke en usikker skrivning.
+1. Opdater Distrikt Beta (port 8788). Main er stadig stabil 1.11.1.
+2. Åbn guiden under Indstillinger → Generelt. På en tom ny/nulstillet beta starter den automatisk. Kontrollér lokal introduktion og vælg din brugsmåde.
+3. Afslut spørgsmålene. En ny opsætning har Gem og start rundtur; svar alene fuldfører ikke forløbet.
+4. Vælg Fortsæt senere under rundturen, og genåbn appen. Den gemte plan skal kunne fortsættes. Prøv dansk/engelsk uden at skifte turtrin.
+5. Afslut sidste trin: guiden skal være lukket, forsiden åben og din plan synlig. Der skal ikke være oprettet kort eller IB af rundturen.
+6. Med kortfunktion valgt: åbn nøgletrinnet i planen. Opret egen nøgle hos Datafordeleren og indsæt den kun i den lokale app. Start med én offentlig vej. Send aldrig nøglen i chat/feedback.
 
-Automatiske prøver bruger opdigtede data: 347 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 12 pakkeprøver og offline Chromium ved fire bredder. Printprøverne laver faktiske front-/bagside-/rapport-PDF'er. Egen printer, HA/telefon/VPN, Google, Datafordeler og eventuel skærmlæser står fortsat som lokale ejerprøver.
-
-[Printguide](PRINT.md) · [Slutkontrol](SLUTKONTROL.md) · [Ejerrestliste](../Dette-skal-hjaelpes-manuelt.md)
-
-Den faktiske pakkestart afslørede en gammel versionsetiket i API-svaret. Appens viste version følger nu den kørende servers version; HTTP-prøven kontrollerer begge kanaler mod ping.
+Offline Chromium kontrollerer rigtig DOM, lagring med opdigtede svar, afbrudt/genoptaget tur, sprog, afvist/dobbelt afslutning og lukning til forsiden ved 320/390/768/1440 px. Tidligere fuldførte indstillinger og ukendte felter dækkes af Python-prøver. Smal introduktion og bred afslutning er visuelt gennemgået. Egen HA/telefon, API-konto og printer er særskilte ejertrin.

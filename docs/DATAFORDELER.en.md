@@ -11,6 +11,12 @@ From beta.8, a saved key routes new road, postcode and boundary downloads throug
 
 Development tests use fictional responses. First try one public road in your own installation and check house numbers and apartment units before downloading a larger area. Testing your real account and HA installation remains a separate owner step.
 
+## Current status
+
+DAR GraphQL import is implemented and uses your own API key. From beta.23, the setup plan links directly to the local key guide. Create an account, an IT system and an API key in Datafordeler Administration, then enter the key in your local LTM. There is no shared application key.
+
+The official REST retirement date remains **15 January 2027**. The [authority announcement](https://www.klimadatastyrelsen.dk/om-klimadatastyrelsen/nyheder/nyhedsarkiv/2026/jun/paralleldrift-paa-datafordeleren-ophoerer-den-15-januar-2027) and [DAR GraphQL access guide](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/) were checked again on 17 October 2026. Address suggestion access is separate. Existing local records remain available; testing your own key with a public road and small area on your own HA is still an owner step.
+
 ## Resuming downloads
 
 A checkpoint retains its source, schema fingerprint and fixed registration/effect time. Completed roads or tiles are skipped after pause/restart. Incomplete results cannot be saved as complete. Source failures stop at the current part and preserve local addresses.

@@ -33,6 +33,25 @@ class CardImportTests(unittest.TestCase):
     def tearDown(self):self.s.close();self.tmp.cleanup()
     def preview(self,rows=ROWS):return self.s.mutate('setup.card-import.preview',csv_file(rows))
     def apply(self,p,**kw):return self.s.mutate('setup.card-import.apply',{'token':p['token'],'confirm':'IMPORTÉR KORT',**kw})
+    def test_new_onboarding_requires_tour_and_preserves_unknown_fields(self):
+        answers={'mode':'desk','boundary':'later','cards':'numbers','ib':'later'}
+        self.s.mutate('setup.onboarding.save',{'answers':answers})
+        cfg=self.s.state()['settings']['onboarding']
+        self.assertFalse(cfg['completed']);self.assertFalse(cfg['tour_completed']);self.assertEqual(cfg['version'],2)
+        self.s.mutate('setup.onboarding.save',{'answers':answers,'tour_completed':True})
+        self.assertTrue(self.s.state()['settings']['onboarding']['completed'])
+        self.s.mutate('setup.onboarding.save',{'answers':answers})
+        self.assertTrue(self.s.state()['settings']['onboarding']['completed'])
+        for module in ('cards','ib','publishers','loans','geo'):self.assertEqual(self.s.all(module),[])
+
+    def test_old_completed_onboarding_is_not_forced_through_tour(self):
+        config=self.s.require('settings','config');config['onboarding']={'version':1,'completed':True,'future_flag':'preserve'}
+        with self.s.transaction():self.s.put('settings',config)
+        answers={'mode':'desk','boundary':'later','cards':'numbers','ib':'later'}
+        self.s.mutate('setup.onboarding.save',{'answers':answers})
+        saved=self.s.state()['settings']['onboarding'];self.assertTrue(saved['completed']);self.assertEqual(saved['future_flag'],'preserve')
+        with self.assertRaises(ValueError):self.s.mutate('setup.onboarding.save',{'answers':answers,'tour_completed':'yes'})
+
     def test_preview_is_read_only_and_apply_preserves_metadata_and_exact_units(self):
         area=self.s.mutate('area.save',{'name':'Eksempelby'})['id'];before=digest(self.s);revision=self.s.revision
         with patch('urllib.request.urlopen',side_effect=AssertionError('No network')):p=self.preview()

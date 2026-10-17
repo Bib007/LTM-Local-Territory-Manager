@@ -1,8 +1,16 @@
 # Egen Datafordeler-nøgle i LTM
 
-Dansk vejledning · kontrolleret mod Datafordelerens dokumentation 16.10.2026.
+Dansk vejledning · kontrolleret mod Datafordelerens dokumentation 17.10.2026.
 
 [English](DATAFORDELER.en.md)
+
+## Kort status
+
+Ja: adresseimport via DAR GraphQL er implementeret og kan bruges med din egen nøgle. Fra beta.23 har opsætningsplanen en direkte indgang til nøglevejledningen. Opret en konto, et IT-system og en API-key i Datafordeler Administration, og indsæt nøglen i din lokale LTM. Der er ikke oprettet en fælles nøgle til alle brugere.
+
+Klimadatastyrelsens frist er fortsat **15. januar 2027** for de gamle REST-tjenester. [Officiel meddelelse](https://www.klimadatastyrelsen.dk/om-klimadatastyrelsen/nyheder/nyhedsarkiv/2026/jun/paralleldrift-paa-datafordeleren-ophoerer-den-15-januar-2027) og [DAR GraphQL-adgang](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/) er genkontrolleret 17.10.2026. Adressevælgerens søgeforslag er en særskilt tjeneste; en fungerende GraphQL-nøgle er ikke i sig selv en prøve af den.
+
+Lokal administration og gemte adresser kan bruges uden en ny hentning. Det udestående ejertrin er at prøve egen nøgle på én offentlig vej og derefter et lille område på egen HA. Send ikke nøglen i chatten.
 
 ## Opret din nøgle
 
