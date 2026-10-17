@@ -42,7 +42,7 @@ def _related(row, field, index):
     return found
 
 
-def _point(row):
+def point_coordinates(row):
     position = row.get('position')
     if not isinstance(position, dict) or position.get('crs') != 25832:
         _fail()
@@ -96,7 +96,7 @@ def join_addresses(addresses, houses, points, roads, posts, *, postcode=None, ro
         name = _text(named, 'vejnavn')
         if road is not None and name != road:
             _fail()
-        coords = _point(_related(house, 'adgangspunkt', point_index))
+        coords = point_coordinates(_related(house, 'adgangspunkt', point_index))
         for field in ('etagebetegnelse', 'doerbetegnelse'):
             # null and empty both mean absent; a missing projected field is unsafe.
             if field not in address or (address[field] is not None and not isinstance(address[field], str)):

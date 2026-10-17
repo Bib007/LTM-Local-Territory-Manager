@@ -1,12 +1,14 @@
 """Flat DAR v3 queries from documented fields; no database or credentials here.
 
-Not connected to Downloads yet. A DarQuery instance pins the same registration
+Used by Downloads. A DarQuery instance pins the same registration
 and effect instant across entities and pages. The local schema and a real public
-test area must still be verified before activating the import adapter.
+test area are verified separately in the owner’s local installation.
 """
 import json
+import math
 from datetime import datetime, timezone
 from dar_paging import collect_pages, IncompleteResult
+from dar_join import point_coordinates
 
 # Explicit projections avoid relying on the provider's incomplete join relations.
 FIELDS = {
@@ -18,7 +20,7 @@ FIELDS = {
 }
 FILTERS = {
     'DAR_Adresse': ('id_lokalId', 'husnummer'),
-    'DAR_Husnummer': ('id_lokalId', 'navngivenVej', 'postnummer'),
+    'DAR_Husnummer': ('id_lokalId', 'navngivenVej', 'postnummer', 'adgangspunkt'),
     'DAR_Adressepunkt': ('id_lokalId',),
     'DAR_NavngivenVej': ('id_lokalId', 'vejnavn'),
     'DAR_Postnummer': ('id_lokalId', 'postnr'),
@@ -92,6 +94,44 @@ class DarQuery:
         filters_copy = dict(filters)
         return collect_pages(fetch, entity, check_cancel=self.check_cancel,
                              max_pages=max_pages, max_nodes=max_nodes)
+
+    def collect_bbox(self, bounds, *, max_pages=2000, max_nodes=200000):
+        """Complete points within a <=9 km² UTM32 tile; no local polygon upload.
+
+        The documented spatial operator is within. Expand the query rectangle by
+        one centimetre so boundary points aren't lost to strict within semantics,
+        then filter to the original inclusive rectangle locally.
+        """
+        if (not isinstance(bounds, (list, tuple)) or len(bounds) != 4 or
+                any(type(v) not in (int, float) or not math.isfinite(v) for v in bounds)):
+            raise ValueError('Ugyldigt DAR-udsnit.')
+        w, s, e, n = bounds
+        if not (100000 <= w < e <= 1000000 and 5900000 <= s < n <= 6500000) or (e-w)*(n-s) > 9000000:
+            raise ValueError('Vælg et DAR-udsnit på højst 9 km² i UTM32.')
+        pw, ps, pe, pn = w-.01, s-.01, e+.01, n+.01
+        ring = [(pw, ps), (pe, ps), (pe, pn), (pw, pn), (pw, ps)]
+        wkt = 'POLYGON ((' + ', '.join(format(x, '.9f') + ' ' + format(y, '.9f') for x, y in ring) + '))'
+        arguments = ('where: { status: { eq: "3" }, position: { within: { wkt: '
+                     + json.dumps(wkt) + ', crs: 25832 } } }, virkningstid: '
+                     + json.dumps(self.snapshot) + ', registreringstid: ' + json.dumps(self.snapshot)
+                     + ', first: ' + str(self.page_size))
+
+        def fetch(after):
+            result = self.request('query { ' + self._selection('DAR_Adressepunkt', arguments, after) + ' }')
+            data = result.get('data') if isinstance(result, dict) else None
+            connection = data.get('DAR_Adressepunkt') if isinstance(data, dict) else None
+            if isinstance(connection, dict) and isinstance(connection.get('nodes'), list):
+                for node in connection['nodes']:
+                    if not isinstance(node, dict) or node.get('status') != '3':
+                        raise IncompleteResult('DAR-udsnittet indeholdt en ugyldig punktstatus.')
+                    x, y = point_coordinates(node)
+                    if not (pw <= x <= pe and ps <= y <= pn):
+                        raise IncompleteResult('DAR-svaret stemte ikke med det geografiske udsnit.')
+            return result
+
+        points = collect_pages(fetch, 'DAR_Adressepunkt', check_cancel=self.check_cancel,
+                               max_pages=max_pages, max_nodes=max_nodes)
+        return [row for row in points if w <= point_coordinates(row)[0] <= e and s <= point_coordinates(row)[1] <= n]
 
     def collect_many(self, entity, field, values, *, require_all=False,
                      batch_size=10, max_requests=2000, max_nodes=200000):

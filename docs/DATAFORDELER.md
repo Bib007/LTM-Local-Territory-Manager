@@ -2,6 +2,8 @@
 
 Dansk vejledning · kontrolleret mod Datafordelerens dokumentation 16.10.2026.
 
+[English](DATAFORDELER.en.md)
+
 ## Opret din nøgle
 
 1. Åbn [Datafordeler Administration](https://portal.datafordeler.dk/), og opret eller log ind på din egen konto.
@@ -13,11 +15,19 @@ Dansk vejledning · kontrolleret mod Datafordelerens dokumentation 16.10.2026.
 
 ## Hvad betyder grøn forbindelse?
 
-I beta.7 betyder det, at din nøgle er gemt og forbindelsen til DAR v3 er kontrolleret. **Adresseimporten bruger fortsat den hidtidige kilde.** Dette er første del af den planlagte overgang før udfasningen af DAR REST. Et skift af adressekilde kommer i et efterfølgende, særskilt kontrolleret trin.
+Fra beta.8 bruger nye vej-, postnummer- og grænsehentninger **DAR GraphQL**, når en nøgle er gemt. LTM henter komplette sider og sammenkobler adresser, husnumre, vejnavne, postnumre og adgangspunkter lokalt. Adresse-ID'er, etage og dør bevares. Uden en nøgle bruges den hidtidige kilde; den varslede udfasning af DAR REST er fortsat 15.01.2027. Adresseforslag i søgefeltet leveres stadig af den særskilte Adressevælger.
+
+En kontrolleret forbindelse bekræfter adgang og gemt nøgle. Automatisk udviklingskontrol bruger opdigtede svar. Prøv derfor først en enkelt offentlig vej i din egen installation, og kontrollér husnumre og lejligheder, før du vælger et større område. Egen konto og levende Datafordeler/HA er et særskilt ejertrin.
+
+## Fortsæt eller opdater en tidligere hentning
+
+En gemt hentning har et fast tidspunkt, en kilde og et skemafingeraftryk. Ved pause/genstart springes færdige veje eller udsnit over, mens manglende dele hentes med det samme tidspunkt. En ufuldstændig vej/et ufuldstændigt udsnit gemmes ikke som komplet. Netfejl stopper ved den aktuelle del; lokale adresser bevares.
+
+En gammel REST-hentning kan ikke fortsættes med GraphQL, og en GraphQL-hentning kan ikke fortsættes uden den gemte forbindelse. Vælg en **ny hentning/opdatering** ved kildeskift, eller gendan forbindelsen for at fortsætte samme kilde. Det samme gælder, hvis det kontrollerede skema er ændret. De allerede hentede lokale adresser slettes ikke ved dette afslag. Postnummeropdatering og opdatering af den samlede grænse bruger den eksisterende kontrol af adresseændringer.
 
 ## Lokal lagring og flytning
 
-Nøglen gemmes separat fra registreringerne i installationens private datamappe. Appens status, kortdata og portable sikkerhedskopier indeholder ikke nøglen. Forbindelsen sættes derfor op igen ved flytning til en anden installation. Datafordeleren modtager nøglen som autentifikation; denne kontrol sender ingen lokale adresser, distriktsgrænser, kort, forkyndere eller IB.
+Nøglen gemmes separat fra registreringerne i installationens private datamappe. Appens status, kortdata og portable sikkerhedskopier indeholder ikke nøglen. Forbindelsen sættes derfor op igen ved flytning til en anden installation. Datafordeleren modtager nøglen som autentifikation. Forbindelseskontrollen sender ingen lokale registreringer. Adressehentning sender kun offentlige opslag med vej-/postnummer-/entitets-ID'er eller rektangulære udsnit. Den præcise distriktsgrænse filtreres lokalt; kort, forkyndere og IB sendes ikke.
 
 **Kontrollér gemt forbindelse** laver en ny kontrol. **Fjern gemt nøgle** fjerner den lokale credential og bevarer dine kort og adresser. Betaens nulstilling af testdata bevarer også forbindelsen.
 

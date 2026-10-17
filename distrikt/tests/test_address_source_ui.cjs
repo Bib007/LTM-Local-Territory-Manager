@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const nodes=new Map(),listeners={},calls=[];
 const el=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',value:'',disabled:false});return nodes.get(id);};
-const c={console,Date,el,window:{confirm:()=>true},document:{querySelectorAll:()=>[],addEventListener:(type,fn)=>(listeners[type]??=[]).push(fn)},api:async(url,payload)=>{calls.push({url,payload});return {json:async()=>({configured:true,checked_at:'2026-10-16T10:00:00Z',import_ready:false})};}};
+const c={console,Date,el,window:{confirm:()=>true},document:{querySelectorAll:()=>[],addEventListener:(type,fn)=>(listeners[type]??=[]).push(fn)},api:async(url,payload)=>{calls.push({url,payload});return {json:async()=>({configured:true,checked_at:'2026-10-16T10:00:00Z',import_ready:true})};}};
 vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),c);const run=code=>vm.runInContext(code,c);
 (async()=>{
  assert.match(run('AddressSourceUI.html()'),/portal.datafordeler.dk/);assert.match(run('AddressSourceUI.html()'),/API-Keys/);
@@ -11,7 +11,7 @@ vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/
  const key='FICTIONAL_ADDRESS_KEY_12345';el('addressSourceKey').value=key;form.reportValidity=()=>true;
  const submit=listeners.submit[0];await submit({target:{id:'addressSourceForm',...form},preventDefault(){}});
  assert.equal(calls[0].url,'/api/address-source/connect');assert.equal(calls[0].payload.api_key,key);assert.equal(el('addressSourceKey').value,'');assert.doesNotMatch(el('addressSourceStatus').textContent,new RegExp(key));
- assert.match(el('addressSourceStatus').textContent,/endnu ikke flyttet/);
+ assert.match(el('addressSourceStatus').textContent,/bruger DAR GraphQL/);
  c.window.confirm=()=>false;await run("AddressSourceUI.act('disconnect')");assert.equal(calls.length,1);
  c.window.confirm=()=>true;await run("AddressSourceUI.act('disconnect')");assert.equal(calls.at(-1).url,'/api/address-source/disconnect');
  let release;c.api=()=>new Promise(r=>release=r);el('addressSourceKey').value=key;
