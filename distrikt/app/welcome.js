@@ -18,5 +18,5 @@ const Welcome={step:0,
   switch(action){case 'numbers':AdminUI.quick();break;case 'boundary':if(!GeoUI.loaded)await GeoUI.load();MainBoundaryUI.open();break;case 'setup':await SetupUI.open();break;case 'ib':await SetupUI.open(4);break;case 'printing':case 'sharing':case 'backup':page='Indstillinger';Navigation.settingsSection={printing:'printing',sharing:'sharing',backup:'data'}[action];render();break;}
  }
 };
-document.addEventListener('click',async e=>{const n=e.target.closest('[data-welcome]');if(!n)return;e.preventDefault();try{if(n.dataset.welcome==='open')Onboarding.open();else await Welcome.handle(n.dataset.welcome,n.dataset.step);}catch(error){toast(error.message);}});
+document.addEventListener('click',async e=>{const n=e.target.closest('[data-welcome]');if(!n)return;e.preventDefault();try{if(n.dataset.welcome==='open')Onboarding.open();else await Welcome.handle(n.dataset.welcome,n.dataset.step);}catch(error){toast(error);}});
 document.addEventListener('change',e=>{if(e.target.id!=='welcomeLanguage')return;I18n.set(e.target.value);Navigation.localize();Welcome.open(Welcome.step);});

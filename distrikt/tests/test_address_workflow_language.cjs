@@ -24,5 +24,6 @@ const click=listeners.click.find(fn=>String(fn).includes("case 'confirm-approve'
  assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(payloads.en,payloads.da);assert.equal(payloads.en[0].data.decision,'accept');assert.equal(payloads.en[1].data.decision,'reject');assert.equal(payloads.en[2].data.side,'front');
  c.window.confirm=()=>false;const before=writes.length;await run("Workspace.handle('accept-address',{id:'change'})");assert.equal(writes.length,before);
  let release;c.pendingLoad=new Promise(r=>release=r);run('GeoUI.load=()=>pendingLoad');const pending=run("Workspace.inspect('addressChanges')");run("openDialog('<form>NEWER UNSAVED DRAFT</form>')");release();await pending;assert.match(get('dialog').innerHTML,/NEWER UNSAVED DRAFT/);
- console.log('Address workflows: bilingual tabs/values, escaped private/user text, card-check findings, equal review/reprint payloads, cancellation and delayed inspection draft protection passed.');
+ c.window.confirm=()=>true;c.pendingWrite=new Promise(r=>release=r);run('mutate=()=>pendingWrite');const review=run("Workspace.handle('accept-address',{id:'change'})");run("openDialog('<form>NEWER REVIEW DRAFT</form>')");release();await review;assert.match(get('dialog').innerHTML,/NEWER REVIEW DRAFT/);
+ console.log('Address workflows: bilingual tabs/values, escaped private/user text, card-check findings, equal review/reprint payloads, cancellation and delayed inspection/review draft protection passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

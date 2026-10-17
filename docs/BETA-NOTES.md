@@ -1,21 +1,19 @@
-# LTM 1.12.0-beta.15
+# LTM 1.12.0-beta.16
 
-## Nyt siden beta.14
+## Nyt siden beta.15
 
-Kortgemning er også rettet: serverens nye revisionsnummer blev fejlagtigt opfattet som en nyere kladde. En vellykket gemning afsluttes nu korrekt og vælger det nyoprettede kort. Nyere tegninger bevares fortsat. Prøv at oprette et ufølsomt kort, gemme en kortgrænse og gemme den samlede grænse; kontrollér, at de vises som gemt og kan genåbnes.
+Ved afbrudt gemning fortæller appen nu, at ændringen kan være nået frem. Automatisk gemning og ventende ændringer standses uden gensendelse. En læsefejl eller afvist ændring vises særskilt, ligesom en bekræftet gemning, hvor efterfølgende genindlæsning fejler. Fælles beskeder følger dansk/engelsk.
 
-Google Drive- og QR-betjening kan vælges på dansk/engelsk. Sprogskift bevarer kortpreview, godkendelsesfelt, URL og QR. Billedernes offentlige indhold og de originale printformularer er uændrede.
-
-Forsinkede status-/preview-/QR-svar kan ikke erstatte nyere kontrol eller dialoger. Dobbelt publicering blokeres. Ændret kortrevision kræver et nyt preview. Et sent publiceringssvar lukker ikke en nyere dialog og flytter dig ikke væk fra en ny opgave.
+Administrative forhåndskontroller erstatter ikke nyere indtastninger. Bekræftelse kræver samme kontrollerede revision og blokerer dobbeltklik. Sene gemmesvar lukker ikke en nyere dialog.
 
 ## Prøv især
 
-1. Opdater **Distrikt Beta**. Stabil installation fortsætter separat. Brug ufølsomme prøvekort og en særskilt Google-testkonto til en eventuel rigtig kontoafprøvning.
-2. Åbn delingsindstillingerne, og skift dansk/engelsk. Kontrollér adgangsstatus og vejledning.
-3. Dan et kortpreview. Skift sprog, og kontrollér, at billede og afkrydsning bevares. Annullér først og kontrollér, at det tidligere billede/link bevares.
-4. Dan et nyt preview. Kontrollér indholdet og godkend udtrykkeligt. Kontrollér samme QR-link ved udlevering, aflevering og genudlevering i en privat browser, som hidtil.
-5. Åbn QR-visningen, og skift sprog. Kontrollér, at link og QR er de samme.
+1. Opdater Distrikt Beta, adskilt fra stabil, og brug kun opdigtede prøvekort. Hent først en privat backup lokalt i betaen.
+2. Gem en ændring normalt, og kontrollér efter genåbning. Prøv også dansk/engelsk og almindelige valideringsfejl.
+3. På en ufølsom prøveinstallation: afbryd forbindelsen under gemning. Kontrollér beskeden, og at yderligere indtastning ikke sendes automatisk. Et normalt forbindelsestjek må ikke gensende.
+4. Gendan forbindelsen. Afvis først at lukke redigeringen; felterne skal bevares. Luk derefter udtrykkeligt uden gensendelse, vælg Opdater, og kontrollér hvad der faktisk blev gemt. Indtast eventuelle manglende ændringer som en ny handling.
+5. Under hurtigoprettelse: start kontrol, og ret input før svaret. Den gamle kontrol må ikke erstatte teksten. Kontrollér igen, og annullér; ingen kort må oprettes.
 
-Udviklingsprøver bruger fiktive status-, opskrifts- og QR-svar samt et genereret prøve-PNG til samtykkeforløbet; billedgeneratoren har særskilte offentlige/privatlivsprøver. Browserforløb er kontrolleret ved 320/390/768/1440 pixels. Intet er sendt til Google under udviklingsprøverne. Egen HA/telefon/Google/Datafordeler og fysisk print er særskilte ejertrin.
+Offline Chromium dækker et servergemt prøvekort med tabt svar, stoppet autosave, eksplicit genindlæsning og sene administrative kontroller ved 320/390/768/1440 pixels. Der er ikke brugt private data eller rigtig Google-/Datafordeler-konto. Egen HA/telefon og fysisk print er særskilte ejertrin.
 
-Fast køreplan: 50 % (5/10). Næste er fælles fejl, bekræftelser og usikker gemning. Ønskelisten venter fortsat.
+Fast køreplan: 50 % (5/10). Punkt 6 er i gang: domænespecifikke fejltekster og resterende bekræftelser, herunder samlet gendannelse/nulstilling, skal gennemgås før afslutning. Ønskelisten venter.
