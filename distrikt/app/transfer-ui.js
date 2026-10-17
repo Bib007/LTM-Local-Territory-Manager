@@ -23,7 +23,7 @@ const TransferUI={previewGeneration:0,writeBusy:false,
    const r=await fetch('/api/restore/preview',{method:'POST',headers:{'X-Distrikt-Token':token,'Content-Type':'application/zip'},body:file}),data=await r.json();
    // An abandoned preview must not replace a newer draft or a different page.
    if(generation!==this.previewGeneration||el('transferProgress')!==progress||openDialog.generation!==dialogGeneration)return;
-   if(!r.ok)throw Error(data.error||I18n.text('Sikkerhedskopien kunne ikke læses.'));
+   if(!r.ok)throw RequestError.fromResponse(data,'rejected',r.status,false);
    const labels={cards:'Distriktskort',publishers:'Forkyndere',loans:'Udleveringer',ib:'IB-registreringer',completions:'Gennemgange',notes:'Kortnoter'},counts=data.visible_counts||data.counts;
    openDialog(`<h2>${ui('Importer sikkerhedskopi?')}</h2><p lang="da">${esc(data.warning)}</p><div class="tablewrap"><table><thead><tr><th>${ui('Data')}</th><th>${ui('Nuværende')}</th><th>${ui('Efter import')}</th></tr></thead><tbody>${Object.entries(labels).map(([key,label])=>`<tr><td>${ui(label)}</td><td>${state[key]?.length||0}</td><td>${Number(counts[key]||0)}</td></tr>`).join('')}</tbody></table></div><label class="check"><input type="checkbox" id="restoreUnderstood"> ${ui('Jeg vil erstatte data på denne installation med sikkerhedskopien.')}</label><div class="actions"><button id="restoreApply" data-restore-token="${esc(data.token)}" class="danger" disabled>${ui('Erstat data og importer')}</button><button data-action="close">${ui('Annuller')}</button></div><p id="restoreError" role="alert" lang="da"></p>`,I18n.language());
   }finally{if(generation===this.previewGeneration&&el('transferProgress')===progress&&progress){progress.textContent='';delete progress.dataset.ui;}}
