@@ -2,7 +2,7 @@
 
 **Aktuel aftale 17.10.2026: Den faste køreplan prioriteres nu. Ønskelisten sættes på pause; der påbegyndes ikke flere ønskefunktioner, mens de faste punkter færdiggøres. Nummererede betaer og statusopdateringer fortsætter som aftalt.**
 
-Den faste klargøringsplan står på 50 % (5/10). Nye ønsker udvider ikke automatisk dens procenttal. Dansk er hovedsprog, og ændringer udvikles på develop før en stabil udgivelse.
+Den faste klargøringsplan står på 50 % (5/10). Punkt 6 er i gang med fælles fejl, bekræftelser og usikker gemning (beta.16); se KOREPLAN.md. Nye ønsker udvider ikke automatisk dens procenttal. Dansk er hovedsprog, og ændringer udvikles på develop før en stabil udgivelse.
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |

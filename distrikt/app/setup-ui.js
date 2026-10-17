@@ -6,7 +6,7 @@ const SetupUI={session:0,previewSequence:0,fileSequence:0,step:1,areas:[],option
   const sequence=++this.fileSequence,session=this.session,sourcePage=page;this.invalidateIB();this.ibContent='';
   const current=()=>sequence===this.fileSequence&&session===this.session&&page===sourcePage&&el('setupIBFile')===node;
   try{if(file.size>2000000)throw Error(I18n.text('IB-filen må højst fylde 2 MB.'));const content=await file.text();if(!current())return;this.ibContent=content;await this.previewIB();}
-  catch(error){if(!current())return;const errorNode=el('setupError');if(errorNode)errorNode.textContent=error.message;}
+  catch(error){if(!current())return;const errorNode=el('setupError');if(errorNode)I18n.errorContent(errorNode,error);}
  },
  dispose(){if(this.map){this.map.remove();this.map=null;}this.dots=null;this.cornerLayer=null;this.shapes.clear();},
  newArea(){return {id:'',name:'',kind:'By',prefix:'',start:'',target:'',polygon:null};},
@@ -48,11 +48,11 @@ case 'ib-apply':{if(!this.ib||this.ib.errors||!this.ib.new)throw Error(I18n.text
 async previewIB(){
  this.ibDate=el('setupIBDate')?.value||this.ibDate;const content=this.ibContent,date=this.ibDate,sequence=++this.previewSequence,session=this.session,stamp=this.stamp();let failure='';this.ib=null;this.busy=true;const apply=document.querySelector?.('[data-setup="ib-apply"]');if(apply)apply.disabled=true;
  try{const r=await(await api('/api/mutate',{action:'setup.ib.preview',data:{content,date}})).json();if(sequence!==this.previewSequence||stamp!==this.stamp())return;this.ib=r.result;}
- catch(error){if(sequence===this.previewSequence&&stamp===this.stamp())failure=error.message;}
- finally{if(sequence===this.previewSequence)this.busy=false;if(session===this.session&&page==='Opstart'){render();if(failure){const node=el('setupError');if(node)node.textContent=failure;}}}
+ catch(error){if(sequence===this.previewSequence&&stamp===this.stamp())failure=error;}
+ finally{if(sequence===this.previewSequence)this.busy=false;if(session===this.session&&page==='Opstart'){render();if(failure){const node=el('setupError');if(node)I18n.errorContent(node,failure);}}}
 }
 
 };
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-setup]');if(!b)return;e.preventDefault();try{await SetupUI.handle(b.dataset.setup,b.dataset);}catch(error){const node=el('setupError');if(node)node.textContent=error.message;toast(error.message);}});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-setup]');if(!b)return;e.preventDefault();try{await SetupUI.handle(b.dataset.setup,b.dataset);}catch(error){const node=el('setupError');if(node)I18n.errorContent(node,error);toast(error);}});
 document.addEventListener('input',e=>{const n=e.target;if(n.dataset.setupOption){SetupUI.options[n.dataset.setupOption]=n.value;SetupUI.plan=null;}if(n.dataset.setupAreaField){const i=Number(n.closest('[data-setup-area]').dataset.setupArea);SetupUI.areas[i][n.dataset.setupAreaField]=n.value;SetupUI.plan=null;}if(n.dataset.setupCardField){const c=SetupUI.plan?.cards.find(c=>c.key===n.dataset.key);if(c){c[n.dataset.setupCardField]=n.value;if(n.dataset.setupCardField==='number')SetupUI.shapes.get(c.key)?.setTooltipContent(ui('kort {number}',{number:n.value}));}}if(n.id==='setupIBDate'){SetupUI.ibDate=n.value;SetupUI.invalidateIB();}});
 document.addEventListener('change',async e=>{const n=e.target;if(n.dataset.setupOption==='numbering'){if(n.value==='hundreds'&&Number(SetupUI.options.start)%100)SetupUI.options.start=100;render();}if(n.dataset.setupAreaField==='id'){const a=SetupUI.areas[Number(n.closest('[data-setup-area]').dataset.setupArea)],old=state.areas.find(a=>a.id===n.value);if(old){a.name=old.name;a.prefix=old.setup_prefix||a.prefix;a.polygon=old.setup_polygon||null;}render();}if(n.id==='setupIBDate')render();if(n.id==='setupIBFile'){const file=n.files?.[0];if(file)await SetupUI.readIB(file,n);}});

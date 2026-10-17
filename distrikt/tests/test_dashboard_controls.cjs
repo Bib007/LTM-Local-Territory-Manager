@@ -59,7 +59,8 @@ keyboard({key:'k',ctrlKey:true,target:{closest(){return null;}},preventDefault()
  let release;answer=new Promise(resolve=>release=resolve);const first=run('Workspace.checkConnection()'),count=requests.length;
  await run('Workspace.checkConnection()');assert.equal(requests.length,count,'Do not overlap probes');release({ok:false});await first;answer=null;
  assert.equal(run('Workspace.connectionState'),'offline');assert.equal(run('Workspace.checkingConnection'),false);
- run("failed('<script> & invented')");assert.match(get('saveState').innerHTML,/&lt;script&gt; &amp; invented/);
+ // Exercise rendering directly; a later failure must not replace the uncertain-write guard.
+ run("SaveStatus.set('error','Gemning er ikke bekræftet','<script> & invented')");assert.match(get('saveState').innerHTML,/&lt;script&gt; &amp; invented/);
  run("I18n.set('en');SaveStatus.paint()");assert.match(get('saveState').innerHTML,/Saving is not confirmed/);
  run('GeoUI={dirty:false,loaded:false};readCount=0;refresh=async()=>readCount++');
  get('dialog').open=true;await run("Workspace.handle('refresh',{})");assert.equal(run('readCount'),0,'Refresh must not interrupt an open edit');
