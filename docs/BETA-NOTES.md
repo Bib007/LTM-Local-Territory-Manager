@@ -1,19 +1,21 @@
-# LTM 1.12.0-beta.9
+# LTM 1.12.0-beta.10
 
-## Nyt siden beta.8
+## Nyt siden beta.9
 
-Udlevering har en tydelig lokal forslagsliste til forkyndernavne. Søg på fornavn eller efternavn; listen prioriterer præcise navne og begyndelsen af navne. Op til otte forslag vises, og du kan indsnævre listen ved at skrive mere. Navne og søgetekst sendes ikke til en ekstern tjeneste.
+Første del af vejbaseret automatisk inddeling: lokalt hentede, gennemgående lige vejstykker kan bruges som skel, også på skrå. Algoritmen vælger blandt højst 256 lokale segmenter og prøver op til 32 relevante kandidater pr. deling. Der hentes ingen nye data under beregningen. Forhåndsvisningen viser vejnavnet og kræver stadig din godkendelse før oprettelse.
 
-Brug piletaster og Enter til at vælge, eller tryk på navnet. Escape lukker forslagene; Tab fortsætter uden at vælge. Enter i en åben liste gemmer ikke udleveringen ved et uheld. Et nyt navn kan stadig skrives frit og oprettes først, når udleveringen registreres. Dansk/engelsk sprogskift bevarer navnet og formularens øvrige kladde.
+Et kort vejfragment forlænges ikke til en opdigtet gennemgående vej. Hvis et egnet vejstykke mangler, vises tydeligt, at delingen er geometrisk og skal rettes manuelt. Husenes lejligheder og alle adressepunkter kontrolleres samlet. Ændrede lokale vejdata gør en gammel forhåndsvisning ugyldig.
+
+Dette afslutter **ikke W16**: kurvede veje, sammenhængende forløb af flere segmenter og naturlige skel kræver næste udviklingstrin. Grænser, adgangsforhold og besøgstal skal fortsat kontrolleres på kortet. Eksisterende kort ændres ikke af at beregne et forslag.
 
 ## Prøv især
 
 1. Opdater **Distrikt Beta** og tag først privat backup af betadata.
-2. Åbn Udlever kort. Søg på et eksisterende fornavn og derefter et efternavn; vælg med piletaster/Enter og med berøring.
-3. Prøv Escape og Tab. Indtast et nyt navn uden at vælge et forslag; annuller og kontrollér, at der ikke er oprettet en forkynder. Registrer derefter en almindelig udlevering.
-4. Skift dansk/engelsk under indtastningen. Navn, kortvalg og dato skal bevares.
-5. Kontrollér listen på din telefon: navne skal kunne læses, listen rulles, og dato/gemknap nås.
+2. Brug et lille prøveområde med lokalt hentede vejlinjer og adresser. Åbn Avanceret → Opsæt distrikter, og lav et forslag.
+3. Find en gennemgående lige vej, også gerne skrå. Kontrollér, at et foreslået skel faktisk følger det viste vejstykke, og at alle adresser stadig har ét kort.
+4. Kontrollér markeringen ved geometriske skel uden passende vejdata. Ret sådanne skel manuelt i forhåndsvisningen.
+5. Kontrollér husenes lejligheder, besøgstal og fælles grænser før eventuel oprettelse. Annuller prøven, hvis den kun skal bruges til at se forslaget.
 
-Automatiske prøver bruger opdigtede navne og kontrollerer søgning, HTML-escaping, tastatur, IME, pointerhændelser, sprog og den eksisterende gemmekontrakt. Det er ikke en visuel mobil-/skærmlæserprøve; browserinstallationen til denne kørsels lokale visuelle kontrol var blokeret af en fejlbehæftet download. Egen HA/browser er fortsat en særskilt prøve.
+Automatiske prøver bruger fiktive vej- og adressegeometrier. De kontrollerer skrå og konkave skæringer, arealdækning uden overlap, ikke-forlængelse af korte vejstykker, lejligheder, deterministisk resultat, forældede forslag og eksisterende atomisk oprettelse. Virkelig HA/browser/kortvisning står særskilt.
 
-DAR GraphQL fra beta.8 og den separate stabile installation bevares. Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.
+Beta.9's lokale forkynderforslag og beta.8's DAR GraphQL bevares. Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.
