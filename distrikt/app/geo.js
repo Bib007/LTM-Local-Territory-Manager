@@ -8,14 +8,15 @@ const GeoUI={
   draftStamp(includeRevision=true){const form=el('geoRangeForm'),range=form?.elements?[...form.elements].filter(e=>e.name).map(e=>[e.name,e.value,e.checked]):null;return JSON.stringify([page,this.session,this.whole,this.target,[...this.ids].sort(),this.polygon,this.drawColor,this.mode,this.dirty,includeRevision?state.revision:null,range]);},
   async syncWrite(stamp,apply,dialogGeneration){
     const [,fresh]=await Promise.all([this.load(),api('/api/state').then(r=>r.json())]);
-    const unchanged=this.draftStamp()===stamp;state=fresh;
+    // The accepted mutation advances state.revision; only compare the editor draft here.
+    const unchanged=this.draftStamp(false)===stamp;state=fresh;
     if(unchanged){apply();if(page==='Kortopsætning')render();if(dialogGeneration!==undefined&&openDialog.generation===dialogGeneration)closeDialog();}
     else if(page==='Kortopsætning'){this.drawLayers();this.drawBoundary();this.updatePanel();}
     saved();return unchanged;
   },
   async saveBoundary(whole=false){
     if(this.saveBusy)return;this.saveBusy=true;
-    const stamp=this.draftStamp(),data=whole?{points:this.polygon.map(p=>p.slice())}:{card_id:this.target,polygon:this.polygon.map(p=>p.slice())};
+    const stamp=this.draftStamp(false),data=whole?{points:this.polygon.map(p=>p.slice())}:{card_id:this.target,polygon:this.polygon.map(p=>p.slice())};
     try{saving();await api('/api/mutate',{action:whole?'geo.main.save':'geo.boundary',data});
       await this.syncWrite(stamp,()=>{this.dirty=!whole&&(this.ids.size!==new Set(card(this.target)?.address_ids||[]).size||[...this.ids].some(i=>!card(this.target)?.address_ids?.includes(i)));});
       toast(I18n.text(whole?'Samlet grænse gemt':'Grænse gemt'));
@@ -97,8 +98,8 @@ const GeoUI={
       if(stamp!==this.draftStamp()||dialogGeneration!==openDialog.generation||(dialogWasOpen&&!el('dialog').open))throw Error(I18n.text('Valget er ændret. Kontrollér det og gem igen.'));
       if(preview.retired?.length)throw Error(I18n.text('Nogle adresser er nedlagt hos DAR. Fjern dem fra valget først.'));
       if(preview.conflicts.length||preview.ignored.length)throw Error(I18n.text('Nogle valgte adresser er allerede brugt eller markeret Se bort fra. Ret valget først.'));
-      saving();const response=await(await api('/api/mutate',{action:'geo.assign',data})).json();
-      await this.syncWrite(stamp,()=>{this.target=response.result.id;const c=card(this.target);this.ids=new Set(c.address_ids);this.polygon=c.geo_polygon.map(p=>p.slice());this.dirty=false;this.setNotice('Adresser, vejliste og grænse er gemt. Kortets udlånshistorik er bevaret.');},dialogGeneration);
+      const writeStamp=this.draftStamp(false);saving();const response=await(await api('/api/mutate',{action:'geo.assign',data})).json();
+      await this.syncWrite(writeStamp,()=>{this.target=response.result.id;const c=card(this.target);this.ids=new Set(c.address_ids);this.polygon=c.geo_polygon.map(p=>p.slice());this.dirty=false;this.setNotice('Adresser, vejliste og grænse er gemt. Kortets udlånshistorik er bevaret.');},dialogGeneration);
       toast(I18n.text('Kort gemt · forsiden kan nu printes'));
     }finally{this.saveBusy=false;}
   },
