@@ -1,4 +1,20 @@
-# LTM 1.12.0-beta.23
+# LTM 1.12.0-beta.24
+
+## Nyt siden beta.23
+
+W30: navneforslag ved udlevering bruger nu mørkegrå baggrund med lys tekst. Den markerede række har lysere mørk baggrund og tydelig kant. Søgning og lokale navne/udlån er uændrede.
+
+## Prøv især
+
+1. Opdater Distrikt Beta på port 8788. Main er stadig stabil 1.11.1.
+2. Åbn Udlever kort og skriv et par bogstaver fra et lokalt forkyndernavn.
+3. Kontrollér læsbarhed på computer og telefon. Prøv hover, pil op/ned, Enter, Tab og Escape. Navnet skal først vælges, når du selv bekræfter det.
+4. Den samlede guide og obligatoriske afsluttende rundtur fra beta.23 følger med. Ny opsætning afslutter til forsiden med planen; eksisterende fuldført opsætning bevares.
+
+Den rigtige browser/CSS er kontrolleret ved 320/390/768/1440 px med fiktive navne: normal kontrast mindst 7:1, mørk baggrund, lys tekst ved markering og uændret tastaturvalg. Visuel kontrol er udført på smal/bred visning. Ingen privat forkynderliste er åbnet.
+
+## Med fra beta.23
+
 
 ## Nyt siden beta.22
 
