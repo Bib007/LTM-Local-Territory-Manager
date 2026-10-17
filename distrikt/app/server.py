@@ -26,7 +26,7 @@ from address_source import Datafordeler
 from ui_errors import error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.21'
+VERSION='1.12.0-beta.22'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -130,7 +130,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/state':
                 self.server.store.purge_expired()
                 with self.server.store.lock:
-                    result=self.server.store.state();result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links()
+                    result=self.server.store.state();result['version']=VERSION;result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links()
                 return self.send(result)
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/activity':return self.send({'items':self.server.store.activity()})

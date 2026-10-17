@@ -1,5 +1,15 @@
 # Ændringsliste
 
+## 1.12.0-beta.22 · Fast punkt 8–10: print, programpakke og slutkontrol
+
+- Dansk/engelsk printdialog og printknapper med bevarede felter, profilværdier og uændrede originalformularer/rapportindhold.
+- Printforberedelse beskytter mod dobbeltklik, ændrede felter/data, navigation og nyere dialoger. Fejlet billedafkodning spærrer print; profilgemning godkender ikke genprint.
+- Appens versionsvisning følger den kørende server i begge kanaler; gammel API-etiket er rettet efter pakkestartprøven.
+- Komplet programpakke med de linkede vejledninger, køreplan, lokal restliste og demovejledning. Pakningen stopper ved manglende original S-12-PDF eller brudte interne vejledningslinks.
+- Printguide og slutkontrol på dansk/engelsk. Egen printer, HA/telefon/VPN, Google-/Datafordeler-konto og eventuel skærmlæser står tydeligt som ejerprøver.
+- Fiktive JavaScript-, Python-, pakke- og Chromium-prøver kontrollerer både programforløb og faktiske front-/bagside-/rapport-PDF'er ved fire skærmbredder. Main er stabil 1.11.1.
+
+
 ## 1.12.0-beta.21 · Fast punkt 7: login, tastatur og fokus
 
 - Login kan vælges på dansk/engelsk uden at genskabe felter. Indsendelse kræver én bekræftet anmodning, har timeout og blokerer dobbeltklik. Fejl bevarer indtastning og passende fokus; kun sprogvalget gemmes som præference.
