@@ -9,6 +9,7 @@ from datetime import date
 from admin_store import signature
 from geography import valid_polygon,point_in_polygon
 from territory_partition import partition,contained,overlaps
+from ui_errors import UIError,error_payload
 
 IB_HEADERS=['kortnummer','vejnavn','husnummer','postnummer','etage','dør','dato']
 
@@ -17,8 +18,8 @@ def clean(value):return re.sub(r'\s+',' ',str(value or '').strip()).casefold()
 def ib_number(a):return a['number']+(', '+' '.join(str(a[k]) for k in ('floor','door') if a.get(k)) if a.get('floor') or a.get('door') else '')
 def bounded_int(value,low,high,label):
     try:n=int(str(value))
-    except (ValueError,TypeError):raise ValueError(label+' skal være et helt tal.') from None
-    if not low<=n<=high:raise ValueError(f'{label} skal være mellem {low} og {high}.')
+    except (ValueError,TypeError):raise UIError('{label} skal være et helt tal.',label=label) from None
+    if not low<=n<=high:raise UIError('{label} skal være mellem {low} og {high}.',label=label,low=low,high=high)
     return n
 
 def defaults(data):
@@ -58,13 +59,13 @@ class SetupStore:
             name=clean_text(existing['name'] if existing else raw.get('name'),80,True)
             if clean(name) in seen:raise ValueError('Et område er valgt flere gange.')
             seen.add(clean(name))
-            if not ident and any(clean(a.get('name'))==clean(name) for a in self.all('settings')+self.all('settings',deleted=True) if a.get('id')!='config' and not a.get('entity')):raise ValueError('Området '+name+' findes allerede. Vælg det fra listen.')
+            if not ident and any(clean(a.get('name'))==clean(name) for a in self.all('settings')+self.all('settings',deleted=True) if a.get('id')!='config' and not a.get('entity')):raise UIError('Området {name} findes allerede. Vælg det fra listen.',name=name)
             points=raw.get('polygon') or (main['points'] if len(raw_areas)==1 else None)
             poly=valid_polygon(points,limit=5000);corners+=len(poly)
             if corners>20000:raise ValueError('Områdegrænserne må samlet have højst 20.000 hjørner. Opret færre områder ad gangen.')
-            if not contained(poly,main['points']):raise ValueError('Områdegrænsen for '+name+' går udenfor ydergrænsen.')
+            if not contained(poly,main['points']):raise UIError('Områdegrænsen for {name} går udenfor ydergrænsen.',name=name)
             for other in areas:
-                if overlaps(poly,other['polygon']):raise ValueError('Områdegrænserne for '+name+' og '+other['name']+' overlapper. Ret dem før oprettelse.')
+                if overlaps(poly,other['polygon']):raise UIError('Områdegrænserne for {name} og {other} overlapper. Ret dem før oprettelse.',name=name,other=other['name'])
             prefix=clean_text(raw.get('prefix'),10).upper()
             if options['numbering']=='prefix' and not re.fullmatch(r'[A-ZÆØÅ]{1,6}',prefix):raise ValueError('Angiv 1–6 områdeforbogstaver, fx F eller B.')
             kind=raw.get('kind','Ukendt')
@@ -92,7 +93,7 @@ class SetupStore:
         boxes=[(min(p[0] for p in a['polygon']),min(p[1] for p in a['polygon']),max(p[0] for p in a['polygon']),max(p[1] for p in a['polygon'])) for a in areas]
         for a in eligible:
             point=[a['lng'],a['lat']];owners=[i for i,(region,(w,s,e,n)) in enumerate(zip(areas,boxes)) if w<=a['lng']<=e and s<=a['lat']<=n and point_in_polygon(point,region['polygon'])]
-            if len(owners)>1:raise ValueError('Adressen '+a['label']+' ligger på flere områdegrænser. Flyt en grænse en smule.')
+            if len(owners)>1:raise UIError('Adressen {address} ligger på flere områdegrænser. Flyt en grænse en smule.',address=a['label'])
             if not owners:uncovered+=1
             else:buckets[owners[0]].append(a)
         local_roads=[r for r in self.all('geo') if r.get('entity')=='road']
@@ -100,13 +101,13 @@ class SetupStore:
         for i,(region,members) in enumerate(zip(areas,buckets)):
             if not members:continue
             parts=partition(region['polygon'],members,region['target'],roads=local_roads)
-            if options['numbering']=='hundreds' and len(parts)>options['block']:raise ValueError('Området '+region['name']+' kræver flere numre end den valgte områdeblok. Vælg en større blok.')
+            if options['numbering']=='hundreds' and len(parts)>options['block']:raise UIError('Området {name} kræver flere numre end den valgte områdeblok. Vælg en større blok.',name=region['name'])
             for j,part in enumerate(parts):
                 if len(part['members'])>10000:raise ValueError('Et kort har over 10.000 adresser. Inddel det berørte område manuelt.')
                 number=str(next_number if options['numbering']=='continuous' else region['start']+j)
                 if options['numbering']=='prefix':number=region['prefix']+number
                 next_number+=1
-                if number.casefold() in numbers:raise ValueError('Kortnummer '+number+' findes allerede eller er reserveret i Gendan ved fejl. Vælg et andet startnummer eller forbogstav.')
+                if number.casefold() in numbers:raise UIError('Kortnummer {number} findes allerede eller er reserveret i Gendan ved fejl. Vælg et andet startnummer eller forbogstav.',number=number)
                 numbers.add(number.casefold());roads=Counter()
                 for a in part['members']:roads[a['road']]+=a.get('count',1)
                 road=sorted(roads,key=lambda r:(-roads[r],r.casefold()))[0]
@@ -143,7 +144,7 @@ class SetupStore:
                 c['polygon']=valid_polygon(e.get('polygon'),limit=5000)
                 if len({tuple(p) for p in c['polygon']})!=len(c['polygon']):raise ValueError('Et hjørne er gentaget. Flyt hjørnerne fra hinanden.')
                 c['number']=str(e.get('number',c['number'])).strip()[:30];c['name']=str(e.get('name',c['name'])).strip()[:100]
-                if not contained(c['polygon'],plan['areas'][c['area_index']]['polygon']):raise ValueError('Kort '+c['number']+' går udenfor sit område. Flyt grænsen tilbage.')
+                if not contained(c['polygon'],plan['areas'][c['area_index']]['polygon']):raise UIError('Kort {number} går udenfor sit område. Flyt grænsen tilbage.',number=c['number'])
             for i,region in enumerate(plan['areas']):
                 cards=[c for c in revised['cards'] if c['area_index']==i]
                 if not cards:continue
@@ -181,7 +182,7 @@ class SetupStore:
                 edit=by_key.get(c['key'])
                 if not edit:raise ValueError('Et kort mangler i listen.')
                 number=clean_text(edit.get('number'),30,True);name=clean_text(edit.get('name'),100,True)
-                if number.casefold() in existing:raise ValueError('Kortnummer '+number+' findes allerede eller er gentaget.')
+                if number.casefold() in existing:raise UIError('Kortnummer {number} findes allerede eller er gentaget.',number=number)
                 existing.add(number.casefold());prepared.append(dict(c,number=number,name=name))
             area_ids={};ids=[]
             for i,a in enumerate(plan['areas']):
@@ -248,7 +249,7 @@ class SetupStore:
                 c,a=candidates[0];key=(c['id'],a['id']);day=valid_day(v.get('date') or default_day)
                 duplicate=key in seen or any(i['card_id']==c['id'] and (i.get('address_id')==a['id'] or clean(i.get('road'))==clean(a['road']) and clean(i.get('number')) in (clean(ib_number(a)),clean(a['number']))) for i in ibs)
                 row.update(status='existing' if duplicate else 'new',card_number=c['number'],label=a.get('label') or a['road']+' '+ib_number(a),date=day,record={'card_id':c['id'],'address_id':a['id'],'road':a['road'],'number':ib_number(a),'date':day});seen.add(key)
-            except (ValueError,TypeError) as error:row['error']=str(error)
+            except (ValueError,TypeError) as error:row.update(error_payload(error))
             rows.append(row)
         if not rows:raise ValueError('Importfilen indeholder ingen IB-linjer. Udfyld skabelonen først.')
         payload={'rows':rows,'new':sum(r['status']=='new' for r in rows),'existing':sum(r['status']=='existing' for r in rows),'errors':sum(r['status']=='error' for r in rows)}
