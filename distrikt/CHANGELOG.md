@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.26 · Opgavelisten kan afsluttes
+
+Planen på forsiden er nu en liste med Udført, Spring over og Fortryd. Afsluttede trin streges ud. Listen forsvinder, når alle trin er udført eller sprunget over; gemt status huskes på installationen efter genindlæsning. At åbne et trin afslutter det ikke automatisk. Opsætningsplanen kan stadig åbnes fra Indstillinger. Dansk/engelsk og smalle skærme er kontrolleret med fiktive data.
+
 ## 1.12.0-beta.25 · Præcis forklaring af adressefristen
 
 Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR GraphQL kan også oprettes bagefter. Nøglevejledningen og opsætningsplanen forklarer nu forskellen og anbefaler overgang i god tid for at undgå pause i nye hentninger. Gemte adresser bevares. Officielle kilder er kontrolleret 17.10.2026.

@@ -3,6 +3,8 @@
 const I18n={
  current:'da',
  english:{
+  "Afslut opsætningsguiden først.":"Finish the setup guide first.",
+  "Vælg et gyldigt trin og en status fra opgavelisten.":"Choose a valid step and status from the checklist.",
   "Den gamle DAR REST-adgang lukker 15. januar 2027. Du kan også oprette en API-nøgle til DAR GraphQL efter den dato. Tilslut gerne den nye adgang nu, så adressehentning kan fortsætte efter lukningen. Dine gemte adresser bliver på installationen.":"The old DAR REST access closes on 15 January 2027. You can also create an API key for DAR GraphQL after that date. Connect the new access now so address downloads can continue after the closure. Saved addresses stay on this installation.",
   "Kortinddeling og nummerering":"Card division and numbering",
   "Ugyldig status for rundtur.":"Invalid tour status.",

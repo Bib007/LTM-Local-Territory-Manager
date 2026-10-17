@@ -123,6 +123,16 @@ class SetupStore:
         if action=='setup.card-import.apply':
             from card_import import apply
             return apply(self,data)
+        if action=='setup.onboarding.task':
+            config=dict(self.require('settings','config'));previous=config.get('onboarding') or {};answers=previous.get('answers') or {}
+            if not previous.get('completed') or not answers:raise ValueError('Afslut opsætningsguiden først.')
+            allowed={'desk','backup',answers.get('cards')}
+            if answers.get('mode')=='map':allowed.update(('data','kml' if answers.get('boundary')=='yes' else 'boundary'))
+            if answers.get('ib')=='yes':allowed.add('ib')
+            task=data.get('task');status=data.get('status')
+            if not isinstance(task,str) or task not in allowed or status not in ('pending','done','skipped'):raise ValueError('Vælg et gyldigt trin og en status fra opgavelisten.')
+            tasks=dict(previous.get('tasks') or {});tasks[task]=status
+            config['onboarding']={**previous,'tasks':tasks};self.put('settings',config);return {}
         if action=='setup.onboarding.save':
             answers=data.get('answers')
             choices={'mode':('desk','map'),'boundary':('yes','later'),'cards':('numbers','excel','auto','manual'),'ib':('yes','later')}
