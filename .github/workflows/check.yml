@@ -61,6 +61,7 @@ jobs:
       - run: node distrikt/tests/test_request_safety.cjs
       - run: node distrikt/tests/test_confirmation_safety.cjs
       - run: node distrikt/tests/test_transfer_safety.cjs
+      - run: node distrikt/tests/test_write_followups.cjs
       - name: Install isolated browser test tool
         run: |
           npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1

@@ -3,6 +3,13 @@
 const I18n={
  current:'da',
  english:{
+  "Bekræft opdeling":"Confirm split",
+  "Bekræft sammenlægning":"Confirm merge",
+  "nyt kort":"new card",
+  "{moving} adresser flyttes. {remaining} bliver tilbage.":"{moving} addresses will move. {remaining} will remain.",
+  "Skriv ÆNDR KORT for at fortsætte":"Type ÆNDR KORT to continue",
+  "Bekræft ændringen":"Confirm the change",
+  "Kontrollér forhåndsvisningen og skriv ÆNDR KORT for at bekræfte.":"Review the preview and type ÆNDR KORT to confirm.",
   "Data er nulstillet":"Data has been reset",
   "Kontrollen er ikke længere gyldig. Åbn og kontrollér ændringen igen.":"The review is no longer valid. Open and review the change again.",
   "Automatisk gemning er sat på pause. Log ind igen.":"Automatic saving is paused. Sign in again.",
