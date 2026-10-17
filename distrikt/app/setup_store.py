@@ -126,7 +126,7 @@ class SetupStore:
         if action=='setup.onboarding.task':
             config=dict(self.require('settings','config'));previous=config.get('onboarding') or {};answers=previous.get('answers') or {}
             if not previous.get('completed') or not answers:raise ValueError('Afslut opsætningsguiden først.')
-            allowed={'desk','backup',answers.get('cards')}
+            allowed={'desk','backup','congregation','folder','printing','sharing','publisher',answers.get('cards')}
             if answers.get('mode')=='map':allowed.update(('data','kml' if answers.get('boundary')=='yes' else 'boundary'))
             if answers.get('ib')=='yes':allowed.add('ib')
             task=data.get('task');status=data.get('status')

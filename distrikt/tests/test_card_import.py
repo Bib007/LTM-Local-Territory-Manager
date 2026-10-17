@@ -61,7 +61,7 @@ class CardImportTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.s.mutate('setup.onboarding.task',{'task':task,'status':status})
         self.assertEqual(self.s.state(),before);self.assertFalse(self.s.all('cards'));self.assertFalse(self.s.all('loans'))
         answers.update(mode='map',boundary='yes',cards='auto',ib='yes');self.s.mutate('setup.onboarding.save',{'answers':answers})
-        for task in ('kml','data','auto','ib'):self.s.mutate('setup.onboarding.task',{'task':task,'status':'skipped'})
+        for task in ('kml','data','auto','ib','congregation','folder','printing','sharing','publisher'):self.s.mutate('setup.onboarding.task',{'task':task,'status':'skipped'})
         with self.assertRaises(ValueError):self.s.mutate('setup.onboarding.task',{'task':'boundary','status':'done'})
 
     def test_old_completed_onboarding_is_not_forced_through_tour(self):

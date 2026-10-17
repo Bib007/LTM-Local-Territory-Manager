@@ -1,12 +1,13 @@
 # Ønskeliste og nye opgaver
 
-**Aktuel aftale 17.10.2026: Den faste udviklingsplan er afsluttet (100 %, 10/10). Ønskelisten behandles efter ejerens prioritet. W35 er udgivet i beta.25 og W34 i beta.26. W38/W39 er afprøvet til beta.27. Næste udestående er W36/W40 (5), derefter W31 og W06 (6). Små nummererede betaer fortsætter; main er stabil 1.11.1.**
+**Aktuel aftale 17.10.2026: Den faste udviklingsplan er afsluttet (100 %, 10/10). Ønskelisten behandles efter ejerens prioritet. W35, W34 og W38/W39/W41 er udgivet i beta.25–27. W43 (2) og W42 (3) er prøvet til beta.28. Næste udestående er W36/W40 (5), derefter W31 og W06 (6). Små nummererede betaer fortsætter; main er stabil 1.11.1.**
 
-Seneste verificerede beta er 1.12.0-beta.26 fra d216163, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
+Seneste verificerede beta er 1.12.0-beta.27 fra 306e849, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
-| W42 | Gør opgavelisten kompakt, og tilføj genveje til menighed, mappeminimum, print og Google Drive | Ikke angivet | Registreret; prioritet afventer ejerens felt | Mindre pladskrævende trin med genveje til menighedsnavn, minimum i mappen, print med/uden baggrund på for-/IB-bagside og Google Drive. Opsætningen opretter ikke data eller deler noget automatisk; originale formularer og almindelig adgang til appen bevares. |
+| W43 | Vis menighedsnavnet i topbaren sammen med projektets identitet | 2 | Implementeret og browserprøvet til beta.28 | Det lokalt gemte navn vises ved logo/navn og Distrikt, også på mobil. Lange navne kan aflæses uden at dække gemmestatus eller navigation. Der bruges kun fiktive navne i GitHub og prøver. |
+| W42 | Gør opgavelisten kompakt, og tilføj genveje til menighed, mappeminimum, print, Google Drive og første forkynder | 3 | Implementeret og browserprøvet til beta.28 | Kompakt sammenklappelig liste med udført/overspringning, genveje til navngivning, mappeminimum, fortrykt papir på begge sider, valgfri Drive-forbindelse og oprettelse af første forkynder. Ingen ny spærring af normal brug eller automatisk deling. |
 | W41 | Forklar cirkelknappen ved noter og opgaver i appen | 3 | Implementeret og prøvet til beta.27 | Synlig forklaring og tooltip fortæller, at cirklen markerer udført, flueben genåbner, og teksten ikke slettes. Tastatur/skærmlæser og dansk/engelsk bevares. |
 | W40 | Gør baggrundskortet på digitale Drive-kort mere afdæmpet, og bevar husnumre og røde adresseprikker tydelige | 5 | Planlagt | Baggrundens ikoner/skel nedtones uden at svække valgte huse, husnumre, grænser eller eksisterende offentlighedskontrol. Fiktive tætte og spredte kort gennemgås visuelt før udgivelse. |
 | W34 | Afsluttelig opgaveliste efter guiden med overstregning og spring over | 3 | Implementeret og prøvet til beta.26 | Hvert punkt kan udføres eller springes over. Listen skjules, når alle punkter er afsluttet; genåbning og eksisterende opsætning bevares. |
@@ -300,4 +301,8 @@ Statusfarver, direkte udlånsformularer og forkyndergrupperet aflevering er impl
 
 ## W42 · yderligere opsætningstrin registreret
 
-Ejerens ønske om mindre felter på forsiden og flere enkle opsætningsgenveje er gemt. Der er endnu ikke oplyst prioritet i ønskefeltet. Ingen ny spærring af appens almindelige brug indføres på baggrund af formuleringen om opsætning; handlinger som deling og printopsætning forbliver eksplicitte.
+Ejerens ønske om mindre felter på forsiden og flere enkle opsætningsgenveje er gemt. Ejerens efterfølgende prioritet er 3, og genvej til første forkynder er tilføjet. Ingen ny spærring af appens almindelige brug indføres på baggrund af formuleringen om opsætning; handlinger som deling og printopsætning forbliver eksplicitte.
+
+## W42/W43 · kompakte opsætningsgenveje og lokalt navn · beta.28
+
+Ejerens prioritet 2 for menighedsnavnet og 3 for den kompakte liste er gemt. Lokalt navnefelt vises ved den eksisterende logoidentitet og slettes fra visningen ved tomt navn. Ingen navn hardcodes eller sendes videre. Sammenklappet liste med antal resterende trin åbner de eksisterende indstillinger/formularer; gennemført/oversprunget status består. Fem nye valgfrie trin kan markeres, uden at de spærrer almindelig brug. Printvalget anvender eksisterende valideret profilgemning og bevarer mål samt anden sides profil. Ingen printåbning, genprintgodkendelse, forkynderoprettelse eller Drive-publicering sker ved blot at åbne genvejene. Fiktive Chromium-prøver dækker smalle skærme, lange navne, stabil/betamarkering, sprog, genveje og begge printvalg før første kort.

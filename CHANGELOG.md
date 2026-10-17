@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.28 · Kompakt opsætning og menighed i topbaren
+
+Menighedsnavnet vises ved projektets logo i topbaren. Lange navne afkortes visuelt og kan læses i feltets titel; navn og gemmestatus holder sig inden for topbaren, også på mobil og i HA-betaen. Navnet gemmes fortsat kun lokalt.
+
+Opgavelisten på forsiden fylder nu én sammenklappet linje med antal resterende trin. Listen har kompakte handlinger og genveje til menighedsnavn, mappeminimum, printvalg, valgfri Google Drive og første forkynder. Udført/overspringning og eksisterende fremdrift bevares. Listen spærrer ikke normal brug.
+
+Indstillinger → Printprofiler kan nu gemme valg af blankt eller fortrykt papir særskilt for forside og IB-bagside, også før første kort. Eksisterende mål bevares. Gemning åbner ikke print og godkender ingen ændret kortside.
+
 ## 1.12.0-beta.27 · Daglig aflevering og tydelig opgavestatus
 
 Kortstatus har nu tydelige farver for udleveret, i mappen og i kassen. Direkte udleverings-/afleveringsknapper åbner de normale kontrollerede formularer; den valgte kortmenu bevares. Ændrede kort kan fortsat være spærret for udlevering.

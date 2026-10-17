@@ -1,12 +1,10 @@
-# LTM 1.12.0-beta.27
+# LTM 1.12.0-beta.28
 
-W38/W39/W41 · Tydelig status og nemmere daglig aflevering.
+W42/W43 · Mindre opgaveliste og menighedsnavn ved logoet.
 
-- Grøn status: i mappen. Gylden status: udleveret. Blå status: i kassen. Status står også som tekst.
-- Prøv de direkte Udlever kort / Aflever til kassen-knapper i kortlisten. De åbner de normale formularer; vælg stadig dato og evt. gennemgang, før noget gemmes. Spærring efter ændret print respekteres.
-- Under Daglig brug: vælg Aflever pr. forkynder. Forkyndere med flest aktive kort står øverst. Søg på navn, vælg kort til sidemenuen, og aflever fra listen. Efter aflevering opdateres antal og sortering.
-- Dansk/engelsk, tastatur og 320/390/768/1440 pixels er prøvet med fiktive lokale svar. Ingen private data eller konti bruges i prøverne.
+- Navngiv menigheden i Indstillinger. Navnet skal opdateres i topbaren. Lange navne afkortes visuelt; hele teksten findes i feltets titel og som beskrivelse til logoets forsideknap.
+- Efter opsætningsguiden vises en sammenklappet opgaveliste med antal trin tilbage. Åbn listen for genveje, Udført og Spring over. Når alle trin er afsluttet, forsvinder listen. Normal brug er tilgængelig imens.
+- Prøv de nye genveje: menighedsnavn, minimum i mappen, print på begge sider, valgfri Google Drive og første forkynder. Åbning af et trin registrerer det ikke automatisk som udført.
+- Under Printprofiler kan begge sider sættes til Med titler og linjer eller Fortrykt kort · kun oplysninger. Mål og den anden sides profil bevares. Gemning printer ikke og ændrer ingen godkendelser.
 
-I Opgaver og noter forklarer en synlig tekst nu cirklen: markér udført, find igen under Udførte, og genåbn med fluebenet. Tooltip og skærmlæsernavn følger sproget. Teksten slettes ikke.
-
-Main er fortsat stabil 1.11.1. Betaen publiceres efter grønne program-, platform- og HA-kontroller.
+Dansk/engelsk, smalle skærme, lange fiktive navne, rigtig betamarkering, uafhængige printvalg og lokal gemning er prøvet. Ingen private navne, credentials eller eksterne delinger indgår. Main er fortsat stabil 1.11.1.

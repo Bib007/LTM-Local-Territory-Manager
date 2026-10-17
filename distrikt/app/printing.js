@@ -8,6 +8,7 @@ function printSettings(fields){
  if(!['portrait','landscape'].includes(cfg.orientation)||!['cut','a4'].includes(cfg.paper)||!['full','data'].includes(cfg.mode))throw Error('Kontrollér retning, papir og tryk.');
  if((cfg.orientation==='portrait')!==(cfg.height>=cfg.width))throw Error('Retning og kortmål stemmer ikke overens.');return cfg;
 }
+function configurePrintMode(side){if(!['front','back'].includes(side))return;const profile={...defaultPrintProfile(side),...(state.settings.print_profiles?.[side]||{})};openDialog(`<h2>${ui(side==='front'?'Kortets forside':'IB-bagside')} · ${ui('Indstil tryk')}</h2><p>${ui('Er papiret allerede fortrykt? Vælg kun oplysninger. På blankt papir vælger du med titler og linjer. Gemning ændrer ikke kortets godkendelse og åbner ikke print.')}</p><form id="profileModeForm" data-side="${side}"><label for="profileMode">${ui('Tryk')}</label><select id="profileMode" name="mode">${[['data','Fortrykt kort · kun oplysninger'],['full','Med titler og linjer']].map(([value,label])=>`<option value="${value}" data-ui="${esc(label)}" ${profile.mode===value?'selected':''}>${esc(I18n.text(label))}</option>`).join('')}</select>${formEnd('Gem printvalg')}</form>`,I18n.language());}
 function printRevisions(side){const ids=state.cards.filter(c=>c[side+'_revision']).sort((a,b)=>cmp(a.number,b.number)).map(c=>c.id);if(!ids.length){toast('Ingen sider afventer genprint.');return;}printOptions(ids[0],side,ids);}
 function printOptions(id,side,ids,defaults=false){
  const cards=(ids||[id]).map(card).filter(Boolean);if(!cards.length)return;
