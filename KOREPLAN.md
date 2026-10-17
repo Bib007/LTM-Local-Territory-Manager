@@ -11,7 +11,7 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 3 | Kortredigering, samlet grænse og import | Færdig og prøvet | 30 % |
 | 4 | Avanceret opsætning og lokal IB-import | Færdig og prøvet | 40 % |
 | 5 | Google Drive og QR med opdigtede svar | Færdig og prøvet | 50 % |
-| 6 | Fælles fejl, bekræftelser og usikker gemning | I gang · beta.17 | 60 % |
+| 6 | Fælles fejl, bekræftelser og usikker gemning | I gang · beta.18 | 60 % |
 | 7 | Login, tastatur og fokus | Afventer | 70 % |
 | 8 | Printbetjening med uændrede originalformularer | Afventer | 80 % |
 | 9 | Samlet programpakke og verifikation | Afventer | 90 % |
@@ -35,7 +35,9 @@ Beta.17 fortsætter med gendannelse og beta-nulstilling: dobbeltanmodninger blok
 
 Beta.16 (`456f327`) og beta.17 (`0b3f715`) er verificeret udgivet med grøn Checks, Platformskontrol og HA beta release samt ZIP og checksum. Lokalt består 341 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 7 program- og 3 betapakkeprøver samt offline Chromium ved fire bredder. Main er uændret `842541a` / 1.11.1.
 
-Punktet er ikke færdigt: domænespecifikke fejltekster og øvrige skrive-/bekræftelsesforløb skal gennemgås. Næste konkrete kontrol er efterfølgende navigation/dialogåbning ved noter, IB og omstrukturering samt faste og parameteriserede backendfejl. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
+Beta.18 beskytter de efterfølgende dialog-/navigationshandlinger ved noter, IB og omstrukturering. Previewet bindes til formularens værdier, alle valgte adresser og revisionen; bekræftelsen kræver uændret kontrol og blokerer dobbeltklik. Nyere lokale tegninger og filtervalg bevares også ved sene gemmesvar. `test_write_followups.cjs` og offline Chromium dækker normale og forsinkede forløb.
+
+Punktet er ikke færdigt: næste er faste og parameteriserede domænefejl og den resterende samlede kontrol. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
 
 ## Aktuel arbejdsrækkefølge · 17.10.2026
 
