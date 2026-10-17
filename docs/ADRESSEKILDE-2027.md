@@ -31,7 +31,24 @@ Denne overgang er endnu ikke færdig. Der er ingen ændring af eksisterende adre
 
 Byggestenen har ingen netværksadgang, credentials eller databaseskrivning og er endnu ikke koblet til Downloads. Den kommende adapter skal levere `fetch_page(after)` med uændrede felter/filtre og samme faste registrerings-/virkningstidspunkt på alle sider samt redigerede transportfejl. Hele resultatet returneres først efter en gyldig slutsides angivelse; fuldstændighed afhænger fortsat af kildens korrekte sideoplysninger. Dette er ikke en kontrol af endnu uimplementerede relationer eller den samlede adresseimport.
 
-12 fiktive prøver dækker sidefølge, tomt resultat, deldata med GraphQL-fejl, manglende felter, ugyldige cursors, cyklusser, dubletter, ID’er, grænser, afbrydelse og netfejl efter første side. Næste del er transport/forespørgsler og lokale DAR-joins, derefter integration i vej-, postnummer- og grænsehentning med separate checkpoints. Ingen ny brugerfunktion er aktiveret; beta.7 og dens tag bevares, og næste funktionelle udgivelse er beta.8.
+12 fiktive prøver dækker sidefølge, tomt resultat, deldata med GraphQL-fejl, manglende felter, ugyldige cursors, cyklusser, dubletter, ID’er, grænser, afbrydelse og netfejl efter første side. Transport/forespørgsler og lokale DAR-joins er nu også implementeret som beskrevet nedenfor. Ingen ny brugerfunktion er aktiveret; beta.7 og dens tag bevares, og næste funktionelle udgivelse er beta.8.
+
+## Afsluttede byggesten · forespørgsler og lokale joins
+
+`address_source.Datafordeler.query` sender interne GraphQL-forespørgsler med den lokalt gemte nøgle gennem den eksisterende begrænsede transport. JSON-fejl, GraphQL-fejl med delresultater og manglende data afvises uden at gengive rå providersvar. Den læser ikke lokale kort eller IB.
+
+`dar_query.DarQuery` fastlåser ét UTC-tidspunkt for registrering og virkning på tværs af de fem flade entiteter og alle sider. De eksplicitte projektioner og lighedsfiltre følger de officielle DAR-eksempler læst 16.10.2026. Status 3 kræves; uafgrænsede landsopslag tillades ikke. Alle værdier og cursors escapes som GraphQL-strengliteraler. Den eksisterende sidehenter kræver en gyldig sidste side, og hvert svar kontrolleres også mod forespørgslens scope.
+
+`dar_join.join_addresses` kræver komplette inputs fra samme snapshot og samler dem lokalt via ID-referencer. Resultatet sammenlignes med det eksisterende normaliserede REST-format i fiktive prøver: `dar:`-ID, adgangsadresse-ID, vej, husnummer/bogstav, postnummer, etage/dør og koordinater. Manglende eller inaktive relationer, dublerede ID'er, manglende etage/dør-felter, ukendt CRS, ugyldig dimension/WKT og ikke-endelige koordinater afviser hele resultatet. Punktgeometri i EPSG:25832 og XY/XYZ behandles; højden bruges ikke. Postnummerfilter anvendes før punktopslag uden for scope, fordi en navngiven vej kan krydse flere postnumre.
+
+14 nye fiktive prøver dækker disse dele, inklusive en samlet transport/side/join-prøve med seks svar. Det er ikke en live skemavalidering, effektiv masseadapter eller aktivering af den nye adressekilde. Den autentificerede skemakontrol med egen lokal nøgle står stadig særskilt.
+
+### Næste konkrete integration
+
+1. En samlet adapter skal finde postnummer og husnumre/veje, hente adresser og relaterede entiteter i afgrænsede opslag og kontrollere, at alle efterspurgte ID'er findes. Undgå ét netkald pr. adresse ved større områder; afprøv den konkrete batchfiltrering mod skemaet før aktivering.
+2. Vej-, postnummer- og grænsehentning skal bruge adapteren med samme snapshot, fremdrift, pause/genoptagelse og særskilt GraphQL-kildemarkør i checkpoints. REST-checkpoints må ikke genoptages som GraphQL.
+3. Import/retirement skal først ske efter en komplet vej/et komplet udsnit og bevare eksisterende transaktioner. Skemafejl, 401, netfejl eller manglende joins må ikke markere lokale adresser udgået.
+4. Afslut fiktive integrationsprøver og program/platform/HA-gates; udgiv først da næste funktionelle beta. Egen lokal nøgle og et offentligt ufølsomt område er separat ejerprøve.
 
 ## Primære kilder
 

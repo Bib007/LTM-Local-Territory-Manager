@@ -64,6 +64,22 @@ class Datafordeler:
             raise ValueError('Datafordeleren returnerede et ukendt svar. Nøglen er ikke ændret.') from None
         return schema
 
+    def query(self,query):
+        """Internal DAR query transport; never return raw provider errors."""
+        if not isinstance(query,str) or not query.strip() or len(query)>100000:
+            raise ValueError('Ugyldig DAR-forespørgsel.')
+        with self.lock:
+            key=self._auth().get('api_key')
+        if not key:raise ValueError('Gem først din egen API-key.')
+        raw=self._request(key,query=query)
+        try:
+            result=json.loads(raw)
+        except (UnicodeError,json.JSONDecodeError):
+            raise ValueError('Datafordeleren returnerede ikke et gyldigt GraphQL-svar.') from None
+        if not isinstance(result,dict) or result.get('errors') or not isinstance(result.get('data'),dict):
+            raise ValueError('Datafordelerens forespørgsel kunne ikke gennemføres fuldstændigt.')
+        return result
+
     def connect(self,key):
         if not isinstance(key,str) or not 10<=len(key.strip())<=2000 or any(ord(c)<33 or ord(c)>126 for c in key.strip()):
             raise ValueError('Indsæt den API-key, der blev oprettet til dit IT-system.')
