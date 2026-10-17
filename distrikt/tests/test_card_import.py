@@ -44,6 +44,26 @@ class CardImportTests(unittest.TestCase):
         self.assertTrue(self.s.state()['settings']['onboarding']['completed'])
         for module in ('cards','ib','publishers','loans','geo'):self.assertEqual(self.s.all(module),[])
 
+    def test_checklist_progress_is_validated_persistent_and_preference_only(self):
+        answers={'mode':'desk','boundary':'later','cards':'numbers','ib':'later'}
+        with self.assertRaises(ValueError):self.s.mutate('setup.onboarding.task',{'task':'numbers','status':'done'})
+        self.s.mutate('setup.onboarding.save',{'answers':answers,'tour_completed':True})
+        for task,status in [('numbers','done'),('desk','skipped'),('backup','done')]:self.s.mutate('setup.onboarding.task',{'task':task,'status':status})
+        self.s.mutate('setup.onboarding.save',{'answers':answers})
+        saved=self.s.state()['settings']['onboarding'];self.assertEqual(saved['tasks'],{'numbers':'done','desk':'skipped','backup':'done'})
+        other=Store(self.tmp.name)
+        try:self.assertEqual(other.state()['settings']['onboarding']['tasks'],saved['tasks'])
+        finally:other.close()
+        self.s.mutate('setup.onboarding.task',{'task':'desk','status':'pending'})
+        self.assertEqual(self.s.state()['settings']['onboarding']['tasks']['desk'],'pending')
+        before=self.s.state()
+        for task,status in [('data','done'),('ib','done'),('numbers','other'),([], 'done'),('numbers',{})]:
+            with self.assertRaises(ValueError):self.s.mutate('setup.onboarding.task',{'task':task,'status':status})
+        self.assertEqual(self.s.state(),before);self.assertFalse(self.s.all('cards'));self.assertFalse(self.s.all('loans'))
+        answers.update(mode='map',boundary='yes',cards='auto',ib='yes');self.s.mutate('setup.onboarding.save',{'answers':answers})
+        for task in ('kml','data','auto','ib'):self.s.mutate('setup.onboarding.task',{'task':task,'status':'skipped'})
+        with self.assertRaises(ValueError):self.s.mutate('setup.onboarding.task',{'task':'boundary','status':'done'})
+
     def test_old_completed_onboarding_is_not_forced_through_tour(self):
         config=self.s.require('settings','config');config['onboarding']={'version':1,'completed':True,'future_flag':'preserve'}
         with self.s.transaction():self.s.put('settings',config)

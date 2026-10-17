@@ -13,6 +13,7 @@ const Navigation={
   if(typeof GeoUI!=='undefined'&&typeof GeoUI.localize==='function')GeoUI.localize();
   I18n.applyShell();
   if(typeof GuidedTour!=='undefined')GuidedTour.localize();
+  if(typeof Onboarding!=='undefined')Onboarding.localizePanel();
   if(typeof BoundaryImportUI!=='undefined')BoundaryImportUI.localize();
   if(typeof PublisherSearch!=='undefined')PublisherSearch.localize();
   if(typeof SaveStatus!=='undefined')SaveStatus.paint();

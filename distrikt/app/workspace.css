@@ -72,3 +72,5 @@ html{scroll-padding-top:calc(var(--shell-height) + 15px)}
 /* Choice radios must not inherit the full-width text-field rule in dialogs. */
 .welcomeChoice>input[type=radio]{width:18px;height:18px;min-height:18px;flex:0 0 18px;margin:3px 0 0;accent-color:var(--accent)}
 .welcomeChoice>span{min-width:0;flex:1;overflow-wrap:anywhere}
+
+.onboardingChecklist{padding-left:24px;margin:16px 0}.onboardingChecklist li{padding:12px 0;border-bottom:1px solid var(--line);line-height:1.6;overflow-wrap:anywhere}.onboardingChecklist .actions{margin:10px 0 0;flex-wrap:wrap}.onboardingChecklist s{color:var(--muted,#b8c5d1)}

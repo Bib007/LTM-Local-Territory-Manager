@@ -2,11 +2,12 @@
 
 **Aktuel aftale 17.10.2026: Den faste udviklingsplan er afsluttet (100 %, 10/10). Ejeren har nu genoptaget ønskelisten. W25/W26 og W27 er implementeret og prøvet i beta.23. W30 (5) retter nu navneforslagenes kontrast; W28 (9) er registreret til sikkerhedsgennemgang. Små nummererede betaer fortsætter, og main er stabil 1.11.1.**
 
-Seneste verificerede beta er 1.12.0-beta.23 fra d006deb, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
+Seneste verificerede beta er 1.12.0-beta.25 fra 3a47ac5, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
-| W34 | Afsluttelig opgaveliste efter guiden med overstregning og spring over | 3 | Planlagt | Hvert punkt kan udføres eller springes over. Listen skjules, når alle punkter er afsluttet; genåbning og eksisterende opsætning bevares. |
+| W40 | Gør baggrundskortet på digitale Drive-kort mere afdæmpet, og bevar husnumre og røde adresseprikker tydelige | 5 | Planlagt | Baggrundens ikoner/skel nedtones uden at svække valgte huse, husnumre, grænser eller eksisterende offentlighedskontrol. Fiktive tætte og spredte kort gennemgås visuelt før udgivelse. |
+| W34 | Afsluttelig opgaveliste efter guiden med overstregning og spring over | 3 | Implementeret og prøvet til beta.26 | Hvert punkt kan udføres eller springes over. Listen skjules, når alle punkter er afsluttet; genåbning og eksisterende opsætning bevares. |
 | W35 | Forklar januarfristen korrekt: kan API-nøgler oprettes bagefter? | 1 | Forklaring rettet til beta.25; officielle kilder kontrolleret | Officielle kilder efterprøves. App og vejledning skelner mellem lukning af gammel REST-adgang og fortsat oprettelse af GraphQL-nøgler. |
 | W36 | Forklar Adressevælger og dens særskilte token forståeligt | 5 | Planlagt | Formål, valgfrihed og forskel fra Datafordeler-nøglen beskrives konkret; uklare tekniske menutekster forbedres. |
 | W37 | Bring webdemo i overensstemmelse med den udgivne app | 9 | Planlagt til sidst i funktionsforløbet | Demo følger kontrolleret produktudgave med udelukkende fiktive data og tydelige begrænsninger. |
@@ -286,3 +287,7 @@ W29 er bekræftet som fast kritisk procedure: develop gemmes, hver færdig kodeo
 ## W35 · fristen gælder gammel adgang
 
 17.10.2026: Datafordelerens officielle overgangsbeskrivelse fastslår API-key/OAuth-adgang og registrering af nye anvendere efter 15.01.2027. Fristen gælder gammel REST/Webbruger/Tjenestebruger-adgang. Appens danske og engelske nøglevejledning, guideplan og dokumentation skelner nu tydeligt mellem de to. Ingen ændring af autentifikation eller adressehentning. Kilder: https://datafordeler.dk/vejledning/transitionsnetvaerk/ og https://confluence.kds.dk/pages/viewpage.action?pageId=187105503 .
+
+## W34 · opgavelisten kan afsluttes · beta.26
+
+Trin markeres eksplicit som udført eller sprunget over, streges ud og kan fortrydes, mens listen vises. Når alle trin er afsluttet, skjules listen. Status gemmes i installationens indstillinger og deles ved normal genindlæsning på andre enheder. Guidens indgange og arbejdsdata bevares. Serveren validerer valgte trin, status, afsluttet guide og normal datarevision. Sene svar genopbygger ikke en nyere dialog. Program- og browserprøver bruger kun fiktive data; genindlæsning, sprog, afvisning og dobbeltklik er dækket. W31-kladden er bevaret, mens højere prioriteter behandles.

@@ -1,7 +1,9 @@
-# LTM 1.12.0-beta.25
+# LTM 1.12.0-beta.26
 
-W35 · API-fristen forklaret præcist. Den gamle DAR REST-adgang lukker 15. januar 2027; nøgler til GraphQL kan også oprettes bagefter.
+W34 · Afsluttelig opgaveliste efter opsætningsguiden.
 
-Prøv den lokale nøglevejledning og opsætningsplanen på dansk og engelsk. Der skal ikke indtastes en rigtig nøgle for at kontrollere teksten. Adressehentning og eksisterende registreringer ændres ikke.
+- Åbn et trin fra listen på forsiden, og vælg Udført bagefter, eller vælg Spring over. Afsluttede trin streges ud.
+- Fortryd kan genåbne et afsluttet trin, mens listen stadig vises. Når alle trin er afsluttet, skjules listen og giver plads til forsiden. Guidens værktøjer findes stadig i Indstillinger.
+- Genindlæs og skift sprog: fremdrift skal bevares. Flere enheder på samme installation deler den gemte status.
 
-Main er fortsat stabil 1.11.1. Betaen udgives først efter grønne program-, platform- og HA-kontroller.
+Programprøver og offline Chromium dækker afviste skrivninger, dobbeltklik, overspringning og genindlæsning ved 320/390/768/1440 pixels. Ingen private registreringer eller konti bruges. Main er fortsat stabil 1.11.1.
