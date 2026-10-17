@@ -64,5 +64,6 @@ tagged.push({dataset:{ui:'Kort',uiParams:'broken-json'},textContent:''});assert.
  assert.equal(payloads.en[0].action,'note.save');assert.equal(payloads.en[0].data.task,true);assert.equal(payloads.en[1].data.card_id,null);
  assert.equal(payloads.en[2].action,'publisher.save');assert.equal(payloads.en[2].data.name,'Forkynder <fictional>');
  assert.equal(run('JSON.stringify(state)'),original);
- console.log('Bilingual work lists preserve filter values, user text, calendar counts, drafts and note/publisher payloads; labels and attributes switch without rebuilding forms.');
+ run("I18n.set('en');Workspace.taskFilter='all'");assert.match(run('Workspace.tasks()'),/marks a task or note as done/);assert.match(run('Workspace.tasks()'),/data-ui-title="Markér udført"/);assert.match(run('Workspace.tasks()'),/aria-pressed="false"/);
+console.log('Bilingual work lists preserve filter values, user text, calendar counts, drafts and note/publisher payloads; labels and attributes switch without rebuilding forms.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

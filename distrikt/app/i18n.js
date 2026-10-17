@@ -3,6 +3,10 @@
 const I18n={
  current:'da',
  english:{
+  "○ markerer en opgave eller note som udført. Find den igen under Udførte. ✓ genåbner den uden at slette teksten.":"○ marks a task or note as done. Find it again under Completed. ✓ reopens it without deleting the text.",
+  "Aflever pr. forkynder":"Return by publisher",
+  "Flest udleverede kort først. Søg på forkynderens navn, og aflever hvert kort fra listen.":"Most assigned cards first. Search by publisher name and return each card from the list.",
+  "Søg forkynderens navn":"Search publisher name",
   "Afslut opsætningsguiden først.":"Finish the setup guide first.",
   "Vælg et gyldigt trin og en status fra opgavelisten.":"Choose a valid step and status from the checklist.",
   "Den gamle DAR REST-adgang lukker 15. januar 2027. Du kan også oprette en API-nøgle til DAR GraphQL efter den dato. Tilslut gerne den nye adgang nu, så adressehentning kan fortsætte efter lukningen. Dine gemte adresser bliver på installationen.":"The old DAR REST access closes on 15 January 2027. You can also create an API key for DAR GraphQL after that date. Connect the new access now so address downloads can continue after the closure. Saved addresses stay on this installation.",
