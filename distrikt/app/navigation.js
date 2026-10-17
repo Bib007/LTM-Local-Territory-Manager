@@ -11,6 +11,7 @@ const Navigation={
  localize(){
   const restoreFocus=document.activeElement?.id==='navigationLanguage';
   I18n.applyShell();
+  if(typeof PublisherSearch!=='undefined')PublisherSearch.localize();
   if(typeof SaveStatus!=='undefined')SaveStatus.paint();
   const nav=el('nav');if(nav){nav.innerHTML=this.html();nav.lang=I18n.language();}
   if(restoreFocus)el('navigationLanguage')?.focus();

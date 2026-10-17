@@ -15,7 +15,7 @@ const context={console,Date,Intl,Number,String,Math,Map,Set,JSON,Array,Object,Pr
  setTimeout(){return 0;},clearTimeout(){},calls:[],frontResizeObserver:null,DistrictMap:{dispose(){}},
  document:{addEventListener(kind,fn){(listeners[kind]??=[]).push(fn);},querySelector(){return {content:'FICTIONAL_TOKEN'};},getElementById:get},
  window:{addEventListener(){}},fetch(){throw Error('Network forbidden in language test');}};
-vm.createContext(context);vm.runInContext(read('i18n.js'),context);
+vm.createContext(context);vm.runInContext(read('i18n.js'),context);vm.runInContext(read('publisher-search.js'),context);
 const source=read('app.js'),boot=source.indexOf('(async()=>{try{await refresh();');assert(boot>0);
 vm.runInContext(source.slice(0,boot),context);const run=s=>vm.runInContext(s,context);
 run(`state={today:'2026-10-16',cards:[
@@ -32,7 +32,7 @@ for(const language of ['da','en']){
  run(`I18n.set('${language}');issue('available')`);
  assert.equal(get('dialog').lang,language);assert.match(html(),/id="issueForm"/);
  assert.match(html(),/name="publisher_name"/);assert.match(html(),/120&lt;test&gt;/);
- assert.match(html(),/>120&lt;test&gt; · Kort<\/option>/);assert.match(html(),/value="Forkynder &lt;fictional&gt;"/);
+ assert.match(html(),/>120&lt;test&gt; · Kort<\/option>/);assert.match(html(),/role="combobox"/);assert(!html().includes('localPublisherNames'));
  assert.match(html(),/name="date" type="date" value="2026-10-16" max="2026-10-16" required/);
  assert(!html().includes('value="assigned"'));
  assert.match(html(),language==='en'?/Assign card 120&lt;test&gt;/:/Udlever kort 120&lt;test&gt;/);
