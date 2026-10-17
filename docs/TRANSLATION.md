@@ -10,9 +10,10 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Indstillinger, backup og rapportskærme | Dansk/engelsk klargjort |
 | Kortoversigt, adresselister og kortkontrol | Dansk/engelsk klargjort og prøvet |
 | Geografisk editor, grænser og import | Dansk/engelsk klargjort og prøvet |
-| Avanceret opsætning og lokal IB-import | Næste opgave |
-| Google/QR, fælles fejl, login og printbetjening | Afventer |
+| Avanceret opsætning og lokal IB-import | Dansk/engelsk klargjort og prøvet |
+| Google/QR | Næste opgave |
+| Fælles fejl, login og printbetjening | Afventer |
 
 [Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
 
-Førstegangsopsætningen, den personlige plan, rundturen og Excel-/CSV-importens betjening kan vælges på dansk eller engelsk. XLSX-skabelonens kolonneoverskrifter er danske på begge sprog, så filformatet er entydigt. Importfejl fra serveren vises som dansk tekst; resten af avanceret opsætning hører fortsat til klargøringsopgave 4.
+Førstegangsopsætningen, den personlige plan, rundturen og Excel-/CSV-importens betjening kan vælges på dansk eller engelsk. XLSX-skabelonens kolonneoverskrifter er danske på begge sprog, så filformatet er entydigt. Importfejl fra serveren vises som dansk tekst; opsætning og lokal IB-import er nu klargjort. De danske bekræftelsesord OPRET KORT og IMPORTÉR IB er identiske på begge sprog.
