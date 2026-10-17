@@ -1,21 +1,19 @@
-# LTM 1.12.0-beta.10
+# LTM 1.12.0-beta.11
 
-## Nyt siden beta.9
+## Nyt siden beta.10
 
-Første del af vejbaseret automatisk inddeling: lokalt hentede, gennemgående lige vejstykker kan bruges som skel, også på skrå. Algoritmen vælger blandt højst 256 lokale segmenter og prøver op til 32 relevante kandidater pr. deling. Der hentes ingen nye data under beregningen. Forhåndsvisningen viser vejnavnet og kræver stadig din godkendelse før oprettelse.
+Automatisk inddeling kan nu følge et lokalt gemt vejforløbs faktiske knæk og kurver. Vejstykker med samme navn forbindes kun ved præcist fælles endepunkt uden forgrening. Små huller lukkes ikke, og veje forlænges ikke kunstigt.
 
-Et kort vejfragment forlænges ikke til en opdigtet gennemgående vej. Hvis et egnet vejstykke mangler, vises tydeligt, at delingen er geometrisk og skal rettes manuelt. Husenes lejligheder og alle adressepunkter kontrolleres samlet. Ændrede lokale vejdata gør en gammel forhåndsvisning ugyldig.
-
-Dette afslutter **ikke W16**: kurvede veje, sammenhængende forløb af flere segmenter og naturlige skel kræver næste udviklingstrin. Grænser, adgangsforhold og besøgstal skal fortsat kontrolleres på kortet. Eksisterende kort ændres ikke af at beregne et forslag.
+Skæringen kræver et enkelt forløb gennem området med to grænsekrydsninger. Tvetydige berøringer, løkker, selvkrydsning og komplekse krydsninger vælges ikke automatisk. Areal og overlap kontrolleres, og alle lejligheder i et hus skal stadig høre til samme kort. Forslaget kan rettes manuelt og kræver fortsat samlet godkendelse. Beregningen bruger kun lokale data og foretager ingen netkald.
 
 ## Prøv især
 
-1. Opdater **Distrikt Beta** og tag først privat backup af betadata.
-2. Brug et lille prøveområde med lokalt hentede vejlinjer og adresser. Åbn Avanceret → Opsæt distrikter, og lav et forslag.
-3. Find en gennemgående lige vej, også gerne skrå. Kontrollér, at et foreslået skel faktisk følger det viste vejstykke, og at alle adresser stadig har ét kort.
-4. Kontrollér markeringen ved geometriske skel uden passende vejdata. Ret sådanne skel manuelt i forhåndsvisningen.
-5. Kontrollér husenes lejligheder, besøgstal og fælles grænser før eventuel oprettelse. Annuller prøven, hvis den kun skal bruges til at se forslaget.
+1. Opdater **Distrikt Beta**, og tag først privat backup af betadata. Stabil 1.11.1 fortsætter separat.
+2. Brug et lille prøveområde med både lokale adresser og vejlinjer. OSM-baggrundsbilledet alene er ikke vejlinjer til beregningen.
+3. Åbn **Indstillinger → Avanceret → Opsæt distrikter**, og lav et forslag. Kontrollér en gennemgående kurvet vej: fælles skel skal følge vejens faktiske knæk.
+4. Kontrollér adressevalg, lejligheder og besøgstal. Prøv at rette et fælles hjørne og vælg **Kontrollér ændrede grænser og besøg**.
+5. Kontrollér bemærkninger om geometrisk deling, hvor et egnet vejforløb mangler. Annullér en ren prøve; opret først kort efter at have gennemgået hele forslaget.
 
-Automatiske prøver bruger fiktive vej- og adressegeometrier. De kontrollerer skrå og konkave skæringer, arealdækning uden overlap, ikke-forlængelse af korte vejstykker, lejligheder, deterministisk resultat, forældede forslag og eksisterende atomisk oprettelse. Virkelig HA/browser/kortvisning står særskilt.
+Se [trinvis vejledning](AUTOMATISK-INDDELING.md). Automatiske prøver bruger fiktive kurver, vejstykker og adresser. De dækker dækning uden huller/overlap, bevarede knæk, ikke-gættede forbindelser, forgreninger, husgrupper, manuel rettelse og faktisk oprettelse i midlertidige databaser. Visuel HA-/kortprøve står særskilt.
 
-Beta.9's lokale forkynderforslag og beta.8's DAR GraphQL bevares. Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.
+W16 er stadig i gang: naturlige skel og avancerede vejnet mangler. Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.
