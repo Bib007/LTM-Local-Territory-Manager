@@ -13,7 +13,9 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Avanceret opsætning og lokal IB-import | Dansk/engelsk klargjort og prøvet |
 | Google/QR | Dansk/engelsk klargjort og prøvet med fiktive svar |
 | Fælles fejl og usikker gemning | Fælles fejl, kernemodulernes domænefejl og særskilte skriveforløb er klargjort og prøvet; tekniske kildediagnostikker bevares |
-| Login og printbetjening | Afventer |
+| Login | Dansk/engelsk klargjort og prøvet; adgangskontrol uændret |
+| Dialoglabels, tastatur og fokus | Klargjort og prøvet med native Chromium-dialoger |
+| Printbetjening | Næste opgave; originale formularer bevares |
 
 [Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
 

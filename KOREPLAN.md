@@ -1,6 +1,6 @@
 # Køreplan · næste version
 
-**Samlet færdig: 60 % · 6 af 10 opgaver afsluttet.**
+**Samlet færdig: 70 % · 7 af 10 opgaver afsluttet.**
 
 Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prøver og lagring på GitHub. Procenten gælder denne plan. Stabil grundudgave 1.11.1 og almindelig HA-installation følger main.
 
@@ -12,8 +12,8 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 4 | Avanceret opsætning og lokal IB-import | Færdig og prøvet | 40 % |
 | 5 | Google Drive og QR med opdigtede svar | Færdig og prøvet | 50 % |
 | 6 | Fælles fejl, bekræftelser og usikker gemning | Færdig og prøvet · beta.20 | 60 % |
-| 7 | Login, tastatur og fokus | Næste | 70 % |
-| 8 | Printbetjening med uændrede originalformularer | Afventer | 80 % |
+| 7 | Login, tastatur og fokus | Færdig og prøvet · beta.21 | 70 % |
+| 8 | Printbetjening med uændrede originalformularer | Næste | 80 % |
 | 9 | Samlet programpakke og verifikation | Afventer | 90 % |
 | 10 | Samlet kontrol, dokumentation og manuel restliste | Afventer | 100 % |
 
@@ -27,7 +27,13 @@ Opgave 1 kontrolleres med `test_map_overview_language.cjs`; opgave 2 med `test_a
 
 Fysisk print, eget Google-samtykke og hjemmenetværket er særskilte ejertrin. Udviklingsprøver bruger opdigtede data og offentliggør ikke rigtige kort.
 
-## Punkt 6 · første del, beta.16
+## Punkt 7 · login, tastatur og fokus
+
+Beta.21 har dansk/engelsk login uden genskabte felter, dobbelt indsendelse, uendelig ventetid eller lagring af kode som præference. Den offentlige loginfil har en lille selvstændig oversættelse; generel app-sprogfil og data forbliver loginbeskyttede. Adgangskontrol/cookies/rategrænse er uændrede. Dialoger navngives fra overskrift, almindelige feltlabels forbindes, startfokus prioriteres, Tab/Shift+Tab afgrænses, og fokus returneres til åbneren efter lukning/genoptegning. Escape beholder gemmekontrollen.
+
+`test_login_ui.cjs`, `test_dialog_focus.cjs`, LAN-prøver, `check_access_browser.cjs` og den udvidede app-browserprøve dækker fiktivt login i begge kanaler ved fire bredder, metadata/felter/payloads, native dialogfokus, tastatur og afvist Escape ved usikker gemning. Smalt/bredt login er visuelt kontrolleret. Egen HA/telefon/skærmlæser er særskilte ejerprøver. Samlet 70 % (7/10); næste er punkt 8 med uændrede originalformularer.
+
+## Punkt 6 · beta.16–20
 
 Fælles fejl skelner mellem læsning, afvisning, udløbet login, usikker skrivning og bekræftet gemning med fejlet genindlæsning. Usikre resultater stopper ventende skrivninger og autosave uden automatisk gensendelse. Eksplicit Opdater kræver afsluttet redigering og henter et nyt datasnapshot; forbindelsestjek ophæver ikke spærringen. Administrative previews bindes til formular, værdier og revision og beskytter mod dobbeltklik/sene svar. `test_request_safety.cjs`, `test_confirmation_safety.cjs`, adresseprøver og offline Chromium dækker disse forløb med opdigtede data.
 
@@ -43,7 +49,7 @@ Beta.20 afslutter punkt 6: særskilte opsætnings-, IB-/kortimport-, delings- og
 
 ## Aktuel arbejdsrækkefølge · 17.10.2026
 
-Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten er på pause. Punkt 3–6 er afsluttet; derefter følger 7–10 i rækkefølge. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
+Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten er på pause. Punkt 3–7 er afsluttet; derefter følger 8–10 i rækkefølge. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
 
 Punkt 3 omfatter dansk/engelsk betjening i korteditor, samlet grænse og grænseimport, uændrede data-/formularkontrakter, bevaret kort/kladde ved sprogskift og beskyttelse mod forsinkede svar, der ellers kunne erstatte en nyere tegning. Det verificeres med fiktive arbejdsgange, geometri-/lagringsprøver og relevante program-/platform-/pakkekontroller. Backendfejl og resterende generelle fejltekster hører til punkt 6.
 

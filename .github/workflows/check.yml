@@ -64,11 +64,15 @@ jobs:
       - run: node distrikt/tests/test_write_followups.cjs
       - run: node distrikt/tests/test_domain_errors.cjs
       - run: node distrikt/tests/test_special_write_safety.cjs
+      - run: node distrikt/tests/test_login_ui.cjs
+      - run: node distrikt/tests/test_dialog_focus.cjs
       - name: Install isolated browser test tool
         run: |
           npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
       - name: Offline geographic editor browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
+      - name: Offline login and keyboard workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Syntax check
         run: find distrikt/app -maxdepth 1 -name '*.js' -exec node --check {} \;

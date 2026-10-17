@@ -1,19 +1,19 @@
-# LTM 1.12.0-beta.20
+# LTM 1.12.0-beta.21
 
-## Nyt siden beta.19
+## Nyt siden beta.20
 
-Fast punkt 6 er afsluttet. Opsætning, IB-/kortimport, deling og førstegangsopsætning skelner mellem afvisning, usikkert svar og bekræftet gemning med fejlet efterfølgende læsning. Der sker ingen automatisk gentagelse. Sene svar erstatter ikke nyere kladder eller opsætningssessioner.
+Fast punkt 7 er afsluttet. Login har dansk/engelsk betjening med bevaret indtastning, tidsgrænse, tydelige fejl og beskyttelse mod dobbelt indsendelse. Kun sprogvalget gemmes som præference. Loginets adgangskontrol, cookie og rategrænse er uændrede; den generelle sprogfil og appdata er stadig beskyttede.
 
-Også lokale billedvalg og geodatahentninger bevarer en nyere dialog. Sene farve-/Se bort fra-svar og oprydningskvitteringer overskriver ikke nyere valg eller kontroller.
+Dialoger har tydelig overskrift som navn, sammenknyttede feltlabels, startfokus og Tab/Shift+Tab inden for dialogen. Lukning returnerer til åbneren, også hvis listen blev tegnet igen. Escape følger fortsat kontrollen for gemning/ugemte felter.
 
 ## Prøv især
 
-1. Opdater Distrikt Beta, adskilt fra stabil, og brug kun opdigtede prøvedata. Hent først en lokal backup i betaen.
-2. Opret et lille sæt prøvekort i opsætningen. Kontrollér normal afslutning, og genåbn kortene.
-3. Hvis skrivningen bekræftes, men genindlæsning fejler: kontrollér beskeden **Ændringen er gemt · opdatér data før næste ændring**. Gentag ikke oprettelsen/importen; afslut redigeringen, vælg Opdater og kontrollér de faktiske registreringer.
-4. Prøv en opdigtet kort-/IB-import og kontrollér samtykkeord, resultat og genprintmarkeringer. En læsefejl må ikke udløse endnu en import.
-5. Kontrollér normal Google-testpublicering med ufølsomme prøvekort og en særskilt testkonto, hvis du ønsker en rigtig kontoafprøvning. Godkendt billede og QR-kontrakt er uændrede. En fejl i statuslæsningen betyder ikke, at uploadanmodningen skal sendes igen.
+1. Opdater Distrikt Beta, adskilt fra stabil. Brug din kode kun i din egen lokale app; send den ikke i chat eller feedback.
+2. På login: indtast en ufølsom forkert prøvekode og skift dansk/engelsk. Feltet skal bevares, og fejlen skal følge sproget. Indsend derefter med tastaturet. Respektér ventetiden efter gentagne fejl.
+3. Log ind normalt lokalt. Kontrollér at sprogvalget følger med. Ingen registreringer ændres af login.
+4. Åbn et kort med tastaturet og vælg redigering. Kontrollér feltlabels, Tab/Shift+Tab og fokus ved lukning med Escape.
+5. Ved usikker gemning: afvis lukning. Teksten og fokus skal blive i dialogen; der må ikke ske en ny gemning. Afslut derefter bevidst og brug Opdater til kontrol.
 
-Fiktive programprøver dækker gennemførte skrivninger, fejlede læsninger, ukendte kvitteringer, nyere sessioner/dialoger, uændrede payloads og spærret gentagelse. Offline Chromium kontrollerer oprettelse med fejlet efterfølgende læsning, bevaret plan og eksplicit genindlæsning ved 320/390/768/1440 pixels. Udviklingsprøver bruger ingen rigtig database, konto eller nøgle.
+Offline Chromium dækker almindelig/beta-login ved 320/390/768/1440 pixels med opdigtet kode, samme POST-payload, fejl/sprogskift og tastaturindsendelse. Appprøven kontrollerer native dialoger, labels, Tab/Shift+Tab, Escape og fokusretur. LAN-prøver kontrollerer uændrede beskyttede adresser. Skærmbilleder af smalt/bredt login er visuelt gennemgået; egen HA/telefon og skærmlæser er særskilte ejerprøver.
 
-Fast køreplan: 60 % (6/10). Næste er punkt 7: login, tastatur og fokus. Ønskelisten venter. Egen HA/telefon, kontoforbindelser og fysisk print er fortsat særskilte ejertrin.
+Fast køreplan: 70 % (7/10). Næste er punkt 8: printbetjening med uændrede originalformularer. Ønskelisten venter fortsat, og main er stabil 1.11.1.
