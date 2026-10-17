@@ -3,6 +3,7 @@
 const I18n={
  current:'da',
  english:{
+  "Data er nulstillet":"Data has been reset",
   "Kontrollen er ikke længere gyldig. Åbn og kontrollér ændringen igen.":"The review is no longer valid. Open and review the change again.",
   "Automatisk gemning er sat på pause. Log ind igen.":"Automatic saving is paused. Sign in again.",
   "Login er udløbet. Luk redigeringen uden at sende igen? Log ind igen og kontrollér data.":"Your session has expired. Close the edit without sending again? Sign in again and check the data.",

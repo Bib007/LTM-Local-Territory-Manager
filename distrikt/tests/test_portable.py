@@ -23,7 +23,7 @@ class PortableTests(unittest.TestCase):
         self.backup=snapshot(self.s,'1.9.0');self.restore=Restores(self.t,'1.9.0')
     def tearDown(self):self.s.close();self.t.close();self.temp.cleanup()
     def test_beta_reset_backups_roundtrip_and_preserves_credentials(self):
-        resets=Restores(self.s,'1.12.0-beta.16');preview=resets.preview(self.backup)
+        resets=Restores(self.s,'1.12.0-beta.17');preview=resets.preview(self.backup)
         before=digest(self.s);old_revision=self.s.revision
         result=resets.reset_beta('NULSTIL BETA',old_revision)
         self.assertNotEqual(old_revision,self.s.revision)
@@ -37,7 +37,7 @@ class PortableTests(unittest.TestCase):
         resets.apply(data['token']);self.assertEqual(digest(self.s),before)
 
     def test_beta_reset_refuses_invalid_confirmation_stale_data_or_shared_maps(self):
-        resets=Restores(self.s,'1.12.0-beta.16');before=digest(self.s)
+        resets=Restores(self.s,'1.12.0-beta.17');before=digest(self.s)
         for confirmation,revision in [('yes',self.s.revision),('NULSTIL BETA','old')]:
             with self.assertRaises(ValueError):resets.reset_beta(confirmation,revision)
             self.assertEqual(before,digest(self.s))
@@ -50,7 +50,7 @@ class PortableTests(unittest.TestCase):
         resets.reset_beta('NULSTIL BETA',self.s.revision)
 
     def test_beta_reset_preserves_data_if_backup_or_transaction_fails(self):
-        resets=Restores(self.s,'1.12.0-beta.16');before=digest(self.s)
+        resets=Restores(self.s,'1.12.0-beta.17');before=digest(self.s)
         with patch('portable.snapshot',side_effect=OSError('fictional disk full')):
             with self.assertRaises(OSError):resets.reset_beta('NULSTIL BETA',self.s.revision)
         self.assertEqual(before,digest(self.s))
@@ -79,7 +79,7 @@ class PortableTests(unittest.TestCase):
         deleted=self.s.mutate('note.save',{'text':'Fiktiv slettet note'})['id']
         self.s.mutate('delete',{'module':'notes','id':deleted})
         with self.s.transaction():self.s.put('cards',{'id':'archived-fictional','number':'99','archived':True,'addresses':[]})
-        before=digest(self.t);preview=self.restore.preview(snapshot(self.s,'1.12.0-beta.16'))
+        before=digest(self.t);preview=self.restore.preview(snapshot(self.s,'1.12.0-beta.17'))
         self.assertEqual(digest(self.t),before,'A preview must not replace target data')
         self.assertEqual(preview['counts']['cards'],2)
         self.assertGreater(preview['counts']['notes'],2,'The original raw count still includes activity')

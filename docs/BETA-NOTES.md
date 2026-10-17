@@ -1,19 +1,17 @@
-# LTM 1.12.0-beta.16
+# LTM 1.12.0-beta.17
 
-## Nyt siden beta.15
+## Nyt siden beta.16
 
-Ved afbrudt gemning fortæller appen nu, at ændringen kan være nået frem. Automatisk gemning og ventende ændringer standses uden gensendelse. En læsefejl eller afvist ændring vises særskilt, ligesom en bekræftet gemning, hvor efterfølgende genindlæsning fejler. Fælles beskeder følger dansk/engelsk.
-
-Administrative forhåndskontroller erstatter ikke nyere indtastninger. Bekræftelse kræver samme kontrollerede revision og blokerer dobbeltklik. Sene gemmesvar lukker ikke en nyere dialog.
+Gendannelse og beta-nulstilling er nu beskyttet mod dobbeltklik og sene svar. En allerede gennemført handling, hvor efterfølgende genindlæsning fejler, vises som gemt med behov for kontrol. Den bliver ikke sendt igen automatisk. En nyere formular eller side erstattes ikke af det gamle svar.
 
 ## Prøv især
 
-1. Opdater Distrikt Beta, adskilt fra stabil, og brug kun opdigtede prøvekort. Hent først en privat backup lokalt i betaen.
-2. Gem en ændring normalt, og kontrollér efter genåbning. Prøv også dansk/engelsk og almindelige valideringsfejl.
-3. På en ufølsom prøveinstallation: afbryd forbindelsen under gemning. Kontrollér beskeden, og at yderligere indtastning ikke sendes automatisk. Et normalt forbindelsestjek må ikke gensende.
-4. Gendan forbindelsen. Afvis først at lukke redigeringen; felterne skal bevares. Luk derefter udtrykkeligt uden gensendelse, vælg Opdater, og kontrollér hvad der faktisk blev gemt. Indtast eventuelle manglende ændringer som en ny handling.
-5. Under hurtigoprettelse: start kontrol, og ret input før svaret. Den gamle kontrol må ikke erstatte teksten. Kontrollér igen, og annullér; ingen kort må oprettes.
+1. Opdater Distrikt Beta, adskilt fra stabil, og brug kun opdigtede prøvedata. Hent en lokal backup i betaens indstillinger først.
+2. Gendan en ufølsom prøvebackup. Kontrollér samtykke, indhold og den lokale sikkerhedskopi fra før import. Ingen rigtige databaser skal sendes til AI eller GitHub.
+3. På en prøveinstallation: luk importdialogen under en langsom import, og åbn en anden formular. Et sent svar må ikke lukke den nyere formular. Afslut den, vælg Opdater og kontrollér det faktisk gemte resultat før videre arbejde.
+4. Prøv Nulstil betadata med opdigtede registreringer. Det kræver fortsat NULSTIL BETA. Kontrollér tomme data, lokal sikkerhedskopi og mulighed for ny opsætning; stabil installation må ikke berøres.
+5. Hvis appen melder, at handlingen er gemt, men genindlæsning mangler: vælg Opdater og kontrollér data. Kør ikke import/nulstilling igen for at teste forbindelsen.
 
-Offline Chromium dækker et servergemt prøvekort med tabt svar, stoppet autosave, eksplicit genindlæsning og sene administrative kontroller ved 320/390/768/1440 pixels. Der er ikke brugt private data eller rigtig Google-/Datafordeler-konto. Egen HA/telefon og fysisk print er særskilte ejertrin.
+Fiktive programprøver dækker samtykke/token, beta-begrænsning, dobbeltanmodninger, fejlet læsning efter bekræftet skrivning samt nyere dialoger og navigation. Offline Chromium dækker et forsinket accepteret import-svar ved 320/390/768/1440 pixels. Ingen rigtig backup er åbnet i disse prøver.
 
-Fast køreplan: 50 % (5/10). Punkt 6 er i gang: domænespecifikke fejltekster og resterende bekræftelser, herunder samlet gendannelse/nulstilling, skal gennemgås før afslutning. Ønskelisten venter.
+Fast køreplan: 50 % (5/10). Punkt 6 er i gang; domænespecifikke fejltekster og øvrige skrive-/bekræftelsesforløb skal færdiggøres før punkt 7. Ønskelisten venter fortsat. Egen HA/telefon, Google/Datafordeler og fysisk print er særskilte ejertrin.
