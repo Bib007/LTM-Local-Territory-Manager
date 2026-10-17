@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.27 · Daglig aflevering og tydelig opgavestatus
+
+Kortstatus har nu tydelige farver for udleveret, i mappen og i kassen. Direkte udleverings-/afleveringsknapper åbner de normale kontrollerede formularer; den valgte kortmenu bevares. Ændrede kort kan fortsat være spærret for udlevering.
+
+Daglig brug har fanen Aflever pr. forkynder: alle aktive udlån grupperes efter forkynder, flest kort først, med navnesøgning og aflevering fra hver kortlinje. Ens navne med forskellige registreringer holdes adskilt. Listen og sidemenuen fungerer på smalle skærme og på dansk/engelsk. Ingen udlåns- eller delingsregler ændres.
+
+Cirkelknappen ved opgaver og noter er forklaret med synlig hjælp og tooltip: markér udført eller genåbn uden at slette teksten.
+
 ## 1.12.0-beta.26 · Opgavelisten kan afsluttes
 
 Planen på forsiden er nu en liste med Udført, Spring over og Fortryd. Afsluttede trin streges ud. Listen forsvinder, når alle trin er udført eller sprunget over; gemt status huskes på installationen efter genindlæsning. At åbne et trin afslutter det ikke automatisk. Opsætningsplanen kan stadig åbnes fra Indstillinger. Dansk/engelsk og smalle skærme er kontrolleret med fiktive data.
