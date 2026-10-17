@@ -168,6 +168,22 @@ class SetupTests(unittest.TestCase):
         self.apply(p)
         self.assertEqual({a for c in self.s.all('cards') for a in c['address_ids']},{a['id'] for a in records()})
 
+    def test_curved_preview_can_be_edited_and_applied_without_losing_addresses(self):
+        curve=[[9.99,55.0125],[10.014,55.0125],[10.014,55.0135],[10.023,55.0135],[10.023,55.0125],[10.05,55.0125]]
+        self.s.mutate('geo.import',{'records':[{'id':'test-curved-road','entity':'road','name':'Fiktiv Kurvevej','points':curve}],'source':'Fiktiv test','label':'Kurvet vej'})
+        p=self.preview(target=40)
+        self.assertEqual(len(p['cards']),2)
+        self.assertTrue(all('Fiktiv Kurvevej' in c['warning'] for c in p['cards']))
+        shared=set(map(tuple,p['cards'][0]['polygon']))&set(map(tuple,p['cards'][1]['polygon']))
+        self.assertTrue(set(map(tuple,curve[1:-1])).issubset(shared))
+        edits=[dict(key=c['key'],number=c['number'],name=c['name'],polygon=[[x,y+.0002 if [x,y]==curve[2] else y] for x,y in c['polygon']]) for c in p['cards']]
+        adjusted=self.s.mutate('setup.adjust.preview',{'token':p['token'],'cards':edits})
+        self.assertEqual(sum(c['visits'] for c in adjusted['cards']),80)
+        self.assertEqual(self.s.all('cards'),[])
+        self.apply(adjusted)
+        ids=[a for c in self.s.all('cards') for a in c['address_ids']]
+        self.assertEqual(len(ids),80);self.assertEqual(len(set(ids)),80)
+
     def test_local_road_change_invalidates_a_preview_without_writing_cards(self):
         p=self.preview()
         self.s.mutate('geo.import',{'records':[{'id':'fake-road','entity':'road','name':'Fiktiv vej','points':[[10,55.015],[10.04,55.02]]}],'source':'Fiktiv test','label':'Vejstykke'})
