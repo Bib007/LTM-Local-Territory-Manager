@@ -1,6 +1,6 @@
 # Sprog og dækning
 
-Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne, noter, søgninger og opbevarede værdier bevares. Originale formularer og print er danske.
+Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne, noter, søgninger og opbevarede værdier bevares. Originale formularer og rapportindhold er danske; printbetjeningen kan vælges på begge sprog.
 
 | Område | Status på develop |
 | --- | --- |
@@ -15,7 +15,7 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Fælles fejl og usikker gemning | Fælles fejl, kernemodulernes domænefejl og særskilte skriveforløb er klargjort og prøvet; tekniske kildediagnostikker bevares |
 | Login | Dansk/engelsk klargjort og prøvet; adgangskontrol uændret |
 | Dialoglabels, tastatur og fokus | Klargjort og prøvet med native Chromium-dialoger |
-| Printbetjening | Næste opgave; originale formularer bevares |
+| Printbetjening | Dansk/engelsk klargjort og prøvet; originale formularer og dansk rapportindhold bevares |
 
 [Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
 

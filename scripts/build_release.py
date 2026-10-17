@@ -4,14 +4,15 @@ from pathlib import Path
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
-REQUIRED=('S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
+REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
-ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md')
+ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','KOREPLAN.md','Dette-skal-hjaelpes-manuelt.md','Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 
 def version():
@@ -48,6 +49,9 @@ def files():
         if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe brand asset: '+n)
         result['assets/brand/'+n]=(p.read_bytes(),0o644)
     for p in sorted((ROOT/'docs').glob('*.md')):result['docs/'+p.name]=(p.read_bytes(),0o644)
+    p=ROOT/'demo'/'README.md'
+    if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe demo guide.')
+    result['demo/README.md']=(p.read_bytes(),0o644)
     # Shared guides use repository paths; portable copies use the desktop folder.
     for name,(raw,mode) in list(result.items()):
         if name in ROOT_DOCS or name.startswith('docs/'):
@@ -59,7 +63,19 @@ def files():
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))
     result['Home-Assistant/SHA256SUMS.txt']=(manifest.encode(),0o644)
     result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
+    validate_links(result)
     return result
+
+def validate_links(entries):
+    """All relative Markdown destinations must exist inside the archive."""
+    for name,(raw,_) in entries.items():
+        if not name.endswith('.md'):continue
+        for target in re.findall(r'\]\(([^)\s]+)',raw.decode('utf-8')):
+            target=target.split('#',1)[0]
+            if not target or ':' in target or target.startswith('/'):continue
+            resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
+            if resolved not in entries and not any(n.startswith(resolved.rstrip('/')+'/') for n in entries):
+                raise ValueError('Broken packaged guide link: '+name+' -> '+target)
 
 def build(output):
     entries=files();output.mkdir(parents=True,exist_ok=True);path=output/('LTM-v'+version()+'.zip')

@@ -1,6 +1,6 @@
 # Køreplan · næste version
 
-**Samlet færdig: 70 % · 7 af 10 opgaver afsluttet.**
+**Samlet færdig: 100 % · 10 af 10 udviklingsopgaver afsluttet.**
 
 Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prøver og lagring på GitHub. Procenten gælder denne plan. Stabil grundudgave 1.11.1 og almindelig HA-installation følger main.
 
@@ -13,9 +13,9 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 5 | Google Drive og QR med opdigtede svar | Færdig og prøvet | 50 % |
 | 6 | Fælles fejl, bekræftelser og usikker gemning | Færdig og prøvet · beta.20 | 60 % |
 | 7 | Login, tastatur og fokus | Færdig og prøvet · beta.21 | 70 % |
-| 8 | Printbetjening med uændrede originalformularer | Næste | 80 % |
-| 9 | Samlet programpakke og verifikation | Afventer | 90 % |
-| 10 | Samlet kontrol, dokumentation og manuel restliste | Afventer | 100 % |
+| 8 | Printbetjening med uændrede originalformularer | Færdig og prøvet · beta.22 | 80 % |
+| 9 | Samlet programpakke og verifikation | Færdig og prøvet · beta.22 | 90 % |
+| 10 | Samlet kontrol, dokumentation og manuel restliste | Færdig og prøvet · beta.22 | 100 % |
 
 Opgave 5 kontrolleres med `test_share_workflow_language.cjs`, de eksisterende private/offentlige billed- og delingsprøver samt den udvidede offline-browserprøve. Fiktive status-/opskrifts-/QR-svar dækker samme offentlige godkendelses-payload på begge sprog, bevaret billede/checkbox/QR ved sprogskift, nyeste polling, sene previews, ændret revision, annulleret forbindelsesfil, dobbelt publicering og bevaret nyere dialog/navigation. Browserprøven bruger et genereret prøve-PNG til samtykkeforløbet; den kontakter ikke Google. Eget Google-samtykke og faktisk adgang fra telefon er fortsat ejertrin.
 
@@ -26,6 +26,16 @@ Opgave 3 kontrolleres med `test_geo_workflow_language.cjs` og den gentagelige of
 Opgave 1 kontrolleres med `test_map_overview_language.cjs`; opgave 2 med `test_address_workflow_language.cjs`. Fiktive Chromium-arbejdsgange har prøvet bevaret kortinstans, søgning, faner og 320/390/768/1440 pixels. Der er ikke brugt private registreringer.
 
 Fysisk print, eget Google-samtykke og hjemmenetværket er særskilte ejertrin. Udviklingsprøver bruger opdigtede data og offentliggør ikke rigtige kort.
+
+## Punkt 8–10 · afslutning af den faste plan
+
+Beta.22 afslutter printbetjening, programpakke og slutkontrol. Printdialogens felter/valg bevares ved sprogskift. Popup-knapper følger det valgte sprog; selve kort- og rapportindholdet og S-12-/S-13-originalerne bevares. Dobbeltklik, sene aktiver, ændrede felter/revisioner/navigation og nyere dialoger er kontrolleret. Fejlet billedafkodning spærrer print. Profilgemning godkender aldrig genprint.
+
+`test_print_workflow.cjs`, rapportprøver og udvidet `check_geo_browser.cjs` dækker dette med opdigtede data, faktiske indlejrede printbilleder og browser-PDF af front, bagside og samlet rapport ved 320/390/768/1440 pixels. Smal/bred printdialog og originalkort er visuelt kontrolleret. De 347 Python-prøver (én forventet overspringning), alle JavaScript-prøver og 12 pakkeprøver består lokalt.
+
+Pakkekontrollen fandt seks eksisterende brudte vejledningslinks. De linkede filer følger nu med; alle relative Markdown-links kontrolleres ved pakning. Original S-12-PDF er et krævet aktiv. Den komplette program-ZIP og separate HA-beta er bygget med checksum; identiske inddata giver identiske ZIP-filer. GitHub-gates kontrollerer desuden Python-varianter, Mac, Windows og HA før betaudgivelse. Status for udgivelsen skal læses på GitHub; lokale prøver er ikke i sig selv en udgivelse.
+
+Se [printvejledning](docs/PRINT.md), [slutkontrol](docs/SLUTKONTROL.md) og [lokal restliste](Dette-skal-hjaelpes-manuelt.md). Fysisk print, egen HA/telefon/VPN, eget Google-/Datafordeler-samtykke og eventuel skærmlæser er udtrykkeligt ejerprøver. Main er fortsat stabil 1.11.1. Ønskelisten er ikke behandlet i denne afslutning.
 
 ## Punkt 7 · login, tastatur og fokus
 
@@ -49,14 +59,16 @@ Beta.20 afslutter punkt 6: særskilte opsætnings-, IB-/kortimport-, delings- og
 
 ## Aktuel arbejdsrækkefølge · 17.10.2026
 
-Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten er på pause. Punkt 3–7 er afsluttet; derefter følger 8–10 i rækkefølge. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
+Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten er på pause. Punkt 1–10 er nu afsluttet i udviklingskoden. Ønskelisten er ikke genoptaget i denne afslutning. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
 
 Punkt 3 omfatter dansk/engelsk betjening i korteditor, samlet grænse og grænseimport, uændrede data-/formularkontrakter, bevaret kort/kladde ved sprogskift og beskyttelse mod forsinkede svar, der ellers kunne erstatte en nyere tegning. Det verificeres med fiktive arbejdsgange, geometri-/lagringsprøver og relevante program-/platform-/pakkekontroller. Backendfejl og resterende generelle fejltekster hører til punkt 6.
 
 ## Nye ønsker
 
-Se [ønskelisten](OENSKELISTE.md) for førstegangsopsætning, guidet rundtur, Excel-import og ejerprioriteter. Opstart og eksisterende kortimport er færdige på develop. De resterende ønsker afventer nu den faste køreplan; se aftalen ovenfor. De nye ønsker ændrer ikke automatisk procentberegningen.
+Se [ønskelisten](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/OENSKELISTE.md) for førstegangsopsætning, guidet rundtur, Excel-import og ejerprioriteter. Opstart og eksisterende kortimport er færdige på develop. Den faste køreplan er afsluttet; de resterende ønsker står fortsat i deres egen kø. De nye ønsker ændrer ikke automatisk procentberegningen.
 
 ## Løbende betaprøver
 
 Små afsluttede funktioner skal fremover udgives som nummererede HA-betaer med en kort konkret testliste. Det nye ejerønske W19 har prioritet -1. Betakanalen er adskilt fra stabil; betaudgivelser ændrer ikke i sig selv de faste ti opgavers procenttal.
+
+Den faktiske pakkestart afslørede en gammel versionsetiket i API-svaret. Appens viste version følger nu den kørende servers version; HTTP-prøven kontrollerer begge kanaler mod ping.

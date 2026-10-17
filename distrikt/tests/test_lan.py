@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
-from server import Server, acquire_lock
+from server import Server, acquire_lock, VERSION
 from access import Access, private_client
 
 class LANTests(unittest.TestCase):
@@ -66,7 +66,7 @@ class LANTests(unittest.TestCase):
             cookie=r.headers['Set-Cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('SameSite=Strict',cookie)
         with self.req('/') as r:
             html=r.read().decode();self.assertIn(self.server.token,html);self.assertIn('Log ud',html);self.assertNotIn('data-action="stop"',html)
-        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.12.0-beta.7')
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],VERSION)
         with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/state')
         self.assertEqual(error.exception.code,403)
     def test_wrong_password_and_foreign_origin_are_rejected(self):

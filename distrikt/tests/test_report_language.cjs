@@ -40,7 +40,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   const details=run('reportDetails(true)');assert.doesNotMatch(details,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|Midlertidige kort|Temporary cards/);assert.match(details,/Kort &lt;invented&gt;/);assert.match(details,/class="tablewrap"/);
   assert.equal(run('JSON.stringify(state)'),original);
  }
- assert.equal(print.en,print.da,'Language switching must leave the complete original Danish print document unchanged');assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
+ assert.equal(print.en.split('<div class="printReports">')[1],print.da.split('<div class="printReports">')[1],'Language switching must leave all printed reports and original forms unchanged');assert.match(print.en,/>Print \/ save PDF<\//);assert.match(print.da,/>Udskriv \/ gem PDF<\//);assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
  // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
  const geometry=run('JSON.stringify(state.cards)');

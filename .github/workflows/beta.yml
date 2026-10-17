@@ -32,6 +32,7 @@ jobs:
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - run: python scripts/test_build_release.py
+      - run: python scripts/check_release_smoke.py
       - run: python -m unittest discover -s scripts -p test_build_beta.py -v
   desktop:
     if: github.ref == 'refs/heads/develop'

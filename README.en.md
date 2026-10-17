@@ -9,7 +9,7 @@
 
 **Private territory administration, on your own computer.** An unofficial, community-built tool for Jehovah’s Witnesses. Vibe coded with **OpenAI Codex**, shaped by practical use at the territory desk.
 
-[Dansk](README.md) · [Installation](docs/INSTALL.en.md) · [Privacy](docs/PRIVACY.en.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Manual help checklist](Dette-skal-hjaelpes-manuelt.md)
+[Dansk](README.md) · [Installation](docs/INSTALL.en.md) · [Privacy](docs/PRIVACY.en.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Manual help checklist](Dette-skal-hjaelpes-manuelt.en.md)
 
 ## New setup and card import on develop
 

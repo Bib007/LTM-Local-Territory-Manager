@@ -1,19 +1,22 @@
-# LTM 1.12.0-beta.21
+# LTM 1.12.0-beta.22
 
-## Nyt siden beta.20
+## Nyt siden beta.21
 
-Fast punkt 7 er afsluttet. Login har dansk/engelsk betjening med bevaret indtastning, tidsgrænse, tydelige fejl og beskyttelse mod dobbelt indsendelse. Kun sprogvalget gemmes som præference. Loginets adgangskontrol, cookie og rategrænse er uændrede; den generelle sprogfil og appdata er stadig beskyttede.
+Den faste udviklingsplan er afsluttet: 100 % (10/10). Printbetjeningen er dansk/engelsk med bevaret indtastning. Originale S-12/S-13-formularer, kortmål og danske rapporter er bevaret. Dobbeltklik, sene svar og ændret grundlag beskyttes; manglende billeder spærrer print.
 
-Dialoger har tydelig overskrift som navn, sammenknyttede feltlabels, startfokus og Tab/Shift+Tab inden for dialogen. Lukning returnerer til åbneren, også hvis listen blev tegnet igen. Escape følger fortsat kontrollen for gemning/ugemte felter.
+Den samlede programpakke indeholder nu alle linkede vejledninger. Brudte lokale vejledningslinks og manglende original S-12-PDF stopper pakningen. Der følger en dansk/engelsk printguide og slutkontrol med tydelig ejerrestliste.
 
 ## Prøv især
 
-1. Opdater Distrikt Beta, adskilt fra stabil. Brug din kode kun i din egen lokale app; send den ikke i chat eller feedback.
-2. På login: indtast en ufølsom forkert prøvekode og skift dansk/engelsk. Feltet skal bevares, og fejlen skal følge sproget. Indsend derefter med tastaturet. Respektér ventetiden efter gentagne fejl.
-3. Log ind normalt lokalt. Kontrollér at sprogvalget følger med. Ingen registreringer ændres af login.
-4. Åbn et kort med tastaturet og vælg redigering. Kontrollér feltlabels, Tab/Shift+Tab og fokus ved lukning med Escape.
-5. Ved usikker gemning: afvis lukning. Teksten og fokus skal blive i dialogen; der må ikke ske en ny gemning. Afslut derefter bevidst og brug Opdater til kontrol.
+1. Opdater Distrikt Beta på port 8788. Main er fortsat stabil 1.11.1.
+2. Åbn et opdigtet kort → Print forside. Vælg A4, fuldt tryk og mål/placering. Skift dansk/engelsk: værdierne skal bevares.
+3. Vælg Fremvis og print. Se originalkortet og vælg 100 % uden sidehoved/sidefod. Kontroller fysisk A4 først og derefter rigtige kort. Gentag med bagside.
+4. Prøv samlet rapport samt separat original S-13. Kontroller tjenesteår, kortudsnit, navne/datoer, sideskift og fortsættelser.
+5. En preview/PDF/profilgemning må aldrig godkende genprint. Godkend først den ændrede side, når det fysiske resultat er kontrolleret.
+6. Ved fejlet profilgemning: læs gemmestatus og brug Opdater, når appen kræver det. Gentag ikke en usikker skrivning.
 
-Offline Chromium dækker almindelig/beta-login ved 320/390/768/1440 pixels med opdigtet kode, samme POST-payload, fejl/sprogskift og tastaturindsendelse. Appprøven kontrollerer native dialoger, labels, Tab/Shift+Tab, Escape og fokusretur. LAN-prøver kontrollerer uændrede beskyttede adresser. Skærmbilleder af smalt/bredt login er visuelt gennemgået; egen HA/telefon og skærmlæser er særskilte ejerprøver.
+Automatiske prøver bruger opdigtede data: 347 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 12 pakkeprøver og offline Chromium ved fire bredder. Printprøverne laver faktiske front-/bagside-/rapport-PDF'er. Egen printer, HA/telefon/VPN, Google, Datafordeler og eventuel skærmlæser står fortsat som lokale ejerprøver.
 
-Fast køreplan: 70 % (7/10). Næste er punkt 8: printbetjening med uændrede originalformularer. Ønskelisten venter fortsat, og main er stabil 1.11.1.
+[Printguide](PRINT.md) · [Slutkontrol](SLUTKONTROL.md) · [Ejerrestliste](../Dette-skal-hjaelpes-manuelt.md)
+
+Den faktiske pakkestart afslørede en gammel versionsetiket i API-svaret. Appens viste version følger nu den kørende servers version; HTTP-prøven kontrollerer begge kanaler mod ping.

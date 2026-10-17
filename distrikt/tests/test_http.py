@@ -49,6 +49,16 @@ class HTTPTests(unittest.TestCase):
         with self.request('/api/address-source/disconnect',{}) as response:self.assertFalse(json.load(response)['configured'])
         with self.request('/address-source-ui.js') as response:self.assertIn(b'AddressSourceUI',response.read())
 
+    def test_state_version_matches_running_server_in_both_channels(self):
+        from server import VERSION
+        for beta in (False,True):
+            self.server.beta=beta
+            with self.request('/api/state') as response:state=json.load(response)
+            with self.request('/api/ping',token=False) as response:ping=json.load(response)
+            self.assertEqual(state['version'],VERSION)
+            self.assertEqual(state['version'],ping['version'])
+            self.assertEqual(state['beta'],beta)
+
     def test_local_printing_code_is_available_with_app_security_policy(self):
         with self.request('/printing.js') as response:
             self.assertEqual(response.status,200)

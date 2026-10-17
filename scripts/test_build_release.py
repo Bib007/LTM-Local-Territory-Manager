@@ -36,6 +36,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         for name in release.ROOT_DOCS:self.add(name,'# Fictional project document\n')
         for name in release.BRAND_FILES:self.add('assets/brand/'+name,'invented vector fixture')
         self.add('docs/INSTALL.md','# Fictional installation guide\n')
+        self.add('demo/README.md','# Fictional demo guide\n')
         self.add('data/kort.sqlite3','DO_NOT_PACKAGE_PRIVATE_TEST_RECORD')
 
     def tearDown(self):
@@ -88,6 +89,14 @@ class ReleaseArchiveTests(unittest.TestCase):
                 for target in re.findall(r'\]\(([^)]+)\)',archive.read(name).decode()):
                     resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
                     self.assertIn(resolved,archive.namelist())
+
+    def test_all_packaged_relative_links_are_validated(self):
+        self.add('docs/OTHER.md','[Missing](../missing-guide.md)\n')
+        with self.assertRaisesRegex(ValueError,'Broken packaged guide link'):self.build('broken')
+
+    def test_original_s12_pdf_is_required(self):
+        (self.source/'templates/S-12-original.pdf').unlink()
+        with self.assertRaisesRegex(ValueError,'missing blank form assets'):self.build('missing')
 
     def test_identical_inputs_make_identical_zip_bytes(self):
         self.assertEqual(self.build('first').read_bytes(),self.build('second').read_bytes())
