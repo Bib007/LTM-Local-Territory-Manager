@@ -1,13 +1,42 @@
 # Ønskeliste og nye opgaver
 
-**Aktuel aftale 17.10.2026: Den faste udviklingsplan er afsluttet (100 %, 10/10). Ønskelisten behandles efter ejerens prioritet. W35, W34 og W38/W39/W41 er udgivet i beta.25–27. W43 (2) og W42 (3) er prøvet til beta.28. Næste udestående er W36/W40 (5), derefter W31 og W06 (6). Små nummererede betaer fortsætter; main er stabil 1.11.1.**
+**Aktuel aftale 17.10.2026: Den faste udviklingsplan er afsluttet (100 %, 10/10). Ønskelisten behandles efter ejerens prioritet. W35, W34 og W38/W39/W41 er udgivet i beta.25–27. W43 (2) og W42 (3) er udgivet i beta.28. Næste er W44 (4), W36/W40 (5), derefter W31 og W06 (6). Hver beta må højst samle tre ønskepunkter. Små nummererede betaer fortsætter; main er stabil 1.11.1.**
 
-Seneste verificerede beta er 1.12.0-beta.27 fra 306e849, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
+Seneste verificerede beta er 1.12.0-beta.28 fra d753d7a, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
+
+## Arbejdsrækkefølge fra 17.10.2026
+
+Kun udestående arbejde står i denne kø. Nyt prioritet -1 går foran køen. W45 er en løbende regel: højst tre ønskepunkter pr. beta, og færre når en stor ændring bør prøves alene. Næste planlagte kodepakke er punkt 1–3. Rækkefølgen justeres ved nye kritiske ønsker eller nødvendige afhængigheder.
+
+| Nr. | Opgave | Prioritet / placering | Afslutning |
+| --- | --- | --- | --- |
+| 1 | W44 · Forklar datoen under Dit lokale overblik | 4 · næste | Tydelig periode og opgørelsesdato eller fjernet felt. |
+| 2 | W36 · Forklar Adressevælger og særskilt token | 5 | Konkret formål, valgfrihed og forskel fra Datafordeler-nøglen. |
+| 3 | W40 · Nedton baggrunden på digitale kort | 5 | Husnumre og røde prikker forbliver tydelige; ingen ændret offentlighedsgrænse. |
+| 4 | W31 · Importér to års gennemgange fra CSV og S-13 | 6 · prototype bevaret, ikke udgivet | Lokal kontrol af datoer/kortnumre/dubletter; digital PDF og lokal OCR undersøges og verificeres før godkendt import. |
+| 5 | W06 · HA-sikkerhedsprofil og adgang | 6 | Vurder profil og mulige forbedringer; større ændringer forelægges ejeren før implementering. |
+| 6 | W16 · Naturlige skel og avancerede vejnet | 7 | Gennemgåelige, redigerbare inddelingsforslag efter reelle skel. |
+| 7 | W32 · Sammenlign månedstal med sidste år | 8 · efter historikimport | Samme måned/periode, korrekt håndtering af ufuldstændig historik og indeværende måned. |
+| 8 | W28 · Codex Security-gennemgang | 9 · senest blokeret af manglende scanruntime | Kontrollér scanneradgang ved opstart; gennemfør scan og vurder fund, når værktøjerne er tilgængelige. Ingen formel scanning er udført. |
+| 9 | W23 · Feedback uden GitHub-konto | 10 · afklaring før endelig demosynkronisering | Anbefal kanal, modtager og håndtering af bilag/persondata; opret ikke automatisk en ny offentlig tjeneste. |
+| 10 | W37/W12 · Opdatér webdemo og kontrollér det direkte link | 9/5 · efter appens funktionsvalg | Demo matcher den kontrollerede app; faktiske Pages-link og første åbning prøves med fiktive data. |
+| 11 | Ejerprøve · Datafordeler | Egen konto og installation | Egen nøgle, én vej og et lille område; kontrollér husnumre, lejligheder og opdatering. |
+| 12 | Ejerprøve · Google Drive og QR | Egen konto og telefon | Samtykke, godkendt kort, adgang under udlån, lukning ved aflevering og genåbning ved genudlevering. |
+| 13 | Ejerprøve · HA, telefon, VPN og flytning | Eget udstyr | Opdatering/genstart, login, separat beta/stabil, privat backup og gendannelse; eventuel flytning bekræftes før gammel installation opgives. |
+| 14 | Ejerprøve · Fysisk print og betjening | Egen printer/hjælpemidler | A4-prøve, rigtige for-/IB-bagsider, mål/placering/QR samt mobil/tastatur og eventuel skærmlæser. |
+| 15 | Samlet slutkontrol og stabil udgivelse, inklusive W10 | Efter relevante kode- og ejerprøver | Gentag program-/platform-/browser-/pakkekontrol, saml dokumentation/versioner, aktivér GitHub-feedbackformular via main og verificér stabil udgivelse. |
+| 16 | W08 · Anbefal om gammelt repository kan arkiveres | 10 · efter stabil udgivelse | Kontrollér bevaret kode, historik, vejledninger og pakker; giv anbefaling. Ingen automatisk arkivering eller sletning. |
+
+Punkt 9 afgør eventuelle feedbackvalg før den endelige demo i punkt 10, så demoen ikke straks skal laves om. Arkivanbefalingen afhænger af den stabile udgivelse og ligger derfor sidst. Blokerede punkter forbliver åbne; øvrigt uafhængigt arbejde kan fortsætte. Ejerprøverne kan begynde tidligere, så snart de relevante funktioner er klar, men tælles ikke som automatisk udført.
+
+## Registrerede ønsker og historik
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
-| W43 | Vis menighedsnavnet i topbaren sammen med projektets identitet | 2 | Implementeret og browserprøvet til beta.28 | Det lokalt gemte navn vises ved logo/navn og Distrikt, også på mobil. Lange navne kan aflæses uden at dække gemmestatus eller navigation. Der bruges kun fiktive navne i GitHub og prøver. |
-| W42 | Gør opgavelisten kompakt, og tilføj genveje til menighed, mappeminimum, print, Google Drive og første forkynder | 3 | Implementeret og browserprøvet til beta.28 | Kompakt sammenklappelig liste med udført/overspringning, genveje til navngivning, mappeminimum, fortrykt papir på begge sider, valgfri Drive-forbindelse og oprettelse af første forkynder. Ingen ny spærring af normal brug eller automatisk deling. |
+| W45 | Saml højst tre ønskepunkter pr. betaudgave | -1 · kritisk | Fast procedure fra nu; erstatter krav om nødvendigvis én beta pr. punkt | En beta kan indeholde 1–3 færdige ønskepunkter efter grønne kontroller. Udgivne versioner overskrives ikke, develop gemmes løbende, og main opdateres ved særskilt stabil udgivelse. |
+| W44 | Forklar eller fjern den misvisende dato under Dit lokale overblik | 4 | Næste opgave; før W36/W40 | Datointervallet har en kort, præcis forklaring af, hvilken periode tallene dækker, eller fjernes hvis det ikke giver værdi. Tjenesteårets begyndelse og opgørelsesdato forveksles ikke med installationsdato. Dansk/engelsk og relevante datoeksempler kontrolleres. |
+| W43 | Vis menighedsnavnet i topbaren sammen med projektets identitet | 2 | Udgivet i beta.28 med grønne program-, platform- og HA-kontroller | Det lokalt gemte navn vises ved logo/navn og Distrikt, også på mobil. Lange navne kan aflæses uden at dække gemmestatus eller navigation. Der bruges kun fiktive navne i GitHub og prøver. |
+| W42 | Gør opgavelisten kompakt, og tilføj genveje til menighed, mappeminimum, print, Google Drive og første forkynder | 3 | Udgivet i beta.28 med grønne program-, platform- og HA-kontroller | Kompakt sammenklappelig liste med udført/overspringning, genveje til navngivning, mappeminimum, fortrykt papir på begge sider, valgfri Drive-forbindelse og oprettelse af første forkynder. Ingen ny spærring af normal brug eller automatisk deling. |
 | W41 | Forklar cirkelknappen ved noter og opgaver i appen | 3 | Implementeret og prøvet til beta.27 | Synlig forklaring og tooltip fortæller, at cirklen markerer udført, flueben genåbner, og teksten ikke slettes. Tastatur/skærmlæser og dansk/engelsk bevares. |
 | W40 | Gør baggrundskortet på digitale Drive-kort mere afdæmpet, og bevar husnumre og røde adresseprikker tydelige | 5 | Planlagt | Baggrundens ikoner/skel nedtones uden at svække valgte huse, husnumre, grænser eller eksisterende offentlighedskontrol. Fiktive tætte og spredte kort gennemgås visuelt før udgivelse. |
 | W34 | Afsluttelig opgaveliste efter guiden med overstregning og spring over | 3 | Implementeret og prøvet til beta.26 | Hvert punkt kan udføres eller springes over. Listen skjules, når alle punkter er afsluttet; genåbning og eksisterende opsætning bevares. |
