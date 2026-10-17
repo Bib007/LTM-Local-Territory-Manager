@@ -6,6 +6,7 @@ Seneste verificerede beta er 1.12.0-beta.26 fra d216163, med grønne program-, M
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
+| W42 | Gør opgavelisten kompakt, og tilføj genveje til menighed, mappeminimum, print og Google Drive | Ikke angivet | Registreret; prioritet afventer ejerens felt | Mindre pladskrævende trin med genveje til menighedsnavn, minimum i mappen, print med/uden baggrund på for-/IB-bagside og Google Drive. Opsætningen opretter ikke data eller deler noget automatisk; originale formularer og almindelig adgang til appen bevares. |
 | W41 | Forklar cirkelknappen ved noter og opgaver i appen | 3 | Implementeret og prøvet til beta.27 | Synlig forklaring og tooltip fortæller, at cirklen markerer udført, flueben genåbner, og teksten ikke slettes. Tastatur/skærmlæser og dansk/engelsk bevares. |
 | W40 | Gør baggrundskortet på digitale Drive-kort mere afdæmpet, og bevar husnumre og røde adresseprikker tydelige | 5 | Planlagt | Baggrundens ikoner/skel nedtones uden at svække valgte huse, husnumre, grænser eller eksisterende offentlighedskontrol. Fiktive tætte og spredte kort gennemgås visuelt før udgivelse. |
 | W34 | Afsluttelig opgaveliste efter guiden med overstregning og spring over | 3 | Implementeret og prøvet til beta.26 | Hvert punkt kan udføres eller springes over. Listen skjules, når alle punkter er afsluttet; genåbning og eksisterende opsætning bevares. |
@@ -296,3 +297,7 @@ Trin markeres eksplicit som udført eller sprunget over, streges ud og kan fortr
 ## W38/W39 · kontrolleret daglig brug · beta.27
 
 Statusfarver, direkte udlånsformularer og forkyndergrupperet aflevering er implementeret samlet. Grupper tæller alle aktive kort pr. registreret forkynder, sorterer efter antal/navn og bevarer ens navne som særskilte personer. Navnesøgning ændrer ikke lagrede data; valgt kort har fortsat sin sidemenu. Aflevering opdaterer visningen gennem den normale udlåns- og revisionskontrol. Ingen nye eksterne tjenester eller ændringer i Google-adgangen. Fiktive programprøver og rigtig Chromium dækker farvekontrast, spærret udlevering, aktive udlåns-ID’er, søgning, sprog, tastatur og en eksplicit aflevering uden gennemgang.
+
+## W42 · yderligere opsætningstrin registreret
+
+Ejerens ønske om mindre felter på forsiden og flere enkle opsætningsgenveje er gemt. Der er endnu ikke oplyst prioritet i ønskefeltet. Ingen ny spærring af appens almindelige brug indføres på baggrund af formuleringen om opsætning; handlinger som deling og printopsætning forbliver eksplicitte.
