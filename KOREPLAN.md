@@ -33,11 +33,13 @@ Fælles fejl skelner mellem læsning, afvisning, udløbet login, usikker skrivni
 
 Beta.17 fortsætter med gendannelse og beta-nulstilling: dobbeltanmodninger blokeres, sene svar bevarer nyere dialoger/navigation, og fejlet læsning efter bekræftet skrivning kræver kontrol frem for gentagelse. `test_transfer_safety.cjs` og offline Chromium med et forsinket import-svar dækker de nye forløb. Ingen rigtig backup er åbnet.
 
-Punktet er ikke færdigt: domænespecifikke fejltekster og øvrige skrive-/bekræftelsesforløb skal gennemgås. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
+Beta.16 (`456f327`) og beta.17 (`0b3f715`) er verificeret udgivet med grøn Checks, Platformskontrol og HA beta release samt ZIP og checksum. Lokalt består 341 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 7 program- og 3 betapakkeprøver samt offline Chromium ved fire bredder. Main er uændret `842541a` / 1.11.1.
+
+Punktet er ikke færdigt: domænespecifikke fejltekster og øvrige skrive-/bekræftelsesforløb skal gennemgås. Næste konkrete kontrol er efterfølgende navigation/dialogåbning ved noter, IB og omstrukturering samt faste og parameteriserede backendfejl. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
 
 ## Aktuel arbejdsrækkefølge · 17.10.2026
 
-Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten sættes på pause. Punkt 3 afsluttes før punkt 4, og derefter fortsættes med de øvrige faste punkter. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
+Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten er på pause. Punkt 3–5 er afsluttet; punkt 6 er aktuelt, derefter følger 7–10 i rækkefølge. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
 
 Punkt 3 omfatter dansk/engelsk betjening i korteditor, samlet grænse og grænseimport, uændrede data-/formularkontrakter, bevaret kort/kladde ved sprogskift og beskyttelse mod forsinkede svar, der ellers kunne erstatte en nyere tegning. Det verificeres med fiktive arbejdsgange, geometri-/lagringsprøver og relevante program-/platform-/pakkekontroller. Backendfejl og resterende generelle fejltekster hører til punkt 6.
 
