@@ -1,5 +1,5 @@
 name: Distrikt Beta
-version: "1.12.0-beta.12"
+version: "1.12.0-beta.13"
 slug: distrikt_beta
 init: false
 description: "Lokalt overblik over distriktskort, udleveringer, gennemgange og print"
