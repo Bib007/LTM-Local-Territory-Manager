@@ -3,7 +3,7 @@
 const RoadSearch={
   online:true,widgets:new WeakMap(),
   normalize(s){return String(s).toLocaleLowerCase('da').replace(/\bgammel\b/g,'gl').replace(/[.,]/g,'').replace(/\s+/g,' ').trim();},
-  field(id,value=''){return `<div class="roadSearch"><input id="${id}" name="road" data-road-search autocomplete="off" maxlength="40" value="${esc(value)}" placeholder="Skriv fx Gammel Landevej" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}List" required><div id="${id}List" class="roadSuggestions" role="listbox" hidden></div><small class="hint roadSearchHint" aria-live="polite">Vælg et forslag for korrekt navn og postnummer.</small></div>`;},
+  field(id,value=''){return `<div class="roadSearch"><input id="${id}" name="road" data-road-search autocomplete="off" maxlength="40" value="${esc(value)}" ${I18n.attribute('placeholder',"Skriv fx Gammel Landevej")} role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}List" required><div id="${id}List" class="roadSuggestions" role="listbox" hidden></div><small class="hint roadSearchHint" aria-live="polite">${ui("Vælg et forslag for korrekt navn og postnummer.")}</small></div>`;},
   local(q,post){
     const result=new Map(),add=(road,postcode,city='')=>{const key=road+'|'+postcode;if((!post||postcode===post)&&this.normalize(road).includes(this.normalize(q)))result.set(key,{road,postcode,city,local:true,label:road+' · '+postcode+(city?' '+city:'')});};
     for(const a of GeoUI.data.addresses||[])if(!a.retired)add(a.road,a.postcode);
@@ -11,11 +11,11 @@ const RoadSearch={
     return [...result.values()].sort((a,b)=>Number(!this.normalize(a.road).startsWith(this.normalize(q)))-Number(!this.normalize(b.road).startsWith(this.normalize(q)))||cmp(a.label,b.label)).slice(0,12);
   },
   state(input){if(!this.widgets.has(input))this.widgets.set(input,{sequence:0,items:[],index:-1,timer:null});return this.widgets.get(input);},
-  draw(input,items,message){
+  draw(input,items,message,params={}){
     const widget=this.state(input);widget.items=items;widget.index=-1;
     const parent=input.closest('.roadSearch'),list=parent.querySelector('[role=listbox]');
-    list.innerHTML=items.map((s,i)=>`<button type="button" role="option" id="${input.id}Option${i}" aria-selected="false" data-road-option="${i}">${esc(s.label)}<small>${s.local?'Lokale data':'Officielt vejnavn fra DAR'}</small></button>`).join('');
-    list.hidden=!items.length;input.setAttribute('aria-expanded',String(!!items.length));input.removeAttribute('aria-activedescendant');parent.querySelector('.roadSearchHint').textContent=message;
+    list.innerHTML=items.map((s,i)=>`<button type="button" role="option" id="${input.id}Option${i}" aria-selected="false" data-road-option="${i}">${esc(s.label)}<small>${ui(s.local?'Lokale data':'Officielt vejnavn fra DAR')}</small></button>`).join('');
+    list.hidden=!items.length;input.setAttribute('aria-expanded',String(!!items.length));input.removeAttribute('aria-activedescendant');I18n.content(parent.querySelector('.roadSearchHint'),message,params);
   },
   search(input){
     const widget=this.state(input);clearTimeout(widget.timer);const sequence=++widget.sequence;
@@ -36,7 +36,7 @@ const RoadSearch={
   pick(input,index){
     const widget=this.state(input),item=widget.items[index];if(!item)return;
     ++widget.sequence;clearTimeout(widget.timer);input.value=item.road;input.form.elements.postcode.value=item.postcode;
-    GeoUI.rangeRoad=item.road;GeoUI.rangePost=item.postcode;this.draw(input,[],item.label+' · valgt');input.focus();
+    GeoUI.rangeRoad=item.road;GeoUI.rangePost=item.postcode;this.draw(input,[],'{label} · valgt',{label:item.label});input.focus();
   },
   hide(input){const w=this.state(input);++w.sequence;clearTimeout(w.timer);this.draw(input,[],'Vælg et forslag for korrekt navn og postnummer.');},
   key(input,e){

@@ -55,5 +55,12 @@ jobs:
       - run: node distrikt/tests/test_report_language.cjs
       - run: node distrikt/tests/test_map_overview_language.cjs
       - run: node distrikt/tests/test_address_workflow_language.cjs
+      - run: node distrikt/tests/test_geo_workflow_language.cjs
+      - name: Install isolated browser test tool
+        run: |
+          npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
+          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
+      - name: Offline geographic editor browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
       - name: Syntax check
         run: find distrikt/app -maxdepth 1 -name '*.js' -exec node --check {} \;

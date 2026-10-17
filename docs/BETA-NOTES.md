@@ -1,19 +1,19 @@
-# LTM 1.12.0-beta.12
+# LTM 1.12.0-beta.13
 
-## Nyt siden beta.11
+## Nyt siden beta.12
 
-Det digitale QR-kort har fået et nyt layout: tydelig blå overskrift med kortnummer/navn, stor kortflade, enkle oplysninger og en lille miniature af printforsiden i hjørnet. Miniaturen genbruger den blanke S-12-forside og den fysiske forsides vejlinjeformatering, men bygges kun af offentligt godkendte adresser. Den er ikke et skærmbillede af dit private kort. IB-oplysninger, noter og forkyndere er ikke med.
+Korteditor, samlet distriktsgrænse og KML/GeoJSON-import kan betjenes på dansk og engelsk. Sprogskift bevarer kortudsnit, adressevalg, ugemt tegning, formularindtastninger og valgt importfil. Kortnumre, vejnavne og gemte typer ændres ikke. Kortvælgeren er tilpasset smalle skærme.
 
-Eksisterende Drive-filer, QR-links og åbning/lukning efter udlevering bevares. Ældre billeder markeres til layoutopdatering. Der uploades ikke noget automatisk på grund af det nye design; du skal kontrollere og godkende et nyt preview.
+Sene forhåndsvisninger og importsvar erstatter ikke en nyere kladde eller dialog. En gemning bruger det kontrollerede valg, og nyere ændringer under gemning bevares som ugemt tegning. Dobbeltgemning blokeres. En afsluttet kortdatahentning genopbygger ikke editorens formular.
 
 ## Prøv især
 
-1. Opdater **Distrikt Beta**, og tag først privat backup af betadata. Stabil 1.11.1 fortsætter separat.
-2. Brug et ufølsomt prøveområde på en særskilt Google-testkonto. Vælg **Opdater Google Drive-upload** for kortet.
-3. Kontrollér det nye preview: kortnummer/navn, kortflade, besøgspunkter og den lille printforside. Kontrollér særligt, at miniaturen kun indeholder offentligt godkendte adresser og ingen IB-oplysninger.
-4. Annullér først en prøve og kontrollér, at det gamle billede/link bevares. Dan derefter et nyt preview og godkend udtrykkeligt.
-5. Kontrollér på telefonen, at samme trykte QR åbner det opdaterede billede. Prøv udlevering, aflevering og genudlevering som hidtil; kontrollér åbning/lukning i privat browser.
+1. Opdater **Distrikt Beta**. Stabil 1.11.1 kører separat. Brug opdigtede oplysninger i betaen.
+2. Åbn en kortgrænse, flyt et hjørne og udfyld vej-/nummerfelter. Skift dansk/engelsk; kontrollér at tegning, zoom, valg og felter bevares. Gem og genåbn.
+3. Åbn samlet grænse. Ret et hjørne og skift sprog. Gem og kontrollér den genåbnede grænse.
+4. Importér en ufølsom KML/GeoJSON med flere grænser. Vælg grænse, skift sprog, kontrollér previewet og annullér først. Importér igen, læg grænsen i tegningen, ret og gem den udtrykkeligt. Filvalg alene gemmer intet.
+5. Prøv på telefonen, at kortvalg, tegneknapper og import kan betjenes uden afskåret indhold.
 
-Programprøver bruger fiktive data. Standardkort, langt navn/kortnummer, tætte kort og tomme kort er renderet som SVG/PNG og kontrolleret visuelt. Privat indhold er bevidst lagt i fiktive lokale felter for at kontrollere, at det ikke kommer i billedet. PNG-format, lokal skabelon, afbrudt indlæsning, layoutmigration, manuel godkendelse og bevaret QR er prøvet. Fysisk HA/browser/telefon og egen Google-konto står særskilt; der er ikke uploadet til ejerens Drive.
+Program- og Chromium-prøver bruger fiktive data/svar og lokal Leaflet. Browserprøver dækker 320/390/768/1440 pixels, kort-/felt-/fokusbevaring og import; asynkrone programprøver dækker sene/ombyttede svar og redigering under gemning. Egen HA/telefon, Datafordeler, Google og fysisk print er særskilte ejerprøver.
 
-Beta.11's kurvede vejskel bevares. W16's naturlige skel og avancerede vejnet mangler. Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.
+Den faste køreplan er nu 30 % (3/10). Næste er avanceret opsætning og lokal IB-import. Ønskelisten er sat på pause efter ejerens aftale; KTM-opfølgningslisten er fortsat fjernet.

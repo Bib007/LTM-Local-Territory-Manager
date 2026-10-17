@@ -10,7 +10,9 @@ const Navigation={
  html(){const icons={Forside:'⌂',Udlevering:'⇄',Distrikter:'▤',Kortoversigt:'◇',Forkyndere:'♙',Opgaver:'☑',Rapporter:'▥',Adresser:'⌖',Indstillinger:'⚙',Feedback:'✎'};return this.groups.map(([name,items],i)=>`${name?`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>`:''}${items.map((item,j)=>item[1]==='Feedback'?`<a class="navExternal" href="https://github.com/Bib007/LTM-Local-Territory-Manager/issues/new?template=idea.yml" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">${icons.Feedback}</span>${esc(I18n.text(item[0]))}<span class="navExternalMark" aria-hidden="true">↗</span></a>`:`<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icons[item[1]]}</span>${esc(I18n.text(item[0]))}</button>`).join('')}`).join('')+`<label class="languageChoice" lang="${I18n.language()}">${esc(I18n.text('Appens og guidens sprog'))}<select id="navigationLanguage"><option value="da" ${I18n.language()==='da'?'selected':''}>Dansk</option><option value="en" ${I18n.language()==='en'?'selected':''}>English</option></select><small>${esc(I18n.text('Oversættelsen er delvis · noget indhold er stadig på dansk.'))}</small></label>`;},
  localize(){
   const restoreFocus=document.activeElement?.id==='navigationLanguage';
+  if(typeof GeoUI!=='undefined'&&typeof GeoUI.localize==='function')GeoUI.localize();
   I18n.applyShell();
+  if(typeof BoundaryImportUI!=='undefined')BoundaryImportUI.localize();
   if(typeof PublisherSearch!=='undefined')PublisherSearch.localize();
   if(typeof SaveStatus!=='undefined')SaveStatus.paint();
   const nav=el('nav');if(nav){nav.innerHTML=this.html();nav.lang=I18n.language();}
