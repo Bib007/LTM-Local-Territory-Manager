@@ -9,8 +9,8 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Forkyndere, opgaver, noter og kortets IB | Dansk/engelsk klargjort |
 | Indstillinger, backup og rapportskærme | Dansk/engelsk klargjort |
 | Kortoversigt, adresselister og kortkontrol | Dansk/engelsk klargjort og prøvet |
-| Geografisk editor, grænser og import | Næste opgave |
-| Avanceret opsætning og lokal IB-import | Afventer |
+| Geografisk editor, grænser og import | Dansk/engelsk klargjort og prøvet |
+| Avanceret opsætning og lokal IB-import | Næste opgave |
 | Google/QR, fælles fejl, login og printbetjening | Afventer |
 
 [Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.

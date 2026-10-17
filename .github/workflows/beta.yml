@@ -23,6 +23,12 @@ jobs:
           node-version: '24'
       - run: python -m unittest discover -s distrikt/tests -v
       - run: for testfile in distrikt/tests/test_*.cjs; do TZ=Europe/Copenhagen node "$testfile" || exit 1; done
+      - name: Install isolated browser test tool
+        run: |
+          npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
+          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
+      - name: Offline geographic editor browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
       - run: python scripts/test_build_release.py
       - run: python -m unittest discover -s scripts -p test_build_beta.py -v
   desktop:
