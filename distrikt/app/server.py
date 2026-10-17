@@ -25,7 +25,7 @@ from sharing import Publications
 from address_source import Datafordeler
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.7'
+VERSION='1.12.0-beta.8'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -39,7 +39,8 @@ class Server(ThreadingHTTPServer):
         super().__init__(address,Handler)
         self.store=store
         self.beta=os.environ.get('LTM_CHANNEL')=='beta'
-        self.downloads=Downloads(store)
+        self.address_source=Datafordeler(store.root)
+        self.downloads=Downloads(store,self.address_source)
         self.token=secrets.token_urlsafe(32)
         self.origin='http://127.0.0.1:%s'%self.server_port
         self.access=Access(store.root,password) if access_host else None
@@ -59,7 +60,6 @@ class Server(ThreadingHTTPServer):
             self.hosts.add('%s:%s'%(host,self.server_port))
             self.public_url='http://%s:%s'%(host,self.server_port)
         self.restores=Restores(store,VERSION)
-        self.address_source=Datafordeler(store.root)
         self.sharing=Publications(store)
 
 class Handler(BaseHTTPRequestHandler):

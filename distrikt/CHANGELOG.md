@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.0-beta.8
+
+- Gemt Datafordeler-nøgle bruges nu til vej-, postnummer- og grænsehentning via DAR GraphQL. Komplette sider, lokale joins og stabile DAR-ID'er bevarer lejligheder og eksisterende registreringer.
+- Genoptagelse kræver samme kilde og skemafingeraftryk. Gamle REST-hentninger blandes ikke med GraphQL. Ved kildeskift vælges en ny opdatering; lokale adresser bevares.
+- Checkpoint og adresseimport gemmes samlet. Netfejl stopper ved den aktuelle vej/udsnit; pause og genstart bevarer afsluttede dele. Præcise distriktsgrænser filtreres lokalt.
+- Flere officielle vej-ID'er med samme navn/postnummer behandles samlet, så adresser ikke fejlagtigt foreslås udgået mellem delene.
+
 ## 1.12.0-beta.7
 
 - Kortdata får trinvis vejledning til egen Datafordeler-konto og API-key, lokal lagring og eksplicit forbindelseskontrol. Nøglen udelades fra portable sikkerhedskopier.

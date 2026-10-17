@@ -3,6 +3,8 @@ import copy
 import math
 from datetime import datetime, timezone
 from admin_store import signature
+from address_checkpoint import GRAPHQL_SOURCE, checkpoint_source, require_source
+from dar_download import road_lines
 from geography import wgs84_to_utm32, point_in_polygon
 from postcode import HOST, BASE, Paused, SourceUnavailable, SourceTimeout, rest_addresses, rest_road_lines
 
@@ -36,7 +38,8 @@ class BoundaryDownload:
         points=boundary['points'];key=signature(points)
         if not manifest or manifest.get('boundary_key')!=key or data.get('refresh'):
             manifest={'id':'main-boundary-download','entity':'boundary_download','boundary_key':key,'points':points,
-                'snapshot':datetime.now(timezone.utc).isoformat(timespec='seconds'),'review_changes':bool(data.get('refresh')),'tiles':boundary_tiles(points)}
+                'snapshot':datetime.now(timezone.utc).isoformat(timespec='seconds'),'source_id':self.source_id(),'schema_sha256':self.source_schema(),'review_changes':bool(data.get('refresh')),'tiles':boundary_tiles(points)}
+        require_source(manifest,self.source_id(),self.source_schema())
         manifest['status']='running';self.store.mutate('geo.main.download.save',{'manifest':manifest})
         tiles=manifest['tiles'];total=len(tiles);done=sum(t['status']=='done' for t in tiles)
         stop_reason=''
@@ -49,20 +52,25 @@ class BoundaryDownload:
                 self.check_cancel();progress(completed=done,total=total,message=f'Henter udsnit {index+1} af {total} indenfor grænsen…')
                 w,s,e,n=tile['bbox'];params=dict(temporal,Vest=w,Syd=s,Oest=e,Nord=n)
                 try:
-                    expected=self.request(HOST,BASE+'adresse',dict(params,format='json',count='true'))
-                    if isinstance(expected,dict):expected=expected.get('count')
-                    if type(expected)!=int or expected<0:raise ValueError('DAR-kilden gav ikke et gyldigt kontroltal.')
-                    items=[] if expected==0 else self.rest_pages('adresse',params,lambda count:progress(message=f'Udsnit {index+1}/{total} · {count} adresser læst'))
-                    if len(items)!=expected:raise ValueError('Antal adresser matcher ikke kildens kontroltal. Udsnittet skal genprøves.')
-                    addresses=rest_addresses(items,None,None)
-                    if len(addresses)!=expected:raise ValueError('Kilden indeholdt adresser med forkert status. Udsnittet skal genprøves.')
+                    if checkpoint_source(manifest)==GRAPHQL_SOURCE:
+                        result=self.graph_adapter(manifest['snapshot'],manifest.get('schema_sha256')).tile(tile['bbox'])
+                        addresses=result['addresses'];lines=road_lines(result['roads'])
+                    else:
+                        expected=self.request(HOST,BASE+'adresse',dict(params,format='json',count='true'))
+                        if isinstance(expected,dict):expected=expected.get('count')
+                        if type(expected)!=int or expected<0:raise ValueError('DAR-kilden gav ikke et gyldigt kontroltal.')
+                        items=[] if expected==0 else self.rest_pages('adresse',params,lambda count:progress(message=f'Udsnit {index+1}/{total} · {count} adresser læst'))
+                        if len(items)!=expected:raise ValueError('Antal adresser matcher ikke kildens kontroltal. Udsnittet skal genprøves.')
+                        addresses=rest_addresses(items,None,None)
+                        if len(addresses)!=expected:raise ValueError('Kilden indeholdt adresser med forkert status. Udsnittet skal genprøves.')
                     addresses=[a for a in addresses if point_in_polygon([a['lng'],a['lat']],points)]
-                    selected={a['id'] for a in addresses};roads={}
-                    for item in items:
-                        if 'dar:'+item['id_lokalId'] not in selected:continue
-                        road=(item.get('husnummer') or {}).get('navngivenVej') or {}
-                        if road.get('id_lokalId'):roads[road['id_lokalId']]=road
-                    lines=rest_road_lines(roads.values())
+                    if checkpoint_source(manifest)!=GRAPHQL_SOURCE:
+                        selected={a['id'] for a in addresses};roads={}
+                        for item in items:
+                            if 'dar:'+item['id_lokalId'] not in selected:continue
+                            road=(item.get('husnummer') or {}).get('navngivenVej') or {}
+                            if road.get('id_lokalId'):roads[road['id_lokalId']]=road
+                        lines=rest_road_lines(roads.values())
                     self.check_cancel();tile.update(status='done',count=len(addresses),address_ids=[a['id'] for a in addresses]);tile.pop('error',None)
                     self.store.mutate('geo.main.download.tile',{'manifest':manifest,'records':addresses,'lines':lines})
                     done+=1
