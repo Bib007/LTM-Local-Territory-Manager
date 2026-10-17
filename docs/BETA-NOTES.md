@@ -1,21 +1,19 @@
-# LTM 1.12.0-beta.8
+# LTM 1.12.0-beta.9
 
-## Nyt siden beta.7
+## Nyt siden beta.8
 
-En gemt Datafordeler-nøgle bruges nu til **vej-, postnummer- og grænsehentning via DAR GraphQL**. Adresse-ID'er, husnumre og etage/dør bevares. Komplette sider og lokale sammenkoblinger kontrolleres før en vej/et udsnit gemmes. Grupperede lighedsopslag giver færre netkald.
+Udlevering har en tydelig lokal forslagsliste til forkyndernavne. Søg på fornavn eller efternavn; listen prioriterer præcise navne og begyndelsen af navne. Op til otte forslag vises, og du kan indsnævre listen ved at skrive mere. Navne og søgetekst sendes ikke til en ekstern tjeneste.
 
-Pause og genstart bevarer afsluttede dele og samme tidspunkt. Netfejl stopper ved den aktuelle del. Checkpoints har kilde og skemafingeraftryk, så gamle REST-resultater ikke blandes med GraphQL. Ved skift af kilde eller skema vælges en ny opdatering; færdige lokale adresser bevares. Flere officielle vej-ID'er med samme navn og postnummer behandles samlet.
-
-Uden nøgle bruges den hidtidige kilde. Adresseforslag i søgefeltet kommer stadig fra den særskilte Adressevælger. Nøglen indtastes kun i den lokale app og følger ikke med portable sikkerhedskopier. Præcise distriktsgrænser, kort, forkyndere og IB uploades ikke til Datafordeleren.
+Brug piletaster og Enter til at vælge, eller tryk på navnet. Escape lukker forslagene; Tab fortsætter uden at vælge. Enter i en åben liste gemmer ikke udleveringen ved et uheld. Et nyt navn kan stadig skrives frit og oprettes først, når udleveringen registreres. Dansk/engelsk sprogskift bevarer navnet og formularens øvrige kladde.
 
 ## Prøv især
 
-1. Opdater **Distrikt Beta**, og tag først privat backup af dine betadata. Stabil 1.11.1 fortsætter separat.
-2. Gem eller kontrollér egen nøgle under Kortdata. Status skal nu oplyse, at nye adressehentninger bruger DAR GraphQL.
-3. Hent først en enkelt offentlig vej. Kontrollér bogstaver, etage/dør og adresseantal. Prøv derefter et lille postnummer eller en lille samlet grænse.
-4. Sæt en større hentning på pause, genstart appen, og fortsæt. Færdige dele skal springes over. Ved netfejl kan du fortsætte senere.
-5. Hvis du har en gammel REST-hentning, skal fortsættelse med GraphQL give en tydelig besked. Vælg en ny opdatering; eksisterende adresser skal bevares og ændringer gennemgås som hidtil.
+1. Opdater **Distrikt Beta** og tag først privat backup af betadata.
+2. Åbn Udlever kort. Søg på et eksisterende fornavn og derefter et efternavn; vælg med piletaster/Enter og med berøring.
+3. Prøv Escape og Tab. Indtast et nyt navn uden at vælge et forslag; annuller og kontrollér, at der ikke er oprettet en forkynder. Registrer derefter en almindelig udlevering.
+4. Skift dansk/engelsk under indtastningen. Navn, kortvalg og dato skal bevares.
+5. Kontrollér listen på din telefon: navne skal kunne læses, listen rulles, og dato/gemknap nås.
 
-Programkontrollen bruger fiktive GraphQL-svar og midlertidige databaser. Levende Datafordeler med din egen nøgle og visningen i din HA/browser er særskilte ejerprøver. En grøn forbindelseskontrol er ikke en påstand om, at dit prøveområde allerede er hentet og sammenlignet.
+Automatiske prøver bruger opdigtede navne og kontrollerer søgning, HTML-escaping, tastatur, IME, pointerhændelser, sprog og den eksisterende gemmekontrakt. Det er ikke en visuel mobil-/skærmlæserprøve; browserinstallationen til denne kørsels lokale visuelle kontrol var blokeret af en fejlbehæftet download. Egen HA/browser er fortsat en særskilt prøve.
 
-Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.
+DAR GraphQL fra beta.8 og den separate stabile installation bevares. Den ekstra KTM-opfølgningsliste er fortsat fjernet. Den faste køreplan står på 20 %.

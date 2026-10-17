@@ -46,6 +46,7 @@ jobs:
       - run: node distrikt/tests/test_onboarding.cjs
       - run: node distrikt/tests/test_i18n.cjs
       - run: node distrikt/tests/test_desk_language.cjs
+      - run: node distrikt/tests/test_publisher_search.cjs
       - run: node distrikt/tests/test_work_lists_language.cjs
       - run: node distrikt/tests/test_dashboard_controls.cjs
       - run: node distrikt/tests/test_card_workflow_language.cjs
