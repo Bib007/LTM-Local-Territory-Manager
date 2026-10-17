@@ -29,14 +29,12 @@ Kun udestående arbejde står i denne kø. Nyt prioritet -1 går foran køen. W4
 | 17 | W28 · Codex Security | 9 · blokeret · Scanværktøjer udestår | Kontrollér scanneradgang, gennemgå programmet og vurder eventuelle fund. |
 | 18 | W23 · Feedback uden GitHub-konto | 10 · Afklaring | Afklar kanal, modtager og håndtering af bilag/persondata. |
 | 19 | W37/W12 · Webdemo og direkte link | 9 / 5 · Efter funktionsvalg | Synkronisér med den færdige app, og prøv faktisk første åbning. |
-| 20 | Ejer: Datafordeler · Egen Datafordeler-prøve | Ejerprøve · Din konto / installation | Egen nøgle, én vej og et lille område; kontrollér adresser og opdatering. |
-| 21 | Ejer: Google · Egen Google Drive- og QR-prøve | Ejerprøve · Din konto / telefon | Samtykke, publicering, lukning ved aflevering og genåbning ved nyt udlån. |
-| 22 | Ejer: HA · HA, telefon, VPN og backup | Ejerprøve · Dit udstyr | Prøv opdatering, genstart, login, adskilt beta/stabil og gendannelse/flytning. |
-| 23 | Ejer: print · Fysisk print og betjening | Ejerprøve · Din printer / hjælpemidler | A4, rigtige for-/IB-bagsider, mål, QR, mobil/tastatur og evt. skærmlæser. |
-| 24 | Stabil/W10 · Samlet slutkontrol og stabil udgivelse | Efter kode- og ejerprøver · Udvikling + ejer | Program/platform/browser/pakker, vejledninger og versioner; feedbackformular via main. |
-| 25 | W08 · Gammelt repository: arkivanbefaling | 10 · Efter stabil udgivelse | Kontrollér bevaret kode, historik, vejledninger og pakker. Ingen automatisk arkivering. |
+| 20 | Ejer: Datafordeler · Egen Datafordeler-prøve | Ejerprøve · afventer genprøve | Forbindelseskontrol afventer et nyt forsøg. Prøv derefter én vej og et lille område, og kontrollér adresser og opdatering. |
+| 21 | Ejer: HA · Afsluttende installationskontrol | Ejerprøve · delvist bekræftet | Opdatering/genstart, adskilt beta/stabil og eventuel flytning står tilbage, hvor relevant. Drift på beta.28, telefon/VPN samt backup og gendannelse er bekræftet af ejeren. |
+| 22 | Stabil/W10 · Samlet slutkontrol og stabil udgivelse | Efter kode- og ejerprøver · Udvikling + ejer | Program/platform/browser/pakker, vejledninger og versioner; feedbackformular via main. |
+| 23 | W08 · Gammelt repository: arkivanbefaling | 10 · Efter stabil udgivelse | Kontrollér bevaret kode, historik, vejledninger og pakker. Ingen automatisk arkivering. |
 
-Opgavemodellen kommer før de tilbagevendende opgaver. Backupplacering kommer før backuploggen; log/påmindelsesvisning genbruges til gentagelser. Historikimport kommer før årssammenligningen. Feedbackvalget afgøres før den endelige demo, og arkivanbefalingen følger den stabile udgivelse. Blokerede punkter forbliver åbne; uafhængigt arbejde kan fortsætte. Ejerprøverne 20–23 kan begynde tidligere, når de relevante funktioner er klar.
+Opgavemodellen kommer før de tilbagevendende opgaver. Backupplacering kommer før backuploggen; log/påmindelsesvisning genbruges til gentagelser. Historikimport kommer før årssammenligningen. Feedbackvalget afgøres før den endelige demo, og arkivanbefalingen følger den stabile udgivelse. Blokerede punkter forbliver åbne; uafhængigt arbejde kan fortsætte. Ejerprøverne 20–21 kan begynde tidligere, når de relevante funktioner er klar.
 
 Afklaret med ejeren: Start og slut er inklusive; 0–300 giver 0000–0300. Eksisterende noter konverteres til opgaver med bevaret indhold og status.
 
@@ -359,3 +357,7 @@ Ejerens prioritet 2 for menighedsnavnet og 3 for den kompakte liste er gemt. Lok
 ## W46–W54 · nye ønsker og afklaringer
 
 17.10.2026: Ni nye ønsker er gemt fra ejerens dokument. Topbarrettelse (1), backupplacering (2), gennemsnitsformat (4), automatisk opsætningsfremdrift (5), samlet opgavemodel/rapportlayout/backuppåmindelse (6) og gentagelser/kortintervaller (7). Ejeren har valgt inklusive grænser, så 0–300 giver 301 kort, samt konvertering af eksisterende noter til opgaver. Tekst, korttilknytning og afslutningsstatus skal bevares. Kun nye installationer får foreslået mappeminimum 0; eksisterende værdier nulstilles ikke. Påmindelser er felter i den lokale app, ikke eksterne beskeder. Ingen programændringer er implementeret i denne planopdatering.
+
+## Ejerbekræftelser · beta.28 · 17.10.2026
+
+Ejeren har bekræftet fungerende drift på beta.28, backup og gendannelse, adgang fra telefon/VPN samt Google Drive og hele QR-adgangscyklussen ved udlån, aflevering og genudlevering. De afprøvede dele er fjernet fra den aktive restkø. Printopgaven er afsluttet med ejerens udtrykkelige godkendelse ud fra udskriftsvisningen; en fysisk udskrift er ikke udført og må ikke beskrives som afprøvet. Datafordeler-forbindelsen afventer genprøve og levende adressehentning. Ubekræftet opdatering/genstart, adskilt installation og eventuel flytning står fortsat som relevante restkontroller. Bekræftelserne gælder beta.28; senere ændringer kræver relevant regressionskontrol. Ingen private kontooplysninger, nøgler eller adresser er gemt her.
