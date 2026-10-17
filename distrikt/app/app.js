@@ -206,7 +206,7 @@ case 'detail':detail(d.id);break;
 case 'show-map':await OverviewMap.open(d.id);break;
 case 'card-tab':detail(d.id,d.tab);break;
 case 'note-edit':editNote(d.id);break;
-case 'note-resolve':{const n=(state.notes||[]).find(n=>n.id===d.id);if(n){await mutate('note.resolve',{id:n.id,resolved:!n.resolved});detail(n.card_id,'Noter');}break;}
+case 'note-resolve':{const n=(state.notes||[]).find(n=>n.id===d.id);if(n){const generation=openDialog.generation,origin=page;await mutate('note.resolve',{id:n.id,resolved:!n.resolved});if(generation===openDialog.generation&&page===origin)detail(n.card_id,'Noter');}break;}
 case 'record-completion':recordCompletion(d.id);break;
 case 'desk-tab':deskTab=d.tab;query='';render();break;
 case 'stock':query='';area='';if(d.status==='Udleverede distriktskort'){page=d.status;loanTab='Aktive';}else{page='Distrikter';status=d.status;}render();break;
@@ -223,7 +223,7 @@ case 'area':area=d.id;render();break;
 case 'areas':page='Indstillinger';render();break;
 case 'edit-area':editArea(d.id);break;
 case 'delete-area':openDialog(`<h2>${ui('Slet området?')}</h2><p>${ui("Kortene beholdes under “Intet område”. Gendannelse ved fejl er mulig i 48 timer.")}</p><div class="actions"><button class="danger" data-action="confirm-area-delete" data-id="${d.id}">${ui("Slet området")}</button><button data-action="close">${ui("Annuller")}</button></div>`);break;
-case 'confirm-area-delete':await mutate('area.delete',{id:d.id},{message:I18n.text("Området slettet; kortene er bevaret")});area='';break;
+case 'confirm-area-delete':{const origin=page,generation=openDialog.generation;await mutate('area.delete',{id:d.id},{message:I18n.text("Området slettet; kortene er bevaret")});if(page===origin&&generation===openDialog.generation&&area===d.id){area='';render();}break;}
 case 'loan-tab':loanTab=d.tab;query='';render();break;
 case 'publisher':editPublisher(d.id);break;
 case 'report-tab':reportTab=d.tab;render();break;
@@ -238,7 +238,7 @@ case 'confirm-approve':await mutate('revision.approve',{card_id:d.id,side:d.side
 case 'draw':editMap=true;mapDraft=[];render();break;
 case 'undo-point':mapDraft.pop();render();break;
 case 'cancel-outline':editMap=false;mapDraft=[];render();break;
-case 'save-outline':await mutate('map.outline',{card_id:mapCard,points:mapDraft},{close:false,message:'Distriktsgrænsen er gemt'});editMap=false;mapDraft=[];render();break;
+case 'save-outline':{const origin=page,generation=openDialog.generation,targetCard=mapCard,draft=mapDraft,stamp=JSON.stringify(mapDraft);await mutate('map.outline',{card_id:mapCard,points:mapDraft},{close:false,message:'Distriktsgrænsen er gemt'});if(page===origin&&generation===openDialog.generation&&mapCard===targetCard&&mapDraft===draft&&JSON.stringify(mapDraft)===stamp){editMap=false;mapDraft=[];render();}break;}
 case 'print-report':await printReport();break;
 case 's13':await download('/api/export/s13?year='+year,'S-13-'+yearLabel(year).replace('/','-')+'.pdf');break;
 case 'print-options':printOptions(d.id,d.side);break;
@@ -252,7 +252,7 @@ case 'remove-address':target.closest('[data-address-row]').remove();scheduleCard
 case 'stop':openDialog(`<h2>${ui('Luk den lokale app?')}</h2><p>${ui('Alle gemte registreringer beholdes. Startfilen åbner appen igen.')}</p><div class="actions"><button data-action="confirm-stop">${ui('Luk appen')}</button><button data-action="close">${ui('Annuller')}</button></div>`);break;
 case 'confirm-stop':await saveQueue;await api('/api/shutdown',{});el('app').innerHTML=`<section class="panel"><h1>${ui('Appen er lukket')}</h1><p>${ui('Dine gemte registreringer er bevaret. Åbn appens startfil for at starte igen.')}</p></section>`;closeDialog();saved('Appen er lukket');break;
 }}catch(e){toast(e);}});
-document.addEventListener('submit',async e=>{const form=e.target;if(!form.id||(form.id.startsWith('geo')||form.id.startsWith('admin')))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
+document.addEventListener('submit',async e=>{const form=e.target;if(!form.id||(form.id.startsWith('geo')||form.id.startsWith('admin')))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
 case 'cardForm':clearTimeout(autosaveTimer);await saveCard(true);break;
 case 'issueForm':await mutate('loan.issue',{card_id:fields.card_id,publisher_name:fields.publisher_name,date:fields.date,initial:fd.has('initial')},{message:I18n.text('Udlevering gemt')});break;
 case 'finishForm':await mutate('loan.finish',{id:form.dataset.id,date:fields.date,complete:form.dataset.retain==='yes'||fields.complete==='yes',retain:form.dataset.retain==='yes',note:fields.note},{message:I18n.text(form.dataset.retain==='yes'?'Gennemgang gemt; kortet beholdes':'Afleveret til kassen')});break;
@@ -260,11 +260,11 @@ case 'publisherForm':await mutate('publisher.save',{id:form.dataset.id||undefine
 case 'areaForm':await mutate('area.save',{id:form.dataset.id||undefined,name:fields.name});break;
 case 'noteForm':await mutate('note.save',{id:form.dataset.id,...fields});break;
 case 'visitForm':await mutate('visit.save',{id:form.dataset.id||undefined,date:fields.date,note:fields.note});break;
-case 'ibForm':{const returnToCard=form.dataset.returnCard==='yes';await mutate('ib.save',{id:form.dataset.id||undefined,...fields},{message:'IB gemt · kun bagsiden skal genprintes'});if(returnToCard)detail(fields.card_id,'Adresser');break;}
+case 'ibForm':{const returnToCard=form.dataset.returnCard==='yes';await mutate('ib.save',{id:form.dataset.id||undefined,...fields},{message:'IB gemt · kun bagsiden skal genprintes'});if(returnToCard&&generation===openDialog.generation&&page===origin)detail(fields.card_id,'Adresser');break;}
 case 'settingsForm':await mutate('settings.save',{...fields,folder_minimum:Number(fields.folder_minimum),rural_minimum:Number(fields.rural_minimum),require_revision:fd.has('require_revision')},{close:false,message:I18n.text("Indstillinger gemt")});break;
 case 'printForm':await printCard(form);break;
 case 'completionForm':await mutate('completion.record',{card_id:form.dataset.id,date:fields.date,note:fields.note},{message:I18n.text('Gennemgang gemt')});break;
-}}catch(e){const err=el('formError');if(err)I18n.errorContent(err,e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
+}}catch(e){const err=el('formError');if(err&&generation===openDialog.generation&&page===origin&&form.isConnected!==false)I18n.errorContent(err,e);else toast(e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
 el('dialog').addEventListener('cancel',e=>{e.preventDefault();closeRequested();});
 window.addEventListener('beforeunload',e=>{if(dialogDirty){e.preventDefault();e.returnValue='';}});
 (async()=>{try{await refresh();year=serviceYear(state.today);await GeoUI.resumeJob();render();saved();Workspace.boot();if(typeof Welcome!=='undefined')Welcome.auto();}catch(e){SaveStatus.set('error','Den lokale app kunne ikke åbnes',e.message);el('app').innerHTML=`<section class="panel startupError"><span class="eyebrow">LTM</span><h1>${ui('Den lokale app kunne ikke åbnes')}</h1><p lang="da">${esc(e.message)}</p><p class="hint">${ui('Kontrollér, at appen er startet på computeren eller i Home Assistant. Kontrollér også Wi-Fi eller VPN.')}</p><button class="primary" data-work="reload-app">${ui('Prøv at åbne igen')}</button></section>`;}})();
