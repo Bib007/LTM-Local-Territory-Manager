@@ -3,6 +3,12 @@
 const I18n={
  current:'da',
  english:{
+  "Søgningen sker kun i din lokale forkynderliste.":"Search only uses your local publisher list.",
+  "{count} forslag. Brug piletasterne og Enter til at vælge.":"{count} suggestions. Use the arrow keys and Enter to choose.",
+  "Ingen forslag. Et nyt navn oprettes først, når du registrerer udleveringen.":"No suggestions. A new name is only created when you save the assignment.",
+  "Viser {count} af {total} forslag. Skriv mere for at begrænse listen.":"Showing {count} of {total} suggestions. Type more to narrow the list.",
+  "Navnet er valgt. Registrer udleveringen for at gemme.":"Name selected. Save the assignment to confirm.",
+
   "Kortnumre uden plads på kortet:":"Card numbers without room on the map:",
   "Mangler på kort":"Missing from cards",
   "Inden for kortgrænse":"Inside a card boundary",

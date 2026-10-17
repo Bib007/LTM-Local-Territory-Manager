@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.9 · Forkynderforslag
+
+- Udlevering får en lokal søge- og forslagsliste med fornavn/efternavn, højst otte forslag, tastaturvalg og berøring. Søgetekst og navne forlader ikke appen.
+- Nye navne kan fortsat skrives frit og oprettes først ved registrering. Escape/Tab vælger ikke et navn; Enter i en åben liste gemmer ikke ved et uheld. Dansk/engelsk og formularens data bevares.
+- Programprøver dækker hændelser og gemmekontrakt; visuel mobil-/skærmlæserkontrol står særskilt.
+
 ## 1.12.0-beta.8
 
 - Gemt Datafordeler-nøgle bruges nu til vej-, postnummer- og grænsehentning via DAR GraphQL. Komplette sider, lokale joins og stabile DAR-ID'er bevarer lejligheder og eksisterende registreringer.
