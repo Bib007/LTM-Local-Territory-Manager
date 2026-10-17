@@ -11,7 +11,7 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 3 | Kortredigering, samlet grænse og import | Færdig og prøvet | 30 % |
 | 4 | Avanceret opsætning og lokal IB-import | Færdig og prøvet | 40 % |
 | 5 | Google Drive og QR med opdigtede svar | Færdig og prøvet | 50 % |
-| 6 | Fælles fejl, bekræftelser og usikker gemning | I gang · beta.16 | 60 % |
+| 6 | Fælles fejl, bekræftelser og usikker gemning | I gang · beta.17 | 60 % |
 | 7 | Login, tastatur og fokus | Afventer | 70 % |
 | 8 | Printbetjening med uændrede originalformularer | Afventer | 80 % |
 | 9 | Samlet programpakke og verifikation | Afventer | 90 % |
@@ -31,7 +31,9 @@ Fysisk print, eget Google-samtykke og hjemmenetværket er særskilte ejertrin. U
 
 Fælles fejl skelner mellem læsning, afvisning, udløbet login, usikker skrivning og bekræftet gemning med fejlet genindlæsning. Usikre resultater stopper ventende skrivninger og autosave uden automatisk gensendelse. Eksplicit Opdater kræver afsluttet redigering og henter et nyt datasnapshot; forbindelsestjek ophæver ikke spærringen. Administrative previews bindes til formular, værdier og revision og beskytter mod dobbeltklik/sene svar. `test_request_safety.cjs`, `test_confirmation_safety.cjs`, adresseprøver og offline Chromium dækker disse forløb med opdigtede data.
 
-Punktet er ikke færdigt: domænespecifikke fejltekster og de resterende bekræftelser, især gendannelse/nulstilling og deres sene svar, skal gennemgås. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
+Beta.17 fortsætter med gendannelse og beta-nulstilling: dobbeltanmodninger blokeres, sene svar bevarer nyere dialoger/navigation, og fejlet læsning efter bekræftet skrivning kræver kontrol frem for gentagelse. `test_transfer_safety.cjs` og offline Chromium med et forsinket import-svar dækker de nye forløb. Ingen rigtig backup er åbnet.
+
+Punktet er ikke færdigt: domænespecifikke fejltekster og øvrige skrive-/bekræftelsesforløb skal gennemgås. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
 
 ## Aktuel arbejdsrækkefølge · 17.10.2026
 

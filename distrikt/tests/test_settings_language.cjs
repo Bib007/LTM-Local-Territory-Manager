@@ -14,7 +14,7 @@ const run=s=>vm.runInContext(s,c);
 run(`ShareUI={html:()=>''};GeoUI={load:async()=>{}};state={today:'2026-10-16',version:'1.12.0-beta.7',
  settings:{congregation:'Områder <invented> & Kort',folder_minimum:30,rural_mode:'manual',rural_minimum:7,require_revision:true,print_profiles:{back:{width:94,height:146,orientation:'portrait',x:1,y:-2}}},
  areas:[{id:'area-1',name:'Menighed og mappe <invented>'}],cards:[],publishers:[],loans:[],completions:[],ib:[],notes:[],recovery:[{label:'Gendan <invented>',batch:'batch-1',count:2,at:'2026-10-15T12:00:00Z'}]};
- mutate=async(action,data,options)=>writes.push({action,data,options});refresh=async()=>{};loadMap=async()=>{};`);
+ mutate=async(action,data,options)=>writes.push({action,data,options});refresh=async()=>{};loadMap=async()=>{};render=()=>{};`);
 const original=run('JSON.stringify(state)'),contracts={};
 const contract=html=>(html.match(/(?:name|value|type|min|max|maxlength|data-action|data-id|data-value)="[^"]*"/g)||[]).join('\n');
 const submit=listeners.submit.find(fn=>String(fn).includes("case 'settingsForm'"));
@@ -48,7 +48,7 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
  const applyRequests=[];c.applyRequests=applyRequests;
  run(`api=async(url,payload)=>{applyRequests.push({url,payload});return {json:async()=>({safety_backup:'FICTIONAL-backup.zip'})};}`);
  const button={disabled:true,dataset:{restoreToken:'INVENTED_RESTORE'}};
- await run('TransferUI.apply')(button);assert.equal(applyRequests.length,0,'Unchecked consent must block import');
+ await run('TransferUI.apply.bind(TransferUI)')(button);assert.equal(applyRequests.length,0,'Unchecked consent must block import');
  get('restoreUnderstood').checked=true;button.id='restoreApply';const transferClick=listeners.click.find(fn=>String(fn).includes("#restoreApply,#downloadSafety"));await transferClick({target:{closest(){return button;}},preventDefault(){}});assert.equal(applyRequests.length,1);assert.equal(applyRequests[0].url,'/api/restore/apply');assert.equal(applyRequests[0].payload.token,'INVENTED_RESTORE');assert.match(get('dialog').innerHTML,/FICTIONAL-backup.zip/);
  let release;c.pendingPreview=new Promise(resolve=>release=resolve);c.fetch=async()=>({ok:true,json:()=>c.pendingPreview});
  const pending=run('TransferUI.preview({size:12})');run("openDialog('<form>NEWER UNSAVED AREA</form>')");release({token:'STALE',counts:{}});await pending;
@@ -68,8 +68,8 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
  const resetButton={disabled:false},resetForm={dataset:{revision:'FICTIONAL-REVISION'},reportValidity(){return false;},querySelector(){return resetButton;}};
  c.removedKeys=[];c.localStorage={removeItem:key=>c.removedKeys.push(key)};
  run(`api=async(url,payload)=>{applyRequests.push({url,payload});return {json:async()=>({safety_backup:'foer-beta-nulstilling-FAKE.zip'})};}`);
- const beforeReset=applyRequests.length;await run('TransferUI.reset').call(run('TransferUI'),resetForm);assert.equal(applyRequests.length,beforeReset);
- resetForm.reportValidity=()=>true;get('betaResetConfirmation').value='NULSTIL BETA';await run('TransferUI.reset').call(run('TransferUI'),resetForm);
+ const beforeReset=applyRequests.length;await run('TransferUI.reset.bind(TransferUI)').call(run('TransferUI'),resetForm);assert.equal(applyRequests.length,beforeReset);
+ resetForm.reportValidity=()=>true;get('betaResetConfirmation').value='NULSTIL BETA';await run('TransferUI.reset.bind(TransferUI)').call(run('TransferUI'),resetForm);
  assert.equal(applyRequests.at(-1).url,'/api/beta/reset');assert.equal(applyRequests.at(-1).payload.revision,'FICTIONAL-REVISION');assert.equal(applyRequests.at(-1).payload.confirmation,'NULSTIL BETA');
  assert.equal(get('betaResetError').textContent,'');assert.match(get('dialog').innerHTML,/foer-beta-nulstilling-FAKE.zip/);assert.match(get('dialog').innerHTML,/betaResetRestart/);
  assert.deepEqual(c.removedKeys,['ltm-welcome-seen','ltm-onboarding-draft']);assert.equal(run('Onboarding.answers'),null);
