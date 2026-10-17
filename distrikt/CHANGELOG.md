@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.25 · Præcis forklaring af adressefristen
+
+Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR GraphQL kan også oprettes bagefter. Nøglevejledningen og opsætningsplanen forklarer nu forskellen og anbefaler overgang i god tid for at undgå pause i nye hentninger. Gemte adresser bevares. Officielle kilder er kontrolleret 17.10.2026.
+
 ## 1.12.0-beta.24 · Læsbare lokale navneforslag
 
 - Navneforslag ved udlevering har lys tekst på mørkegrå baggrund. Hover og tastaturmarkering har en lysere mørk tone og tydelig kant.
