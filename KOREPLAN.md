@@ -1,6 +1,6 @@
 # Køreplan · næste version
 
-**Samlet færdig: 50 % · 5 af 10 opgaver afsluttet.**
+**Samlet færdig: 60 % · 6 af 10 opgaver afsluttet.**
 
 Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prøver og lagring på GitHub. Procenten gælder denne plan. Stabil grundudgave 1.11.1 og almindelig HA-installation følger main.
 
@@ -11,8 +11,8 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 3 | Kortredigering, samlet grænse og import | Færdig og prøvet | 30 % |
 | 4 | Avanceret opsætning og lokal IB-import | Færdig og prøvet | 40 % |
 | 5 | Google Drive og QR med opdigtede svar | Færdig og prøvet | 50 % |
-| 6 | Fælles fejl, bekræftelser og usikker gemning | I gang · beta.19 | 60 % |
-| 7 | Login, tastatur og fokus | Afventer | 70 % |
+| 6 | Fælles fejl, bekræftelser og usikker gemning | Færdig og prøvet · beta.20 | 60 % |
+| 7 | Login, tastatur og fokus | Næste | 70 % |
 | 8 | Printbetjening med uændrede originalformularer | Afventer | 80 % |
 | 9 | Samlet programpakke og verifikation | Afventer | 90 % |
 | 10 | Samlet kontrol, dokumentation og manuel restliste | Afventer | 100 % |
@@ -39,11 +39,11 @@ Beta.18 beskytter de efterfølgende dialog-/navigationshandlinger ved noter, IB 
 
 Beta.19 lokaliserer faste og parameteriserede fejl fra kort, adresser, udlån, IB, opsætning, administration og backup. Oprindelig dansk fejltekst bevares; navne, numre og talgrænser behandles som data og oversættes ikke. Kildekataloget kontrolleres mod Python-raises i de syv kernemoduler. HTTP-/UI-/Chromium-prøver kontrollerer afvisning uden skrivning, sprogskift, IB-linjefejl og sikre fallback-beskeder. Tekniske fejl fra eksterne tjenester kan fortsat vises uændret som diagnostik.
 
-Punktet er ikke færdigt: næste er afsluttende kontrol af særskilte opsætnings-, kortimport- og delingsskrivninger, især gennemført skrivning med fejlet efterfølgende læsning. Procenten forbliver 50 %. Derefter følger punkt 7, ikke ønskelisten.
+Beta.20 afslutter punkt 6: særskilte opsætnings-, IB-/kortimport-, delings- og onboarding-skrivninger bruger fælles kvitterings-/læsefasekontrol. Nyere sessioner, formularer og snapshots bevares; bekræftet skrivning med fejlet efterfølgende læsning kræver Opdater frem for gentagelse. `test_special_write_safety.cjs` og offline Chromium dækker oprettelse med fejlet læsning og kontrol uden dobbeltskrivning. Supplerende hændelsesprøver dækker lokale billedvalg, downloads, farver, Se bort fra og nye oprydningskontroller. Samlet 60 % (6/10). Herefter punkt 7: login, tastatur og fokus. Ønskelisten er fortsat på pause.
 
 ## Aktuel arbejdsrækkefølge · 17.10.2026
 
-Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten er på pause. Punkt 3–5 er afsluttet; punkt 6 er aktuelt, derefter følger 7–10 i rækkefølge. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
+Ejeren har prioriteret at få den faste køreplan færdig. Ønskelisten er på pause. Punkt 3–6 er afsluttet; derefter følger 7–10 i rækkefølge. Nummererede HA-betaer og statusopdatering fortsætter; main er stabil.
 
 Punkt 3 omfatter dansk/engelsk betjening i korteditor, samlet grænse og grænseimport, uændrede data-/formularkontrakter, bevaret kort/kladde ved sprogskift og beskyttelse mod forsinkede svar, der ellers kunne erstatte en nyere tegning. Det verificeres med fiktive arbejdsgange, geometri-/lagringsprøver og relevante program-/platform-/pakkekontroller. Backendfejl og resterende generelle fejltekster hører til punkt 6.
 

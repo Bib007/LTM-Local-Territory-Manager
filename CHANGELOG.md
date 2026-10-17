@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.0-beta.20 · Fast punkt 6 afsluttet
+
+- Særskilte skrivninger i opsætning, IB-/kortimport, deling og førstegangsopsætning bruger nu samme tydelige faser: usikker kvittering, kendt afvisning eller bekræftet skrivning med behov for genindlæsning. En læsefejl udløser aldrig automatisk gentagelse.
+- Nyere opsætningssessioner, imports, formularer og datasnapshots bevares ved sene svar. Delingshandlinger blokerer dobbeltklik og viser mislykket statuslæsning særskilt efter en accepteret handling.
+- Supplerende kontroller beskytter lokale billedvalg, geodatahentninger, farve-/Se bort fra-opfølgning og nyere oprydningskontroller mod sene svar.
+- Programprøver og offline Chromium dækker gennemført kortoprettelse med efterfølgende læsefejl, bevaret plan og eksplicit kontrol uden dobbeltskrivning. Fast køreplan: 60 % (6/10). Næste er login, tastatur og fokus; ønskelisten venter.
+
 ## 1.12.0-beta.19 · Forståelige domænefejl på dansk og engelsk
 
 - Faste fejl fra kort, adresser, udlån, IB, opsætning, administration og backup følger valgt sprog. Ukendte diagnostikker vises fortsat uændret og HTML-escaped.

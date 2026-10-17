@@ -23,6 +23,8 @@ On a phone, the menu button announces whether the menu is open. Tap the backdrop
 - **All changes saved** means the normal app operation completed successfully.
 - **Saving…** means a save operation is in progress.
 - **Saving is not confirmed** means the app cannot confirm the result. A disconnected request may already have reached the server. Keep the open text, restore the connection, then check the records before repeating the action.
+- **The change is saved · refresh data before making another change** means the write was acknowledged, but the subsequent read or display did not complete. Do not repeat the creation, import or sharing action. Finish the edit, choose Refresh and check the result.
+- **The change was rejected** means the app received a known rejection, such as an existing card number. Correct the reported error; your fields have not been overwritten.
 - **The connection is responding again** confirms only that the server answered a connection check. It does not confirm a previous write. The app does not automatically resend it or clear the uncertain-save indicator.
 
 Connection checks are read-only and leave open fields intact. Finish or deliberately close an edit before choosing **Refresh**. Refresh reads the server state; it is not an automatic retry of a failed write. After an uncertain save, the status says **Data refreshed · check the earlier change**, not **All changes saved**. Compare the records with your intended change. If the app cannot open at all, its recovery screen offers a retry and tells you to check the computer/Home Assistant, Wi-Fi and VPN, without assuming a particular platform.
