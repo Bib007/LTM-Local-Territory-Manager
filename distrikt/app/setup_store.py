@@ -32,7 +32,7 @@ def defaults(data):
 
 class SetupStore:
     def setup_signature(self,ib=False):
-        return signature([self.main_boundary(),self.all('cards')+self.all('cards',deleted=True),self.all('ignored'),[a for a in self.all('geo') if a.get('entity')=='address'],[a for a in self.all('settings') if a.get('id')!='config'],self.all('ib') if ib else []])
+        return signature([self.main_boundary(),self.all('cards')+self.all('cards',deleted=True),self.all('ignored'),[a for a in self.all('geo') if a.get('entity') in ('address','road')],[a for a in self.all('settings') if a.get('id')!='config'],self.all('ib') if ib else []])
     def setup_remember(self,kind,payload):
         now=time.monotonic();self._setup_previews={k:v for k,v in self._setup_previews.items() if v['until']>now}
         if len(self._setup_previews)>=6:self._setup_previews.pop(next(iter(self._setup_previews)))
@@ -41,7 +41,7 @@ class SetupStore:
     def setup_require_preview(self,data,kind):
         p=self._setup_previews.get(data.get('token'))
         if not p or p['kind']!=kind or p['until']<=time.monotonic():raise ValueError('Forhåndsvisningen er udløbet. Lav et nyt forslag.')
-        if self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, områder eller IB er ændret. Lav en ny forhåndsvisning.')
+        if self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, veje, områder eller IB er ændret. Lav en ny forhåndsvisning.')
         return p['payload']
     def setup_plan(self,data):
         options=defaults(data);main=self.main_boundary()
@@ -95,10 +95,11 @@ class SetupStore:
             if len(owners)>1:raise ValueError('Adressen '+a['label']+' ligger på flere områdegrænser. Flyt en grænse en smule.')
             if not owners:uncovered+=1
             else:buckets[owners[0]].append(a)
+        local_roads=[r for r in self.all('geo') if r.get('entity')=='road']
         proposed=[];next_number=options['start'];numbers={c['number'].casefold() for c in cards}
         for i,(region,members) in enumerate(zip(areas,buckets)):
             if not members:continue
-            parts=partition(region['polygon'],members,region['target'])
+            parts=partition(region['polygon'],members,region['target'],roads=local_roads)
             if options['numbering']=='hundreds' and len(parts)>options['block']:raise ValueError('Området '+region['name']+' kræver flere numre end den valgte områdeblok. Vælg en større blok.')
             for j,part in enumerate(parts):
                 if len(part['members'])>10000:raise ValueError('Et kort har over 10.000 adresser. Inddel det berørte område manuelt.')
