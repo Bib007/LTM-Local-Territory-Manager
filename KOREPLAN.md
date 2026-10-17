@@ -1,6 +1,6 @@
 # Køreplan · næste version
 
-**Samlet færdig: 40 % · 4 af 10 opgaver afsluttet.**
+**Samlet færdig: 50 % · 5 af 10 opgaver afsluttet.**
 
 Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prøver og lagring på GitHub. Procenten gælder denne plan. Stabil grundudgave 1.11.1 og almindelig HA-installation følger main.
 
@@ -10,12 +10,14 @@ Hver afsluttet opgave giver 10 procentpoint efter implementering, relevante prø
 | 2 | Adresser, IB/genprintlister og kortkontrol | Færdig og prøvet | 20 % |
 | 3 | Kortredigering, samlet grænse og import | Færdig og prøvet | 30 % |
 | 4 | Avanceret opsætning og lokal IB-import | Færdig og prøvet | 40 % |
-| 5 | Google Drive og QR med opdigtede svar | Næste | 50 % |
-| 6 | Fælles fejl, bekræftelser og usikker gemning | Afventer | 60 % |
+| 5 | Google Drive og QR med opdigtede svar | Færdig og prøvet | 50 % |
+| 6 | Fælles fejl, bekræftelser og usikker gemning | Næste | 60 % |
 | 7 | Login, tastatur og fokus | Afventer | 70 % |
 | 8 | Printbetjening med uændrede originalformularer | Afventer | 80 % |
 | 9 | Samlet programpakke og verifikation | Afventer | 90 % |
 | 10 | Samlet kontrol, dokumentation og manuel restliste | Afventer | 100 % |
+
+Opgave 5 kontrolleres med `test_share_workflow_language.cjs`, de eksisterende private/offentlige billed- og delingsprøver samt den udvidede offline-browserprøve. Fiktive status-/opskrifts-/QR-svar dækker samme offentlige godkendelses-payload på begge sprog, bevaret billede/checkbox/QR ved sprogskift, nyeste polling, sene previews, ændret revision, annulleret forbindelsesfil, dobbelt publicering og bevaret nyere dialog/navigation. Browserprøven bruger et genereret prøve-PNG til samtykkeforløbet; den kontakter ikke Google. Eget Google-samtykke og faktisk adgang fra telefon er fortsat ejertrin.
 
 Opgave 4 kontrolleres med `test_setup_workflow_language.cjs` og samme offline-browserprøve: uændrede typer/nummerering, samme skrivepayload og danske bekræftelsesord på begge sprog, bevaret opsætningskort/kladdenavne og IB-kontrol ved sprogskift, ombyttede filindlæsninger samt ugyldiggørelse ved ændret dato, område, revision eller navigation. IB-fejl spærrer godkendelse. Ingen privat fil er brugt.
 

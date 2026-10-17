@@ -2,7 +2,7 @@
 
 **Aktuel aftale 17.10.2026: Den faste køreplan prioriteres nu. Ønskelisten sættes på pause; der påbegyndes ikke flere ønskefunktioner, mens de faste punkter færdiggøres. Nummererede betaer og statusopdateringer fortsætter som aftalt.**
 
-Den faste klargøringsplan står på 40 % (4/10). Nye ønsker udvider ikke automatisk dens procenttal. Dansk er hovedsprog, og ændringer udvikles på develop før en stabil udgivelse.
+Den faste klargøringsplan står på 50 % (5/10). Nye ønsker udvider ikke automatisk dens procenttal. Dansk er hovedsprog, og ændringer udvikles på develop før en stabil udgivelse.
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
@@ -11,7 +11,7 @@ Den faste klargøringsplan står på 40 % (4/10). Nye ønsker udvider ikke autom
 | W20 | Ret opsætningsguidens valgfelter, hvor teksten står ved siden af boksen med knapper | 5 | Udgivet i beta.5 med grønne program/platform/HA-gates; offline layout og guideprøver består | Valg og forklaring holder sig i samme boks ved mobil- og skrivebordsbredder. |
 | W21 | Nulstil betadata, så en test kan begynde forfra | 2 | Færdig og udgivet i beta.2; program-, platform- og HA-kontroller består | Tydelig bekræftelse, sikkerhedskopi og ny opstart; stabil installation berøres ikke, og offentlige kort må ikke efterlades uden registrering. |
 | W22 | Fast topbar under rulning og logo som link til forsiden | 4 | Udgivet i beta.3, samlet med W04/W03; program/platform/HA-gates består | Topbaren bliver på plads, indhold dækkes ikke, og logoet åbner forsiden med appens sædvanlige kontrol af ugemte ændringer. |
-| W19 | Små løbende betaudgivelser, som kan testes i HA efter nye funktioner | -1 · kritisk | Færdig: HA-betaer til og med 1.12.0-beta.13 er udgivet; program-, Mac-, Windows- og HA-betagates består; løbende små betaer er nu fast aftale | Kontrollerede betaer kan installeres/opdateres i HA ved siden af stabil udgave. Hver beta har fast version og kort testliste; main forbliver stabil. |
+| W19 | Små løbende betaudgivelser, som kan testes i HA efter nye funktioner | -1 · kritisk | Færdig: HA-betaer til og med 1.12.0-beta.14 er udgivet; program-, Mac-, Windows- og HA-betagates består; løbende små betaer er nu fast aftale | Kontrollerede betaer kan installeres/opdateres i HA ved siden af stabil udgave. Hver beta har fast version og kort testliste; main forbliver stabil. |
 | W14 | KTM-rapportens distriktskort tilpasses automatisk til geografiens højde/bredde, evt. egen side, og distriktnumre vises på kortet | 3 | Implementeret og afprøvet på develop: læsbare etiketter, forbindelsesstreger, automatisk stående/liggende A4 og visuelt kontrollerede fiktive PDF-rapporter; levende browser/OSM står særskilt | Kortet bruger dynamisk format/udsnit og læsbare distriktnumre ved både smalle og brede distriktsgrænser. |
 | W15 | Forbedr autofuldførelse af forkyndere ved udlevering | 6 | Udgivet i beta.9; program-/platform-/HA-gates består, visuel mobil-/skærmlæserkontrol udestår | En tydelig, relevant forslagsliste erstatter browserlignende autofyld; tastatur og mobil fungerer. |
 | W16 | Automatisk distriktsinddeling skal følge meningsfulde vej- og områdegrænser, ikke firkanter | 7 | Kurvede og sammenhængende vejforløb udgivet i beta.11; naturlige skel og avancerede vejnet udestår | Forslag følger veje og naturlige områder og kan kontrolleres/redigeres før gemning. |
@@ -35,13 +35,13 @@ Den faste klargøringsplan står på 40 % (4/10). Nye ønsker udvider ikke autom
 
 ## Aktuel status og næste arbejdssession · 17.10.2026
 
-- Stabil main og seneste stabile release: 1.11.1. Seneste verificerede HA-beta: 1.12.0-beta.13 fra 1f31286 med grøn Checks, Platformskontrol og HA beta release. Beta.13 har separat HA-ZIP/checksum og er en prerelease; tidligere betaer er bevaret.
+- Stabil main og seneste stabile release: 1.11.1. Seneste verificerede HA-beta: 1.12.0-beta.14 fra 540cb6a med grøn Checks, Platformskontrol og HA beta release. Beta.14 har separat HA-ZIP/checksum og er en prerelease; tidligere betaer er bevaret.
 - Udgivet: betanulstilling (W21, beta.2), topbar/forsidelink/logo/HA-billeder (W22/W03/W04, beta.3) og guide-layout (W20, beta.5). Rapportopfølgningslisten fra beta.4 er efterfølgende afvist af ejeren og fjernet i beta.6 og senere. Testlisten følger docs/BETA-NOTES.md. Virkelig HA, browserrulning, OSM, printdialog og Google-konto er fortsat ejerprøver.
 - W07 (5): GraphQL-import er nu koblet på vej-, postnummer- og grænsehentning til beta.8, når egen nøgle er gemt. Komplette sider/joins, aliasbatching, kantpunkter, lokale transaktioner, pause/genstart og separate kilde-/skemacheckpoints er implementeret og afprøvet med fiktive svar. Beta.8 er udgivet fra c0528c9 efter grønne gates. Egen Datafordeler-/HA-prøve er særskilt; ingen ejercredentials eller private data er åbnet. Adressevælgerens varslede brugerstyring og dens rolle som søgeforslag kræver fortsat opfølgning. Se docs/ADRESSEKILDE-2027.md. W07 markeres ikke fuldt afsluttet før de udestående kontroller.
 - W12 (5): det rigtige direkte demo-link og alle statiske JS/CSS/logo-aktiver svarer 200 uden login og matcher kontrolleret kilde. Links er rettet i develop-dokumentationen. Browserens første åbning/mobil/print står særskilt.
-- Ejeren har 17.10.2026 skiftet fokus til den faste køreplan. Næste er punkt 3: korteditor, samlet grænse og import; derefter punkt 4 og de øvrige faste punkter i rækkefølge. Ønskefunktioner, herunder resten af W16, sættes på pause. Tidligere udgivne funktioner bevares.
+- Ejeren har 17.10.2026 skiftet fokus til den faste køreplan. Punkt 3, 4 og 5 er afsluttet. Næste er punkt 6: fælles fejl, bekræftelser og usikker gemning; derefter de øvrige faste punkter i rækkefølge. Ønskefunktioner, herunder resten af W16, sættes på pause. Tidligere udgivne funktioner bevares.
 - W10-formularen er fortsat kun på develop og aktiveres først som GitHubs standardformular via main. Ingen test-issues er oprettet. W18's egen Google-/inkognitotest udestår.
-- Den faste køreplans opgave 3 og 4 er implementeret og prøvet; punkt 5 går nu først. Procenten er 40 % (4/10). Brug denne oversigt frem for de historiske næste-trin i kontroljournalen nedenfor.
+- Den faste køreplans opgave 3, 4 og 5 er implementeret og prøvet; punkt 6 går nu først. Procenten er 50 % (5/10). Brug denne oversigt frem for de historiske næste-trin i kontroljournalen nedenfor.
 
 ## W18 · beslutninger og afgrænsning
 
@@ -232,3 +232,15 @@ Avanceret opsætning har nu dansk/engelsk i alle fire trin, område-/nummerstand
 Forsinkede forslag accepteres kun til uændret opsætning/revision. Ombyttede lokale filindlæsninger bruger kun den nyeste fil. Ny fil, ændret dato, navigation eller fejl ugyldiggør ældre IB-kontrol; en forkert/for stor fil efterlader ikke et gammelt skjult CSV-indhold til import. Under oprettelse er opsætningsfelter spærret. Forhåndsvisninger opretter intet; eksplicit bekræftelse og serverens transaktions-/tokenkontrol bevares.
 
 Lokale program-, JavaScript-, pakke- og Chromium-prøver med fiktive data består; browserkontrol dækker 320/390/768/1440 pixels med rigtig app/Leaflet. Beta.14 afventer GitHub-gates. Fast køreplan er 40 % (4/10); næste er punkt 5, Google Drive og QR med opdigtede svar. Ønskelisten venter, og egne konti/HA/telefon/print er fortsat særskilte ejertrin.
+
+## Fast punkt 5 færdig · beta.14 udgivet · beta.15
+
+Den samlede kontrol fandt, at API-håndteringen ændrer klientens revision efter en vellykket mutation. Korteditorens kladdesammenligning tog det for en ny redigering og afsluttede derfor ikke en ellers gemt tegning eller et nyt kort korrekt. Beta.15 sammenligner kladden uden den forventede revisionsændring efter skrivning; kontrollen før skrivning bruger stadig revisionen. Nye positive prøver bruger den rigtige API-wrapper til kortoprettelse og grænsegemning. Chromium prøver begge grænsegemninger med revisionssvar. Nyere redigeringer under skrivning bevares fortsat.
+
+17.10.2026: Beta.14 fra 540cb6a er udgivet efter grøn Checks, Platformskontrol og HA beta release med fast HA-ZIP/checksum. Beta.13 og tidligere versioner er bevaret; main er stabil 1.11.1.
+
+Google Drive-/QR-betjening har dansk/engelsk med bevaret preview, checkbox, offentlig opskrift, URL og QR ved sprogskift. Billedets offentlige indhold og originale printformularer er uændrede. Adgangsstatus beskriver fortsat åbning/lukning og usikker adgang korrekt. Sene/ombyttede statusbeskeder kan ikke gendanne ældre adgangsstatus.
+
+Et forsinket preview/QR-svar erstatter ikke en nyere dialog eller side. Godkendt publicering er låst mod dobbeltklik og sender kun det samme offentlige PNG/fingeraftryk/layoutversion. Ændret revision kræver et nyt kontrolleret preview. Et sent publiceringssvar tvinger ikke navigation eller lukker en nyere dialog. Forbindelsesfilen læses kun til den aktuelle kontekst; polling genopbygger ikke inputtet under indlæsning. Ugyldig JSON giver en neutral fejl uden filindhold. Alle program-/browserprøver bruger opdigtede svar og forbindelsesfixture; ingen rigtig nøgle, Google-konto eller privat fil er åbnet eller uploadet.
+
+Nye kontrakt-/hændelsesprøver dækker ens godkendelses-payload på begge sprog, sene svar, annullering og fejl. Chromium ved 320/390/768/1440 pixels dækker app/Leaflet, opsætning/IB samt samtykke og QR med et genereret prøve-PNG; selve billedgeneratoren kontrolleres særskilt i billedprøverne. Beta.15 afventer GitHub-gates. Fast køreplan er 50 % (5/10); næste er punkt 6. Ønskelisten venter fortsat, og virkeligt HA/telefon/Google/Datafordeler/print er særskilte ejerprøver.

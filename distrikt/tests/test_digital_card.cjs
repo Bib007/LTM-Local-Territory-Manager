@@ -8,10 +8,10 @@ class ReaderStub{readAsDataURL(){this.result=template;this.onload();}}
 const canvas={getContext:()=>({drawImage(){}}),toBlob(fn){fn({type:'image/png'});}};
 const context={console,Date,Intl,Number,String,Math,JSON,Map,Set,WeakMap,Array,Object,Promise,setTimeout,clearTimeout,
  Image:ImageStub,FileReader:ReaderStub,location:{origin:'http://127.0.0.1:9999'},window:{addEventListener(){}},
- document:{querySelector:()=>({content:'FICTIONAL_TOKEN'}),addEventListener(){},createElement(kind){assert.equal(kind,'canvas');return canvas;}},
+ document:{getElementById:()=>({open:false}),querySelector:()=>({content:'FICTIONAL_TOKEN'}),addEventListener(){},createElement(kind){assert.equal(kind,'canvas');return canvas;}},
  fetch:async url=>{fetched.push(url);assert.equal(url,'/s12-template.png','Only the local blank template may be fetched');return {ok:true,blob:async()=>({type:'image/png'})};},
  GeoUI:{data:{roads:[],buildings:[]}},RoadSearch:{normalize:s=>s.toLowerCase()}};
-vm.createContext(context);vm.runInContext(read('map-export.js'),context);vm.runInContext(read('share-ui.js'),context);
+vm.createContext(context);vm.runInContext(read('i18n.js'),context);vm.runInContext(read('map-export.js'),context);vm.runInContext(read('share-ui.js'),context);
 const app=read('app.js');vm.runInContext(app.slice(0,app.indexOf("document.addEventListener('input'")),context);
 const run=s=>vm.runInContext(s,context);
 run(`state={today:'2026-10-17',cards:[{id:'fake',number:'PRIVATE_NUMBER',name:'PRIVATE_NAME',addresses:[{road:'PRIVATE_IB_ROAD',numbers:'99',count:1}]}],ib:[{card_id:'fake',road:'PRIVATE_IB_ROAD',number:'99'}],publishers:[{name:'PRIVATE_PERSON'}],loans:[],notes:[{text:'PRIVATE_NOTE'}],public_maps:[],areas:[]};`);

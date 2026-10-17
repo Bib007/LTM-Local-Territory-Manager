@@ -11,8 +11,9 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Kortoversigt, adresselister og kortkontrol | Dansk/engelsk klargjort og prøvet |
 | Geografisk editor, grænser og import | Dansk/engelsk klargjort og prøvet |
 | Avanceret opsætning og lokal IB-import | Dansk/engelsk klargjort og prøvet |
-| Google/QR | Næste opgave |
-| Fælles fejl, login og printbetjening | Afventer |
+| Google/QR | Dansk/engelsk klargjort og prøvet med fiktive svar |
+| Fælles fejl og usikker gemning | Næste opgave |
+| Login og printbetjening | Afventer |
 
 [Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
 

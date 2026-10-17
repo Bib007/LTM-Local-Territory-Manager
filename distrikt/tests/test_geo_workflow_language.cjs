@@ -5,6 +5,7 @@ const read=n=>fs.readFileSync(path.join(__dirname,'../app',n),'utf8'),nodes=new 
 const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',dataset:{},style:{},open:false,showModal(){this.open=true;},close(){this.open=false;},addEventListener(){}});return nodes.get(id);};
 const c={console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,writes,frontResizeObserver:null,DistrictMap:{dispose(){}},setTimeout(){},clearTimeout(){},window:{addEventListener(){},confirm:()=>true},document:{getElementById:get,querySelector:()=>({content:'FICTIONAL',disabled:false}),querySelectorAll:()=>[],addEventListener(k,fn){(listeners[k]??=[]).push(fn);}},fetch(){throw Error('Network forbidden');}};
 vm.createContext(c);for(const n of ['i18n.js','geo.js','main-boundary.js','boundary-import.js','road-search.js','address-source-ui.js'])vm.runInContext(read(n),c);let src=read('app.js');vm.runInContext(src.slice(0,src.indexOf('(async()=>{try{await refresh();')),c);const run=s=>vm.runInContext(s,c);
+run('const realApi=api,realPreview=GeoUI.preview;');
 run(`state={revision:'r1',today:'2026-10-17',cards:[{id:'c1',number:'101',area_id:'area',address_ids:['a1'],geo_polygon:[[10,55],[10.01,55],[10,55.01]]},{id:'c2',number:'102',address_ids:[],geo_polygon:[]}],areas:[{id:'area',name:'Vejnavn <invented>'}],ignored:[],settings:{}};
 GeoUI.loaded=true;GeoUI.target='c1';GeoUI.ids=new Set(['a1']);GeoUI.polygon=state.cards[0].geo_polygon.map(p=>p.slice());GeoUI.data={addresses:[{id:'a1',road:'Vejnavn',number:'1',postcode:'9999',floor:'',door:'',label:'Adresse <invented>',type:'Hus',lng:10,lat:55,count:1},{id:'a2',road:'Vejnavn',number:'2',postcode:'9999',label:'B',type:'Kontor',lng:10.001,lat:55.001,count:1}],buildings:[],roads:[],info:{addresses:2},status:{a1:{card_id:'c1'}}};page='Kortopsætning';GeoUI.drawLayers=()=>{};GeoUI.drawBoundary=()=>{};render=()=>{};saved=()=>{};saving=()=>{};toast=()=>{};MapBackground={mode:'road',toolbar:()=>'',detach(){}};`);
 const contract=html=>(html.match(/(?:data-geo|data-main|data-action|data-id|name|value)="[^"]*"/g)||[]).join('\n');
@@ -44,5 +45,21 @@ const contracts={};const initial=run('JSON.stringify(state)');
  run('BoundaryImportUI.open(true)');let fileRelease;c.file={size:10,name:'fictional.kml',text:()=>new Promise(r=>fileRelease=r)};pending=run('BoundaryImportUI.read(file)');run("openDialog('<form>OTHER DIALOG</form>')");fileRelease('<kml/>');await pending;assert.match(get('dialog').innerHTML,/OTHER DIALOG/);
  // The preview revision is the request revision, never a later revision seen on completion.
  run('BoundaryImportUI.open(true);BoundaryImportUI.show=()=>{};state.revision="before"');c.file={size:10,name:'fictional.kml',text:async()=>'<kml/>'};let importRelease;c.importPending=new Promise(r=>importRelease=r);run('api=()=>importPending');pending=run('BoundaryImportUI.read(file)');await new Promise(r=>setImmediate(r));run('state.revision="after"');importRelease({json:async()=>({result:{format:'KML',boundaries:[{name:'Vejnavn',points:[[10,55],[10.01,55],[10,55.01]]}]}})});await pending;assert.equal(run('BoundaryImportUI.revision'),'before');assert.throws(()=>run('BoundaryImportUI.apply()'),/Data has changed/);
- console.log('Geographic workflows: bilingual contracts and canonical values, escaped user text, stale/out-of-order selections, immutable/deduplicated saves, newer drafts/dialogs, polygon isolation, cleanup and file/revision guards passed.');
+ // Exercise the real API wrapper: an accepted mutation advances the client revision.
+ // That server acknowledgement must not be mistaken for an edit to the drawing.
+ c.serverState=JSON.parse(run('JSON.stringify(state)'));
+ c.serverState.cards.push({id:'created',number:'103',address_ids:['a1'],geo_polygon:[[10,55],[10.01,55],[10,55.01]]});
+ c.serverState.revision='before-real-save';let revision='before-real-save';const realRequests=[];
+ c.fetch=async(url,options)=>{const body=options.body?JSON.parse(options.body):null;realRequests.push({url,body});let payload;
+  if(url==='/api/mutate'){
+   if(body.action==='geo.preview')payload={result:{retired:[],conflicts:[],ignored:[]},revision};
+   else {revision=body.action==='geo.assign'?'after-real-save':'after-real-boundary';c.serverState.revision=revision;payload={result:{id:'created'},revision};}
+  }else payload=url==='/api/state'?c.serverState:run('GeoUI.data');
+  return {ok:true,json:async()=>payload,clone(){return {json:async()=>payload};}};
+ };
+ run("api=realApi;GeoUI.preview=realPreview;state.revision='before-real-save';GeoUI.whole=false;GeoUI.target='';GeoUI.ids=new Set(['a1']);GeoUI.polygon=[[10,55],[10.01,55],[10,55.01]];GeoUI.dirty=true;openDialog('<p>Real API confirmation</p>')");
+ await run("GeoUI.save('103',{kind:'By'})");assert.equal(run('GeoUI.target'),'created');assert.equal(run('GeoUI.dirty'),false);assert.equal(run('state.revision'),'after-real-save');assert.equal(get('dialog').open,false);
+ assert.equal(realRequests.find(r=>r.body?.action==='geo.assign').body.data._revision,'before-real-save');
+ run('GeoUI.whole=true;GeoUI.dirty=true');await run('GeoUI.saveBoundary(true)');assert.equal(run('GeoUI.dirty'),false);assert.equal(run('state.revision'),'after-real-boundary');
+ console.log('Geographic workflows: bilingual contracts, immutable saves, stale draft/dialog guards, file/revision guards and real API revision acknowledgements passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
