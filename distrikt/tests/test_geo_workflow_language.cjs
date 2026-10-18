@@ -20,6 +20,15 @@ const contracts={};const initial=run('JSON.stringify(state)');
   assert.match(road,/name="road"[^>]*value=""/);
   assert.match(editor,language==='en'?/placeholder="Postcode"/:/placeholder="Postnummer"/);
   assert.doesNotMatch(editor,/placeholder="\d+"/);
+  // Inspect the actual download dialogs too; a fresh setup has no built-in location.
+  run('(()=>{const load=AddressSourceUI.load;AddressSourceUI.load=()=>{};try{GeoUI.dataDialog();}finally{AddressSourceUI.load=load;}})()');
+  const downloadInputs=[...get('dialog').innerHTML.matchAll(/<input\b[^>]*\bname="(road|postcode)"[^>]*>/g)];
+  assert.equal(downloadInputs.length,4);
+  for(const [input,name] of downloadInputs){
+   const value=input.match(/\svalue="([^"]*)"/),hint=input.match(/\splaceholder="([^"]*)"/);
+   assert.ok(!value||value[1]==='',`Fresh ${name} must not contain a location`);
+   if(hint)assert.equal(hint[1],run(`I18n.text('${name==='road'?'Vejnavn':'Postnummer'}')`));
+  }
   assert.match(get('geoHouse').innerHTML,/Adresse &lt;invented&gt;/);assert.doesNotMatch(get('geoHouse').innerHTML,/<invented>/);
   await run("GeoUI.handle('save')");assert.match(get('dialog').innerHTML,language==='en'?/Save address selection on card 101/:/Gem adressevalget på kort 101/);
   run("GeoUI.target='';");await run("GeoUI.handle('save')");contracts[language].push(contract(get('dialog').innerHTML));assert.match(get('dialog').innerHTML,/<option value="By" data-ui="By">/);assert.match(get('dialog').innerHTML,language==='en'?/>Urban<\//:/>By<\//);
