@@ -1,10 +1,10 @@
-# LTM 1.12.0-beta.31
+# LTM 1.12.0-beta.32
 
-To ønskepunkter: W49 og W59. Ændringerne fra beta.30 er med.
+Ét ønskepunkt: W50. Ændringerne fra beta.30 og beta.31 er med.
 
-- W49: Topbaren har logo og menighedsnavn på én vandret linje. Det eksisterende desktoplogo er igen 360 × 66 px, også med menighedsnavn; mobilikonet er fortsat 34 × 34 px. Navnet følger efter en tankestreg og afsluttes med Distrikt/Territory. Lange navne afkortes visuelt, med hele titlen i tekstfeltets title. Beta-markering og gemmestatus bevares.
-- W59: Den interaktive kortvisning i kortets detaljedialog starter låst. Hold Ctrl/Command nede ved flytning eller hjulzoom. Normal rulning passerer til dialogen. Aktivér kort · touch og tastatur er en tydelig alternativ tilstand med piletaster, +/− og touch. Lås kortet igen bevarer udsnittet. Tilstanden nulstilles ved nyt kort/lukning eller vinduesskift. Det statiske godkendelsesbillede til Google Drive er uændret; ingen publicering sker automatisk.
+- Opgaver er nu den eneste funktion til opfølgning. Gamle noter bliver opgaver med bevaret tekst, datoer, kortreference og udført-status, både ved genstart og ved godkendt import af en gammel backup. En importforhåndsvisning ændrer intet.
+- Navigationen viser kun antal åbne opgaver. Kort med åbne opgaver markeres i kortlisten/mappen, og udleveringsformularen viser en tydeligere advarsel med opgaveteksten. Udførte opgaver tælles ikke med. Ingen ny udleveringsspærring og ingen automatisk IB-ændring.
+- Separate notefiltre og valg mellem note/opgave er fjernet. Opgaver kan være generelle eller knyttet til et kort; redigering bevarer også en eksisterende tilknytning til et arkiveret kort. ○ markerer udført, ✓ genåbner. Ved aflevering/gennemgang kan du stadig skrive en valgfri opgave.
+- Gamle fil-/API-navne bevares, så eksisterende sikkerhedskopier stadig fungerer. Aktivitetshistorik konverteres ikke til opgaver. Tests bruger kun opdigtede poster; ingen private oplysninger er lagt i GitHub.
 
-Ejerens faktiske API-hentning skal stadig prøves med rettelsen fra beta.30; grøn forbindelse alene er ikke nok. Prøv én vej med lejligheder, et lille område og opdatering. Send aldrig nøglen eller private adresser i chat/feedback.
-
-W63: Bred kontrol af faste eksempler afsluttet; nye regressionstests efterprøver tomme adressefelter. W61: Alle udgivelsespakker og grene/tags er renset og verificeret; resterende GitHub-cache/PR-henvisninger og udgivelsesmetadata kræver ekstern oprydning. Main er fortsat stabil 1.11.1.
+Tag fortsat en privat backup før opdatering. Ejerens faktiske API-hentning skal stadig prøves med rettelsen fra beta.30; grøn forbindelse alene er ikke nok. W61's GitHub-cache/PR-restoprydning og udgivelsesmetadata er stadig åbne. HA-sikkerhedsprofil og login er uændrede; W06 og den afhængige nøglebackup W56 er ikke færdigmeldt. Main er stabil 1.11.1.

@@ -41,9 +41,9 @@ Open a publisher to check their active cards. A number-only temporary card can b
 | Kort i kassen | Available cards in the storage box at home |
 | Aflever til kassen | Return the card to the storage box |
 | Gennemgået | Record completion |
-| Opgaver og noter | Follow-up tasks and notes |
+| Opgaver | Follow-up tasks · open tasks counted only |
 
-Put the cards you actually carry into the folder in the app. When assigning one, select its publisher and date. When it is returned, record whether it was completed and optionally add a note/task, for example to review a do-not-call entry later. **Returns go to the box**, not automatically back into the folder.
+Put the cards you actually carry into the folder in the app. When assigning one, select its publisher and date. When it is returned, record whether it was completed and optionally add a task, for example to review a do-not-call entry later. **Returns go to the box**, not automatically back into the folder.
 
 Each recorded completion counts, including repeated completions of the same card. The visit total is an estimate based on the card's address/unit count; it is not a record of individual calls made. A service year runs from **1 September to 31 August**.
 

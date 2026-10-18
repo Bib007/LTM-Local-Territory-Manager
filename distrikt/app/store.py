@@ -82,6 +82,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             os.chmod(path, 0o600)
         self.db.commit()
         with self.transaction():
+            self.migrate_tasks()
             # Remove the credential belonging to the retired aerial-photo feature only.
             self.db.execute("DELETE FROM geo.records WHERE id = ?",('basemap-config',))
             if not self.get('settings', 'config'):
@@ -111,6 +112,20 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             raise ValueError('Ukendt datafil.')
         return 'main' if module == 'settings' else module
 
+    def migrate_tasks(self):
+        """Keep the legacy storage/API names; promote records without changing their content.
+
+        Called inside the startup/restore transaction. Deleted rows retain their
+        original recovery batch and timestamps; activity summaries are not tasks.
+        """
+        for row in self.db.execute('SELECT id,payload FROM notes.records').fetchall():
+            item=json.loads(row['payload'])
+            if item.get('entity')!='activity' and item.get('task') is not True:
+                item['task']=True
+                self._dirty_modules.add('notes')
+                self.db.execute('UPDATE notes.records SET payload=? WHERE id=?',
+                                (json.dumps(item,ensure_ascii=False),row['id']))
+
     def all(self, module, deleted=False):
         sql = 'SELECT * FROM ' + self.alias(module) + '.records WHERE deleted_at IS ' + ('NOT NULL' if deleted else 'NULL')
         rows = self.db.execute(sql).fetchall()
@@ -123,6 +138,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         return None
 
     def put(self, module, item):
+        if module=='notes' and item.get('entity')!='activity':item=dict(item,task=True)
         self._dirty_modules.add(module)
         self.workflow_track(module,item['id'])
         self.db.execute('INSERT INTO ' + self.alias(module) + '.records(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload', (item['id'], json.dumps(item, ensure_ascii=False)))
@@ -333,16 +349,16 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         if action == 'note.save':
             c=self.require('cards',data['card_id']) if data.get('card_id') else None
             item=dict(self.require('notes',data['id']) if data.get('id') else {'id':new_id(),'date':today(),'created':now(),'resolved':False})
-            if item.get('entity')=='activity':raise ValueError('Vælg en note.')
+            if item.get('entity')=='activity':raise ValueError('Vælg en opgave.')
             item['card_id']=c['id'] if c else None
-            item['task']=bool(data.get('task',item.get('task',False)))
+            item['task']=True
             item['text']=clean_text(data.get('text'),1000,True)
             self.put('notes',item);return {'id':item['id']}
         if action == 'note.resolve':
             item=self.require('notes',data.get('id'))
-            if item.get('entity')=='activity':raise ValueError('Vælg en note.')
+            if item.get('entity')=='activity':raise ValueError('Vælg en opgave.')
             if item.get('card_id'):self.require('cards',item['card_id'])
-            if type(data.get('resolved'))!=bool:raise ValueError('Ugyldig notestatus.')
+            if type(data.get('resolved'))!=bool:raise ValueError('Ugyldig opgavestatus.')
             item.update(resolved=data['resolved'],resolved_at=now() if data['resolved'] else None)
             self.put('notes',item);return {'id':item['id']}
         if action == 'loan.finish':

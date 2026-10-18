@@ -6,6 +6,10 @@ These features are prepared for the next app version; use a complete release whe
 
 ### A useful starting point
 
+From beta.32, **Tasks** handles all follow-up. Existing notes become tasks while retaining their text, dates, card links and completion status. The same conversion runs after explicitly importing an older backup; previewing one changes nothing. User text is never translated. Legacy storage/API names remain compatible with existing backups.
+
+Navigation counts open tasks only. Cards with open tasks are marked in the card/folder list and get a prominent assignment-form warning containing their task text. Tasks do not create do-not-call records automatically or block assignment. Use them to add a do-not-call record, check house numbers or remove a house that does not exist. **○** marks a task done; **✓** reopens it. Completed tasks stay editable under Completed without losing content or links.
+
 Home shows the current service year, where the cards are, completed rounds and follow-up. The carry-folder, storage-box and open-task shortcuts open the corresponding existing lists. Counts are calculated from the local records; a card covered twice contributes two completions, but coverage counts that card only once. Estimated visits describe the address/unit counts on completed cards, not recorded house-to-house activity.
 
 The follow-up list uses four calendar months from the start of the current round. It is a prompt for your own review, not a congregational decision or an automatic reassignment. Changed-side counts are reminders to check and reprint physical cards. Opening the dashboard does not change any records.

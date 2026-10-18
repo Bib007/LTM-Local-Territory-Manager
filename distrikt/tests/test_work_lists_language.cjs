@@ -64,6 +64,20 @@ tagged.push({dataset:{ui:'Kort',uiParams:'broken-json'},textContent:''});assert.
  assert.equal(payloads.en[0].action,'note.save');assert.equal(payloads.en[0].data.task,true);assert.equal(payloads.en[1].data.card_id,null);
  assert.equal(payloads.en[2].action,'publisher.save');assert.equal(payloads.en[2].data.name,'Forkynder <fictional>');
  assert.equal(run('JSON.stringify(state)'),original);
- run("I18n.set('en');Workspace.taskFilter='all'");assert.match(run('Workspace.tasks()'),/marks a task or note as done/);assert.match(run('Workspace.tasks()'),/data-ui-title="Markér udført"/);assert.match(run('Workspace.tasks()'),/aria-pressed="false"/);
+ run("I18n.set('en');Workspace.taskFilter='all'");assert.match(run('Workspace.tasks()'),/marks a task as done/);assert.match(run('Workspace.tasks()'),/data-ui-title="Markér udført"/);assert.match(run('Workspace.tasks()'),/aria-pressed="false"/);
+ // Legacy non-task records are shown immediately, and completed records never inflate alerts.
+ vm.runInContext(read('navigation.js'),c);
+ run(`state.notes.push({id:'old',text:'Fiktiv gammel <opfølgning>',card_id:'folder',task:false,resolved:false,date:'2026-10-01'},
+  {id:'done',text:'FIKTIV_DONE_TASK',card_id:'folder',task:false,resolved:true,date:'2026-10-01'},
+  {id:'general',text:'Fiktiv generel opgave',card_id:null,resolved:false,date:'2026-10-01'});Workspace.taskFilter='open';`);
+ let html=run('Workspace.tasks()');assert.match(html,/Fiktiv gammel &lt;opfølgning&gt;/);assert.match(html,/Fiktiv generel opgave/);assert.doesNotMatch(html,/FIKTIV_DONE_TASK|data-value="notes"|data-work="make-task"/);
+ assert.match(run('Navigation.html()'),/class="navTaskCount"[^>]*>3<\/span>/);
+ assert.match(run("taskBadge('folder')"),/2 open tasks/);assert.equal(run("taskBadge('box')"),'');
+ run("Workspace.taskFilter='done'");assert.match(run('Workspace.tasks()'),/FIKTIV_DONE_TASK/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv generel opgave/);
+ run("Workspace.noteForm('old')");assert.doesNotMatch(get('dialog').innerHTML,/name="task"|New task \/ note/);assert.match(get('dialog').innerHTML,/Fiktiv gammel &lt;opfølgning&gt;/);
+ run(`state.archived_cards=[{id:'archive',number:'FIKTIV-ARKIV',name:'Fiktiv arkiveret'}];state.notes.push({id:'archived-task',card_id:'archive',text:'Fiktiv bevaret opgave',resolved:true});Workspace.noteForm('archived-task');`);
+ assert.match(get('dialog').innerHTML,/option value="archive" selected/,'Editing an archived-card task must preserve its link');
+ c.PublisherSearch={field:()=>'',attach(){}};run("issue('folder')");assert.match(get('dialog').innerHTML,/issueTaskAlert/);assert.match(get('dialog').innerHTML,/Fiktiv gammel &lt;opfølgning&gt;/);assert.doesNotMatch(get('dialog').innerHTML,/FIKTIV_DONE_TASK/);assert.match(get('dialog').innerHTML,/do not.*block assignment/);
+ const beforeChange=run('JSON.stringify(state)');await listeners.change.find(fn=>String(fn).includes('issueTaskWarning'))({target:{name:'card_id',value:'box',form:{id:'issueForm'}}});assert.equal(get('issueTaskWarning').innerHTML,'');assert.equal(run('JSON.stringify(state)'),beforeChange);
 console.log('Bilingual work lists preserve filter values, user text, calendar counts, drafts and note/publisher payloads; labels and attributes switch without rebuilding forms.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

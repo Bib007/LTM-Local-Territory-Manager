@@ -40,9 +40,9 @@ Tilføj forkyndere under **Forkyndere**. Brug derefter **Registrer eksisterende 
 | Kort i kassen | Ledige kort i kassen derhjemme |
 | Aflever til kassen | Kortet registreres tilbage i kassen |
 | Gennemgået | En afsluttet gennemgang registreres |
-| Opgaver og noter | Punkter til senere opfølgning |
+| Opgaver | Punkter til senere opfølgning · kun åbne tælles |
 
-Læg de kort, der faktisk medbringes, i mappen i appen. Ved udlevering vælges forkynder og dato. Ved aflevering registreres, om kortet er gennemgået, og eventuelt en note. **Afleverede kort går til kassen**, ikke automatisk tilbage til mappen.
+Læg de kort, der faktisk medbringes, i mappen i appen. Ved udlevering vælges forkynder og dato. Ved aflevering registreres, om kortet er gennemgået, og eventuelt en opgave til senere. **Afleverede kort går til kassen**, ikke automatisk tilbage til mappen.
 
 Hver registreret gennemgang tæller, også flere gennemgange af samme kort. Anslåede besøg bygger på adresser/enheder på kortet og er ikke en registrering af de enkelte husbesøg. Tjenesteåret løber fra **1. september til 31. august**.
 

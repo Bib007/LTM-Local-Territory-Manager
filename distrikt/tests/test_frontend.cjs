@@ -191,8 +191,8 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("DistrictMap.map=null;MapBackground.detach('districtMap');document.createElement=originalCreateElement;state.ib=[]");
  // Return notes are local reminders, safely rendered and excluded from public exports.
  run("state.notes=[{id:'note-test',card_id:'c3',date:state.today,created:'2026-01-01',text:'PRIVATE_NOTE <script>bad</script>',resolved:false}];detail('c3','Noter')");
- assert(get('dialog').innerHTML.includes('Noter · 1'));assert(get('dialog').innerHTML.includes('&lt;script&gt;'));assert(!get('dialog').innerHTML.includes('<script>bad'));
- assert(!run("MapExport.svg('c3').includes('PRIVATE_NOTE')"));assert(run("notesList().includes('Markér håndteret')"));
+ assert(get('dialog').innerHTML.includes('Opgaver · 1'));assert(get('dialog').innerHTML.includes('&lt;script&gt;'));assert(!get('dialog').innerHTML.includes('<script>bad'));
+ assert(!run("MapExport.svg('c3').includes('PRIVATE_NOTE')"));assert(run("notesList().includes('Markér udført')"));
  run("state.loans.push({id:'note-loan',card_id:'c3',publisher_id:'p1',cycle_start:'2026-01-01'});finish('note-loan')");assert(get('dialog').innerHTML.includes('name="note"'));assert(get('dialog').innerHTML.includes('Tilføj IB')||get('dialog').innerHTML.includes('tilføj IB'));
  assert(run("printDocument([card('c3')],'front',{paper:'cut',mode:'data',width:146,height:94,x:0,y:0}).includes('top:calc(17% - 1mm)')"));
  // Report labels fit polygon area/width and OSM snapshot is embedded in print without private notes.

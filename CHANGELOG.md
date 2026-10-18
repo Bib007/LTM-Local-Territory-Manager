@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.32 · Én samlet opgavefunktion
+
+W50: Noter og opgaver er samlet under Opgaver. Gamle noter bliver opgaver med uændret tekst, kortreference, datoer og udført-status, også efter import af ældre backup. Aktive og gendannelige poster konverteres i en transaktion; aktivitetshistorik ændres ikke til opgaver. Gamle data-/API-navne bevares for kompatibilitet. Redigering af udførte opgaver og tilknytning til arkiverede kort bevarer status og reference.
+
+Navigationen tæller kun åbne opgaver. Kortlisten/mappen viser et tydeligt opgavemærke. Udleveringsformularen viser en stærkere advarsel med de åbne opgaver og opdaterer den ved kortvalg. Der er ingen ny obligatorisk spærring eller automatisk IB-ændring. Separate notefiltre, noteoprettelse og valg af note/opgave er fjernet fra opgavefunktionen. En valgfri opgave kan stadig tilføjes ved aflevering/gennemgang. KTM-besøgets selvstændige tekstfelt kaldes Bemærkning.
+
 ## 1.12.0-beta.31 · Logo i fuld størrelse og bevidst kortbetjening
 
 W49: Det eksisterende desktoplogo bevarer 360 × 66 px, mens menighedsnavnet står på samme vandrette linje efter en tankestreg. Mobilikonet bevarer 34 × 34 px. Lange navne afkortes visuelt med hele titlen tilgængelig; beta-markering, navigation og gemmestatus er bevaret.
