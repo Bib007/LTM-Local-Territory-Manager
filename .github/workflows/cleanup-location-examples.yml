@@ -1,0 +1,53 @@
+name: W61 location example cleanup
+on:
+  push:
+    branches: [develop]
+    paths: ['.github/workflows/cleanup-location-examples.yml']
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply the reviewed W61 cleanup to releases, branches and tags
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: w61-location-example-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.repository == 'Bib007/LTM-Local-Territory-Manager' && github.ref == 'refs/heads/develop' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[privacy-cleanup-once]'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install pinned cleanup-only dependency
+        run: python -m pip install git-filter-repo==2.47.0
+      - name: Synthetic archive and complete-history regressions
+        run: python -m unittest discover -s scripts -p test_cleanup_location_examples.py -v
+      - name: Stage, validate and clean the reviewed repository inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          APPLY: ${{ github.event_name == 'push' || inputs.apply }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          options=()
+          if [[ "$APPLY" == 'true' ]]; then options+=(--apply); fi
+          python scripts/cleanup_location_examples.py --work "$RUNNER_TEMP/w61-cleanup" --expected-head "$GITHUB_SHA" "${options[@]}"
+      - name: Preserve redacted results only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w61-cleanup-report
+          path: ${{ runner.temp }}/w61-cleanup/report.json
+          if-no-files-found: ignore
+          retention-days: 7
