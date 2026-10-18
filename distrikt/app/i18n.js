@@ -3,6 +3,8 @@
 const I18n={
  current:'da',
  english:{
+  "Kontrollér DAR-opslag":"Check DAR lookups",
+  "DAR-kontrollen bruger fiktive søgeværdier og gemmer ingen adresser. Den kan tage op til ét minut.":"The DAR check uses fictional search values and saves no addresses. It may take up to one minute.",
   "Datafordeleren afviste forespørgslen ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler rejected the query ({diagnostic}). No addresses from this lookup were saved.",
   "Datafordeleren afviste forespørgslens felter eller filtre ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler rejected the query fields or filters ({diagnostic}). No addresses from this lookup were saved.",
   "Datafordeleren afviste adgang til selve dataopslaget ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler denied access to the data lookup ({diagnostic}). No addresses from this lookup were saved.",

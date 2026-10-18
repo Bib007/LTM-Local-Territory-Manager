@@ -23,6 +23,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
    if(u.pathname==='/api/share/publish'){const data=route.request().postDataJSON();assert.deepEqual(Object.keys(data).sort(),['card_id','fingerprint','png','render_revision']);assert.match(data.png,/^data:image\/png;base64,/);writes.push({action:'FAKE_SHARE_PUBLISH',data});return json({});}
    if(u.pathname==='/api/share/qr')return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="white"/><text x="5" y="50">Fictional</text></svg>'});
    if(u.pathname==='/api/address-source/status')return json({configured:false});
+   if(u.pathname==='/api/address-source/diagnose'){assert.deepEqual(route.request().postDataJSON(),{});return json({status:'COMPLETE',probes:[{entity:'DAR_NavngivenVej',variant:'plain',status:'ACCEPTED'},{entity:'DAR_Husnummer',variant:'batch',status:'GQL-REJECTED',codes:['HC0011'],terms:['aliases','arguments','complexity','supported']}]});}
    if(u.pathname==='/api/restore/preview')return json({token:'FICTIONAL_RESTORE',warning:'Fictional backup review',counts:{cards:1}});
    if(u.pathname==='/api/restore/apply'){const data=route.request().postDataJSON();assert.equal(data.token,'FICTIONAL_RESTORE');writes.push({action:'FAKE_RESTORE_APPLY',data});await new Promise(resolve=>releaseRestore=resolve);storedState.revision+='-restored';return json({safety_backup:'FICTIONAL-safety.zip'});}
    if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();writes.push(body);
@@ -39,6 +40,16 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
    const file=path.resolve(root,'.'+(u.pathname==='/'?'/index.html':u.pathname));assert.ok(file.startsWith(root+path.sep));assert.ok(fs.existsSync(file),'Unexpected request '+u.pathname);return route.fulfill({path:file});
   });
   await page.goto('http://ltm.test/');await page.waitForFunction(()=>state!==null&&GeoUI.busy===false);
+  // Read-only diagnostic remains usable at mobile/desktop widths on both languages.
+  await page.evaluate(()=>GeoUI.dataDialog());await page.getByText('Datafordeleren · egen API-nøgle',{exact:true}).click();
+  await page.locator('[data-address-source=diagnose]').click();await page.waitForFunction(()=>el('addressSourceDiagnostic').textContent.includes('COMPLETE'));
+  assert.match(await page.locator('#addressSourceDiagnostic').innerText(),/DAR_Husnummer.*batch.*GQL-REJECTED/);
+  assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'DAR diagnostic fits narrow dialogs');
+  const diagnosticBefore=await page.locator('#addressSourceDiagnostic').innerText();await page.evaluate(()=>{I18n.set('en');Navigation.localize();});
+  assert.equal(await page.locator('[data-address-source=diagnose]').innerText(),'Check DAR lookups');
+  assert.equal(await page.locator('#addressSourceDiagnostic').innerText(),diagnosticBefore);
+  if(out)await page.screenshot({path:path.join(out,`dar-diagnostic-${width}.png`),fullPage:true});
+  await page.evaluate(()=>{I18n.set('da');Navigation.localize();closeDialog();});
   await page.evaluate(g=>{GeoUI.loaded=true;GeoUI.data=g;GeoUI.openCard('c1');},geo);
   await page.locator('#geoRangeForm [name=road]').fill('Vejnavn');await page.locator('#geoRangeForm [name=postcode]').fill('9999');await page.locator('#geoRangeForm [name=from]').fill('1');await page.locator('#geoRangeForm [name=to]').fill('8');await page.locator('#geoRangeForm [name=parity]').selectOption('even');
   await page.evaluate(()=>{window.mapBefore=GeoUI.map;window.inputBefore=el('geoRangeRoad');window.polyBefore=JSON.stringify(GeoUI.polygon);window.idsBefore=[...GeoUI.ids].join();GeoUI.mode='move';GeoUI.dirty=true;GeoUI.drawBoundary();GeoUI.updatePanel();el('geoRangeRoad').focus();I18n.set('en');Navigation.localize();});

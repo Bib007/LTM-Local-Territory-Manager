@@ -59,6 +59,17 @@ class HTTPTests(unittest.TestCase):
             self.assertEqual(state['version'],ping['version'])
             self.assertEqual(state['beta'],beta)
 
+    def test_dar_diagnostic_requires_token_and_does_not_mutate_store(self):
+        before = self.store.revision
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request('/api/address-source/diagnose', {}, token=False)
+        self.assertEqual(caught.exception.code, 403)
+        with patch('dar_diagnostic.diagnose', return_value={'status': 'COMPLETE', 'probes': []}) as probe:
+            with self.request('/api/address-source/diagnose', {}) as response:
+                self.assertEqual(json.load(response), {'status': 'COMPLETE', 'probes': []})
+            probe.assert_called_once_with(self.server.address_source)
+        self.assertEqual(self.store.revision, before)
+
     def test_local_printing_code_is_available_with_app_security_policy(self):
         with self.request('/printing.js') as response:
             self.assertEqual(response.status,200)

@@ -40,3 +40,7 @@ Only the fixed official Datafordeler host receives the key for authentication. C
 For rejected access, check that this is an API key for the right IT system, rather than an OAuth shared secret. For network failures, resume later. Replace expired or deactivated keys locally. [Official API-key instructions](https://confluence.kds.dk/pages/viewpage.action?pageId=187105503).
 
 A newly created API key can take up to **15 minutes** to become active. This is only one possible reason for rejected access, not an explanation for every failure. After 15 minutes, explicitly retry **Kontrollér gemt forbindelse**. Network/server errors remain separate. [Official Administration guide](https://datafordeler.dk/media/lggned4a/20260219-datafordeler-administration.pdf).
+
+## Read-only diagnostics in beta.40
+
+Choose **Check DAR lookups** under the Datafordeler connection. It compares the actual projections and filters using fictional search values in plain and aliased queries. The check saves no addresses, changes no connection or checkpoints, and shows no raw provider messages. It takes up to one minute. An accepted fictional lookup does not confirm a real address download; W62 remains open.
