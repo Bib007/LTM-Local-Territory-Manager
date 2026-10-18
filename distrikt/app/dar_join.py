@@ -35,14 +35,16 @@ def _index(rows):
     return result
 
 
-def _related(row, field, index):
+def _related(row, field, index, status='3'):
     found = index.get(_text(row, field))
-    if found is None or found.get('status') != '3':
+    if found is None or (status is not None and found.get('status') != status):
         _fail()
     return found
 
 
 def point_coordinates(row):
+    # Point lifecycle differs from address/house lifecycle. Services may omit it.
+    if row.get('status') not in (None,'8'):_fail()
     position = row.get('position')
     if not isinstance(position, dict) or position.get('crs') != 25832:
         _fail()
@@ -96,7 +98,7 @@ def join_addresses(addresses, houses, points, roads, posts, *, postcode=None, ro
         name = _text(named, 'vejnavn')
         if road is not None and name != road:
             _fail()
-        coords = point_coordinates(_related(house, 'adgangspunkt', point_index))
+        coords = point_coordinates(_related(house, 'adgangspunkt', point_index, status=None))
         for field in ('etagebetegnelse', 'doerbetegnelse'):
             # null and empty both mean absent; a missing projected field is unsafe.
             if field not in address or (address[field] is not None and not isinstance(address[field], str)):

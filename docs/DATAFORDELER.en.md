@@ -11,6 +11,8 @@ From beta.8, a saved key routes new road, postcode and boundary downloads throug
 
 Development tests use fictional responses. First try one public road in your own installation and check house numbers and apartment units before downloading a larger area. Testing your real account and HA installation remains a separate owner step.
 
+Beta.38 corrects a point-lifecycle error that could return zero addresses with a valid saved key. Points use a different lifecycle from addresses/houses, and service responses may omit point status. Older GraphQL boundary checkpoints are fetched again automatically; you can also choose **Opdater hele området**. An empty result gives a clear warning and cannot retire all existing local addresses. A real road and area still need testing with your own key.
+
 From beta.30, downloads with your own key no longer require the legacy suggestion service. If suggestions fail, enter the exact official road name and postcode and choose **Hent vej**. Suggestions remain optional help. A small map-area download still gets buildings/road names from OSM, then uses GraphQL for their addresses.
 
 **Can I create a key after 15 January 2027? Yes.** The date closes the old REST access; it is not a deadline for creating API keys. API-key/OAuth access and GraphQL continue afterwards, and new users register in Datafordeler Administration. Connect the new access before the closure to avoid an interruption to new address downloads. An expired or lost key can be replaced in Administration and saved in LTM. See the [official transition description](https://datafordeler.dk/vejledning/transitionsnetvaerk/).

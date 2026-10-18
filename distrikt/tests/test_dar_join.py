@@ -21,7 +21,7 @@ def fixture():
          {'id_lokalId': 'a2', 'status': '3', 'husnummer': 'h1', 'adressebetegnelse': 'Prøvevej 12B, 9999 Prøveby',
           'etagebetegnelse': None, 'doerbetegnelse': ''}],
         [{'id_lokalId': 'h1', 'status': '3', 'husnummertekst': '12B', 'navngivenVej': 'r1', 'postnummer': 'p1', 'adgangspunkt': 'g1'}],
-        [{'id_lokalId': 'g1', 'status': '3', 'position': {'crs': 25832, 'dimension': 'XY', 'wkt': 'POINT (550000 6170000)'}}],
+        [{'id_lokalId': 'g1', 'status': '8', 'position': {'crs': 25832, 'dimension': 'XY', 'wkt': 'POINT (550000 6170000)'}}],
         [{'id_lokalId': 'r1', 'status': '3', 'vejnavn': 'Prøvevej'}],
         [{'id_lokalId': 'p1', 'status': '3', 'postnr': '9999'}],
     ]

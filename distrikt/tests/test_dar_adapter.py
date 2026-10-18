@@ -53,8 +53,8 @@ def tables():
                           {'id_lokalId': 'p2', 'status': '3', 'postnr': '9998', 'navn': 'Prøveby 2'}],
         'DAR_Husnummer': [{'id_lokalId': 'h1', 'status': '3', 'navngivenVej': 'r1', 'postnummer': 'p1', 'adgangspunkt': 'g1', 'husnummertekst': '12B'},
                          {'id_lokalId': 'h2', 'status': '3', 'navngivenVej': 'r1', 'postnummer': 'p2', 'adgangspunkt': 'g2', 'husnummertekst': '14'}],
-        'DAR_Adressepunkt': [{'id_lokalId': 'g1', 'status': '3', 'position': {'crs': 25832, 'dimension': 'XY', 'wkt': 'POINT (550000 6170000)'}},
-                            {'id_lokalId': 'g2', 'status': '3', 'position': {'crs': 25832, 'dimension': 'XY', 'wkt': 'POINT (550100 6170000)'}}],
+        'DAR_Adressepunkt': [{'id_lokalId': 'g1', 'status': '8', 'position': {'crs': 25832, 'dimension': 'XY', 'wkt': 'POINT (550000 6170000)'}},
+                            {'id_lokalId': 'g2', 'status': '8', 'position': {'crs': 25832, 'dimension': 'XY', 'wkt': 'POINT (550100 6170000)'}}],
         'DAR_Adresse': [{'id_lokalId': 'a1', 'status': '3', 'husnummer': 'h1', 'adressebetegnelse': 'Fiktivvej 12B, 2. tv., 9999 Prøveby', 'etagebetegnelse': '2', 'doerbetegnelse': 'tv'},
                         {'id_lokalId': 'a2', 'status': '3', 'husnummer': 'h1', 'adressebetegnelse': 'Fiktivvej 12B, 9999 Prøveby', 'etagebetegnelse': None, 'doerbetegnelse': ''},
                         {'id_lokalId': 'a3', 'status': '3', 'husnummer': 'h2', 'adressebetegnelse': 'Fiktivvej 14, 9998 Prøveby 2', 'etagebetegnelse': None, 'doerbetegnelse': None}],
@@ -166,6 +166,17 @@ class AdapterTests(unittest.TestCase):
 
 
 class TileTests(unittest.TestCase):
+    def test_point_status_may_be_omitted_but_parent_addresses_stay_current(self):
+        rows=tables()
+        for point in rows['DAR_Adressepunkt']:point.pop('status')
+        provider=Provider(rows);adapter=DarAdapter(DarQuery(provider))
+        self.assertEqual(len(adapter.tile([550000,6170000,550100,6170100])['addresses']),3)
+        self.assertEqual(len(adapter.road('r1',postcode='9999')['addresses']),2)
+        for query in provider.calls:
+            for entity,arguments in re.findall(r'(DAR_\w+)\((.*?)\)\s*\{',query):
+                if entity=='DAR_Adressepunkt':self.assertNotIn('status:',arguments)
+                else:self.assertIn('status: { eq: "3" }',arguments)
+
     def test_complete_multisided_tile_keeps_edge_points_and_apartments(self):
         provider = Provider(tables());query = DarQuery(provider, snapshot=STAMP, page_size=1)
         result = DarAdapter(query).tile([550000, 6170000, 550100, 6170100])
@@ -176,7 +187,7 @@ class TileTests(unittest.TestCase):
         self.assertTrue(all('POLYGON' not in call for call in provider.calls[2:]))
 
     def test_padding_removed_locally_and_adjacent_tiles_share_stable_edge_id(self):
-        rows = tables();rows['DAR_Adressepunkt'].append({'id_lokalId': 'padding', 'status': '3',
+        rows = tables();rows['DAR_Adressepunkt'].append({'id_lokalId': 'padding', 'status': '8',
             'position': {'crs': 25832, 'dimension': 'XY', 'wkt': 'POINT (549999.995 6170000)'}})
         query = DarQuery(Provider(rows), snapshot=STAMP)
         result = query.collect_bbox([550000, 6170000, 550100, 6170100])
@@ -218,7 +229,7 @@ class TileTests(unittest.TestCase):
         with self.assertRaises(IncompleteResult):
             DarAdapter(DarQuery(Provider(rows))).tile([550000, 6170000, 550100, 6170100])
         provider = Provider(tables())
-        response = provider('query { DAR_Adressepunkt(where: {status: {eq: "3"}}, first: 1) { nodes { id_lokalId } } }')
+        response = provider('query { DAR_Adressepunkt(where: {status: {eq: "8"}}, first: 1) { nodes { id_lokalId } } }')
         with self.assertRaisesRegex(ValueError, 'network'):
             DarAdapter(DarQuery(Mock(side_effect=[response, ValueError('clean network error')]), page_size=1)).tile([550000, 6170000, 550100, 6170100])
 

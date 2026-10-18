@@ -25,6 +25,8 @@ Lokal administration og gemte adresser kan bruges uden en ny hentning. Det udest
 
 ## Hvad betyder grøn forbindelse?
 
+Fra beta.38 er en fejl i punktstatus rettet: adressepunkter bruger en anden livscyklus end adresser og husnumre. Fejlen kunne give 0 adresser ved en korrekt gemt nøgle. Efter opdateringen genprøves gamle GraphQL-grænsehentninger automatisk; du kan også vælge **Opdater hele området**. Et tomt resultat advarer nu tydeligt. Kontrollér fortsat en virkelig vej og et område med din egen nøgle, før hentningen godkendes som afprøvet.
+
 Fra beta.8 bruger nye vej-, postnummer- og grænsehentninger **DAR GraphQL**, når en nøgle er gemt. LTM henter komplette sider og sammenkobler adresser, husnumre, vejnavne, postnumre og adgangspunkter lokalt. Adresse-ID'er, etage og dør bevares. Uden en nøgle bruges den hidtidige kilde; den varslede udfasning af DAR REST er fortsat 15.01.2027. Adresseforslag i søgefeltet leveres stadig af den særskilte Adressevælger.
 
 En kontrolleret forbindelse bekræfter adgang og gemt nøgle. Automatisk udviklingskontrol bruger opdigtede svar. Prøv derfor først en enkelt offentlig vej i din egen installation, og kontrollér husnumre og lejligheder, før du vælger et større område. Egen konto og levende Datafordeler/HA er et særskilt ejertrin.

@@ -196,6 +196,30 @@ class DarDownloadTests(unittest.TestCase):
         for query in self.provider.calls:self.assertIn(manifest['snapshot'].replace('+00:00', '.000000Z'), query)
         self.download.request.assert_not_called()
 
+    def test_old_empty_graph_checkpoint_is_refetched_instead_of_replayed_as_success(self):
+        self.boundary();self.provider.tables['DAR_Adressepunkt']=[];self.download.boundary({},lambda **kw:None)
+        old=copy.deepcopy(self.store.get('geo','main-boundary-download'));old.pop('point_query_version')
+        for tile in old['tiles']:tile.update(status='done',count=0,address_ids=[])
+        self.store.mutate('geo.main.download.save',{'manifest':old});self.provider.tables=two_roads();self.provider.calls.clear()
+        result=self.download.boundary({},lambda **kw:None)
+        self.assertTrue(result['complete']);self.assertEqual(result['count'],2)
+        self.assertTrue(any('within:' in query for query in self.provider.calls))
+        self.assertEqual(self.store.get('geo','main-boundary-download')['point_query_version'],2)
+
+    def test_verified_empty_boundary_has_explicit_warning_instead_of_checked_address_claim(self):
+        self.boundary();self.provider.tables['DAR_Adressepunkt']=[]
+        result=self.download.boundary({},lambda **kw:None)
+        self.assertEqual(result['count'],0);self.assertTrue(result['warnings']);self.assertTrue(result['empty']);self.assertEqual(result['fetched_count'],0)
+        self.assertNotIn('Alle udsnit er hentet og kontrolleret',result['note'])
+        self.assertIn('Ingen adresser fundet',result['note'])
+
+    def test_empty_graph_refresh_cannot_retire_existing_local_addresses(self):
+        self.boundary();self.download.boundary({},lambda **kw:None)
+        before=copy.deepcopy(self.store.geo_state()['addresses']);self.provider.tables['DAR_Adressepunkt']=[]
+        with self.assertRaisesRegex(ValueError,'ingen adresser'):
+            self.download.boundary({'refresh':True},lambda **kw:None)
+        self.assertEqual(self.store.geo_state()['addresses'],before)
+
     def test_boundary_checkpoint_mismatch_and_source_failure_preserve_addresses(self):
         self.boundary();self.assertTrue(self.download.boundary({}, lambda **kw: None)['complete'])
         before = copy.deepcopy(self.store.geo_state()['addresses']);revision = self.store.revision

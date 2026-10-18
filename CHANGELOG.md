@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.38 · Ret tomme GraphQL-adressehentninger
+
+W62: Punktstatus var fejlagtigt behandlet som adresse-/husnummerstatus 3. DAR-adressepunkter har en særskilt livscyklus med 8 = i brug, og tjenester kan udelade punktstatus. Punktopslag bruger nu entitets-ID/geometri og det fælles faste tidspunkt; husnumre, adresser, veje og postnumre kræver fortsat status 3. Punktsvar uden status og med status 8 accepteres; eksplicit ugyldige punktstatusser og brudte koordinater/relationer afvises. Hentning af vej, postnummer og grænse er dækket af realistiske, fiktive tests.
+
+Gamle GraphQL-grænsecheckpoints genhentes automatisk med rettelsen, så et tidligere tomt udsnit ikke springes over som færdigt. Et reelt tomt resultat får en tydelig advarsel; et tomt GraphQL-svar kan ikke udgå områdets eksisterende lokale adresser. Ejerens prøve i beta.37 bekræftede fejlen; ny faktisk hentning i beta.38 mangler fortsat. Forbindelseskontrol alene er ikke bevis for adressehentning.
+
+Grundlag: [DAR-livscyklus](https://danmarksadresser.dk/adressedata/kodelister/livscyklus) og [DAR GraphQL](https://confluence.kds.dk/pages/viewpage.action?pageId=187105632). Ingen lokale adresser eller nøgler er brugt som testdata.
+
 ## 1.12.0-beta.37 · Backuppåmindelse følger serverens kalender
 
 W52-opfølgning: Sidste backupdato og appens i dag regnes nu i samme lokale serverkalender, også når UTC-datoen er dagen før. Dermed kommer 14-dagespåmindelsen ikke en dag for tidligt omkring midnat. Sommer-/vintertid dækkes af syntetiske tests. Det er en ren beregning ved læsning; tidsstempler, backupfiler, historik og udsættelser ændres ikke.

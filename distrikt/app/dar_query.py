@@ -14,7 +14,7 @@ from dar_join import point_coordinates
 FIELDS = {
     'DAR_Adresse': 'id_lokalId status adressebetegnelse etagebetegnelse doerbetegnelse husnummer',
     'DAR_Husnummer': 'id_lokalId status husnummertekst navngivenVej postnummer adgangspunkt',
-    'DAR_Adressepunkt': 'id_lokalId status position { crs dimension wkt }',
+    'DAR_Adressepunkt': 'id_lokalId position { crs dimension wkt }',
     'DAR_NavngivenVej': 'id_lokalId status vejnavn vejnavnebeliggenhed_vejnavnelinje { crs dimension wkt }',
     'DAR_Postnummer': 'id_lokalId status postnr navn',
 }
@@ -57,7 +57,10 @@ class DarQuery:
         """
         if entity not in FIELDS or not isinstance(filters, dict) or not filters:
             raise ValueError('Vælg en afgrænset DAR-forespørgsel.')
-        clauses = ['status: { eq: "3" }']
+        # Points have their own lifecycle (8 = in use), and point status is not
+        # consistently exposed by services. Current parent addresses/houses are
+        # checked separately; point versions remain pinned to the same snapshot.
+        clauses = [] if entity=='DAR_Adressepunkt' else ['status: { eq: "3" }']
         for field, value in sorted(filters.items()):
             if field not in FILTERS[entity] or not isinstance(value, str) or not value.strip() or len(value) > 1000:
                 raise ValueError('Ugyldigt DAR-opslagsfelt eller værdi.')
@@ -86,9 +89,10 @@ class DarQuery:
             connection = data.get(entity) if isinstance(data, dict) else None
             if isinstance(connection, dict) and isinstance(connection.get('nodes'), list):
                 for row in connection['nodes']:
-                    if (not isinstance(row, dict) or row.get('status') != '3' or
+                    if (not isinstance(row, dict) or (entity!='DAR_Adressepunkt' and row.get('status') != '3') or
                             any(row.get(field) != value for field, value in filters_copy.items())):
                         raise IncompleteResult('DAR-svaret stemte ikke med det afgrænsede opslag.')
+                    if entity=='DAR_Adressepunkt':point_coordinates(row)
             return envelope
 
         filters_copy = dict(filters)
@@ -111,7 +115,7 @@ class DarQuery:
         pw, ps, pe, pn = w-.01, s-.01, e+.01, n+.01
         ring = [(pw, ps), (pe, ps), (pe, pn), (pw, pn), (pw, ps)]
         wkt = 'POLYGON ((' + ', '.join(format(x, '.9f') + ' ' + format(y, '.9f') for x, y in ring) + '))'
-        arguments = ('where: { status: { eq: "3" }, position: { within: { wkt: '
+        arguments = ('where: { position: { within: { wkt: '
                      + json.dumps(wkt) + ', crs: 25832 } } }, virkningstid: '
                      + json.dumps(self.snapshot) + ', registreringstid: ' + json.dumps(self.snapshot)
                      + ', first: ' + str(self.page_size))
@@ -122,7 +126,7 @@ class DarQuery:
             connection = data.get('DAR_Adressepunkt') if isinstance(data, dict) else None
             if isinstance(connection, dict) and isinstance(connection.get('nodes'), list):
                 for node in connection['nodes']:
-                    if not isinstance(node, dict) or node.get('status') != '3':
+                    if not isinstance(node, dict):
                         raise IncompleteResult('DAR-udsnittet indeholdt en ugyldig punktstatus.')
                     x, y = point_coordinates(node)
                     if not (pw <= x <= pe and ps <= y <= pn):
