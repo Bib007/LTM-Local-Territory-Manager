@@ -1,10 +1,9 @@
-# LTM 1.12.0-beta.28
+# LTM 1.12.0-beta.29
 
-W42/W43 · Mindre opgaveliste og menighedsnavn ved logoet.
+W61 · Første del af kritisk oprydning: neutrale felter i adressehentning.
 
-- Navngiv menigheden i Indstillinger. Navnet skal opdateres i topbaren. Lange navne afkortes visuelt; hele teksten findes i feltets titel og som beskrivelse til logoets forsideknap.
-- Efter opsætningsguiden vises en sammenklappet opgaveliste med antal trin tilbage. Åbn listen for genveje, Udført og Spring over. Når alle trin er afsluttet, forsvinder listen. Normal brug er tilgængelig imens.
-- Prøv de nye genveje: menighedsnavn, minimum i mappen, print på begge sider, valgfri Google Drive og første forkynder. Åbning af et trin registrerer det ikke automatisk som udført.
-- Under Printprofiler kan begge sider sættes til Med titler og linjer eller Fortrykt kort · kun oplysninger. Mål og den anden sides profil bevares. Gemning printer ikke og ændrer ingen godkendelser.
+- Faste sted-/adresseeksempler i vejnavn, postnummer og husnummerinterval er erstattet med feltets formål på dansk/engelsk.
+- Den tidligere stedtekst er fjernet fra oversættelser og erstattet med opdigtede testoplysninger i prøverne.
+- Eksisterende gemte adresser, kort og indtastning bevares. Vejnavnesøgningen fungerer som før.
 
-Dansk/engelsk, smalle skærme, lange fiktive navne, rigtig betamarkering, uafhængige printvalg og lokal gemning er prøvet. Ingen private navne, credentials eller eksterne delinger indgår. Main er fortsat stabil 1.11.1.
+Vigtigt: W61 er stadig åben. Tidligere udgivelser, betaer, pakker og Git-historik er endnu ikke renset. W62 om fejlslagen faktisk adressehentning er ikke rettet med denne beta. Grøn forbindelseskontrol er ikke bevis for fungerende hentning. Main er fortsat stabil 1.11.1.

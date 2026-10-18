@@ -14,6 +14,12 @@ const contracts={};const initial=run('JSON.stringify(state)');
  for(const language of ['da','en']){
   run(`I18n.set('${language}');GeoUI.whole=false;GeoUI.focus=['a1'];GeoUI.mode='choose'`);
   contracts[language]=[contract(run('GeoUI.page()'))];run('GeoUI.updatePanel()');contracts[language].push(contract(get('geoSelection').innerHTML));
+  // Search fields start blank and describe their purpose without location examples.
+  const editor=run('GeoUI.page()'),road=run("RoadSearch.field('privacyRoad')");
+  assert.match(road,language==='en'?/placeholder="Road name"/:/placeholder="Vejnavn"/);
+  assert.match(road,/name="road"[^>]*value=""/);
+  assert.match(editor,language==='en'?/placeholder="Postcode"/:/placeholder="Postnummer"/);
+  assert.doesNotMatch(editor,/placeholder="\d+"/);
   assert.match(get('geoHouse').innerHTML,/Adresse &lt;invented&gt;/);assert.doesNotMatch(get('geoHouse').innerHTML,/<invented>/);
   await run("GeoUI.handle('save')");assert.match(get('dialog').innerHTML,language==='en'?/Save address selection on card 101/:/Gem adressevalget på kort 101/);
   run("GeoUI.target='';");await run("GeoUI.handle('save')");contracts[language].push(contract(get('dialog').innerHTML));assert.match(get('dialog').innerHTML,/<option value="By" data-ui="By">/);assert.match(get('dialog').innerHTML,language==='en'?/>Urban<\//:/>By<\//);

@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.29 · Neutrale felter i adressehentning
+
+Faste vej-, postnummer- og husnummereksempler er fjernet fra Hent en vej og adressevalget. Felterne beskriver nu kun deres formål på dansk/engelsk. Den tidligere stedtekst er også fjernet fra oversættelser og erstattet med opdigtede testdata i prøverne. Gemte lokale adresser og den eksisterende vejnavnesøgning bevares.
+
+W61 er fortsat kritisk og åben: rettelsen i denne beta er ikke en færdigmelding af oprydningen i tidligere udgivelser, betaer eller Git-historik. W62 om fejlslagen faktisk API-hentning er en særskilt, endnu ikke rettet fejl.
+
 ## 1.12.0-beta.28 · Kompakt opsætning og menighed i topbaren
 
 Menighedsnavnet vises ved projektets logo i topbaren. Lange navne afkortes visuelt og kan læses i feltets titel; navn og gemmestatus holder sig inden for topbaren, også på mobil og i HA-betaen. Navnet gemmes fortsat kun lokalt.

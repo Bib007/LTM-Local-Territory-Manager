@@ -38,7 +38,7 @@ console.log('Geographic selection, publisher profiles and front-print rendering 
 assert.equal(run("RoadSearch.normalize('Gammel Fiktivvej')"),run("RoadSearch.normalize('Gl. Fiktivvej')"));
 assert.equal(run("RoadSearch.local('gammel', '9999').length"),0);
 run(`GeoUI.data.addresses.push({id:'miss',road:'Gl. Fiktivvej',number:'3',postcode:'9999',floor:'',door:'',lng:10.001,lat:55.001,count:1,type:'Hus',label:'Gl. Fiktivvej 3'});GeoUI.data.status={a1:{card_id:'c3',card_number:'3'},a2:{card_id:'c3',card_number:'3'},miss:{within:[{card_id:'c3',card_number:'3'}]}};`);
-assert.equal(run("RoadSearch.local('gammel Fiktivvej', '9999')[0].road"),'Gl. Fiktivvej');
+assert.equal(run("RoadSearch.local('gammel fiktivvej', '9999')[0].road"),'Gl. Fiktivvej');
 assert.equal(run('missingAddresses().length'),1);
 run("query='';addressTab='Mangler på kort';addressPostcode='';addressPage=0;");assert(run("addressesPage().includes('Tilføj til kort')"));assert(run("addressesPage().includes('Se bort fra')"));
 run("addressTab='Inden for kortgrænse'");assert(run("addressesPage().includes('Grænse for kort 3')"));
