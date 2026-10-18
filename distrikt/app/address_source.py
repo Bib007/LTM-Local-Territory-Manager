@@ -48,7 +48,7 @@ class Datafordeler:
             return raw
         except urllib.error.HTTPError as error:
             if error.code in (408,504):raise SourceTimeout('Datafordeleren svarede ikke inden for tidsgrænsen. Prøv et mindre område eller fortsæt senere.') from None
-            if error.code in (401,403):raise ValueError('Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system.') from None
+            if error.code in (401,403):raise ValueError('Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system. En ny nøgle kan være op til 15 minutter om at blive aktiv. Ventetid er kun én mulig årsag. Prøv forbindelsen igen, når der er gået 15 minutter.') from None
             raise ValueError('Datafordeleren svarede med HTTP '+str(error.code)+'. Prøv igen senere.') from None
         except (OSError,TimeoutError,http.client.HTTPException) as error:
             if isinstance(error,TimeoutError) or isinstance(getattr(error,'reason',None),TimeoutError):

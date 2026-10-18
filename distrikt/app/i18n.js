@@ -3,6 +3,12 @@
 const I18n={
  current:'da',
  english:{
+  "Gem sikkerhedskopi som…":"Save backup as…",
+  "ZIP-sikkerhedskopi":"ZIP backup",
+  "Vælg filnavn og placering med Gem sikkerhedskopi som…, hvis knappen vises. Ellers bruges Hent lokal sikkerhedskopi; placeringen styres af browserens downloadindstillinger, også i desktopudgaven. Ingen automatisk upload.":"Choose a filename and location with Save backup as… when the button is available. Otherwise use Download local backup; the location is controlled by your browser download settings, including in the desktop edition. No automatic upload.",
+  "Filvælgeren er ikke tilgængelig her. Brug Hent lokal sikkerhedskopi, og vælg placering via browserens downloadindstillinger.":"The file picker is unavailable here. Use Download local backup and choose the location through your browser download settings.",
+  "Sikkerhedskopien kunne ikke gemmes på den valgte placering. Kontrollér adgang og ledig plads, eller brug almindelig download.":"The backup could not be saved to the selected location. Check permissions and free space, or use the regular download.",
+  "Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system. En ny nøgle kan være op til 15 minutter om at blive aktiv. Ventetid er kun én mulig årsag. Prøv forbindelsen igen, når der er gået 15 minutter.":"Datafordeler rejected the key. Check the API key for your IT system. A new key may take up to 15 minutes to become active. Activation time is only one possible cause. Try the connection again after 15 minutes.",
   "Distrikt":"Territory",
   "Indstil tryk":"Set up printing",
   "Gem printvalg":"Save print choice",

@@ -156,17 +156,18 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
     def road(self,data,progress):
         road=str(data.get('road','')).strip();post=str(data.get('postcode','')).strip()
         if not 1<=len(road)<=80 or not re.fullmatch(r'\d{4}',post):raise ValueError('Skriv et vejnavn og et firecifret postnummer.')
-        # Resolve spelling/abbreviations explicitly; never select a random fuzzy neighbour.
-        suggestions=self.suggest(road,post)['suggestions']
-        exact=[s for s in suggestions if s['road'].casefold()==road.casefold()]
-        chosen=exact if len(exact)==1 else suggestions
-        if len(chosen)!=1:raise ValueError('Vælg det officielle vejnavn i forslagene under søgefeltet.')
-        road=chosen[0]['road']
         if self.source_id()==GRAPHQL_SOURCE:
             progress(message='Henter den komplette vej via DAR GraphQL…')
             loaded=self.graph_adapter().named_road(road,post)
             addresses=loaded['addresses'];source='DAR / Datafordeleren'
         else:
+            # Legacy spelling resolution must not gate the independent GraphQL API.
+            # Never select a random fuzzy neighbour when using the older source.
+            suggestions=self.suggest(road,post)['suggestions']
+            exact=[s for s in suggestions if s['road'].casefold()==road.casefold()]
+            chosen=exact if len(exact)==1 else suggestions
+            if len(chosen)!=1:raise ValueError('Vælg det officielle vejnavn i forslagene under søgefeltet.')
+            road=chosen[0]['road']
             token=self.token();params={'vejnavn':road,'postnummer':post,'maksimum':200,'token':token};source='DAR / Adressevælger'
             progress(message='Finder gældende DAR-adresser på vejen…')
             found=self.request('adressevaelger.dk','/adresser/soeg',params).get('fund',[])
