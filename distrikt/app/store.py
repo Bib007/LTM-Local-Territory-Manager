@@ -237,7 +237,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields)})
-                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.task','completion.record','visit.save','ib.save','revision.approve')
+                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120} if changed and reversible else None
             finally:self._tracking=None
         if candidate:
@@ -247,7 +247,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
 
     def _mutate(self, action, data, *, geographic=False):
         if action.startswith('setup.'):return self.setup_mutate(action,data)
-        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task'):
+        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete'):
             return self.workflow_mutate(action,data)
         if action in ('card.bulk.preview','card.bulk.create','card.bulk.edit.preview','card.bulk.edit','loan.correct.preview','loan.correct'):
             return self.admin_mutate(action,data)
@@ -354,10 +354,12 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             item['card_id']=c['id'] if c else None
             item['task']=True
             item['text']=clean_text(data.get('text'),1000,True)
+            if 'recurrence' in data:self.task_configure(item,data['recurrence'])
             self.put('notes',item);return {'id':item['id']}
         if action == 'note.resolve':
             item=self.require('notes',data.get('id'))
             if item.get('entity')=='activity':raise ValueError('Vælg en opgave.')
+            if item.get('recurrence'):raise ValueError('Vælg en tilbagevendende opgave og markér den aktuelle forekomst udført.')
             if item.get('card_id'):self.require('cards',item['card_id'])
             if type(data.get('resolved'))!=bool:raise ValueError('Ugyldig opgavestatus.')
             item.update(resolved=data['resolved'],resolved_at=now() if data['resolved'] else None)

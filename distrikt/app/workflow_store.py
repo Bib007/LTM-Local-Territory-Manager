@@ -10,6 +10,18 @@ from admin_store import signature
 
 
 class WorkflowStore:
+    def task_configure(self,item,recurrence):
+        if recurrence is None:
+            item.pop('recurrence',None);return
+        if not isinstance(recurrence,dict) or recurrence.get('frequency')!='weekly' or type(recurrence.get('weekday')) is not int or not 0<=recurrence['weekday']<=6:
+            raise ValueError('Vælg ingen gentagelse eller en ugedag.')
+        previous=item.get('recurrence') or {};weekday=recurrence['weekday']
+        due=previous.get('next_due') if previous.get('frequency')=='weekly' and previous.get('weekday')==weekday else None
+        if not due:
+            day=date.today();due=(day+timedelta(days=(weekday-day.weekday())%7)).isoformat()
+        item['recurrence']={'frequency':'weekly','weekday':weekday,'next_due':due}
+        item['resolved']=False
+
     def workflow_init(self):
         self.revision=uuid.uuid4().hex
         self._geo_cache=None
@@ -30,6 +42,16 @@ class WorkflowStore:
 
     def workflow_mutate(self,action,data):
         from store import clean_text, now
+        if action=='note.complete':
+            item=self.require('notes',data.get('id'));recurrence=item.get('recurrence') or {}
+            if item.get('entity')=='activity' or recurrence.get('frequency')!='weekly':raise ValueError('Vælg en tilbagevendende opgave.')
+            if item.get('card_id'):self.require('cards',item['card_id'])
+            due=recurrence['next_due'];day=date.today()
+            if data.get('due')!=due or due>day.isoformat():raise ValueError('Opgaven er ikke forfalden eller er allerede håndteret. Opdater oversigten.')
+            history=list(item.get('task_history') or []);history.append({'due':due,'date':day.isoformat(),'at':now()})
+            delta=(recurrence['weekday']-day.weekday())%7 or 7
+            item.update(task_history=history,resolved=False,resolved_at=now(),recurrence={**recurrence,'next_due':(day+timedelta(days=delta)).isoformat()})
+            self.put('notes',item);return {'id':item['id']}
         if action=='filter.save':
             config=dict(self.require('settings','config'));views=list(config.get('saved_views',[]))
             name=clean_text(data.get('name'),60,True)
