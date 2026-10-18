@@ -3,6 +3,11 @@
 const I18n={
  current:'da',
  english:{
+  "Datafordeleren afviste forespørgslen ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler rejected the query ({diagnostic}). No addresses from this lookup were saved.",
+  "Datafordeleren afviste forespørgslens felter eller filtre ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler rejected the query fields or filters ({diagnostic}). No addresses from this lookup were saved.",
+  "Datafordeleren afviste adgang til selve dataopslaget ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler denied access to the data lookup ({diagnostic}). No addresses from this lookup were saved.",
+  "Datafordelerens størrelsesgrænse er nået ({diagnostic}). Opslaget skal gøres mindre.":"Datafordeler's query size limit was reached ({diagnostic}). The lookup must be reduced.",
+  "Datafordeleren returnerede et ufuldstændigt svar (GQL-RESULT). Ingen adresser fra opslaget er gemt.":"Datafordeler returned an incomplete response (GQL-RESULT). No addresses from this lookup were saved.",
   "{fetched} DAR-adresser fundet indenfor grænsen · {local} lokale aktive adresser. Kontrollér eventuelle adresseændringer.":"{fetched} DAR addresses found within the boundary · {local} active local addresses. Review any address changes.",
   "Ingen adresser fundet indenfor den gemte grænse. Kontrollér grænsen, og prøv en enkelt vej. En kontrolleret forbindelse er ikke en bekræftet adressehentning.":"No addresses found within the saved boundary. Check the boundary and try a single road. A checked connection does not confirm an address download.",
   "DAR returnerede ingen adresser, selv om området har lokale adresser. Den tomme opdatering er ikke godkendt; eksisterende adresser er bevaret. Prøv en enkelt vej eller opdater området igen.":"DAR returned no addresses although the area has local addresses. The empty update was not approved; existing addresses are preserved. Try a single road or update the area again.",
@@ -1597,7 +1602,7 @@ const I18n={
   "Åbn kortimport":"Open card import"
  },
  content(node,key,params={}){if(!node)return;node.dataset.ui=key;node.dataset.uiParams=JSON.stringify(params);node.textContent=this.format(key,params);node.lang=this.textLanguage(key);},
- errorInfo(error){return {key:error?.uiKey||error?.message||String(error??''),params:error?.uiParams||{},detail:error?.uiDetail||''};},
+ errorInfo(error){let key=error?.uiKey||error?.message||String(error??'');if(!error?.uiKey&&this.current==='en')for(const template of Object.keys(this.english).filter(k=>k.includes('({diagnostic})'))){const escaped=template.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace('\\{diagnostic\\}','([A-Za-z0-9_ ·-]{1,200})');key=key.replace(new RegExp(escaped,'g'),(_,diagnostic)=>this.format(template,{diagnostic}));}return {key,params:error?.uiParams||{},detail:error?.uiDetail||''};},
  errorText(error){const e=this.errorInfo(error);return this.format(e.key,e.params)+(e.detail?' '+e.detail:'');},
  errorHTML(error){const e=this.errorInfo(error);return this.label(e.key,e.params)+(e.detail?' <span lang="da">'+this.escape(e.detail)+'</span>':'');},
  errorContent(node,error){if(!node)return;const e=this.errorInfo(error);if(!e.detail){this.content(node,e.key,e.params);return;}if(node.dataset){delete node.dataset.ui;delete node.dataset.uiParams;}node.textContent=this.errorText(error);node.innerHTML=this.errorHTML(error);},

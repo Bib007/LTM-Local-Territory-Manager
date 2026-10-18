@@ -20,6 +20,7 @@ class SourceUnavailable(ValueError):
     pass
 
 class SourceTimeout(SourceUnavailable):pass
+class SourceLimit(SourceUnavailable):pass
 
 def rest_addresses(items,postcode,road):
     normalized=[]

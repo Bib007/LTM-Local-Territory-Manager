@@ -12,10 +12,36 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from access import write_private
-from postcode import SourceTimeout
+from postcode import SourceTimeout, SourceLimit
 
 BASE='https://graphql.datafordeler.dk/DAR/v3'
 MAX_SCHEMA=8*1024*1024
+
+def reject_graphql(result,query):
+    """Classify provider failures without returning messages, values or paths."""
+    errors=result.get('errors') if isinstance(result,dict) else None
+    if not isinstance(errors,list) or not errors:
+        raise ValueError('Datafordeleren returnerede et ufuldstændigt svar (GQL-RESULT). Ingen adresser fra opslaget er gemt.') from None
+    known=[];categories=[];fields=[]
+    allowed_fields={'id_lokalId','status','position','crs','dimension','wkt','nodes','pageInfo','hasNextPage','endCursor','first','after','where','virkningstid','registreringstid','husnummer','navngivenVej','adgangspunkt','postnummer','postnr','navn','vejnavn','adressebetegnelse','etagebetegnelse','doerbetegnelse','husnummertekst','vejnavnebeliggenhed_vejnavnelinje'}
+    for error in errors:
+        if not isinstance(error,dict):categories.append('GQL-REJECTED');continue
+        message=error.get('message');message=message.casefold() if isinstance(message,str) else ''
+        ext=error.get('extensions');code=ext.get('code') if isinstance(ext,dict) else None
+        if isinstance(code,str) and (re.fullmatch(r'HC\d{4}',code) or code in ('GRAPHQL_VALIDATION_FAILED','GRAPHQL_PARSE_FAILED','AUTH_NOT_AUTHORIZED','AUTH_NOT_AUTHENTICATED','INTERNAL_SERVER_ERROR')):known.append(code)
+        if code=='HC0047' or 'max graphql request size reached' in message or 'maximum allowed cost' in message:categories.append('GQL-LIMIT')
+        elif code in ('AUTH_NOT_AUTHORIZED','AUTH_NOT_AUTHENTICATED') or 'not authorized' in message or 'not authorised' in message:categories.append('GQL-ACCESS')
+        elif code in ('GRAPHQL_VALIDATION_FAILED','GRAPHQL_PARSE_FAILED') or any(s in message for s in ('does not exist','is not defined','unknown field','unknown argument','syntax error','cannot query field')):categories.append('GQL-SCHEMA')
+        else:categories.append('GQL-REJECTED')
+        for field in re.findall(r'(?:field|argument)\s+[\x22\x27`]?([a-z_][a-z0-9_]*)',message):
+            original=next((f for f in allowed_fields if f.casefold()==field),None)
+            if original:fields.append(original)
+    entity=next(iter(re.findall(r'\b(DAR_(?:Adressepunkt|Adresse|Husnummer|NavngivenVej|Postnummer))\s*\(',query)),'DAR')
+    category=next((c for c in categories if c!='GQL-LIMIT'),'GQL-LIMIT' if categories else 'GQL-REJECTED')
+    detail=' · '.join([category,entity]+sorted(set(known))[:3]+sorted(set(fields))[:2])
+    if categories and all(c=='GQL-LIMIT' for c in categories):raise SourceLimit('Datafordelerens størrelsesgrænse er nået ('+detail+'). Opslaget skal gøres mindre.') from None
+    prefix={'GQL-SCHEMA':'Datafordeleren afviste forespørgslens felter eller filtre','GQL-ACCESS':'Datafordeleren afviste adgang til selve dataopslaget'}.get(category,'Datafordeleren afviste forespørgslen')
+    raise ValueError(prefix+' ('+detail+'). Ingen adresser fra opslaget er gemt.') from None
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args):return None
@@ -49,6 +75,10 @@ class Datafordeler:
         except urllib.error.HTTPError as error:
             if error.code in (408,504):raise SourceTimeout('Datafordeleren svarede ikke inden for tidsgrænsen. Prøv et mindre område eller fortsæt senere.') from None
             if error.code in (401,403):raise ValueError('Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system. En ny nøgle kan være op til 15 minutter om at blive aktiv. Ventetid er kun én mulig årsag. Prøv forbindelsen igen, når der er gået 15 minutter.') from None
+            if query is not None and error.code in (400,422):
+                try:body=json.loads(error.read(MAX_SCHEMA+1))
+                except (ValueError,OSError):body=None
+                if isinstance(body,dict) and body.get('errors'):reject_graphql(body,query)
             raise ValueError('Datafordeleren svarede med HTTP '+str(error.code)+'. Prøv igen senere.') from None
         except (OSError,TimeoutError,http.client.HTTPException) as error:
             if isinstance(error,TimeoutError) or isinstance(getattr(error,'reason',None),TimeoutError):
@@ -80,8 +110,7 @@ class Datafordeler:
             result=json.loads(raw)
         except (UnicodeError,json.JSONDecodeError):
             raise ValueError('Datafordeleren returnerede ikke et gyldigt GraphQL-svar.') from None
-        if not isinstance(result,dict) or result.get('errors') or not isinstance(result.get('data'),dict):
-            raise ValueError('Datafordelerens forespørgsel kunne ikke gennemføres fuldstændigt.')
+        if not isinstance(result,dict) or result.get('errors') or not isinstance(result.get('data'),dict):reject_graphql(result,query)
         return result
 
     def connect(self,key):

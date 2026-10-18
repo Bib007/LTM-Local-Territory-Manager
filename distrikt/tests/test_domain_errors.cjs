@@ -21,6 +21,8 @@ const capture=async p=>{try{await p;assert.fail('Expected rejection');}catch(e){
   ['Ukendt databaseversion: {file}',{file:'notes'},'Unknown database version: notes']
  ]){c.body={error:'Original fictional diagnostic',ui_error:{key,params}};run('currentError=RequestError.fromResponse(body)');assert.equal(run('I18n.errorText(currentError)'),expected);assert.equal(JSON.stringify(c.body.ui_error.params),JSON.stringify(params));}
  // Unknown/incomplete/non-scalar metadata never hides the original diagnostic or becomes HTML.
+ assert.match(run("I18n.errorText('Udsnit 1: Datafordeleren afviste forespørgslens felter eller filtre (GQL-SCHEMA · DAR_Adressepunkt · HC0011 · status). Ingen adresser fra opslaget er gemt.')"),/Datafordeler rejected the query fields or filters/);
+ assert.match(run("I18n.errorText('Datafordelerens størrelsesgrænse er nået (GQL-LIMIT · DAR_Adressepunkt · HC0047). Opslaget skal gøres mindre.')"),/query size limit was reached/);
  for(const metadata of [{key:'UNKNOWN TEMPLATE',params:{}},{key:'{field} skal være en gyldig dato.',params:{}},{key:'{field} skal være en gyldig dato.',params:{field:['Dato']}},{key:'{field} skal være en gyldig dato.',params:{field:{value:'Dato'}}},{key:'{field} skal være en gyldig dato.',params:null}]){
   c.body={error:'Original <fictional> {field}',ui_error:metadata};run('currentError=RequestError.fromResponse(body)');assert.equal(run('I18n.errorText(currentError)'),c.body.error);assert.match(run('I18n.errorHTML(currentError)'),/Original &lt;fictional&gt;/);
  }

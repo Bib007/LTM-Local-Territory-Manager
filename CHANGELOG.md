@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.39 · Sikker GraphQL-diagnose og mindre opslag ved størrelsesfejl
+
+W62: Beta.38-prøven fejlede både på grænsen og på en enkelt vej med en generisk GraphQL-afvisning. Den bagvedliggende afvisningsårsag er endnu ikke bekræftet. Fejlteksten viser nu en sikker kategori: GQL-SCHEMA, GQL-ACCESS, GQL-LIMIT, GQL-RESULT eller GQL-REJECTED, opslagets entitet og genkendte fejlkoder/feltnavne. Rå leverandørbeskeder, søgeværdier, URL'er, nøgler og fejlstier vises ikke. Dansk/engelsk bevarer de samme diagnostikkoder.
+
+Kun genkendte størrelsesfejl udløser tilpasning: færre poster pr. side, enkeltopslag i stedet for alias-batches og derefter mindre grænseudsnit. Tidspunkt, filter, cursor og fuldstændighedskontrol bevares; vedvarende fejl stopper begrænset. Andre afvisninger genprøves ikke som størrelsesfejl. HTTP 400/422 med struktureret GraphQL-fejl behandles også. Ingen delvise resultater importeres. Ny faktisk ejerprøve er nødvendig; dette er ikke en færdigmelding af W62.
+
 ## 1.12.0-beta.38 · Ret tomme GraphQL-adressehentninger
 
 W62: Punktstatus var fejlagtigt behandlet som adresse-/husnummerstatus 3. DAR-adressepunkter har en særskilt livscyklus med 8 = i brug, og tjenester kan udelade punktstatus. Punktopslag bruger nu entitets-ID/geometri og det fælles faste tidspunkt; husnumre, adresser, veje og postnumre kræver fortsat status 3. Punktsvar uden status og med status 8 accepteres; eksplicit ugyldige punktstatusser og brudte koordinater/relationer afvises. Hentning af vej, postnummer og grænse er dækket af realistiske, fiktive tests.

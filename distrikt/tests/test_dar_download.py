@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'app'))
 from geodata import Downloads
 from store import Store
 from geography import utm32_to_wgs84
-from postcode import Paused, SourceUnavailable, SourceTimeout
+from postcode import Paused, SourceUnavailable, SourceTimeout, SourceLimit
 from dar_download import road_lines
 from address_checkpoint import GRAPHQL_SOURCE, REST_SOURCE
 from test_dar_adapter import Provider, tables
@@ -255,6 +255,20 @@ class DarDownloadTests(unittest.TestCase):
         self.source.query = Mock(side_effect=ValueError('Fiktiv afvist adgang'))
         with self.assertRaises(SourceUnavailable):self.download.graph_adapter().discover_postcode('9999')
         self.assertNotIn('request_started', self.download.jobs['job'])
+
+    def test_graph_size_limit_keeps_type_and_splits_only_unfinished_tiles(self):
+        self.source.query=Mock(side_effect=SourceLimit('Fiktiv størrelsesgrænse'))
+        with self.assertRaises(SourceLimit):self.download.graph_adapter().discover_postcode('9999')
+        points=[utm32_to_wgs84(x,y) for x,y in [(549900,6169900),(552400,6169900),(552400,6172400),(549900,6172400)]]
+        self.store.mutate('geo.main.save',{'points':points});calls=[]
+        def tile(bounds):
+            calls.append(bounds)
+            if (bounds[2]-bounds[0])*(bounds[3]-bounds[1])>1000000:raise SourceLimit('Fiktiv størrelsesgrænse')
+            return {'addresses':[],'roads':[]}
+        adapter=Mock();adapter.tile.side_effect=tile
+        with patch.object(self.download,'graph_adapter',return_value=adapter):result=self.download.boundary({},lambda **kw:None)
+        self.assertTrue(result['complete']);self.assertLessEqual(len(calls),21)
+        self.assertTrue(all(t['status']=='done' for t in self.store.get('geo','main-boundary-download')['tiles']))
 
     def test_optional_road_geometry_and_xyz_lines(self):
         rows = two_roads()['DAR_NavngivenVej'];lines = road_lines(rows)

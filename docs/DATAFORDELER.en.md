@@ -11,6 +11,8 @@ From beta.8, a saved key routes new road, postcode and boundary downloads throug
 
 Development tests use fictional responses. First try one public road in your own installation and check house numbers and apartment units before downloading a larger area. Testing your real account and HA installation remains a separate owner step.
 
+From beta.39, rejected queries show a sanitized GQL category for schema/filters, data access, size limits or another rejection. Only known codes and field names are shown. Recognized size errors trigger bounded smaller lookups; other failures stop. Try one road first and report only the app's GQL diagnostic if it fails. The beta.38 owner test failed for both a road and the boundary, so working live downloads remain unconfirmed.
+
 Beta.38 corrects a point-lifecycle error that could return zero addresses with a valid saved key. Points use a different lifecycle from addresses/houses, and service responses may omit point status. Older GraphQL boundary checkpoints are fetched again automatically; you can also choose **Opdater hele området**. An empty result gives a clear warning and cannot retire all existing local addresses. A real road and area still need testing with your own key.
 
 From beta.30, downloads with your own key no longer require the legacy suggestion service. If suggestions fail, enter the exact official road name and postcode and choose **Hent vej**. Suggestions remain optional help. A small map-area download still gets buildings/road names from OSM, then uses GraphQL for their addresses.

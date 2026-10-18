@@ -9,6 +9,7 @@ import math
 from datetime import datetime, timezone
 from dar_paging import collect_pages, IncompleteResult
 from dar_join import point_coordinates
+from postcode import SourceLimit
 
 # Explicit projections avoid relying on the provider's incomplete join relations.
 FIELDS = {
@@ -77,13 +78,24 @@ class DarQuery:
         return ((alias + ': ' if alias else '') + entity + '(' + arguments + cursor + ') { nodes { '
                 + FIELDS[entity] + ' } pageInfo { hasNextPage endCursor } }')
 
+    def _page(self,entity,arguments,after,size):
+        prefix,separator,_=arguments.rpartition('first: ')
+        if not separator:raise ValueError('Ugyldig DAR-sideafgrænsning.')
+        while True:
+            self.check_cancel()
+            try:return self.request('query { '+self._selection(entity,prefix+'first: '+str(size),after)+' }'),size
+            except SourceLimit:
+                if size==1:raise
+                size=max(1,size//5)
+
     def collect(self, entity, filters, *, max_pages=2000, max_nodes=200000):
         """Collect one complete equality-filtered scope before returning any rows."""
         arguments = self._arguments(entity, filters)
+        size=self.page_size
 
         def fetch(after):
-            query = 'query { ' + self._selection(entity, arguments, after) + ' }'
-            envelope = self.request(query)
+            nonlocal size
+            envelope,size=self._page(entity,arguments,after,size)
             # A broken/changed filter must fail, not silently retire local data.
             data = envelope.get('data') if isinstance(envelope, dict) else None
             connection = data.get(entity) if isinstance(data, dict) else None
@@ -119,9 +131,11 @@ class DarQuery:
                      + json.dumps(wkt) + ', crs: 25832 } } }, virkningstid: '
                      + json.dumps(self.snapshot) + ', registreringstid: ' + json.dumps(self.snapshot)
                      + ', first: ' + str(self.page_size))
+        size=self.page_size
 
         def fetch(after):
-            result = self.request('query { ' + self._selection('DAR_Adressepunkt', arguments, after) + ' }')
+            nonlocal size
+            result,size=self._page('DAR_Adressepunkt',arguments,after,size)
             data = result.get('data') if isinstance(result, dict) else None
             connection = data.get('DAR_Adressepunkt') if isinstance(data, dict) else None
             if isinstance(connection, dict) and isinstance(connection.get('nodes'), list):
@@ -178,7 +192,11 @@ class DarQuery:
             batch = scopes[start:start + batch_size]
             selections = [self._selection(entity, arguments, alias='scope_' + str(i))
                           for i, (_, arguments) in enumerate(batch)]
-            envelope = request('query { ' + ' '.join(selections) + ' }')
+            try:envelope = request('query { ' + ' '.join(selections) + ' }')
+            except SourceLimit:
+                if batch_size==1 and self.page_size==1:raise
+                worker=DarQuery(request,snapshot=self.snapshot,page_size=max(1,self.page_size//5),check_cancel=self.check_cancel)
+                return worker.collect_many(entity,field,[value for value,_ in scopes],require_all=require_all,batch_size=1,max_requests=max(1,requests_left),max_nodes=max_nodes)
             data = envelope.get('data') if isinstance(envelope, dict) else None
             if (not isinstance(data, dict) or envelope.get('errors') or
                     any('scope_' + str(i) not in data for i in range(len(batch)))):

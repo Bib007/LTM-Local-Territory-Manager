@@ -6,7 +6,7 @@ from admin_store import signature
 from address_checkpoint import GRAPHQL_SOURCE, checkpoint_source, require_source
 from dar_download import road_lines
 from geography import wgs84_to_utm32, point_in_polygon
-from postcode import HOST, BASE, Paused, SourceUnavailable, SourceTimeout, rest_addresses, rest_road_lines
+from postcode import HOST, BASE, Paused, SourceUnavailable, SourceTimeout, SourceLimit, rest_addresses, rest_road_lines
 
 def boundary_tiles(points):
     projected=[]
@@ -80,12 +80,12 @@ class BoundaryDownload:
                     self.check_cancel();tile.update(status='done',count=len(addresses),address_ids=[a['id'] for a in addresses]);tile.pop('error',None)
                     self.store.mutate('geo.main.download.tile',{'manifest':manifest,'records':addresses,'lines':lines})
                     done+=1
-                except SourceTimeout as err:
+                except (SourceTimeout,SourceLimit) as err:
                     self.check_cancel();children=smaller_tiles(tile)
                     if children and len(tiles)+3<=500:
                         tiles[index:index+1]=children;total=len(tiles)
                         self.store.mutate('geo.main.download.save',{'manifest':manifest})
-                        progress(completed=done,total=total,message=f'Udsnit {index+1} fik timeout. Området er delt i fire mindre udsnit; fortsætter…')
+                        progress(completed=done,total=total,message=f'Udsnit {index+1} nåede tids- eller størrelsesgrænsen. Området er delt i fire mindre udsnit; fortsætter…')
                         continue
                     tile.update(status='error',error=str(err));stop_reason=f'Hentningen er stoppet ved udsnit {index+1}. '+str(err)
                     self.store.mutate('geo.main.download.save',{'manifest':manifest})
