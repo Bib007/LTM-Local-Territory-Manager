@@ -1,6 +1,7 @@
 """One-time local setup and IB imports; previews in RAM, writes in existing files."""
 import csv
 import io
+import json
 import re
 import time
 import uuid
@@ -32,6 +33,50 @@ def defaults(data):
 
 
 class SetupStore:
+    def onboarding_after_write(self,action,data):
+        """Advance only from a successful domain write, within its transaction.
+
+        Connection checks and whole-list owner reviews remain explicit. Opening
+        a form, previewing data, restarting or reading state cannot complete tasks.
+        """
+        events={
+            'settings.save':('congregation','folder'),
+            'print.profile.save':('printing',),
+            'publisher.save':('publisher',),
+            'card.save':('cards',),'card.bulk.create':('cards',),
+            'setup.card-import.apply':('cards',),'setup.apply':('cards',),
+            'geo.main.save':('boundary',),'setup.ib.apply':('ib',),
+            'backup.record':('backup',),
+            'setup.onboarding.save':('congregation','folder','printing','publisher','cards','boundary','ib','backup'),
+        }
+        if action not in events:return
+        config=dict(self.require('settings','config'));previous=config.get('onboarding') or {}
+        answers=previous.get('answers') or {}
+        if not previous.get('completed') or not answers:return
+        tasks=dict(previous.get('tasks') or {});updated=dict(tasks)
+        checks={
+            'congregation':bool(config.get('congregation')),
+            'folder':config.get('folder_minimum_configured') is True,
+            'printing':all(side in (config.get('print_profiles') or {}) for side in ('front','back')),
+            'publisher':lambda:bool(self.all('publishers')),
+            'cards':lambda:bool([c for c in self.all('cards') if not c.get('archived')]),
+            'boundary':lambda:bool(self.main_boundary()),
+            'ib':lambda:bool(self.all('ib')),
+            'backup':bool(config.get('last_backup')),
+        }
+        for event in events[action]:
+            task=answers.get('cards') if event=='cards' else ('kml' if answers.get('boundary')=='yes' else 'boundary') if event=='boundary' else event
+            if event=='boundary' and answers.get('mode')!='map' or event=='ib' and answers.get('ib')!='yes':continue
+            if updated.get(task) in ('done','skipped'):continue
+            if event=='folder' and action=='settings.save':
+                row=self._tracking.get(('settings','config')) if self._tracking is not None else None
+                before=json.loads(row[1]) if row else {}
+                if data.get('folder_minimum_confirmed') is not True and before.get('folder_minimum')==config.get('folder_minimum'):continue
+            check=checks[event]
+            if (check() if callable(check) else check):updated[task]='done'
+        if updated!=tasks:
+            config['onboarding']={**previous,'tasks':updated};self.put('settings',config)
+
     def setup_signature(self,ib=False):
         return signature([self.main_boundary(),self.all('cards')+self.all('cards',deleted=True),self.all('ignored'),[a for a in self.all('geo') if a.get('entity') in ('address','road')],[a for a in self.all('settings') if a.get('id')!='config'],self.all('ib') if ib else []])
     def setup_remember(self,kind,payload):

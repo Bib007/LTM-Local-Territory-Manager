@@ -134,8 +134,8 @@ class Restores:
             with self.store.transaction():
                 self.store._dirty_modules.update(MODULES)
                 for module in MODULES:self.store.db.execute('DELETE FROM '+self.store.alias(module)+'.records')
-                self.store.put('settings',{'id':'config','congregation':'','folder_minimum':30,
-                    'rural_mode':'auto','rural_minimum':5,'require_revision':False,'schema':1})
+                self.store.put('settings',{'id':'config','congregation':'','folder_minimum':0,
+                    'rural_mode':'auto','rural_minimum':0,'require_revision':False,'schema':1})
             self.store.workflow_init()
             self.pending.clear()
             return {'ok':True,'safety_backup':filename}
