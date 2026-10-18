@@ -43,7 +43,7 @@ class DarDownloadTests(unittest.TestCase):
         self.download.request = Mock(side_effect=AssertionError('Unexpected legacy/OSM request'))
 
     def test_named_road_import_uses_graphql_and_preserves_units(self):
-        self.download.suggest = Mock(return_value={'suggestions': [{'road': 'Fiktivvej', 'postcode': '9999'}]})
+        self.download.suggest = Mock(side_effect=AssertionError('GraphQL must not depend on legacy suggestions'))
         result = self.download.road({'road': 'Fiktivvej', 'postcode': '9999'}, lambda **kw: None)
         self.assertEqual(result['count'], 2)
         addresses = self.store.geo_state()['addresses']
@@ -51,6 +51,7 @@ class DarDownloadTests(unittest.TestCase):
         self.assertTrue(all(row['source'] == 'DAR / Datafordeleren' for row in addresses))
         self.assertEqual(next(row for row in addresses if row['id'] == 'dar:a1')['door'], 'tv')
         self.download.request.assert_not_called()
+        self.download.suggest.assert_not_called()
 
     def test_postcode_commits_roads_and_checkpoint_at_same_snapshot(self):
         result = self.download.postcode({'postcode': '9999'}, lambda **kw: None)
@@ -62,6 +63,33 @@ class DarDownloadTests(unittest.TestCase):
         for query in self.provider.calls:
             self.assertIn(manifest['snapshot'], query)
         self.download.request.assert_not_called()
+
+    def test_area_road_addresses_do_not_need_legacy_suggestions(self):
+        point = utm32_to_wgs84(550000, 6170000)
+        self.download.request = Mock(return_value={'elements': [{'id': 'fixture-road',
+            'tags': {'highway': 'residential', 'name': 'Fiktivvej'},
+            'geometry': [{'lon': point[0], 'lat': point[1]},
+                         {'lon': point[0]+.0001, 'lat': point[1]+.0001}]}]})
+        self.download.suggest = Mock(side_effect=AssertionError('Legacy suggestions unavailable'))
+        result = self.download.area({'postcode': '9999',
+            'bbox': [point[0]-.001, point[1]-.001, point[0]+.001, point[1]+.001]}, True, lambda **kw: None)
+        self.assertEqual(result['roads_downloaded'], 1)
+        self.assertEqual(result['warnings'], [])
+        self.assertEqual(len(self.store.geo_state()['addresses']), 2)
+        self.download.suggest.assert_not_called()
+        self.download.request.assert_called_once()
+        self.assertEqual(self.download.request.call_args.args[0], 'overpass-api.de')
+
+    def test_failed_graphql_road_preserves_existing_local_records(self):
+        self.download.suggest = Mock(side_effect=AssertionError('Legacy suggestions unavailable'))
+        self.download.road({'road': 'Fiktivvej', 'postcode': '9999'}, lambda **kw: None)
+        before = copy.deepcopy(self.store.geo_state());revision = self.store.revision
+        self.source.query = Mock(side_effect=ValueError('Fiktiv forbindelsesfejl'))
+        with self.assertRaises(SourceUnavailable):
+            self.download.road({'road': 'Fiktivvej', 'postcode': '9999'}, lambda **kw: None)
+        self.assertEqual(self.store.geo_state(), before)
+        self.assertEqual(self.store.revision, revision)
+        self.download.suggest.assert_not_called()
 
     def test_same_name_with_multiple_official_ids_is_one_complete_retirement_scope(self):
         self.provider.tables['DAR_NavngivenVej'][1]['vejnavn'] = 'Fiktivvej'

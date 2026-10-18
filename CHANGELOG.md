@@ -1,5 +1,19 @@
 # Ændringsliste
 
+## 1.12.0-beta.30 · API-hentning og sikkerhedskopi
+
+W62: Hentning af en vej med egen Datafordeler-nøgle afhænger ikke længere af det gamle systems vejforslag. Det gælder også vejene i et lille OSM-kortudsnit. Den nye kilde bruger det præcise officielle vejnavn og postnummer; der vælges ikke en tilfældig nabovej. Regler for komplette adresser, lejligheder, opdateringer og bevarelse af lokale data er uændrede. Rettelsen er testet med fiktive svar; ejerens rigtige API-hentning skal fortsat bekræftes.
+
+W55: Ved HTTP 401/403 forklares på dansk/engelsk, at en ny nøgle kan være op til 15 minutter om at blive aktiv. Afvist adgang og nøglekontrol beskrives fortsat; andre net-/serverfejl forklares ikke som aktiveringstid. Prøv forbindelse er fortsat en bevidst handling.
+
+W46: Indstillinger tilbyder Gem sikkerhedskopi som… i sikre browserkontekster med understøttet filvælger. Filnavn og placering vælges før hentningen. Annullering henter intet og registrerer ikke en backup. Først en afsluttet filskrivning registreres som gemt. Almindelig download og hjælp til browserens placering er bevaret, også i desktopudgaven; ingen automatisk upload.
+
+W61: Udgivelsespakker og grene/tags er renset; GitHub-cache, gamle PR-henvisninger og resterende udgivelsesmetadata afventer ekstern oprydning. W63: Det brede eftersyn af faste eksempler er afsluttet med en ny test af tomme hentefelter. Main er fortsat stabil 1.11.1.
+
+## 1.12.0-beta.29 · Neutrale adressefelter
+
+Faste sted-/adresseeksempler er erstattet med neutrale feltbeskrivelser på dansk/engelsk. Egne lokale data og dynamiske vejforslag er bevaret.
+
 ## 1.12.0-beta.28 · Kompakt opsætning og menighed i topbaren
 
 Menighedsnavnet vises ved projektets logo i topbaren. Lange navne afkortes visuelt og kan læses i feltets titel; navn og gemmestatus holder sig inden for topbaren, også på mobil og i HA-betaen. Navnet gemmes fortsat kun lokalt.

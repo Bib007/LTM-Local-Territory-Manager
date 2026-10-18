@@ -29,6 +29,8 @@ Fra beta.8 bruger nye vej-, postnummer- og grænsehentninger **DAR GraphQL**, n�
 
 En kontrolleret forbindelse bekræfter adgang og gemt nøgle. Automatisk udviklingskontrol bruger opdigtede svar. Prøv derfor først en enkelt offentlig vej i din egen installation, og kontrollér husnumre og lejligheder, før du vælger et større område. Egen konto og levende Datafordeler/HA er et særskilt ejertrin.
 
+Fra beta.30 er hentning med egen nøgle uafhængig af det gamle systems vejforslag. Hvis forslagstjenesten fejler, kan du skrive det præcise officielle vejnavn og postnummer og vælge **Hent vej**. Forslagene er fortsat en hjælp, ikke et krav for GraphQL. Et lille kortudsnit med bygninger/vejnavne bruger stadig OSM; adresserne til de fundne veje hentes via GraphQL.
+
 ## Fortsæt eller opdater en tidligere hentning
 
 En gemt hentning har et fast tidspunkt, en kilde og et skemafingeraftryk. Ved pause/genstart springes færdige veje eller udsnit over, mens manglende dele hentes med det samme tidspunkt. En ufuldstændig vej/et ufuldstændigt udsnit gemmes ikke som komplet. Netfejl stopper ved den aktuelle del; lokale adresser bevares.
@@ -44,6 +46,7 @@ Nøglen gemmes separat fra registreringerne i installationens private datamappe.
 ## Hvis kontrollen fejler
 
 - Ved afvist adgang: kontrollér at du har kopieret en API-key fra det rigtige IT-system. En OAuth Shared Secret er en anden credential og kan ikke sættes ind som API-key.
+- En helt ny API-key kan være op til **15 minutter** om at blive aktiv. Det er kun én mulig årsag til afvist adgang, ikke en forklaring på alle fejl. Vent til de 15 minutter er gået, og vælg bevidst **Kontrollér gemt forbindelse** igen. Net- og serverfejl vises fortsat særskilt.
 - Ved netfejl: prøv igen senere. En mislykket kontrol erstatter ikke den gemte nøgle.
 - Hvis nøglen er udløbet eller deaktiveret: forny eller opret den i Datafordeler Administration og gem erstatningen i LTM.
 - Send ikke nøglen i chat, skærmbilleder eller GitHub-feedback. Den indtastes kun i din lokale app.
@@ -51,5 +54,6 @@ Nøglen gemmes separat fra registreringerne i installationens private datamappe.
 ## Kilder
 
 - [Officiel vejledning: autentifikationsmetoder og oprettelse af API-key](https://confluence.kds.dk/pages/viewpage.action?pageId=187105503).
+- [Datafordeler Administration: aktivering af nye API-nøgler](https://datafordeler.dk/media/lggned4a/20260219-datafordeler-administration.pdf).
 - [DAR GraphQL](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/).
 - [LTM's overgangsplan](ADRESSEKILDE-2027.md).

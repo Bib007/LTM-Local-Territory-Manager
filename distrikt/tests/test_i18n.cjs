@@ -28,6 +28,7 @@ assert.equal(e.nodes.navigationLanguage.focused,true);
 assert.equal(JSON.stringify(e.context.state),before);assert.equal(e.nodes.custom.textContent,'Forside');
 assert.deepEqual(e.writes,['ltm-language']);assert.equal(e.stored.get('ltm-language'),'en');
 assert.equal(e.run("I18n.text('Unknown fictional road')"),'Unknown fictional road');
+assert.match(e.run("I18n.errorText(new Error('Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system. En ny nøgle kan være op til 15 minutter om at blive aktiv. Ventetid er kun én mulig årsag. Prøv forbindelsen igen, når der er gået 15 minutter.'))"),/rejected the key.*15 minutes.*only one possible cause/);
 assert.equal(e.run("I18n.set('<script>')"),false);assert.equal(e.run('I18n.language()'),'en');
 const englishTargets=e.run('Navigation.html().match(/data-navigation="[^"]+"/g).join()');
 e.run("I18n.set('da');Navigation.localize()");assert.equal(e.run('Navigation.html().match(/data-navigation="[^"]+"/g).join()'),englishTargets);

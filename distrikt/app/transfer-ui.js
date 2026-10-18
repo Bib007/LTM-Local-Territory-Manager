@@ -1,5 +1,6 @@
 'use strict';
 const TransferUI={previewGeneration:0,writeBusy:false,
+ saveHTML(){return `${canChooseBackupLocation()?`<button data-action="backup-save">${ui('Gem sikkerhedskopi som…')}</button>`:''}<p class="hint">${ui('Vælg filnavn og placering med Gem sikkerhedskopi som…, hvis knappen vises. Ellers bruges Hent lokal sikkerhedskopi; placeringen styres af browserens downloadindstillinger, også i desktopudgaven. Ingen automatisk upload.')}</p>`;},
  context(){return {page,generation:openDialog.generation};},
  current(context){return page===context.page&&openDialog.generation===context.generation&&el('dialog').open;},
  reviewLater(){const error=new RequestError('En nyere redigering er åbnet. Opdater igen, når du er færdig.','response');WriteGuard.requireRefresh(error);toast(error);},

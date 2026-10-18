@@ -77,10 +77,12 @@ class AddressSourceTests(unittest.TestCase):
                 make.return_value.open.side_effect=urllib.error.HTTPError('https://fake.invalid/?apiKey='+KEY,status,KEY,{},None)
                 with self.assertRaises(ValueError) as error:self.client._request(KEY)
                 self.assertNotIn(KEY,str(error.exception));self.assertNotIn('fake.invalid',str(error.exception))
+                self.assertEqual('15 minutter' in str(error.exception),status in (401,403))
         with patch('address_source.urllib.request.build_opener') as make:
             make.return_value.open.side_effect=urllib.error.URLError(KEY)
             with self.assertRaises(ValueError) as error:self.client._request(KEY)
             self.assertNotIn(KEY,str(error.exception))
+            self.assertNotIn('15 minutter',str(error.exception))
 
     def test_portable_backup_excludes_key_and_beta_reset_keeps_connection(self):
         store=Store(self.temp.name);self.addCleanup(store.close);self.connect()

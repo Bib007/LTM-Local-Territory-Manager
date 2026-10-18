@@ -11,6 +11,8 @@ From beta.8, a saved key routes new road, postcode and boundary downloads throug
 
 Development tests use fictional responses. First try one public road in your own installation and check house numbers and apartment units before downloading a larger area. Testing your real account and HA installation remains a separate owner step.
 
+From beta.30, downloads with your own key no longer require the legacy suggestion service. If suggestions fail, enter the exact official road name and postcode and choose **Hent vej**. Suggestions remain optional help. A small map-area download still gets buildings/road names from OSM, then uses GraphQL for their addresses.
+
 **Can I create a key after 15 January 2027? Yes.** The date closes the old REST access; it is not a deadline for creating API keys. API-key/OAuth access and GraphQL continue afterwards, and new users register in Datafordeler Administration. Connect the new access before the closure to avoid an interruption to new address downloads. An expired or lost key can be replaced in Administration and saved in LTM. See the [official transition description](https://datafordeler.dk/vejledning/transitionsnetvaerk/).
 
 ## Current status
@@ -32,3 +34,5 @@ The key stays in the installation's private data folder, separate from SQLite. I
 Only the fixed official Datafordeler host receives the key for authentication. Connectivity checks send no local records. Downloads send public road/postcode/entity lookups or rectangular tiles. The exact territory boundary is filtered locally. Cards, publishers and do-not-call records are never sent. Do not send your key in chat, screenshots or GitHub feedback.
 
 For rejected access, check that this is an API key for the right IT system, rather than an OAuth shared secret. For network failures, resume later. Replace expired or deactivated keys locally. [Official API-key instructions](https://confluence.kds.dk/pages/viewpage.action?pageId=187105503).
+
+A newly created API key can take up to **15 minutes** to become active. This is only one possible reason for rejected access, not an explanation for every failure. After 15 minutes, explicitly retry **Kontrollér gemt forbindelse**. Network/server errors remain separate. [Official Administration guide](https://datafordeler.dk/media/lggned4a/20260219-datafordeler-administration.pdf).
