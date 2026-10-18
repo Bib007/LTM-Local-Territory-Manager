@@ -1,6 +1,6 @@
 """Read-only DAR road/postcode/tile adapter used by Downloads.
 
-Queries, aliases and joins share one snapshot. No local store or checkpoint is
+Queries and joins share one snapshot. No local store or checkpoint is
 read or changed here; callers must only import a complete returned result.
 """
 import re

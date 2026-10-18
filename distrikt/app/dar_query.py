@@ -153,12 +153,12 @@ class DarQuery:
 
     def collect_many(self, entity, field, values, *, require_all=False,
                      batch_size=10, max_requests=2000, max_nodes=200000):
-        """Batch first pages with aliases; retain complete independent pagination.
+        """Collect complete scopes through one unaliased root per request.
 
-        Uses only the existing scalar equality filters, avoiding assumptions about
-        provider-specific IN filters. One alias has its own cursor and scope. Most
-        ID lookups finish on their first page, reducing transport round trips.
-        Any missing alias, partial error or missing required ID fails the whole call.
+        DAR rejects even a single root alias. Keep each scope's filters, cursor
+        and snapshot unchanged and share the request/node budgets across them.
+        batch_size is retained for call compatibility; it never combines roots.
+        No rows escape if any scope, required ID or later page fails.
         """
         if (entity not in FILTERS or field not in FILTERS[entity] or
                 type(batch_size) is not int or not 1 <= batch_size <= 10 or
@@ -188,43 +188,19 @@ class DarQuery:
             self.check_cancel()
             return result
 
-        for start in range(0, len(scopes), batch_size):
-            batch = scopes[start:start + batch_size]
-            selections = [self._selection(entity, arguments, alias='scope_' + str(i))
-                          for i, (_, arguments) in enumerate(batch)]
-            try:envelope = request('query { ' + ' '.join(selections) + ' }')
-            except SourceLimit:
-                if batch_size==1 and self.page_size==1:raise
-                worker=DarQuery(request,snapshot=self.snapshot,page_size=max(1,self.page_size//5),check_cancel=self.check_cancel)
-                return worker.collect_many(entity,field,[value for value,_ in scopes],require_all=require_all,batch_size=1,max_requests=max(1,requests_left),max_nodes=max_nodes)
-            data = envelope.get('data') if isinstance(envelope, dict) else None
-            if (not isinstance(data, dict) or envelope.get('errors') or
-                    any('scope_' + str(i) not in data for i in range(len(batch)))):
-                raise IncompleteResult('Datafordelerens masseopslag kunne ikke hentes fuldstændigt.')
-            for i, (value, _) in enumerate(batch):
-                initial = {'data': {entity: data['scope_' + str(i)]}}
-                first = True
-
-                def fetch(query):
-                    nonlocal first
-                    if first:
-                        first = False
-                        return initial
-                    return request(query)
-
-                worker = DarQuery(fetch, snapshot=self.snapshot, page_size=self.page_size,
-                                  check_cancel=self.check_cancel)
-                # collect_pages validates every alias's first and subsequent pages.
-                found = worker.collect(entity, {field: value}, max_nodes=max_nodes,
-                                       max_pages=max_requests + 1)
-                if require_all and len(found) != 1:
-                    raise IncompleteResult('Et nødvendigt DAR-ID manglede. Ingen adresser er klar til import.')
-                if len(rows) + len(found) > max_nodes:
-                    raise IncompleteResult('DAR-opslaget indeholdt for mange resultater.')
-                for node in found:
-                    if node['id_lokalId'] in identities:
-                        raise IncompleteResult('Datafordeleren gentog et ID på tværs af opslag.')
-                    identities.add(node['id_lokalId'])
-                rows.extend(found)
+        worker = DarQuery(request, snapshot=self.snapshot, page_size=self.page_size,
+                          check_cancel=self.check_cancel)
+        for value, _ in scopes:
+            found = worker.collect(entity, {field: value}, max_nodes=max_nodes,
+                                   max_pages=max_requests + 1)
+            if require_all and len(found) != 1:
+                raise IncompleteResult('Et nødvendigt DAR-ID manglede. Ingen adresser er klar til import.')
+            if len(rows) + len(found) > max_nodes:
+                raise IncompleteResult('DAR-opslaget indeholdt for mange resultater.')
+            for node in found:
+                if node['id_lokalId'] in identities:
+                    raise IncompleteResult('Datafordeleren gentog et ID på tværs af opslag.')
+                identities.add(node['id_lokalId'])
+            rows.extend(found)
         self.check_cancel()
         return rows
