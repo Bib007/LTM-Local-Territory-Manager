@@ -55,7 +55,7 @@ class WorkflowStore:
             return self.restructure(action,data)
         if action=='note.task':
             n=self.require('notes',data.get('id'))
-            if n.get('entity')=='activity':raise ValueError('Vælg en note.')
+            if n.get('entity')=='activity':raise ValueError('Vælg en opgave.')
             n['task']=True;n['resolved']=False;self.put('notes',n);return {'id':n['id']}
         if action=='address.change.review':
             self._dirty_modules.add('geo')

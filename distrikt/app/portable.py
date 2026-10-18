@@ -109,6 +109,7 @@ class Restores:
                     alias=self.store.alias(module)
                     self.store.db.execute('DELETE FROM '+alias+'.records')
                     self.store.db.executemany('INSERT INTO '+alias+'.records(id,payload,deleted_at,batch) VALUES(?,?,?,?)',rows)
+                self.store.migrate_tasks()
                 # Never resume public uploads from a different installation or an older backup.
                 for item in self.store.all('maps'):
                     if item.get('entity')=='publication':

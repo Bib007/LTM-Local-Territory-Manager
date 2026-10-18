@@ -71,6 +71,8 @@ html{scroll-padding-top:calc(var(--shell-height) + 15px)}
 
 .districtMap.mapGestureLocked{touch-action:pan-y!important;cursor:default}.mapGestureHint{margin:8px 0;line-height:1.6}.mapGestureControls{margin:10px 0}.mapGestureControls button[aria-pressed=true]{background:#245840;border-color:#6ea98d}
 
+.taskAlert{display:block;margin-top:7px;background:#523b20;color:#ffe0a6;border:1px solid #ae813e;font-weight:600}.issueTaskAlert{position:static;inset:auto;transform:none;width:auto;max-width:100%;padding:14px;margin:14px 0;background:#512f2d;border:2px solid #c98068;border-radius:6px;color:#ffe3d6;box-shadow:none;overflow-wrap:anywhere}.issueTaskAlert ul{padding-left:22px}.issueTaskAlert li{white-space:pre-wrap;margin:6px 0}.issueTaskAlert p{font-size:12px;line-height:1.6}.navTaskCount{margin-left:auto;background:#493c26;border:1px solid #997737;border-radius:10px;padding:2px 7px;font-size:11px}
+
 /* Choice radios must not inherit the full-width text-field rule in dialogs. */
 .welcomeChoice>input[type=radio]{width:18px;height:18px;min-height:18px;flex:0 0 18px;margin:3px 0 0;accent-color:var(--accent)}
 .welcomeChoice>span{min-width:0;flex:1;overflow-wrap:anywhere}
