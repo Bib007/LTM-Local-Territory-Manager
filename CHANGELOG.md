@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.34 · Opsætning følger gemte handlinger
+
+W47: Relevante opsætningstrin afsluttes automatisk efter en gennemført gemning: menighed, mappeminimum, begge printprofiler, forkynder, kort, ydergrænse, IB-import og registreret backup. Fremdriften gemmes i samme transaktion som handlingen og følger med ved Fortryd. Åbning, forhåndsvisning og afvist gemning tæller ikke. Spring over og eksisterende fremdrift bevares. Forbindelser og den samlede gennemgang af udleveringer bekræftes fortsat manuelt; én registrering beviser ikke, at hele gennemgangen er færdig.
+
+Nye installationer og en udtrykkeligt godkendt beta-nulstilling starter med mappeminimum 0, også for land. Eksisterende valg ændres ikke. Mappetrinnet afsluttes ved et ændret minimum eller et eksplicit indtastet og gemt 0; en uvedkommende indstillingsgemning godkender ikke standardværdien.
+
 ## 1.12.0-beta.33 · Hurtig oprettelse med inklusivt interval
 
 W54: Hurtig oprettelse har et særskilt intervalvalg med start/slut inklusive, valgfrit antal cifre/nuludfyldning og ét valgfrit foranstillet bogstav. 0–300 med fire cifre giver 0000–0300, i alt 301 kort. Bogstavet og nuludfyldningen indgår i den synlige forhåndsvisning. Højst 500 kort oprettes ad gangen, og den eksisterende egen liste er uændret; her betyder 1–10 stadig ét bogstaveligt kortnummer.

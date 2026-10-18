@@ -6,6 +6,8 @@ These features are prepared for the next app version; use a complete release whe
 
 ### A useful starting point
 
+From beta.34, relevant setup steps complete automatically when settings or records are actually saved, such as the congregation, both print profiles, publishers and cards. Opening a shortcut or preview does not count. New installations start with a folder minimum of 0; enter and save your chosen number even when it should be 0. Existing minimum values and progress are preserved. **Skip** and **Undo** remain available. Connections and the overall assignment review still require **Done**, because the app cannot verify that the whole review is finished.
+
 From beta.33, **Hurtig oprettelse → Range** generates card numbers from the inclusive start to the inclusive end. Optionally choose a minimum number of digits for zero padding and one prefix letter. 0–300 with four digits gives 0000–0300, 301 cards; a prefix is preserved. The limit remains 500 cards per batch. Review all numbers, the count and any duplicates before confirming. Preview creates nothing. **Custom list** still treats 1–10 as one literal card number, not a range.
 
 From beta.32, **Tasks** handles all follow-up. Existing notes become tasks while retaining their text, dates, card links and completion status. The same conversion runs after explicitly importing an older backup; previewing one changes nothing. User text is never translated. Legacy storage/API names remain compatible with existing backups.

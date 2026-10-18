@@ -86,8 +86,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             # Remove the credential belonging to the retired aerial-photo feature only.
             self.db.execute("DELETE FROM geo.records WHERE id = ?",('basemap-config',))
             if not self.get('settings', 'config'):
-                self.put('settings', {'id': 'config', 'congregation': '', 'folder_minimum': 30,
-                    'rural_mode': 'auto', 'rural_minimum': 5, 'require_revision': False, 'schema': 1})
+                self.put('settings', {'id': 'config', 'congregation': '', 'folder_minimum': 0,
+                    'rural_mode': 'auto', 'rural_minimum': 0, 'require_revision': False, 'schema': 1})
         self.purge_expired()
 
     @contextmanager
@@ -220,6 +220,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self._tracking={}
             try:
                 result = self._mutate(action, data)
+                self.onboarding_after_write(action,data)
                 if action in ('restore','delete','recovery.purge','history.cleanup'):self._dirty_modules.update(MODULES)
                 touched=self._tracking
                 changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.alias(m)+'.records WHERE id=?',(i,)).fetchone()])
@@ -434,8 +435,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             return {'batch': batch}
         if action == 'settings.save':
             c = dict(self.require('settings', 'config'))
-            minimum = int(data.get('folder_minimum', 30))
-            rural = int(data.get('rural_minimum', 5))
+            minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
+            rural = int(data.get('rural_minimum', c.get('rural_minimum',0)))
             mode = data.get('rural_mode', 'auto')
             if mode == 'auto':
                 rural = min(rural, minimum)
@@ -443,6 +444,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Kontrollér minimum og antal landkort.')
             c.update(congregation=clean_text(data.get('congregation'), 100), folder_minimum=minimum,
                 rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')))
+            if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
+                c['folder_minimum_configured']=True
             self.put('settings', c)
             return {}
         if action == 'completion.record':

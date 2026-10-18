@@ -77,5 +77,8 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
  assert.equal(applyRequests.at(-1).url,'/api/beta/reset');assert.equal(applyRequests.at(-1).payload.revision,'FICTIONAL-REVISION');assert.equal(applyRequests.at(-1).payload.confirmation,'NULSTIL BETA');
  assert.equal(get('betaResetError').textContent,'');assert.match(get('dialog').innerHTML,/foer-beta-nulstilling-FAKE.zip/);assert.match(get('dialog').innerHTML,/betaResetRestart/);
  assert.deepEqual(c.removedKeys,['ltm-welcome-seen','ltm-onboarding-draft']);assert.equal(run('Onboarding.answers'),null);
- console.log('Settings language: equal real save payloads, stable options/limits, escaped names, backup consent/token gates and abandoned/out-of-order preview protection passed.');
+ const folderForm=form('settingsForm',[['congregation','Fiktiv menighed'],['folder_minimum','0'],['rural_mode','auto'],['rural_minimum','0']]);
+ listeners.input.find(fn=>String(fn).includes('settingsFolderMinimum'))({target:{id:'settingsFolderMinimum',form:folderForm}});
+ assert.equal(folderForm.dataset.folderTouched,'yes');await submit({target:folderForm,preventDefault(){}});assert.equal(writes.at(-1).data.folder_minimum_confirmed,true);
+ console.log('Settings language: equal real save payloads, explicit zero confirmation, stable options/limits, escaped names, backup consent/token gates and abandoned/out-of-order preview protection passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
