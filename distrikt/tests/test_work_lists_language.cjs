@@ -64,6 +64,14 @@ tagged.push({dataset:{ui:'Kort',uiParams:'broken-json'},textContent:''});assert.
  assert.equal(payloads.en[0].action,'note.save');assert.equal(payloads.en[0].data.task,true);assert.equal(payloads.en[1].data.card_id,null);
  assert.equal(payloads.en[2].action,'publisher.save');assert.equal(payloads.en[2].data.name,'Forkynder <fictional>');
  assert.equal(run('JSON.stringify(state)'),original);
+ const weekly={};for(const language of ['da','en']){
+  run(`I18n.set('${language}')`);await run('Workspace.submit')({dataset:{workForm:'note',id:'n'},fields:[['card_id','folder'],['text','Fiktiv ugentlig'],['repeat_weekday','4']]});weekly[language]=JSON.parse(JSON.stringify(calls.at(-1)));
+ }
+ assert.deepEqual(weekly.da,weekly.en);assert.deepEqual(weekly.en.data.recurrence,{frequency:'weekly',weekday:4});
+ run("state.notes[0].recurrence={frequency:'weekly',weekday:4,next_due:'2026-10-16'};state.notes[0].task_history=[{due:'2026-10-09',date:'2026-10-10'}];Workspace.noteForm('n')");
+ assert.match(get('dialog').innerHTML,/value="4" selected data-ui="Fredag"/);assert.match(get('dialog').innerHTML,/Completion history/);assert.match(get('dialog').innerHTML,/Scheduled/);
+ await run("Workspace.handle('resolve',{id:'n',due:'2026-10-16'})");assert.equal(calls.at(-1).action,'note.complete');assert.equal(calls.at(-1).data.due,'2026-10-16');
+ run(`state=${original}`);
  run("I18n.set('en');Workspace.taskFilter='all'");assert.match(run('Workspace.tasks()'),/marks a task as done/);assert.match(run('Workspace.tasks()'),/data-ui-title="Markér udført"/);assert.match(run('Workspace.tasks()'),/aria-pressed="false"/);
  // Legacy non-task records are shown immediately, and completed records never inflate alerts.
  vm.runInContext(read('navigation.js'),c);

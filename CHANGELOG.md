@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.36 · Ugentlige opgaver på forsiden
+
+W53: En opgave kan gentages ugentligt på en valgt ugedag. Første forekomst er den valgte dag fra og med i dag. Forfaldne opgaver vises på forsiden og kan markeres udført derfra. Tekst, korttilknytning, opgaven og afslutningshistorikken bevares. Næste forekomst lægges på den valgte ugedag strengt efter udførelsesdagen. Forsinkede uger opretter ikke kopier eller opdigtede gennemførelser.
+
+For tidlig eller gentagen udførelse af samme forekomst afvises; historik og næste dato gemmes atomisk og kan fortrydes sammen. Redigering bevarer historikken. Ingen gentagelse stopper fremtidige forekomster uden at slette opgaven/historikken. Ældre klienters almindelige tekstredigering fjerner ikke gentagelsen. Datoer/historik bevares ved genstart og gendannelse. Ingen automatisk kortflytning, upload eller ekstern påmindelse; dansk/engelsk skifter uden at miste formularens valg og tekst.
+
 ## 1.12.0-beta.35 · Lokal backuphistorik og påmindelse
 
 W52: De seneste 100 manuelle backupforsøg vises under Indstillinger → Data med særskilt status for oprettet ZIP, startet browserdownload og afsluttet filskrivning via filvælgeren. Annullering registrerer ingen backup. Fejlet filskrivning beholder kun ZIP-oprettelsen; den udskyder ikke påmindelsen. Filstier, filnavne, nøgler og forbindelsesoplysninger gemmes ikke i denne historik. Eksisterende backupregistreringer bevares uden at blive omtalt som bekræftet filskrivning.

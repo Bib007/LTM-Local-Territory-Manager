@@ -32,6 +32,9 @@ run("state.today='2026-10-16'");assert.match(run('Workspace.backupReminder()'),/
 run("state.settings.last_backup='invalid';state.settings.backup_snoozed_until='';I18n.set('en')");assert.match(run('Workspace.backupReminder()'),/No backup transfer/);
 run("state.settings.backup_history=[{id:'fictional',at:'2026-10-01T00:00:00Z',status:'file_saved'},{id:'fictional2',at:'2026-10-02T00:00:00Z',status:'created'}]");
 assert.match(run('Workspace.backupHistory()'),/File write confirmed by the file picker/);assert.match(run('Workspace.backupHistory()'),/transfer not confirmed/);
+run("state.notes=[{id:'due',text:'Fiktiv <ugentlig>',recurrence:{frequency:'weekly',weekday:4,next_due:'2026-10-16'}},{id:'future',text:'FIKTIV_FUTURE',recurrence:{frequency:'weekly',weekday:4,next_due:'2026-10-23'}}]");
+assert.match(run('Workspace.recurringTasks()'),/Weekly tasks ready for action/);assert.match(run('Workspace.recurringTasks()'),/Fiktiv &lt;ugentlig&gt;/);assert.doesNotMatch(run('Workspace.recurringTasks()'),/FIKTIV_FUTURE/);
+assert.match(run('Workspace.recurringTasks()'),/data-due="2026-10-16"/);assert.match(run('Workspace.taskButton(state.notes[1])'),/disabled/);
 run(`state=${original};I18n.set('da')`);
 for(const language of ['da','en']){
  run(`I18n.set('${language}')`);const html=run('Workspace.dashboard()');
