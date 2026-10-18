@@ -21,17 +21,18 @@ Ejeren har bedt LTM revurdere samtlige prioriteter og vælge rækkefølgen fremo
 | 9 | W44 · Datoen på forsiden | Prioritet 5 · Udvikling | Forklar perioden, eller fjern det misvisende felt. |
 | 10 | W48 · Gennemsnit mellem gennemgange | Prioritet 5 · Udvikling | Vis gennemsnitsintervallet som måneder og dage på forsiden med konsistent beregning og afrunding. Bevar datagrundlag og tydelig besked ved utilstrækkelig historik; dansk/engelsk og relevante intervaller prøves. |
 | 11 | W36 · Adressevælger og token | Prioritet 6 · Udvikling | Forklar formål og forskellen fra Datafordeler-nøglen. |
-| 12 | W40 · Baggrund på digitale kort | Prioritet 6 · Udvikling | Nedton baggrunden; behold tydelige husnumre og røde prikker. |
-| 13 | W16 · Naturlige skel og avancerede vejnet | Prioritet 7 · Udvikling | Bedre forslag til distriktsinddeling med mulighed for redigering. |
-| 14 | W28 · Codex Security | Prioritet 8 · Blokeret · scanværktøjer udestår | Kontrollér scanneradgang, gennemgå programmet og vurder eventuelle fund. |
-| 15 | W58 · Fuld dansk/engelsk | Prioritet 8 · Afsluttende sprogkontrol | Gennemgå alle statiske brugerflader, fejl, hjælpetekster, eksportbetjening og relevante rapporttekster. Fjern først mærkningen om delvis oversættelse, når dækningen er kontrolleret. Brugerdata, kanoniske dataværdier og originale S-12-/S-13-formularer ændres ikke. Sprogskift skal bevare fokus, felter og kladder. Nye funktioner laves løbende tosprogede; den afsluttende samlede kontrol ligger efter funktionsarbejdet. |
-| 16 | W23 · Feedback uden GitHub-konto | Prioritet 9 · Udvikling | Afklar kanal, modtager og håndtering af bilag/persondata. |
-| 17 | W37/W12 · Webdemo og direkte link | Prioritet 9 · Udvikling | Synkronisér med den færdige app, og prøv faktisk første åbning. |
-| 18 | Ejer: Datafordeler · Egen adressehentning | Udskudt til slutkontrollen efter ejerens ønske | Beta.41 viser en hentebesked, men ejeren ser ingen hentede adresser. Ejeren ser muligvis adresserne under “Adresseændring”; betydningen er ikke afklaret. Faktisk hentning og visning er ikke godkendt. W62 forbliver åben; ingen yderligere API-ejerprøve kræves nu. Eksisterende funktion uden egen API bruges imens. |
-| 19 | Ejer: HA · Afsluttende HA-kontrol | Delvist bekræftet · Kun relevante restprøver | Opdatering/genstart, adskilt beta/stabil og eventuel flytning står tilbage, hvor relevant. Drift på beta.28, telefon/VPN samt backup og gendannelse er bekræftet af ejeren. |
-| 20 | Stabil/W10 · Samlet slutkontrol og stabil udgivelse | Prioritet 9 · Efter kode- og ejerprøver | Program/platform/browser/pakker, vejledninger og versioner; feedbackformular via main. |
-| 21 | W08 · Gammelt repository: arkivanbefaling | Prioritet 10 · Efter stabil udgivelse | Kontrollér bevaret kode, historik, vejledninger og pakker. Ingen automatisk arkivering. |
-| 22 | W65 · Flerbrugeradgang, roller og aktivitetslog | Afklaring · Implementering ikke bestilt | Fremtidsønske om konti/adminpanel, konfigurerbare roller, serverkontrol, sikre sessioner, samtidighed og aktivitetslog. De fulde ejerkrav er bevaret nedenfor. Prioritet, logopbevaring og løsning skal aftales før udvikling. Ingen VPN-/netværksopsætning indgår. |
+| 12 | W66 · Navnets visuelle placering | Prioritet 6 · Visuel kontrol | Ejeren oplever, at navnet ikke er korrekt placeret. Bevar referencebilledet i det private plandokument, afklar det præcise element og juster med kontrol ved smal/bred skærm. Ingen private navne eller billeder offentliggøres. |
+| 13 | W40 · Baggrund på digitale kort | Prioritet 6 · Udvikling | Nedton baggrunden; behold tydelige husnumre og røde prikker. |
+| 14 | W16 · Naturlige skel og avancerede vejnet | Prioritet 7 · Udvikling | Bedre forslag til distriktsinddeling med mulighed for redigering. |
+| 15 | W28 · Codex Security | Prioritet 8 · Blokeret · scanværktøjer udestår | Kontrollér scanneradgang, gennemgå programmet og vurder eventuelle fund. |
+| 16 | W58 · Fuld dansk/engelsk | Prioritet 8 · Afsluttende sprogkontrol | Gennemgå alle statiske brugerflader, fejl, hjælpetekster, eksportbetjening og relevante rapporttekster. Fjern først mærkningen om delvis oversættelse, når dækningen er kontrolleret. Brugerdata, kanoniske dataværdier og originale S-12-/S-13-formularer ændres ikke. Sprogskift skal bevare fokus, felter og kladder. Nye funktioner laves løbende tosprogede; den afsluttende samlede kontrol ligger efter funktionsarbejdet. |
+| 17 | W23 · Feedback uden GitHub-konto | Prioritet 9 · Udvikling | Afklar kanal, modtager og håndtering af bilag/persondata. |
+| 18 | W37/W12 · Webdemo og direkte link | Prioritet 9 · Udvikling | Synkronisér med den færdige app, og prøv faktisk første åbning. |
+| 19 | Ejer: Datafordeler · Egen adressehentning | Udskudt til slutkontrollen efter ejerens ønske | Beta.41 viser en hentebesked, men ejeren ser ingen hentede adresser. Ejeren ser muligvis adresserne under “Adresseændring”; betydningen er ikke afklaret. Faktisk hentning og visning er ikke godkendt. W62 forbliver åben; ingen yderligere API-ejerprøve kræves nu. Eksisterende funktion uden egen API bruges imens. |
+| 20 | Ejer: HA · Afsluttende HA-kontrol | Delvist bekræftet · Kun relevante restprøver | Opdatering/genstart, adskilt beta/stabil og eventuel flytning står tilbage, hvor relevant. Drift på beta.28, telefon/VPN samt backup og gendannelse er bekræftet af ejeren. |
+| 21 | Stabil/W10 · Samlet slutkontrol og stabil udgivelse | Prioritet 9 · Efter kode- og ejerprøver | Program/platform/browser/pakker, vejledninger og versioner; feedbackformular via main. |
+| 22 | W08 · Gammelt repository: arkivanbefaling | Prioritet 10 · Efter stabil udgivelse | Kontrollér bevaret kode, historik, vejledninger og pakker. Ingen automatisk arkivering. |
+| 23 | W65 · Flerbrugeradgang, roller og aktivitetslog | Afklaring · Implementering ikke bestilt | Fremtidsønske om konti/adminpanel, konfigurerbare roller, serverkontrol, sikre sessioner, samtidighed og aktivitetslog. De fulde ejerkrav er bevaret nedenfor. Prioritet, logopbevaring og løsning skal aftales før udvikling. Ingen VPN-/netværksopsætning indgår. |
 
 W61 afventer ekstern restoprydning. W62-koderettelsen, W55 og W46 er udgivet i beta.30, og ejerens live-prøve står åben. W49/W59, W50, W54, W47, W52 og W53 er udgivet i beta.31–37. Næste uafhængige udviklingsopgave er W51, mens W06/W56 afventer. HA-sikkerhedsvurderingen ligger før eksport af forbindelser. Opgavemodel og backup-påmindelsesvisning ligger før tilbagevendende opgaver. Rapportlayout/opgavemodel ligger før læsbar eksport. Historikimport kommer før årssammenligning. Nye funktioner laves løbende tosprogede; den samlede oversættelseskontrol og demosynkronisering ligger efter funktionsarbejdet. Arkivanbefalingen følger stabil udgivelse. Blokerede punkter forbliver åbne, mens uafhængigt arbejde fortsætter. Ejerprøverne 17–18 kan begynde tidligere, når funktionerne er klar.
 
@@ -61,6 +62,7 @@ Beta.31 er udgivet og verificeret med kun W49 og W59. W49 bevarer det eksisteren
 
 | ID | Ønske | Ejerprioritet | Placering og status | Færdig når |
 | --- | --- | --- | --- | --- |
+| W66 | Justér navnets visuelle placering | Ejeren har overdraget prioritering til LTM | Arbejdsprioritet 6; visuel kontrol | Afklar det præcise element ud fra det bevarede private referencebillede, og kontrollér placering ved relevante skærmbredder. Billedet og private navne bliver i ejerens plan. |
 | W65 | Flerbrugeradgang i LTM – konti, roller og aktivitetslog | Ikke fastlagt – drøftes senere | Afklaring; implementering ikke bestilt | Bevar ejerens fulde krav i afsnittet W65. Konti, roller, serverrettigheder, sessionshåndtering, samtidighed og aktivitetslog skal afklares samlet før implementering. |
 | W64 | Ændringslog mangler ved opdatering af HA-beta | Ejeren har overdraget prioritering til LTM | Arbejdsprioritet 3; næste uafhængige rettelse | Ændringsloggen er tilgængelig ved normal HA-betaopdatering og med korrekt versionshistorik. Kontroller genereret pakke og betakanal; ældre betaer ændres ikke. |
 | W63 | Bred gennemgang for faste personhenførbare eksempler i alle LTM-udgaver | -1 · kritisk | Gennemgang og relevante kildeændringer afsluttet; restoprydning ligger hos W61 | Aktive grene, udgivelsestags og deres kildehistorik er gennemgået sammen med UI-eksempler, oversættelser, testdata, demo og formular-/importskabeloner. Tilsvarende felttekster i en tidligere projektkopi er neutraliseret og efterkontrolleret. Ingen yderligere ejerafledte faste eksempler er identificeret i det gennemgåede materiale. Private detaljer bliver i ejerens plan. Kendte rester i GitHubs cache/PR-referencer forbliver hos W61, indtil de faktisk er fjernet. |
@@ -434,7 +436,7 @@ collect_many brugte aliaser også for ét enkelt ID. Det forklarer vejforløbets
 
 ## Samlet udviklingsplan · ønskerne overført 18.10.2026
 
-Ønskefanen og udviklingsplanen er samlet: W64 og W65 er registreret med status og fuldt indhold, før ønskefanen ryddes. Der er nu 22 åbne planpunkter inklusive afklaringer. W61 har fortsat prioritet −1 og afventer ekstern hjælp. W64 er den næste uafhængige rettelse, derefter W51. W62 forbliver udskudt til slutkontrollen. W65 er et fremtidsønske, ikke en bestilling på implementering.
+Ønskefanen og udviklingsplanen er samlet: W64, W65 og W66 er registreret med status og fuldt indhold, før ønskefanen ryddes. Der er nu 23 åbne planpunkter inklusive afklaringer. W61 har fortsat prioritet −1 og afventer ekstern hjælp. W64 er den næste uafhængige rettelse, derefter W51. W62 forbliver udskudt til slutkontrollen. W65 er et fremtidsønske, ikke en bestilling på implementering.
 
 ### W62 · Supplerende ejerobservation til senere
 
@@ -458,3 +460,7 @@ Aktivitetslog: Registrér konto, tidspunkt og handling for bl.a. udlevering/modt
 Afgrænsning: VPN, portåbning og øvrig netværks-/fjernadgangsopsætning er ikke produktfunktioner. Installationsejeren vælger og har ansvar for netværk, transportkryptering og eksponering. LTM skal stadig håndhæve sin egen login- og rettighedskontrol.
 
 Ejerens prioritet: Ikke fastlagt – drøftes senere. Status: Afklaring, ingen implementering bestilt. En sammenlægning af planen er ikke en godkendelse af denne funktion. Opbevaring og detaljer for aktivitetsloggen samt prioritet og løsning skal aftales før udvikling. Sammenhængen med W06 vurderes ved afklaring.
+
+### W66 · Navnets visuelle placering
+
+Ejerens supplerende ønske under sammenlægningen: “ved ikke om du syns det er pænt, men syns ik navnet er alignet helt godt…?” Prioritet: du bestemmer. Arbejdsprioritet 6, sammen med øvrige visuelle forbedringer. Referencebilledet bevares i det private Google-plandokument som bilag til W66; det kopieres ikke til GitHub. Afklar hvilket navneelement og hvilken placering billedet viser, og kontroller en eventuel justering på smal og bred skærm. Ikke udført endnu.
