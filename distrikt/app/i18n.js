@@ -3,6 +3,17 @@
 const I18n={
  current:'da',
  english:{
+  "Egen liste":"Custom list",
+  "Interval · start og slut inklusive":"Range · inclusive start and end",
+  "Slutnummer":"End number",
+  "Antal cifre · 0 betyder ingen nuludfyldning":"Number of digits · 0 means no zero padding",
+  "Forbogstav · valgfrit, ét bogstav":"Prefix · optional, one letter",
+  "Begge ender tælles med. 0–300 med fire cifre giver 0000–0300, i alt 301 kort. Højst 500 kort ad gangen. Eksisterende numre overskrives ikke.":"Both endpoints are included. 0–300 with four digits gives 0000–0300, 301 cards in total. At most 500 cards at a time. Existing numbers are never overwritten.",
+  "Start og slut skal være hele tal fra 0 til 999999999; antal cifre skal være 0–29.":"Start and end must be whole numbers from 0 to 999999999; the number of digits must be 0–29.",
+  "Slutnummeret må ikke være mindre end startnummeret.":"The end number cannot be smaller than the start number.",
+  "Intervallet må højst indeholde 500 kort. Start og slut tælles begge med.":"A range can contain at most 500 cards. Both start and end are included.",
+  "Forbogstavet skal være tomt eller præcis ét bogstav.":"The prefix must be empty or exactly one letter.",
+  "Vælg egen liste eller interval.":"Choose a custom list or a range.",
   "Bemærkning · valgfri":"Comment · optional",
   "Opgaver":"Tasks",
   "Vælg en opgave.":"Choose a task.",
