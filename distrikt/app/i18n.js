@@ -3,6 +3,9 @@
 const I18n={
  current:'da',
  english:{
+  "{fetched} DAR-adresser fundet indenfor grænsen · {local} lokale aktive adresser. Kontrollér eventuelle adresseændringer.":"{fetched} DAR addresses found within the boundary · {local} active local addresses. Review any address changes.",
+  "Ingen adresser fundet indenfor den gemte grænse. Kontrollér grænsen, og prøv en enkelt vej. En kontrolleret forbindelse er ikke en bekræftet adressehentning.":"No addresses found within the saved boundary. Check the boundary and try a single road. A checked connection does not confirm an address download.",
+  "DAR returnerede ingen adresser, selv om området har lokale adresser. Den tomme opdatering er ikke godkendt; eksisterende adresser er bevaret. Prøv en enkelt vej eller opdater området igen.":"DAR returned no addresses although the area has local addresses. The empty update was not approved; existing addresses are preserved. Try a single road or update the area again.",
   "Mandag":"Monday",
   "Tirsdag":"Tuesday",
   "Onsdag":"Wednesday",

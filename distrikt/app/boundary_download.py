@@ -36,9 +36,15 @@ class BoundaryDownload:
             manifest=copy.deepcopy(self.store.get('geo','main-boundary-download'))
         if not boundary:raise ValueError('Kontrollér og gem den samlede grænse først.')
         points=boundary['points'];key=signature(points)
+        if manifest and manifest.get('boundary_key')==key and not data.get('refresh'):
+            require_source(manifest,self.source_id(),self.source_schema())
+            if checkpoint_source(manifest)==GRAPHQL_SOURCE and manifest.get('point_query_version')!=2:
+                # Earlier point-status filters could certify empty tiles. Fetch
+                # them again at a new snapshot, preserving stored local data.
+                data={**data,'refresh':True}
         if not manifest or manifest.get('boundary_key')!=key or data.get('refresh'):
             manifest={'id':'main-boundary-download','entity':'boundary_download','boundary_key':key,'points':points,
-                'snapshot':datetime.now(timezone.utc).isoformat(timespec='seconds'),'source_id':self.source_id(),'schema_sha256':self.source_schema(),'review_changes':bool(data.get('refresh')),'tiles':boundary_tiles(points)}
+                'snapshot':datetime.now(timezone.utc).isoformat(timespec='seconds'),'source_id':self.source_id(),'schema_sha256':self.source_schema(),'point_query_version':2,'review_changes':bool(data.get('refresh')),'tiles':boundary_tiles(points)}
         require_source(manifest,self.source_id(),self.source_schema())
         manifest['status']='running';self.store.mutate('geo.main.download.save',{'manifest':manifest})
         tiles=manifest['tiles'];total=len(tiles);done=sum(t['status']=='done' for t in tiles)
@@ -94,12 +100,16 @@ class BoundaryDownload:
                     tile.update(status='error',error=str(err));self.store.mutate('geo.main.download.save',{'manifest':manifest})
                 progress(completed=done,total=total);index+=1
             manifest['status']='complete' if done==total else 'partial'
+            manifest['empty_result']=done==total and not any(t.get('address_ids') for t in tiles)
         except Paused:
             manifest['status']='paused';self.store.mutate('geo.main.download.save',{'manifest':manifest});raise
         self.store.mutate('geo.main.download.save',{'manifest':manifest})
         warnings=[f"Udsnit {i+1}: {t.get('error','Afventer hentning')}" for i,t in enumerate(tiles) if t['status']!='done']
         with self.store.lock:
             count=sum(a.get('entity')=='address' and not a.get('retired') and point_in_polygon([a['lng'],a['lat']],points) for a in self.store.all('geo'))
-        return {'count':count,'complete':done==total,'warnings':warnings,
+        if manifest.get('empty_result'):
+            warnings.append('DAR returnerede ingen adresser indenfor den gemte grænse. Kontrollér grænsen, og prøv en enkelt vej. En kontrolleret forbindelse bekræfter ikke, at adresser er hentet.')
+        return {'count':count,'complete':done==total,'warnings':warnings,'empty':bool(manifest.get('empty_result')),
+            'fetched_count':len({ident for tile in tiles for ident in tile.get('address_ids',[])}),
             'bbox':[min(p[0] for p in points),min(p[1] for p in points),max(p[0] for p in points),max(p[1] for p in points)],
-            'note':f'{count} lokale adresser indenfor grænsen · {done}/{total} udsnit. '+('Alle udsnit er hentet og kontrolleret.' if done==total else (stop_reason+' Færdige udsnit er bevaret. Fortsæt senere under Samlet distriktsgrænse.' if stop_reason else 'Hentningen er ufuldstændig. Fortsæt for at genprøve de manglende udsnit.'))}
+            'note':f'{count} lokale adresser indenfor grænsen · {done}/{total} udsnit. '+('Ingen adresser fundet. Kontrollér grænsen, og prøv en enkelt vej.' if manifest.get('empty_result') else 'Alle udsnit er hentet og kontrolleret.' if done==total else (stop_reason+' Færdige udsnit er bevaret. Fortsæt senere under Samlet distriktsgrænse.' if stop_reason else 'Hentningen er ufuldstændig. Fortsæt for at genprøve de manglende udsnit.'))}

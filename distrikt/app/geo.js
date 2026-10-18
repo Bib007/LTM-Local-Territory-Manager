@@ -116,7 +116,9 @@ const GeoUI={
     if(job.status==='done'){
       this.rangeRoad=job.result.road||this.rangeRoad;this.rangePost=job.result.postcode||this.rangePost;
       this.notice=job.result.note|| (job.result.road?'Adresserne er hentet. Vælg huse eller et nummerinterval.':'Kortdata gemt lokalt.');
-      if(job.result.warnings?.length)this.notice+=' '+job.result.warnings.length+' udsnit/opslag mangler. Se fejl og fortsæt under '+(job.kind==='boundary'?'Samlet distriktsgrænse.':'Kortdata.');
+      if(job.kind==='boundary'&&job.result.complete&&Number.isInteger(job.result.fetched_count))this.notice=I18n.format('{fetched} DAR-adresser fundet indenfor grænsen · {local} lokale aktive adresser. Kontrollér eventuelle adresseændringer.',{fetched:job.result.fetched_count,local:job.result.count});
+      if(job.result.empty)this.notice=I18n.text('Ingen adresser fundet indenfor den gemte grænse. Kontrollér grænsen, og prøv en enkelt vej. En kontrolleret forbindelse er ikke en bekræftet adressehentning.');
+      if(job.result.warnings?.length&&!job.result.empty)this.notice+=' '+job.result.warnings.length+' udsnit/opslag mangler. Se fejl og fortsæt under '+(job.kind==='boundary'?'Samlet distriktsgrænse.':'Kortdata.');
       if(page==='Kortopsætning')this.updatePanel();else render();
       if(job.result.bbox&&this.map){const[w,s,e,n]=job.result.bbox;this.map.fitBounds([[s,w],[n,e]],{padding:[30,30],maxZoom:18});}
       if(this.pendingRange){const range=this.pendingRange;this.pendingRange=null;if(range.stamp===this.draftStamp(false))await this.selectPreview({mode:'range',...range.data});}
