@@ -1,10 +1,13 @@
 """Local backup receipts contain no paths, credentials or invented success."""
 import copy
+import os
 import sys
 import tempfile
+import time
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from portable import snapshot, Restores
@@ -58,5 +61,15 @@ class BackupHistoryTests(unittest.TestCase):
         restores=Restores(self.store,'fictional-test');preview=restores.preview(payload)
         restores.apply(preview['token'])
         self.assertEqual(self.config(),expected)
+
+    @unittest.skipUnless(hasattr(time,'tzset'),'Host timezone selection is not available on Windows')
+    def test_reminder_day_uses_server_calendar_with_midnight_and_dst(self):
+        try:
+            with patch.dict(os.environ,{'TZ':'Europe/Copenhagen'}):
+                time.tzset()
+                for stamp,expected in (('2026-10-01T22:30:00+00:00','2026-10-02'),('2026-12-01T23:30:00+00:00','2026-12-02')):
+                    with self.store.transaction():self.store.put('settings',{**self.config(),'last_backup':stamp})
+                    before=copy.deepcopy(self.config());self.assertEqual(self.store.state()['backup_last_day'],expected);self.assertEqual(self.config(),before)
+        finally:time.tzset()
 
 if __name__=='__main__':unittest.main()

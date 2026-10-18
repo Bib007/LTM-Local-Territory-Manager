@@ -27,6 +27,8 @@ const original=run('JSON.stringify(state)');
 run("state.settings.last_backup='2026-10-01T23:59:59Z';state.today='2026-10-15'");
 assert.match(run('Workspace.backupReminder()'),/backupReminder/,'Exactly 14 calendar days is due');
 run("state.today='2026-10-14'");assert.equal(run('Workspace.backupReminder()'),'');
+run("state.today='2026-10-15';state.backup_last_day='2026-10-02'");assert.equal(run('Workspace.backupReminder()'),'','Use the server calendar day, not the UTC timestamp date');
+run("state.today='2026-10-16'");assert.match(run('Workspace.backupReminder()'),/backupReminder/);run('delete state.backup_last_day');
 run("state.today='2026-10-15';state.settings.backup_snoozed_until='2026-10-16'");assert.equal(run('Workspace.backupReminder()'),'');
 run("state.today='2026-10-16'");assert.match(run('Workspace.backupReminder()'),/backup-snooze/,'Visible again tomorrow, not after 24 hours');
 run("state.settings.last_backup='invalid';state.settings.backup_snoozed_until='';I18n.set('en')");assert.match(run('Workspace.backupReminder()'),/No backup transfer/);

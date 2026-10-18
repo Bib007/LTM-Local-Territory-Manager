@@ -52,7 +52,8 @@ const Workspace={memory:{},taskFilter:'open',taskQuery:'',activityData:[],histor
  },
  backupReminder(){
   const config=state.settings,last=Date.parse(config.last_backup||''),today=Date.parse(state.today+'T00:00:00Z');
-  const age=Number.isFinite(last)?Math.floor((today-Date.parse(new Date(last).toISOString().slice(0,10)+'T00:00:00Z'))/86400000):null;
+  const lastDay=state.backup_last_day||(Number.isFinite(last)?new Date(last).toISOString().slice(0,10):null);
+  const age=lastDay?Math.floor((today-Date.parse(lastDay+'T00:00:00Z'))/86400000):null;
   if(config.backup_snoozed_until>state.today||(age!==null&&age<14))return '';
   return `<section id="backupReminder" class="panel notice"><h3>${ui('Tid til en privat sikkerhedskopi')}</h3><p>${age===null?ui('Ingen backupoverførsel er registreret endnu.'):ui('Der er gået mindst 14 dage siden sidste registrerede backupoverførsel.')}</p><p class="hint">${ui('Browserdownload bekræfter ikke, at filen ligger på disken. Kontrollér filen. Ingen automatisk backup eller upload.')}</p><div class="actions"><button class="primary" data-action="backup">${ui('Hent sikkerhedskopi nu')}</button><button data-action="backup-snooze">${ui('Udsæt til i morgen')}</button></div></section>`;
  },

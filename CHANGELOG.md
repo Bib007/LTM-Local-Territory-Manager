@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.37 · Backuppåmindelse følger serverens kalender
+
+W52-opfølgning: Sidste backupdato og appens i dag regnes nu i samme lokale serverkalender, også når UTC-datoen er dagen før. Dermed kommer 14-dagespåmindelsen ikke en dag for tidligt omkring midnat. Sommer-/vintertid dækkes af syntetiske tests. Det er en ren beregning ved læsning; tidsstempler, backupfiler, historik og udsættelser ændres ikke.
+
 ## 1.12.0-beta.36 · Ugentlige opgaver på forsiden
 
 W53: En opgave kan gentages ugentligt på en valgt ugedag. Første forekomst er den valgte dag fra og med i dag. Forfaldne opgaver vises på forsiden og kan markeres udført derfra. Tekst, korttilknytning, opgaven og afslutningshistorikken bevares. Næste forekomst lægges på den valgte ugedag strengt efter udførelsesdagen. Forsinkede uger opretter ikke kopier eller opdigtede gennemførelser.
