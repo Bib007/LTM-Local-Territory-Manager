@@ -11,6 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from address_source import Datafordeler, reject_graphql
 from dar_query import DarQuery
+from dar_paging import IncompleteResult
 from postcode import SourceLimit
 from test_dar_adapter import Provider, tables, STAMP
 
@@ -48,15 +49,31 @@ class DarErrorTests(unittest.TestCase):
         for query in calls:self.assertIn(STAMP,query);self.assertIn('husnummer: { eq: "h1" }',query)
         self.assertIn('after: "1"',calls[-1])
 
-    def test_alias_cost_falls_back_to_bounded_single_scopes(self):
+    def test_plain_scope_size_reduction_shares_a_bounded_request_budget(self):
         provider=Provider(tables());calls=[]
         def source(query):
             calls.append(query)
-            if query.count('scope_')>1 or any(int(n)>4 for n in re.findall(r'first:\s*(\d+)',query)):raise SourceLimit('Fiktiv størrelsesgrænse')
+            if any(int(n)>4 for n in re.findall(r'first:\s*(\d+)',query)):raise SourceLimit('Fiktiv størrelsesgrænse')
             return provider(query)
         result=DarQuery(source,snapshot=STAMP).collect_many('DAR_Adresse','husnummer',['h1','h2'])
         self.assertEqual({r['id_lokalId'] for r in result},{'a1','a2','a3'});self.assertLessEqual(len(calls),6)
         for query in calls:self.assertIn(STAMP,query)
+
+    def test_retries_and_later_scopes_cannot_reset_the_request_budget(self):
+        provider = Provider(tables())
+        calls = []
+        def source(query):
+            calls.append(query)
+            if int(re.search(r'first:\s*(\d+)', query)[1]) > 4:
+                raise SourceLimit('Fiktiv størrelsesgrænse')
+            return provider(query)
+        with self.assertRaises(IncompleteResult):
+            DarQuery(source, snapshot=STAMP).collect_many(
+                'DAR_Adresse', 'husnummer', ['h1', 'h2'], max_requests=4)
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(len(provider.calls), 1)
+        self.assertIn('husnummer: { eq: "h2" }', calls[-1])
+        self.assertTrue(all('scope_' not in query for query in calls))
 
     def test_persistent_cost_stops_at_one_and_other_errors_are_not_retried(self):
         calls=[]

@@ -44,3 +44,7 @@ A newly created API key can take up to **15 minutes** to become active. This is 
 ## Read-only diagnostics in beta.40
 
 Choose **Check DAR lookups** under the Datafordeler connection. It compares the actual projections and filters using fictional search values in plain and aliased queries. The check saves no addresses, changes no connection or checkpoints, and shows no raw provider messages. It takes up to one minute. An accepted fictional lookup does not confirm a real address download; W62 remains open.
+
+## Address downloads from beta.41
+
+The beta.40 check accepted plain requests and rejected aliases and multiple root fields. From beta.41, address downloads therefore use separate plain requests. The read-only check retains its alias/batch probes for diagnostics; rejection of those probes is expected and does not mean downloads still use aliases. After updating, try one road and then Fetch/continue for the combined territory boundary. Share only counts or sanitized errors, never the key. Large downloads may take longer; interrupted or incomplete requests are not stored as complete.

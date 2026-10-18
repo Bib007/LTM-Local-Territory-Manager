@@ -11,12 +11,13 @@ from dar_adapter import DarAdapter, SOURCE
 from dar_query import DarQuery
 from dar_paging import IncompleteResult
 from dar_join import point_coordinates
+from address_source import reject_graphql
 
 STAMP = '2026-10-17T07:00:00.000000Z'
 
 
 class Provider:
-    """Tiny synthetic provider, interprets the public equality/page contract."""
+    """Synthetic provider with the plain-only contract observed in beta.40."""
     def __init__(self, tables):
         self.tables = tables
         self.calls = []
@@ -24,7 +25,10 @@ class Provider:
     def __call__(self, query):
         self.calls.append(query)
         data = {}
-        for alias, entity, arguments in re.findall(r'(?:(scope_\d+):\s*)?(DAR_\w+)\((.*?)\)\s*\{', query):
+        selections = re.findall(r'(?:(\w+):\s*)?(DAR_\w+)\((.*?)\)\s*\{', query)
+        if len(selections) != 1 or any(alias for alias, _, _ in selections):
+            reject_graphql({'errors': [{'message': 'Aliases not allowed; multiple root fields not allowed.'}]}, query)
+        for alias, entity, arguments in selections:
             filters = {field: json.loads(value) for field, value in
                        re.findall(r'(\w+):\s*\{\s*eq:\s*("(?:[^"\\]|\\.)*")\s*\}', arguments)}
             selected = [copy.deepcopy(row) for row in self.tables.get(entity, [])
@@ -61,32 +65,34 @@ def tables():
     }
 
 
-class BatchTests(unittest.TestCase):
-    def test_twenty_five_ids_need_three_requests_with_one_fixed_snapshot(self):
+class ManyScopeTests(unittest.TestCase):
+    def test_twenty_five_ids_use_plain_requests_with_one_fixed_snapshot(self):
         provider = Provider({'DAR_Postnummer': [{'id_lokalId': 'p' + str(i), 'status': '3'} for i in range(25)]})
         values = ['p' + str(i) for i in range(25)]
         query = DarQuery(provider, snapshot=STAMP)
         result = query.collect_many('DAR_Postnummer', 'id_lokalId', values + ['p0'], require_all=True)
         self.assertEqual([row['id_lokalId'] for row in result], values)
-        self.assertEqual(len(provider.calls), 3)
+        self.assertEqual(len(provider.calls), 25)
         for call in provider.calls:
             self.assertEqual(call.count('registreringstid: "' + STAMP + '"'), call.count('DAR_Postnummer('))
             self.assertEqual(call.count('virkningstid: "' + STAMP + '"'), call.count('DAR_Postnummer('))
             self.assertNotIn(' in:', call)
 
-    def test_each_alias_has_complete_independent_pagination(self):
+    def test_each_scope_has_complete_independent_pagination(self):
         provider = Provider(tables())
         query = DarQuery(provider, page_size=1, snapshot=STAMP)
         result = query.collect_many('DAR_Adresse', 'husnummer', ['h1', 'h2'])
         self.assertEqual([row['id_lokalId'] for row in result], ['a1', 'a2', 'a3'])
-        self.assertEqual(len(provider.calls), 2)
-        self.assertIn('scope_0:', provider.calls[0]);self.assertIn('scope_1:', provider.calls[0])
-        self.assertIn('after: "1"', provider.calls[1]);self.assertNotIn('scope_1:', provider.calls[1])
+        self.assertEqual(len(provider.calls), 3)
+        self.assertIn('after: "1"', provider.calls[1])
+        self.assertNotIn('after:', provider.calls[2])
+        self.assertIn('husnummer: { eq: "h2" }', provider.calls[2])
+        self.assertTrue(all('scope_' not in call for call in provider.calls))
 
-    def test_missing_alias_partial_error_null_and_wrong_scope_fail(self):
-        good = Provider(tables())('query { scope_0: DAR_Postnummer(where: {id_lokalId: {eq: "p1"}}, first: 100) { nodes { id_lokalId } } }')
-        bad_scope = copy.deepcopy(good);bad_scope['data']['scope_0']['nodes'][0]['id_lokalId'] = 'other'
-        for response in ({'data': {}}, {'data': {'scope_0': None}}, dict(good, errors=[{'message': 'FICTIONAL_KEY'}]), bad_scope):
+    def test_missing_root_partial_error_null_and_wrong_scope_fail(self):
+        good = Provider(tables())('query { DAR_Postnummer(where: {id_lokalId: {eq: "p1"}}, first: 100) { nodes { id_lokalId } } }')
+        bad_scope = copy.deepcopy(good);bad_scope['data']['DAR_Postnummer']['nodes'][0]['id_lokalId'] = 'other'
+        for response in ({'data': {}}, {'data': {'DAR_Postnummer': None}}, dict(good, errors=[{'message': 'FICTIONAL_KEY'}]), bad_scope):
             with self.assertRaises(IncompleteResult) as error:
                 DarQuery(Mock(return_value=response)).collect_many('DAR_Postnummer', 'id_lokalId', ['p1'], require_all=True)
             self.assertNotIn('FICTIONAL_KEY', str(error.exception))
@@ -98,7 +104,7 @@ class BatchTests(unittest.TestCase):
         with self.assertRaises(IncompleteResult):
             DarQuery(Provider(rows)).collect_many('DAR_Adresse', 'husnummer', ['h1', 'h2'])
         provider = Provider(tables())
-        first = provider('query { scope_0: DAR_Adresse(where: {husnummer: {eq: "h1"}}, first: 1) { nodes { id_lokalId } } }')
+        first = provider('query { DAR_Adresse(where: {husnummer: {eq: "h1"}}, first: 1) { nodes { id_lokalId } } }')
         with self.assertRaisesRegex(ValueError, 'transport'):
             DarQuery(Mock(side_effect=[first, ValueError('clean transport error')]), page_size=1).collect_many('DAR_Adresse', 'husnummer', ['h1'])
 

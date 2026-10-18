@@ -65,3 +65,7 @@ Nøglen gemmes separat fra registreringerne i installationens private datamappe.
 ## Læsende diagnose i beta.40
 
 Vælg **Kontrollér DAR-opslag** under Datafordeler-forbindelsen. Den sammenligner de aktuelle feltprojektioner og filtre med fiktive søgeværdier i almindelige opslag og aliases. Kontrollen gemmer ingen adresser, ændrer ingen forbindelse eller checkpoints og viser ingen rå leverandørtekst. Den tager op til ét minut. Et accepteret fiktivt opslag er ikke en bekræftet virkelig adressehentning; W62 er fortsat åben.
+
+## Adressehentning fra beta.41
+
+Kontrollen i beta.40 viste, at almindelige opslag accepteres, mens aliaser og flere rodfelter afvises. Fra beta.41 udføres adressehentning derfor som separate almindelige opslag. Den læsende kontrol beholder sine alias-/batchprøver til diagnose; en afvisning dér er forventet og betyder ikke, at den almindelige hentning stadig bruger aliaser. Prøv én vej efter opdatering og derefter Hent/fortsæt for samlet distriktsgrænse. Oplys kun antal eller den rensede fejltekst, aldrig nøglen. Store opslag kan tage længere tid; afbrudte eller ufuldstændige opslag gemmes ikke som komplette.

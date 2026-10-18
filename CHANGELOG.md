@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.41 · DAR-opslag uden aliaser
+
+Ejerens læsende beta.40-kontrol accepterede almindelige opslag for alle fem DAR-entiteter, men afviste både ét alias og flere rodfelter. Adressehentningen bruger nu ét almindeligt opslag ad gangen, også ved mange ID'er. Samme tidspunkt, filtre, separate cursors, afbrydelse og fælles resultat-/anmodningsgrænser bevares. Ingen delvise svar frigives til import. Fiktive leverandørprøver afviser nu aliaser og flere rodfelter; vej- og grænseforløbet fejlede før rettelsen og består efter. En rigtig hentning efter opdateringen udestår; W62 er fortsat åben.
+
 ## 1.12.0-beta.40 · Læsende DAR-kontraktkontrol
 
 W62 er fortsat åben. En ny kontrol i Kortdata → Datafordeleren prøver de samme projektioner og filtre som adressehentningen med fiktive søgeværdier. Den sammenligner enkeltopslag, ét alias og ti aliases uden at oprette hentningsjob, gemme adresser eller ændre checkpoints og forbindelsen. Kun faste fejlkategorier, genkendte fejlkoder og en afgrænset liste diagnoseord vises; ingen rå leverandørtekst, data, stier eller nøgler. Prøven er tidsbegrænset. Den eksisterende grønne forbindelseskontrol er ikke en prøve af de faktiske dataopslag. Der er endnu ikke dokumenteret en årsagsrettelse eller en vellykket livehentning.
