@@ -2,7 +2,7 @@ name: W61 location example cleanup
 on:
   push:
     branches: [develop]
-    paths: ['.github/workflows/cleanup-location-examples.yml']
+    paths: ['.github/workflows/cleanup-location-examples.yml', 'scripts/cleanup_location_examples.py', 'scripts/test_cleanup_location_examples.py']
   workflow_dispatch:
     inputs:
       apply:
@@ -15,7 +15,17 @@ concurrency:
   group: w61-location-example-cleanup
   cancel-in-progress: false
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install git-filter-repo==2.47.0
+      - run: python -m unittest discover -s scripts -p test_cleanup_location_examples.py -v
   cleanup:
+    needs: verify
     if: github.repository == 'Bib007/LTM-Local-Territory-Manager' && github.ref == 'refs/heads/develop' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[privacy-cleanup-once]'))
     runs-on: ubuntu-latest
     permissions:

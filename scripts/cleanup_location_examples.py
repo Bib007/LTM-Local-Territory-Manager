@@ -56,7 +56,7 @@ class Rules:
         result = result.replace(b'placeholder="' + self.phrase + b'"', b'placeholder="Vejnavn"')
         result = result.replace(b"I18n.attribute('placeholder',\"" + self.phrase + b'\")',
                                 b"I18n.attribute('placeholder',\"Vejnavn\")")
-        translated = b'I18n.attribute(' in raw
+        translated = raw.lstrip().startswith((b"'use strict';", b'"use strict";')) and b'I18n.attribute(' in raw
 
         def number(match):
             label = {b'postcode': b'Postnummer', b'from': b'Fra', b'to': b'Til'}[match[2]]
@@ -271,10 +271,15 @@ def run(work, expected_head, apply=False):
     git(root, *push)
     if remote_refs(root) != after:
         raise ValueError('Published branch/tag refs did not verify.')
+    report['status'] = 'assets and Git refs published and verified; release metadata updates pending'
+    report['metadata_updated'] = []
+    report_path.write_text(json.dumps(report, indent=2) + '\n')
     for row in staged:
         commit = git(root, 'rev-parse', row['tag'] + '^{commit}').decode().strip()
         gh_json('--method', 'PATCH', 'repos/' + REPOSITORY + '/releases/' + str(row['id']),
                 '-f', 'target_commitish=' + commit)
+        report['metadata_updated'].append(row['tag'])
+        report_path.write_text(json.dumps(report, indent=2) + '\n')
     report['status'] = 'published and verified; GitHub cache/PR purge still outstanding'
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     return report

@@ -17,7 +17,8 @@ class CleanupTests(unittest.TestCase):
         self.rules = cleanup.Rules(SEED)
 
     def test_legacy_and_translated_fields_and_test_abbreviations(self):
-        raw = SEED + b'<input name="postcode" ${I18n.attribute('placeholder',"Postnummer")}><input name="from" ${I18n.attribute('placeholder',"Fra")}><input name="to" ${I18n.attribute('placeholder',"Til")}>'
+        field = lambda name, number: b'<input name="' + name + b'" placeholder="' + number + b'">'
+        raw = SEED + field(b'postcode', b'9999') + field(b'from', b'12') + field(b'to', b'34')
         actual = self.rules.clean(raw)
         self.assertIn(b'placeholder="Vejnavn"', actual)
         self.assertIn(b'placeholder="Postnummer"', actual)
@@ -33,6 +34,9 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(self.rules.clean(entry), b'  "Vejnavn":"Road name",\n')
         raw = b'unchanged numeric limit 9999; identifiers and UTF-8: \xc3\xa6\xc3\xb8\xc3\xa5'
         self.assertEqual(self.rules.clean(raw), raw)
+        # Python tests can mention I18n without becoming JavaScript templates.
+        python = b"# I18n.attribute(\nvalue = " + repr(SEED + b'<input name="postcode" placeholder="' + b'9999' + b'">').encode() + b'\n'
+        compile(self.rules.clean(python), '<invented fixture>', 'exec')
         binary = b'\x00\xff' + EXAMPLE
         self.assertEqual(self.rules.clean(binary), binary)
 
