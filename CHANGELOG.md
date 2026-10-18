@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.40 · Læsende DAR-kontraktkontrol
+
+W62 er fortsat åben. En ny kontrol i Kortdata → Datafordeleren prøver de samme projektioner og filtre som adressehentningen med fiktive søgeværdier. Den sammenligner enkeltopslag, ét alias og ti aliases uden at oprette hentningsjob, gemme adresser eller ændre checkpoints og forbindelsen. Kun faste fejlkategorier, genkendte fejlkoder og en afgrænset liste diagnoseord vises; ingen rå leverandørtekst, data, stier eller nøgler. Prøven er tidsbegrænset. Den eksisterende grønne forbindelseskontrol er ikke en prøve af de faktiske dataopslag. Der er endnu ikke dokumenteret en årsagsrettelse eller en vellykket livehentning.
+
 ## 1.12.0-beta.39 · Sikker GraphQL-diagnose og mindre opslag ved størrelsesfejl
 
 W62: Beta.38-prøven fejlede både på grænsen og på en enkelt vej med en generisk GraphQL-afvisning. Den bagvedliggende afvisningsårsag er endnu ikke bekræftet. Fejlteksten viser nu en sikker kategori: GQL-SCHEMA, GQL-ACCESS, GQL-LIMIT, GQL-RESULT eller GQL-REJECTED, opslagets entitet og genkendte fejlkoder/feltnavne. Rå leverandørbeskeder, søgeværdier, URL'er, nøgler og fejlstier vises ikke. Dansk/engelsk bevarer de samme diagnostikkoder.

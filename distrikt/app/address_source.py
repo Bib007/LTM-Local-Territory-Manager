@@ -61,7 +61,7 @@ class Datafordeler:
             return {'configured':bool(auth.get('api_key')),'checked_at':auth.get('checked_at'),
                     'schema_sha256':auth.get('schema_sha256'),'import_ready':bool(auth.get('api_key'))}
 
-    def _request(self,key,suffix='',query=None):
+    def _request(self,key,suffix='',query=None,*,return_graphql_errors=False):
         url=BASE+suffix+'?'+urllib.parse.urlencode({'apiKey':key})
         payload=json.dumps({'query':query}).encode() if query is not None else None
         headers={'User-Agent':'LTMLocal','Accept':'application/json' if query else 'text/plain'}
@@ -78,7 +78,9 @@ class Datafordeler:
             if query is not None and error.code in (400,422):
                 try:body=json.loads(error.read(MAX_SCHEMA+1))
                 except (ValueError,OSError):body=None
-                if isinstance(body,dict) and body.get('errors'):reject_graphql(body,query)
+                if isinstance(body,dict) and body.get('errors'):
+                    if return_graphql_errors:return json.dumps(body).encode()
+                    reject_graphql(body,query)
             raise ValueError('Datafordeleren svarede med HTTP '+str(error.code)+'. Prøv igen senere.') from None
         except (OSError,TimeoutError,http.client.HTTPException) as error:
             if isinstance(error,TimeoutError) or isinstance(getattr(error,'reason',None),TimeoutError):

@@ -26,7 +26,7 @@ from address_source import Datafordeler
 from ui_errors import error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.39'
+VERSION='1.12.0-beta.40'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -197,6 +197,9 @@ class Handler(BaseHTTPRequestHandler):
                 with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))
             if self.path=='/api/address-source/connect':return self.send(self.server.address_source.connect(data.get('api_key')))
             if self.path=='/api/address-source/check':return self.send(self.server.address_source.check())
+            if self.path=='/api/address-source/diagnose':
+                from dar_diagnostic import diagnose
+                return self.send(diagnose(self.server.address_source))
             if self.path=='/api/address-source/disconnect':return self.send(self.server.address_source.disconnect())
             if self.path=='/api/share/connect':
                 with self.server.sharing.lock:

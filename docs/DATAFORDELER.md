@@ -61,3 +61,7 @@ Nøglen gemmes separat fra registreringerne i installationens private datamappe.
 - [Datafordeler Administration: aktivering af nye API-nøgler](https://datafordeler.dk/media/lggned4a/20260219-datafordeler-administration.pdf).
 - [DAR GraphQL](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/).
 - [LTM's overgangsplan](ADRESSEKILDE-2027.md).
+
+## Læsende diagnose i beta.40
+
+Vælg **Kontrollér DAR-opslag** under Datafordeler-forbindelsen. Den sammenligner de aktuelle feltprojektioner og filtre med fiktive søgeværdier i almindelige opslag og aliases. Kontrollen gemmer ingen adresser, ændrer ingen forbindelse eller checkpoints og viser ingen rå leverandørtekst. Den tager op til ét minut. Et accepteret fiktivt opslag er ikke en bekræftet virkelig adressehentning; W62 er fortsat åben.

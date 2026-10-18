@@ -19,5 +19,13 @@ vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/
  nodes.delete('addressSourceStatus');el('addressSourceStatus').textContent='NEWER_DIALOG';release({json:async()=>({configured:true,checked_at:'2026-10-16T10:00:00Z'})});await pending;
  assert.equal(el('addressSourceStatus').textContent,'NEWER_DIALOG');assert.equal(run('AddressSourceUI.busy'),false);
  c.api=async()=>{throw Error('Fiktiv forbindelsesfejl');};el('addressSourceKey').value=key;await run('AddressSourceUI.act("connect")');assert.match(el('addressSourceError').textContent,/Fiktiv/);assert.equal(el('addressSourceKey').value,'');
+ c.api=async(url,payload)=>{calls.push({url,payload});return {json:async()=>({status:'COMPLETE',probes:[{entity:'DAR_Husnummer',variant:'alias',status:'GQL-REJECTED',codes:[],terms:['aliases','supported']}]})};};
+ el('addressSourceStatus').textContent='CONNECTION_UNCHANGED';await run("AddressSourceUI.act('diagnose')");
+ assert.equal(calls.at(-1).url,'/api/address-source/diagnose');assert.equal(JSON.stringify(calls.at(-1).payload),'{}');
+ assert.equal(el('addressSourceStatus').textContent,'CONNECTION_UNCHANGED');assert.match(el('addressSourceDiagnostic').textContent,/DAR_Husnummer.*alias.*GQL-REJECTED/);
+ c.api=()=>new Promise(r=>release=r);const diagnosticPending=run("AddressSourceUI.act('diagnose')");
+ nodes.delete('addressSourceDiagnostic');el('addressSourceDiagnostic').textContent='NEWER_DIAGNOSTIC';
+ release({json:async()=>({status:'COMPLETE',probes:[]})});await diagnosticPending;
+ assert.equal(el('addressSourceDiagnostic').textContent,'NEWER_DIAGNOSTIC');
  console.log('Address source UI: local guide, key clearing, validation, explicit disconnect, busy guard and abandoned-dialog protection passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

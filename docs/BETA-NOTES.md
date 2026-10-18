@@ -1,9 +1,10 @@
-# LTM 1.12.0-beta.39
+# LTM 1.12.0-beta.40
 
-Ét fejlpunkt: W62. Alle ændringer fra beta.30–38 er med.
+Ét fejlpunkt: W62. Denne beta tilføjer en nødvendig læsende diagnose; adressehentningsfejlen er endnu ikke rettet.
 
-- Beta.38 gav fortsat en generisk afvisning på både grænse og enkelt vej. Nu vises en sikker GQL-fejlkategori, entitet og genkendt fejlkode/feltnavn. Ingen rå leverandørtekst, søgeværdier, URL'er eller nøgler vises.
-- Ved genkendte størrelsesfejl reduceres sidestørrelse, alias-batches og om nødvendigt grænseudsnit med faste grænser. Andre afvisninger genprøves ikke som størrelsesfejl. Filtre, tidspunkt, cursor og fuldstændighedskontrol bevares.
-- Prøv først én vej. Hvis den stadig afvises, oplys kun GQL-diagnostikken fra appen. Den reelle afvisningsårsag og fungerende adressehentning er endnu ikke bekræftet; W62 er åben.
+- Åbn Kort og adresser → Hent adresser → Datafordeleren · egen API-nøgle → Kontrollér DAR-opslag.
+- Kontrollen bruger fiktive søgeværdier, de faktiske feltprojektioner og samme transport. Den sammenligner almindelige opslag med ét og ti aliases. Den kan tage op til ét minut.
+- Den gemmer ingen adresser og ændrer hverken checkpoints eller den gemte forbindelse. Nøglen bliver i installationen bortset fra den normale autentifikation hos Datafordeleren.
+- Kun faste kategorier, kendte fejlkoder og udvalgte tekniske diagnoseord vises. Rå leverandørtekst og adresser vises ikke. ACCEPTED betyder kun, at den pågældende fiktive forespørgsel blev accepteret; det beviser ikke en komplet virkelig adressehentning.
 
-Tag fortsat en privat backup før opdatering. Ejerens faktiske API-hentning skal prøves igen med beta.39; grøn forbindelse alene er ikke nok. W61's eksterne GitHub-cache/PR-oprydning og udgivelsesmetadata er stadig åbne. W06 og den afhængige nøglebackup W56 er ikke færdigmeldt. Main er stabil 1.11.1.
+Næste prøve er denne ene læsende kontrol i den eksisterende installation. Der er ikke behov for en ny privat nøgle eller gentagelse af adresseimporten. W62 er fortsat åben. Main er stabil 1.11.1.
