@@ -3,6 +3,11 @@
 const I18n={
  current:'da',
  english:{
+  "Aktivér kort · touch og tastatur":"Activate map · touch and keyboard",
+  "Lås kortet igen":"Lock map again",
+  "Hold Ctrl/Command nede for at flytte eller zoome. På touch eller med tastatur: vælg Aktivér kort. Uden aktivering ruller dialogen normalt.":"Hold Ctrl/Command to pan or zoom. For touch or keyboard, choose Activate map. Without activation the dialog scrolls normally.",
+  "Kortet er låst. Hold Ctrl/Command nede for at flytte eller zoome, eller vælg Aktivér kort.":"The map is locked. Hold Ctrl/Command to pan or zoom, or choose Activate map.",
+  "Kortet er aktivt. Flyt eller zoom med touch, mus eller piletaster og +/−. Vælg Lås kortet igen for almindelig rulning.":"The map is active. Pan or zoom with touch, mouse or arrow keys and +/−. Choose Lock map again to scroll normally.",
   "Gem sikkerhedskopi som…":"Save backup as…",
   "ZIP-sikkerhedskopi":"ZIP backup",
   "Vælg filnavn og placering med Gem sikkerhedskopi som…, hvis knappen vises. Ellers bruges Hent lokal sikkerhedskopi; placeringen styres af browserens downloadindstillinger, også i desktopudgaven. Ingen automatisk upload.":"Choose a filename and location with Save backup as… when the button is available. Otherwise use Download local backup; the location is controlled by your browser download settings, including in the desktop edition. No automatic upload.",
