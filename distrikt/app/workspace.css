@@ -69,6 +69,8 @@ html{scroll-padding-top:calc(var(--shell-height) + 15px)}
 @media(max-width:750px){:root{--shell-height:60px}.brand .brandWordmark{display:none}.brand .brandCompact,.brand b{display:block}.brand .brandCompact{width:34px;height:34px}.brand{gap:8px;flex-shrink:0}.brand b{font-size:18px}.betaChannel .brand b{font-size:16px}header #saveState{max-width:none;flex:1;text-align:right}.mobileMenu{flex-shrink:0}.menuBackdrop{top:var(--shell-height)}}
 @media print{body{padding-top:0}}
 
+.districtMap.mapGestureLocked{touch-action:pan-y!important;cursor:default}.mapGestureHint{margin:8px 0;line-height:1.6}.mapGestureControls{margin:10px 0}.mapGestureControls button[aria-pressed=true]{background:#245840;border-color:#6ea98d}
+
 /* Choice radios must not inherit the full-width text-field rule in dialogs. */
 .welcomeChoice>input[type=radio]{width:18px;height:18px;min-height:18px;flex:0 0 18px;margin:3px 0 0;accent-color:var(--accent)}
 .welcomeChoice>span{min-width:0;flex:1;overflow-wrap:anywhere}
@@ -82,9 +84,9 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 
 .publisherReturnGroup{padding:10px 0 20px;border-bottom:2px solid var(--line);margin-bottom:18px}.publisherReturnGroup h3{display:flex;gap:12px;flex-wrap:wrap;align-items:center;overflow-wrap:anywhere}.publisherReturns{min-width:0}.publisherReturnGroup table{min-width:0;width:100%;table-layout:fixed}.publisherReturnGroup td,.publisherReturnGroup th{padding:12px 5px;overflow-wrap:anywhere}.publisherReturnGroup th:last-child{width:36%}.publisherReturnGroup button{padding:8px 9px}
 
-.brandIdentity{min-width:0}.brandCongregation{max-width:360px;font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}.hasCongregation .brandWordmark{height:48px;object-position:left center}.hasCongregation .brandCongregation{padding-left:48px}
-@media(max-width:750px){.brand{flex-shrink:1}.brandIdentity{min-width:0}.brand .brandCompact{flex-shrink:0}.hasCongregation .brandCongregation{padding:0;max-width:135px;font-size:10px;line-height:13px}header #saveState{flex:1 1 85px;min-width:65px}.brand.hasCongregation b{font-size:14px}}
+.brand{flex:1 1 auto;min-width:0}.brandIdentity{display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 auto}.brand .brandWordmark{width:360px;max-width:none;height:66px;flex:0 0 360px;object-position:left center}.brandCongregation{min-width:0;max-width:none;font-size:17px;line-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);order:2}.brandIdentity b{order:3;flex-shrink:0}header #saveState{flex:0 1 auto;max-width:30%;min-width:65px}
+@media(max-width:750px){.brand{flex:1 1 auto;gap:8px}.brandIdentity{gap:6px}.brand .brandCompact{width:34px;height:34px;flex:0 0 34px}.brandCongregation{font-size:12px;line-height:18px}.brandIdentity b{order:0;font-size:14px}.betaChannel .brandIdentity b{font-size:14px}header #saveState{flex:0 1 85px;max-width:30%;min-width:65px}}
 
 .onboardingTasks{padding:12px 16px;margin-bottom:16px}.onboardingTasks>summary{font-size:14px;font-weight:600;cursor:pointer;line-height:1.5}.onboardingTasks>p{font-size:12px;line-height:1.5;margin:10px 0}.onboardingTasks .onboardingChecklist{margin:8px 0;padding-left:22px}.onboardingTasks .onboardingChecklist li{padding:7px 0;font-size:12px;line-height:1.4}.onboardingTasks .onboardingChecklist .actions{margin-top:5px;gap:5px}.onboardingTasks .onboardingChecklist button{padding:5px 8px;font-size:11px;min-height:28px}
 
-@media(min-width:751px){.betaChannel .brandIdentity{position:relative;padding-right:70px}.betaChannel .brandIdentity b{position:absolute;top:23px;right:0}.betaChannel .hasCongregation .brandIdentity b{top:16px}}
+@media(min-width:751px){.betaChannel .brandIdentity{padding-right:0}.betaChannel .brandIdentity b{position:static;font-size:12px}}

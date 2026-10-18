@@ -1,0 +1,24 @@
+// Only synthetic handlers/events. Gesture changes must not mutate geographic data.
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const target=()=>({listeners:[],attrs:{},dataset:{},classList:{toggle(){}},addEventListener(type,fn,options){this.listeners.push({type,fn,options});},removeEventListener(type,fn){this.listeners=this.listeners.filter(l=>l.type!==type||l.fn!==fn);},setAttribute(k,v){this.attrs[k]=v;},fire(type,values={}){for(const l of [...this.listeners])if(l.type===type)l.fn({preventDefault(){throw Error('Locked gestures must not consume scrolling');},...values});}});
+const win=target(),node=target(),button=target(),hint={id:'invented-hint',dataset:{}},document={...target(),activeElement:node};
+node.contains=value=>value===node;node.focus=()=>document.activeElement=node;
+const c={console,window:win,document};vm.createContext(c);
+for(const file of ['i18n.js','district-map.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../app',file),'utf8'),c);
+const run=s=>vm.runInContext(s,c),map={};for(const key of ['dragging','scrollWheelZoom','doubleClickZoom','touchZoom','boxZoom','keyboard','tapHold'])map[key]={on:true,enable(){this.on=true;},disable(){this.on=false;}};
+c.map=map;c.node=node;c.button=button;c.hint=hint;
+const gate=run('DistrictMapGesture.attach(map,node,button,hint)');
+const check=value=>{assert.equal(gate.enabled(),value);assert.ok(Object.values(map).every(handler=>handler.on===value));};
+check(false);assert.equal(node.tabIndex,0);assert.equal(node.attrs['aria-describedby'],hint.id);
+node.fire('wheel');check(false);assert.match(hint.textContent,/Kortet er låst/);
+node.fire('mousedown');check(false);node.fire('touchstart');check(false);
+node.fire('mousedown',{ctrlKey:true});check(true);win.fire('keyup');check(false);
+node.fire('wheel',{metaKey:true});check(true);win.fire('keyup');check(false);
+win.fire('keydown',{ctrlKey:true});check(true);win.fire('blur');check(false);
+button.fire('click');check(true);assert.equal(button.attrs['aria-pressed'],'true');
+node.fire('touchstart');check(true);win.fire('keyup');check(true);
+button.fire('click');check(false);assert.equal(button.attrs['aria-pressed'],'false');
+run("I18n.set('en')");node.fire('wheel');assert.match(hint.textContent,/map is locked/);
+gate.dispose();assert.equal(node.listeners.length,0);assert.equal(win.listeners.length,0);assert.equal(button.listeners.length,0);gate.dispose();
+console.log('Map gestures: default lock, unconsumed scroll, Ctrl/Command, explicit touch/keyboard activation, release/blur relock and listener disposal passed.');

@@ -1,11 +1,10 @@
-# LTM 1.12.0-beta.30
+# LTM 1.12.0-beta.31
 
-Tre ønskepunkter: W62, W55 og W46.
+To ønskepunkter: W49 og W59. Ændringerne fra beta.30 er med.
 
-- W62: Hent vej med egen API-nøgle går direkte til DAR GraphQL. Det gamle systems vejforslag kan ikke længere blokere hentningen. Gælder også adresser til vejene i et lille OSM-udsnit. Skriv det præcise officielle navn og postnummer, hvis forslagstjenesten er utilgængelig.
-- W55: Afvist API-adgang forklarer nu, at en ny nøgle kan være op til 15 minutter om at blive aktiv. Andre fejl forklares ikke som ventetid. Dansk/engelsk og bevidst genprøve er bevaret.
-- W46: Gem sikkerhedskopi som… tilbyder navn og placering, hvor browseren tillader det. Annullering henter intet og registrerer ikke succes. Almindelig download er altid tilgængelig; browserens downloadindstillinger bestemmer da placeringen. Ingen automatisk upload.
+- W49: Topbaren har logo og menighedsnavn på én vandret linje. Det eksisterende desktoplogo er igen 360 × 66 px, også med menighedsnavn; mobilikonet er fortsat 34 × 34 px. Navnet følger efter en tankestreg og afsluttes med Distrikt/Territory. Lange navne afkortes visuelt, med hele titlen i tekstfeltets title. Beta-markering og gemmestatus bevares.
+- W59: Den interaktive kortvisning i kortets detaljedialog starter låst. Hold Ctrl/Command nede ved flytning eller hjulzoom. Normal rulning passerer til dialogen. Aktivér kort · touch og tastatur er en tydelig alternativ tilstand med piletaster, +/− og touch. Lås kortet igen bevarer udsnittet. Tilstanden nulstilles ved nyt kort/lukning eller vinduesskift. Det statiske godkendelsesbillede til Google Drive er uændret; ingen publicering sker automatisk.
 
-Testet med opdigtede oplysninger. Ejerens faktiske API-hentning skal stadig prøves efter opdateringen; grøn forbindelse alene er ikke nok. Prøv én vej med lejligheder, et lille område og opdatering. Send aldrig nøglen eller private adresser i chat/feedback.
+Ejerens faktiske API-hentning skal stadig prøves med rettelsen fra beta.30; grøn forbindelse alene er ikke nok. Prøv én vej med lejligheder, et lille område og opdatering. Send aldrig nøglen eller private adresser i chat/feedback.
 
 W63: Bred kontrol af faste eksempler afsluttet; nye regressionstests efterprøver tomme adressefelter. W61: Alle udgivelsespakker og grene/tags er renset og verificeret; resterende GitHub-cache/PR-henvisninger og udgivelsesmetadata kræver ekstern oprydning. Main er fortsat stabil 1.11.1.

@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.31 · Logo i fuld størrelse og bevidst kortbetjening
+
+W49: Det eksisterende desktoplogo bevarer 360 × 66 px, mens menighedsnavnet står på samme vandrette linje efter en tankestreg. Mobilikonet bevarer 34 × 34 px. Lange navne afkortes visuelt med hele titlen tilgængelig; beta-markering, navigation og gemmestatus er bevaret.
+
+W59: Kortets interaktive detaljevisning kræver Ctrl/Command til panorering og hjulzoom, eller eksplicit aktivering til touch/tastatur. Normal rulning går til dialogen. Kortet kan låses igen uden at nulstille udsnittet. Lyttere fjernes ved lukning, og nyt kort starter låst. Medlemskab, gemte grænser, eksport og publiceringsgodkendelse ændres ikke.
+
+Disse to ønskepunkter er afgrænset fra beta.30. Rigtig API-hentning og ekstern GitHub-cache/PR-oprydning er fortsat åbne ejer-/Support-trin. Main er stabil 1.11.1.
+
 ## 1.12.0-beta.30 · API-hentning og sikkerhedskopi
 
 W62: Hentning af en vej med egen Datafordeler-nøgle afhænger ikke længere af det gamle systems vejforslag. Det gælder også vejene i et lille OSM-kortudsnit. Den nye kilde bruger det præcise officielle vejnavn og postnummer; der vælges ikke en tilfældig nabovej. Regler for komplette adresser, lejligheder, opdateringer og bevarelse af lokale data er uændrede. Rettelsen er testet med fiktive svar; ejerens rigtige API-hentning skal fortsat bekræftes.
