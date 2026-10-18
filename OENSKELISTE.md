@@ -2,7 +2,7 @@
 
 **Aktuel aftale 17.10.2026: Den faste udviklingsplan er afsluttet (100 %, 10/10). Ejeren har overdraget prioriteringen til LTM (W60). Den øverste kø viser nu den gældende arbejdsprioritet; tidligere ejerprioriteter bevares i registreringshistorikken. W61 er kritisk -1 og går straks foran alt øvrigt arbejde, også oprydning i tidligere udgivelser/betaer. Derefter W62 om fejlslagen adressehentning og W55 om nøgleaktivering. Hver beta må højst samle tre ønskepunkter. Udvikling foregår på develop; main er stabil 1.11.1.**
 
-Seneste verificerede beta er 1.12.0-beta.28 fra d753d7a, med grønne program-, Mac-, Windows- og HA-kontroller. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
+Seneste verificerede beta er 1.12.0-beta.29 fra bd66dfc, med grønne program-, browser-, Mac-, Windows- og HA-kontroller. Den fjerner faste sted-/adresseeksempler i den nye beta; W61 om alle tidligere versioner er fortsat kritisk og åben. Lokale ejerprøver er særskilte og tælles ikke som udført automatisk.
 
 ## Arbejdsrækkefølge fra 17.10.2026
 
@@ -381,8 +381,10 @@ Ejeren har bekræftet fungerende drift på beta.28, backup og gendannelse, adgan
 
 17.10.2026: Ejerens grønne Datafordeler-forbindelse er bekræftet. Live adressehentning er endnu ikke prøvet. Hjælpetekst om op til 15 minutters aktiveringstid er registreret som W55 og kontrolleret mod Datafordelerens officielle administrationsvejledning. W56–W59 dækker separat krypteret nøglebackup, læsbart eksportarkiv, afsluttende fuld oversættelse og kontrollerede bevægelser i digitalt kortpreview. Ejeren har valgt kryptering med selvvalgt kode; almindelig data-/PDF-/CSV-backup skal fortsat holdes adskilt fra credentials. W60 overdrager den fremtidige prioritering til LTM; den aktive kø er derfor omprioriteret efter fejl, backup, arbejdsgrundlag og afhængigheder. Der er ikke indført programkode i denne opdatering.
 
-## W61–W62 · Akut prioritering 17.10.2026
+## W61–W62 · Akut prioritering 17.–18.10.2026
 
 Ejeren melder personfølsomme forslag i bl.a. Hent en vej og kræver øjeblikkelig fjernelse i alle tidligere udgivelser og betaer. W61 er derfor -1 og går foran alt øvrigt arbejde. Offentlige noter beskriver kun problemet generelt uden de konkrete oplysninger. Ejeren melder samtidig, at faktisk adressehentning med den nye API fejler; dette registreres som W62 og må ikke forveksles med en grøn forbindelseskontrol eller W55. Denne opdatering ændrer planen, ikke programkode eller tidligere udgivelsespakker.
+
+18.10.2026: Beta.29 er udgivet fra bd66dfcb53a24ff2a9eddbdfc0436573bc150895. Checks, Platformskontrol og HA beta release er alle grønne. Udgivelsen indeholder HA-pakke og kontrolsum, og HA-betagrenen viser version 1.12.0-beta.29. Lokalt passerede 350 Python-test (én sprunget over), samtlige JavaScript-test og pakke-/opstartskontroller. Lokal browserstart var blokeret af en manglende testbrowser; de krævede browserprøver passerede på GitHub. W61 forbliver åben for tidligere udgivelser og afklaring af dynamiske forslag; W62 er ikke rettet.
 
 18.10.2026: Første W61-rettelse klargjort som beta.29: faste vej-/postnummer-/husnummereksempler er fjernet fra de geografiske søgefelter; stedteksten er også fjernet fra oversættelser og erstattet i testdata. De relevante felter bruger neutrale dansk/engelske beskrivelser. Der er ingen forekomster af den identificerede stedtekst i de aktuelle sporede tekstfiler. Brugerens lokale data og dynamiske vejnavnesøgning ændres ikke. En kildegennemgang finder stedteksten ved alle 30 eksisterende udgivelsestags (28 betaer samt 1.11.0 og 1.11.1). Dette verificerer kildeforekomster, ikke de downloadede udgivelsespakker. De tidligere tags, pakker og Git-historik er endnu ikke renset; W61 forbliver kritisk og åben. Det mangler at blive afklaret, om ejerens krav også omfatter dynamiske forslag under indtastning, da det vedhæftede skærmbillede ikke kunne åbnes. W62 er fortsat åben og ikke rettet.
