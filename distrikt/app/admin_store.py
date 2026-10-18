@@ -21,9 +21,26 @@ class AdminStore:
         return fields
 
     def bulk_numbers(self,data):
-        raw=data.get('numbers','')
-        if not isinstance(raw,str) or len(raw)>20000:raise ValueError('Indsæt højst 500 kortnumre.')
-        numbers=[n for n in re.split(r'[\s,;]+',raw.strip()) if n]
+        mode=data.get('numbering_mode','list')
+        if mode=='range':
+            values=[]
+            for key,limit in (('range_start',999999999),('range_end',999999999),('range_digits',29)):
+                raw=data.get(key,'0' if key=='range_digits' else '')
+                if isinstance(raw,bool) or not isinstance(raw,(str,int)) or not re.fullmatch(r'[0-9]{1,9}',str(raw)) or int(raw)>limit:
+                    raise ValueError('Start og slut skal være hele tal fra 0 til 999999999; antal cifre skal være 0–29.')
+                values.append(int(raw))
+            start,end,digits=values
+            if end<start:raise ValueError('Slutnummeret må ikke være mindre end startnummeret.')
+            if end-start+1>500:raise ValueError('Intervallet må højst indeholde 500 kort. Start og slut tælles begge med.')
+            prefix=data.get('range_prefix','')
+            if not isinstance(prefix,str) or len(prefix)>1 or prefix and not prefix.isalpha():
+                raise ValueError('Forbogstavet skal være tomt eller præcis ét bogstav.')
+            numbers=[prefix+str(n).zfill(digits) for n in range(start,end+1)]
+        elif mode=='list':
+            raw=data.get('numbers','')
+            if not isinstance(raw,str) or len(raw)>20000:raise ValueError('Indsæt højst 500 kortnumre.')
+            numbers=[n for n in re.split(r'[\s,;]+',raw.strip()) if n]
+        else:raise ValueError('Vælg egen liste eller interval.')
         if not numbers or len(numbers)>500:raise ValueError('Indsæt mellem 1 og 500 kortnumre.')
         if any(len(n)>30 for n in numbers):raise ValueError('Et kortnummer må højst have 30 tegn.')
         seen=set();duplicates=[]

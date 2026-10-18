@@ -6,6 +6,8 @@ These features are prepared for the next app version; use a complete release whe
 
 ### A useful starting point
 
+From beta.33, **Hurtig oprettelse → Range** generates card numbers from the inclusive start to the inclusive end. Optionally choose a minimum number of digits for zero padding and one prefix letter. 0–300 with four digits gives 0000–0300, 301 cards; a prefix is preserved. The limit remains 500 cards per batch. Review all numbers, the count and any duplicates before confirming. Preview creates nothing. **Custom list** still treats 1–10 as one literal card number, not a range.
+
 From beta.32, **Tasks** handles all follow-up. Existing notes become tasks while retaining their text, dates, card links and completion status. The same conversion runs after explicitly importing an older backup; previewing one changes nothing. User text is never translated. Legacy storage/API names remain compatible with existing backups.
 
 Navigation counts open tasks only. Cards with open tasks are marked in the card/folder list and get a prominent assignment-form warning containing their task text. Tasks do not create do-not-call records automatically or block assignment. Use them to add a do-not-call record, check house numbers or remove a house that does not exist. **○** marks a task done; **✓** reopens it. Completed tasks stay editable under Completed without losing content or links.

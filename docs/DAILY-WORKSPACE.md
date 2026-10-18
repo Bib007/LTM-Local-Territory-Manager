@@ -6,6 +6,8 @@ Disse forbedringer er klargjort til næste appversion. En udviklingsbranch er ik
 
 ### Et brugbart udgangspunkt
 
+Fra beta.33 kan **Hurtig oprettelse → Interval** danne kortnumre fra start til slut inklusive. Vælg eventuelt antal cifre til nuludfyldning og ét foranstillet bogstav. 0–300 med fire cifre giver 0000–0300, i alt 301 kort; et bogstav foran bliver bevaret. Der er fortsat højst 500 kort pr. oprettelse. Kontrollér hele nummerlisten, antal og eventuelle dubletter før Bekræft og gem. Intet oprettes ved forhåndsvisning. **Egen liste** virker som før, hvor fx 1–10 er ét kortnummer, ikke et interval.
+
 Fra beta.32 bruges **Opgaver** til al opfølgning. Tidligere noter bliver opgaver med samme tekst, datoer, kortreference og udført-status. Det sker også, når en gammel sikkerhedskopi importeres; forhåndsvisningen ændrer intet. Teksten oversættes ikke. Den interne datafil og gamle API-navne bevares for kompatibilitet, så eksisterende backups kan bruges.
 
 Navigationens tæller viser kun åbne opgaver. Kort med åbne opgaver markeres i kortlisten/mappen, og udleveringsformularen viser en tydelig advarsel med opgaveteksten. En opgave opretter ikke IB automatisk og spærrer ikke udlevering. Brug fx opgaver til at tilføje IB, kontrollere numre eller fjerne et hus, der ikke findes. **○** markerer udført; **✓** genåbner. Udførte opgaver kan findes og redigeres under Udførte uden at miste indhold eller tilknytning.

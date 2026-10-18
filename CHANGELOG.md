@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.33 · Hurtig oprettelse med inklusivt interval
+
+W54: Hurtig oprettelse har et særskilt intervalvalg med start/slut inklusive, valgfrit antal cifre/nuludfyldning og ét valgfrit foranstillet bogstav. 0–300 med fire cifre giver 0000–0300, i alt 301 kort. Bogstavet og nuludfyldningen indgår i den synlige forhåndsvisning. Højst 500 kort oprettes ad gangen, og den eksisterende egen liste er uændret; her betyder 1–10 stadig ét bogstaveligt kortnummer.
+
+Antal og alle endelige numre vises før godkendelse. Serveren efterprøver interval, længder og dubletter igen ved oprettelsen. Eksisterende, arkiverede og gendannelige kortnumre reserveres som før, uanset store/små bogstaver. Et ugyldigt interval eller én dublet stopper hele oprettelsen. Eksisterende kort overskrives ikke.
+
 ## 1.12.0-beta.32 · Én samlet opgavefunktion
 
 W50: Noter og opgaver er samlet under Opgaver. Gamle noter bliver opgaver med uændret tekst, kortreference, datoer og udført-status, også efter import af ældre backup. Aktive og gendannelige poster konverteres i en transaktion; aktivitetshistorik ændres ikke til opgaver. Gamle data-/API-navne bevares for kompatibilitet. Redigering af udførte opgaver og tilknytning til arkiverede kort bevarer status og reference.
