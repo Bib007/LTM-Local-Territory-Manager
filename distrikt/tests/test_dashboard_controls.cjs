@@ -24,6 +24,15 @@ run(`state={today:'2026-10-16',cards:[
  completions:[{card_id:'c0',date:'2026-09-03',visits:5},{card_id:'c0',date:'2026-10-03',visits:4},{card_id:'c1',date:'2026-10-05',visits:2},{card_id:'old',date:'2026-10-06',visits:3}],
  visits:[{date:'2026-09-20'}],notes:[{text:'Private invented note',task:true,resolved:false}],settings:{saved_views:[{id:'v',name:'Gemte visninger'}]}};`);
 const original=run('JSON.stringify(state)');
+run("state.settings.last_backup='2026-10-01T23:59:59Z';state.today='2026-10-15'");
+assert.match(run('Workspace.backupReminder()'),/backupReminder/,'Exactly 14 calendar days is due');
+run("state.today='2026-10-14'");assert.equal(run('Workspace.backupReminder()'),'');
+run("state.today='2026-10-15';state.settings.backup_snoozed_until='2026-10-16'");assert.equal(run('Workspace.backupReminder()'),'');
+run("state.today='2026-10-16'");assert.match(run('Workspace.backupReminder()'),/backup-snooze/,'Visible again tomorrow, not after 24 hours');
+run("state.settings.last_backup='invalid';state.settings.backup_snoozed_until='';I18n.set('en')");assert.match(run('Workspace.backupReminder()'),/No backup transfer/);
+run("state.settings.backup_history=[{id:'fictional',at:'2026-10-01T00:00:00Z',status:'file_saved'},{id:'fictional2',at:'2026-10-02T00:00:00Z',status:'created'}]");
+assert.match(run('Workspace.backupHistory()'),/File write confirmed by the file picker/);assert.match(run('Workspace.backupHistory()'),/transfer not confirmed/);
+run(`state=${original};I18n.set('da')`);
 for(const language of ['da','en']){
  run(`I18n.set('${language}')`);const html=run('Workspace.dashboard()');
  assert.match(html,/>4<\/strong>/);assert.match(html,/>14<\/strong>/);assert.match(html,/>67%<\/strong>/);

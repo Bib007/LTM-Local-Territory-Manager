@@ -66,6 +66,8 @@ class OnboardingProgressTests(unittest.TestCase):
         self.assertNotIn('printing',self.tasks())
         self.store.mutate('print.profile.save',{'side':'back','profile':dict(PROFILE,mode='data')})
         self.assertEqual(self.tasks()['printing'],'done');self.assertNotIn('backup',self.tasks())
+        self.store.mutate('backup.record',{'id':'fictional-created','status':'created'})
+        self.assertNotIn('backup',self.tasks(),'ZIP creation alone is not a completed transfer')
         self.store.mutate('backup.record',{});self.assertEqual(self.tasks()['backup'],'done')
         self.assertNotIn('desk',self.tasks());self.assertNotIn('sharing',self.tasks())
 

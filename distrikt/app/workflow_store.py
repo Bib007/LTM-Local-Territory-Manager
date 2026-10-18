@@ -1,8 +1,10 @@
 """Local workflow tools. Activity stores summaries only; undo payloads stay in RAM."""
 import copy
 import json
+import re
 import time
 import uuid
+from datetime import date, timedelta
 from geography import enclosing_outline, street_rows
 from admin_store import signature
 
@@ -41,7 +43,26 @@ class WorkflowStore:
         if action=='filter.delete':
             config=dict(self.require('settings','config'));config['saved_views']=[v for v in config.get('saved_views',[]) if v['id']!=data.get('id')];self.put('settings',config);return {}
         if action=='backup.record':
-            config=dict(self.require('settings','config'));config['last_backup']=now();self.put('settings',config);return {}
+            status=data.get('status','download_started');ident=data.get('id') or uuid.uuid4().hex
+            if status not in ('created','download_started','file_saved') or not isinstance(ident,str) or not re.fullmatch(r'[A-Za-z0-9-]{1,64}',ident):
+                raise ValueError('Ugyldig backupregistrering.')
+            config=dict(self.require('settings','config'));history=list(config.get('backup_history') or [])
+            existing=next((entry for entry in history if entry['id']==ident),None)
+            if existing:
+                if existing['status']==status:return {}
+                if existing['status']!='created' or status=='created':raise ValueError('Ugyldig backupregistrering.')
+                entry={**existing,'status':status,'at':now()};history=[entry if item['id']==ident else item for item in history]
+            else:
+                if data.get('id') and status!='created':raise ValueError('Ugyldig backupregistrering.')
+                entry={'id':ident,'created':now(),'at':now(),'status':status};history.append(entry)
+            config['backup_history']=history[-100:]
+            if status!='created':
+                config['last_backup']=entry['at'];config.pop('backup_snoozed_until',None)
+            self.put('settings',config);return {}
+        if action=='backup.snooze':
+            config=dict(self.require('settings','config'))
+            config['backup_snoozed_until']=(date.today()+timedelta(days=1)).isoformat()
+            self.put('settings',config);return {}
         if action=='workflow.undo':
             entry=self._undo
             if not entry or entry['until']<time.monotonic() or entry['revision']!=self.revision:raise ValueError('Fortryd er udløbet, eller data er ændret siden handlingen.')

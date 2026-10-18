@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.35 · Lokal backuphistorik og påmindelse
+
+W52: De seneste 100 manuelle backupforsøg vises under Indstillinger → Data med særskilt status for oprettet ZIP, startet browserdownload og afsluttet filskrivning via filvælgeren. Annullering registrerer ingen backup. Fejlet filskrivning beholder kun ZIP-oprettelsen; den udskyder ikke påmindelsen. Filstier, filnavne, nøgler og forbindelsesoplysninger gemmes ikke i denne historik. Eksisterende backupregistreringer bevares uden at blive omtalt som bekræftet filskrivning.
+
+Forsiden påminder, hvis ingen overførsel er registreret, eller der er gået mindst 14 kalenderdage. Udsæt skjuler feltet til næste kalenderdag, ikke i 24 timer. Browserdownload betyder kun, at overførslen er startet; kontrollér filen i browseren. Historikken følger dataene ved gendannelse og indeholder kun registreringer fra før ZIP'ens oprettelse. Ingen automatisk backup, upload eller ekstern besked.
+
 ## 1.12.0-beta.34 · Opsætning følger gemte handlinger
 
 W47: Relevante opsætningstrin afsluttes automatisk efter en gennemført gemning: menighed, mappeminimum, begge printprofiler, forkynder, kort, ydergrænse, IB-import og registreret backup. Fremdriften gemmes i samme transaktion som handlingen og følger med ved Fortryd. Åbning, forhåndsvisning og afvist gemning tæller ikke. Spring over og eksisterende fremdrift bevares. Forbindelser og den samlede gennemgang af udleveringer bekræftes fortsat manuelt; én registrering beviser ikke, at hele gennemgangen er færdig.

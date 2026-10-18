@@ -226,12 +226,23 @@ async function download(path,name,options={}){
   catch(error){if(error?.name==='AbortError')return false;throw Error(I18n.text('Filvælgeren er ikke tilgængelig her. Brug Hent lokal sikkerhedskopi, og vælg placering via browserens downloadindstillinger.'));}
  }
  const r=await api(path),blob=await r.blob();
+ if(options.onCreated)await options.onCreated();
  if(handle){
   let writer;
   try{writer=await handle.createWritable();await writer.write(blob);await writer.close();}
   catch{try{await writer?.abort();}catch{}throw Error(I18n.text('Sikkerhedskopien kunne ikke gemmes på den valgte placering. Kontrollér adgang og ledig plads, eller brug almindelig download.'));}
  }else{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);}
  return true;
+}
+async function backup(chooseLocation=false){
+ if(backup.busy)return false;backup.busy=true;
+ const id=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12);
+ try{
+  const completed=await download('/api/export/backup','Distrikt-sikkerhedskopi-'+state.today+'.zip',{chooseLocation,onCreated:()=>mutate('backup.record',{id,status:'created'},{close:false,autosave:true})});
+  if(!completed)return false;
+  await mutate('backup.record',{id,status:chooseLocation?'file_saved':'download_started'},{close:false,message:I18n.text(chooseLocation?'Sikkerhedskopi gemt i valgt fil':'Backupdownload startet · kontrollér filen i browseren')});
+  return true;
+ }finally{backup.busy=false;}
 }
 document.addEventListener('input',e=>{if(e.target.id==='settingsFolderMinimum'&&e.target.form){e.target.form.dataset.folderTouched='yes';}else if(e.target.id==='search'){query=e.target.value;addressPage=0;const p=e.target.selectionStart;render();el('search')?.focus();el('search')?.setSelectionRange(p,p);}else if(e.target.closest('#cardForm'))scheduleCardSave();});
 document.addEventListener('change',async e=>{try{if(e.target.name==='card_id'&&e.target.form?.id==='issueForm'){el('issueTaskWarning').innerHTML=taskWarning(e.target.value);}else if(e.target.id==='serviceYear'){year=Number(e.target.value);render();}else if(e.target.id==='addressPostcode'){addressPostcode=e.target.value;addressPage=0;render();}else if(e.target.id==='areaFilter'){area=e.target.value;render();}else if(e.target.id==='statusFilter'){status=e.target.value;render();}else if(e.target.id==='mapCard'){mapCard=e.target.value;mapDraft=[];editMap=false;render();}else if(e.target.id==='printOrientation'){let f=e.target.form,w=f.elements.width,h=f.elements.height,a=Number(w.value),b=Number(h.value);w.value=e.target.value==='portrait'?Math.min(a,b):Math.max(a,b);h.value=e.target.value==='portrait'?Math.max(a,b):Math.min(a,b);}else if(e.target.id==='mapFile'){const fileInput=e.target,origin=page,dialogGeneration=openDialog.generation,file=e.target.files[0];if(!file)return;if(file.size>5*1024*1024)throw Error('Billedet må højst være 5 MB.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});if(page!==origin||openDialog.generation!==dialogGeneration||el('mapFile')!==fileInput||fileInput.files?.[0]!==file||fileInput.isConnected===false)return;openDialog(`<h2>Brug det nye kortbillede?</h2><p>Billedet lagres kun lokalt. Gamle tegnede grænser fjernes, fordi de ikke nødvendigvis passer til det nye billede.</p><div class="actions"><button id="confirmMap" class="primary">Brug billedet</button><button data-action="close">Annuller</button></div>`);el('confirmMap').addEventListener('click',async()=>{const generation=openDialog.generation,origin=page;let accepted=false;try{await mutate('map.save',{image:data,name:file.name});accepted=true;await loadMap();if(page===origin&&generation===openDialog.generation)render();}catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);toast(error);}});}else if(e.target.closest('#cardForm'))scheduleCardSave();}catch(e){toast(e);}});
@@ -289,7 +300,8 @@ case 'profile-mode':configurePrintMode(d.side);break;
 case 'print-options':printOptions(d.id,d.side);break;
 case 'open-data':{const r=await(await api('/api/open-data',{})).json();toast(I18n.format('Datamappe på serveren: {path}',{path:r.path}));} break;
 case 'logout':await api('/api/logout',{});location.replace('/');break;
-case 'backup':case 'backup-save':if(await download('/api/export/backup','Distrikt-sikkerhedskopi-'+state.today+'.zip',{chooseLocation:d.action==='backup-save'}))await mutate('backup.record',{}, {close:false,message:I18n.text("Privat sikkerhedskopi hentet")});break;
+case 'backup':case 'backup-save':await backup(d.action==='backup-save');break;
+case 'backup-snooze':await mutate('backup.snooze',{}, {close:false,message:I18n.text('Backuppåmindelse udsat til i morgen')});break;
 case 'cleanup':{const generation=openDialog.generation,info=await(await api('/api/data-info')).json(),count=state.loans.filter(l=>l.returned&&l.returned<info.cutoff).length+state.completions.filter(e=>e.date<info.cutoff).length;if(target.isConnected===false||openDialog.generation!==generation)return;openDialog(`<h2>${ui('Ryd historik før {date}?',{date:fmt(info.cutoff)})}</h2><p>${ui('{count} afsluttede udlån / gennemgange fjernes. Aktive udlån, nyere registreringer, IB, forkyndere og KTM-besøg beholdes.',{count})}</p><p class="hint">${ui("Seneste kendte gennemgang på kortet bevares. Gendannelse ved fejl er mulig i 48 timer.")}</p><div class="actions"><button class="danger" data-action="confirm-cleanup">${ui("Fjern den gamle historik")}</button><button data-action="close">${ui("Annuller")}</button></div>`);break;}
 case 'confirm-cleanup':await mutate('history.cleanup',{},{message:I18n.text("Gammel historik fjernet · 48 timers gendannelse ved fejl")});break;
 case 'add-address':el('addressRows').insertAdjacentHTML('beforeend',addressRow());I18n.applyShell();scheduleCardSave();break;

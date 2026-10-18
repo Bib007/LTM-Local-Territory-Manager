@@ -247,7 +247,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
 
     def _mutate(self, action, data, *, geographic=False):
         if action.startswith('setup.'):return self.setup_mutate(action,data)
-        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','note.task'):
+        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task'):
             return self.workflow_mutate(action,data)
         if action in ('card.bulk.preview','card.bulk.create','card.bulk.edit.preview','card.bulk.edit','loan.correct.preview','loan.correct'):
             return self.admin_mutate(action,data)
