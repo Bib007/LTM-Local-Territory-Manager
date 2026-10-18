@@ -473,3 +473,11 @@ Ejeren bekræfter: API-adressehentningen virker nu; alle adresseændringer skull
 W67 er en note til senere: revurdér hvilke hændelser der faktisk skal udløse adresseændringer, hvordan systemet forklares og ventende ændringer vises, samt om en Godkend alle-knap skal tilbydes. Ejerens rydning må ikke omsættes til en anbefaling om automatisk sletning. Krav, kontrol og godkendelsesforløb skal vurderes før eventuel implementering; ingen ændring er bestilt nu.
 
 W61: En privat Gmail-kladde til GitHub Support er oprettet til ejerens gennemgang. GitHubs dokumenterede kanal er supportportalen; ingen henvendelse er sendt. W61 er fortsat −1, indtil restoprydningen faktisk er bekræftet. Private repositorydetaljer, mailindhold og de oprindelige stedværdier offentliggøres ikke her.
+
+## Enkel statusvisning i Google-planen
+
+Ejerens aftale 18.10.2026: Fanen “Hvor meget er der tilbage?” er et enkelt visuelt overblik med korte opgavetitler, næste trin og en cirka-procent. Historik, tekniske beslutninger, test-/udgivelsesbeviser og arbejdsnoter vedligeholdes på GitHub i denne fil. Private supportoplysninger bliver i den eksisterende Gmail-kladde; de offentliggøres ikke her. W66-referencebilledet bevares som privat bilag i Google-dokumentet.
+
+Fremdriftens visningsregel: total = antal unikke registrerede W-ID'er; åbne = antal aktuelle planpunkter i arbejdsrækkefølgen, inklusive afventende og senere afklaringer. Procent = afrund(100 × (total − åbne) / total). Aktuelt: 67 registrerede ønsker, 23 åbne planpunkter, 44 afsluttede/afklarede i visningsestimatet, cirka 66 %. Det er et groft opgaveestimat; sammenlagte ønsker og faste procedurer gør det uegnet som estimat for resterende arbejdstid.
+
+Når en opgave afsluttes, eller et nyt ønske registreres, genberegnes procent og antal og det enkle Google-overblik opdateres i samme arbejdsforløb. Nye ønsker gemmes i udviklingsplanen og kontrolleres, før de fjernes fra ønskefanen. Kun åbne punkter vises på oversigten; detaljer og afslutningshistorik bliver her. Ingen baggrundsautomation er oprettet.
