@@ -7,7 +7,7 @@ from dar_adapter import DarAdapter
 from dar_query import DarQuery
 from dar_paging import IncompleteResult
 from geography import utm32_to_wgs84
-from postcode import SourceUnavailable, SourceTimeout
+from postcode import SourceUnavailable, SourceTimeout, SourceLimit
 
 
 def road_lines(roads):
@@ -73,7 +73,7 @@ class DarDownload:
                 result = self.address_source.query(query)
                 if expected_schema != self.source_schema():
                     raise SourceUnavailable('Datafordelerens skema er ændret under hentningen. Start en ny opdatering; lokale adresser er bevaret.')
-            except SourceTimeout:
+            except (SourceTimeout,SourceLimit):
                 raise
             except ValueError as error:
                 # Datafordeler.query has already removed provider text and keys.
