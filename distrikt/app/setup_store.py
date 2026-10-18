@@ -62,7 +62,7 @@ class SetupStore:
             'cards':lambda:bool([c for c in self.all('cards') if not c.get('archived')]),
             'boundary':lambda:bool(self.main_boundary()),
             'ib':lambda:bool(self.all('ib')),
-            'backup':bool(config.get('last_backup')),
+            'backup':bool(config.get('last_backup')) and data.get('status')!='created',
         }
         for event in events[action]:
             task=answers.get('cards') if event=='cards' else ('kml' if answers.get('boundary')=='yes' else 'boundary') if event=='boundary' else event
