@@ -157,6 +157,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
             result['settings'] = self.get('settings', 'config')
+            try:
+                result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
+            except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
             result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
             result['archived_cards']=[c for c in result['cards'] if c.get('archived')]
