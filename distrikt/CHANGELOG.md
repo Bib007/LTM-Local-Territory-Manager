@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.51 · Topbar og roligere digitale kort
+
+W66: Menighedsnavnet i topbaren står nu ved logoets hovedtekst i stedet for midt mellem hovedtekst og undertekst. Tom plads i logoets højre side udnyttes, uden at ændre logoets 360 × 66 pixels. Lange navne afkortes fortsat visuelt med den fulde tekst i hjælpeteksten; mobilens kompakte identitet, betamarkering og gemmestatus bevares. Den private reference er ikke medtaget i kode eller kontrolbilleder.
+
+W40: På digitale Drive-kort nedtones kun baggrundens vejkort, ikoner/skel og lokale vej-/bygningslag. Valgte husnumre, røde besøgsprikker, distriktsgrænse, miniature og kildeangivelse beholder deres styrke. Almindelige lokale korteksporter ændres ikke. Eksisterende Drive-filer, links og QR bevares; layoutopfølgning beder om ny lokal forhåndsvisning og udtrykkelig godkendelse, ikke automatisk upload eller genpublicering. Fiktive tætte/spredte kort og topbarer i stabil-/betavisning ved 320/390/768/1440 pixels indgår nu i browserkontrollen.
+
 ## 1.12.0-beta.50 · S-13 med navne og udleveringer
 
 W69: Den lokale historikimport aflæser nu også forkyndernavne, udleveringer og indleveringer i understøttet digital S-13. Efter ejerens afklaring bliver en udlevering uden indleveringsdato et aktivt udlån; en indlevering afslutter udlånet og registrerer kortet som gennemgået. Forhåndsvisningen viser navnematch, nye forkyndere, aktive/afsluttede udlån og konflikter før udtrykkelig godkendelse. En ekstra femkolonners CSV-skabelon understøtter manuel overførsel fra scanninger og fotos; den eksisterende skabelon med kortnummer/dato bevares.
