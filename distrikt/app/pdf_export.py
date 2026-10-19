@@ -12,8 +12,10 @@ def pdf_document(pages, width=595.28, height=841.89, image=None):
     objects = [b'<< /Type /Catalog /Pages 2 0 R >>', b'', b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>']
     kids = []
     if image:
-        raw,iw,ih=image
-        objects.append(('<< /Type /XObject /Subtype /Image /Width %s /Height %s /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length %s >>\nstream\n'%(iw,ih,len(raw))).encode()+raw+b'\nendstream')
+        raw,iw,ih=image[:3]
+        png=len(image)>3 and image[3]=='png'
+        filter_name='/FlateDecode /DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns %s >>'%iw if png else '/DCTDecode'
+        objects.append(('<< /Type /XObject /Subtype /Image /Width %s /Height %s /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter %s /Length %s >>\nstream\n'%(iw,ih,filter_name,len(raw))).encode()+raw+b'\nendstream')
     for commands in pages:
         page_id = len(objects)+1
         content_id = page_id+1

@@ -24,6 +24,20 @@ class HTTPTests(unittest.TestCase):
         h.update(headers or {})
         req=urllib.request.Request(self.server.origin+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
         return urllib.request.urlopen(req,timeout=3)
+    def test_readable_export_requires_token_and_preserves_data(self):
+        import io,zipfile
+        revision=self.store.revision
+        for path in ('prepare','image','finish'):
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/export/readable/'+path,{},token=False)
+            self.assertEqual(caught.exception.code,403)
+        with self.request('/api/export/readable/prepare',{}) as response:job=json.load(response)
+        with self.request('/api/export/readable/finish',{'token':job['token']}) as response:
+            self.assertEqual(response.headers['Content-Type'],'application/zip')
+            self.assertEqual(response.headers['Cache-Control'],'no-store')
+            with zipfile.ZipFile(io.BytesIO(response.read())) as archive:self.assertIn('PDF/04-alle-opgaver.pdf',archive.namelist())
+        self.assertEqual(self.store.revision,revision)
+        with self.request('/readable-export-ui.js') as response:self.assertIn(b'ReadableExportUI',response.read())
+
     def test_parameterized_validation_metadata_keeps_original_error_and_does_not_write(self):
         before=self.store.revision
         cases=[
