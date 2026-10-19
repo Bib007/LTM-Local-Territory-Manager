@@ -46,11 +46,21 @@ for(const language of ['da','en']){
  assert.equal((html.match(/data-ui="[a-z]{3} \{year\}"/g)||[]).length,24);
  assert.match(html,/aria-hidden="true"/);assert.match(html,/class="srOnly"/);
  assert.match(html,language==='en'?/Service year 2026\/2027/:/Tjenesteår 2026\/2027/);
- assert.match(html,language==='en'?/Completions and estimated visits: 1\.9\.2026 – 16\.10\.2026\. Cards and tasks show their current status\./:/Gennemgange og anslåede besøg: 1\.9\.2026 – 16\.10\.2026\. Kort og opgaver viser aktuel status\./);
+ assert.doesNotMatch(html,/dashboardPeriod|Gennemgange og anslåede besøg:|Completions and estimated visits:/);
  assert.match(html,language==='en'?/View monthly figures as a table/:/Vis månedstallene som tabel/);
+ assert.match(html,language==='en'?/1 month and 0 days/:/1 måned og 0 dage/);
+ assert.match(html,language==='en'?/Converted using 30 days per month/:/Omregnet med 30 dage pr. måned/);
  run("Workspace.searchDialog('Kort <fictional>')");assert.match(get('workspaceSearchResults').innerHTML,/Kort &lt;fictional&gt;/);
  assert.equal(get('dialog').lang,language);assert.match(run('Workspace.filters()'),/>Gemte visninger<\/option>/);
  assert.equal(run('JSON.stringify(state)'),original);
+}
+for(const language of ['da','en']){
+ run(`I18n.set('${language}')`);
+ for(const [days,months,remainder] of [[0,0,0],[1,0,1],[29,0,29],[30,1,0],[31,1,1],[59.5,2,0],[60,2,0],[365,12,5]]){
+  const label=run(`Workspace.intervalLabel(${days})`).replace(/<[^>]*>/g,'');
+  assert.equal(label,language==='en'?`${months} ${months===1?'month':'months'} and ${remainder} ${remainder===1?'day':'days'}`:`${months} ${months===1?'måned':'måneder'} og ${remainder} ${remainder===1?'dag':'dage'}`);
+ }
+ assert.doesNotMatch(run('Workspace.intervalLabel(NaN)'),/NaN/);
 }
 run('state.cards=[];state.completions=[];state.archived_cards=[];state.loans=[];state.notes=[]');
 assert.match(run('Workspace.dashboard()'),/Begin|Begynd|Start with/);assert(!run('Workspace.dashboard()').includes('NaN'));

@@ -1,9 +1,9 @@
-# LTM 1.12.0-beta.44
+# LTM 1.12.0-beta.45
 
-Ét større ønskepunkt: W57 · Læsearkiv uden LTM.
+Tre ønskepunkter samlet: W57, W68 og W48.
 
-Indstillinger → Data → Eksportér læsearkiv danner en ZIP med fire PDF'er (forsider, IB-bagsider, digitale kort og opgaver), S-13 for hele den gemte periode og CSV-tabeller. Aktive og arkiverede registreringer medtages. Kort uden geografi findes i forsider/CSV og får ikke et opdigtet digitalt kort.
+- Læsearkiv under Indstillinger → Data: fire PDF'er, fuld S-13-historik og CSV med præcise adresser og kortreferencer. Kort vises og medtages ét ad gangen med OpenStreetMap-baggrund, uden automatisk massehentning. Pakken er privat og kan læses uden LTM.
+- Forsiden viser ikke længere datointervallet eller forklaringen under Dit lokale overblik, som ejeren har ønsket.
+- Gennemsnittet mellem gennemgange står som måneder og dage. Samme kendte intervaller bruges; gennemsnittet afrundes til hele dage med en tydeligt oplyst omregning på 30 dage pr. måned.
 
-Digitale kort vises ét ad gangen. Vælg Medtag kort og fortsæt for det viste OpenStreetMap-kort; næste kort hentes først efter dette valg. Dermed undgås automatisk massehentning fra OSM. Billederne er indlejret i den færdige PDF, der kan læses offline. Kortene udelader IB, Se bort fra og udgåede adresser som i den eksisterende digitale visning; ZIP'ens IB-PDF og CSV indeholder de private IB-registreringer.
-
-Prøv med opdigtede data: Åbn ZIP'en, kontrollér alle fire PDF'er, alle relevante S-13-år samt præcise etager/døre i CSV. Prøv at annullere ved et kort, og prøv at ændre data fra en anden fane under eksporten: der må ikke hentes en delvis pakke. Kontrollér dansk/engelsk og mobil. Pakken skal opbevares privat og erstatter ikke sikkerhedskopien til gendannelse. Ingen nøgler, upload til Google, ændring af Google-adgang eller genprintgodkendelse. Main er stabil 1.11.1.
+Prøv med opdigtede data: Åbn og kontrollér læsearkivets fire PDF'er, S-13-år og CSV med etager/døre; annullér ved et kort og kontrollér, at der ikke kommer nogen delvis ZIP. Se den forenklede forside på mobil og computer og skift dansk/engelsk. Kontrollér varigheden, også ved manglende historik. Gemte data, gendannelsesbackup, genprintgodkendelser og Google-adgang ændres ikke. Main er stabil 1.11.1.

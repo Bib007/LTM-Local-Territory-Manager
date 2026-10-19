@@ -52,6 +52,15 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  await page.locator('[data-work=task-filter][data-value=done]').click();assert.match(await page.locator('#app').innerText(),/FIKTIV_DONE_TASK/);await page.locator('[data-work=new-task]').click();assert.equal(await page.locator('[data-work-form=note] [name=task]').count(),0);assert.equal(await page.locator('[data-work-form=note]').count(),1);await page.locator('.dialogClose').click();assert.deepEqual(errors,[]);
  // Dashboard reminder is local and calendar-based; ordinary download is never called a disk save.
  await page.evaluate(()=>{page='Forside';render();});await page.locator('#backupReminder').waitFor();const beforeBackup=writes.length;
+ await page.evaluate(()=>{state.completions=[{id:'interval-one',card_id:'folder',date:'2026-09-01'},{id:'interval-two',card_id:'folder',date:'2026-10-02'}];render();});
+ for(const language of ['da','en']){
+  await page.evaluate(language=>{I18n.set(language);Navigation.localize();},language);
+  assert.equal(await page.locator('.dashboardHero small').count(),0,'The removed date and explanation must not be shown');
+  assert.equal(await page.locator('.dashboardMetrics .metricText').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Months and days fit the viewport');
+ }
+ await page.evaluate(()=>{state.completions=[];I18n.set('da');render();});
+
  await page.locator('[data-action=backup-snooze]').click();await page.waitForFunction(()=>!document.getElementById('backupReminder'));assert.equal(writes.length,beforeBackup+1);assert.equal(writes.at(-1).action,'backup.snooze');
  await page.reload();await page.waitForFunction(()=>state!==null);assert.equal(await page.locator('#backupReminder').count(),0);
  state.today='2026-10-18';await page.reload();await page.locator('#backupReminder').waitFor();await page.locator('#navigationLanguage').selectOption('en');assert.match(await page.locator('#backupReminder').innerText(),/private backup/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
