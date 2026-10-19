@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.44 · Læsearkiv med PDF, CSV og fuld S-13
+
+W57: Indstillinger → Data tilbyder en lokal ZIP, der kan læses uden LTM. Fire PDF'er indeholder alle forsider på den originale blanke formular, IB-bagsider pr. kort, digitale kort og alle opgaver. S-13 følger for hvert tjenesteår i den gemte historik. CSV dækker kort, præcise adresser og eksisterende vejlinjer, IB, udleveringer med forkyndere, gennemgange, områder, forkyndere, opgaver, besøg og menighed. Aktive og arkiverede registreringer bevares. Ingen nøgler, adgangskoder eller rå forbindelses-/indstillingsfiler kopieres.
+
+Digitale kort bruger appens offentligt afgrænsede kortindhold og OpenStreetMap-baggrund. Hvert kort vises og medtages af brugeren før næste kort hentes; der er ingen automatisk massehentning. Den færdige PDF har indlejrede billeder og kræver ikke internet. Kort uden geografi fremgår af forsider og CSV. OSM-attribution bevares.
+
+Eksporten bindes til én dataversion. Manglende billeder, ændrede data, udløbet forløb, annullering eller fejl giver ingen delvis download. ZIP'en har kontrolsummer og læsevejledning og ændrer hverken data, genprintgodkendelser, backupdato eller Google-adgang. CSV bevarer Unicode og beskytter mod fortolkning af brugerdata som regnearksformler; tegn uden for PDF-standardfonten vises med deres Unicode-kode i læse-PDF. Den eksisterende gendannelsesbackup er uændret.
+
 ## 1.12.0-beta.43 · Fælles rapportoversigt og forklaret datoperiode
 
 W51: Rapporten samler tjenesteåret og de seneste 12 måneder med hver sin periode, gennemgange, anslåede besøg, dækning og månedsgraf på én fælles oversigt. Oversigten findes både digitalt og på den første printside. Kortene følger fortsat på to særskilte sider med tydelige periodeoverskrifter; original S-13 og distriktets oplysninger bevares. Rapportens to første faner vælger, hvilket periodekort der vises under oversigten. Målinger, historiske år og aktuelle kortbestande beregnes som før. Ingen IB-adresser indgår i oversigten.

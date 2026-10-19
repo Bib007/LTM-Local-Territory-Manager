@@ -18,6 +18,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from store import Store, MODULES
 from pdf_export import s13_pdf
+from readable_export import ReadableExport
 from geodata import Downloads
 from access import Access, LOGIN, private_client, write_private
 from portable import Restores, snapshot, MAX_ARCHIVE
@@ -26,7 +27,7 @@ from address_source import Datafordeler
 from ui_errors import error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.43'
+VERSION='1.12.0-beta.44'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -39,6 +40,7 @@ class Server(ThreadingHTTPServer):
     def __init__(self, address, store, access_host=None, password=None):
         super().__init__(address,Handler)
         self.store=store
+        self.readable=ReadableExport(store)
         self.beta=os.environ.get('LTM_CHANNEL')=='beta'
         self.address_source=Datafordeler(store.root)
         self.downloads=Downloads(store,self.address_source)
@@ -107,7 +109,7 @@ class Handler(BaseHTTPRequestHandler):
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.token)
                 if self.server.access:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -179,6 +181,9 @@ class Handler(BaseHTTPRequestHandler):
             if not 0<length<=16000000:raise ValueError('Forespørgslen er for stor eller tom.')
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
+            if self.path=='/api/export/readable/prepare':return self.send(self.server.readable.prepare())
+            if self.path=='/api/export/readable/image':return self.send(self.server.readable.image(data))
+            if self.path=='/api/export/readable/finish':return self.send(self.server.readable.finish(data.get('token')),'application/zip',headers={'Content-Disposition':'attachment; filename="LTM-laesearkiv.zip"'})
             if self.path=='/api/logout':
                 if self.server.access:self.server.access.logout(self.headers.get('Cookie'))
                 cookie_name=self.server.access.cookie_name if self.server.access else 'distrikt_session'
