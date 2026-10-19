@@ -27,7 +27,7 @@ from address_source import Datafordeler
 from ui_errors import error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.50'
+VERSION='1.12.0-beta.51'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):

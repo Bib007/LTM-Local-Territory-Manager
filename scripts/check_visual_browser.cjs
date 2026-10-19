@@ -21,7 +21,7 @@ if(out)fs.mkdirSync(out,{recursive:true});
    if(name){assert.ok(geometry.name.width>0,'Name retains space');assert.ok(geometry.name.right<=geometry.brand.right+1);assert.ok(geometry.name.bottom<=60,'Name remains inside topbar');}
    if(width>750){assert.equal(geometry.logo.width,360,'Never shrink the logo');assert.equal(geometry.logo.height,66);if(name){assert.equal(geometry.name.y-geometry.logo.y,12,'Align name with first logo text line');assert.equal(geometry.name.x-geometry.logo.right,-48,'Remove only the image’s blank right margin');}if(beta){assert.equal(geometry.badge.y-geometry.logo.y,15);if(name)assert.ok(geometry.name.right<=geometry.badge.x);}}
    else if(name){assert.ok(geometry.badge.right<=geometry.name.x,'Compact identity precedes name');assert.ok(Math.abs(geometry.name.y+geometry.name.height/2-geometry.badge.y-geometry.badge.height/2)<1);}
-   if(out)await page.screenshot({path:path.join(out,`header-${beta?'beta':'stable'}-${width}-${key}.png`)});
+   if(out)await page.screenshot({animations:'disabled',path:path.join(out,`header-${beta?'beta':'stable'}-${width}-${key}.png`)});
   }
   await context.close();
  }
