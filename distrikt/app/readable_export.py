@@ -145,7 +145,7 @@ def tables(state,geo):
     add('adresser',['kort_id','kortnummer','grundlag','adresse_id','vej','husnummer_eller_gemt_vejlinje','etage','doer','postnummer','besoegstal','laengdegrad','breddegrad','type','nedlagt','se_bort_fra'],address_rows)
     add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date','')) for r in state['ib']])
     add('udleveringer',['udlaans_id','kort_id','kortnummer','forkynder_id','forkynder','udleveret','aktuel_gennemgang_fra','afleveret'],[(r['id'],r['card_id'],ref(r['card_id']),r['publisher_id'],people.get(r['publisher_id'],''),r['assigned'],r.get('cycle_start',''),r.get('returned','')) for r in state['loans']])
-    add('gennemgange',['id','kort_id','kortnummer','dato','forrige_gennemgang','udlaans_id','besoeg'],[(r['id'],r['card_id'],ref(r['card_id']),r['date'],r.get('previous_completed',''),r.get('loan_id',''),r.get('visits','')) for r in state['completions']])
+    add('gennemgange',['id','kort_id','kortnummer','dato','forrige_gennemgang','udlaans_id','besoeg','besoeg_ukendt','kilde'],[(r['id'],r['card_id'],ref(r['card_id']),r['date'],r.get('previous_completed',''),r.get('loan_id',''),'' if r.get('visits_unknown') else r.get('visits',''),bool(r.get('visits_unknown')),r.get('source','')) for r in state['completions']])
     add('forkyndere',['id','navn'],[(r['id'],r['name']) for r in state['publishers']])
     add('omraader',['id','navn'],[(r['id'],r['name']) for r in state['areas']])
     add('opgaver',['id','kort_id','kortnummer','tekst','oprettet','udfoert','gentagelse','naeste_gang','afslutningshistorik'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('text',''),r.get('created',''),bool(r.get('resolved')),json.dumps(r.get('recurrence'),ensure_ascii=False),r.get('recurrence',{}).get('next_due','') if r.get('recurrence') else '',json.dumps(r.get('task_history',[]),ensure_ascii=False)) for r in state['notes']])
@@ -153,19 +153,25 @@ def tables(state,geo):
     add('stamdata',['menighed','opgoerelsesdato'],[(state['settings'].get('congregation',''),state['today'])])
     return result
 
+class SnapshotView:
+    """Reuse the public filter against one frozen read, without per-card SQL scans."""
+    def __init__(self,state,geo):self.data={**state,'geo':geo,'settings':[state['settings'],*state['areas']]}
+    def all(self,module):return self.data.get(module,[])
+    def get(self,module,ident):return next((r for r in self.all(module) if r.get('id')==ident),None)
+
 class ReadableExport:
     def __init__(self,store):self.store=store;self.lock=threading.RLock();self.job=None
     def prepare(self):
         with self.lock,self.store.lock:
-            state=self.store.state();geo=self.store.all('geo');cards=[]
+            state=self.store.state();geo=self.store.all('geo');view=SnapshotView(state,geo);cards=[]
             current={c['id']:c for c in state['cards']};state['public_maps']=[]
             for row in self.store.all('maps'):
                 c=current.get(row.get('card_id'));url=row.get('front_url') or row.get('url')
-                if c and row.get('entity')=='publication' and row.get('status') in ('published','ready','access_retry','access_failed') and url and fingerprint(self.store,c)==row.get('fingerprint'):
+                if c and row.get('entity')=='publication' and row.get('status') in ('published','ready','access_retry','access_failed') and url and fingerprint(view,c)==row.get('fingerprint'):
                     state['public_maps'].append({'card_id':c['id'],'url':url})
             for c in state['cards']+state.get('archived_cards',[]):
-                members=public_members(self.store,c)
-                if c.get('geo_polygon') or members:cards.append({'card':{k:c.get(k) for k in ('id','number','geo_polygon','map_color')},'members':members,'name':public_name(self.store,c)+(' · Arkiveret' if c.get('archived') else '')})
+                members=public_members(view,c)
+                if c.get('geo_polygon') or members:cards.append({'card':{k:c.get(k) for k in ('id','number','geo_polygon','map_color')},'members':members,'name':public_name(view,c)+(' · Arkiveret' if c.get('archived') else '')})
             self.job={'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'size':0,'until':time.monotonic()+3600}
             return {k:self.job[k] for k in ('token','revision','cards')}
     def require(self,token):
@@ -181,7 +187,7 @@ class ReadableExport:
             if size>MAX_IMAGES:raise ValueError('Kortbillederne fylder mere end 100 MB. Eksporten er stoppet.')
             job['images'][ident]=raw;job['size']=size;return {'ok':True}
     def finish(self,token):
-        with self.lock,self.store.lock:
+        with self.lock:
             job=self.require(token)
             if len(job['images'])!=len(job['cards']):raise ValueError('Ikke alle digitale kort er dannet. Ingen eksportpakke er hentet.')
             state=job['state'];files=tables(state,job['geo']);cards=state['cards']+state.get('archived_cards',[]);refs={c['id']:c['number'] for c in cards}
@@ -199,4 +205,7 @@ class ReadableExport:
             out=io.BytesIO()
             with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as archive:
                 for name,raw in sorted(files.items()):archive.writestr(name,raw)
-            self.job=None;return out.getvalue()
+            with self.store.lock:
+                self.require(token)
+                self.job=None
+            return out.getvalue()
