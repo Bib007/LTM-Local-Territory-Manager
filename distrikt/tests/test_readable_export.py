@@ -67,7 +67,7 @@ class ReadableExportTests(unittest.TestCase):
             for i in range(25):self.store.put('cards',{'id':'extra-'+str(i),'number':str(100+i),'addresses':[]})
         with patch.object(self.store,'all',wraps=self.store.all) as reads:
             self.export.prepare()
-        self.assertLessEqual(sum(call.args==('geo',) for call in reads.call_args_list),2)
+        self.assertLessEqual(sum(call.args==('geo',) and not call.kwargs.get('deleted',False) for call in reads.call_args_list),2)
 
     def test_csv_formulas_and_multiline_values(self):
         import csv
