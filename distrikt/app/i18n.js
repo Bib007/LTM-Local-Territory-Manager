@@ -3,6 +3,14 @@
 const I18n={
  current:'da',
  english:{
+  "Valgt tjenesteår":"Selected service year",
+  "Samme måned sidste år":"Same month last year",
+  "Ikke begyndt":"Not started",
+  "Ingen registreringer":"No records",
+  "{count} registreret":"{count} recorded",
+  "Månedlige gennemgange sammenlignet med sidste år. Datoer og tal findes i tabellen.":"Monthly completions compared with last year. Dates and figures are available in the table.",
+  "Indeværende måned tælles til i dag og til samme dato sidste år. Afsluttede måneder sammenlignes som hele måneder. Skuddag tilpasses kalenderen.":"The current month is counted up to today and the same date last year. Completed months are compared as full months. Leap day is adjusted to the calendar.",
+  "? betyder ingen registreringer i sammenligningsperioden. Historik kan mangle; det er ikke en bekræftelse af nul gennemgange. Alle tal er gemte registreringer, også for arkiverede kort.":"? means there are no records in the comparison period. History may be missing; this does not confirm zero completions. All figures are saved records, including archived cards.",
   "Historiske gennemgange uden besøgstal er udeladt fra besøgsskønnet.":"Historical completions without visit counts are excluded from the visit estimate.",
   "Importér tidligere gennemgange":"Import past completions",
   "Tilføj gennemgange fra de seneste to år til eksisterende kort. Hver række indeholder kortnummer og dato. Tag en sikkerhedskopi først.":"Add completions from the past two years to existing cards. Each row contains a card number and date. Make a backup first.",
