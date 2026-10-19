@@ -14,7 +14,7 @@ def read(raw):
     if reader.is_encrypted:raise ValueError('Fjern PDF-adgangskoden, eller brug CSV-skabelonen.')
     if not 1<=len(reader.pages)<=20:raise ValueError('Brug højst 20 S-13-sider ad gangen.')
     folder=Path(__file__).resolve().parents[1]/'templates'
-    template=json.loads((folder/'S-13-fields.json').read_text());fields=template['fields'];rows=[]
+    template=json.loads((folder/'S-13-fields.json').read_text());fields=template['fields'];rows=[];records=[]
     background=(folder/'S-13-background.jpg').read_bytes()
     for page_number,page in enumerate(reader.pages,1):
         if page.rotation or abs(float(page.mediabox.width)-template['width'])>1 or abs(float(page.mediabox.height)-template['height'])>1:
@@ -48,12 +48,17 @@ def read(raw):
         for i in range(1,21):
             prefix=f'row_{i:02d}.';number=values.get(prefix+'number','').strip()
             if number.endswith(' forts.'):number=number[:-7].strip()
-            stamps=[values.get(prefix+'previous_completed','')]+[values.get(prefix+f'assignment_{j}.completed','') for j in range(1,5)]
-            for stamp in stamps:
-                if not stamp.strip():continue
-                rows.append([number,stamp.strip()]);found=True
-        if not found:raise ValueError('En PDF-side har ingen aflæste gennemgange. Kontrollér siden, og brug CSV-skabelonen.')
-    return {'rows':rows}
+            previous=values.get(prefix+'previous_completed','').strip()
+            if previous:rows.append([number,previous]);records.append([number,previous,'','','']);found=True
+            for j in range(1,5):
+                person,assigned,completed=[values.get(prefix+f'assignment_{j}.'+key,'').strip() for key in ('person','assigned','completed')]
+                if not any((person,assigned,completed)):continue
+                found=True
+                if completed:rows.append([number,completed])
+                # A date without a name or allocation is a standalone completion.
+                records.append([number,'',person,assigned,completed] if person or assigned else [number,completed,'','',''])
+        if not found:raise ValueError('En PDF-side har ingen aflæste udleveringer eller gennemgange. Kontrollér siden, og brug CSV-skabelonen.')
+    return {'rows':rows,'records':records}
 
 if __name__=='__main__':
     try:
