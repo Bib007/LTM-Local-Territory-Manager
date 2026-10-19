@@ -11,6 +11,7 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
 REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
+PDF_DEPENDENCIES=('pypdf-6.10.0.zip','PYPDF-LICENSE','PYPDF.md')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
 ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','KOREPLAN.md','Dette-skal-hjaelpes-manuelt.md','Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
@@ -22,6 +23,8 @@ def version():
     return value
 
 def files():
+    for dependency in PDF_DEPENDENCIES:
+        if not (SRC/'app/vendor_py'/dependency).is_file():raise ValueError('Release incomplete: missing local PDF dependency: '+dependency)
     missing=[n for n in REQUIRED if not (SRC/'templates'/n).is_file()]
     if missing:raise ValueError('Release incomplete: missing blank form assets: '+', '.join(missing))
     if not (SRC/'app'/'kort-import-skabelon.xlsx').is_file():raise ValueError('Release incomplete: missing Excel import template.')

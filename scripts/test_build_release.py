@@ -19,6 +19,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.root_patch=patch.object(release,'ROOT',self.root)
         self.src_patch=patch.object(release,'SRC',self.source)
         self.root_patch.start();self.src_patch.start()
+        for name in release.PDF_DEPENDENCIES:self.add('distrikt/app/vendor_py/'+name,'invented local dependency fixture')
         self.add('distrikt/app/kort-import-skabelon.xlsx','invented spreadsheet fixture')
         self.add('distrikt/app/server.py',"VERSION='9.9.0'\n")
         self.add('distrikt/config.yaml','version: "9.9.0"\n')
@@ -50,6 +51,10 @@ class ReleaseArchiveTests(unittest.TestCase):
 
     def build(self,folder):
         with contextlib.redirect_stdout(io.StringIO()):return release.build(self.root/folder)
+
+    def test_missing_local_pdf_dependency_blocks_release(self):
+        (self.source/'app/vendor_py/pypdf-6.10.0.zip').unlink()
+        with self.assertRaisesRegex(ValueError,'missing local PDF dependency'):self.build('missing-pdf')
 
     def test_complete_portable_docs_and_no_data(self):
         output=self.build('first')

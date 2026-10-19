@@ -24,6 +24,19 @@ class HTTPTests(unittest.TestCase):
         h.update(headers or {})
         req=urllib.request.Request(self.server.origin+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
         return urllib.request.urlopen(req,timeout=3)
+    def test_history_import_local_ui_and_authenticated_atomic_write(self):
+        from datetime import date,timedelta
+        with self.request('/history-import-ui.js') as response:self.assertIn(b'HistoryImportUI',response.read())
+        card=self.store.mutate('card.save',{'number':'001'})['id'];day=(date.today()-timedelta(days=30)).isoformat()
+        payload={'action':'setup.history-import.preview','data':{'name':'fictional.csv','content':'kortnummer;dato\n001;'+day}}
+        with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/mutate',payload,token=False)
+        self.assertEqual(caught.exception.code,403)
+        revision=self.store.revision
+        with self.request('/api/mutate',payload) as response:preview=json.load(response)['result']
+        self.assertEqual(self.store.revision,revision);self.assertFalse(self.store.all('completions'))
+        with self.request('/api/mutate',{'action':'setup.history-import.apply','data':{'token':preview['token'],'confirm':'IMPORTÉR HISTORIK','_revision':revision}}) as response:self.assertEqual(json.load(response)['result']['count'],1)
+        self.assertEqual(self.store.all('completions')[0]['card_id'],card)
+
     def test_readable_export_requires_token_and_preserves_data(self):
         import io,zipfile
         revision=self.store.revision

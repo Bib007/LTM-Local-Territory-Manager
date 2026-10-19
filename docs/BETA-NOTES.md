@@ -1,5 +1,5 @@
-# LTM 1.12.0-beta.46
+# LTM 1.12.0-beta.47
 
-Opfølgning på læsearkivet fra beta.44/45: PDF-dannelse frigiver databaselåsen, mens arkivet bygges. Ændres data undervejs, stoppes download med krav om et nyt forsøg. Adressefiltreringen genbruger ét frosset datasnapshot, og kortbilleder dannes med uigennemsigtig baggrund.
+W31 · Lokal historikimport under Indstillinger → Data. CSV og understøttet digital S-13 aflæses lokalt. Gennemse og ret kortnumre/datoer før godkendelse med IMPORTÉR HISTORIK. Dubletter og datoer uden for de seneste to år springes over, og alle fejl skal rettes før import. Navne og udleveringer importeres ikke; eksisterende udlån bevares. Historiske besøgstal står som ukendte frem for at blive opfundet. Scanninger og fotos overføres manuelt til CSV-skabelonen; der er ingen automatisk OCR eller videresendelse.
 
-Prøv med opdigtede data: Dan et læsearkiv med flere kort, åbn de fire PDF’er og CSV-filerne. Kontrollér, at appen fortsat reagerer under eksport. Redigér data fra en anden fane under opbygningen og kontrollér, at det gamle arkiv ikke downloades. De samlede forsiderettelser fra beta.45 følger med. Main er stabil 1.11.1.
+Prøv med opdigtede data og en sikkerhedskopi: CSV med ny gennemgang, dublet, ugyldigt kort og gammel dato; ret fejl og kontrollér igen. Prøv både original udfyldelig S-13 og en LTM-eksporteret S-13. Bekræft, at udleveringer bevares, at datoer og månedsgraf stemmer, og at gentaget import ikke opretter dubletter. Kontrollér mobilbredde og dansk/engelsk. Læsearkivets eksportforbedringer fra beta.46-kandidaten følger med; beta.46 blev stoppet af versionskontrollen og ikke udgivet. Main er stabil 1.11.1.

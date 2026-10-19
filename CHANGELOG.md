@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.47 · Lokal historikimport
+
+W31: Indstillinger → Data kan importere de seneste to års gennemgange fra CSV og understøttede digitale S-13-filer: den originale udfyldelige formular og LTM’s egen PDF-eksport. Filen aflæses lokalt; kortnummer og gennemgangsdato vises i en redigerbar kladde før udtrykkelig godkendelse. Navne og udleveringsdatoer importeres ikke. Dubletter og ældre datoer vises som fravalgte; ukendte/uklare kort, fremtidige datoer og gendannelige poster skal rettes før hele importen kan gemmes. Eksisterende udlån og historiske registreringer overskrives ikke. Aktuelle og arkiverede kort understøttes. En ændret database eller udløbet forhåndsvisning kræver ny kontrol.
+
+Historiske besøgstal gættes ikke fra nutidens adresser: importerede gennemgange markeres med ukendt besøgstal, og rapporten forklarer deres udeladelse fra besøgsskønnet. Scanninger/fotos og andre PDF-layouts indtastes i CSV-skabelonen. Ekstern OCR er kun et frivilligt alternativ med tydelig oplysning om usikker privatlivssikkerhed; ingen fil videresendes automatisk. PDF-læsning sker i en tidsbegrænset lokal proces med medfølgende pypdf og licens.
+
+Eksportforbedringerne fra den ikke udgivne beta.46-kandidat følger med. Dens pakkekontrol stoppede korrekt, fordi server- og HA-versionen var forskellige; begge versionsfelter er nu beta.47. Ingen offentliggjort beta overskrives.
+
 ## 1.12.0-beta.46 · Hurtigere læsearkiv
 
 W57-opfølgning: PDF-dannelse holder ikke længere databaselåsen under hele arbejdet. Appen kan fortsat bruges, og dataversionen kontrolleres igen før download; ændrede data giver ingen delvis fil. Kortfiltreringen bruger ét frosset datasnapshot frem for gentagne databaseopslag pr. kort. Kortbilleder dannes med en uigennemsigtig baggrund for mindre billedbehandling. Ingen ændring af gemte data eller arkivets indhold.

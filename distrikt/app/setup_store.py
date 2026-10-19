@@ -162,6 +162,12 @@ class SetupStore:
         payload={'areas':areas,'cards':proposed,'options':options,'uncovered':uncovered,'excluded':dict(excluded),'visits':sum(c['visits'] for c in proposed)}
         return dict(payload,token=self.setup_remember('cards',payload))
     def setup_mutate(self,action,data):
+        if action=='setup.history-import.preview':
+            from history_import import preview
+            return preview(self,data)
+        if action=='setup.history-import.apply':
+            from history_import import apply
+            return apply(self,data)
         if action=='setup.card-import.preview':
             from card_import import preview
             return preview(self,data)

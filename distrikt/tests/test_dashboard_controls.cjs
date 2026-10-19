@@ -62,6 +62,12 @@ for(const language of ['da','en']){
  }
  assert.doesNotMatch(run('Workspace.intervalLabel(NaN)'),/NaN/);
 }
+run("state.completions.push({card_id:'c0',date:'2026-10-07',visits:0,visits_unknown:true})");
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),14);
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').events.length"),5);
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').unknownVisits"),1);
+assert.match(run('Workspace.dashboard()'),/Historical completions without visit counts/);
+run(`state=${original}`);
 run('state.cards=[];state.completions=[];state.archived_cards=[];state.loans=[];state.notes=[]');
 assert.match(run('Workspace.dashboard()'),/Begin|Begynd|Start with/);assert(!run('Workspace.dashboard()').includes('NaN'));
 assert.match(run("Workspace.dashboardChart('2026-09-01','2027-08-31')"),/No completions recorded/);
