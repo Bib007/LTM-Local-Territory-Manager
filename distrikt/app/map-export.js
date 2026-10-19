@@ -116,7 +116,7 @@ const MapExport={
     if(options.publicCard)options={...options,publicTemplate:await this.frontTemplate()};
     const snapshot=background==='osm'?this.osmSnapshot(id,{tight:true,...options}):{},svg=this.svg(id,{...snapshot,...options}),image=new Image();
     await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error('Kortbilledet kunne ikke dannes i browseren.'));image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);});
-    const canvas=document.createElement('canvas');canvas.width=2200;canvas.height=1560;const ctx=canvas.getContext('2d');if(!ctx)throw Error('Browseren understøtter ikke billedeksport.');ctx.drawImage(image,0,0);
+    const canvas=document.createElement('canvas');canvas.width=2200;canvas.height=1560;const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('Browseren understøtter ikke billedeksport.');ctx.drawImage(image,0,0);
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG-billedet kunne ikke gemmes.');
     return blob;
     }finally{this.exporting=false;}

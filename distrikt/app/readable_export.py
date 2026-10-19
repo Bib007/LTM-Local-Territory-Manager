@@ -181,7 +181,7 @@ class ReadableExport:
             if size>MAX_IMAGES:raise ValueError('Kortbillederne fylder mere end 100 MB. Eksporten er stoppet.')
             job['images'][ident]=raw;job['size']=size;return {'ok':True}
     def finish(self,token):
-        with self.lock,self.store.lock:
+        with self.lock:
             job=self.require(token)
             if len(job['images'])!=len(job['cards']):raise ValueError('Ikke alle digitale kort er dannet. Ingen eksportpakke er hentet.')
             state=job['state'];files=tables(state,job['geo']);cards=state['cards']+state.get('archived_cards',[]);refs={c['id']:c['number'] for c in cards}
@@ -199,4 +199,7 @@ class ReadableExport:
             out=io.BytesIO()
             with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as archive:
                 for name,raw in sorted(files.items()):archive.writestr(name,raw)
-            self.job=None;return out.getvalue()
+            with self.store.lock:
+                self.require(token)
+                self.job=None
+            return out.getvalue()

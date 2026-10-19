@@ -1,6 +1,7 @@
 """Invented private records in a temporary store; no network or real account."""
 import base64,hashlib,io,json,struct,sys,tempfile,unittest,zipfile,zlib
 from pathlib import Path
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from readable_export import ReadableExport,csv_file,png_image,image_pdf
@@ -52,6 +53,15 @@ class ReadableExportTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.export.image({'token':second['token'],'card_id':'foreign','png':''})
         with self.store.transaction():self.store.put('notes',{'id':'new','task':True,'text':'Fiktiv'})
         with self.assertRaisesRegex(ValueError,'Data er ændret'):self.export.finish(second['token'])
+    def test_data_changed_during_pdf_generation_stops_download(self):
+        job=self.export.prepare();self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
+        def change(_state):
+            with self.store.transaction():self.store.put('notes',{'id':'during-export','task':True,'text':'Fiktiv nyere opgave'})
+            return b'%PDF-FICTIONAL'
+        with patch('readable_export.fronts_pdf',side_effect=change):
+            with self.assertRaisesRegex(ValueError,'Data er ændret'):self.export.finish(job['token'])
+        self.assertIsNotNone(self.store.get('notes','during-export'))
+
     def test_csv_formulas_and_multiline_values(self):
         import csv
         rows=list(csv.reader(io.StringIO(csv_file(['tekst'],[['=1+1'],['+Fiktiv'],['@SUM(1)'],['Linje\n"to";æøå']]).decode('utf-8-sig')),delimiter=';'))
