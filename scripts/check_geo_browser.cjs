@@ -161,7 +161,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   assert.equal(readableImages,0);assert.equal(readableFinished,0,'No automatic map iteration or download before user includes the visible map');
   assert.equal(await page.locator('#readableExportMap').isVisible(),true);
   assert.equal(await page.locator('#dialog').evaluate(node=>node.scrollWidth<=node.clientWidth),true);
-  const archiveDownload=page.waitForEvent('download');await page.locator('#readableExportInclude').click();const archiveFile=await archiveDownload;assert.match(archiveFile.suggestedFilename(),/^LTM-laesearkiv-/);
+  const archiveDownload=page.waitForEvent('download').catch(error=>({error}));await page.locator('#readableExportInclude').click();await page.waitForFunction(()=>!ReadableExportUI.busy);const readableStatus=await page.locator('#readableExportProgress').innerText();assert.match(readableStatus,/ZIP-file|ZIP-filen/,'Readable export status: '+readableStatus);const archiveFile=await archiveDownload;assert.equal(archiveFile.error,undefined);assert.match(archiveFile.suggestedFilename(),/^LTM-laesearkiv-/);
   await page.waitForFunction(()=>!ReadableExportUI.busy);assert.equal(readableFinished,1);assert.equal(readableImages,1);assert.equal(await page.locator('#readableExportMap').count(),0);
   await page.locator('#dialog .dialogClose').click();
   await page.locator('[data-action="readable-export"]').click();await page.locator('#readableExportStart').click();await page.waitForFunction(()=>document.getElementById('readableExportInclude')&&!document.getElementById('readableExportInclude').disabled);
