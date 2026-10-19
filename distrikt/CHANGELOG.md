@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.49 · Forstå Adressevælger og token
+
+W36: Kortdata forklarer nu Adressevælgerens online vejforslag, valgfriheden og forskellen fra Datafordelerens DAR GraphQL-forbindelse og API-key. Det fremgår, hvilke søgefelter der sendes ved online forslag, og hvordan forslag kan begrænses til lokalt gemte veje. Status viser standardtoken eller gemt egen token uden at vise værdien. Det valgfrie tokenfelt er flyttet under Avanceret, og det forklares, at et tomt felt og Gem tokenvalg gendanner standardtoken uden at ændre Datafordeler-nøglen. Dansk/engelsk vejledning og link til KDS’ officielle tokenvejledning følger med. Opslag, forbindelser og gemmehandlinger fungerer som før.
+
 ## 1.12.0-beta.48 · Sammenlign månedstal med sidste år
 
 W32: Forsidens månedsgraf viser nu parvise søjler for det valgte tjenesteår og samme måneder sidste år. Tabellen viser de præcise datoperioder og registrerede antal. Indeværende måned tælles til i dag og til samme kalenderdato sidste år; afsluttede måneder sammenlignes som hele måneder, og skuddag tilpasses kalenderen. Fremtidige måneder er ikke begyndt. Manglende registreringer fra sidste år vises som ? / Ingen registreringer frem for et bekræftet nul. Der vises ingen misvisende procentændring ved ukendt historik. Gentagne gennemgange og arkiverede kort tælles fortsat med; personnavne og IB indgår ikke.
