@@ -29,6 +29,17 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage[^"]*">([\s\S]*?)<\/section>/g),m=>m[1]);
   assert.equal(mapPages.length,2);assert.match(mapPages[0],/Tjenesteår 2026\/2027/);assert.match(mapPages[0],/FIXED_SERVICE_MAP/);assert.doesNotMatch(mapPages[0],/FIXED_ROLLING_MAP|reportchart/);assert.match(mapPages[1],/Seneste 12 måneder/);assert.match(mapPages[1],/FIXED_ROLLING_MAP/);assert.doesNotMatch(mapPages[1],/FIXED_SERVICE_MAP|reportchart/);assert.doesNotMatch(print[language],/data-ui|Kort til opfølgning|AKTUEL OPFØLGNING/);
   const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.match(summary,/<strong>20<\/strong>/);assert.match(summary,/<strong>50%<\/strong>/);
+  const beforeOverview=run('Workspace.reportPeriod'),overview=run('Workspace.reportOverview(true)');
+  assert.equal(run('Workspace.reportPeriod'),beforeOverview,'Comparing periods must not change map selection');
+  assert.match(overview,language==='en'?/Combined report overview/:/Samlet rapportoversigt/);
+  const figures=Array.from(overview.matchAll(/<article class="reportPeriod" data-report-period="([^"]+)">([\s\S]*?)<\/article>/g));
+  assert.equal(figures.length,2);assert.equal(figures[0][1],'service');assert.equal(figures[1][1],'rolling');
+  assert.deepEqual(Array.from(figures[0][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['3','20','50%']);
+  assert.deepEqual(Array.from(figures[1][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['4','24','100%']);
+  assert.doesNotMatch(overview,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|reportDistrictMap|<invented>/);
+  assert.equal((print[language].match(/class="report reportOverview"/g)||[]).length,1);
+  assert.equal((print[language].match(/data-report-period=/g)||[]).length,2);
+  assert(print[language].indexOf('reportOverview')<print[language].indexOf('<section class="report reportMapPage'));
   assert.match(summary,language==='en'?/>Coverage of current cards<\//:/>Dækning af aktuelle kort<\//);
   const service=counts(run("Workspace.reportChart('2026-09-01','2027-08-31')"));assert.equal(service.length,12);assert.equal(service.reduce((a,b)=>a+b,0),3);assert.equal(service[0],2);assert.equal(service[1],1);
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
@@ -41,6 +52,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.equal(run('JSON.stringify(state)'),original);
  }
  assert.equal(print.en.split('<div class="printReports">')[1],print.da.split('<div class="printReports">')[1],'Language switching must leave all printed reports and original forms unchanged');assert.match(print.en,/>Print \/ save PDF<\//);assert.match(print.da,/>Udskriv \/ gem PDF<\//);assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
+ run('year=2026');const historical=run('Workspace.reportOverview(true)');assert.match(historical,/2025\/2026/);assert.match(historical,/2025-10-16|16\.10\.2025/);run('year=2027');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
  // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
  const geometry=run('JSON.stringify(state.cards)');

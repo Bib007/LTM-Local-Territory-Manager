@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.43 · Fælles rapportoversigt og forklaret datoperiode
+
+W51: Rapporten samler tjenesteåret og de seneste 12 måneder med hver sin periode, gennemgange, anslåede besøg, dækning og månedsgraf på én fælles oversigt. Oversigten findes både digitalt og på den første printside. Kortene følger fortsat på to særskilte sider med tydelige periodeoverskrifter; original S-13 og distriktets oplysninger bevares. Rapportens to første faner vælger, hvilket periodekort der vises under oversigten. Målinger, historiske år og aktuelle kortbestande beregnes som før. Ingen IB-adresser indgår i oversigten.
+
+W44: Datoerne under Dit lokale overblik forklarer nu udtrykkeligt perioden for gennemgange og anslåede besøg. Kort og opgaver viser aktuel status; datoerne er ikke en installationsdato. Hjælpen følger dansk/engelsk.
+
 ## 1.12.0-beta.42 · Ændringslog i Home Assistant
 
 W64: Home Assistant-pakkens ændringslog var stoppet ved beta.29, selv om projektets ændringslog var opdateret. Appmappens CHANGELOG.md indeholder nu også beta.30–42 i samme rækkefølge som projektets ændringslog. Tidligere versionsnoter bevares; ældre udgivelser og tags ændres ikke.

@@ -46,6 +46,7 @@ for(const language of ['da','en']){
  assert.equal((html.match(/data-ui="[a-z]{3} \{year\}"/g)||[]).length,24);
  assert.match(html,/aria-hidden="true"/);assert.match(html,/class="srOnly"/);
  assert.match(html,language==='en'?/Service year 2026\/2027/:/Tjenesteår 2026\/2027/);
+ assert.match(html,language==='en'?/Completions and estimated visits: 1\.9\.2026 – 16\.10\.2026\. Cards and tasks show their current status\./:/Gennemgange og anslåede besøg: 1\.9\.2026 – 16\.10\.2026\. Kort og opgaver viser aktuel status\./);
  assert.match(html,language==='en'?/View monthly figures as a table/:/Vis månedstallene som tabel/);
  run("Workspace.searchDialog('Kort <fictional>')");assert.match(get('workspaceSearchResults').innerHTML,/Kort &lt;fictional&gt;/);
  assert.equal(get('dialog').lang,language);assert.match(run('Workspace.filters()'),/>Gemte visninger<\/option>/);

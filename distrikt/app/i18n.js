@@ -3,6 +3,10 @@
 const I18n={
  current:'da',
  english:{
+  "Samlet rapportoversigt":"Combined report overview",
+  "Kort · tjenesteår":"Map · service year",
+  "Kort · seneste 12 måneder":"Map · last 12 months",
+  "Gennemgange og anslåede besøg: {start} – {end}. Kort og opgaver viser aktuel status.":"Completions and estimated visits: {start} – {end}. Cards and tasks show their current status.",
   "Kontrollér DAR-opslag":"Check DAR lookups",
   "DAR-kontrollen bruger fiktive søgeværdier og gemmer ingen adresser. Den kan tage op til ét minut.":"The DAR check uses fictional search values and saves no addresses. It may take up to one minute.",
   "Datafordeleren afviste forespørgslen ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler rejected the query ({diagnostic}). No addresses from this lookup were saved.",
