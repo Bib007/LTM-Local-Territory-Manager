@@ -27,7 +27,7 @@ if(out)fs.mkdirSync(out,{recursive:true});
  }
  const context=await browser.newContext({viewport:{width:2200,height:1560}}),page=await context.newPage();
  await context.route('**/*',route=>{assert.equal(new URL(route.request().url()).href,'https://ltm.visual.test/s12-template.png');return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});});
- await page.goto('about:blank');await page.addScriptTag({content:read('i18n.js')});await page.addScriptTag({content:read('map-export.js')});
+ await page.setContent('<meta name="app-token" content="FICTIONAL_OFFLINE_TOKEN">');await page.addScriptTag({content:read('i18n.js')});await page.addScriptTag({content:read('map-export.js')});
  const app=read('app.js');await page.addScriptTag({content:app.slice(0,app.indexOf("document.addEventListener('input'"))});
  await page.evaluate(()=>{state={today:'2026-10-19',cards:[],areas:[],ib:[]};window.GeoUI={data:{roads:[],buildings:[]}};});
  const template='data:image/png;base64,'+fs.readFileSync(path.resolve(root,'../templates/S-12-source.png')).toString('base64');
