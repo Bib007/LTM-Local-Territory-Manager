@@ -1,5 +1,85 @@
 # Ændringsliste
 
+## 1.12.0-beta.42 · Ændringslog i Home Assistant
+
+W64: Home Assistant-pakkens ændringslog var stoppet ved beta.29, selv om projektets ændringslog var opdateret. Appmappens CHANGELOG.md indeholder nu også beta.30–42 i samme rækkefølge som projektets ændringslog. Tidligere versionsnoter bevares; ældre udgivelser og tags ændres ikke.
+
+Pakning af både komplet program og HA-beta afvises fremover, hvis de to ændringslogfiler er forskellige, eller den aktuelle version ikke står først. Prøver dækker den tidligere fejl, bevaret historik og den faktiske ZIP-fils ændringslog/kontrolsum. Der ændres ingen lokale data eller adressefunktioner. Visning på ejerens egen HA kontrolleres efter næste opdatering.
+
+## 1.12.0-beta.41 · DAR-opslag uden aliaser
+
+Ejerens læsende beta.40-kontrol accepterede almindelige opslag for alle fem DAR-entiteter, men afviste både ét alias og flere rodfelter. Adressehentningen bruger nu ét almindeligt opslag ad gangen, også ved mange ID'er. Samme tidspunkt, filtre, separate cursors, afbrydelse og fælles resultat-/anmodningsgrænser bevares. Ingen delvise svar frigives til import. Fiktive leverandørprøver afviser nu aliaser og flere rodfelter; vej- og grænseforløbet fejlede før rettelsen og består efter. En rigtig hentning efter opdateringen udestår; W62 er fortsat åben.
+
+## 1.12.0-beta.40 · Læsende DAR-kontraktkontrol
+
+W62 er fortsat åben. En ny kontrol i Kortdata → Datafordeleren prøver de samme projektioner og filtre som adressehentningen med fiktive søgeværdier. Den sammenligner enkeltopslag, ét alias og ti aliases uden at oprette hentningsjob, gemme adresser eller ændre checkpoints og forbindelsen. Kun faste fejlkategorier, genkendte fejlkoder og en afgrænset liste diagnoseord vises; ingen rå leverandørtekst, data, stier eller nøgler. Prøven er tidsbegrænset. Den eksisterende grønne forbindelseskontrol er ikke en prøve af de faktiske dataopslag. Der er endnu ikke dokumenteret en årsagsrettelse eller en vellykket livehentning.
+
+## 1.12.0-beta.39 · Sikker GraphQL-diagnose og mindre opslag ved størrelsesfejl
+
+W62: Beta.38-prøven fejlede både på grænsen og på en enkelt vej med en generisk GraphQL-afvisning. Den bagvedliggende afvisningsårsag er endnu ikke bekræftet. Fejlteksten viser nu en sikker kategori: GQL-SCHEMA, GQL-ACCESS, GQL-LIMIT, GQL-RESULT eller GQL-REJECTED, opslagets entitet og genkendte fejlkoder/feltnavne. Rå leverandørbeskeder, søgeværdier, URL'er, nøgler og fejlstier vises ikke. Dansk/engelsk bevarer de samme diagnostikkoder.
+
+Kun genkendte størrelsesfejl udløser tilpasning: færre poster pr. side, enkeltopslag i stedet for alias-batches og derefter mindre grænseudsnit. Tidspunkt, filter, cursor og fuldstændighedskontrol bevares; vedvarende fejl stopper begrænset. Andre afvisninger genprøves ikke som størrelsesfejl. HTTP 400/422 med struktureret GraphQL-fejl behandles også. Ingen delvise resultater importeres. Ny faktisk ejerprøve er nødvendig; dette er ikke en færdigmelding af W62.
+
+## 1.12.0-beta.38 · Ret tomme GraphQL-adressehentninger
+
+W62: Punktstatus var fejlagtigt behandlet som adresse-/husnummerstatus 3. DAR-adressepunkter har en særskilt livscyklus med 8 = i brug, og tjenester kan udelade punktstatus. Punktopslag bruger nu entitets-ID/geometri og det fælles faste tidspunkt; husnumre, adresser, veje og postnumre kræver fortsat status 3. Punktsvar uden status og med status 8 accepteres; eksplicit ugyldige punktstatusser og brudte koordinater/relationer afvises. Hentning af vej, postnummer og grænse er dækket af realistiske, fiktive tests.
+
+Gamle GraphQL-grænsecheckpoints genhentes automatisk med rettelsen, så et tidligere tomt udsnit ikke springes over som færdigt. Et reelt tomt resultat får en tydelig advarsel; et tomt GraphQL-svar kan ikke udgå områdets eksisterende lokale adresser. Ejerens prøve i beta.37 bekræftede fejlen; ny faktisk hentning i beta.38 mangler fortsat. Forbindelseskontrol alene er ikke bevis for adressehentning.
+
+Grundlag: [DAR-livscyklus](https://danmarksadresser.dk/adressedata/kodelister/livscyklus) og [DAR GraphQL](https://confluence.kds.dk/pages/viewpage.action?pageId=187105632). Ingen lokale adresser eller nøgler er brugt som testdata.
+
+## 1.12.0-beta.37 · Backuppåmindelse følger serverens kalender
+
+W52-opfølgning: Sidste backupdato og appens i dag regnes nu i samme lokale serverkalender, også når UTC-datoen er dagen før. Dermed kommer 14-dagespåmindelsen ikke en dag for tidligt omkring midnat. Sommer-/vintertid dækkes af syntetiske tests. Det er en ren beregning ved læsning; tidsstempler, backupfiler, historik og udsættelser ændres ikke.
+
+## 1.12.0-beta.36 · Ugentlige opgaver på forsiden
+
+W53: En opgave kan gentages ugentligt på en valgt ugedag. Første forekomst er den valgte dag fra og med i dag. Forfaldne opgaver vises på forsiden og kan markeres udført derfra. Tekst, korttilknytning, opgaven og afslutningshistorikken bevares. Næste forekomst lægges på den valgte ugedag strengt efter udførelsesdagen. Forsinkede uger opretter ikke kopier eller opdigtede gennemførelser.
+
+For tidlig eller gentagen udførelse af samme forekomst afvises; historik og næste dato gemmes atomisk og kan fortrydes sammen. Redigering bevarer historikken. Ingen gentagelse stopper fremtidige forekomster uden at slette opgaven/historikken. Ældre klienters almindelige tekstredigering fjerner ikke gentagelsen. Datoer/historik bevares ved genstart og gendannelse. Ingen automatisk kortflytning, upload eller ekstern påmindelse; dansk/engelsk skifter uden at miste formularens valg og tekst.
+
+## 1.12.0-beta.35 · Lokal backuphistorik og påmindelse
+
+W52: De seneste 100 manuelle backupforsøg vises under Indstillinger → Data med særskilt status for oprettet ZIP, startet browserdownload og afsluttet filskrivning via filvælgeren. Annullering registrerer ingen backup. Fejlet filskrivning beholder kun ZIP-oprettelsen; den udskyder ikke påmindelsen. Filstier, filnavne, nøgler og forbindelsesoplysninger gemmes ikke i denne historik. Eksisterende backupregistreringer bevares uden at blive omtalt som bekræftet filskrivning.
+
+Forsiden påminder, hvis ingen overførsel er registreret, eller der er gået mindst 14 kalenderdage. Udsæt skjuler feltet til næste kalenderdag, ikke i 24 timer. Browserdownload betyder kun, at overførslen er startet; kontrollér filen i browseren. Historikken følger dataene ved gendannelse og indeholder kun registreringer fra før ZIP'ens oprettelse. Ingen automatisk backup, upload eller ekstern besked.
+
+## 1.12.0-beta.34 · Opsætning følger gemte handlinger
+
+W47: Relevante opsætningstrin afsluttes automatisk efter en gennemført gemning: menighed, mappeminimum, begge printprofiler, forkynder, kort, ydergrænse, IB-import og registreret backup. Fremdriften gemmes i samme transaktion som handlingen og følger med ved Fortryd. Åbning, forhåndsvisning og afvist gemning tæller ikke. Spring over og eksisterende fremdrift bevares. Forbindelser og den samlede gennemgang af udleveringer bekræftes fortsat manuelt; én registrering beviser ikke, at hele gennemgangen er færdig.
+
+Nye installationer og en udtrykkeligt godkendt beta-nulstilling starter med mappeminimum 0, også for land. Eksisterende valg ændres ikke. Mappetrinnet afsluttes ved et ændret minimum eller et eksplicit indtastet og gemt 0; en uvedkommende indstillingsgemning godkender ikke standardværdien.
+
+## 1.12.0-beta.33 · Hurtig oprettelse med inklusivt interval
+
+W54: Hurtig oprettelse har et særskilt intervalvalg med start/slut inklusive, valgfrit antal cifre/nuludfyldning og ét valgfrit foranstillet bogstav. 0–300 med fire cifre giver 0000–0300, i alt 301 kort. Bogstavet og nuludfyldningen indgår i den synlige forhåndsvisning. Højst 500 kort oprettes ad gangen, og den eksisterende egen liste er uændret; her betyder 1–10 stadig ét bogstaveligt kortnummer.
+
+Antal og alle endelige numre vises før godkendelse. Serveren efterprøver interval, længder og dubletter igen ved oprettelsen. Eksisterende, arkiverede og gendannelige kortnumre reserveres som før, uanset store/små bogstaver. Et ugyldigt interval eller én dublet stopper hele oprettelsen. Eksisterende kort overskrives ikke.
+
+## 1.12.0-beta.32 · Én samlet opgavefunktion
+
+W50: Noter og opgaver er samlet under Opgaver. Gamle noter bliver opgaver med uændret tekst, kortreference, datoer og udført-status, også efter import af ældre backup. Aktive og gendannelige poster konverteres i en transaktion; aktivitetshistorik ændres ikke til opgaver. Gamle data-/API-navne bevares for kompatibilitet. Redigering af udførte opgaver og tilknytning til arkiverede kort bevarer status og reference.
+
+Navigationen tæller kun åbne opgaver. Kortlisten/mappen viser et tydeligt opgavemærke. Udleveringsformularen viser en stærkere advarsel med de åbne opgaver og opdaterer den ved kortvalg. Der er ingen ny obligatorisk spærring eller automatisk IB-ændring. Separate notefiltre, noteoprettelse og valg af note/opgave er fjernet fra opgavefunktionen. En valgfri opgave kan stadig tilføjes ved aflevering/gennemgang. KTM-besøgets selvstændige tekstfelt kaldes Bemærkning.
+
+## 1.12.0-beta.31 · Logo i fuld størrelse og bevidst kortbetjening
+
+W49: Det eksisterende desktoplogo bevarer 360 × 66 px, mens menighedsnavnet står på samme vandrette linje efter en tankestreg. Mobilikonet bevarer 34 × 34 px. Lange navne afkortes visuelt med hele titlen tilgængelig; beta-markering, navigation og gemmestatus er bevaret.
+
+W59: Kortets interaktive detaljevisning kræver Ctrl/Command til panorering og hjulzoom, eller eksplicit aktivering til touch/tastatur. Normal rulning går til dialogen. Kortet kan låses igen uden at nulstille udsnittet. Lyttere fjernes ved lukning, og nyt kort starter låst. Medlemskab, gemte grænser, eksport og publiceringsgodkendelse ændres ikke.
+
+Disse to ønskepunkter er afgrænset fra beta.30. Rigtig API-hentning og ekstern GitHub-cache/PR-oprydning er fortsat åbne ejer-/Support-trin. Main er stabil 1.11.1.
+
+## 1.12.0-beta.30 · API-hentning og sikkerhedskopi
+
+W62: Hentning af en vej med egen Datafordeler-nøgle afhænger ikke længere af det gamle systems vejforslag. Det gælder også vejene i et lille OSM-kortudsnit. Den nye kilde bruger det præcise officielle vejnavn og postnummer; der vælges ikke en tilfældig nabovej. Regler for komplette adresser, lejligheder, opdateringer og bevarelse af lokale data er uændrede. Rettelsen er testet med fiktive svar; ejerens rigtige API-hentning skal fortsat bekræftes.
+
+W55: Ved HTTP 401/403 forklares på dansk/engelsk, at en ny nøgle kan være op til 15 minutter om at blive aktiv. Afvist adgang og nøglekontrol beskrives fortsat; andre net-/serverfejl forklares ikke som aktiveringstid. Prøv forbindelse er fortsat en bevidst handling.
+
+W46: Indstillinger tilbyder Gem sikkerhedskopi som… i sikre browserkontekster med understøttet filvælger. Filnavn og placering vælges før hentningen. Annullering henter intet og registrerer ikke en backup. Først en afsluttet filskrivning registreres som gemt. Almindelig download og hjælp til browserens placering er bevaret, også i desktopudgaven; ingen automatisk upload.
+
+W61: Udgivelsespakker og grene/tags er renset; GitHub-cache, gamle PR-henvisninger og resterende udgivelsesmetadata afventer ekstern oprydning. W63: Det brede eftersyn af faste eksempler er afsluttet med en ny test af tomme hentefelter. Main er fortsat stabil 1.11.1.
+
 ## 1.12.0-beta.29 · Neutrale felter i adressehentning
 
 Faste vej-, postnummer- og husnummereksempler er fjernet fra Hent en vej og adressevalget. Felterne beskriver nu kun deres formål på dansk/engelsk. Den tidligere stedtekst er også fjernet fra oversættelser og erstattet med opdigtede testdata i prøverne. Gemte lokale adresser og den eksisterende vejnavnesøgning bevares.
@@ -140,12 +220,11 @@ Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR G
 - Nye navne kan fortsat skrives frit og oprettes først ved registrering. Escape/Tab vælger ikke et navn; Enter i en åben liste gemmer ikke ved et uheld. Dansk/engelsk og formularens data bevares.
 - Programprøver dækker hændelser og gemmekontrakt; visuel mobil-/skærmlæserkontrol står særskilt.
 
-## 1.12.0-beta.8
+## 1.12.0-beta.8 · DAR GraphQL
 
-- Gemt Datafordeler-nøgle bruges nu til vej-, postnummer- og grænsehentning via DAR GraphQL. Komplette sider, lokale joins og stabile DAR-ID'er bevarer lejligheder og eksisterende registreringer.
-- Genoptagelse kræver samme kilde og skemafingeraftryk. Gamle REST-hentninger blandes ikke med GraphQL. Ved kildeskift vælges en ny opdatering; lokale adresser bevares.
-- Checkpoint og adresseimport gemmes samlet. Netfejl stopper ved den aktuelle vej/udsnit; pause og genstart bevarer afsluttede dele. Præcise distriktsgrænser filtreres lokalt.
-- Flere officielle vej-ID'er med samme navn/postnummer behandles samlet, så adresser ikke fejlagtigt foreslås udgået mellem delene.
+- Egen lokalt gemte Datafordeler-nøgle bruges til komplette vej-, postnummer- og grænsehentninger. Flade opslag sammenkobles lokalt med stabile adresse-ID'er og bevarede etage-/døroplysninger.
+- Grupperede opslag reducerer antal netkald. Kilde og skemafingeraftryk følger checkpoints; ufuldstændige svar gemmes ikke som komplette veje/udsnit. Genstart fortsætter kun ufærdige dele af samme hentning.
+- Uden nøgle fortsætter den hidtidige kilde. Ved kildeskift kræves en ny opdatering. Adresseforslag fra Adressevælger er fortsat en særskilt tjeneste. Egen Datafordeler-/HA-prøve står særskilt fra fiktiv programkontrol.
 
 ## 1.12.0-beta.7
 
@@ -175,9 +254,21 @@ Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR G
 
 - Betaen kan nulstille testdata med bekræftelse, automatisk lokal sikkerhedskopi og kontrol af delte kort. Login og forbindelser bevares.
 
-## 1.12.0-beta.1
+## 1.12.0-beta.1 · HA-beta under klargøring
 
-Spørgsmål ved første start, personlig opsætningsplan, guidet rundtur og lokal XLSX-/CSV-import af allerede fordelte kort med adresser og områder. Præcise lejligheder kan bruges til lokal IB-import.
+- Separat HA-betakanal med port 8788, egne data og egen login-cookie. Små nummererede prereleases udgives først efter program-, Mac-, Windows- og HA-kontrol.
+
+- Google Drive-billeder er private mellem udlån og åbnes automatisk ved udlevering. QR-linket bevares; afventende/fejlede adgangsændringer og nyt forsøg vises. Ingen udlåns- eller personoplysninger uploades.
+
+- Selvstændigt link til idéer og feedback via GitHub med valgfrie bilag og tydelig oplysning om offentligt indhold; aktiveres med næste stabile udgivelse.
+- HA-installationssiden forklarer funktioner, første start, lokal adgang og backup.
+- KTM-kort får læsbare distriktnumre med forbindelsesstreger, når der er trangt. Kortets egen printside bliver automatisk stående eller liggende efter geografien; fiktive PDF-rapporter er kontrolleret visuelt.
+- Det overflødige tal for midlertidige kort er fjernet fra distriktets oplysninger.
+
+- Spørgsmål ved første start med personlig opsætningsplan og en valgfri rundtur i de rigtige sider.
+- Lokal Excel-/CSV-import af allerede fordelte kort, områder, kortnavne og adresser med kontrol før oprettelse.
+- Præcise importerede lejligheder kan bruges til lokal IB-import; besøgstal bevares.
+- Regnearksskabelon med dansk vejledning og udfyldningsfelter.
 
 
 - Blå identitet og valgfri velkomstguide.
@@ -187,11 +278,11 @@ Spørgsmål ved første start, personlig opsætningsplan, guidet rundtur og loka
 - Backupoversigten sammenligner synlige kort og noter korrekt og bevarer arkiverede poster.
 - Originalt dansk print, gemte værdier og datastier bevares.
 
-## 1.11.0
+## 1.11.0 · første offentlige kildekodeudgave
 
-- Første offentlige repositoryudgave til Home Assistant OS.
-- Lokal administration, kort og adresser, udleveringer, gennemgange og IB.
-- De tomme originale S-12/S-13-formularer følger med.
-- Dansk installationsvejledning med engelsk som ekstra valg.
-- Ingen ændring af eksisterende databaseskema eller appens lokale datasti.
-- Lokal programstart undgår unødvendige reverse DNS-opslag.
+- Lokal distriktsadministration til Mac, Windows og Home Assistant OS.
+- Opstart på en fast lokal IP kræver ikke reverse DNS; det undgår forsinket Mac-start uden netværksopslag.
+- Kort, forkyndere, udleveringer, gennemgange, IB, lokale backups og dansk print.
+- Gennemgået programkode og tomme S-12/S-13-formularer; ingen brugerregistreringer eller private kørselsfiler.
+- Dansk README og opsætningsguider med engelsk som ekstra valg.
+- Installation og senere programopdateringer via HA-repository uden manuel kopiering af programfiler.
