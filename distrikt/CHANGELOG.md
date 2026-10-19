@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.45 · Læsearkiv og forenklet forside
+
+Tre sammenhængende ønskepunkter: W57, W68 og W48. Det fulde lokale læsearkiv fra eksportarbejdet i beta.44 følger med her: fire PDF'er, CSV og S-13 for hele historikken med indlejrede digitale OpenStreetMap-kort. Hvert kort vises og medtages af brugeren; ingen automatisk massehentning eller Google-upload.
+
+W68: Ejerens nye feedback erstatter W44-løsningen: både datointervallet og den forklarende tekst under Dit lokale overblik er fjernet helt. Tjenesteårets overskrift og rapporternes egne perioder bevares.
+
+W48: Forsidens gennemsnit viser hele måneder og dage i stedet for et decimaltal i måneder. Samme kendte intervaller for aktuelle og arkiverede kort anvendes. Gennemsnittet afrundes én gang til nærmeste hele dag og omregnes med 30 dage pr. måned, som oplyses ved tallet. Ental/flertal, 30-/60-dagesgrænser og manglende historik er kontrolleret på dansk/engelsk. Ingen datoer eller historik ændres.
+
 ## 1.12.0-beta.44 · Læsearkiv med PDF, CSV og fuld S-13
 
 W57: Indstillinger → Data tilbyder en lokal ZIP, der kan læses uden LTM. Fire PDF'er indeholder alle forsider på den originale blanke formular, IB-bagsider pr. kort, digitale kort og alle opgaver. S-13 følger for hvert tjenesteår i den gemte historik. CSV dækker kort, præcise adresser og eksisterende vejlinjer, IB, udleveringer med forkyndere, gennemgange, områder, forkyndere, opgaver, besøg og menighed. Aktive og arkiverede registreringer bevares. Ingen nøgler, adgangskoder eller rå forbindelses-/indstillingsfiler kopieres.

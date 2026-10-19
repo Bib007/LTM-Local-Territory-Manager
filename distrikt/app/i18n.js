@@ -3,6 +3,11 @@
 const I18n={
  current:'da',
  english:{
+  "{months} måned og {days} dag":"{months} month and {days} day",
+  "{months} måned og {days} dage":"{months} month and {days} days",
+  "{months} måneder og {days} dag":"{months} months and {days} day",
+  "{months} måneder og {days} dage":"{months} months and {days} days",
+  "Omregnet med 30 dage pr. måned.":"Converted using 30 days per month.",
   "Eksporten er udløbet. Start igen.":"The export has expired. Start again.",
   "Data er ændret. Start eksporten igen for at få én samlet version.":"Data has changed. Restart the export to get one consistent version.",
   "Ukendt eksportkort.":"Unknown export card.",
@@ -24,7 +29,6 @@ const I18n={
   "Samlet rapportoversigt":"Combined report overview",
   "Kort · tjenesteår":"Map · service year",
   "Kort · seneste 12 måneder":"Map · last 12 months",
-  "Gennemgange og anslåede besøg: {start} – {end}. Kort og opgaver viser aktuel status.":"Completions and estimated visits: {start} – {end}. Cards and tasks show their current status.",
   "Kontrollér DAR-opslag":"Check DAR lookups",
   "DAR-kontrollen bruger fiktive søgeværdier og gemmer ingen adresser. Den kan tage op til ét minut.":"The DAR check uses fictional search values and saves no addresses. It may take up to one minute.",
   "Datafordeleren afviste forespørgslen ({diagnostic}). Ingen adresser fra opslaget er gemt.":"Datafordeler rejected the query ({diagnostic}). No addresses from this lookup were saved.",
