@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.46 · Hurtigere læsearkiv
+
+W57-opfølgning: PDF-dannelse holder ikke længere databaselåsen under hele arbejdet. Appen kan fortsat bruges, og dataversionen kontrolleres igen før download; ændrede data giver ingen delvis fil. Kortfiltreringen bruger ét frosset datasnapshot frem for gentagne databaseopslag pr. kort. Kortbilleder dannes med en uigennemsigtig baggrund for mindre billedbehandling. Ingen ændring af gemte data eller arkivets indhold.
+
+407 Python-prøver består (én forventet overspringning), herunder ændring under eksport og optælling af databaseopslag. Eksisterende browser- og platformskontroller kræves før udgivelse.
+
 ## 1.12.0-beta.45 · Læsearkiv og forenklet forside
 
 Tre sammenhængende ønskepunkter: W57, W68 og W48. Det fulde lokale læsearkiv fra eksportarbejdet i beta.44 følger med her: fire PDF'er, CSV og S-13 for hele historikken med indlejrede digitale OpenStreetMap-kort. Hvert kort vises og medtages af brugeren; ingen automatisk massehentning eller Google-upload.
