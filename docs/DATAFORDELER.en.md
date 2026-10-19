@@ -48,3 +48,15 @@ Choose **Check DAR lookups** under the Datafordeler connection. It compares the 
 ## Address downloads from beta.41
 
 The beta.40 check accepted plain requests and rejected aliases and multiple root fields. From beta.41, address downloads therefore use separate plain requests. The read-only check retains its alias/batch probes for diagnostics; rejection of those probes is expected and does not mean downloads still use aliases. After updating, try one road and then Fetch/continue for the combined territory boundary. Share only counts or sanitized errors, never the key. Large downloads may take longer; interrupted or incomplete requests are not stored as complete.
+
+## Adressevælger and Datafordeler are separate connections
+
+Adressevælger supplies online road suggestions as you type. Suggestions still use Adressevælger when Datafordeler is connected. Without a saved Datafordeler key, LTM also uses Adressevælger for address downloads; with a key, addresses are fetched through Datafordeler's DAR GraphQL service.
+
+You normally do not need to enter an Adressevælger token. LTM automatically uses the default token recommended by KDS. Enter your separate Datafordeler API key under **Datafordeler · your API key**, never in the Adressevælger field.
+
+Under **Map data → Road suggestions · Adressevælger**, the status shows whether the default or a custom token is used. The saved value is not displayed. **Advanced · change Adressevælger token** lets you replace it. Leave the field blank and choose **Save token choice** to restore the default; your Datafordeler key is kept.
+
+Turn off online road suggestions beside the road field to use suggestions from locally saved roads only. Online suggestions send the search text and optional postcode to Adressevælger. Card selections, do-not-call records and publisher names are not part of the suggestion request. **Fetch road** remains a separate online action.
+
+[The official KDS guide to Adressevælger tokens and planned user access management](https://confluence.kds.dk/display/ADV/Brugerstyring) was checked on 19 October 2026. Access arrangements may change; changing an Adressevælger token does not replace creating a Datafordeler key.

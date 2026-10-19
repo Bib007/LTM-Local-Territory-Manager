@@ -1,7 +1,7 @@
-# LTM 1.12.0-beta.48
+# LTM 1.12.0-beta.49
 
-W32 · Forsiden sammenligner månedlige gennemgange med samme måned sidste år. Indeværende måned går til samme kalenderdato begge år; afsluttede måneder sammenlignes fuldt. Tabellen viser datoperioderne, ? betyder manglende registreringer fra sidste år, og fremtidige måneder står som ikke begyndt. Alle tal er gemte registreringer; tom historik beviser ikke nul gennemgange.
+W36 · Kortdata → Adresseforslag · Adressevælger forklarer formålet, valgfriheden og forskellen fra Datafordelerens API-key. Status viser standardtoken eller egen token uden at vise den gemte værdi. Det valgfrie felt ligger under Avanceret. Tomt felt og Gem tokenvalg gendanner standardtoken; Datafordeler-nøglen bevares. Dansk/engelsk forklaring og officielle kilder følger med.
 
-W31 · Historikimporten fra beta.47-kandidaten følger med, nu med den manglende lokale PDF-afhængighed til Python 3.9/3.10. CSV og understøttet digital S-13 kontrolleres før udtrykkelig godkendelse. Navne og udleveringer importeres ikke, og historiske besøgstal gættes ikke. Scanninger og fotos overføres manuelt til CSV-skabelonen.
+Historikimporten og månedssammenligningen fra beta.48 følger med. Udgivelsesforløbet kræver fortsat Python 3.9/3.13, browser, desktop og HA før offentliggørelse.
 
-Prøv med opdigtede data og en sikkerhedskopi: Kontroller forskellige antal i samme måned begge år, en post efter dagens dato sidste år, en tom tidligere måned og fremtidige måneder. Sammenhold søjler, tabel og datoperioder på mobil og computer, dansk/engelsk. Prøv CSV og understøttede digitale S-13-filer lokalt, også uden installerede Python-pakker. Main er stabil 1.11.1.
+Prøv med opdigtede data: Åbn forklaringen i Kortdata og skift dansk/engelsk. Kontrollér status uden egen token. Hvis du bruger en egen token, skal status vise dette uden at afsløre den. Gem kun ændrede tokenvalg, når det er tilsigtet; tomt felt gendanner standardtoken. Datafordeler-nøglen hører til i sit særskilte felt. Se også de opdaterede danske og engelske forbindelsesvejledninger. Main er stabil 1.11.1.

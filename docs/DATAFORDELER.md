@@ -69,3 +69,15 @@ Vælg **Kontrollér DAR-opslag** under Datafordeler-forbindelsen. Den sammenlign
 ## Adressehentning fra beta.41
 
 Kontrollen i beta.40 viste, at almindelige opslag accepteres, mens aliaser og flere rodfelter afvises. Fra beta.41 udføres adressehentning derfor som separate almindelige opslag. Den læsende kontrol beholder sine alias-/batchprøver til diagnose; en afvisning dér er forventet og betyder ikke, at den almindelige hentning stadig bruger aliaser. Prøv én vej efter opdatering og derefter Hent/fortsæt for samlet distriktsgrænse. Oplys kun antal eller den rensede fejltekst, aldrig nøglen. Store opslag kan tage længere tid; afbrudte eller ufuldstændige opslag gemmes ikke som komplette.
+
+## Adressevælger og Datafordeleren er to forskellige forbindelser
+
+Adressevælger bruges til de online vejforslag, du får, mens du skriver. Forslagene bruger fortsat Adressevælger, selv om du har tilsluttet Datafordeleren. Uden gemt Datafordeler-nøgle bruger LTM også Adressevælger ved adressehentning; med nøgle hentes adresserne gennem DAR GraphQL hos Datafordeleren.
+
+Du behøver normalt ikke indtaste en token til Adressevælger. LTM bruger automatisk den standardtoken, KDS anbefaler. Den særskilte API-key fra Datafordeleren skal indtastes under **Datafordeleren · egen API-nøgle**, aldrig i Adressevælger-feltet.
+
+Under **Kortdata → Adresseforslag · Adressevælger** kan du se, om standardtoken eller egen token bruges. Den gemte værdi vises ikke. Under **Avanceret · ændr token til Adressevælger** kan du erstatte token. Et tomt felt og **Gem tokenvalg** gendanner standardtoken; Datafordeler-nøglen bevares.
+
+Online vejforslag kan slås fra ved vejfeltet, så forslag kun kommer fra allerede gemte lokale veje. Når online forslag er slået til, sendes søgetekst og eventuelt postnummer til Adressevælger. Kortvalg, IB og forkyndernavne indgår ikke i forslagsopslaget. Selve **Hent vej** er fortsat en særskilt online handling.
+
+[KDS’ officielle vejledning om Adressevælger-token og varslet brugerstyring](https://confluence.kds.dk/display/ADV/Brugerstyring) er kontrolleret 19.10.2026. Adgangsordningen kan ændre sig; et skift af Adressevælger-token erstatter ikke oprettelse af en Datafordeler-nøgle.
