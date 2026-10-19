@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.48 · Sammenlign månedstal med sidste år
+
+W32: Forsidens månedsgraf viser nu parvise søjler for det valgte tjenesteår og samme måneder sidste år. Tabellen viser de præcise datoperioder og registrerede antal. Indeværende måned tælles til i dag og til samme kalenderdato sidste år; afsluttede måneder sammenlignes som hele måneder, og skuddag tilpasses kalenderen. Fremtidige måneder er ikke begyndt. Manglende registreringer fra sidste år vises som ? / Ingen registreringer frem for et bekræftet nul. Der vises ingen misvisende procentændring ved ukendt historik. Gentagne gennemgange og arkiverede kort tælles fortsat med; personnavne og IB indgår ikke.
+
+W31-opfølgning: Den manglende typing_extensions-afhængighed til pypdf på Python 3.9/3.10 følger nu med lokalt og med licens. PDF-processen bruger isoleret Python uden installerede tredjepartspakker, så aflæsningen afhænger af programmets egne filer. Beta.47’s Python 3.9-kontrol identificerede manglen. Udgivelsen kræver nu også fulde Python 3.9-/3.13-prøver direkte i betaforløbet. Historikimporten kræver fortsat grønne kontroller før afslutning.
+
 ## 1.12.0-beta.47 · Lokal historikimport
 
 W31: Indstillinger → Data kan importere de seneste to års gennemgange fra CSV og understøttede digitale S-13-filer: den originale udfyldelige formular og LTM’s egen PDF-eksport. Filen aflæses lokalt; kortnummer og gennemgangsdato vises i en redigerbar kladde før udtrykkelig godkendelse. Navne og udleveringsdatoer importeres ikke. Dubletter og ældre datoer vises som fravalgte; ukendte/uklare kort, fremtidige datoer og gendannelige poster skal rettes før hele importen kan gemmes. Eksisterende udlån og historiske registreringer overskrives ikke. Aktuelle og arkiverede kort understøttes. En ændret database eller udløbet forhåndsvisning kræver ny kontrol.

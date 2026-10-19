@@ -59,3 +59,9 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .addressSourceDiagnostic{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-width:100%}
 
 .reportOverview .reportPeriod{min-width:0;border-top:1px solid #dfe8ee;margin-top:22px;padding-top:18px}.reportOverview .reportPeriod h2{font-size:21px;margin:0}.reportOverview .periodDates{font-size:12px;margin:4px 0}.reportOverview .metrics{margin:14px 0}
+.comparisonLegend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:#b6cbdd}
+.comparisonLegend span{display:inline-flex;align-items:center;gap:7px}
+.comparisonLegend i{display:inline-block;width:12px;height:12px;border-radius:3px;flex:none}
+.comparisonCurrent{background:#7cb8e4}.comparisonPrevious{background:#e1ab71}
+.monthlyComparison .trendPeriod{white-space:normal;overflow-wrap:anywhere}
+.monthlyComparison td small{display:block;font-size:.72rem;white-space:nowrap;margin-top:3px}

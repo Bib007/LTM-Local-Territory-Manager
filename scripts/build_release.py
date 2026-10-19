@@ -11,7 +11,7 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
 REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
-PDF_DEPENDENCIES=('pypdf-6.10.0.zip','PYPDF-LICENSE','PYPDF.md')
+PDF_DEPENDENCIES=('pypdf-6.10.0.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
 ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','KOREPLAN.md','Dette-skal-hjaelpes-manuelt.md','Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')

@@ -38,6 +38,21 @@ jobs:
       - run: python scripts/test_build_release.py
       - run: python scripts/check_release_smoke.py
       - run: python -m unittest discover -s scripts -p test_build_beta.py -v
+  python-compatibility:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.9', '3.13']
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest discover -s distrikt/tests -v
   desktop:
     if: github.ref == 'refs/heads/develop'
     runs-on: ${{ matrix.os }}
@@ -69,7 +84,7 @@ jobs:
       - run: docker run --rm --env LTM_CHANNEL=beta --entrypoint python3 ltm-ha-beta -c "import sys,tempfile; sys.path.insert(0, '/opt/distrikt/app'); from access import Access,LOGIN; assert 'Beta' in LOGIN; d=tempfile.TemporaryDirectory(); assert Access(d.name,'Fictional-pass-123').cookie_name=='distrikt_beta_session'"
   publish:
     if: github.ref == 'refs/heads/develop'
-    needs: [checks, desktop, home-assistant]
+    needs: [checks, python-compatibility, desktop, home-assistant]
     runs-on: ubuntu-latest
     permissions:
       contents: write

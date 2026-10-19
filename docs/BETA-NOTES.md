@@ -1,5 +1,7 @@
-# LTM 1.12.0-beta.47
+# LTM 1.12.0-beta.48
 
-W31 · Lokal historikimport under Indstillinger → Data. CSV og understøttet digital S-13 aflæses lokalt. Gennemse og ret kortnumre/datoer før godkendelse med IMPORTÉR HISTORIK. Dubletter og datoer uden for de seneste to år springes over, og alle fejl skal rettes før import. Navne og udleveringer importeres ikke; eksisterende udlån bevares. Historiske besøgstal står som ukendte frem for at blive opfundet. Scanninger og fotos overføres manuelt til CSV-skabelonen; der er ingen automatisk OCR eller videresendelse.
+W32 · Forsiden sammenligner månedlige gennemgange med samme måned sidste år. Indeværende måned går til samme kalenderdato begge år; afsluttede måneder sammenlignes fuldt. Tabellen viser datoperioderne, ? betyder manglende registreringer fra sidste år, og fremtidige måneder står som ikke begyndt. Alle tal er gemte registreringer; tom historik beviser ikke nul gennemgange.
 
-Prøv med opdigtede data og en sikkerhedskopi: CSV med ny gennemgang, dublet, ugyldigt kort og gammel dato; ret fejl og kontrollér igen. Prøv både original udfyldelig S-13 og en LTM-eksporteret S-13. Bekræft, at udleveringer bevares, at datoer og månedsgraf stemmer, og at gentaget import ikke opretter dubletter. Kontrollér mobilbredde og dansk/engelsk. Læsearkivets eksportforbedringer fra beta.46-kandidaten følger med; beta.46 blev stoppet af versionskontrollen og ikke udgivet. Main er stabil 1.11.1.
+W31 · Historikimporten fra beta.47-kandidaten følger med, nu med den manglende lokale PDF-afhængighed til Python 3.9/3.10. CSV og understøttet digital S-13 kontrolleres før udtrykkelig godkendelse. Navne og udleveringer importeres ikke, og historiske besøgstal gættes ikke. Scanninger og fotos overføres manuelt til CSV-skabelonen.
+
+Prøv med opdigtede data og en sikkerhedskopi: Kontroller forskellige antal i samme måned begge år, en post efter dagens dato sidste år, en tom tidligere måned og fremtidige måneder. Sammenhold søjler, tabel og datoperioder på mobil og computer, dansk/engelsk. Prøv CSV og understøttede digitale S-13-filer lokalt, også uden installerede Python-pakker. Main er stabil 1.11.1.

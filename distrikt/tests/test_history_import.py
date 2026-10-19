@@ -74,6 +74,7 @@ class HistoryImportTests(unittest.TestCase):
         data={'name':'opdigtet.pdf','content':base64.b64encode(raw).decode()}
         p=self.s.mutate('setup.history-import.preview',data)
         self.assertEqual(p['count'],0);self.assertEqual(p['rows'][0]['number'],'001');self.assertEqual(p['rows'][0]['date'],self.day)
+        sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app/vendor_py'))
         sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app/vendor_py/pypdf-6.10.0.zip'))
         from pypdf import PdfReader,PdfWriter
         writer=PdfWriter(clone_from=str(Path(__file__).resolve().parents[1]/'templates/S-13-fillable.pdf'))

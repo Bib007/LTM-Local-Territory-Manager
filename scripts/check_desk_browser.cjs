@@ -64,6 +64,13 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
   assert.equal(await page.locator('.dashboardMetrics .metricText').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Months and days fit the viewport');
  }
+ await page.evaluate(()=>{state.completions=[{id:'fictional-september',card_id:'folder',date:'2026-09-02'},{id:'fictional-current',card_id:'folder',date:'2026-10-17'},{id:'fictional-future',card_id:'folder',date:'2026-10-18'},{id:'fictional-previous',card_id:'folder',date:'2025-10-17'},{id:'fictional-too-late',card_id:'folder',date:'2025-10-18'}];I18n.set('da');render();});
+ assert.equal(await page.locator('[data-comparison=current][data-month="2026-10"]').getAttribute('data-count'),'1');
+ assert.equal(await page.locator('[data-comparison=previous][data-month="2026-10"]').getAttribute('data-count'),'1');
+ assert.equal(await page.locator('[data-comparison=previous][data-month="2026-09"]').count(),0);
+ assert.equal(await page.locator('[data-comparison=current][data-month="2026-11"]').count(),0);
+ await page.locator('.monthlyComparison .chartData summary').click();assert.match(await page.locator('[data-comparison-row="2026-10"]').innerText(),/17\.10\.2025/);assert.match(await page.locator('[data-comparison-row="2026-09"]').innerText(),/Ingen registreringer/);
+ await page.locator('#navigationLanguage').selectOption('en');assert.match(await page.locator('.comparisonLegend').innerText(),/Same month last year/);assert.match(await page.locator('[data-comparison-row="2026-09"]').innerText(),/No records/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Comparison table stays inside the mobile page');
  await page.evaluate(()=>{state.completions=[];I18n.set('da');render();});
 
  await page.locator('[data-action=backup-snooze]').click();await page.waitForFunction(()=>!document.getElementById('backupReminder'));assert.equal(writes.length,beforeBackup+1);assert.equal(writes.at(-1).action,'backup.snooze');

@@ -5,3 +5,5 @@ Unmodified Python sources from the installed pypdf 6.10.0 distribution, packaged
 SHA-256: 96d4e4bdb428066b36a18b72c07ecd0879bee5bbf1b752a01a18716fff89e02d
 
 Loaded only in the bounded S-13 subprocess; no dependency installation or network request at runtime.
+
+Python 3.9/3.10 also require typing_extensions. The unmodified 4.16.0 module is included beside this ZIP, with its license in TYPING-EXTENSIONS-LICENSE. Upstream: https://github.com/python/typing_extensions/tree/4.16.0
