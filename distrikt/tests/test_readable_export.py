@@ -62,6 +62,13 @@ class ReadableExportTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Data er ændret'):self.export.finish(job['token'])
         self.assertIsNotNone(self.store.get('notes','during-export'))
 
+    def test_prepare_reads_geography_once_for_many_cards(self):
+        with self.store.transaction():
+            for i in range(25):self.store.put('cards',{'id':'extra-'+str(i),'number':str(100+i),'addresses':[]})
+        with patch.object(self.store,'all',wraps=self.store.all) as reads:
+            self.export.prepare()
+        self.assertLessEqual(sum(call.args==('geo',) for call in reads.call_args_list),2)
+
     def test_csv_formulas_and_multiline_values(self):
         import csv
         rows=list(csv.reader(io.StringIO(csv_file(['tekst'],[['=1+1'],['+Fiktiv'],['@SUM(1)'],['Linje\n"to";æøå']]).decode('utf-8-sig')),delimiter=';'))

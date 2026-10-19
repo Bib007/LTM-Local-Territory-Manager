@@ -153,19 +153,25 @@ def tables(state,geo):
     add('stamdata',['menighed','opgoerelsesdato'],[(state['settings'].get('congregation',''),state['today'])])
     return result
 
+class SnapshotView:
+    """Reuse the public filter against one frozen read, without per-card SQL scans."""
+    def __init__(self,state,geo):self.data={**state,'geo':geo,'settings':[state['settings'],*state['areas']]}
+    def all(self,module):return self.data.get(module,[])
+    def get(self,module,ident):return next((r for r in self.all(module) if r.get('id')==ident),None)
+
 class ReadableExport:
     def __init__(self,store):self.store=store;self.lock=threading.RLock();self.job=None
     def prepare(self):
         with self.lock,self.store.lock:
-            state=self.store.state();geo=self.store.all('geo');cards=[]
+            state=self.store.state();geo=self.store.all('geo');view=SnapshotView(state,geo);cards=[]
             current={c['id']:c for c in state['cards']};state['public_maps']=[]
             for row in self.store.all('maps'):
                 c=current.get(row.get('card_id'));url=row.get('front_url') or row.get('url')
-                if c and row.get('entity')=='publication' and row.get('status') in ('published','ready','access_retry','access_failed') and url and fingerprint(self.store,c)==row.get('fingerprint'):
+                if c and row.get('entity')=='publication' and row.get('status') in ('published','ready','access_retry','access_failed') and url and fingerprint(view,c)==row.get('fingerprint'):
                     state['public_maps'].append({'card_id':c['id'],'url':url})
             for c in state['cards']+state.get('archived_cards',[]):
-                members=public_members(self.store,c)
-                if c.get('geo_polygon') or members:cards.append({'card':{k:c.get(k) for k in ('id','number','geo_polygon','map_color')},'members':members,'name':public_name(self.store,c)+(' · Arkiveret' if c.get('archived') else '')})
+                members=public_members(view,c)
+                if c.get('geo_polygon') or members:cards.append({'card':{k:c.get(k) for k in ('id','number','geo_polygon','map_color')},'members':members,'name':public_name(view,c)+(' · Arkiveret' if c.get('archived') else '')})
             self.job={'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'size':0,'until':time.monotonic()+3600}
             return {k:self.job[k] for k in ('token','revision','cards')}
     def require(self,token):
