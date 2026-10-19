@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.42 · Ændringslog i Home Assistant
+
+W64: Home Assistant-pakkens ændringslog var stoppet ved beta.29, selv om projektets ændringslog var opdateret. Appmappens CHANGELOG.md indeholder nu også beta.30–42 i samme rækkefølge som projektets ændringslog. Tidligere versionsnoter bevares; ældre udgivelser og tags ændres ikke.
+
+Pakning af både komplet program og HA-beta afvises fremover, hvis de to ændringslogfiler er forskellige, eller den aktuelle version ikke står først. Prøver dækker den tidligere fejl, bevaret historik og den faktiske ZIP-fils ændringslog/kontrolsum. Der ændres ingen lokale data eller adressefunktioner. Visning på ejerens egen HA kontrolleres efter næste opdatering.
+
 ## 1.12.0-beta.41 · DAR-opslag uden aliaser
 
 Ejerens læsende beta.40-kontrol accepterede almindelige opslag for alle fem DAR-entiteter, men afviste både ét alias og flere rodfelter. Adressehentningen bruger nu ét almindeligt opslag ad gangen, også ved mange ID'er. Samme tidspunkt, filtre, separate cursors, afbrydelse og fælles resultat-/anmodningsgrænser bevares. Ingen delvise svar frigives til import. Fiktive leverandørprøver afviser nu aliaser og flere rodfelter; vej- og grænseforløbet fejlede før rettelsen og består efter. En rigtig hentning efter opdateringen udestår; W62 er fortsat åben.
@@ -74,9 +80,11 @@ W46: Indstillinger tilbyder Gem sikkerhedskopi som… i sikre browserkontekster 
 
 W61: Udgivelsespakker og grene/tags er renset; GitHub-cache, gamle PR-henvisninger og resterende udgivelsesmetadata afventer ekstern oprydning. W63: Det brede eftersyn af faste eksempler er afsluttet med en ny test af tomme hentefelter. Main er fortsat stabil 1.11.1.
 
-## 1.12.0-beta.29 · Neutrale adressefelter
+## 1.12.0-beta.29 · Neutrale felter i adressehentning
 
-Faste sted-/adresseeksempler er erstattet med neutrale feltbeskrivelser på dansk/engelsk. Egne lokale data og dynamiske vejforslag er bevaret.
+Faste vej-, postnummer- og husnummereksempler er fjernet fra Hent en vej og adressevalget. Felterne beskriver nu kun deres formål på dansk/engelsk. Den tidligere stedtekst er også fjernet fra oversættelser og erstattet med opdigtede testdata i prøverne. Gemte lokale adresser og den eksisterende vejnavnesøgning bevares.
+
+W61 er fortsat kritisk og åben: rettelsen i denne beta er ikke en færdigmelding af oprydningen i tidligere udgivelser, betaer eller Git-historik. W62 om fejlslagen faktisk API-hentning er en særskilt, endnu ikke rettet fejl.
 
 ## 1.12.0-beta.28 · Kompakt opsætning og menighed i topbaren
 
@@ -217,6 +225,34 @@ Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR G
 - Egen lokalt gemte Datafordeler-nøgle bruges til komplette vej-, postnummer- og grænsehentninger. Flade opslag sammenkobles lokalt med stabile adresse-ID'er og bevarede etage-/døroplysninger.
 - Grupperede opslag reducerer antal netkald. Kilde og skemafingeraftryk følger checkpoints; ufuldstændige svar gemmes ikke som komplette veje/udsnit. Genstart fortsætter kun ufærdige dele af samme hentning.
 - Uden nøgle fortsætter den hidtidige kilde. Ved kildeskift kræves en ny opdatering. Adresseforslag fra Adressevælger er fortsat en særskilt tjeneste. Egen Datafordeler-/HA-prøve står særskilt fra fiktiv programkontrol.
+
+## 1.12.0-beta.7
+
+- Kortdata får trinvis vejledning til egen Datafordeler-konto og API-key, lokal lagring og eksplicit forbindelseskontrol. Nøglen udelades fra portable sikkerhedskopier.
+- Dette klargør DAR v3-forbindelsen; selve adresseimporten flyttes i et efterfølgende trin.
+
+## 1.12.0-beta.6
+
+- Den ekstra opfølgningsliste er fjernet fra KTM-rapporten og samlet PDF efter ejerens ønske. De øvrige rapportoversigter og original S-13 bevares.
+
+## 1.12.0-beta.5
+
+- Opsætningsguidens radioknapper arver ikke længere tekstfelters fulde bredde. Valgtekst og forklaring holdes inden for deres boks på smalle skærme.
+
+## 1.12.0-beta.4
+
+- Rapporten får en aktuel opfølgningsliste med manglende historik, gennemgange over 12 måneder og aktuelle udlån over fire måneder.
+- Kort vises én gang med datoer og årsager; arkiverede kort udelades. Ingen personnavne, noter eller IB-adresser føjes til listen. Samme liste følger samlet PDF.
+
+## 1.12.0-beta.3
+
+- Fast topbar ved rulning på computer og mobil; logoet åbner forsiden med kontrol af ugemte ændringer.
+- Fuldt projektlogo i topbaren på computer, kompakt mærke på mobil og tydelig beta-identitet.
+- HA-ikon og logo følger nu både normal programpakke og betapakke.
+
+## 1.12.0-beta.2
+
+- Betaen kan nulstille testdata med bekræftelse, automatisk lokal sikkerhedskopi og kontrol af delte kort. Login og forbindelser bevares.
 
 ## 1.12.0-beta.1 · HA-beta under klargøring
 

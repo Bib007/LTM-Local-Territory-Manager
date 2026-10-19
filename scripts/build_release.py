@@ -44,6 +44,14 @@ def files():
         p=ROOT/n
         if not p.is_file():raise ValueError('Missing release document: '+n)
         result[n]=(p.read_bytes(),0o644)
+    # HA reads the app-folder changelog, not the repository's root changelog.
+    # Reject drift before either the portable or beta package can be published.
+    changelog=result['CHANGELOG.md'][0]
+    if result['Home-Assistant/distrikt/CHANGELOG.md'][0]!=changelog:
+        raise ValueError('Project and HA changelogs differ. Sync distrikt/CHANGELOG.md from CHANGELOG.md.')
+    newest=re.search(r'^##[ \t]+([^\s]+)',changelog.decode('utf-8'),re.M)
+    if not newest or newest.group(1)!=version():
+        raise ValueError('Changelog must list the current version first.')
     for n in BRAND_FILES:
         p=ROOT/'assets'/'brand'/n
         if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe brand asset: '+n)

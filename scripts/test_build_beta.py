@@ -1,5 +1,6 @@
 """HA beta packaging with invented files; no user installation or credentials."""
 import contextlib
+import hashlib
 import io
 import tempfile
 from pathlib import Path
@@ -16,6 +17,9 @@ class BetaBuildTests(unittest.TestCase):
         self.add('distrikt/config.yaml','name: Distrikt\nversion: "9.9.0-beta.1"\nslug: distrikt\nboot: auto\nports:\n  8787/tcp: 8787\nwebui: "http://[HOST]:[PORT:8787]/"\n')
         self.add('distrikt/run.sh','#!/bin/sh\nset -euo pipefail\npython app/server.py --port 8787 --data-dir /data/distrikt\n')
         self.add('distrikt/app/index.html','<title>Local Territory Manager – JW</title><body><b>LTM</b>')
+        self.changelog=self.fixture.changelog.replace('9.9.0','9.9.0-beta.1')
+        self.add('CHANGELOG.md',self.changelog)
+        self.add('distrikt/CHANGELOG.md',self.changelog)
         self.add('docs/BETA.md','# Fiktiv betavejledning\n')
     def tearDown(self):self.fixture.tearDown()
     def build(self,name):
@@ -44,5 +48,17 @@ class BetaBuildTests(unittest.TestCase):
         self.assertEqual((output/'keep.txt').read_text(),'preserve')
         self.add('distrikt/app/server.py',"VERSION='9.9.0'\n");self.add('distrikt/config.yaml','version: "9.9.0"\n')
         with self.assertRaisesRegex(ValueError,'numbered beta'):beta.entries()
+
+    def test_beta_changelog_history_and_checksum_match_source(self):
+        with zipfile.ZipFile(self.build('changelog')) as archive:
+            raw=archive.read('distrikt/CHANGELOG.md')
+            self.assertEqual(raw,self.changelog.encode())
+            self.assertIn(b'## 9.8.0',raw)
+            manifest=archive.read('SHA256SUMS.txt').decode()
+            self.assertIn(hashlib.sha256(raw).hexdigest()+'  distrikt/CHANGELOG.md\n',manifest)
+
+    def test_beta_rejects_stale_changelog(self):
+        self.add('distrikt/CHANGELOG.md','# Fictional old beta changes\n')
+        with self.assertRaisesRegex(ValueError,'changelogs differ'):self.build('stale')
 
 if __name__=='__main__':unittest.main()

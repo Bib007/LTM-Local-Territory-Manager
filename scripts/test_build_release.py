@@ -34,6 +34,9 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.add('Opdater-Home-Assistant-Mac.command','#!/bin/bash\n')
         for name in release.REQUIRED:self.add('distrikt/templates/'+name,'invented form fixture')
         for name in release.ROOT_DOCS:self.add(name,'# Fictional project document\n')
+        self.changelog='# Fictional changes\n\n## 9.9.0 · Current version\n\nNew changes.\n\n## 9.8.0 · Previous version\n\nPreserved history.\n'
+        self.add('CHANGELOG.md',self.changelog)
+        self.add('distrikt/CHANGELOG.md',self.changelog)
         for name in release.BRAND_FILES:self.add('assets/brand/'+name,'invented vector fixture')
         self.add('docs/INSTALL.md','# Fictional installation guide\n')
         self.add('demo/README.md','# Fictional demo guide\n')
@@ -89,6 +92,24 @@ class ReleaseArchiveTests(unittest.TestCase):
                 for target in re.findall(r'\]\(([^)]+)\)',archive.read(name).decode()):
                     resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
                     self.assertIn(resolved,archive.namelist())
+
+    def test_changelog_matches_in_desktop_ha_and_project_archive(self):
+        with zipfile.ZipFile(self.build('changelog')) as archive:
+            for name in ('CHANGELOG.md','Distrikt-lokal/CHANGELOG.md','Home-Assistant/distrikt/CHANGELOG.md'):
+                self.assertEqual(archive.read(name),self.changelog.encode())
+
+    def test_stale_ha_changelog_blocks_release(self):
+        self.add('distrikt/CHANGELOG.md','# Fictional changes\n\n## 9.8.0 · Previous version\n')
+        with self.assertRaisesRegex(ValueError,'changelogs differ'):self.build('stale')
+
+    def test_current_version_must_be_first_in_changelog(self):
+        old_first=self.changelog.replace('## 9.9.0 · Current version','## 9.8.0 · Old version',1)
+        for name in ('CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,old_first+'\n## 9.9.0 · Misplaced version\n')
+        with self.assertRaisesRegex(ValueError,'current version first'):self.build('old-first')
+
+    def test_missing_changelog_version_blocks_release(self):
+        for name in ('CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,'# Fictional changes\n')
+        with self.assertRaisesRegex(ValueError,'current version first'):self.build('missing-version')
 
     def test_all_packaged_relative_links_are_validated(self):
         self.add('docs/OTHER.md','[Missing](../missing-guide.md)\n')
