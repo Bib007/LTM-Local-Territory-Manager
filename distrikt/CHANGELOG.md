@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.50 · S-13 med navne og udleveringer
+
+W69: Den lokale historikimport aflæser nu også forkyndernavne, udleveringer og indleveringer i understøttet digital S-13. Efter ejerens afklaring bliver en udlevering uden indleveringsdato et aktivt udlån; en indlevering afslutter udlånet og registrerer kortet som gennemgået. Forhåndsvisningen viser navnematch, nye forkyndere, aktive/afsluttede udlån og konflikter før udtrykkelig godkendelse. En ekstra femkolonners CSV-skabelon understøtter manuel overførsel fra scanninger og fotos; den eksisterende skabelon med kortnummer/dato bevares.
+
+Entydigt ens navne genbruges. Dubletter og allerede kendte kortcyklusser springes over; overlappende udlån, uklare navne, ugyldige datoer og gendannelige poster skal rettes før lagring. En kendt gennemgang uden udlån kan kobles til den importerede udlevering uden at tælle igen eller ændre dato/besøgstal. Eksisterende udlån overskrives ikke. Aktive udlån med ældre udleveringsdato medtages; afsluttet historik følger toårsgrænsen. Hele importen gemmes atomisk. Historiske besøgstal gættes ikke, og filer/navne videresendes ikke automatisk.
+
 ## 1.12.0-beta.49 · Forstå Adressevælger og token
 
 W36: Kortdata forklarer nu Adressevælgerens online vejforslag, valgfriheden og forskellen fra Datafordelerens DAR GraphQL-forbindelse og API-key. Det fremgår, hvilke søgefelter der sendes ved online forslag, og hvordan forslag kan begrænses til lokalt gemte veje. Status viser standardtoken eller gemt egen token uden at vise værdien. Det valgfrie tokenfelt er flyttet under Avanceret, og det forklares, at et tomt felt og Gem tokenvalg gendanner standardtoken uden at ændre Datafordeler-nøglen. Dansk/engelsk vejledning og link til KDS’ officielle tokenvejledning følger med. Opslag, forbindelser og gemmehandlinger fungerer som før.

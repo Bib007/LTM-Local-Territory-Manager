@@ -1,7 +1,5 @@
-# LTM 1.12.0-beta.49
+# LTM 1.12.0-beta.50
 
-W36 · Kortdata → Adresseforslag · Adressevælger forklarer formålet, valgfriheden og forskellen fra Datafordelerens API-key. Status viser standardtoken eller egen token uden at vise den gemte værdi. Det valgfrie felt ligger under Avanceret. Tomt felt og Gem tokenvalg gendanner standardtoken; Datafordeler-nøglen bevares. Dansk/engelsk forklaring og officielle kilder følger med.
+W69 · Importér historik · S-13 / CSV medtager nu også udleveringer og forkyndernavne. En udlevering uden indleveringsdato bliver et aktivt udlån; alle indleveringer regnes som gennemgået. Gennemse navnematch, nye forkyndere, datoer, aktive udlån og konflikter før IMPORTÉR HISTORIK. Den gamle to-kolonners CSV bevares, og en ny femkolonners skabelon kan udfyldes manuelt fra scanning/foto.
 
-Historikimporten og månedssammenligningen fra beta.48 følger med. Udgivelsesforløbet kræver fortsat Python 3.9/3.13, browser, desktop og HA før offentliggørelse.
-
-Prøv med opdigtede data: Åbn forklaringen i Kortdata og skift dansk/engelsk. Kontrollér status uden egen token. Hvis du bruger en egen token, skal status vise dette uden at afsløre den. Gem kun ændrede tokenvalg, når det er tilsigtet; tomt felt gendanner standardtoken. Datafordeler-nøglen hører til i sit særskilte felt. Se også de opdaterede danske og engelske forbindelsesvejledninger. Main er stabil 1.11.1.
+Prøv med opdigtede data og en sikkerhedskopi: En indleveret og en fortsat udleveret post, både et nyt og et kendt forkyndernavn. Kontrollér udlån og gennemgang efter import og ved gentagen import. Prøv en allerede kendt gennemgang uden udlån; den skal kobles uden dobbelttælling. Overlap og uklare navne skal blokere hele importen. Prøv også aktivt udlån med ældre startdato, dansk/engelsk og mobilbredde. Original udfyldelig S-13 og LTM’s egen PDF understøttes; andre layouts/scanninger kræver manuel CSV. Main er stabil 1.11.1.
