@@ -83,5 +83,15 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_desk_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
+      - name: Fictional header and digital map visual checks
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_visual_browser.cjs
+      - name: Fictional visual review images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fictional-visual-checks
+          path: ${{ runner.temp }}/ltm-visual
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Syntax check
         run: find distrikt/app -maxdepth 1 -name '*.js' -exec node --check {} \;
