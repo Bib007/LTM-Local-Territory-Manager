@@ -24,10 +24,6 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
 (async()=>{
  const payloads={};
  for(const language of ['da','en']){
-  run(`I18n.set('${language}');Workspace.brand()`);
-  assert.equal(get('headerCongregation').textContent,'– Områder <invented> & Kort '+(language==='en'?'Territory':'Distrikt'));
-  assert.equal(get('headerCongregation').title,'Local Territory Manager '+get('headerCongregation').textContent);
-  assert.equal(get('headerCongregation').hidden,false);
   run(`I18n.set('${language}');Workspace.activityData=[{action:'settings.save',fields:['name','Kort'],cards:['101 <invented>'],at:'2026-10-15T12:00:00Z',count:1},{action:'Gem',at:'2026-10-15T12:00:00Z',count:1}]`);const html=run('settingsPage()');contracts[language]=[contract(html),contract(run('Workspace.settingsNav()'))];
   const activity=run('Workspace.activity()');assert.match(activity,language==='en'?/>Settings changed<\//:/>Indstillinger ændret<\//);assert.match(activity,/101 &lt;invented&gt;/);assert.match(activity,/>Gem</,'Unknown action identifiers stay unchanged');assert.match(activity,/, Kort</,'Unknown field identifiers stay unchanged');
   assert.match(html,/Områder &lt;invented&gt; &amp; Kort/);assert.match(html,/Menighed og mappe &lt;invented&gt;/);assert.match(html,/Gendan &lt;invented&gt;/);

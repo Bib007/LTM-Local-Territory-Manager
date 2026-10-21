@@ -1,7 +1,6 @@
 'use strict';
 /* Private local workspace. No task, history or search content is shared publicly. */
 const Workspace={memory:{},taskFilter:'open',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',
- brand(){const node=el('headerCongregation');if(!node)return;const name=state.settings.congregation||'';node.textContent=name?'– '+name+' '+I18n.text('Distrikt'):'';node.title=name?'Local Territory Manager '+node.textContent:'';node.hidden=!name;document.querySelector('.brand')?.classList?.toggle?.('hasCongregation',!!name);},
  restructureStamp(form){return JSON.stringify([form.dataset.mode,form.dataset.source,[...new FormData(form)]]);},
  async previewRestructure(form,payload){
   payload=JSON.parse(JSON.stringify(payload));

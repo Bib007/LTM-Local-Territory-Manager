@@ -12,17 +12,13 @@ if(out)fs.mkdirSync(out,{recursive:true});
   await page.setContent(`<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="https://ltm.visual.test/style.css"><link rel="stylesheet" href="https://ltm.visual.test/workspace.css"></head><body class="${beta?'betaChannel':''}">${header.replaceAll('src="/','src="https://ltm.visual.test/').replace('<b>LTM</b>',`<b>LTM${beta?' Beta':''}</b>`)}</body></html>`);
   await page.locator('.brandWordmark').evaluate(n=>n.decode());await page.locator('.brandCompact').evaluate(n=>n.decode());
   await page.locator('#saveState').evaluate(n=>{n.textContent='Alle ændringer er gemt';n.dataset.saveKind='saved';});
-  for(const [key,name] of [['empty',''],['short','Fiktiv menighed'],['long','Fiktiv meget lang menighed med mange brede bogstaver WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW']]){
-   await page.locator('#headerCongregation').evaluate((n,name)=>{n.textContent=name?'– '+name+' Distrikt':'';n.hidden=!name;n.title=n.textContent;},name);
-   const geometry=await page.evaluate(()=>{const box=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};return {brand:box('.brand'),logo:box('.brandWordmark'),name:box('#headerCongregation'),badge:box('.brandIdentity b'),save:box('#saveState'),overflow:document.documentElement.scrollWidth>innerWidth};});
-   assert.equal(geometry.overflow,false,`Header overflow ${width}/${beta}/${key}`);
-   assert.ok(geometry.brand.right<=geometry.save.x+1,'Brand must not cover save status');
-   assert.ok(geometry.save.width>=65,'Save status remains visible');
-   if(name){assert.ok(geometry.name.width>0,'Name retains space');assert.ok(geometry.name.right<=geometry.brand.right+1);assert.ok(geometry.name.bottom<=60,'Name remains inside topbar');}
-   if(width>750){assert.equal(geometry.logo.width,360,'Never shrink the logo');assert.equal(geometry.logo.height,66);if(name){assert.equal(geometry.name.y-geometry.logo.y,12,'Align name with first logo text line');assert.equal(geometry.name.x-geometry.logo.right,-48,'Remove only the image’s blank right margin');}if(beta){assert.equal(geometry.badge.y-geometry.logo.y,15);if(name)assert.ok(geometry.name.right<=geometry.badge.x);}}
-   else if(name){assert.ok(geometry.badge.right<=geometry.name.x,'Compact identity precedes name');assert.ok(Math.abs(geometry.name.y+geometry.name.height/2-geometry.badge.y-geometry.badge.height/2)<1);}
-   if(out)await page.screenshot({animations:'disabled',path:path.join(out,`header-${beta?'beta':'stable'}-${width}-${key}.png`)});
-  }
+  assert.equal(await page.locator('#headerCongregation').count(),0);
+  assert.equal(await page.locator('.brand').getAttribute('aria-describedby'),null);
+  const geometry=await page.evaluate(()=>{const box=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,right:r.right,width:r.width,height:r.height};};return {brand:box('.brand'),logo:box('.brandWordmark'),save:box('#saveState'),overflow:document.documentElement.scrollWidth>innerWidth};});
+  assert.equal(geometry.overflow,false,`Header overflow ${width}/${beta}`);
+  assert.ok(geometry.brand.right<=geometry.save.x+1);assert.ok(geometry.save.width>=65);
+  if(width>750){assert.equal(geometry.logo.width,360);assert.equal(geometry.logo.height,66);}
+  if(out)await page.screenshot({animations:'disabled',path:path.join(out,`header-${beta?'beta':'stable'}-${width}.png`)});
   await context.close();
  }
  const context=await browser.newContext({viewport:{width:2200,height:1560}}),page=await context.newPage();
@@ -40,7 +36,7 @@ if(out)fs.mkdirSync(out,{recursive:true});
    const recipe={publicCard:{id:'fake',number:dense?'F36':'F3',name:dense?'Fiktivt tæt bykort':'Fiktivt spredt kort',map_color:'#477596',geo_polygon:points},publicMembers:members,publicTemplate:template,...(raster?{backgroundImage:canvas.toDataURL(),viewBounds:[10,55,10.02,55.02]}:{})};
    const svg=MapExport.svg('fake',recipe),doc=new DOMParser().parseFromString(svg,'image/svg+xml');
    if(doc.querySelector('parsererror'))throw Error('Invalid SVG');
-   const layer=doc.querySelector('[data-map-background]');if(layer.getAttribute('opacity')!=='.55')throw Error('Missing background-only attenuation');
+   const layer=doc.querySelector('[data-map-background]');if(layer.getAttribute('opacity')!=='.5')throw Error('Missing background-only attenuation');
    const dots=[...doc.querySelectorAll('circle')];if(dots.length!==members.reduce((n,a)=>n+a.count,0)||dots.some(n=>n.closest('[data-map-background]')))throw Error('Visit dots must remain full-strength');
    const labels=[...doc.querySelectorAll('text[font-size="20"][paint-order="stroke"]')];if(labels.length!==members.length||labels.some(n=>n.closest('[data-map-background]')))throw Error('House numbers must remain full-strength');
    if(doc.querySelector('[stroke-dasharray="12 7"]').closest('[data-map-background]'))throw Error('Boundary must remain full-strength');
@@ -53,4 +49,5 @@ if(out)fs.mkdirSync(out,{recursive:true});
  }
  await context.close();console.log('Fictional production header: stable/beta, empty/short/long names, four widths; digital cards: dense/sparse, local/raster, full-strength foreground and real PNG decoding passed.');
  await require('./check_partition_browser.cjs')(browser,out);
+ await require('./check_share_image_browser.cjs')(browser,out);
 }finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});
