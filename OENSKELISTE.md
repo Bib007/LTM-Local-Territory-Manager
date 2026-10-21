@@ -2,12 +2,12 @@
 
 ## Ny ejeropfølgning · W70/W71 · registreret 21.10.2026
 
-To nye ønsker fra Google-planen prioriteres samlet til næste beta, beta.54. W70: Fjern menighedsnavnet helt fra topbaren; det gemte navn og dets øvrige anvendelser bevares. Dette ændrer ejerens tidligere topbarønske W43/W49/W66, hvis udgivelseshistorik bevares. W71: Gør baggrunden på det digitale kort til Google Drive lysere med 50 % synlig OSM-baggrund over hvidt, mens røde besøgsprikker og husnumre står helt synligt uden dæmpning. Dette følger op på W40. Kontroller den faktisk dannede PNG og bevar forhåndsvisning/godkendelse før upload samt samme fil/QR-link. Ældre billeder opdateres ved ny lokal dannelse og godkendelse, aldrig automatisk. Ingen rigtig Drive-upload indgår i udviklingsprøverne. Registreringen skal være gemt og læst tilbage på develop, før ønskefanen ryddes.
+De to nye ønsker fra Google-planen er samlet udgivet i beta.54. Den særskilte Mac-platformskontrol afventer fortsat en GitHub-runner, så den samlede afslutning registreres først efter denne kontrol. W70: Fjern menighedsnavnet helt fra topbaren; det gemte navn og dets øvrige anvendelser bevares. Dette ændrer ejerens tidligere topbarønske W43/W49/W66, hvis udgivelseshistorik bevares. W71: Gør baggrunden på det digitale kort til Google Drive lysere med 50 % synlig OSM-baggrund over hvidt, mens røde besøgsprikker og husnumre står helt synligt uden dæmpning. Dette følger op på W40. Kontroller den faktisk dannede PNG og bevar forhåndsvisning/godkendelse før upload samt samme fil/QR-link. Ældre billeder opdateres ved ny lokal dannelse og godkendelse, aldrig automatisk. Ingen rigtig Drive-upload indgår i udviklingsprøverne. Registreringen skal være gemt og læst tilbage på develop, før ønskefanen ryddes.
 
 | Nr. | Opgave | Prioritet | Status |
 | --- | --- | --- | --- |
-| W70 | Fjern menighedsnavnet fra topbaren | LTM vælger · næste beta | Klargjort til beta.54 · udgivelse udestår |
-| W71 | 50 % lysere Drive-kortbaggrund med tydelige prikker/husnumre | LTM vælger · samme beta | Klargjort til beta.54 · udgivelse udestår |
+| W70 | Fjern menighedsnavnet fra topbaren | LTM vælger · næste beta | Udgivet i beta.54 · særskilt Mac-platformskontrol afventer |
+| W71 | 50 % lysere Drive-kortbaggrund med tydelige prikker/husnumre | LTM vælger · samme beta | Udgivet i beta.54 · særskilt Mac-platformskontrol afventer |
 
 Beta.53 er verificeret udgivet fra 22654cca480bfc51301d0b3b5c7efd0ff1c08a7e: alle syv HA-job inklusive publicering er completed/success, og release-ZIP matcher den lokalt testede SHA256 b3ded53a167721049cc52d1945f98d69e9236f29bf7da62441095173f1ca8f2c. Vandløb og jernbaner er dermed udgivet som del af W16; mere komplekse vejnet og øvrige skel er fortsat åbne. Den nye aktuelle kø er W70/W71, derefter resten af W16 og den tidligere kø nedenfor. Med de to nye ønsker er fremdriften 56 af 71, cirka 79 %, og 15 åbne punkter. Tidligere statusafsnit er historik.
 
@@ -651,3 +651,12 @@ Drive-kortets baggrund tegnes med 50 % opacitet over hvidt. Det tidligere farved
 453 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 14 programpakkeprøver, fem betapakkeprøver og faktisk arkivopstart består lokalt. Checks 39610206194 og Platformskontrol 39610206191 for bd77623c2791b5b4ce233c3a9b8389794f39f018 er grønne. CI-artifakt 12350615390 har verificeret SHA256 3f6e8f8c03565a49a7a80f8f5bbe413f87149cb943613ee140be5afc10423496. Mobil-/desktoptopbar, tæt rasterkort og den faktiske Drive-preview-PNG er visuelt gennemgået. Den nye browserprøve går via ShareUI.prepare, rigtige Leaflet-tiles fra en fiktiv offlinekilde, OSM-snapshot, SVG og PNG. Den måler den kendte baggrundsfarve blandet halvt med hvidt samt helt dækkende røde prikker og husnumre. Ingen publicering udføres; godkendelsesknappen er fortsat låst før aktivt tilvalg.
 
 Beta.54 afventer sine egne endelige udgivelseskontroller. W70/W71 tælles endnu som åbne, 56/71 afsluttet og 15 åbne. Main er fortsat stabil 1.11.1.
+
+
+## Beta.54 udgivet · særskilt Mac-platformskontrol afventer
+
+21.10.2026: Beta.54 er publiceret fra ec83cbf1290efda2c21e5b4ed5987747a27c07f0. Checks 39610820291 er completed/success, og alle syv job i HA beta release 39610820295 er completed/success, inklusive Mac/Windows, Python 3.9/3.13, browser-/pakkeprøver, HA og publicering. Den publicerede ZIP har SHA256 665ce7964386f8a57987cfae11296b5bf81d0fd79a0d0437c0422415fcff7d9a, som matcher den lokale, opstartskontrollerede pakke. Betakanalen er læst tilbage som beta.54/port 8788. Main er læst tilbage som stabil 1.11.1.
+
+Platformskontrol 39610820462 har Windows og HA completed/success, mens det særskilte, identiske Mac-desktopjob 119258878837 stadig står queued uden runner. Dette er en ekstern kø, ikke et observeret testnedbrud; der er ikke ændret eller sprunget kontrol over. W70/W71 er udgivet, men den formelle samlede afslutning og fremdrift fastholdes på 56/71 og 15 åbne, indtil den sidste kontrol er completed/success. Herefter bliver fremdriften 58/71, cirka 82 %, og 13 åbne. Næste udviklingspunkt er resten af W16. Den aktuelle status øverst og dette afsnit erstatter de tidligere klargøringsafsnit som statuskilde.
+
+Udgivelse: https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.0-beta.54
