@@ -1,7 +1,7 @@
-# LTM 1.12.0-beta.51
+# LTM 1.12.0-beta.52
 
-W66 · Topbarens menighedsnavn flugter med logoets hovedtekst med mindre tom luft imellem. Selve logoet er ikke gjort mindre. Mobilvisning, lange navne og gemmestatus er bevaret.
+W16, delopgave · Forslag til distriktsinddeling kan følge gennemgående vejforløb ved enkle forgreninger. Vejstykker skal have samme navn og præcist fælles registrerede punkter. Ingen huller, navneskift eller sløjfer gættes. Husenes lejligheder holdes sammen, og eksisterende kort bevares.
 
-W40 · Digitale kort får en roligere baggrund, mens husnumre, røde besøgsprikker og distriktsgrænser beholder deres kontrast. Eksisterende Drive-links og QR-koder bevares. Dan et nyt kortbillede, gennemse det og godkend det for at få det nye layout på Drive; opdateringen uploader ikke noget automatisk.
+Prøv med fiktive data og sikkerhedskopi: Opsæt distrikter → Områder og numre → Lav forslag. Kontrollér skel, besøgstal, husenes tilhørsforhold og adgangsforhold; prøv eventuelt Ret grænser på kortet. Der oprettes først kort efter særskilt OPRET KORT. Ændrede vejdata kræver et nyt forslag. Dansk/engelsk, smal/bred visning og eksisterende nummerering er bevaret.
 
-Prøv et kort og et langt menighedsnavn på mobil og computer. Gennemse et tæt og et spredt digitalt kort med Vejkort; kontrollér husnumre, prikker og afgrænsning før godkendelse. Brug kun fiktive data ved fejlrapportering. S-13-importen fra beta.50 er uændret. Main er stabil 1.11.1.
+Dette afslutter ikke hele W16. Vandløb, jernbaner og mere komplekse vejnet kræver fortsat manuel kontrol/redigering. Der foretages ingen nye netkald. Topbar/kortlayout fra beta.51 og S-13-import fra beta.50 er uændret. Main er stabil 1.11.1.

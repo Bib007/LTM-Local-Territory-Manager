@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.52 · Forslag langs enkle vejforgreninger
+
+W16, delopgave: Automatisk distriktsinddeling kan nu også afprøve gennemgående forløb i enkle forgrenede vejnet. Kun lokale vejstykker med samme navn og præcist fælles registrerede punkter forbindes; knæk og kurver bevares. Eksisterende uforgrenede forslag prøves først. Besøgstallet og de hidtidige geometrikontroller vælger mellem mulige faktiske vejforløb, før et geometrisk reserveforslag anvendes.
+
+Navneskift, huller, sløjfer og uklare kryds gættes ikke, og søgningen har faste arbejdsgrænser. Lejligheder i samme hus holdes sammen; adresser, besøgstal og eksisterende kort bevares. Forslaget kan fortsat rettes og skal godkendes med OPRET KORT. Ingen nye netkald eller automatisk kortoprettelse. Dansk/engelsk vejledning forklarer begrænsningerne. W16 er ikke samlet afsluttet: vandløb, jernbaner og mere komplekse vejnet kræver fortsat manuelt arbejde.
+
 ## 1.12.0-beta.51 · Topbar og roligere digitale kort
 
 W66: Menighedsnavnet i topbaren står nu ved logoets hovedtekst i stedet for midt mellem hovedtekst og undertekst. Tom plads i logoets højre side udnyttes, uden at ændre logoets 360 × 66 pixels. Lange navne afkortes fortsat visuelt med den fulde tekst i hjælpeteksten; mobilens kompakte identitet, betamarkering og gemmestatus bevares. Den private reference er ikke medtaget i kode eller kontrolbilleder.
