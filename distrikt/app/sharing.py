@@ -98,7 +98,7 @@ class Drive:
         for p in self.api('/files/'+file_id+'/permissions?fields=permissions(id,type)')['permissions']:
             if p['type']=='anyone':self.api('/files/'+file_id+'/permissions/'+p['id'],method='DELETE')
 
-RENDER_REVISION=3
+RENDER_REVISION=4
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -237,7 +237,7 @@ class Publications:
             return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'card':dict({k:c.get(k) for k in ('id','number','map_color','geo_polygon')},name=public_name(self.store,c)),'members':public_members(self.store,c)}
     def enqueue(self,data):
         revision=data.get('render_revision',1)
-        if type(revision) is not int or revision not in (1,2,RENDER_REVISION):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
+        if type(revision) is not int or revision not in (1,2,3,RENDER_REVISION):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
         png=png_bytes(data.get('png'))
         if not self.drive.connected():raise ValueError('Forbind Google Drive først.')
         with self.lock,self.store.transaction():

@@ -588,7 +588,7 @@ const I18n={
   "Linket er lukket for offentlig adgang, når kortet ikke er udleveret. QR-koden ændres ikke ved opdatering eller genudlevering. Tidligere kortholdere med samme link kan derfor også åbne det, når det genåbnes. Den vises automatisk nederst til højre på kortets forside og følger med ved print.":"The link is closed to the public while the card is unassigned. Updating or reassigning does not change the QR code. Previous holders with the same link can also open it when it reopens. It appears automatically at the lower right of the card front and is included in print.",
   "Forbundet · {account}":"Connected · {account}",
   "Google Drive er ikke forbundet":"Google Drive is not connected",
-  "Opdater kortbilledet til det nye design med printminiature.":"Update the card image to the new design with a print miniature.",
+  "Dan og godkend et nyt kortbillede for at opdatere baggrunden på Google Drive.":"Generate and approve a new map image to update the background on Google Drive.",
   "Geografisk kort mangler":"Geographic map missing",
   "Tilføj kortets geografiske grænse eller adresser først":"Add the card’s geographic boundary or addresses first",
   "Forbind Google Drive først":"Connect Google Drive first",
