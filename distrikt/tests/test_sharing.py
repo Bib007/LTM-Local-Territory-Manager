@@ -43,7 +43,7 @@ class SharingTests(unittest.TestCase):
         self.publisher=self.s.mutate('publisher.save',{'name':'Fiktiv kortholder'})['id']
         self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-01','initial':True})['id']
     def tearDown(self):self.s.close();self.temp.cleanup()
-    def enqueue(self):return self.p.enqueue({'render_revision':4,'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
+    def enqueue(self):return self.p.enqueue({'render_revision':5,'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
     def row(self):return self.s.get('maps',self.p.key(self.c))
     def finish(self,retain=False):
         return self.s.mutate('loan.finish',{'id':self.loan,'date':'2026-01-02','complete':retain,'retain':retain})
@@ -239,10 +239,10 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':link}])
         self.assertEqual(self.row()['file_id'],before['file_id'])
         self.assertEqual(self.row()['status'],'published')
-        self.assertEqual(self.p.prepare(self.c)['render_revision'],4)
+        self.assertEqual(self.p.prepare(self.c)['render_revision'],5)
         self.enqueue();self.p.process_one()
         self.assertEqual(self.row()['front_url'],link)
-        self.assertEqual(self.row()['render_revision'],4)
+        self.assertEqual(self.row()['render_revision'],5)
         self.assertFalse(Publications(self.s).status()['cards'][0]['render_refresh'])
     def test_previous_layout_keeps_link_without_automatic_upload(self):
         self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':3})
@@ -263,7 +263,7 @@ class SharingTests(unittest.TestCase):
         self.assertTrue(upgraded.front_links())
 
     def test_unknown_layout_revision_is_rejected_without_writes(self):
-        for revision in ('4',True,0,5):
+        for revision in ('5',True,0,6):
             with self.subTest(revision=revision),self.assertRaises(ValueError):
                 self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':revision})
         self.assertIsNone(self.row())

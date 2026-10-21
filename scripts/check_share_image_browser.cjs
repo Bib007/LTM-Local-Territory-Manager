@@ -23,7 +23,7 @@ module.exports=async(browser,out)=>{
     if(u.pathname==='/api/geo/job')return json({status:'idle'});
     if(u.pathname==='/api/ping')return json({ok:true});
     if(u.pathname==='/api/share/status')return json({connected:true,account:'Fictional',cards:[]});
-    if(u.pathname==='/api/share/prepare')return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:4});
+    if(u.pathname==='/api/share/prepare')return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:5});
     throw Error('Unexpected API request '+u.pathname);
    }
    if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
@@ -36,7 +36,8 @@ module.exports=async(browser,out)=>{
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
   const result=await page.evaluate(async()=>{
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
-   if(!pending||pending.render_revision!==4)throw Error('Missing current preview');
+   if(!pending||pending.render_revision!==5)throw Error('Missing current preview');
+   if(doc.querySelectorAll('[data-ltm-brand] svg').length!==1||doc.querySelector('[data-ltm-brand] text')?.textContent!=='Local Territory Manager')throw Error('Missing public project identity');
    const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
    const pixel=(x,y)=>[...ctx.getImageData(Math.round(x),Math.round(y),1,1).data],circle=doc.querySelector('circle');
