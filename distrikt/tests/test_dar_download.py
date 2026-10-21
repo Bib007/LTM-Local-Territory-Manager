@@ -80,6 +80,34 @@ class DarDownloadTests(unittest.TestCase):
         self.download.request.assert_called_once()
         self.assertEqual(self.download.request.call_args.args[0], 'overpass-api.de')
 
+    def test_viewport_includes_roads_missing_from_osm_and_all_postcodes(self):
+        self.provider.tables=tables()
+        point=utm32_to_wgs84(550000,6170000)
+        self.download.request=Mock(return_value={'elements':[]})
+        result=self.download.area({'postcode':'9999','bbox':[point[0]-.003,point[1]-.003,point[0]+.003,point[1]+.003]},True,lambda **kw:None)
+        self.assertTrue(result['complete']);self.assertEqual(result['addresses_downloaded'],3)
+        self.assertEqual({a['postcode'] for a in self.store.geo_state()['addresses']},{'9999','9998'})
+    def test_over_45_osm_names_does_not_limit_spatial_dar_import(self):
+        point=utm32_to_wgs84(550000,6170000)
+        self.download.request=Mock(return_value={'elements':[{'id':str(i),'tags':{'highway':'residential','name':'Fiktiv '+str(i)},'geometry':[{'lon':point[0],'lat':point[1]},{'lon':point[0]+.0001,'lat':point[1]+.0001}]} for i in range(46)]})
+        result=self.download.area({'bbox':[point[0]-.003,point[1]-.003,point[0]+.003,point[1]+.003]},True,lambda **kw:None)
+        self.assertTrue(result['complete']);self.assertEqual(result['addresses_downloaded'],3)
+        self.assertEqual(self.store.geo_info()['roads'],46)
+    def test_dar_failure_does_not_claim_complete_or_remove_existing_addresses(self):
+        point=utm32_to_wgs84(550000,6170000)
+        self.download.road({'road':'Fiktivvej','postcode':'9999'},lambda **kw:None)
+        before=copy.deepcopy(self.store.geo_state()['addresses'])
+        self.download.request=Mock(return_value={'elements':[]});self.source.query=Mock(side_effect=ValueError('Fiktiv netfejl'))
+        result=self.download.area({'bbox':[point[0]-.003,point[1]-.003,point[0]+.003,point[1]+.003]},True,lambda **kw:None)
+        self.assertFalse(result['complete']);self.assertTrue(result['warnings'])
+        self.assertEqual(self.store.geo_state()['addresses'],before)
+    def test_dar_addresses_can_be_downloaded_when_osm_is_temporarily_unavailable(self):
+        point=utm32_to_wgs84(550000,6170000)
+        self.download.request=Mock(side_effect=ValueError('Fiktiv kortkildefejl'))
+        result=self.download.area({'bbox':[point[0]-.003,point[1]-.003,point[0]+.003,point[1]+.003]},True,lambda **kw:None)
+        self.assertTrue(result['complete']);self.assertEqual(result['addresses_downloaded'],3)
+        self.assertTrue(result['warnings'])
+
     def test_failed_graphql_road_preserves_existing_local_records(self):
         self.download.suggest = Mock(side_effect=AssertionError('Legacy suggestions unavailable'))
         self.download.road({'road': 'Fiktivvej', 'postcode': '9999'}, lambda **kw: None)

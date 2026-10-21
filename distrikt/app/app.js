@@ -54,7 +54,7 @@ async function api(path,body){
  const previousState=state,previousRevision=state?.revision;
  if(path==='/api/mutate'&&state?.revision)body={...body,data:{...body.data,_revision:state.revision}};
  let r;try{r=await fetch(path,{method:body?'POST':'GET',headers:{'X-Distrikt-Token':token,...(body?{'Content-Type':'application/json'}:{})},...(controller?{signal:controller.signal}:{}),...(body?{body:JSON.stringify(body)}:{})});}
- catch(error){Workspace.connectionChanged('offline');const failure=problem(writing?'Forbindelsen blev afbrudt. Ændringen kan være nået frem; genindlæs data og kontrollér før du prøver igen.':'Ingen forbindelse til appen. Kontrollér Wi-Fi / VPN.',writing?'uncertain':'connection');if(writing)WriteGuard.mark(failure);throw failure;}
+ catch(error){if(error?.name==='AbortError'){const failure=problem(writing?'Ændringen tog for lang tid at bekræfte. Genindlæs data og kontrollér før du prøver igen.':'Kontrollen tog for lang tid. Forbindelsen er ikke nødvendigvis afbrudt. Prøv et mindre område eller prøv igen.',writing?'uncertain':'timeout');if(writing)WriteGuard.mark(failure);throw failure;}Workspace.connectionChanged('offline');const failure=problem(writing?'Forbindelsen blev afbrudt. Ændringen kan være nået frem; genindlæs data og kontrollér før du prøver igen.':'Ingen forbindelse til appen. Kontrollér Wi-Fi / VPN.',writing?'uncertain':'connection');if(writing)WriteGuard.mark(failure);throw failure;}
  if(!r.ok){
   const data=await r.json().catch(()=>({}));
   if(writing&&(r.status>=500||r.status===408)){const failure=problem('Serveren kunne ikke bekræfte ændringen. Kontrollér de gemte data med Opdater før et nyt forsøg.','uncertain',r.status);WriteGuard.mark(failure);throw failure;}

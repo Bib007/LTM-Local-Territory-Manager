@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.57 · Komplette adresseudsnit og kortforslag uden kort HTTP-tidsgrænse
+
+W76: Med Datafordeleren hentes adresser nu direkte fra DAR-punkter indenfor det viste udsnit. Alle postnumre i udsnittet medtages, også veje der mangler i OpenStreetMap, og grænsen på 45 OSM-vejnavne bruges ikke til denne hentning. Store udsnit opdeles i små opslag med ét fælles tidspunkt; tids-/størrelsesfejl opdeler videre, og ufuldstændighed vises tydeligt. Færdige udsnit bevares ved fejl. Baggrundens OSM-hentning er særskilt og kan fejle uden at blokere DAR-adresser. Den ældre adressekilde bevarer sine begrænsninger. Samlet distriktsgrænse er fortsat valget til større, vedvarende hentninger.
+
+W77: Forslag til distriktskort og kontrol af rettede grænser kan nu beregnes i baggrunden på den lokale server. Browseren følger med korte statuskald, så en beregning over 30 sekunder ikke alene afbrydes som en Wi-Fi-/VPN-fejl. Kun ét forslag beregnes ad gangen, og forladte eller forældede svar erstatter ikke en nyere redigering. Netfejl og udløbet forespørgsel har hver sin forklaring. Forslag er fortsat læsning; kort oprettes først efter kontrol og OPRET KORT. Det parkerede arbejde med nye vejnetfunktioner genoptages ikke.
+
 ## 1.12.0-beta.56 · Natlig adressekontrol på Home Assistant
 
 W73: Under Opgaver kan du nu slå automatisk adressekontrol til, vælge hver 1–30 dage og et klokkeslæt i serverens lokale tid. Kontrollen bruger den gemte samlede distriktsgrænse og din Datafordeler-forbindelse. Appen skal køre i Home Assistant.

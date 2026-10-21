@@ -1,4 +1,14 @@
-# LTM 1.12.0-beta.56
+# LTM 1.12.0-beta.57
+
+W76/W77 · Retter adressehentning i kortudsnit og langsomme kortforslag.
+
+Kortdata → Hent vist udsnit → Hent også DAR-adresser i udsnittet: Med Datafordeler-forbindelse hentes alle postnumre direkte indenfor udsnittet, uafhængigt af OSM-vejnavne og den tidligere grænse på 45 vejnavne. Kontrollér meldingen om antal adresser og eventuelle manglende udsnit. Ved fejl bevares færdige dele; gentag samme udsnit. Brug Samlet distriktsgrænse til større hentninger, der skal kunne fortsættes efter genstart. Postnummerfeltet er kun nødvendigt ved den ældre adressekilde.
+
+Opsæt distrikter → Lav forslag: beregningen kører på serveren med løbende statuskald. Store områder må tage over 30 sekunder uden alene at blive meldt som Wi-Fi-/VPN-fejl. Kontrollér og ret forslaget før OPRET KORT. Forladte svar må ikke erstatte nyere redigering. Dette ændrer ingen vejnetalgoritme.
+
+Egen prøve: Hent det tidligere problemudsnit igen og sammenlign adresser midt i kortet. Prøv samme inddeling som gav forbindelsesfejl. Brug sikkerhedskopi; del ingen private kort, IB eller API-nøgler i fejlrapporter.
+
+## Fra beta.56
 
 W73 · Natlig adressekontrol på Home Assistant. Gem først den samlede distriktsgrænse, og forbind Datafordeleren. Gå til Opgaver → Automatisk adressekontrol → Indstil opgave. Vælg hyppighed (1–30 dage), tidspunkt og aktivér. Tiden følger serverens lokale tidszone; næste tidspunkt vises på opgaven. Slået fra som udgangspunkt.
 

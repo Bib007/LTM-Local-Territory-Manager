@@ -209,8 +209,13 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
         bounds=f'{s},{w},{n},{e}'
         query=f'[out:json][timeout:15];(way["building"]({bounds});way["highway"]({bounds});way["waterway"~"^(river|stream|canal)$"]({bounds});way["railway"="rail"]({bounds}););out tags geom;'
         progress(message='Henter offentlige veje, bygninger, vandløb og jernbaner til det viste udsnit…')
-        result=self.request('overpass-api.de','/api/interpreter',query=query)
-        if result.get('remark'):raise ValueError('Kortkilden returnerede en ufuldstændig hentning. Zoom tættere på og prøv igen.')
+        osm_warnings=[]
+        try:
+            result=self.request('overpass-api.de','/api/interpreter',query=query)
+            if result.get('remark'):raise ValueError('Kortkilden returnerede en ufuldstændig hentning. Zoom tættere på og prøv igen.')
+        except ValueError as error:
+            if not with_addresses or self.source_id()!=GRAPHQL_SOURCE:raise
+            result={'elements':[]};osm_warnings.append('Kortbaggrund: '+str(error))
         records=[];roads=set()
         for item in result.get('elements',[]):
             tags=item.get('tags',{});points=[[p['lon'],p['lat']] for p in item.get('geometry',[]) if p and 'lon' in p]
@@ -225,8 +230,13 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
                 'building_type':tags.get('building',''),'road_type':tags.get('highway','')})
             if typ=='divider':records[-1].update(divider_type=tags.get('waterway') if tags.get('waterway') in ('river','stream','canal') else 'rail',layer=tags.get('layer','0'),bridge=tags.get('bridge',''),tunnel=tags.get('tunnel',''))
             if typ=='road' and tags.get('name'):roads.add(tags['name'])
-        if not records:raise ValueError('Ingen veje, bygninger, vandløb eller jernbaner fundet. Prøv et andet udsnit.')
-        saved=self.store.mutate('geo.import',{'records':records,'label':'Lokalt kortudsnit','source':'OpenStreetMap','bbox':[w,s,e,n]})
+        if not records and not (with_addresses and self.source_id()==GRAPHQL_SOURCE):raise ValueError('Ingen veje, bygninger, vandløb eller jernbaner fundet. Prøv et andet udsnit.')
+        saved=self.store.mutate('geo.import',{'records':records,'label':'Lokalt kortudsnit','source':'OpenStreetMap','bbox':[w,s,e,n]}) if records else {'count':0}
+        if with_addresses and self.source_id()==GRAPHQL_SOURCE:
+            addresses=self.graph_viewport([w,s,e,n],progress)
+            addresses['warnings']=osm_warnings+addresses['warnings']
+            if osm_warnings:addresses['note']+=' Kortbaggrunden er ufuldstændig; DAR-kontrollen er udført særskilt.'
+            return dict(saved,**addresses)
         warnings=[];road_results=[]
         if with_addresses:
             post=str(data.get('postcode','')).strip()

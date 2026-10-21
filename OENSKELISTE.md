@@ -2,15 +2,19 @@
 
 ## Aktuel status · 21.10.2026
 
-Beta.55 er fuldt verificeret udgivet fra 0c992e29d097a2709d62c0f22f7d85edf6fc4a7b. Checks 39615583107, Platformskontrol 39615583067 og HA beta release 39615583062 er completed/success. Den publicerede HA-ZIP matcher frisk lokal bygning: SHA256 130823d949d7a1afcf3df4439d65e21b6b0f174388f9b4adcfb6bfff69b20479. Betakanalen er læst tilbage som beta.55/8788, main stabil 1.11.1. W72 er afsluttet.
+Beta.56 er fuldt verificeret udgivet fra 1be8ac475d6db0a555aa64290f227b0575a42286. Checks 39623440773, HA beta release 39623440760 og Platformskontrol 39622979037 på den identiske runtime-kilde er completed/success. Alle HA-udgivelsesjob, herunder Mac/Windows, Python 3.9/3.13, browser og publicering, består. HA-ZIP-SHA256 d97dd6f47d221a937b41fb0f1f6e5c13fc72be08900a72950936c377aea3a0d5 matcher den lokale pakke. Betakanalen er beta.56/8788, main stabil 1.11.1. W72/W73 er afsluttet; faktisk natlig HA-/Datafordeler-kørsel er en særskilt ejerprøve.
 
-W73 er implementeret og klargjort til beta.56; endelige CI-/browser-/udgivelseskontroller udestår. Opgaver giver indstillinger for interval/tid og stop; forsiden viser resultat. Kontrollen gemmer tilstand og genprøver automatisk efter fejl/genstart. Alle adresseændringer venter på godkendelse; fjernelser foreslås først efter komplet udtræk. Rigtig natlig HA-/Datafordeler-prøve er særskilt, ikke udført i udviklingen.
+W73-browserartefakt 12356191764 har verificeret SHA256 762de8741136fa1303624194662c519be3d1eb1857f77a5e791c2b42d2f570fb. Opgaveindstillinger, forsideantal, revisionskontrol, adressegennemgang og ventestatus er prøvet ved 320/390/768/1440 px; 320/1440-billeder er gennemset uden overflydning eller skjult betjening. Den første browserkontrol fandt en manglende venten på den asynkrone dialog i selve prøven; dette er rettet og hele kontrollen består.
 
-Nye ejerønsker fra alle Google-planfaner er registreret som W74–W77 nedenfor. Aktuel fremdrift: 77 registrerede ønsker, 59 afsluttet/afklaret, 18 åbne, cirka 77 %. Fast plan er afsluttet (10/10). Aktiv kø: færdiggør W73-gates; undersøg W76 manglende adresser og W77 forbindelsesfejl ved inddeling; derefter W75 mobil/tablet, feedback uden egen e-mail/GitHub-konto og webdemo. W74's nye installationsvejledninger tilføjes først efter næste stabile udgivelse efter ejerens ønske.
+W76/W77 er klargjort til beta.57; endelige CI-/browser-/udgivelseskontroller udestår. W76 erstatter OSM-vejnavne som adresseliste med direkte komplette DAR-udsnit i den konfigurerede Datafordeler-kilde. W77 flytter lange kortforslag og kontrol af rettede grænser til en lokal baggrundsberegning med korte statuskald. En 30-sekunders klienttidsgrænse kan forklare ejerens forbindelsesfejl; dette er udledt fra koden, ikke en reproduktion med ejerens data. Reelle netfejl kan stadig forekomme, og ejerens samme problemområde skal prøves efter opdatering.
+
+Aktuel fremdrift: 77 registrerede ønsker, 60 afsluttet/afklaret, 17 åbne, cirka 78 %. Fast plan er afsluttet (10/10). Aktiv kø: W76/W77-gates; derefter W75 mobil/tablet, W23 feedback uden egen e-mail/GitHub-konto og webdemo. W74 egen hosting samt nye installationsvejledninger venter til næste stabile udgivelse efter ejerens ønske.
+
+Google-planen: W74–W77 er gemt og læst tilbage på develop. W75/W77-teksterne er ryddet. To resterende kildetekster om egen hosting og manglende adresser står fortsat i den native ønsketabel; automatisk godkendelseskontrol afviste sletning og krævede tydeligere tilladelse. De er registrerede punkter, ikke nye dubletter. Ingen alternativ rydning er forsøgt efter afvisningen. Bilag og native tabel bevares.
 
 W61: Ejeren oplyser i Google-planen 21.10.2026, at supporthenvendelsen er afsendt. Afvent ekstern restoprydning/svar; dette afslutter ikke det kritiske punkt. W23 har en konkret Tally-specifikation i docs/FEEDBACK-UDEN-KONTO.md, men ingen oprettet/verificeret formular eller autoriseret forbindelse.
 
-W16 vejnet og øvrig automatisk kortgenerering er parkeret. W77 gælder en faktisk fejl i den eksisterende inddeling, ikke udvidelse af vejnet/autogenerering. W58 engelsk venter, til appen ellers er færdig; eksisterende sprogvalg bevares. Historiske køer nedenfor er ikke gældende prioritering. Nye ønsker ryddes først fra Google, efter registrering er gemt og læst tilbage på develop.
+W16 vejnet og øvrig automatisk kortgenerering er parkeret. W77 er fejlretning af eksisterende inddeling, ikke genoptagelse af vejnetforsøget. W58 engelsk venter, til appen ellers er færdig; eksisterende sprogvalg bevares. Historiske køer nedenfor er ikke gældende prioritering.
 
 ## Ny ejeropfølgning · W70/W71 · registreret 21.10.2026
 
@@ -702,3 +706,10 @@ Alle nedenstående ønsker har prioriteten “Du bestemmer”. Registreret betyd
 | W77 | Forbindelsesfejl ved inddeling af distriktskort | Ejeren får “Ingen forbindelse til appen. Kontrollér Wi-Fi / VPN.” ved inddeling. Undersøg serverfejl, beregningstid, klienttimeout og faktisk forbindelse; ret og afprøv eksisterende arbejdsgang. Dette er fejlretning, ikke genoptagelse af det parkerede W16-vejnetforsøg. Bed kun om en konkret ejerprøve, hvis fejlen ikke kan reproduceres med fiktive data. |
 
 W73-lokalkontrol under udvikling: særskilte prøver dækker HA-afgrænsning, revisionskontrol, opgaveindstillinger via faktisk HTTP, nye veje til godkendelse, fejl/genforsøg, vedvarende snapshot og genstart af både scheduler og Store, dubletter, manglende kørsel ved samtidige hentninger samt stop. Browserkontrol ved fire skærmbredder er tilføjet til CI og skal bestå før udgivelse. Ingen rigtige provideropslag eller brugerdata indgår i prøverne.
+
+
+## W76/W77 · Beta.57 klargøring · 21.10.2026
+
+W76: Fiktive GraphQL-prøver dækker adresser på veje uden OSM-data, alle postnumre indenfor udsnittet, over 45 OSM-vejnavne, kildefejl uden falsk komplet status eller tab af eksisterende adresser og OSM-fejl uden blokering af DAR. Den gamle kilde er ikke gjort ubegrænset. Præcise udsnitsgrænser kontrolleres lokalt; ingen privat polygon sendes til DAR.
+
+W77: Korte start-/statuskald til en lokal baggrundsberegning for setup.preview og setup.adjust.preview. Oprindelig synkron preview-API bevares til kompatibilitet. Token, udløb, revisionskontrol, OPRET KORT og beskyttelse mod forældede svar bevares. Prøver dækker statuskald mens Store-låsen er optaget af en langsom beregning, krav om autentificering/token, samtidighed, kopieret input, fejl uden interne detaljer og net-timeout der ikke fejlmærkes offline. Browserprøven for faktiske fiktive Python-forslag går nu via asynkront start-/statusforløb. 469 Python-prøver (én forventet overspringning), JavaScript og pakke-/arkivopstartsprøver består lokalt. Endelige gates udestår; W76/W77 er ikke afsluttet endnu.
