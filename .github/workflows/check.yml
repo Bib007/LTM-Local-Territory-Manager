@@ -85,6 +85,8 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_visual_browser.cjs
+      - name: HA scheduled address task browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_address_task_browser.cjs
       - name: Fictional visual review images
         if: always()
         uses: actions/upload-artifact@v4

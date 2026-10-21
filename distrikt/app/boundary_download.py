@@ -44,7 +44,7 @@ class BoundaryDownload:
                 data={**data,'refresh':True}
         if not manifest or manifest.get('boundary_key')!=key or data.get('refresh'):
             manifest={'id':'main-boundary-download','entity':'boundary_download','boundary_key':key,'points':points,
-                'snapshot':datetime.now(timezone.utc).isoformat(timespec='seconds'),'source_id':self.source_id(),'schema_sha256':self.source_schema(),'point_query_version':2,'review_changes':bool(data.get('refresh')),'tiles':boundary_tiles(points)}
+                'snapshot':datetime.now(timezone.utc).isoformat(timespec='seconds'),'source_id':self.source_id(),'schema_sha256':self.source_schema(),'point_query_version':2,'review_changes':bool(data.get('refresh')),'review_all':bool(data.get('review_all')),'check_run':data.get('check_run'),'tiles':boundary_tiles(points)}
         require_source(manifest,self.source_id(),self.source_schema())
         manifest['status']='running';self.store.mutate('geo.main.download.save',{'manifest':manifest})
         tiles=manifest['tiles'];total=len(tiles);done=sum(t['status']=='done' for t in tiles)

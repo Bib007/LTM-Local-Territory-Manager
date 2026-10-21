@@ -2,13 +2,15 @@
 
 ## Aktuel status · 21.10.2026
 
-Senest fuldt verificerede udgivelse er beta.54 fra ec83cbf1290efda2c21e5b4ed5987747a27c07f0. Alle program-, platform- og HA-kontroller består. Betakanalen er beta.54/8788, main stabil 1.11.1.
+Beta.55 er fuldt verificeret udgivet fra 0c992e29d097a2709d62c0f22f7d85edf6fc4a7b. Checks 39615583107, Platformskontrol 39615583067 og HA beta release 39615583062 er completed/success. Den publicerede HA-ZIP matcher frisk lokal bygning: SHA256 130823d949d7a1afcf3df4439d65e21b6b0f174388f9b4adcfb6bfff69b20479. Betakanalen er læst tilbage som beta.55/8788, main stabil 1.11.1. W72 er afsluttet.
 
-W72 er klargjort til beta.55: lille lokalt dannet LTM-logo med “Local Territory Manager” under på Drive-kortet. Checks 39614540523 på 3f57910bd974bcbe062f9e1fc94f3448319eea8f er completed/success. Artefakt 12352182746 har verificeret SHA256 29b081b0553fd7d13a5df20847cc391625f2d68fa8663adde85c28bda22d0507. Faktisk preview-PNG og tætte/spredte rasterkort er gennemset: logo, tekst, placering og læsbarhed består. Endelige beta.55-gates og udgivelse udestår; W72 er fortsat åben.
+W73 er implementeret og klargjort til beta.56; endelige CI-/browser-/udgivelseskontroller udestår. Opgaver giver indstillinger for interval/tid og stop; forsiden viser resultat. Kontrollen gemmer tilstand og genprøver automatisk efter fejl/genstart. Alle adresseændringer venter på godkendelse; fjernelser foreslås først efter komplet udtræk. Rigtig natlig HA-/Datafordeler-prøve er særskilt, ikke udført i udviklingen.
 
-Aktuel fremdrift: 73 registrerede ønsker, 58 afsluttet/afklaret, 15 åbne, cirka 79 %. Fast plan er afsluttet (10/10). W73 om natlig adressekontrol er registreret nedenfor. Aktiv kø: W72-udgivelseskontrol, W73, feedback uden egen e-mail/GitHub-konto og opdateret webdemo. W23 har en konkret Tally-specifikation i docs/FEEDBACK-UDEN-KONTO.md, men ingen oprettet/verificeret formular eller autoriseret forbindelse.
+Nye ejerønsker fra alle Google-planfaner er registreret som W74–W77 nedenfor. Aktuel fremdrift: 77 registrerede ønsker, 59 afsluttet/afklaret, 18 åbne, cirka 77 %. Fast plan er afsluttet (10/10). Aktiv kø: færdiggør W73-gates; undersøg W76 manglende adresser og W77 forbindelsesfejl ved inddeling; derefter W75 mobil/tablet, feedback uden egen e-mail/GitHub-konto og webdemo. W74's nye installationsvejledninger tilføjes først efter næste stabile udgivelse efter ejerens ønske.
 
-Ejerens seneste beslutninger styrer køen: W16 vejnet og øvrig automatisk kortgenerering er parkeret. W58 engelsk venter, til appen ellers er færdig; eksisterende sprogvalg bevares. Kritiske blokerede punkter bevarer deres status. Historiske køer nedenfor er ikke gældende prioritering. Nye ønsker ryddes først fra Google, efter registrering er gemt og læst tilbage på develop.
+W61: Ejeren oplyser i Google-planen 21.10.2026, at supporthenvendelsen er afsendt. Afvent ekstern restoprydning/svar; dette afslutter ikke det kritiske punkt. W23 har en konkret Tally-specifikation i docs/FEEDBACK-UDEN-KONTO.md, men ingen oprettet/verificeret formular eller autoriseret forbindelse.
+
+W16 vejnet og øvrig automatisk kortgenerering er parkeret. W77 gælder en faktisk fejl i den eksisterende inddeling, ikke udvidelse af vejnet/autogenerering. W58 engelsk venter, til appen ellers er færdig; eksisterende sprogvalg bevares. Historiske køer nedenfor er ikke gældende prioritering. Nye ønsker ryddes først fra Google, efter registrering er gemt og læst tilbage på develop.
 
 ## Ny ejeropfølgning · W70/W71 · registreret 21.10.2026
 
@@ -686,3 +688,17 @@ Ejerens nye ønske er læst i alle aktuelle Google-planfaner. Prioritet: LTM væ
 Ved midlertidige fejl skal arbejdet bevares, vente og prøve igen automatisk uden manuel genstart. En ufuldstændig hentning må aldrig fortolkes som fjernede adresser. Genstart, samtidige kørsler, afbrudt net/API, nøglefejl og gentagne forsøg skal håndteres med synlig status, passende ventetid og bevaret fremdrift. Genbrug den eksisterende adresseændringsmodel og opgavemodel; afklar overlap med W67 under implementeringen. Ingen ægte API-nøgler, kort eller adresser i offentlige prøver. Dette er en LTM-funktion, ikke en ChatGPT-automation.
 
 Status: Registreret og planlagt; ikke implementeret. Total 73, afsluttet/afklaret 58, åbne 15 (cirka 79 %). Google-indbakken må først ryddes efter remote læsekontrol.
+
+
+## W74–W77 · Nye ejerønsker · registreret 21.10.2026
+
+Alle nedenstående ønsker har prioriteten “Du bestemmer”. Registreret betyder planlagt, ikke udført. Bevar kildeønskerne i Google indtil remote læsekontrol.
+
+| Nr. | Opgave | Status og afgrænsning |
+| --- | --- | --- |
+| W74 | Samlet egen hosting på Windows/Mac og mulig Linux | Undersøg fælles pakke med lokal app og servertilstand. Server skal lytte på lokal IP, køre uden automatisk browseråbning og have privat adgang; brugeren står selv for VPN/netværk. Ønskede valg: HA, Windows lokal/server, Mac lokal/server og mulig Linux. Vurder app-lignende separat vindue til lokal pc. Mac-guide skal forklare godkendt åbning af .command-filer via systemets indstillinger uden generel deaktivering af sikkerhed. Ejeren ønsker først de nye udgivelses-/installationsvalg og vejledninger tilføjet efter næste stabile udgave. |
+| W75 | Fuld optimering til telefon, iPad og tablet | Mobil/tablet bliver primær brug ved HA/server. Gennemgå faktisk touchbetjening, skærmbredder, dialoger, navigation, kort, input og daglige arbejdsgange på både smalle og mellemstore skærme. Prioritér konkrete fejl og prøv faktiske brugerforløb. |
+| W76 | Manglende adresser og grænse på 45 vejnavne | Ejeren oplever manglende adresser midt i kortet og beskeden om over 45 vejnavne ved kortudsnithentning. Undersøg forskellen på OSM-vejopslag og komplet DAR-hentning samt reelle begrænsninger. Gør begrænsning/ufuldstændighed tydelig og ret fejlen, så adresser ikke fremstår fuldt hentet, når de mangler. Fjern ikke sikkerhedsgrænser uden en kontrolleret erstatning. Brug fiktive data; ingen private kort eller nøgler kopieres. |
+| W77 | Forbindelsesfejl ved inddeling af distriktskort | Ejeren får “Ingen forbindelse til appen. Kontrollér Wi-Fi / VPN.” ved inddeling. Undersøg serverfejl, beregningstid, klienttimeout og faktisk forbindelse; ret og afprøv eksisterende arbejdsgang. Dette er fejlretning, ikke genoptagelse af det parkerede W16-vejnetforsøg. Bed kun om en konkret ejerprøve, hvis fejlen ikke kan reproduceres med fiktive data. |
+
+W73-lokalkontrol under udvikling: særskilte prøver dækker HA-afgrænsning, revisionskontrol, opgaveindstillinger via faktisk HTTP, nye veje til godkendelse, fejl/genforsøg, vedvarende snapshot og genstart af både scheduler og Store, dubletter, manglende kørsel ved samtidige hentninger samt stop. Browserkontrol ved fire skærmbredder er tilføjet til CI og skal bestå før udgivelse. Ingen rigtige provideropslag eller brugerdata indgår i prøverne.

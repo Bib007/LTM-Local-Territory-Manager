@@ -3,6 +3,10 @@
 const I18n={
  current:'da',
  english:{
+  "Vent på den automatiske adressekontrol før nulstilling eller gendannelse.":"Wait for the automatic address check before resetting or restoring.",
+  "Den automatiske adressekontrol kører eller venter på genprøve. Vent før en manuel hentning.":"The automatic address check is running or waiting to retry. Wait before starting a manual download.",
+  "Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.":"Wait for the automatic address check before changing the boundary or removing addresses.",
+
   "Veje, bygninger, vandløb og jernbaner er fra OSM. Kun succesfuldt hentede DAR-veje har en komplet vej-adresseliste. Kontrollér manglende veje og adresser.":"Roads, buildings, waterways and railways are from OSM. Only successfully downloaded DAR roads have a complete address list. Check for missing roads and addresses.",
   "Skel følger vandløbet{suffix}. Kontrollér passage og lokale forhold.":"The boundary follows the waterway{suffix}. Check crossings and local conditions.",
   "Skel følger jernbanen{suffix}. Kontrollér passage og lokale forhold.":"The boundary follows the railway{suffix}. Check crossings and local conditions.",

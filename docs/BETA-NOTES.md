@@ -1,4 +1,12 @@
-# LTM 1.12.0-beta.55
+# LTM 1.12.0-beta.56
+
+W73 · Natlig adressekontrol på Home Assistant. Gem først den samlede distriktsgrænse, og forbind Datafordeleren. Gå til Opgaver → Automatisk adressekontrol → Indstil opgave. Vælg hyppighed (1–30 dage), tidspunkt og aktivér. Tiden følger serverens lokale tidszone; næste tidspunkt vises på opgaven. Slået fra som udgangspunkt.
+
+Forsiden viser seneste gennemførte kontrol og antal nye, ændrede og foreslået fjernede adresser. Gennemgå adresseændringer, og godkend dem enkeltvis. Ingen lokale adresser eller kort ændres automatisk. Ved net-/kildefejl vises ventestatus og næste genforsøg; fremdriften bevares også ved genstart. Slå opgaven fra for at stoppe efter det aktuelle opslag. Manuelle hentninger, grænseændring, nulstilling og gendannelse venter, mens kontrollen arbejder eller venter på genprøve.
+
+Egen HA-prøve: vælg en nært forestående tid, kontrollér resultat på forsiden, prøv midlertidigt netudfald/genstart, og kontrollér at genforsøg sker uden manuel start. Brug sikkerhedskopi og fiktive data. Rigtig Datafordeler-forbindelse og en faktisk natlig HA-kørsel er særskilte ejerprøver.
+
+## Fra beta.55
 
 W72 · Lille LTM-logo med “Local Territory Manager” under er tilføjet øverst til højre på det digitale Drive-kort.
 
