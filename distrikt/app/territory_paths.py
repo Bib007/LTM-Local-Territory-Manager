@@ -13,6 +13,10 @@ MAX_PATHS = 256
 MAX_ATTEMPTS = 32
 MAX_EDGE_PAIRS = 200000
 MAX_OWNERSHIP_WORK = 2000000
+MAX_NETWORK_EDGES = 4096
+MAX_NETWORK_WORK = 16384
+MAX_NETWORK_PATHS = 128
+MAX_NETWORK_POINT_WORK = 200000
 
 
 def _box(points):
@@ -165,6 +169,88 @@ def road_paths(roads, poly):
             if len(set(points)) == len(points):
                 result.append((_canonical(points), min(names) or 'Unavngiven vej'))
     return sorted(result, key=lambda row: (-sum(math.dist(a, b) for a, b in zip(row[0], row[0][1:])), row))[:MAX_PATHS]
+
+
+def network_paths(roads, poly):
+    """Bounded extra candidates through simple, same-name branching networks.
+
+    Connect only identical recorded vertices. Never snap, infer an intersection,
+    cross a name change, extend a dead end or choose a route around a cycle.
+    Existing unbranched candidates are kept separately and tried first.
+    """
+    bounds = _box(poly)
+    records = set()
+    for road in roads:
+        name = str(road.get('name') or '').strip()
+        raw = road.get('points', [])
+        if not name or not 2 <= len(raw) <= MAX_POINTS or not _boxes_overlap(_box(raw), bounds):
+            continue
+        points = _canonical(raw)
+        if len(set(points)) == len(points):
+            records.add((name.casefold(), points, name))
+    graphs = defaultdict(lambda: defaultdict(set))
+    names = {}
+    edges = 0
+    for key, points, name in sorted(records):
+        names[key] = min(names.get(key, name), name)
+        for a, b in zip(points, points[1:]):
+            if a == b or b in graphs[key][a]:
+                continue
+            if edges >= MAX_NETWORK_EDGES:
+                # Never mistake a truncated cycle or junction for a complete
+                # tree. Keep the existing conservative fallback for this input.
+                return []
+            graphs[key][a].add(b)
+            graphs[key][b].add(a)
+            edges += 1
+    result = set()
+    work = 0
+    point_work = 0
+    for key, graph in sorted(graphs.items()):
+        seen = set()
+        for root in sorted(graph):
+            if root in seen:
+                continue
+            component = set()
+            pending = [root]
+            while pending:
+                node = pending.pop()
+                if node in component:
+                    continue
+                component.add(node)
+                pending.extend(graph[node] - component)
+            seen.update(component)
+            # A tree has one actual route between vertices. Cyclic or highly
+            # branched networks need manual review rather than guessed routing.
+            if (not any(len(graph[n]) > 2 for n in component)
+                    or any(len(graph[n]) > 8 for n in component)
+                    or sum(len(graph[n]) for n in component) != 2 * (len(component) - 1)):
+                continue
+            needed = len(component) * len(poly)
+            if point_work + needed > MAX_NETWORK_POINT_WORK:
+                continue
+            point_work += needed
+            inside = {n: strict_inside(n, poly) for n in component}
+            starts = sorted((a, b) for a in component if not inside[a] for b in graph[a] if inside[b])
+            for a, b in starts:
+                pending = [(a, b)]
+                while pending:
+                    points = pending.pop()
+                    work += 1
+                    if work > MAX_NETWORK_WORK:
+                        return sorted(result, key=lambda row: (-len(row[0]), row))[:MAX_NETWORK_PATHS]
+                    last = points[-1]
+                    if not inside[last]:
+                        result.add((_canonical(points), names[key]))
+                        if len(result) >= MAX_NETWORK_PATHS:
+                            return sorted(result, key=lambda row: (-len(row[0]), row))
+                        continue
+                    if len(points) >= MAX_POINTS:
+                        continue
+                    for following in sorted(graph[last], reverse=True):
+                        if following not in points:
+                            pending.append(points + (following,))
+    return sorted(result, key=lambda row: (-len(row[0]), row))
 
 
 def path_partition(ring, groups, target, paths):

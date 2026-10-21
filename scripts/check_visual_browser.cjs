@@ -52,4 +52,5 @@ if(out)fs.mkdirSync(out,{recursive:true});
   if(out){fs.writeFileSync(path.join(out,name+'.svg'),result.svg);fs.writeFileSync(path.join(out,name+'.png'),Buffer.from(result.png,'base64'));}
  }
  await context.close();console.log('Fictional production header: stable/beta, empty/short/long names, four widths; digital cards: dense/sparse, local/raster, full-strength foreground and real PNG decoding passed.');
+ await require('./check_partition_browser.cjs')(browser,out);
 }finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

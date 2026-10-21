@@ -174,8 +174,9 @@ def partition(poly,addresses,target,roads=()):
         point=(round(sum(a['lng'] for a in members)/len(members),7),round(sum(a['lat'] for a in members)/len(members),7))
         clusters[point].extend(members)
     groups=[{'point':point,'members':sorted(members,key=lambda a:a['id']),'weight':sum(a.get('count',1) for a in members)} for point,members in sorted(clusters.items())]
-    from territory_paths import road_paths,path_partition
+    from territory_paths import road_paths,network_paths,path_partition
     paths=road_paths(roads,poly)
+    networks=network_paths(roads,poly)
     segments=road_segments(roads,poly)
     result=[];pending=[(poly,groups,0,())]
     while pending:
@@ -183,7 +184,7 @@ def partition(poly,addresses,target,roads=()):
         wanted=max(1,int(weight/target+.5))
         if wanted<=1 or len(groups)<=1 or depth>=24:
             result.append({'polygon':ring,'members':[a for g in groups for a in g['members']],'visits':weight,'warning':' '.join(dict.fromkeys(basis+(('Besøgstallet afviger fra ønsket; kontrollér grænsen manuelt.',) if weight>target*1.5 else ())))});continue
-        road=path_partition(ring,groups,target,paths) or road_partition(ring,groups,target,segments)
+        road=path_partition(ring,groups,target,paths) or path_partition(ring,groups,target,networks) or road_partition(ring,groups,target,segments)
         if road:
             parts,allocated,name=road
             note='Skel følger vejforløbet '+name+'. Kontrollér adgang og lokale forhold.'

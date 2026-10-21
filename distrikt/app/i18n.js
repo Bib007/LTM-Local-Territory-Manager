@@ -3,6 +3,7 @@
 const I18n={
  current:'da',
  english:{
+  "Hver lejlighed tæller som ét besøg; eksisterende samlede besøgstal pr. adresse bevares. Lejligheder i samme hus holdes sammen. Besøgstallet er omtrentligt. Lokalt hentede, gennemgående vejforløb foretrækkes som skel, også med knæk og kurver. Vejstykker med samme navn kan forbindes ved præcist fælles punkt, også ved enkle forgreninger. Sløjfer, navneskift, huller og uklare forbindelser gættes ikke. Mangler et egnet vejforløb, markeres geometrisk deling til manuel rettelse. Kontrollér adgangsforhold og naturlige skel på forslaget; vandløb og jernbaner indgår endnu ikke automatisk.":"Each apartment counts as one visit; existing aggregate visit counts per address are preserved. Apartments in the same house stay together. The visit count is approximate. Locally downloaded through-roads are preferred as boundaries, including bends and curves. Road sections with the same name can connect at an exact shared point, including simple branches. Loops, name changes, gaps and ambiguous connections are not guessed. If no suitable road is available, a geometric split is flagged for manual correction. Check access and natural boundaries in the proposal; waterways and railways are not yet included automatically.",
   "Aktivt udlån":"Active loan",
   "Forkynder":"Publisher",
   "Importér historik · S-13 / CSV":"Import history · S-13 / CSV",

@@ -4,10 +4,11 @@ import random
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'app'))
 from geography import point_in_polygon
 from territory_partition import area, contained, overlaps, partition
-from territory_paths import split_polygon_path, road_paths, MAX_POINTS, MAX_PATHS
+from territory_paths import split_polygon_path, road_paths, network_paths, MAX_POINTS, MAX_PATHS
 
 POLY = [[10,55],[10.04,55],[10.04,55.04],[10,55.04]]
 CONCAVE = [[10,55],[10.04,55],[10.04,55.01],[10.01,55.01],[10.01,55.03],[10.04,55.03],[10.04,55.04],[10,55.04]]
@@ -93,6 +94,55 @@ class RoadChainTests(unittest.TestCase):
         roads=[{'name':'Fiktiv '+str(i),'points':[[9.99,55.001+i*.00001],[10.05,55.002+i*.00001]]} for i in range(MAX_PATHS+20)]
         self.assertEqual(len(road_paths(roads,POLY)),MAX_PATHS)
 
+class NetworkPathTests(unittest.TestCase):
+    def roads(self, outside=False):
+        return RoadChainTests().roads()+[{'name':'Fiktiv Kurvevej','points':[CURVE[2],[10.012,55.03],[10.012,55.05 if outside else 55.035]]}]
+    def test_branching_tree_retains_actual_through_route_and_inside_bends(self):
+        roads=self.roads();before=copy.deepcopy(roads)
+        paths=network_paths(roads,POLY)
+        self.assertEqual(len(paths),1)
+        self.assertEqual(paths[0][1],'Fiktiv Kurvevej')
+        self.assertEqual(set(paths[0][0]),set(map(tuple,CURVE)))
+        PathGeometryTests().assert_partition(POLY,split_polygon_path(POLY,paths[0][0]))
+        self.assertEqual(roads,before)
+        self.assertFalse(any(set(map(tuple,CURVE)).issubset(set(p)) for p,n in road_paths(roads,POLY)),'Original conservative candidates remain unchanged')
+    def test_multiple_exits_are_explicit_candidates_not_a_guessed_continuation(self):
+        paths=network_paths(self.roads(outside=True),POLY)
+        self.assertEqual(len(paths),3)
+        for points,name in paths:
+            self.assertEqual(name,'Fiktiv Kurvevej')
+            PathGeometryTests().assert_partition(POLY,split_polygon_path(POLY,points))
+    def test_input_order_directions_duplicates_and_case_are_deterministic(self):
+        roads=self.roads(outside=True)
+        expected=network_paths(roads,POLY)
+        variants=[list(reversed(roads)),[dict(r,points=list(reversed(r['points']))) for r in roads],roads+[dict(roads[0],name='fiktiv kurvevej')]]
+        for value in variants:self.assertEqual(network_paths(value,POLY),expected)
+    def test_no_snapping_name_changes_unnamed_or_inferred_crossings(self):
+        roads=self.roads()
+        roads[1]['points'][0]=[10.0300001,55.025]
+        self.assertFalse(any(set(map(tuple,CURVE)).issubset(set(p)) for p,n in network_paths(roads,POLY)))
+        roads=self.roads();roads[1]['name']='Fiktiv anden vej'
+        self.assertFalse(any(set(map(tuple,CURVE)).issubset(set(p)) for p,n in network_paths(roads,POLY)))
+        self.assertEqual(network_paths([dict(r,name='') for r in self.roads()],POLY),[])
+        # A geometric crossing without a shared recorded vertex is not a node.
+        crossing=RoadChainTests().roads()+[{'name':'Fiktiv Kurvevej','points':[[10.005,55.02],[10.015,55.03]]}]
+        self.assertEqual(network_paths(crossing,POLY),[])
+    def test_cycles_are_not_routed_and_dead_ends_are_not_extended(self):
+        roads=self.roads()+[{'name':'Fiktiv Kurvevej','points':[CURVE[2],[10.02,55.03],CURVE[3]]}]
+        self.assertEqual(network_paths(roads,POLY),[])
+        roads=self.roads()
+        for r in roads:
+            r['points']=[[max(10.001,min(10.039,p[0])),max(55.001,min(55.039,p[1]))] for p in r['points']]
+        self.assertEqual(network_paths(roads,POLY),[])
+    def test_limits_skip_incomplete_graphs_and_bound_search_and_output(self):
+        roads=self.roads(outside=True)
+        for key,limit in [('MAX_NETWORK_EDGES',1),('MAX_NETWORK_WORK',1),('MAX_NETWORK_POINT_WORK',1)]:
+            with self.subTest(key=key),patch('territory_paths.'+key,limit):self.assertEqual(network_paths(roads,POLY),[])
+        with patch('territory_paths.MAX_NETWORK_PATHS',1):
+            self.assertEqual(len(network_paths(roads,POLY)),1)
+            self.assertEqual(network_paths(roads,POLY),network_paths(list(reversed(roads)),POLY))
+
+
 class PartitionIntegrationTests(unittest.TestCase):
     def addresses(self):
         points=[(10.005,55.005),(10.02,55.006),(10.035,55.007),(10.005,55.035),(10.02,55.036),(10.035,55.037)]
@@ -112,6 +162,29 @@ class PartitionIntegrationTests(unittest.TestCase):
         addresses[0].update(number='42',lng=10.019,lat=55.024)
         addresses[3].update(number='42',lng=10.021,lat=55.026)
         parts=partition(POLY,addresses,3,roads=RoadChainTests().roads())
+        self.assertFalse(any('Fiktiv Kurvevej' in p['warning'] for p in parts))
+        owners=[p for p in parts if any(a['id']=='fake0' for a in p['members'])]
+        self.assertEqual(len(owners),1)
+        self.assertIn('fake3',[a['id'] for a in owners[0]['members']])
+        self.assertEqual(sum(len(p['members']) for p in parts),6)
+    def test_branching_network_is_used_before_geometric_fallback(self):
+        roads=NetworkPathTests().roads(outside=True);addresses=self.addresses()
+        before=copy.deepcopy((roads,addresses))
+        parts=partition(POLY,addresses,3,roads=roads)
+        self.assertEqual(len(parts),2)
+        self.assertEqual(sorted(p['visits'] for p in parts),[3,3])
+        self.assertTrue(all('Fiktiv Kurvevej' in p['warning'] and 'Geometrisk' not in p['warning'] for p in parts))
+        shared=set(map(tuple,parts[0]['polygon']))&set(map(tuple,parts[1]['polygon']))
+        self.assertTrue(set(map(tuple,CURVE[1:-1])).issubset(shared))
+        PathGeometryTests().assert_partition(POLY,[p['polygon'] for p in parts])
+        self.assertEqual(sorted(a['id'] for p in parts for a in p['members']),sorted(a['id'] for a in addresses))
+        self.assertEqual(parts,partition(POLY,list(reversed(addresses)),3,roads=list(reversed(roads))))
+        self.assertEqual((roads,addresses),before)
+    def test_branching_path_still_cannot_separate_units_in_the_same_house(self):
+        addresses=self.addresses()
+        addresses[0].update(number='42',lng=10.019,lat=55.024)
+        addresses[3].update(number='42',lng=10.021,lat=55.026)
+        parts=partition(POLY,addresses,3,roads=NetworkPathTests().roads())
         self.assertFalse(any('Fiktiv Kurvevej' in p['warning'] for p in parts))
         owners=[p for p in parts if any(a['id']=='fake0' for a in p['members'])]
         self.assertEqual(len(owners),1)

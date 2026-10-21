@@ -184,6 +184,26 @@ class SetupTests(unittest.TestCase):
         ids=[a for c in self.s.all('cards') for a in c['address_ids']]
         self.assertEqual(len(ids),80);self.assertEqual(len(set(ids)),80)
 
+    def test_branching_road_preview_can_be_adjusted_and_applied_atomically(self):
+        curve=[[9.99,55.0125],[10.014,55.0125],[10.014,55.0135],[10.023,55.0135],[10.023,55.0125],[10.05,55.0125]]
+        roads=[{'id':'network-'+str(i),'entity':'road','name':'Fiktiv Forgrenet vej','points':points} for i,points in enumerate((curve[:3],curve[2:4],curve[3:],[curve[2],[10.016,55.0145]]))]
+        self.s.mutate('geo.import',{'records':roads,'source':'Fiktiv test','label':'Forgrening'})
+        p=self.preview(target=40)
+        self.assertEqual(len(p['cards']),2)
+        self.assertEqual(sorted(c['visits'] for c in p['cards']),[40,40])
+        self.assertTrue(all('Fiktiv Forgrenet vej' in c['warning'] and 'Geometrisk' not in c['warning'] for c in p['cards']))
+        self.assertEqual(self.s.all('cards'),[])
+        edits=[dict(key=c['key'],number=c['number'],name=c['name'],polygon=[[x,y+.0001 if [x,y]==curve[2] else y] for x,y in c['polygon']]) for c in p['cards']]
+        adjusted=self.s.mutate('setup.adjust.preview',{'token':p['token'],'cards':edits})
+        self.assertEqual(sum(c['visits'] for c in adjusted['cards']),80)
+        with self.assertRaises(ValueError):self.apply(adjusted,confirm='yes')
+        self.assertEqual(self.s.all('cards'),[])
+        self.apply(adjusted)
+        ids=[a for c in self.s.all('cards') for a in c['address_ids']]
+        self.assertEqual(len(ids),80)
+        self.assertEqual(set(ids),{a['id'] for a in records()})
+        self.assertFalse(overlaps(*(c['geo_polygon'] for c in self.s.all('cards'))))
+        self.assertTrue(all(contained(c['geo_polygon'],POLY) for c in self.s.all('cards')))
     def test_local_road_change_invalidates_a_preview_without_writing_cards(self):
         p=self.preview()
         self.s.mutate('geo.import',{'records':[{'id':'fake-road','entity':'road','name':'Fiktiv vej','points':[[10,55.015],[10.04,55.02]]}],'source':'Fiktiv test','label':'Vejstykke'})
