@@ -23,7 +23,7 @@ Vælg **Kontrollér for opdateringer** i HA's appbutik, og opdater **Distrikt Be
 
 Start med opdigtede prøveoplysninger. Brug en særskilt Google-konto til Drive-prøver: en beta med rigtige filnumre og den samme Google-konto kan ellers ændre delingen af de rigtige kortbilleder. Google-forbindelsen kopieres ikke fra den stabile app.
 
-Se [betaudgivelserne](https://github.com/Bib007/LTM-Local-Territory-Manager/releases) for versionsnummer og de få ting, som skal prøves i netop den beta. Fejl og idéer beskrives via appens GitHub-link med opdigtede eksempler.
+Se [betaudgivelserne](https://github.com/Bib007/LTM-Local-Territory-Manager/releases) for versionsnummer og de få ting, som skal prøves i netop den beta. Fejl og idéer beskrives via appens feedbacklink til Tally med opdigtede eksempler.
 
 ## Til udvikling
 

@@ -1692,6 +1692,8 @@ const I18n={
   "Generel · uden distriktskort":"General · no territory card",
   "Tekst":"Text",
   "Opgave, som skal udføres":"Task to be completed",
+  "Tally · uden konto eller e-mail":"Tally · no account or email required",
+  "Kun fiktive eksempler. Indsendt tekst og billeder gemmes hos Tally.":"Fictional examples only. Submitted text and images are stored by Tally.",
   'Forside':'Home','Daglig brug':'Territory desk','Overblik':'Overview',
   'Administration':'Administration','Hjælp':'Help','Idéer og feedback':'Ideas and feedback','Distriktskort':'Territory cards',
   'Kortoversigt':'Map overview','Forkyndere':'Publishers','Opgaver og noter':'Tasks and notes',
