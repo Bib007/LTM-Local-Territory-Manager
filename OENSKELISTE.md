@@ -1,5 +1,16 @@
 # Ønskeliste og nye opgaver
 
+## Ny ejeropfølgning · W70/W71 · registreret 21.10.2026
+
+To nye ønsker fra Google-planen prioriteres samlet til næste beta, beta.54. W70: Fjern menighedsnavnet helt fra topbaren; det gemte navn og dets øvrige anvendelser bevares. Dette ændrer ejerens tidligere topbarønske W43/W49/W66, hvis udgivelseshistorik bevares. W71: Gør baggrunden på det digitale kort til Google Drive lysere med 50 % synlig OSM-baggrund over hvidt, mens røde besøgsprikker og husnumre står helt synligt uden dæmpning. Dette følger op på W40. Kontroller den faktisk dannede PNG og bevar forhåndsvisning/godkendelse før upload samt samme fil/QR-link. Ældre billeder opdateres ved ny lokal dannelse og godkendelse, aldrig automatisk. Ingen rigtig Drive-upload indgår i udviklingsprøverne. Registreringen skal være gemt og læst tilbage på develop, før ønskefanen ryddes.
+
+| Nr. | Opgave | Prioritet | Status |
+| --- | --- | --- | --- |
+| W70 | Fjern menighedsnavnet fra topbaren | LTM vælger · næste beta | Registreret, åben |
+| W71 | 50 % lysere Drive-kortbaggrund med tydelige prikker/husnumre | LTM vælger · samme beta | Registreret, åben |
+
+Beta.53 er verificeret udgivet fra 22654cca480bfc51301d0b3b5c7efd0ff1c08a7e: alle syv HA-job inklusive publicering er completed/success, og release-ZIP matcher den lokalt testede SHA256 b3ded53a167721049cc52d1945f98d69e9236f29bf7da62441095173f1ca8f2c. Vandløb og jernbaner er dermed udgivet som del af W16; mere komplekse vejnet og øvrige skel er fortsat åbne. Den nye aktuelle kø er W70/W71, derefter resten af W16 og den tidligere kø nedenfor. Med de to nye ønsker er fremdriften 56 af 71, cirka 79 %, og 15 åbne punkter. Tidligere statusafsnit er historik.
+
 ## Ny ejeropfølgning · W69 · registreret 19.10.2026
 
 Fra Google-planens ønskefane: Udleveringer og forkyndernavne skal også kunne importeres, når man importerer data fra S-13. Ejeren har overladt prioriteringen til LTM. Dette udvider den tidligere W31-import af gennemgangsdatoer; W31’s udgivne afgrænsning og historik bevares. W69 prioriteres som næste importopgave efter den klargjorte W36-beta. Navnematch, udleveringsdatoer, åbne/afsluttede udlån, eksisterende data og dubletter skal fremgå af lokal forhåndsvisning før udtrykkelig godkendelse. Ingen ejerfiler eller navne kopieres til GitHub. Ønsket skal først ryddes fra Google, når denne registrering er gemt på develop.
