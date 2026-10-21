@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.54 · Enkel topbar og tydeligere Drive-kort
+
+W70: Menighedsnavnet er fjernet fra topbaren. Logo, betamarkering og gemmestatus bevares, og det gemte navn bruges fortsat i indstillinger, sidepanel og rapporter.
+
+W71: Det digitale kort til Google Drive viser nu OSM-baggrunden med 50 % styrke over hvidt. Farvet fyld inden for distriktsgrænsen er fjernet fra dette billede, så det ikke mørkner baggrunden igen. Besøgsprikker er kraftigere røde, og husnumre er mørkerøde med hvid kontur; begge vises uden dæmpning. Grænse, oplysninger og printforside bevares.
+
+Eksisterende Drive-billeder ændres først, når du vælger Opdater Google Drive-upload, kontrollerer det nye billede og godkender publicering. Status viser, når kortbilledet bruger et ældre design. Samme fil og QR-link bevares. Der sker ingen automatisk genpublicering, og private IB, noter og forkyndere indgår fortsat ikke i billedet.
+
 ## 1.12.0-beta.53 · Vandløb og jernbaner som skel
 
 W16, delopgave: Hentning af et kortudsnit medtager nu også offentlige vandløb og jernbaner fra OpenStreetMap. Distriktsforslag kan følge egnede gennemgående forløb før vejforslagene. Blå vandløb og grå stiplede jernbaner vises i editoren og i den lokale kortbaggrund; husnumre og besøgsprikker beholder deres styrke. Ældre kortdata skal opdateres ved at hente relevante udsnit igen.

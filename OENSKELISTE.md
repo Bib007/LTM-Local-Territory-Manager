@@ -6,8 +6,8 @@ To nye ønsker fra Google-planen prioriteres samlet til næste beta, beta.54. W7
 
 | Nr. | Opgave | Prioritet | Status |
 | --- | --- | --- | --- |
-| W70 | Fjern menighedsnavnet fra topbaren | LTM vælger · næste beta | Registreret, åben |
-| W71 | 50 % lysere Drive-kortbaggrund med tydelige prikker/husnumre | LTM vælger · samme beta | Registreret, åben |
+| W70 | Fjern menighedsnavnet fra topbaren | LTM vælger · næste beta | Klargjort til beta.54 · udgivelse udestår |
+| W71 | 50 % lysere Drive-kortbaggrund med tydelige prikker/husnumre | LTM vælger · samme beta | Klargjort til beta.54 · udgivelse udestår |
 
 Beta.53 er verificeret udgivet fra 22654cca480bfc51301d0b3b5c7efd0ff1c08a7e: alle syv HA-job inklusive publicering er completed/success, og release-ZIP matcher den lokalt testede SHA256 b3ded53a167721049cc52d1945f98d69e9236f29bf7da62441095173f1ca8f2c. Vandløb og jernbaner er dermed udgivet som del af W16; mere komplekse vejnet og øvrige skel er fortsat åbne. Den nye aktuelle kø er W70/W71, derefter resten af W16 og den tidligere kø nedenfor. Med de to nye ønsker er fremdriften 56 af 71, cirka 79 %, og 15 åbne punkter. Tidligere statusafsnit er historik.
 
@@ -640,3 +640,14 @@ Editoren viser blå vandløb og grå stiplede jernbaner. Linjerne er også med i
 Checks for 47bf115a0cf98d241ccc5c8b64dd7f669772ce9e er grønne. Den faktiske Python-/produktionseditorfixture omfatter nu vej, vandløb og jernbane ved 320/390/768/1440 pixels samt sprogskift, korrekt escaping og redigerbare fælles hjørner. Billeder er hentet med verificeret artefaktdigest e5cc0d6074e2387457b20972e68dbf9e9ce7620bed3cbaa41613da93ce07a6fe og inspiceret før versionsløft. Fiktive offentlige SVG/PNG viser de nye baggrundslag med bevarede forgrundsprikker og husnumre.
 
 Se docs/NATURLIGE-SKEL.md for betjening, afgrænsning og primære OSM-/Overpass-kilder læst 21.10.2026. Beta.53 afventer sin egen udgivelsesgate. W16 tælles fortsat som åben; mere komplekse vejnet og øvrige skeltyper mangler. Ingen privat database, konto eller rigtigt kort er brugt ved udviklingsprøverne.
+
+
+## W70/W71 · Beta.54 klargjort efter browserkontrol
+
+Menighedsteksten og dens dynamiske topbaropdatering er fjernet. Logoets dimensioner, kompakt mobilidentitet, betamarkering og gemmestatus er bevaret. Den faktiske onboardingprøve gemmer fortsat et langt fiktivt navn i indstillingerne, men viser det ikke i topbaren; øvrige anvendelser af navnet bevares.
+
+Drive-kortets baggrund tegnes med 50 % opacitet over hvidt. Det tidligere farvede polygonfyld er fjernet fra den offentlige version. Røde prikker og mørkerøde husnumre med hvid kontur ligger uden for dæmpningen. Renderrevision 4 markerer ældre billeddesign til bevidst opdatering, men udløser ingen automatisk upload eller linkændring. Tidligere godkendte revisioner 1–3 accepteres fortsat.
+
+453 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 14 programpakkeprøver, fem betapakkeprøver og faktisk arkivopstart består lokalt. Checks 39610206194 og Platformskontrol 39610206191 for bd77623c2791b5b4ce233c3a9b8389794f39f018 er grønne. CI-artifakt 12350615390 har verificeret SHA256 3f6e8f8c03565a49a7a80f8f5bbe413f87149cb943613ee140be5afc10423496. Mobil-/desktoptopbar, tæt rasterkort og den faktiske Drive-preview-PNG er visuelt gennemgået. Den nye browserprøve går via ShareUI.prepare, rigtige Leaflet-tiles fra en fiktiv offlinekilde, OSM-snapshot, SVG og PNG. Den måler den kendte baggrundsfarve blandet halvt med hvidt samt helt dækkende røde prikker og husnumre. Ingen publicering udføres; godkendelsesknappen er fortsat låst før aktivt tilvalg.
+
+Beta.54 afventer sine egne endelige udgivelseskontroller. W70/W71 tælles endnu som åbne, 56/71 afsluttet og 15 åbne. Main er fortsat stabil 1.11.1.

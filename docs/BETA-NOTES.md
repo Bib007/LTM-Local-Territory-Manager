@@ -1,4 +1,10 @@
-# LTM 1.12.0-beta.53
+# LTM 1.12.0-beta.54
+
+W70/W71 · Menighedsnavnet er fjernet fra topbaren. Det digitale Drive-kort har nu 50 % OSM-baggrund over hvidt, kraftige røde besøgsprikker og tydelige mørkerøde husnumre uden dæmpning.
+
+For allerede uploadede billeder: Indstillinger → Google Drive → Opdater Google Drive-upload ved kortet. Kontrollér det nye billede, og godkend derefter publicering. Det opdaterer samme fil/QR-link. Opgradering alene erstatter ikke tidligere godkendte billeder. Prøv også topbaren på mobil og med et langt gemt menighedsnavn; indstillinger, sidepanel og rapporter bevarer navnet.
+
+## Fra beta.53
 
 W16, delopgave · Vandløb og jernbaner kan nu bruges som skel ved distriktsforslag. Hent først relevante udsnit igen under Kortdata → Hent veje, bygninger, vandløb og jernbaner i det viste udsnit. Ældre lokale kortdata indeholder ikke automatisk de nye forløb.
 
