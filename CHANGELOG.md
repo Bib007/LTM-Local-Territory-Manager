@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.60 · Adressehentning, kortdata og læsbare fejlforklaringer
+
+W78: DAR GraphQL genprøver midlertidige netfejl og HTTP 429/500/502/503 op til to gange på samme forespørgsel og kildetidspunkt. Ventestatus vises, serverens korte Retry-After respekteres, og pause kan afbryde ventetiden. Længere/ukendt cooldown stopper sikkert. Login-/skema-/certifikatfejl genprøves ikke automatisk; tids- og størrelsesgrænser bruger stadig mindre udsnit. NET-DNS, NET-RESET, NET-CONNECTION og NET-TLS skelner sikre fejlkategorier uden nøgler, URL eller leverandørtekst. Færdige udsnit og kontrollen før adresseændringer bevares. Ejerens konkrete hentning skal stadig genprøves.
+
+W79: Hentning af veje, bygninger, vandløb og jernbaner kræver intet postnummer. Feltet vises og kræves kun, når man vælger adresser med den ældre kilde. Med Datafordeleren hentes alle postnumre i udsnittet. Et skjult felt sendes ikke og kan ikke blokere kortdatahentningen.
+
+W80: Gemmestatus med en forklaring kan åbnes med tryk eller tastatur. Hele teksten står i et panel, der tilpasses skærmen og kan rulles. Den tidligere afkortning af årsagen på telefon er erstattet; åbne formularer og gemningskontroller bevares.
+
 ## 1.12.0-beta.59 · Feedback uden konto eller e-mail
 
 W23: Menupunktet Idéer og feedback åbner nu den verificerede Tally-formular i en ny fane. Menuen forklarer tjenesten og håndtering af manuelt indsendt tekst/billeder. Ingen lokale data, nøglefiler eller logs overføres automatisk. Ejeren har bekræftet prøven uden login og med billede.

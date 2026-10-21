@@ -2,6 +2,8 @@
 import io
 import json
 import os
+import socket
+import ssl
 import sys
 import tempfile
 import unittest
@@ -13,13 +15,36 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from address_source import Datafordeler,NoRedirect,MAX_SCHEMA
 from portable import snapshot,Restores
 from store import Store
-from postcode import SourceTimeout
+from postcode import SourceTimeout, SourceTransient, SourceUnavailable
 
 SCHEMA=b'type Query { DAR_Adresse: String DAR_Husnummer: String DAR_Postnummer: String }'
 KEY='FICTIONAL_KEY_123456789'
 PROBE=b'{"data":{"__typename":"Query"}}'
 
 class AddressSourceTests(unittest.TestCase):
+    def test_network_diagnostics_are_safe_and_certificate_errors_not_retried(self):
+        for cause,code,kind in [(socket.gaierror(KEY),'NET-DNS',SourceTransient),(ConnectionResetError(KEY),'NET-RESET',SourceTransient),(ssl.SSLCertVerificationError(KEY),'NET-TLS',SourceUnavailable)]:
+            with self.subTest(code=code),patch('address_source.urllib.request.build_opener') as make:
+                make.return_value.open.side_effect=urllib.error.URLError(cause)
+                with self.assertRaises(kind) as error:self.client._request(KEY,query='query { __typename }')
+                self.assertIn(code,str(error.exception));self.assertNotIn(KEY,str(error.exception))
+                if code=='NET-TLS':self.assertNotIsInstance(error.exception,SourceTransient)
+    def test_retryable_failures_are_typed_and_cooldown_is_bounded(self):
+        for code in (429,500,502,503):
+            with self.subTest(code=code),patch('address_source.urllib.request.build_opener') as make:
+                make.return_value.open.side_effect=urllib.error.HTTPError('secret',code,KEY,{'Retry-After':'12'},None)
+                with self.assertRaises(SourceTransient) as error:self.client._request(KEY,query='query { __typename }')
+                self.assertEqual(error.exception.retry_after,60 if code==429 else 12)
+                self.assertNotIn(KEY,str(error.exception))
+        with patch('address_source.urllib.request.build_opener') as make:
+            make.return_value.open.side_effect=urllib.error.URLError(KEY)
+            with self.assertRaises(SourceTransient):self.client._request(KEY,query='query { __typename }')
+        for value in ('120','Wed, 21 Oct 2026 18:00:00 GMT'):
+            with patch('address_source.urllib.request.build_opener') as make:
+                make.return_value.open.side_effect=urllib.error.HTTPError('secret',503,KEY,{'Retry-After':value},None)
+                with self.assertRaises(SourceUnavailable) as error:self.client._request(KEY,query='query { __typename }')
+                self.assertNotIsInstance(error.exception,SourceTransient)
+
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.client=Datafordeler(self.temp.name)

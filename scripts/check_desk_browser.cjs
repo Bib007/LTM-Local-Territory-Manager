@@ -41,6 +41,17 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  });
  const activate=locator=>touch?locator.tap():locator.click();
  await page.goto('http://ltm.desk.test/');await page.waitForFunction(()=>state!==null);
+ // A rejected write keeps a readable, scrollable explanation on real touch layouts.
+ await page.evaluate(()=>SaveStatus.set('error','Ændringen blev afvist','Fiktiv forklaring om en afvist ændring. '.repeat(35)+'SLUT_FIKTIV_FORKLARING'));
+ await activate(page.locator('.saveExplanation>summary'));
+ const explanation=page.locator('.saveExplanationText');assert.match(await explanation.innerText(),/SLUT_FIKTIV_FORKLARING/);
+ assert.ok(await explanation.evaluate(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.scrollWidth<=n.clientWidth+1&&getComputedStyle(n).whiteSpace!=='nowrap';}),'Complete error stays inside phone/tablet viewport');
+ await page.evaluate(()=>{I18n.set('en');Navigation.localize();});assert.equal(await page.locator('.saveExplanation').getAttribute('open'),'');
+ assert.match(await page.locator('.saveExplanation>summary').innerText(),/rejected/);
+ if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`save-explanation-${width}.png`),fullPage:true});}
+ await activate(page.locator('[data-save-explanation-close]'));assert.equal(await page.locator('.saveExplanation').getAttribute('open'),null);
+ await page.evaluate(()=>{I18n.set('da');Navigation.localize();saved();});assert.equal(writes.length,0);
+
  if(touch&&width<=750){await page.locator('.mobileMenu').tap();assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'true');await page.locator('.mobileMenu').tap();assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'false');}
  await page.evaluate(()=>{page='Distrikter';render();});
  for(const name of ['issued','folder','box']){assert.ok(await page.locator('.statusBadge.'+name).count());const style=await page.locator('.statusBadge.'+name).first().evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(style.color,style.background)>=4.5,name+' contrast');}

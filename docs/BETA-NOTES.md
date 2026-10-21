@@ -1,4 +1,14 @@
-# LTM 1.12.0-beta.59
+# LTM 1.12.0-beta.60
+
+W78/W79/W80 · Robust adressehentning, enklere kortdata og læsbare fejlforklaringer.
+
+Samlet distriktsgrænse → Fortsæt hentning: Prøv samme afbrudte hentning. Midlertidige GraphQL-netfejl genprøves op til to gange med synlig ventestatus. Pause kan afbryde ventetiden. Færdige udsnit genhentes ikke. Ved fortsat fejl skal kun fejlkoden NET-DNS/NET-RESET/NET-CONNECTION/NET-TLS eller HTTP-koden oplyses; send ikke nøgle, adresser eller private kort. Netårsagen i den konkrete HA-installation er endnu ikke bekræftet rettet.
+
+Kortdata → Hent veje, bygninger, vandløb og jernbaner i det viste udsnit: Postnummerfeltet er væk ved almindelige kortdata og ved Datafordeler-adresser. Kun adresser fra den ældre kilde viser feltet. Kontrollér begge valg og sprogskift. Datafordeleren medtager alle postnumre i udsnittet.
+
+Ved “Ændringen blev afvist” eller anden gemmestatus med en forklaring: Tryk på status øverst. Hele årsagen vises i et panel, som kan rulles og lukkes igen. Prøv på telefon stående/liggende. Ingen ændring sendes ved at åbne forklaringen.
+
+## Fra beta.59
 
 W23 · Idéer og feedback åbner nu ejerens Tally-formular uden konto eller e-mail. Billeder er valgfrie: højst tre JPG/JPEG/PNG/WebP-filer på højst 10 MB hver. Menuen oplyser, at indsendt tekst og billeder gemmes hos Tally. Intet fra installationen vedhæftes eller udfyldes automatisk.
 

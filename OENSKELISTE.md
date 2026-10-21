@@ -6,7 +6,17 @@ Senest fuldt verificerede udgivelse er beta.59 fra 4190d793f16f30624278c9dec3725
 
 W72 er afsluttet i beta.55 (lille Drive-logo), W73 i beta.56 (natlig adressekontrol), W76/W77 i beta.57 (direkte DAR-udsnit og asynkrone kortforslag), W75 i beta.58 (touchbetjening og mobilgennemgang). Rigtig natlig HA-/Datafordeler-kørsel, ejerens samme problemudsnit/inddeling samt fysisk iPhone/iPad med skærmtastatur er fortsat særskilte ejerprøver; der er ikke brugt private ejerdata i udviklingskontroller.
 
-Fremdrift efter W23: 77 registrerede ønsker, 64 afsluttet/afklaret, 13 åbne, cirka 83 %. Fast plan er afsluttet (10/10). Beta.59 med Tally-link er verificeret udgivet. W23 er afsluttet. W37/W12 webdemo er fortsat åben med den tidligere adgangsbegrænsning. Egen hosting og nye installationsvejledninger i W74 venter til næste stabile udgivelse efter ejerens ønske.
+Fremdrift før beta.60: 80 registrerede ønsker, 64 afsluttet/afklaret, 16 åbne, cirka 80 %. Fast plan er afsluttet (10/10). Beta.59 med Tally-link er verificeret udgivet. W23 er afsluttet. W37/W12 webdemo er fortsat åben med den tidligere adgangsbegrænsning. Egen hosting og nye installationsvejledninger i W74 venter til næste stabile udgivelse efter ejerens ønske.
+
+Nye ønsker W78/W79/W80 fra Google-planen er registreret 21.10.2026 og samlet til beta.60. Antal: 80 ønsker. W78 forbliver åben til ejerens konkrete HA-hentning er bekræftet; fiktive fejlprøver kan dokumentere genforsøg, ikke hjemmenetværkets årsag. W79/W80 afsluttes efter udgivelsesgates. Efter W79/W80 er fremdriften 66 afsluttet/afklaret, 14 åbne, cirka 83 %. W16, W58 og W74 forbliver parkeret som aftalt.
+
+| Punkt | Registreret ønske i planen | Arbejde og kontrol |
+| --- | --- | --- |
+| W78 | Hentning indenfor samlet grænse stopper ved udsnit 2 efter forbindelsesfejl til Datafordeleren; færdige udsnit bevares | Genprøv sikre, uændrede GraphQL-læsninger, vis ventestatus, respekter cooldown/pause og vis sanitiseret netkategori. Ingen garanti for vedvarende netudfald; ejerprøve udestår. |
+| W79 | Hvorfor kræves postnummer ved Hent veje, bygninger, vandløb og jernbaner i det viste udsnit? | Postnummer skjules/deaktiveres ved kortdata alene og ved GraphQL-adresser; kræves kun til den ældre adressekilde. Browserprøver dækker kildevalg, manglende status og sprogskift. |
+| W80 | Årsagen til afviste ændringer er ikke synlig på telefon; teksten skal tilpasses | Åbnbar fuld fejlforklaring i gemmestatus. Skærmtilpasset rulning, tastatur/touch og bevaret åben visning ved sprogskift. |
+
+W65, ejeropfølgning 21.10.2026: Ved flerbrugerløsningen skal versioner/ændringer kunne sammenlignes for samtidig redigering, eller aktiv redigering skal kunne låse øvrige brugere til visning. De to løsningsmuligheder er bevaret til afklaringen; ingen tilstedeværelsesovervågning, låsning eller ny flerbrugerkode er bestilt eller indført nu.
 
 W75-kontrol: de faktiske daglige touchforløb består i Chromium og WebKit ved 390×844, 844×390, 768×1024 og 1024×768. Opgaver, udlevering/aflevering, menu, søgning, backupkvitteringer, sprogskift og historikimport er omfattet. Browserartefakt 12355759540 har verificeret SHA256 06506f0ccb87bccbbedb748ecaeabb24c78378f8cdbad6a61475dfe91b45096b. WebKit-dialoger stående/liggende, tablet-afleveringer og kortforslag ved 320 px er gennemset: betjening, dialogrulning og alle fem kontrolfelter/advarsler er tilgængelige. Billederne er fiktive.
 

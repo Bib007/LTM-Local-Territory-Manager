@@ -7,7 +7,7 @@ from dar_adapter import DarAdapter
 from dar_query import DarQuery
 from dar_paging import IncompleteResult
 from geography import utm32_to_wgs84
-from postcode import SourceUnavailable, SourceTimeout, SourceLimit
+from postcode import SourceUnavailable, SourceTimeout, SourceLimit, SourceTransient, Paused
 
 
 def road_lines(roads):
@@ -62,29 +62,42 @@ class DarDownload:
     def graph_adapter(self, snapshot=None, schema_sha256=None):
         expected_schema = schema_sha256 if schema_sha256 is not None else self.source_schema()
         def request(query):
-            self.check_cancel()
-            if expected_schema != self.source_schema():
-                raise SourceUnavailable('Datafordelerens skema er ændret under hentningen. Start en ny opdatering; lokale adresser er bevaret.')
             with self.lock:
-                job = self.active
-                if job:
-                    self.jobs[job].update(request_started=time.monotonic(), request_label='Datafordeleren GraphQL', request_timeout=20)
-            try:
-                result = self.address_source.query(query)
+                job=self.active
+                stage=self.jobs[job].get('message','') if job else ''
+            for attempt in range(3):
+                self.check_cancel()
                 if expected_schema != self.source_schema():
                     raise SourceUnavailable('Datafordelerens skema er ændret under hentningen. Start en ny opdatering; lokale adresser er bevaret.')
-            except (SourceTimeout,SourceLimit):
-                raise
-            except ValueError as error:
-                # Datafordeler.query has already removed provider text and keys.
-                raise SourceUnavailable(str(error)) from None
-            finally:
                 with self.lock:
-                    if job:
-                        for field in ('request_started', 'request_label', 'request_timeout'):
-                            self.jobs[job].pop(field, None)
-            self.check_cancel()
-            return result
+                    if job:self.jobs[job].update(request_started=time.monotonic(),request_label='Datafordeleren GraphQL',request_timeout=20)
+                try:
+                    result=self.address_source.query(query)
+                    if expected_schema != self.source_schema():
+                        raise SourceUnavailable('Datafordelerens skema er ændret under hentningen. Start en ny opdatering; lokale adresser er bevaret.')
+                except SourceTransient as error:
+                    if attempt==2:raise SourceUnavailable(str(error)+' Automatisk genprøvet 2 gange.') from None
+                    delay=max((2,5)[attempt],error.retry_after)
+                    with self.lock:
+                        if job:
+                            self.jobs[job].update(message=stage+f' Midlertidig forbindelsesfejl · genprøver om {delay} sekunder ({attempt+1}/2)…',retry_delay=delay,retry_attempt=attempt+1,retry_stage=stage)
+                            for field in ('request_started','request_label','request_timeout'):self.jobs[job].pop(field,None)
+                    if self.cancel_event.wait(delay):raise Paused()
+                    continue
+                except (SourceTimeout,SourceLimit):
+                    # Time/size limits go straight to bounded tile splitting.
+                    raise
+                except ValueError as error:
+                    # Datafordeler.query has already removed provider text and keys.
+                    raise SourceUnavailable(str(error)) from None
+                finally:
+                    with self.lock:
+                        if job:
+                            for field in ('request_started','request_label','request_timeout','retry_delay','retry_attempt','retry_stage'):self.jobs[job].pop(field,None)
+                self.check_cancel()
+                with self.lock:
+                    if job:self.jobs[job]['message']=stage
+                return result
         return DarAdapter(DarQuery(request, snapshot=snapshot, check_cancel=self.check_cancel))
 
     def graph_discover_postcode(self, post, progress):

@@ -5,6 +5,8 @@ import os
 import tempfile
 import json
 import re
+import socket
+import ssl
 import threading
 import urllib.error
 import urllib.parse
@@ -12,7 +14,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from access import write_private
-from postcode import SourceTimeout, SourceLimit
+from postcode import SourceTimeout, SourceLimit, SourceTransient, SourceUnavailable
 
 BASE='https://graphql.datafordeler.dk/DAR/v3'
 MAX_SCHEMA=8*1024*1024
@@ -75,6 +77,12 @@ class Datafordeler:
         except urllib.error.HTTPError as error:
             if error.code in (408,504):raise SourceTimeout('Datafordeleren svarede ikke inden for tidsgrænsen. Prøv et mindre område eller fortsæt senere.') from None
             if error.code in (401,403):raise ValueError('Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system. En ny nøgle kan være op til 15 minutter om at blive aktiv. Ventetid er kun én mulig årsag. Prøv forbindelsen igen, når der er gået 15 minutter.') from None
+            if error.code in (429,500,502,503):
+                message='Datafordeleren er midlertidigt utilgængelig (HTTP '+str(error.code)+'). Prøv igen senere.'
+                cooldown=error.headers.get('Retry-After','') if error.headers else ''
+                if cooldown and (not cooldown.isdigit() or int(cooldown)>60):raise SourceUnavailable(message) from None
+                delay=max(60 if error.code==429 else 0,int(cooldown) if cooldown else 0)
+                raise SourceTransient(message,delay) from None
             if query is not None and error.code in (400,422):
                 try:body=json.loads(error.read(MAX_SCHEMA+1))
                 except (ValueError,OSError):body=None
@@ -85,7 +93,11 @@ class Datafordeler:
         except (OSError,TimeoutError,http.client.HTTPException) as error:
             if isinstance(error,TimeoutError) or isinstance(getattr(error,'reason',None),TimeoutError):
                 raise SourceTimeout('Datafordeleren svarede ikke inden for tidsgrænsen. Prøv et mindre område eller fortsæt senere.') from None
-            raise ValueError('Forbindelsen til Datafordeleren mislykkedes. Den gemte nøgle er ikke ændret.') from None
+            cause=getattr(error,'reason',error)
+            if isinstance(cause,ssl.SSLCertVerificationError):
+                raise SourceUnavailable('Datafordelerens sikre forbindelse kunne ikke bekræftes (NET-TLS). Kontrollér serverens dato og netværksopsætning. Den gemte nøgle er ikke ændret.') from None
+            code='NET-DNS' if isinstance(cause,socket.gaierror) else 'NET-RESET' if isinstance(cause,(ConnectionResetError,ConnectionAbortedError,BrokenPipeError,http.client.IncompleteRead,http.client.RemoteDisconnected)) else 'NET-CONNECTION'
+            raise SourceTransient('Forbindelsen til Datafordeleren mislykkedes ('+code+'). Den gemte nøgle er ikke ændret.') from None
 
     def _check(self,key):
         schema=self._request(key,'/schema')

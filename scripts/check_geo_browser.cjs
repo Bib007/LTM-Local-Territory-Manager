@@ -44,7 +44,25 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   });
   await page.goto('http://ltm.test/');await page.waitForFunction(()=>state!==null&&GeoUI.busy===false);
   // Read-only diagnostic remains usable at mobile/desktop widths on both languages.
-  await page.evaluate(()=>GeoUI.dataDialog());await page.getByText('Datafordeleren · egen API-nøgle',{exact:true}).click();
+  await page.evaluate(()=>GeoUI.dataDialog());
+  await page.locator('#geoAreaForm [name=addresses]').waitFor({state:'attached'});
+  await page.waitForFunction(()=>!el('geoAreaForm').elements.addresses.disabled);
+  await page.getByText('Hent veje, bygninger, vandløb og jernbaner i det viste udsnit',{exact:true}).click();
+  const areaPost=page.locator('#geoAreaForm [name=postcode]'),areaAddresses=page.locator('#geoAreaForm [name=addresses]');
+  assert.equal(await areaPost.isVisible(),false);assert.equal(await areaPost.isDisabled(),true);
+  await areaAddresses.check();assert.equal(await areaPost.isVisible(),true);assert.equal(await areaPost.getAttribute('required'),'');
+  await areaPost.fill('9999');await areaAddresses.uncheck();assert.equal(await areaPost.isDisabled(),true);
+  await page.evaluate(()=>GeoUI.areaSource(true));await areaAddresses.check();assert.equal(await areaPost.isVisible(),false);assert.equal(await areaPost.isDisabled(),true);
+  assert.match(await page.locator('#geoAreaSourceHint').innerText(),/alle postnumre/);
+  await page.evaluate(()=>{I18n.set('en');Navigation.localize();});assert.match(await page.locator('#geoAreaSourceHint').innerText(),/all postcodes/);
+  await page.evaluate(()=>{I18n.set('da');Navigation.localize();GeoUI.areaSource(false);});
+  assert.equal(await areaPost.inputValue(),'9999');await areaAddresses.uncheck();
+  assert.equal(await page.locator('#geoAreaForm').evaluate(f=>f.checkValidity()),true);
+  await page.evaluate(()=>GeoUI.areaSourceFailed());assert.equal(await areaAddresses.isDisabled(),true);assert.match(await page.locator('#geoAreaSourceHint').innerText(),/stadig hentes uden adresser/);
+  await page.evaluate(()=>GeoUI.areaSource(false));assert.equal(await areaAddresses.isDisabled(),false);
+  if(out)await page.screenshot({path:path.join(out,`map-data-source-${width}.png`),fullPage:true});
+  await page.getByText('Hent veje, bygninger, vandløb og jernbaner i det viste udsnit',{exact:true}).click();
+  await page.getByText('Datafordeleren · egen API-nøgle',{exact:true}).click();
   await page.locator('[data-address-source=diagnose]').click();await page.waitForFunction(()=>el('addressSourceDiagnostic').textContent.includes('COMPLETE'));
   assert.match(await page.locator('#addressSourceDiagnostic').innerText(),/DAR_Husnummer.*batch.*GQL-REJECTED/);
   assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'DAR diagnostic fits narrow dialogs');

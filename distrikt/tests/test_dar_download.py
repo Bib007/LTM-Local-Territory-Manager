@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'app'))
 from geodata import Downloads
 from store import Store
 from geography import utm32_to_wgs84
-from postcode import Paused, SourceUnavailable, SourceTimeout, SourceLimit
+from postcode import Paused, SourceUnavailable, SourceTimeout, SourceLimit, SourceTransient
 from dar_download import road_lines
 from address_checkpoint import GRAPHQL_SOURCE, REST_SOURCE
 from test_dar_adapter import Provider, tables
@@ -35,6 +35,41 @@ def two_roads():
 
 
 class DarDownloadTests(unittest.TestCase):
+    def test_graph_transient_read_retries_same_snapshot_query_and_restores_status(self):
+        original=self.source.query;calls=[]
+        self.download.active='job';self.download.jobs['job']={'status':'running','message':'Henter udsnit 2 af 32…'}
+        def query(value):
+            calls.append(value)
+            if len(calls)<3:raise SourceTransient('Fiktiv afbrydelse',7)
+            return original(value)
+        self.source.query=query
+        def backoff(delay):
+            self.assertIn('genprøver om',self.download.jobs['job']['message'])
+            self.assertNotIn('request_started',self.download.jobs['job'])
+            return False
+        with patch.object(self.download.cancel_event,'wait',side_effect=backoff) as wait:
+            result=self.download.graph_adapter().discover_postcode('9999')
+        self.assertTrue(result['roads']);self.assertEqual(calls[0],calls[1]);self.assertEqual(calls[1],calls[2])
+        self.assertEqual([x.args[0] for x in wait.call_args_list],[7,7])
+        self.assertEqual(self.download.jobs['job']['message'],'Henter udsnit 2 af 32…')
+        self.assertNotIn('request_started',self.download.jobs['job'])
+
+    def test_graph_transient_exhaustion_pause_and_schema_change_never_import_partial(self):
+        self.source.query=Mock(side_effect=SourceTransient('Fiktiv afbrydelse'))
+        with patch.object(self.download.cancel_event,'wait',return_value=False) as wait:
+            with self.assertRaisesRegex(SourceUnavailable,'genprøvet 2'):self.download.graph_adapter().discover_postcode('9999')
+        self.assertEqual(self.source.query.call_count,3);self.assertEqual([x.args[0] for x in wait.call_args_list],[2,5])
+        self.source.query.reset_mock()
+        with patch.object(self.download.cancel_event,'wait',return_value=True):
+            with self.assertRaises(Paused):self.download.graph_adapter().discover_postcode('9999')
+        self.assertEqual(self.source.query.call_count,1)
+        self.source.query.reset_mock()
+        def change(delay):self.source.schema='changed';return False
+        with patch.object(self.download.cancel_event,'wait',side_effect=change):
+            with self.assertRaisesRegex(SourceUnavailable,'skema er ændret'):self.download.graph_adapter().discover_postcode('9999')
+        self.assertEqual(self.source.query.call_count,1)
+        self.assertFalse(self.store.all('geo'))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.store = Store(self.temp.name);self.addCleanup(lambda: self.store.close())
