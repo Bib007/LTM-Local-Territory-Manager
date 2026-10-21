@@ -165,7 +165,11 @@ def road_partition(ring,groups,target,segments):
     return None
 
 
-def partition(poly,addresses,target,roads=()):
+def partition(poly,addresses,target,roads=(),dividers=()):
+    labels={}
+    def warning_fields(messages):
+        messages=list(dict.fromkeys(messages))
+        return {'warning':' '.join(messages),'warning_ui':[labels.get(m,{'key':m,'params':{}}) for m in messages]}
     houses=defaultdict(list)
     for a in addresses:houses[(a['postcode'],a['road'].casefold(),a['number'].upper())].append(a)
     clusters=defaultdict(list)
@@ -174,20 +178,27 @@ def partition(poly,addresses,target,roads=()):
         point=(round(sum(a['lng'] for a in members)/len(members),7),round(sum(a['lat'] for a in members)/len(members),7))
         clusters[point].extend(members)
     groups=[{'point':point,'members':sorted(members,key=lambda a:a['id']),'weight':sum(a.get('count',1) for a in members)} for point,members in sorted(clusters.items())]
-    from territory_paths import road_paths,network_paths,path_partition
+    from territory_paths import road_paths,network_paths,divider_paths,path_partition
     paths=road_paths(roads,poly)
     networks=network_paths(roads,poly)
+    natural=divider_paths(dividers,poly)
     segments=road_segments(roads,poly)
     result=[];pending=[(poly,groups,0,())]
     while pending:
         ring,groups,depth,basis=pending.pop();weight=sum(g['weight'] for g in groups)
         wanted=max(1,int(weight/target+.5))
         if wanted<=1 or len(groups)<=1 or depth>=24:
-            result.append({'polygon':ring,'members':[a for g in groups for a in g['members']],'visits':weight,'warning':' '.join(dict.fromkeys(basis+(('Besøgstallet afviger fra ønsket; kontrollér grænsen manuelt.',) if weight>target*1.5 else ())))});continue
-        road=path_partition(ring,groups,target,paths) or path_partition(ring,groups,target,networks) or road_partition(ring,groups,target,segments)
+            result.append({'polygon':ring,'members':[a for g in groups for a in g['members']],'visits':weight,**warning_fields(basis+(('Besøgstallet afviger fra ønsket; kontrollér grænsen manuelt.',) if weight>target*1.5 else ()))});continue
+        boundary=path_partition(ring,groups,target,natural)
+        road=boundary or path_partition(ring,groups,target,paths) or path_partition(ring,groups,target,networks) or road_partition(ring,groups,target,segments)
         if road:
             parts,allocated,name=road
-            note='Skel følger vejforløbet '+name+'. Kontrollér adgang og lokale forhold.'
+            note=('Skel følger '+name+'. Kontrollér passage og lokale forhold.') if boundary else ('Skel følger vejforløbet '+name+'. Kontrollér adgang og lokale forhold.')
+            if boundary:
+                rail=name.startswith('Jernbane')
+                key='Skel følger jernbanen{suffix}. Kontrollér passage og lokale forhold.' if rail else 'Skel følger vandløbet{suffix}. Kontrollér passage og lokale forhold.'
+                labels[note]={'key':key,'params':{'suffix':name[len('Jernbane' if rail else 'Vandløb'):]}}
+            else:labels[note]={'key':'Skel følger vejforløbet {name}. Kontrollér adgang og lokale forhold.','params':{'name':name}}
             pending.extend((p,gs,depth+1,basis+(note,)) for p,gs in reversed(list(zip(parts,allocated))))
             if len(result)+len(pending)>500:raise ValueError('Forslaget giver over 500 kort. Vælg flere besøg pr. kort eller færre områder ad gangen.')
             continue
@@ -211,6 +222,6 @@ def partition(poly,addresses,target,roads=()):
                     success=True;break
                 if success:break
             if success:break
-        if not success:result.append({'polygon':ring,'members':[a for g in groups for a in g['members']],'visits':weight,'warning':'Området kunne ikke deles yderligere uden at dele et hus eller skabe en tom/usammenhængende grænse. Ret kortet manuelt.'})
+        if not success:result.append({'polygon':ring,'members':[a for g in groups for a in g['members']],'visits':weight,**warning_fields(('Området kunne ikke deles yderligere uden at dele et hus eller skabe en tom/usammenhængende grænse. Ret kortet manuelt.',))})
         if len(result)+len(pending)>500:raise ValueError('Forslaget giver over 500 kort. Vælg flere besøg pr. kort eller færre områder ad gangen.')
     return result

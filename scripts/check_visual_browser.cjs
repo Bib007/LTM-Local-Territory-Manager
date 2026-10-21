@@ -34,7 +34,7 @@ if(out)fs.mkdirSync(out,{recursive:true});
  for(const dense of [false,true])for(const raster of [false,true]){
   const result=await page.evaluate(async({dense,raster,template})=>{
    const points=[[10,55],[10.02,55],[10.02,55.02],[10,55.02]],members=Array.from({length:dense?36:3},(_,i)=>({id:'fiction-'+i,road:'Fiktiv vej '+(i%3+1),number:String(i+1),lng:10.002+(i%6)*.003,lat:55.002+Math.floor(i/6)*.003,count:1+i%3}));
-   GeoUI.data={roads:Array.from({length:6},(_,i)=>({points:[[10,55+i*.004],[10.02,55+i*.004]]})),buildings:members.map(a=>({points:[[a.lng-.0004,a.lat-.0004],[a.lng+.0004,a.lat-.0004],[a.lng+.0004,a.lat+.0004],[a.lng-.0004,a.lat+.0004]]}))};
+   GeoUI.data={roads:Array.from({length:6},(_,i)=>({points:[[10,55+i*.004],[10.02,55+i*.004]]})),dividers:[{divider_type:'river',points:[[10.003,55],[10.007,55.01],[10.003,55.02]]},{divider_type:'rail',points:[[10.015,55],[10.015,55.02]]}],buildings:members.map(a=>({points:[[a.lng-.0004,a.lat-.0004],[a.lng+.0004,a.lat-.0004],[a.lng+.0004,a.lat+.0004],[a.lng-.0004,a.lat+.0004]]}))};
    const canvas=document.createElement('canvas');canvas.width=600;canvas.height=600;const ctx=canvas.getContext('2d');ctx.fillStyle='#b9d9a8';ctx.fillRect(0,0,600,600);ctx.lineWidth=3;ctx.strokeStyle='#222';ctx.font='22px Arial';
    for(let i=0;i<6;i++){ctx.strokeRect(20+i*95,20,65,560);ctx.fillStyle=i%2?'#1743ab':'#666';ctx.fillRect(30+i*95,70,36,36);ctx.fillText('F'+i,30+i*95,140);}
    const recipe={publicCard:{id:'fake',number:dense?'F36':'F3',name:dense?'Fiktivt tæt bykort':'Fiktivt spredt kort',map_color:'#477596',geo_polygon:points},publicMembers:members,publicTemplate:template,...(raster?{backgroundImage:canvas.toDataURL(),viewBounds:[10,55,10.02,55.02]}:{})};

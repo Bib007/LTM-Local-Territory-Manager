@@ -2,8 +2,10 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 module.exports=async(browser,out)=>{
- const root=path.resolve(__dirname,'../distrikt/app'),fixture=JSON.parse(execFileSync(process.env.LTM_TEST_PYTHON||'python3',[path.join(__dirname,'partition_browser_fixture.py')],{encoding:'utf8'}));
+ const root=path.resolve(__dirname,'../distrikt/app');
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64');
+ for(const kind of ['road','river','rail']){
+ const fixture=JSON.parse(execFileSync(process.env.LTM_TEST_PYTHON||'python3',[path.join(__dirname,'partition_browser_fixture.py'),kind],{encoding:'utf8'}));
  for(const width of [320,390,768,1440]){
   const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],requests=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -29,6 +31,7 @@ module.exports=async(browser,out)=>{
   for(const language of ['en','da']){
    await page.evaluate(language=>{I18n.set(language);Navigation.localize();},language);
    assert.equal(await page.evaluate(()=>JSON.stringify(SetupUI.plan)),before,'Language switch preserves actual branching polygons');
+   if(kind!=='road'){assert.match(await page.locator('.setupCardTable .warning').first().innerText(),language==='en'?(kind==='rail'?/railway/:/waterway/):(kind==='rail'?/jernbanen/:/vandløbet/));assert.equal(await page.locator('.setupCardTable .warning vandløb,.setupCardTable .warning jernbane').count(),0,'Public feature names remain escaped text');}
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Preview fits viewport');
   }
   await page.locator('[data-setup=edit-boundaries]').click();assert.ok(await page.locator('.setupCorner').count()>4,'Actual bent boundary remains editable');
@@ -36,8 +39,10 @@ module.exports=async(browser,out)=>{
   // Mock tiles are deliberately blank. Draw only the same fictional downloaded
   // road geometry behind the real proposal so the shared curve can be inspected.
   await page.evaluate(()=>{for(const road of GeoUI.data.roads)L.polyline(road.points.map(([x,y])=>[y,x]),{color:'#a6adb1',weight:7,opacity:.65,interactive:false}).addTo(SetupUI.map).bringToBack();});
-  if(out){await page.screenshot({animations:'disabled',path:path.join(out,`partition-${width}.png`),fullPage:true});await page.locator('#setupMap').screenshot({animations:'disabled',path:path.join(out,`partition-map-${width}.png`)});}
+  const dividerCount=await page.evaluate(()=>{let count=0;SetupUI.map.eachLayer(l=>{if(l.options?.className==='naturalDivider')count++;});return count;});assert.equal(dividerCount,kind==='road'?0:1,'Downloaded natural context is visible in actual editor');
+  if(out){await page.screenshot({animations:'disabled',path:path.join(out,`partition-${kind}-${width}.png`),fullPage:true});await page.locator('#setupMap').screenshot({animations:'disabled',path:path.join(out,`partition-map-${kind}-${width}.png`)});}
   assert.deepEqual(errors,[]);await context.close();
  }
- console.log('Actual fictional Python branching preview: 80 addresses, two editable cards, DA/EN, four widths, no apply or external services passed.');
+ }
+ console.log('Actual fictional Python road/waterway/railway previews: 80 addresses, two editable cards, translated and escaped source warnings, four widths, no apply or external services passed.');
 };
