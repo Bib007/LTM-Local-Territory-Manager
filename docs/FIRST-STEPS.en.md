@@ -50,7 +50,7 @@ Each recorded completion counts, including repeated completions of the same card
 ## 5. Add detail when ready
 
 - Import/draw the congregation's outer boundary, review it, then fetch addresses inside it. Keep your actual KML and records private.
-- Fill in existing cards individually. [Automatic division](AUTOMATISK-INDDELING.en.md) is an advanced proposal for creating new cards; review it before creation.
+- Fill in existing cards individually, or draw each card and select addresses in the map editor. Automatic division proposals are paused from beta.61.
 - Select do-not-call entries from the card's own addresses. The English abbreviation is DNC; the installed Danish app uses IB.
 - Test front/back printing on ordinary paper and save your printer profiles before using pre-cut cards.
 - Google Drive is optional. Follow [Drive and QR setup](GOOGLE-DRIVE.en.md) only if you want approved public map images.

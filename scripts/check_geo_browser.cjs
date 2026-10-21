@@ -91,7 +91,13 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   if(out)await page.screenshot({path:path.join(out,`overall-${width}.png`),fullPage:true});
   await page.evaluate(()=>GeoUI.saveBoundary(true));assert.equal(await page.evaluate(()=>GeoUI.dirty),false);
   // Advanced setup keeps the real editable nodes/map and exact stored types on language changes.
-  await page.evaluate(()=>SetupUI.open(2));await page.locator('[data-setup-option=numbering]').selectOption('prefix');await page.locator('[data-setup-area-field=name]').fill('Områdenavn <fictional>');await page.locator('[data-setup-area-field=kind]').selectOption('Land');await page.locator('[data-setup-area-field=prefix]').fill('F');
+  await page.evaluate(()=>SetupUI.open());
+  await page.locator('#setupIBFile').waitFor();
+  assert.equal(await page.locator('.setupSteps,[data-setup=preview],[data-setup=apply]').count(),0,'Active setup offers IB only');
+  // Explicit test-only opt-in preserves coverage of the archived generator.
+  assert.equal(await page.evaluate(()=>SetupUI.autoDivisionEnabled),false);
+  assert.equal(await page.evaluate(()=>SetupUI.advanced().includes('data-setup="open"')),false);
+  await page.evaluate(()=>{SetupUI.autoDivisionEnabled=true;return SetupUI.open(2);});await page.locator('[data-setup-option=numbering]').selectOption('prefix');await page.locator('[data-setup-area-field=name]').fill('Områdenavn <fictional>');await page.locator('[data-setup-area-field=kind]').selectOption('Land');await page.locator('[data-setup-area-field=prefix]').fill('F');
   await page.evaluate(()=>{window.areaBefore=document.querySelector('[data-setup-area-field=name]');window.optionsBefore=JSON.stringify(SetupUI.options);window.areasBefore=JSON.stringify(SetupUI.areas);window.areaBefore.focus();I18n.set('da');Navigation.localize();});
   assert.ok(await page.evaluate(()=>document.querySelector('[data-setup-area-field=name]')===window.areaBefore&&document.activeElement===window.areaBefore&&JSON.stringify(SetupUI.areas)===window.areasBefore&&JSON.stringify(SetupUI.options)===window.optionsBefore));assert.equal(await page.locator('[data-setup-area-field=kind]').inputValue(),'Land');assert.match(await page.locator('[data-setup-option=numbering] option:checked').innerText(),/Forbogstaver/);await page.evaluate(()=>{I18n.set('en');Navigation.localize();});assert.match(await page.locator('[data-setup-option=numbering] option:checked').innerText(),/Area prefix letters/);
   await page.locator('[data-setup=preview]').click();await page.locator('#setupConfirm').waitFor();await page.locator('[data-setup-card-field=name]').fill('NEWER Name <fictional>');await page.locator('#setupConfirm').fill('OPRET KORT');

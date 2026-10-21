@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.61 · Manuel kortinddeling og klargøring til stabil udgivelse
+
+- W81: fjern automatiske grænse- og inddelingsforslag fra aktiv opsætning. Gamle personlige planer peger på manuel korttegning; IB-import og eksisterende data bevares.
+- Afvis gamle forslags-/oprettelseskald på serveren. Bevar generator, tidligere vejledninger og isolerede prøver til senere udvikling.
+- Opdatér kom-i-gang og begrænsninger, og saml udestående ejerprøver før stabil udgivelse. Overførte Google-ønsker er ryddet efter ejerens bekræftelse.
+
 ## 1.12.0-beta.60 · Adressehentning, kortdata og læsbare fejlforklaringer
 
 W78: DAR GraphQL genprøver midlertidige netfejl og HTTP 429/500/502/503 op til to gange på samme forespørgsel og kildetidspunkt. Ventestatus vises, serverens korte Retry-After respekteres, og pause kan afbryde ventetiden. Længere/ukendt cooldown stopper sikkert. Login-/skema-/certifikatfejl genprøves ikke automatisk; tids- og størrelsesgrænser bruger stadig mindre udsnit. NET-DNS, NET-RESET, NET-CONNECTION og NET-TLS skelner sikre fejlkategorier uden nøgler, URL eller leverandørtekst. Færdige udsnit og kontrollen før adresseændringer bevares. Ejerens konkrete hentning skal stadig genprøves.

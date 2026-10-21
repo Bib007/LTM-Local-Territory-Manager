@@ -2,7 +2,7 @@
 
 [English](SLUTKONTROL.en.md)
 
-Kontrolgrundlag: 1.12.0-beta.22 på develop, 17.10.2026. Main er fortsat stabil 1.11.1. Den faste plan består af ti udviklingsopgaver; ønskelisten er en separat kø. At udviklingskontrollen er afsluttet, betyder ikke, at ejerens fysiske udstyr og konti er afprøvet.
+Kontrolgrundlag: beta.60 har beståede program-, platform-, pakke- og browserkontroller. Beta.61 klargøres med W81 og skal bestå samme CI før udgivelse. Main er fortsat stabil 1.11.1. Den faste udviklingsplan er afsluttet; hele ønskekøen er ikke et krav til næste stabile udgave.
 
 ## Gentagelige kontroller
 
@@ -22,3 +22,13 @@ Kortoversigt, adresser/kortkontrol, geografisk editor/import, avanceret opsætni
 Fysisk printer, egen HA/telefon/VPN, eget Google-samtykke og adgang ved aflevering/genudlevering, egen Datafordeler-konto samt eventuel skærmlæser står særskilt. Følg [restlisten](../Dette-skal-hjaelpes-manuelt.md). Disse punkter markeres ikke som afprøvet af de automatiske kontroller.
 
 Se [print](PRINT.md), [installation](INSTALL.md), [betakanal](BETA.md), [begrænsninger](LIMITATIONS.md) og [køreplan](../KOREPLAN.md).
+
+## Konkret vej til næste stabile udgave
+
+1. W81-beta: kontrollér fravær af automatiske forslag, manuel korttegning, lokal IB-import og bevarede kort. Kræv grønne program-, browser-, platform- og HA-pakkekontroller på den præcise udgivelseskode.
+2. W78 på ejerens HA: gentag den tidligere afbrudte adressehentning. Kontrollér fortsættelse, færdige udsnit og eventuel fejlkode. En fortsat fejl afklares før denne adressearbejdsgang erklæres stabil.
+3. Ejerens korte slutprøve: tag privat backup, opdatér beta, genstart, log ind fra telefon, prøv udlevering/aflevering og gendannelse til en separat prøveinstallation. Kontrollér print/QR, hvis de bruges; afprøv natlig adressekontrol, hvis den aktiveres.
+4. Afklar status på W61-oprydning hos GitHub og de åbne sikkerhedspunkter W06/W28/W56. Der er ikke dokumenteret en fuld sikkerhedsscanning eller krypteret nøglebackup. Den eksisterende LAN/VPN-adgangsmodel er ikke ændret. Før publicering skal åbne punkter være løst eller eksplicit afgrænset i udgivelsesnoterne sammen med ejeren.
+5. Saml endelige begrænsninger, versionsnummer, ændringslog, opgraderings-/backupvej og pakkechecksums. Promovér først den verificerede kode til main og opret stabil udgivelse som et særskilt trin.
+
+W16/automatisk inddeling er parkeret og fjernet fra aktiv app. W65 flerbruger er ikke bestilt. W74 hosting venter til efter stabil; W08 arkivering vurderes bagefter. Webdemoens manglende live-kontrol holdes særskilt fra lokal/HA-udgivelse. W58 fuld engelsk færdiggørelse står fortsat åbent; udgivelsen må ikke love fuld oversættelse før kontrol.

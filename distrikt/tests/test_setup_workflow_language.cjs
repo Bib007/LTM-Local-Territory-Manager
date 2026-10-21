@@ -10,15 +10,25 @@ const plan={token:'FICTIONAL_PLAN',cards:[{key:'new1',number:'F101',name:'Navn <
 const ib={token:'FICTIONAL_IB',new:1,existing:1,errors:1,rows:[{line:2,status:'new',card_number:'F101',label:'Private <fictional>',date:'2026-10-17'},{line:3,status:'error',error:'Error <fictional>'}]};c.plan=plan;c.ib=ib;
 const contract=html=>(html.match(/(?:data-setup|data-setup-option|data-setup-area-field|data-setup-card-field|data-key|data-index|value|name|placeholder)="[^"]*"/g)||[]).filter(v=>!v.startsWith('placeholder=')).join('\n');
 (async()=>{
+ assert.equal(run('SetupUI.autoDivisionEnabled'),false);
+ assert.doesNotMatch(run('SetupUI.advanced()'),/data-setup="open"/);
+ assert.match(run('SetupUI.advanced()'),/data-setup="ib-open"/);
+ assert.match(run('SetupUI.advanced()'),/data-card-import="open"/);
+ for(const step of [1,2,3,4]){run('SetupUI.step='+step);assert.doesNotMatch(run('SetupUI.page()'),/setupSteps|setup-option|setupConfirm|setupMap/);assert.match(run('SetupUI.page()'),/setupIBFile/);}
+ const initialWrites=writes.length;
+ for(const action of ['preview','apply','step','return','save-defaults'])await run(`SetupUI.handle('${action}',{step:2})`);
+ await run("SetupUI.applyReviewed('setup.apply',{})");assert.equal(writes.length,initialWrites);
+ // Exercise archived code only with this explicit test opt-in.
+ run('SetupUI.autoDivisionEnabled=true');
  const contracts={},payloads={};for(const lang of ['da','en']){
-  run(`I18n.set('${lang}');SetupUI.plan=JSON.parse(JSON.stringify(plan));SetupUI.ib=JSON.parse(JSON.stringify(ib))`);contracts[lang]=[];
+  run(`SetupUI.autoDivisionEnabled=true;I18n.set('${lang}');SetupUI.plan=JSON.parse(JSON.stringify(plan));SetupUI.ib=JSON.parse(JSON.stringify(ib))`);contracts[lang]=[];
   for(const numbering of ['hundreds','continuous','prefix']){run(`SetupUI.options.numbering='${numbering}';SetupUI.step=2`);const html=run('SetupUI.page()');contracts[lang].push(contract(html));assert.match(html,/<option value="By" data-ui="By" selected>/);assert.match(html,/Områdenavn &lt;fictional&gt;/);assert.doesNotMatch(html,/<fictional>/);}
   for(const step of [1,3,4]){run(`SetupUI.step=${step}`);const html=run('SetupUI.page()');contracts[lang].push(contract(html));assert.doesNotMatch(html,/<fictional>/);if(step===3){assert.match(html,/Navn &lt;fictional&gt;/);assert.match(html,/placeholder="OPRET KORT"/);}if(step===4){assert.match(html,/Private &lt;fictional&gt;/);assert.match(html,/placeholder="IMPORTÉR IB"/);assert.match(html,lang==='en'?/new do-not-call entries/:/nye IB/);}}
   // Real handlers retain the exact confirmation tokens and mutation payloads on both languages.
-  run('api=async(url,data)=>{writes.push({url,data});return {json:async()=>({result:{count:1}})}};SetupUI.step=3;SetupUI.busy=false;SetupUI.boundaryDirty=false');get('setupConfirm').value='OPRET KORT';const start=writes.length;await run("SetupUI.handle('apply',{})");run('SetupUI.ib={...ib,errors:0};SetupUI.busy=false');get('setupIBConfirm').value='IMPORTÉR IB';await run("SetupUI.handle('ib-apply',{})");payloads[lang]=JSON.parse(JSON.stringify(writes.slice(start)));
+  run('api=async(url,data)=>{writes.push({url,data});return {json:async()=>({result:{count:1}})}};SetupUI.step=3;SetupUI.busy=false;SetupUI.boundaryDirty=false');get('setupConfirm').value='OPRET KORT';const start=writes.length;await run("SetupUI.handle('apply',{})");run('SetupUI.autoDivisionEnabled=false;SetupUI.ib={...ib,errors:0};SetupUI.busy=false');get('setupIBConfirm').value='IMPORTÉR IB';await run("SetupUI.handle('ib-apply',{})");payloads[lang]=JSON.parse(JSON.stringify(writes.slice(start)));
  }
  assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(payloads.en,payloads.da);assert.equal(payloads.en[0].data.data.confirm,'OPRET KORT');assert.equal(payloads.en[1].data.data.confirm,'IMPORTÉR IB');
- run('SetupUI.plan=JSON.parse(JSON.stringify(plan));SetupUI.ib={...ib,errors:0};SetupUI.busy=false');get('setupConfirm').value='CREATE CARDS';get('setupIBConfirm').value='IMPORT DNC';const count=writes.length;await assert.rejects(run("SetupUI.handle('apply',{})"),/OPRET KORT/);await assert.rejects(run("SetupUI.handle('ib-apply',{})"),/IMPORTÉR IB/);assert.equal(writes.length,count);
+ run('SetupUI.autoDivisionEnabled=true;SetupUI.plan=JSON.parse(JSON.stringify(plan));SetupUI.ib={...ib,errors:0};SetupUI.busy=false');get('setupConfirm').value='CREATE CARDS';get('setupIBConfirm').value='IMPORT DNC';const count=writes.length;await assert.rejects(run("SetupUI.handle('apply',{})"),/OPRET KORT/);await assert.rejects(run("SetupUI.handle('ib-apply',{})"),/IMPORTÉR IB/);assert.equal(writes.length,count);
  run('SetupUI.invalidateIB()');get('setupIBConfirm').value='IMPORTÉR IB';await assert.rejects(run("SetupUI.handle('ib-apply',{})"),/Check the do-not-call file/);assert.equal(writes.length,count);
  // A late geographic proposal never replaces changed defaults/area drafts.
  let release;c.pending=new Promise(r=>release=r);run("page='Opstart';SetupUI.plan=null;SetupUI.step=2;api=()=>pending");let pending=run("SetupUI.handle('preview',{})");run("SetupUI.options.target=60;SetupUI.areas[0].name='NEWER AREA'");release({json:async()=>({result:plan})});await pending;assert.equal(run('SetupUI.plan'),null);assert.equal(run('SetupUI.areas[0].name'),'NEWER AREA');assert.equal(run('SetupUI.busy'),false);

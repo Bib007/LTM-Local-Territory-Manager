@@ -49,7 +49,7 @@ Hver registreret gennemgang tæller, også flere gennemgange af samme kort. Ansl
 ## 5. Tilføj detaljerne
 
 - Importér eller tegn den samlede grænse, kontrollér den, og hent adresser indenfor. Virkelige KML-filer og registreringer bliver private.
-- Udfyld eksisterende kort enkeltvis. [Automatisk inddeling](AUTOMATISK-INDDELING.md) er et forslag til nye kort, som skal gennemgås før oprettelse.
+- Udfyld eksisterende kort enkeltvis, eller tegn hvert kort og vælg adresser i korteditoren. Automatiske inddelingsforslag er sat på pause fra beta.61.
 - Vælg IB fra det konkrete korts egne adresser.
 - Brug almindeligt papir til den første printtilpasning, og gem printerprofilen.
 - [Google Drive og QR](GOOGLE-DRIVE.md) er valgfrit.

@@ -51,10 +51,25 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(self.store.revision,revision)
         with self.request('/readable-export-ui.js') as response:self.assertIn(b'ReadableExportUI',response.read())
 
+    def test_archived_division_rejects_all_http_entrypoints_without_touching_cards(self):
+        self.store.mutate('card.save',{'number':'001'})
+        before=self.store.state();revision=self.store.revision
+        with patch.object(self.server.setup_jobs,'start') as start, patch.object(self.server.store,'mutate') as mutate:
+            for action in ('setup.preview','setup.adjust.preview','setup.apply'):
+                for asynchronous in (False,True):
+                    with self.assertRaises(urllib.error.HTTPError) as caught:
+                        self.request('/api/mutate',{'action':action,'data':{'_async':asynchronous,'_revision':revision}})
+                    self.assertEqual(caught.exception.code,400)
+                    self.assertIn('sat på pause',json.load(caught.exception)['error'])
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/setup/job?id=old-job')
+            self.assertEqual(caught.exception.code,400)
+            start.assert_not_called();mutate.assert_not_called()
+        self.assertEqual(self.store.revision,revision);self.assertEqual(self.store.state(),before)
+
     def test_parameterized_validation_metadata_keeps_original_error_and_does_not_write(self):
         before=self.store.revision
         cases=[
-            ({'action':'setup.preview','data':{'target':0}},'Besøg pr. kort skal være mellem 1 og 1000.','{label} skal være mellem {low} og {high}.',{'label':'Besøg pr. kort','low':1,'high':1000}),
+            ({'action':'setup.defaults','data':{'target':0}},'Besøg pr. kort skal være mellem 1 og 1000.','{label} skal være mellem {low} og {high}.',{'label':'Besøg pr. kort','low':1,'high':1000}),
             ({'action':'setup.ib.preview','data':{'content':'vejnavn;husnummer;postnummer\nFiktiv;1;9999','date':'not-a-date'}},'Dato skal være en gyldig dato.','{field} skal være en gyldig dato.',{'field':'Dato'}),
         ]
         for payload,original,key,params in cases:

@@ -1,5 +1,7 @@
 # Forslag langs vandløb og jernbaner
 
+> Arkiveret fra beta.61 efter W81. Automatiske forslag til distriktsgrænser og kortinddeling er fjernet fra appen og afvist af API’et. Koden og denne tidligere vejledning bevares til videreudvikling. Brug korteditoren til manuel inddeling; eksisterende kort, adressehentning og lokal IB-import bevares.
+
 Opsæt distrikter kan bruge lokalt gemte vandløb og jernbaner som skel. Et egnet gennemgående forløb prøves før vejforslagene. Forslagene har fortsat omtrentlige besøgstal og kan rettes, før kortene oprettes.
 
 ## Tilføj grundlaget

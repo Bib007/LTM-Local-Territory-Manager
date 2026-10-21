@@ -2,7 +2,7 @@
 
 [Dansk](SLUTKONTROL.md)
 
-Verification target: 1.12.0-beta.22 on develop, 17 October 2026. Main remains stable 1.11.1. The fixed plan has ten development tasks; the wishlist is a separate queue. Development verification does not imply testing the owner's physical equipment or accounts.
+Verification baseline: beta.60 passed program, platform, package and browser checks. Beta.61 prepares W81 and must pass the same CI before release. Main remains stable 1.11.1. The fixed development plan is complete; the entire wishlist is not required for the next stable release.
 
 ## Repeatable checks
 
@@ -22,3 +22,13 @@ Map overview, addresses/card checks, geographic editing/import, advanced setup/l
 Physical printing, the actual HA/phone/VPN, Google consent and access on return/reassignment, the configured Datafordeler account and any screen reader remain separate. Follow the [owner checklist](../Dette-skal-hjaelpes-manuelt.en.md). Automated verification does not mark these as tested.
 
 See [printing](PRINT.en.md), [installation](INSTALL.en.md), [beta](BETA.md), [limitations](LIMITATIONS.en.md) and the [fixed plan](../KOREPLAN.md).
+
+## Next stable release gates
+
+1. Verify the W81 beta: no automatic proposals, working manual maps/local do-not-call import and preserved cards. Require successful program, browser, platform and HA package checks on the exact release code.
+2. Repeat W78's interrupted address download on the owner's HA. Check resume, completed tiles and any failure code before declaring that workflow stable.
+3. Owner smoke check: private backup, beta update, restart, phone login, assignment/return and restore to a separate test installation. Check printing/QR when used and overnight address checks when enabled.
+4. Resolve or explicitly scope W61 GitHub cleanup and open security items W06/W28/W56 with the owner. A full security scan and encrypted key backup have not been documented. The existing LAN/VPN access model is unchanged.
+5. Finalize limitations, version, changelog, upgrade/backup instructions and package checksums. Promote verified code to main and publish stable as a separate step.
+
+Automatic division/W16 is paused and removed from the active app. Multiuser W65 is not ordered. Hosting W74 and old-repository archiving W08 follow stable. The unverified live web demo is separate from local/HA release. Full English completion W58 remains open; do not claim complete translation before verification.

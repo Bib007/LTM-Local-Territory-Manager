@@ -1,5 +1,7 @@
 # Forslag til distriktsinddeling
 
+> Arkiveret fra beta.61 efter W81. Automatiske forslag til distriktsgrænser og kortinddeling er fjernet fra appen og afvist af API’et. Koden og denne tidligere vejledning bevares til videreudvikling. Brug korteditoren til manuel inddeling; eksisterende kort, adressehentning og lokal IB-import bevares.
+
 [English](AUTOMATISK-INDDELING.en.md)
 
 På develop fra 1.12.0-beta.11 kan et forslag følge et lokalt gemt vejforløb med knæk og kurver. Vejstykker med samme navn forbindes kun, når deres endepunkter mødes præcist, og forbindelsen ikke er forgrenet. Der oprettes først kort, når du har gennemgået og godkendt hele forslaget.

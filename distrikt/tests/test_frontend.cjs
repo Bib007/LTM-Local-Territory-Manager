@@ -255,7 +255,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
 // Hidden one-time setup, escaped user labels and explicit confirmations.
 setImmediate(()=>{
  run("SetupUI.options={numbering:'prefix',start:101,block:100,target:50};SetupUI.areas=[{id:'',name:'<test>',prefix:'F',kind:'By'}];SetupUI.ibDate='2026-10-15'");
- assert(run("SetupUI.advanced().includes('Kortinddeling og nummerering')"));
+ assert(!run("SetupUI.advanced().includes('Kortinddeling og nummerering')"));
  assert(!run("Navigation.html().includes('Opsæt distrikter')"));
  assert(run("SetupUI.areasPage().includes('&lt;test&gt;')"));
  assert(run(`SetupUI.areasPage().includes('value="101"')`));

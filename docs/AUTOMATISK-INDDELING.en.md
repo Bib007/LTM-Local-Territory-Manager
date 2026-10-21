@@ -1,5 +1,7 @@
 # Territory division proposals
 
+> Archived from beta.61 under W81. Automatic boundary and card division proposals are removed from the app and rejected by the API. The implementation and this earlier guide are retained for future development. Use the map editor for manual division; existing cards, address downloads and local do-not-call import remain available.
+
 [Dansk](AUTOMATISK-INDDELING.md)
 
 On develop from 1.12.0-beta.11, proposals can follow a locally saved road path with bends and curves. Same-name road records are joined only at exactly matching endpoints without a branch. Cards are created only after you review and confirm the complete proposal.

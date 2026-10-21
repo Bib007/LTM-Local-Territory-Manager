@@ -45,31 +45,15 @@ class SetupJobsTests(unittest.TestCase):
             self.assertEqual(result['error'],expected);self.assertNotIn('FICTIONAL_INTERNAL_VALUE',json.dumps(result))
 
 class SetupJobsHTTPTests(unittest.TestCase):
-    def test_async_start_and_poll_stay_short_and_authenticated(self):
+    def test_archived_job_endpoint_remains_authenticated(self):
         with tempfile.TemporaryDirectory() as folder:
             store=Store(folder);server=Server(('127.0.0.1',0),store);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-            entered=threading.Event();release=threading.Event();original=store.mutate
-            def compute(action,data):
-                if action=='setup.preview':
-                    with store.lock:entered.set();release.wait(3);return {'token':'fictional','cards':[]}
-                return original(action,data)
-            def api(path,data=None,token=True):
-                headers={'X-Distrikt-Token':server.token} if token else {};raw=None
-                if data is not None:raw=json.dumps(data).encode();headers['Content-Type']='application/json'
-                with urllib.request.urlopen(urllib.request.Request(server.origin+path,raw,headers),timeout=1) as response:return json.load(response)
             try:
-                with patch.object(store,'mutate',side_effect=compute):
-                    result=api('/api/mutate',{'action':'setup.preview','data':{'_async':True,'_revision':store.revision}})
-                    self.assertTrue(entered.wait(1));path='/api/setup/job?id='+result['result']['job_id']
-                    self.assertEqual(api(path)['status'],'running')
-                    with self.assertRaises(urllib.error.HTTPError) as error:api(path,token=False)
-                    self.assertEqual(error.exception.code,403);release.set()
-                    for _ in range(100):
-                        status=api(path)
-                        if status['status']!='running':break
-                        time.sleep(.01)
-                    self.assertEqual(status['response']['result']['token'],'fictional')
-                    self.assertEqual(store.state()['cards'],[])
-            finally:release.set();server.shutdown();thread.join();server.server_close();store.close()
+                for token,status in ((False,403),(True,400)):
+                    headers={'X-Distrikt-Token':server.token} if token else {}
+                    with self.assertRaises(urllib.error.HTTPError) as error:
+                        urllib.request.urlopen(urllib.request.Request(server.origin+'/api/setup/job?id=fictional',headers=headers),timeout=1)
+                    self.assertEqual(error.exception.code,status)
+            finally:server.shutdown();thread.join();server.server_close();store.close()
 
 if __name__=='__main__':unittest.main()

@@ -1,4 +1,15 @@
-# LTM 1.12.0-beta.60
+# LTM 1.12.0-beta.61
+
+W81 · Automatiske forslag til distriktsgrænser og kortinddeling er sat på pause.
+
+Opsæt distrikter og det automatiske valg i førstegangsopsætningen er fjernet. En tidligere plan med automatisk inddeling åbner nu manuel korttegning. Serveren afviser både synkrone og asynkrone forslag, grænsejusteringer og oprettelse fra gamle forslag. Eksisterende kort, adresser, udlån og historik bevares. Adressehentning, kortimport og lokal IB-import fortsætter som før.
+
+Prøv Indstillinger → Avanceret → Åbn lokal IB-import: der skal kun vises IB-import, ingen trin til automatisk inddeling. Åbn korteditoren og kontrollér et eksisterende kort. Koden, algoritmeprøverne og den tidligere vejledning ligger fortsat på GitHub til senere udvikling. Se [arkiv og afgrænsning](ARKIVERET-AUTOFORDELING.md).
+
+Før en stabil udgivelse bruges den konkrete [slutkontrol](SLUTKONTROL.md). W78 kræver stadig ejerens gentagelse af den afbrudte adressehentning. Denne beta ændrer ikke adressekilden eller netforbindelsen.
+
+## Fra beta.60
+
 
 W78/W79/W80 · Robust adressehentning, enklere kortdata og læsbare fejlforklaringer.
 

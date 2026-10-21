@@ -3,6 +3,8 @@
 const I18n={
  current:'da',
  english:{
+ "Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.":"Automatic card division is paused. Use the map editor to create cards.",
+ "Lokal IB-import":"Local do-not-call import",
  "Beregningen kører på din server. Store områder kan tage tid; forslag opretter ingen kort.":"The calculation is running on your server. Large areas can take time; previews do not create cards.",
  "En kortberegning kører allerede. Vent på den før et nyt forslag.":"A district preview is already being calculated. Wait before starting another.",
  "Kortberegningen er udløbet. Lav et nyt forslag.":"The district preview expired. Create another preview.",
