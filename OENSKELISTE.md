@@ -2,9 +2,13 @@
 
 ## Aktuel status · 21.10.2026
 
-Beta.54 er fuldt verificeret udgivet fra ec83cbf1290efda2c21e5b4ed5987747a27c07f0: Checks 39610820291, Platformskontrol 39610820462 og alle syv HA-job i 39610820295 er completed/success. ZIP-SHA256 665ce7964386f8a57987cfae11296b5bf81d0fd79a0d0437c0422415fcff7d9a matcher lokal opstartskontrolleret bygning. Betakanalen er beta.54/8788, main stabil 1.11.1. W70/W71 afsluttes: 58 af 71 punkter, cirka 82 %, og 13 åbne.
+Senest fuldt verificerede udgivelse er beta.54 fra ec83cbf1290efda2c21e5b4ed5987747a27c07f0. Alle program-, platform- og HA-kontroller består. Betakanalen er beta.54/8788, main stabil 1.11.1.
 
-Ny ejerbesked i Google-planen: Vent med at oversætte til engelsk. Dette er en ændring af W58's prioritet, ikke en ny funktion eller et ekstra ønskepunkt. W58 udsættes efter ejerens ønske; eksisterende sprogvalg og oversættelser bevares. Dansk er arbejdssprog. Ejeren har nu også bedt om at springe vejnet og øvrig automatisk kortgenerering over for nu. W16 er parkeret; det lokale vejnetforsøg er gemt særskilt og er ikke udgivet. Engelsk oversættelse venter til appen er færdig. Den aktive kø er feedback uden egen e-mail/GitHub-konto, nyt diskret logo på Drive-kortet og derefter opdateret webdemo. Kritiske blokerede punkter bevarer deres status. Ønskebeskeden ryddes først fra Google, når denne ændring er gemt og læst tilbage på develop.
+W72 er klargjort til beta.55: lille lokalt dannet LTM-logo med “Local Territory Manager” under på Drive-kortet. Checks 39614540523 på 3f57910bd974bcbe062f9e1fc94f3448319eea8f er completed/success. Artefakt 12352182746 har verificeret SHA256 29b081b0553fd7d13a5df20847cc391625f2d68fa8663adde85c28bda22d0507. Faktisk preview-PNG og tætte/spredte rasterkort er gennemset: logo, tekst, placering og læsbarhed består. Endelige beta.55-gates og udgivelse udestår; W72 er fortsat åben.
+
+Aktuel fremdrift: 73 registrerede ønsker, 58 afsluttet/afklaret, 15 åbne, cirka 79 %. Fast plan er afsluttet (10/10). W73 om natlig adressekontrol er registreret nedenfor. Aktiv kø: W72-udgivelseskontrol, W73, feedback uden egen e-mail/GitHub-konto og opdateret webdemo. W23 har en konkret Tally-specifikation i docs/FEEDBACK-UDEN-KONTO.md, men ingen oprettet/verificeret formular eller autoriseret forbindelse.
+
+Ejerens seneste beslutninger styrer køen: W16 vejnet og øvrig automatisk kortgenerering er parkeret. W58 engelsk venter, til appen ellers er færdig; eksisterende sprogvalg bevares. Kritiske blokerede punkter bevarer deres status. Historiske køer nedenfor er ikke gældende prioritering. Nye ønsker ryddes først fra Google, efter registrering er gemt og læst tilbage på develop.
 
 ## Ny ejeropfølgning · W70/W71 · registreret 21.10.2026
 
@@ -673,3 +677,12 @@ Udgivelse: https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1
 Ejeren ønsker et lille eksisterende LTM-logo med teksten “Local Territory Manager” i lille størrelse under logoet på det digitale distriktskort til Google Drive. Brug projektets eksisterende identitet, bevar kortets læsbarhed, lyse baggrund, offentlige afgrænsning og udtrykkelige publiceringsgodkendelse. Ingen privat reference eller private kort kopieres til GitHub. Prioriteres som næste lille betaopgave. Ikke udført ved registreringen. Ny total: 72 ønsker, 58 afsluttet/afklaret, 14 åbne, cirka 81 %.
 
 W23-opfølgning: Ejeren overlader kanalvalget til LTM og ønsker en formular, hvor afsenderen ikke skal bruge egen e-mail. Undersøg en anonym formular med mulighed for bilag, uden GitHub-login og uden at sende driftsdata, IB eller lokale databaser automatisk. En modtager og faktisk fungerende formulartjeneste skal være på plads før funktionen kan kaldes klar. E-mailudkast er fravalgt. Ingen central hemmelighed må indbygges i appen.
+
+
+## W73 · Natlig adressekontrol på Home Assistant · registreret 21.10.2026
+
+Ejerens nye ønske er læst i alle aktuelle Google-planfaner. Prioritet: LTM vælger. Automatisk adressekontrol skal kunne planlægges som en opgave under Opgaver på Home Assistant med valgfri hyppighed og tidspunkt om natten. Find både nye og fjernede adresser. Forsiden skal dagen efter vise, at kontrollen har kørt, hvilke ændringer der er fundet, og give mulighed for gennemgang/godkendelse. Kontrollen må ikke automatisk acceptere ændringer eller fjerne lokale registreringer.
+
+Ved midlertidige fejl skal arbejdet bevares, vente og prøve igen automatisk uden manuel genstart. En ufuldstændig hentning må aldrig fortolkes som fjernede adresser. Genstart, samtidige kørsler, afbrudt net/API, nøglefejl og gentagne forsøg skal håndteres med synlig status, passende ventetid og bevaret fremdrift. Genbrug den eksisterende adresseændringsmodel og opgavemodel; afklar overlap med W67 under implementeringen. Ingen ægte API-nøgler, kort eller adresser i offentlige prøver. Dette er en LTM-funktion, ikke en ChatGPT-automation.
+
+Status: Registreret og planlagt; ikke implementeret. Total 73, afsluttet/afklaret 58, åbne 15 (cirka 79 %). Google-indbakken må først ryddes efter remote læsekontrol.

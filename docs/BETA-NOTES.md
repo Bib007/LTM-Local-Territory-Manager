@@ -1,4 +1,10 @@
-# LTM 1.12.0-beta.54
+# LTM 1.12.0-beta.55
+
+W72 · Lille LTM-logo med “Local Territory Manager” under er tilføjet øverst til højre på det digitale Drive-kort.
+
+Prøv med fiktive data: Åbn forhåndsvisningen af Drive-kortet, og kontrollér logo, tekst og læsbarhed. Eksisterende billeder opdateres via Opdater Google Drive-upload efter ny godkendelse. Samme fil/QR-link bevares. Opgradering alene ændrer ikke godkendte billeder.
+
+## Fra beta.54
 
 W70/W71 · Menighedsnavnet er fjernet fra topbaren. Det digitale Drive-kort har nu 50 % OSM-baggrund over hvidt, kraftige røde besøgsprikker og tydelige mørkerøde husnumre uden dæmpning.
 

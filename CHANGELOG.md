@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.55 · Lille logo på Drive-kortet
+
+W72: Det digitale distriktskort har nu et lille LTM-logo øverst til højre med “Local Territory Manager” under. Kortets lyse baggrund, husnumre, besøgsprikker og printforside bevares. Logoet dannes lokalt uden ekstra netkald eller persondata.
+
+Eksisterende Drive-billeder ændres først via Opdater Google Drive-upload, ny forhåndsvisning og udtrykkelig godkendelse. Samme fil og QR-link bevares.
+
 ## 1.12.0-beta.54 · Enkel topbar og tydeligere Drive-kort
 
 W70: Menighedsnavnet er fjernet fra topbaren. Logo, betamarkering og gemmestatus bevares, og det gemte navn bruges fortsat i indstillinger, sidepanel og rapporter.
