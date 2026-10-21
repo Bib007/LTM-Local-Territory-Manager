@@ -23,7 +23,19 @@ const position=c=>loanFor(c.id)?'Udleverede distriktskort':c.in_folder?'Kort i m
 const age=c=>c.last_completed?dayDiff(state.today,c.last_completed):Infinity;
 function fourMonths(day){let d=new Date(day+'T12:00:00'),n=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+4);let max=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(n,max));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 const SaveStatus={kind:'loading',message:'Åbner dine data…',detail:'',
- paint(){const node=el('saveState');if(!node)return;node.className=this.kind==='error'?'error':'';node.dataset.saveKind=this.kind;node.title=I18n.text(this.message)+(this.detail?' · '+I18n.errorText(this.detail):'');node.innerHTML=ui(this.message)+(this.detail?`<span class="saveDetail"> · ${I18n.errorHTML(this.detail)}</span>`:'');},
+ paint(){
+  const node=el('saveState');if(!node)return;
+  const explanation=expanded=>`<details class="saveExplanation" ${expanded?'open':''}><summary ${I18n.attribute('aria','{message} · vis hele forklaringen',{message:I18n.text(this.message)})}>${ui(this.message)}</summary><div class="saveExplanationText"><b>${ui(this.message)}</b><p>${I18n.errorHTML(this.detail)}</p><button type="button" data-save-explanation-close>${ui('Luk')}</button></div></details>`;
+  node.className=this.kind==='error'?'error':'';node.dataset.saveKind=this.kind;node.title=I18n.text(this.message)+(this.detail?' · '+I18n.errorText(this.detail):'');
+  node.innerHTML=this.detail?explanation(!!node.querySelector?.('.saveExplanation[open]')):ui(this.message);
+  const dialog=el('dialog');
+  if(dialog?.open&&document.createElement&&dialog.appendChild){
+   let notice=dialog.querySelector('[data-save-feedback]');
+   if(!this.detail){notice?.remove();return;}
+   if(!notice){notice=document.createElement('section');notice.className='dialogSaveFeedback notice';notice.dataset.saveFeedback='';dialog.appendChild(notice);}
+   notice.innerHTML=explanation(!!notice.querySelector('.saveExplanation[open]'));
+  }
+ },
  set(kind,message,detail=''){this.kind=kind;this.message=message;this.detail=detail;this.paint();}
 };
 class RequestError extends Error{
@@ -84,7 +96,7 @@ const DialogFocus={opener:null,
  keydown(event,dialog){if(event.key!=='Tab'||event.defaultPrevented||!dialog.open)return;const fields=[...dialog.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=true]')].filter(node=>node.tabIndex>=0&&!node.matches(':disabled')&&!node.hidden&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');const first=fields[0],last=fields.at(-1),active=document.activeElement;if(!first){event.preventDefault();dialog.focus();return;}if(event.shiftKey&&(active===first||!dialog.contains(active))){event.preventDefault();last.focus({preventScroll:true});}else if(!event.shiftKey&&(active===last||!dialog.contains(active))){event.preventDefault();first.focus({preventScroll:true});}},
  restore(dialog){const saved=this.opener;this.opener=null;if(!saved)return;const target=saved.node?.isConnected?saved.node:(saved.id?document.getElementById(saved.id):null)||(saved.selector?document.querySelector(saved.selector):null);if(target&&target.isConnected!==false&&!dialog.contains?.(target))target.focus?.({preventScroll:true});}
 };
-function openDialog(html,language='da'){const dialog=el('dialog');DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);}
+function openDialog(html,language='da'){const dialog=el('dialog');DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();}
 function closeDialog(){const dialog=el('dialog');frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.close();DialogFocus.restore(dialog);}
 function empty(message){return `<div class="empty">${message}</div>`;}
 function searchText(c){return [c.number,c.name,areaName(c.area_id),c.kind,...(c.addresses||[]).flatMap(a=>[a.road,a.numbers,a.type])].join(' ').toLowerCase();}
@@ -327,3 +339,5 @@ el('dialog').addEventListener('keydown',e=>DialogFocus.keydown(e,el('dialog')));
 el('dialog').addEventListener('cancel',e=>{e.preventDefault();closeRequested();});
 window.addEventListener('beforeunload',e=>{if(dialogDirty){e.preventDefault();e.returnValue='';}});
 (async()=>{try{await refresh();year=serviceYear(state.today);await GeoUI.resumeJob();render();saved();Workspace.boot();if(typeof Welcome!=='undefined')Welcome.auto();}catch(e){SaveStatus.set('error','Den lokale app kunne ikke åbnes',e.message);el('app').innerHTML=`<section class="panel startupError"><span class="eyebrow">LTM</span><h1>${ui('Den lokale app kunne ikke åbnes')}</h1><p lang="da">${esc(e.message)}</p><p class="hint">${ui('Kontrollér, at appen er startet på computeren eller i Home Assistant. Kontrollér også Wi-Fi eller VPN.')}</p><button class="primary" data-work="reload-app">${ui('Prøv at åbne igen')}</button></section>`;}})();
+
+document.addEventListener('click',event=>{const close=event.target.closest('[data-save-explanation-close]');if(close){const details=close.closest('details');details?.removeAttribute('open');details?.querySelector('summary')?.focus();}});

@@ -22,6 +22,12 @@ class SourceUnavailable(ValueError):
 class SourceTimeout(SourceUnavailable):pass
 class SourceLimit(SourceUnavailable):pass
 
+class SourceTransient(SourceUnavailable):
+    """A sanitized read failure that may be retried after a bounded cooldown."""
+    def __init__(self,message,retry_after=0):
+        super().__init__(message)
+        self.retry_after=retry_after
+
 def rest_addresses(items,postcode,road):
     normalized=[]
     for raw in items:
