@@ -3,6 +3,17 @@
 const I18n={
  current:'da',
  english:{
+ "Beregningen kører på din server. Store områder kan tage tid; forslag opretter ingen kort.":"The calculation is running on your server. Large areas can take time; previews do not create cards.",
+ "En kortberegning kører allerede. Vent på den før et nyt forslag.":"A district preview is already being calculated. Wait before starting another.",
+ "Kortberegningen er udløbet. Lav et nyt forslag.":"The district preview expired. Create another preview.",
+ "Kortforslaget kunne ikke beregnes. Eksisterende kort er ikke ændret.":"The district preview could not be calculated. Existing cards have not changed.",
+ "Ændringen tog for lang tid at bekræfte. Genindlæs data og kontrollér før du prøver igen.":"Confirmation of the change took too long. Reload and check your data before retrying.",
+ "Kontrollen tog for lang tid. Forbindelsen er ikke nødvendigvis afbrudt. Prøv et mindre område eller prøv igen.":"The check took too long. The connection may still be working. Try a smaller area or try again.",
+
+  "Postnummer · kun nødvendigt ved ældre adressekilde":"Postcode · only required for the legacy address source",
+  "Hent også DAR-adresser i udsnittet":"Also fetch DAR addresses in the viewport",
+  "Zoom ind på et mindre område. Med Datafordeleren hentes alle postnumre i udsnittet; adresser afhænger ikke af OSM-vejnavne. Kortbaggrunden gemmes separat.":"Zoom into a smaller area. Datafordeleren includes all postcodes in the viewport; addresses do not depend on OSM road names. The map background is stored separately.",
+
   "Vent på den automatiske adressekontrol før nulstilling eller gendannelse.":"Wait for the automatic address check before resetting or restoring.",
   "Den automatiske adressekontrol kører eller venter på genprøve. Vent før en manuel hentning.":"The automatic address check is running or waiting to retry. Wait before starting a manual download.",
   "Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.":"Wait for the automatic address check before changing the boundary or removing addresses.",

@@ -105,3 +105,34 @@ class DarDownload:
         self.check_cancel()
         self.store.mutate('geo.postcode.save', {'manifest': manifest, 'lines': lines})
         return manifest
+
+    def graph_viewport(self,bbox,progress):
+        """Fetch official address points, independent of OSM road-name coverage."""
+        from boundary_download import boundary_tiles, smaller_tiles
+        from datetime import datetime, timezone
+        from geography import point_in_polygon
+        w,s,e,n=bbox;points=[[w,s],[e,s],[e,n],[w,n]]
+        snapshot=datetime.now(timezone.utc).isoformat(timespec='seconds')
+        schema=self.source_schema();tiles=boundary_tiles(points);seen=set();roads=set();warnings=[];index=0
+        while index<len(tiles):
+            self.check_cancel();tile=tiles[index]
+            progress(message=f'Henter komplette DAR-adresser i udsnit {index+1} af {len(tiles)}…',completed=index,total=len(tiles))
+            try:
+                result=self.graph_adapter(snapshot,schema).tile(tile['bbox'])
+                addresses=[a for a in result['addresses'] if point_in_polygon([a['lng'],a['lat']],points) and a['id'] not in seen]
+                self.check_cancel()
+                for offset in range(0,len(addresses),20000):
+                    self.store.mutate('geo.import',{'records':addresses[offset:offset+20000],'source':'DAR / Datafordeleren','label':'DAR-adresser i vist udsnit','review_changes':True})
+                seen.update(a['id'] for a in addresses);roads.update((a['road'],a['postcode']) for a in addresses)
+            except (SourceTimeout,SourceLimit) as error:
+                children=smaller_tiles(tile)
+                if children and len(tiles)+3<=500:
+                    tiles[index:index+1]=children;continue
+                warnings.append('DAR-udsnit '+str(index+1)+': '+str(error));break
+            except ValueError as error:
+                warnings.append('DAR-udsnit '+str(index+1)+': '+str(error));break
+            index+=1
+        complete=index==len(tiles)
+        progress(completed=index,total=len(tiles))
+        return {'addresses_downloaded':len(seen),'roads_downloaded':len(roads),'complete':complete,'warnings':warnings,
+            'note':f'{len(seen)} DAR-adresser fundet i det viste udsnit · {index}/{len(tiles)} udsnit kontrolleret. '+('Alle postnumre i udsnittet er medtaget, uafhængigt af OSM-vejnavne. Kontrollér eventuelle adresseændringer.' if complete else 'Adressehentningen er ufuldstændig. Færdige udsnit er bevaret; hent udsnittet igen eller brug Samlet distriktsgrænse til en hentning, der kan fortsættes.')}
