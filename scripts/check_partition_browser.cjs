@@ -35,6 +35,7 @@ module.exports=async(browser,out)=>{
    if(kind!=='road'){assert.match(await page.locator('.setupCardTable .warning').first().innerText(),language==='en'?(kind==='rail'?/railway/:/waterway/):(kind==='rail'?/jernbanen/:/vandløbet/));assert.equal(await page.locator('.setupCardTable .warning vandløb,.setupCardTable .warning jernbane').count(),0,'Public feature names remain escaped text');}
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Preview fits viewport');
   }
+  if(width<600){const cells=await page.locator('.setupCardTable tbody td').evaluateAll(nodes=>nodes.map(n=>({left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth})));assert.ok(cells.every(n=>n.left>=0&&n.right<=n.width+1),'All card review fields fit without horizontal scrolling');}
   await page.locator('[data-setup=edit-boundaries]').click();assert.ok(await page.locator('.setupCorner').count()>4,'Actual bent boundary remains editable');
   assert.equal(await page.locator('[data-setup=apply]').count(),1);assert.equal(await page.locator('#setupConfirm').inputValue(),'');assert.equal(requests.length,1,'Opening editor never applies proposal');
   // Mock tiles are deliberately blank. Draw only the same fictional downloaded

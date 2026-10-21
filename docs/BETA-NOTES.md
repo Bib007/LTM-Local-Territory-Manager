@@ -1,4 +1,14 @@
-# LTM 1.12.0-beta.57
+# LTM 1.12.0-beta.58
+
+W75 · Bedre touchbetjening på telefon og iPad/tablet.
+
+Prøv stående og liggende: åbn menuen, søg efter et kort, åbn udlevering/aflevering, brug forkynderlisten og opgaver, og luk dialoger. Knapper og felter har større trykflader. Dialoger holder sig indenfor skærmens højde, og inputtekst på touchskærme er mindst 16 pixels.
+
+Opsæt distrikter → Lav forslag: På smalle skærme står nummer, navn, område, besøg og advarsler samlet for hvert kort. Du skal kunne læse alle kontroloplysninger uden at rulle sidelæns. Kort oprettes stadig først efter OPRET KORT.
+
+Automatiske touchprøver kører i Chromium og WebKit med fiktive data ved telefon/tablet i begge retninger. Egen iPhone/iPad-prøve med skærmtastatur og browserens værktøjslinjer er fortsat relevant; en simuleret browser er ikke en fysisk enhed.
+
+## Fra beta.57
 
 W76/W77 · Retter adressehentning i kortudsnit og langsomme kortforslag.
 

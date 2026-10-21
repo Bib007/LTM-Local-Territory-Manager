@@ -95,3 +95,26 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .onboardingTasks{padding:12px 16px;margin-bottom:16px}.onboardingTasks>summary{font-size:14px;font-weight:600;cursor:pointer;line-height:1.5}.onboardingTasks>p{font-size:12px;line-height:1.5;margin:10px 0}.onboardingTasks .onboardingChecklist{margin:8px 0;padding-left:22px}.onboardingTasks .onboardingChecklist li{padding:7px 0;font-size:12px;line-height:1.4}.onboardingTasks .onboardingChecklist .actions{margin-top:5px;gap:5px}.onboardingTasks .onboardingChecklist button{padding:5px 8px;font-size:11px;min-height:28px}
 
 @media(min-width:751px){.betaChannel .brandIdentity{padding-right:0}.betaChannel .brandIdentity b{position:static;font-size:12px}}
+
+/* Touch screens need room for fingers and readable fields without automatic zoom. */
+@media screen and (any-pointer:coarse){
+ button,button.taskCheck,.onboardingTasks .onboardingChecklist button{min-width:44px;min-height:44px}
+ input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px;min-height:44px}
+ label.check{min-height:44px;padding:6px 0}
+ .dialogClose{min-width:44px;min-height:44px}
+ dialog{max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overscroll-behavior:contain;scroll-padding:14px}
+ .leaflet-control-zoom a{width:44px;height:44px;line-height:44px}
+ .navGroup summary,.chartData summary,.onboardingTasks>summary{min-height:44px;padding-top:12px;padding-bottom:12px}
+ .toolbar>input,.toolbar>select{min-width:0}
+}
+
+.setupCellLabel{display:none}
+@media screen and (max-width:600px){
+ .setupCardTable,.setupCardTable tbody,.setupCardTable tr,.setupCardTable td{display:block;width:100%;min-width:0;max-width:100%}
+ .setupCardTable thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .setupCardTable tbody tr{border:1px solid var(--line);border-radius:6px;padding:10px;margin:12px 0}
+ .setupCardTable td{border:0;padding:8px 0;overflow-wrap:anywhere}
+ .setupCardTable td input{width:100%;min-width:0}
+ .setupCardTable .setupCellLabel{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+ .setupCardTable .warning{white-space:normal;overflow-wrap:anywhere;line-height:1.6}
+}

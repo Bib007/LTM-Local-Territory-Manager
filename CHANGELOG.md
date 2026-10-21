@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.58 · Bedre touchbetjening på telefon og tablet
+
+W75: På touchskærme får knapper, formularfelter, menuer og kortets zoom større trykflader. Formulartekst er mindst 16 pixels, så felter på iPhone/iPad ikke alene udløser automatisk zoom på grund af lille tekst. Dialoger tilpasses også skærmens aktuelle højde i liggende visning og holder rulning inde i dialogen.
+
+På smalle skærme vises hvert kortforslag som en samlet lodret række med nummer, navn, område, besøg og kontrol/advarsler. Alle felter kan gennemgås uden at rulle tabellen sidelæns. Tastatur- og skærmlæseroplysninger samt oprettelsesgodkendelsen bevares. Skrivebordsvisning og print ændres ikke.
+
 ## 1.12.0-beta.57 · Komplette adresseudsnit og kortforslag uden kort HTTP-tidsgrænse
 
 W76: Med Datafordeleren hentes adresser nu direkte fra DAR-punkter indenfor det viste udsnit. Alle postnumre i udsnittet medtages, også veje der mangler i OpenStreetMap, og grænsen på 45 OSM-vejnavne bruges ikke til denne hentning. Store udsnit opdeles i små opslag med ét fælles tidspunkt; tids-/størrelsesfejl opdeler videre, og ufuldstændighed vises tydeligt. Færdige udsnit bevares ved fejl. Baggrundens OSM-hentning er særskilt og kan fejle uden at blokere DAR-adresser. Den ældre adressekilde bevarer sine begrænsninger. Samlet distriktsgrænse er fortsat valget til større, vedvarende hentninger.

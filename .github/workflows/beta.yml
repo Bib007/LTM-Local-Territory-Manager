@@ -27,12 +27,17 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
+          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
       - name: Offline geographic editor browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
       - name: Unified setup and required tour browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_onboarding_browser.cjs
       - name: Offline daily use and publisher returns
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_desk_browser.cjs
+      - name: Touch phone and tablet daily workflows in Chromium
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 node scripts/check_desk_browser.cjs
+      - name: Touch phone and tablet daily workflows in WebKit
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit node scripts/check_desk_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks
