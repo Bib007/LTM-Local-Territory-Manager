@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.0-beta.56 · Natlig adressekontrol på Home Assistant
+
+W73: Under Opgaver kan du nu slå automatisk adressekontrol til, vælge hver 1–30 dage og et klokkeslæt i serverens lokale tid. Kontrollen bruger den gemte samlede distriktsgrænse og din Datafordeler-forbindelse. Appen skal køre i Home Assistant.
+
+Forsiden viser seneste gennemførte kontrol samt antal nye, ændrede og foreslået fjernede adresser. Alle fund venter på gennemgang og udtrykkelig godkendelse. Eksisterende distriktskort ændres ikke automatisk. En ufuldstændig hentning giver aldrig forslag om fjernelser.
+
+Ved fejl gemmes fremdriften, og opgaven prøver automatisk igen efter stigende ventetid. Genstart fortsætter samme udtræk. Manuelle hentninger, grænseændring, nulstilling og gendannelse venter, mens kontrollen arbejder eller afventer genprøve. Slå opgaven fra for at stoppe efter det aktuelle opslag.
+
 ## 1.12.0-beta.55 · Lille logo på Drive-kortet
 
 W72: Det digitale distriktskort har nu et lille LTM-logo øverst til højre med “Local Territory Manager” under. Kortets lyse baggrund, husnumre, besøgsprikker og printforside bevares. Logoet dannes lokalt uden ekstra netkald eller persondata.

@@ -42,7 +42,7 @@ class MainBoundaryStore:
             if action.endswith('.tile'):
                 records=data.get('records',[])
                 if any(not point_in_polygon([a['lng'],a['lat']],boundary['points']) for a in records):raise ValueError('Udtrækket indeholder adresser udenfor grænsen.')
-                for offset in range(0,len(records),20000):self.geo_mutate('geo.import',{'records':records[offset:offset+20000],'source':'DAR / Datafordeleren','label':'Samlet distriktsgrænse','review_changes':manifest.get('review_changes',False)})
+                for offset in range(0,len(records),20000):self.geo_mutate('geo.import',{'records':records[offset:offset+20000],'source':'DAR / Datafordeleren','label':'Samlet distriktsgrænse','review_changes':manifest.get('review_changes',False),'review_all':manifest.get('review_all',False),'check_run':manifest.get('check_run')})
                 lines=data.get('lines',[])
                 for offset in range(0,len(lines),20000):self.geo_mutate('geo.import',{'records':lines[offset:offset+20000],'source':'DAR / Datafordeleren','label':'Officielle vejlinjer · samlet grænse'})
             if manifest.get('status')=='complete':
@@ -53,8 +53,13 @@ class MainBoundaryStore:
                 for a in self.all('geo'):
                     if a.get('entity')=='address' and a.get('verified') and a.get('source','').startswith('DAR') and not a.get('retired') and a['id'] not in seen and a.get('source_id') not in seen and point_in_polygon([a['lng'],a['lat']],boundary['points']):
                         if manifest.get('review_changes'):
-                            self.put('geo',{'id':'change:'+a['id'],'entity':'address_change','kind':'retired','before':a,'after':dict(a,retired=True,retired_at=stamp()),'at':stamp()})
+                            self.put('geo',{'id':'change:'+a['id'],'entity':'address_change','kind':'retired','before':a,'after':dict(a,retired=True,retired_at=stamp()),'at':stamp(),**({'check_run':manifest['check_run']} if manifest.get('check_run') else {})})
                         else:a['retired']=True;a['retired_at']=stamp();self.put('geo',a)
+            if manifest.get('status')=='complete' and manifest.get('review_all'):
+                for change in self.all('geo'):
+                    after=change.get('after') or {}
+                    if change.get('entity')=='address_change' and change.get('check_run') and change.get('check_run')!=manifest.get('check_run') and 'lng' in after and point_in_polygon([after['lng'],after['lat']],boundary['points']):
+                        self.db.execute('DELETE FROM geo.records WHERE id=?',(change['id'],))
             manifest['updated_at']=stamp();self.put('geo',manifest);return {}
         if action=='geo.main.save':
             points=valid_polygon(data.get('points'),limit=5000)

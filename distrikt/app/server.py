@@ -24,10 +24,11 @@ from access import Access, LOGIN, private_client, write_private
 from portable import Restores, snapshot, MAX_ARCHIVE
 from sharing import Publications
 from address_source import Datafordeler
+from address_schedule import AddressSchedule
 from ui_errors import error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.55'
+VERSION='1.12.0-beta.56'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -64,6 +65,7 @@ class Server(ThreadingHTTPServer):
             self.public_url='http://%s:%s'%(host,self.server_port)
         self.restores=Restores(store,VERSION)
         self.sharing=Publications(store)
+        self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args):
@@ -132,7 +134,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/state':
                 self.server.store.purge_expired()
                 with self.server.store.lock:
-                    result=self.server.store.state();result['version']=VERSION;result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links()
+                    result=self.server.store.state();result['version']=VERSION;result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links();result['address_task']=self.server.address_schedule.status()
                 return self.send(result)
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/activity':return self.send({'items':self.server.store.activity()})
@@ -191,15 +193,18 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/beta/reset':
                 if not self.server.beta:return self.send({'error':'Nulstilling findes kun i betakanalen.'},status=404)
                 # Hold this lock until commit: a concurrent request cannot start a download.
-                with self.server.downloads.lock:
+                with self.server.address_schedule.lock, self.server.downloads.lock:
+                    if self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før nulstilling eller gendannelse.')
                     if self.server.downloads.active:raise ValueError('Vent på adressehentningen, eller sæt den på pause før nulstilling.')
                     with self.server.sharing.lock:
                         result=self.server.restores.reset_beta(data.get('confirmation'),data.get('revision'))
                     self.server.downloads.jobs.clear();self.server.downloads.suggestion_cache.clear()
                 return self.send(result)
             if self.path=='/api/restore/apply':
-                if self.server.downloads.status().get('status')=='running':raise ValueError('Sæt adressehentningen på pause før import.')
-                with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))
+                with self.server.address_schedule.lock, self.server.downloads.lock:
+                    if self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før nulstilling eller gendannelse.')
+                    if self.server.downloads.active:raise ValueError('Sæt adressehentningen på pause før import.')
+                    with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))
             if self.path=='/api/address-source/connect':return self.send(self.server.address_source.connect(data.get('api_key')))
             if self.path=='/api/address-source/check':return self.send(self.server.address_source.check())
             if self.path=='/api/address-source/diagnose':
@@ -227,12 +232,17 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/share/publish':return self.send(self.server.sharing.enqueue(data))
             if self.path=='/api/share/withdraw':return self.send(self.server.sharing.withdraw(data.get('card_id')))
             if self.path=='/api/share/retry':return self.send(self.server.sharing.retry(data.get('card_id')))
-            if self.path=='/api/geo/download':return self.send(self.server.downloads.start(data.get('kind'),data.get('data',{})))
+            if self.path=='/api/geo/download':
+                with self.server.address_schedule.lock:
+                    if self.server.address_schedule.busy():raise ValueError('Den automatiske adressekontrol kører eller venter på genprøve. Vent før en manuel hentning.')
+                    return self.send(self.server.downloads.start(data.get('kind'),data.get('data',{})))
             if self.path=='/api/geo/pause':return self.send(self.server.downloads.pause(data.get('job_id')))
             if self.path=='/api/mutate':
-                if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
-                result=self.server.store.mutate(data.get('action'),data.get('data',{}))
-                return self.send({'ok':True,'result':result,'revision':self.server.store.revision})
+                with self.server.address_schedule.lock:
+                    if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.')
+                    if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
+                    result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
+                    return self.send({'ok':True,'result':result,'revision':self.server.store.revision})
             if self.path=='/api/open-data':
                 if not self.server.access:
                     if sys.platform=='darwin':subprocess.Popen(['/usr/bin/open',str(self.server.store.root)])
@@ -305,6 +315,7 @@ def main():
     if lock is None:return
     store=Store(data);server=Server(('0.0.0.0',args.port) if args.lan else ('127.0.0.1',0),store,access_host=args.access_host if args.lan else None,password=os.environ.pop('DISTRIKT_PASSWORD',None) if args.lan else None)
     server.sharing.start()
+    server.address_schedule.start()
     run={'url':server.origin,'token':server.token,'pid':os.getpid(),'version':VERSION}
     runpath=data/'run.json';runpath.write_text(json.dumps(run));os.chmod(runpath,0o600)
     def cleanup_loop():
@@ -316,7 +327,7 @@ def main():
     signal.signal(signal.SIGTERM,shutdown);signal.signal(signal.SIGINT,shutdown)
     try:server.serve_forever(poll_interval=.2)
     finally:
-        stop_event.set();server.sharing.close();server.server_close();store.close()
+        stop_event.set();server.address_schedule.close();server.sharing.close();server.server_close();store.close()
         try:runpath.unlink()
         except FileNotFoundError:pass
         lock.close()
