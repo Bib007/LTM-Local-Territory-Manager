@@ -55,7 +55,7 @@ Har du de rette tilladelser i JW HUB, kan du ifølge mine erfaringer hente en KM
 
 ## Idéer og feedback
 
-Har du et forslag eller en kommentar til LTM? Åbn [Idéer og feedback på GitHub](https://github.com/Bib007/LTM-Local-Territory-Manager/issues/new?template=idea.yml). Forslag, billeder og kommentarer håndteres direkte af GitHub og gemmes ikke i LTM. GitHub kræver login for at oprette et issue. Alt indsendt er offentligt: brug kun opdigtede eller anonymiserede eksempler.
+Har du et forslag eller en kommentar til LTM? Åbn [Idéer og feedback](https://tally.so/r/KpY0ZV). Formularen hos Tally kræver hverken konto eller e-mail. Du kan vedhæfte op til tre billeder (JPG/JPEG/PNG/WebP, højst 10 MB hver). Indsendt tekst og bilag gemmes i projektejerens Tally-arbejdsrum; LTM sender ingen lokale data automatisk. Brug kun fiktive eksempler uden IB, rigtige distriktskort, personoplysninger eller adgangskoder. Uden kontaktoplysninger kan vi ikke svare personligt. [GitHub-issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) er fortsat en mulighed for brugere med GitHub-konto.
 
 ## Åbent projekt
 

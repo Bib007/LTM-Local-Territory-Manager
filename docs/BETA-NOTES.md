@@ -1,4 +1,10 @@
-# LTM 1.12.0-beta.58
+# LTM 1.12.0-beta.59
+
+W23 · Idéer og feedback åbner nu ejerens Tally-formular uden konto eller e-mail. Billeder er valgfrie: højst tre JPG/JPEG/PNG/WebP-filer på højst 10 MB hver. Menuen oplyser, at indsendt tekst og billeder gemmes hos Tally. Intet fra installationen vedhæftes eller udfyldes automatisk.
+
+Prøv menupunktet på telefon og computer. Kontrollér at formularen åbner i en ny fane, og at LTM bliver stående. Brug kun fiktive eksempler uden IB, rigtige distriktskort eller personoplysninger. Ejerens private vindue- og billedprøve er bekræftet; faktisk modtagelse af fiktiv tekst er kontrolleret i arbejdsrummet.
+
+## Fra beta.58
 
 W75 · Bedre touchbetjening på telefon og iPad/tablet.
 

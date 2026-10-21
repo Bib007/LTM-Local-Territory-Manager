@@ -1,8 +1,8 @@
 # Feedback uden GitHub-konto eller egen e-mail
 
-W23 · Valgt retning 21.10.2026 efter ejerens ønske: en Tally-formular med bilag. Afsenderen skal hverken logge ind på GitHub/Tally eller angive en e-mailadresse. Den eksisterende GitHub-formular bevares, indtil den nye kanal faktisk er oprettet og afprøvet.
+W23 · Valgt retning 21.10.2026 efter ejerens ønske: en Tally-formular med bilag. Afsenderen skal hverken logge ind på GitHub/Tally eller angive en e-mailadresse. Formularen er oprettet og afprøvet 21.10.2026. Beta.59 skifter appens menupunkt til den verificerede formular; GitHub-issues bevares som alternativ.
 
-## Klart til opsætning
+## Oprettet formular
 
 Formularens navn er **LTM · Idéer og feedback**. Introduktion: “Har du en idé eller fundet en fejl? Skriv den her. Du behøver ingen konto eller e-mailadresse. Uden kontaktoplysninger kan vi ikke svare dig personligt.”
 
@@ -14,7 +14,7 @@ Formularens navn er **LTM · Idéer og feedback**. Introduktion: “Har du en id
 | Sådan kan fejlen gentages | Trin med fiktive eksempler | Valgfri tekst |
 | LTM-version | Kan kopieres fra appens versionsnummer | Valgfri tekst; ingen automatisk indsamling |
 | Billeder eller tegninger | Op til tre PNG/JPEG/WebP, højst 10 MB pr. fil | Valgfrit; ingen database-, backup- eller nøglefiler |
-| Kontrollér indholdet | “Jeg har kun brugt fiktive eksempler og kontrolleret, at tekst og bilag ikke indeholder IB, rigtige distriktskort, navne, adresser, adgangskoder eller andre personoplysninger.” | Obligatorisk bekræftelse |
+| Kontrollér indholdet | “Jeg har kun brugt fiktive eksempler. Tekst og bilag er uden IB, rigtige distriktskort, navne, adresser, adgangskoder og andre personoplysninger.” | Obligatorisk bekræftelse |
 
 Ingen felter til e-mail, navn, menighed eller telefon. Ingen automatisk vedhæftning, skærmoptagelse, driftslog eller udtræk af lokale data. Ingen automatisk kopiering af indsendelser eller filadresser til offentlige GitHub-issues.
 
@@ -22,13 +22,13 @@ Takside: “Tak! Din feedback er gemt. Vi gennemgår forslagene, men kan ikke sv
 
 ## Ejerskab og aktivering
 
-Formularen skal oprettes i projektejerens Tally-arbejdsrum, så ejeren modtager og administrerer svar og bilag dér. Afsenderne behøver ingen konto. Den konto, som ejer formularen, skal være tilgængelig ved opsætning; der er endnu ingen verificeret formular eller forbindelse. Tally blev søgt i pluginoversigten 21.10.2026 uden tilgængeligt resultat. En opdigtet formularadresse må ikke sættes i appen.
+Formularen ligger i projektejerens Tally-arbejdsrum. Offentligt link: https://tally.so/r/KpY0ZV . Formularadministration og svar kræver ejerens konto; de adresser indgår ikke i appen.
 
-Når ejeren har forbindelse til arbejdsrummet: Opret først en kladde med ovenstående felter og begrænsninger. Kontrollér indstillinger og modtager, publicér formularen, og prøv den uden login med fiktiv tekst og et fiktivt billede. Bekræft, at svar og fil faktisk kan læses i ejerens arbejdsrum, at taksiden først vises ved succes, og at fil-/størrelsesgrænser fungerer. Fjern den fiktive prøve efter kontrollen. Først da kan appens menupunkt ændres til den verificerede offentlige formularadresse i en ny beta.
+Kontrol 21.10.2026: Alle planlagte felter er oprettet, og standardsprog er dansk. Kun emne, kort overskrift, beskrivelse og indholdsbekræftelse er obligatoriske. Valgfrie billeder tillader præcis .jpg/.jpeg/.png/.webp; højst tre filer, gratisgrænse 10 MB pr. fil. Tom indsendelse gav fire danske valideringsfejl. En faktisk fiktiv tekstindsendelse gav taksiden og kunne derefter læses i ejerens Submissions. Preview-prøven skabte ingen rigtig indsendelse. Ejeren bekræftede derefter, at prøven i privat browservindue med billede virker. Den fiktive tekniske tekstprøve er bevaret i arbejdsrummet; den er ikke slettet automatisk. Der er ikke afprøvet uploads over grænserne eller modtaget rigtige brugerdata i udviklingskontroller.
 
 Appen indeholder alene det offentlige formularlink. API-nøgler eller adgang til formens svar må aldrig følge med programpakken eller GitHub. Tallys navn og behandling af manuelt indsendt tekst/bilag skal fremgå, før brugeren åbner formularen. Undlad at love anonymitet over for selve tjenesteudbyderen: “uden konto eller e-mail” beskriver afsenderens formularfelter og login, ikke fravær af tekniske netværksoplysninger.
 
-W23 er fortsat åben, indtil ejerskab, formular og faktisk modtagelse er kontrolleret.
+W23: formular og ejerprøve er bekræftet; menulinket aktiveres med beta.59 efter de sædvanlige udgivelsesgates.
 
 ## Kontrollerede primære kilder
 

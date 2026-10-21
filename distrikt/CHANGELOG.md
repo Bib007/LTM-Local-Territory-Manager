@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.0-beta.59 · Feedback uden konto eller e-mail
+
+W23: Menupunktet Idéer og feedback åbner nu den verificerede Tally-formular i en ny fane. Menuen forklarer tjenesten og håndtering af manuelt indsendt tekst/billeder. Ingen lokale data, nøglefiler eller logs overføres automatisk. Ejeren har bekræftet prøven uden login og med billede.
+
 ## 1.12.0-beta.58 · Bedre touchbetjening på telefon og tablet
 
 W75: På touchskærme får knapper, formularfelter, menuer og kortets zoom større trykflader. Formulartekst er mindst 16 pixels, så felter på iPhone/iPad ikke alene udløser automatisk zoom på grund af lille tekst. Dialoger tilpasses også skærmens aktuelle højde i liggende visning og holder rulning inde i dialogen.
