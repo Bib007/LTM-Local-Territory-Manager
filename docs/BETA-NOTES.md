@@ -1,7 +1,7 @@
-# LTM 1.12.0-beta.52
+# LTM 1.12.0-beta.53
 
-W16, delopgave · Forslag til distriktsinddeling kan følge gennemgående vejforløb ved enkle forgreninger. Vejstykker skal have samme navn og præcist fælles registrerede punkter. Ingen huller, navneskift eller sløjfer gættes. Husenes lejligheder holdes sammen, og eksisterende kort bevares.
+W16, delopgave · Vandløb og jernbaner kan nu bruges som skel ved distriktsforslag. Hent først relevante udsnit igen under Kortdata → Hent veje, bygninger, vandløb og jernbaner i det viste udsnit. Ældre lokale kortdata indeholder ikke automatisk de nye forløb.
 
-Prøv med fiktive data og sikkerhedskopi: Opsæt distrikter → Områder og numre → Lav forslag. Kontrollér skel, besøgstal, husenes tilhørsforhold og adgangsforhold; prøv eventuelt Ret grænser på kortet. Der oprettes først kort efter særskilt OPRET KORT. Ændrede vejdata kræver et nyt forslag. Dansk/engelsk, smal/bred visning og eksisterende nummerering er bevaret.
+Prøv med fiktive data og sikkerhedskopi: Opsæt distrikter → Områder og numre → Lav forslag. Blå linjer viser vandløb, og grå stiplede linjer viser jernbaner. Kontrollér skel, besøgstal og passage; prøv Ret grænser på kortet. Kontrolteksten følger dansk/engelsk. Ændrede skel kræver ny forhåndsvisning. Kort oprettes først efter OPRET KORT.
 
-Dette afslutter ikke hele W16. Vandløb, jernbaner og mere komplekse vejnet kræver fortsat manuel kontrol/redigering. Der foretages ingen nye netkald. Topbar/kortlayout fra beta.51 og S-13-import fra beta.50 er uændret. Main er stabil 1.11.1.
+Huller, navneskift, sløjfer og bro-/tunnelstykker gættes ikke. Første beregning bruger forløb i lag 0 uden bro-/tunnelmærkning; øvrige hentede stykker er kontekst. Mere komplekse vejnet og yderligere skeltyper står tilbage i W16. [Læs vejledningen om naturlige skel](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/docs/NATURLIGE-SKEL.md). Main er stabil 1.11.1.
