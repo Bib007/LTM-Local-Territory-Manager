@@ -2,7 +2,7 @@
 
 [English](SLUTKONTROL.en.md)
 
-Kontrolgrundlag: beta.60 har beståede program-, platform-, pakke- og browserkontroller. Beta.61 klargøres med W81 og skal bestå samme CI før udgivelse. Main er fortsat stabil 1.11.1. Den faste udviklingsplan er afsluttet; hele ønskekøen er ikke et krav til næste stabile udgave.
+Kontrolgrundlag: beta.60 har beståede program-, platform-, pakke- og browserkontroller. Beta.61 er implementeret med W81 på kildecommit cd95b1b130bebe07c9ffc3d2c5fe380ca5058253. Program-, browser-, Windows-, HA- og pakkekontroller er bestået; Mac-jobbet står i GitHubs kø, og automatisk udgivelse afventer dette. Beta.61 er endnu ikke registreret udgivet. Main er fortsat stabil 1.11.1. Den faste udviklingsplan er afsluttet; hele ønskekøen er ikke et krav til næste stabile udgave.
 
 ## Gentagelige kontroller
 

@@ -2,7 +2,7 @@
 
 [Dansk](SLUTKONTROL.md)
 
-Verification baseline: beta.60 passed program, platform, package and browser checks. Beta.61 prepares W81 and must pass the same CI before release. Main remains stable 1.11.1. The fixed development plan is complete; the entire wishlist is not required for the next stable release.
+Verification baseline: beta.60 passed program, platform, package and browser checks. Beta.61 implements W81 in source commit cd95b1b130bebe07c9ffc3d2c5fe380ca5058253. Program, browser, Windows, HA and package checks passed; the Mac job remains queued on GitHub and gates automatic release. Beta.61 is not yet recorded as published. Main remains stable 1.11.1. The fixed development plan is complete; the entire wishlist is not required for the next stable release.
 
 ## Repeatable checks
 
