@@ -4,7 +4,7 @@
 
 Beta.54 er fuldt verificeret udgivet fra ec83cbf1290efda2c21e5b4ed5987747a27c07f0: Checks 39610820291, Platformskontrol 39610820462 og alle syv HA-job i 39610820295 er completed/success. ZIP-SHA256 665ce7964386f8a57987cfae11296b5bf81d0fd79a0d0437c0422415fcff7d9a matcher lokal opstartskontrolleret bygning. Betakanalen er beta.54/8788, main stabil 1.11.1. W70/W71 afsluttes: 58 af 71 punkter, cirka 82 %, og 13 åbne.
 
-Ny ejerbesked i Google-planen: Vent med at oversætte til engelsk. Dette er en ændring af W58's prioritet, ikke en ny funktion eller et ekstra ønskepunkt. W58 udsættes efter ejerens ønske; eksisterende sprogvalg og oversættelser bevares. Dansk er arbejdssprog. Den næste aktive udviklingsopgave er fortsat W16, mere komplekse vejnet; derefter feedback og opdateret webdemo efter den øvrige kø. Kritiske blokerede punkter bevarer deres status. Ønskebeskeden ryddes først fra Google, når denne ændring er gemt og læst tilbage på develop.
+Ny ejerbesked i Google-planen: Vent med at oversætte til engelsk. Dette er en ændring af W58's prioritet, ikke en ny funktion eller et ekstra ønskepunkt. W58 udsættes efter ejerens ønske; eksisterende sprogvalg og oversættelser bevares. Dansk er arbejdssprog. Ejeren har nu også bedt om at springe vejnet og øvrig automatisk kortgenerering over for nu. W16 er parkeret; det lokale vejnetforsøg er gemt særskilt og er ikke udgivet. Engelsk oversættelse venter til appen er færdig. Den aktive kø er feedback uden egen e-mail/GitHub-konto, nyt diskret logo på Drive-kortet og derefter opdateret webdemo. Kritiske blokerede punkter bevarer deres status. Ønskebeskeden ryddes først fra Google, når denne ændring er gemt og læst tilbage på develop.
 
 ## Ny ejeropfølgning · W70/W71 · registreret 21.10.2026
 
@@ -666,3 +666,10 @@ Beta.54 afventer sine egne endelige udgivelseskontroller. W70/W71 tælles endnu 
 Platformskontrol 39610820462 har Windows og HA completed/success, mens det særskilte, identiske Mac-desktopjob 119258878837 stadig står queued uden runner. Dette er en ekstern kø, ikke et observeret testnedbrud; der er ikke ændret eller sprunget kontrol over. W70/W71 er udgivet, men den formelle samlede afslutning og fremdrift fastholdes på 56/71 og 15 åbne, indtil den sidste kontrol er completed/success. Herefter bliver fremdriften 58/71, cirka 82 %, og 13 åbne. Næste udviklingspunkt er resten af W16. Den aktuelle status øverst og dette afsnit erstatter de tidligere klargøringsafsnit som statuskilde.
 
 Udgivelse: https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.0-beta.54
+
+
+## W72 · Lille logo på det digitale Drive-kort · registreret 21.10.2026
+
+Ejeren ønsker et lille eksisterende LTM-logo med teksten “Local Territory Manager” i lille størrelse under logoet på det digitale distriktskort til Google Drive. Brug projektets eksisterende identitet, bevar kortets læsbarhed, lyse baggrund, offentlige afgrænsning og udtrykkelige publiceringsgodkendelse. Ingen privat reference eller private kort kopieres til GitHub. Prioriteres som næste lille betaopgave. Ikke udført ved registreringen. Ny total: 72 ønsker, 58 afsluttet/afklaret, 14 åbne, cirka 81 %.
+
+W23-opfølgning: Ejeren overlader kanalvalget til LTM og ønsker en formular, hvor afsenderen ikke skal bruge egen e-mail. Undersøg en anonym formular med mulighed for bilag, uden GitHub-login og uden at sende driftsdata, IB eller lokale databaser automatisk. En modtager og faktisk fungerende formulartjeneste skal være på plads før funktionen kan kaldes klar. E-mailudkast er fravalgt. Ingen central hemmelighed må indbygges i appen.
