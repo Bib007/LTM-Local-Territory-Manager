@@ -116,7 +116,7 @@ def split_polygon_path(poly, points):
     return parts
 
 
-def road_paths(roads, poly):
+def road_paths(roads, poly, *, unnamed='Unavngiven vej'):
     """Join same-name records only at exact, unbranched shared endpoints."""
     bounds = _box(poly)
     by_name = defaultdict(dict)
@@ -167,7 +167,7 @@ def road_paths(roads, poly):
                     seen.add(j)
                     names.append(source[records[j]])
             if len(set(points)) == len(points):
-                result.append((_canonical(points), min(names) or 'Unavngiven vej'))
+                result.append((_canonical(points), min(names) or unnamed))
     return sorted(result, key=lambda row: (-sum(math.dist(a, b) for a, b in zip(row[0], row[0][1:])), row))[:MAX_PATHS]
 
 
@@ -251,6 +251,31 @@ def network_paths(roads, poly):
                         if following not in points:
                             pending.append(points + (following,))
     return sorted(result, key=lambda row: (-len(row[0]), row))
+
+
+def divider_paths(dividers, poly):
+    """Actual unbranched surface waterways/railways; never join different kinds.
+
+    Tunnel, bridge and ambiguous layer sections remain visible context but are
+    not used to infer a continuous ground-level boundary across a missing part.
+    """
+    sources = defaultdict(list)
+    for item in dividers:
+        kind = item.get('divider_type')
+        if (kind not in ('river','stream','canal','rail') or item.get('retired')
+                or str(item.get('layer') or '0') != '0'
+                or item.get('tunnel') not in (None,'','no')
+                or item.get('bridge') not in (None,'','no')):
+            continue
+        sources[kind].append(item)
+    paths = []
+    for kind, rows in sorted(sources.items()):
+        label = 'Jernbane' if kind=='rail' else 'Vandløb'
+        for points, name in road_paths(rows, poly, unnamed=''):
+            # road_paths keeps unnamed records separate. Use an honest label
+            # here, after candidate creation, without inventing a shared name.
+            paths.append((points, label + (' · '+name if name else '')))
+    return sorted(set(paths), key=lambda row: (-sum(math.dist(a,b) for a,b in zip(row[0],row[0][1:])),row))[:MAX_PATHS]
 
 
 def path_partition(ring, groups, target, paths):

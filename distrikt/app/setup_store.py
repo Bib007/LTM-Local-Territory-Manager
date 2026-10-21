@@ -78,7 +78,7 @@ class SetupStore:
             config['onboarding']={**previous,'tasks':updated};self.put('settings',config)
 
     def setup_signature(self,ib=False):
-        return signature([self.main_boundary(),self.all('cards')+self.all('cards',deleted=True),self.all('ignored'),[a for a in self.all('geo') if a.get('entity') in ('address','road')],[a for a in self.all('settings') if a.get('id')!='config'],self.all('ib') if ib else []])
+        return signature([self.main_boundary(),self.all('cards')+self.all('cards',deleted=True),self.all('ignored'),[a for a in self.all('geo') if a.get('entity') in ('address','road','divider')],[a for a in self.all('settings') if a.get('id')!='config'],self.all('ib') if ib else []])
     def setup_remember(self,kind,payload):
         now=time.monotonic();self._setup_previews={k:v for k,v in self._setup_previews.items() if v['until']>now}
         if len(self._setup_previews)>=6:self._setup_previews.pop(next(iter(self._setup_previews)))
@@ -142,10 +142,11 @@ class SetupStore:
             if not owners:uncovered+=1
             else:buckets[owners[0]].append(a)
         local_roads=[r for r in self.all('geo') if r.get('entity')=='road']
+        local_dividers=[r for r in self.all('geo') if r.get('entity')=='divider']
         proposed=[];next_number=options['start'];numbers={c['number'].casefold() for c in cards}
         for i,(region,members) in enumerate(zip(areas,buckets)):
             if not members:continue
-            parts=partition(region['polygon'],members,region['target'],roads=local_roads)
+            parts=partition(region['polygon'],members,region['target'],roads=local_roads,dividers=local_dividers)
             if options['numbering']=='hundreds' and len(parts)>options['block']:raise UIError('Området {name} kræver flere numre end den valgte områdeblok. Vælg en større blok.',name=region['name'])
             for j,part in enumerate(parts):
                 if len(part['members'])>10000:raise ValueError('Et kort har over 10.000 adresser. Inddel det berørte område manuelt.')
@@ -156,7 +157,7 @@ class SetupStore:
                 numbers.add(number.casefold());roads=Counter()
                 for a in part['members']:roads[a['road']]+=a.get('count',1)
                 road=sorted(roads,key=lambda r:(-roads[r],r.casefold()))[0]
-                proposed.append({'key':str(len(proposed)),'number':number,'name':(region['name']+' – '+road)[:100],'area_index':i,'area_name':region['name'],'kind':region['kind'],'polygon':part['polygon'],'address_ids':[a['id'] for a in part['members']],'visits':part['visits'],'warning':part['warning']})
+                proposed.append({'key':str(len(proposed)),'number':number,'name':(region['name']+' – '+road)[:100],'area_index':i,'area_name':region['name'],'kind':region['kind'],'polygon':part['polygon'],'address_ids':[a['id'] for a in part['members']],'visits':part['visits'],'warning':part['warning'],'warning_ui':part.get('warning_ui',[])})
         if not proposed:raise ValueError('Ingen ledige adresser indenfor de valgte områder. Hent adresser først, eller kontrollér eksisterende kort og Se bort fra.')
         if len(proposed)>500:raise ValueError('Forslaget giver over 500 kort. Opret færre områder ad gangen.')
         payload={'areas':areas,'cards':proposed,'options':options,'uncovered':uncovered,'excluded':dict(excluded),'visits':sum(c['visits'] for c in proposed)}
@@ -232,6 +233,7 @@ class SetupStore:
                         houses[house]=c['key']
                     c['address_ids']=ids;c['visits']=sum(address_lookup[a].get('count',1) for a in ids)
                     c['warning']='Kontrollér besøgstallet efter grænseændringen.' if not region['target']*.5<=c['visits']<=region['target']*1.5 else ''
+                    c['warning_ui']=[]
             return dict(revised,token=self.setup_remember('cards',revised))
         if action=='setup.defaults':
             config=dict(self.require('settings','config'));config['setup_defaults']=defaults(data);self.put('settings',config);return {}

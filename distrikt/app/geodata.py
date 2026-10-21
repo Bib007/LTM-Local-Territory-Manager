@@ -207,8 +207,8 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
         w,s=valid_coordinate(bbox[:2]);e,n=valid_coordinate(bbox[2:])
         if w>=e or s>=n or (e-w)*(n-s)>0.003:raise ValueError('Zoom tættere på. Hent ét mindre område ad gangen, højst ca. 20 km².')
         bounds=f'{s},{w},{n},{e}'
-        query=f'[out:json][timeout:15];(way["building"]({bounds});way["highway"]({bounds}););out tags geom;'
-        progress(message='Henter offentlige vej- og bygningsdata til det viste udsnit…')
+        query=f'[out:json][timeout:15];(way["building"]({bounds});way["highway"]({bounds});way["waterway"~"^(river|stream|canal)$"]({bounds});way["railway"="rail"]({bounds}););out tags geom;'
+        progress(message='Henter offentlige veje, bygninger, vandløb og jernbaner til det viste udsnit…')
         result=self.request('overpass-api.de','/api/interpreter',query=query)
         if result.get('remark'):raise ValueError('Kortkilden returnerede en ufuldstændig hentning. Zoom tættere på og prøv igen.')
         records=[];roads=set()
@@ -216,12 +216,16 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
             tags=item.get('tags',{});points=[[p['lon'],p['lat']] for p in item.get('geometry',[]) if p and 'lon' in p]
             if len(points)<2:continue
             points=[valid_coordinate(p) for p in points]
-            typ='building' if 'building' in tags else 'road'
+            if 'building' in tags:typ='building'
+            elif 'highway' in tags:typ='road'
+            elif tags.get('waterway') in ('river','stream','canal') or tags.get('railway')=='rail':typ='divider'
+            else:continue
             if typ=='building' and len(points)<4:continue
             records.append({'id':'osm:'+str(item['id']),'entity':typ,'points':points,'source':'OpenStreetMap','name':tags.get('name',''),
                 'building_type':tags.get('building',''),'road_type':tags.get('highway','')})
+            if typ=='divider':records[-1].update(divider_type=tags.get('waterway') if tags.get('waterway') in ('river','stream','canal') else 'rail',layer=tags.get('layer','0'),bridge=tags.get('bridge',''),tunnel=tags.get('tunnel',''))
             if typ=='road' and tags.get('name'):roads.add(tags['name'])
-        if not records:raise ValueError('Ingen veje eller bygninger fundet. Prøv et andet udsnit.')
+        if not records:raise ValueError('Ingen veje, bygninger, vandløb eller jernbaner fundet. Prøv et andet udsnit.')
         saved=self.store.mutate('geo.import',{'records':records,'label':'Lokalt kortudsnit','source':'OpenStreetMap','bbox':[w,s,e,n]})
         warnings=[];road_results=[]
         if with_addresses:
@@ -234,4 +238,4 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
                 except ValueError as e:warnings.append(road+': '+str(e))
             progress(completed=len(roads))
         return dict(saved,roads_downloaded=len(road_results),warnings=warnings,complete=False,
-                    note='Bygninger og vejnavne er fra OSM. Kun succesfuldt hentede DAR-veje har en komplet vej-adresseliste. Kontrollér manglende veje og bygninger.')
+                    note='Veje, bygninger, vandløb og jernbaner er fra OSM. Kun succesfuldt hentede DAR-veje har en komplet vej-adresseliste. Kontrollér manglende veje og adresser.')

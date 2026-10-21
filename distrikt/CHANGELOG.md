@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0-beta.53 · Vandløb og jernbaner som skel
+
+W16, delopgave: Hentning af et kortudsnit medtager nu også offentlige vandløb og jernbaner fra OpenStreetMap. Distriktsforslag kan følge egnede gennemgående forløb før vejforslagene. Blå vandløb og grå stiplede jernbaner vises i editoren og i den lokale kortbaggrund; husnumre og besøgsprikker beholder deres styrke. Ældre kortdata skal opdateres ved at hente relevante udsnit igen.
+
+Første beregning bruger sammenhængende forløb i lag 0 uden bro-/tunnelmærkning. Huller, navneskift, forgreninger og bro-/tunnelstykker forbindes ikke ved gæt. Alle adresser og lejligheder kontrolleres med de eksisterende geometriregler, og ændrede skel kræver ny forhåndsvisning. Forslag kan fortsat rettes og kræver OPRET KORT før oprettelse. Kontroltekster om skel følger dansk/engelsk og bevarer kildens navne. W16 er fortsat delvist åben for mere komplekse vejnet og yderligere skeltyper. [Vejledning om naturlige skel](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/docs/NATURLIGE-SKEL.md).
+
 ## 1.12.0-beta.52 · Forslag langs enkle vejforgreninger
 
 W16, delopgave: Automatisk distriktsinddeling kan nu også afprøve gennemgående forløb i enkle forgrenede vejnet. Kun lokale vejstykker med samme navn og præcist fælles registrerede punkter forbindes; knæk og kurver bevares. Eksisterende uforgrenede forslag prøves først. Besøgstallet og de hidtidige geometrikontroller vælger mellem mulige faktiske vejforløb, før et geometrisk reserveforslag anvendes.
