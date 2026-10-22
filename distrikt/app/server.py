@@ -26,10 +26,10 @@ from sharing import Publications
 from address_source import Datafordeler
 from address_schedule import AddressSchedule
 from setup_jobs import SetupJobs
-from ui_errors import error_payload
+from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.0-beta.60'
+VERSION='1.12.0-beta.61'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -131,7 +131,7 @@ class Handler(BaseHTTPRequestHandler):
                 from setup_store import ib_template
                 return self.send(ib_template(),'text/csv',headers={'Content-Disposition':'attachment; filename=IB-import-skabelon.csv'})
             if path=='/api/geo':return self.send(self.server.store.geo_state())
-            if path=='/api/setup/job':return self.send(self.server.setup_jobs.status(q.get('id',[''])[0]))
+            if path=='/api/setup/job':raise UIError('Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.')
             if path=='/api/geo/job':return self.send(self.server.downloads.status(q.get('id',[''])[0]))
             if path=='/api/geo/suggest':return self.send(self.server.downloads.suggest(q.get('road',[''])[0],q.get('postcode',[''])[0]))
             if path=='/api/state':
@@ -241,8 +241,10 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(self.server.downloads.start(data.get('kind'),data.get('data',{})))
             if self.path=='/api/geo/pause':return self.send(self.server.downloads.pause(data.get('job_id')))
             if self.path=='/api/mutate':
-                if data.get('action') in ('setup.preview','setup.adjust.preview') and isinstance(data.get('data'),dict) and data['data'].get('_async') is True:
-                    return self.send({'ok':True,'result':self.server.setup_jobs.start(data['action'],data['data']),'revision':self.server.store.revision})
+                # W81: retain implementation in setup_store/setup_jobs for later development,
+                # but reject both synchronous and asynchronous public entry points.
+                if data.get('action') in ('setup.preview','setup.adjust.preview','setup.apply'):
+                    raise UIError('Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.')
                 with self.server.address_schedule.lock:
                     if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.')
                     if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
