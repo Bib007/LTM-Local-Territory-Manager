@@ -23,6 +23,8 @@ Fysisk printer, egen HA/telefon/VPN, eget Google-samtykke og adgang ved afleveri
 
 Se [print](PRINT.md), [installation](INSTALL.md), [betakanal](BETA.md), [begrænsninger](LIMITATIONS.md) og [køreplan](../KOREPLAN.md).
 
+[Kladde til næste stabile udgivelse](NAESTE-STABILE-UDGAVE.md) samler nyheder, opdateringsvej og de begrænsninger, der skal være synlige ved publicering.
+
 ## Konkret vej til næste stabile udgave
 
 1. W81-beta: kontrollér fravær af automatiske forslag, manuel korttegning, lokal IB-import og bevarede kort. Kræv grønne program-, browser-, platform- og HA-pakkekontroller på den præcise udgivelseskode.
