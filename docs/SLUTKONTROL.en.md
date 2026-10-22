@@ -2,7 +2,7 @@
 
 [Dansk](SLUTKONTROL.md)
 
-Verification baseline: beta.60 passed program, platform, package and browser checks. Beta.61 implements W81 in source commit cd95b1b130bebe07c9ffc3d2c5fe380ca5058253. Program, browser, Windows, HA and package checks passed; the Mac job remains queued on GitHub and gates automatic release. Beta.61 is not yet recorded as published. Main remains stable 1.11.1. The fixed development plan is complete; the entire wishlist is not required for the next stable release.
+Verification baseline: beta.61 was verified published on 22 October 2026 from source commit cd95b1b130bebe07c9ffc3d2c5fe380ca5058253. Program, browser, Mac, Windows, HA and package checks passed. The previously cancelled Mac job passed on rerun without code changes, and the HA release gate completed successfully. Main remains stable 1.11.1. The fixed development plan is complete; the entire wishlist is not required for the next stable release.
 
 ## Repeatable checks
 
@@ -11,7 +11,7 @@ Verification baseline: beta.60 passed program, platform, package and browser che
 - Browser: `scripts/check_geo_browser.cjs` and `scripts/check_access_browser.cjs`, with isolated Playwright 1.56.1 via `PLAYWRIGHT_MODULE`. No browser dependency is added to the app. Tests cover 320/390/768/1440 pixels, invented login/API, real DOM, focus, front/back printing and complete report PDFs. External services use test responses.
 - Packaging: `python scripts/test_build_release.py` and `python -m unittest discover -s scripts -p test_build_beta.py -v`. Checks cover complete forms, packaged guide links, checksums, reproducibility, no runtime data and isolated beta identity.
 - Real archives: `python scripts/check_release_smoke.py` verifies reproducibility, all HA checksums and real extracted startup with empty temporary data and a matching version. `python scripts/build_release.py` and `python scripts/build_beta.py --output /tmp/ltm-ha-beta-review`. Verify ZIP integrity, manifest and checksum. Blank originals and the import template are included; private databases, keys and connection files are excluded.
-- GitHub additionally runs multiple Python versions, Mac/Windows launcher checks and an HA container check before publishing beta automatically. Stable publication is separate.
+- GitHub additionally runs multiple Python versions, Mac/Windows launcher checks and an HA container check before publishing beta automatically. On develop, stable publication now depends on the reusable Checks and Platformskontrol workflows at the exact same commit. Publishing requires both to succeed and runs only on main, retaining the version guard and immutable published archives. Actual stable publication is reserved for the separate promotion to main.
 
 ## Completed areas
 

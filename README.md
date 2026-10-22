@@ -11,20 +11,20 @@
 
 ## Ny opstart og kortimport på develop
 
-Første start spørger til enkel udlevering eller kortfunktion, KML, eksisterende kortfordeling og IB. Svarene giver en personlig plan og en valgfri rundtur i appen. Guiden kan åbnes igen under Indstillinger.
+Første start spørger til enkel udlevering eller kortfunktion, KML, eksisterende kortfordeling og IB. Svarene giver en personlig plan. Førstegangsopsætningen afsluttes med en rundtur i appen, som kan genåbnes under Indstillinger.
 
 Har du allerede fordelt adresser på kort og områder, kan du hente Excel-skabelonen i **Indstillinger → Avanceret → Importér eksisterende distriktskort**. XLSX og CSV kontrolleres lokalt; alle fejl skal rettes før samlet oprettelse. [Kortimport](docs/KORTIMPORT.md) og [nye ønsker](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/OENSKELISTE.md).
 
 ## Kom i gang
 
-**Udviklingsudgave: 1.12.0-beta.21.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. [Køreplan: 70 %](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
+**Udviklingsgren: develop.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. Betakanalen har separat app og port; følg [betavejledningen](docs/BETA.md). Den faste udviklingsplan er afsluttet; [slutkontrollen](docs/SLUTKONTROL.md) viser, hvad der mangler før næste stabile udgave.
 
 [![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
-**1.11.0** er det stabile udgangspunkt. Den videre udvikling følger [udviklingsplanen](ROADMAP.md).
+**1.11.1** er det stabile udgangspunkt. Den videre udvikling følger [udviklingsplanen](ROADMAP.md).
 
 - **Home Assistant OS:** Brug knappen ovenfor, og vælg **Distrikt → Installer** i HA. Senere programopdateringer hentes direkte i HA. [Dansk installationsguide](docs/INSTALL.md).
-- **Mac / Windows:** Når udgivelsen er klar, hentes den komplette ZIP fra [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases). Installer Python 3.9 eller nyere én gang, og åbn den relevante `Start-Distrikt`-fil i `Distrikt-lokal`. Docker og pip-pakker er ikke nødvendige.
+- **Mac / Windows:** Hent den komplette stabile ZIP fra [seneste stabile udgivelse](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest). Installer Python 3.9 eller nyere én gang, og åbn den relevante `Start-Distrikt`-fil i `Distrikt-lokal`. Docker og pip-pakker er ikke nødvendige.
 - **Eksisterende installation:** Bevar den fungerende app og dens data. Følg [opdateringsvejledningen](docs/INSTALL.md), og tag en privat sikkerhedskopi først.
 
 Home Assistant kan holde appen tændt hjemme, mens den samme installation åbnes fra telefon, iPad eller computer. Udefra forbindes enheden til **VPN på egen router**, hvorefter appens private adresse åbnes. Appen har eget login og egen port; den bruger ikke Ingress eller Nabu Casa.
@@ -38,6 +38,8 @@ Home Assistant kan holde appen tændt hjemme, mens den samme installation åbnes
 - IB opbevaret lokalt og udskrevet på kortets bagside.
 - Print af forsider, bagsider, S-13 og rapporter efter tjenesteår: 1. september–31. august.
 - Valgfri Google Drive-deling af et gennemgået PNG-kort med stabil QR-kode.
+
+På develop er automatiske forslag til distriktsgrænser og kortinddeling sat på pause fra beta.61. Brug den manuelle korteditor. Eksisterende kort, adressehentning og lokal IB-import bevares; generatorens kode ligger i [arkivet til senere udvikling](docs/ARKIVERET-AUTOFORDELING.md).
 
 [Åbn webdemoen direkte](https://bib007.github.io/LTM-Local-Territory-Manager/) uden installation eller GitHub-login. Den bruger udelukkende opdigtede data og kan ikke åbne eller importere installationens private data. [Om demoen](demo/README.md).
 

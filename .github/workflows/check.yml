@@ -4,6 +4,7 @@ on:
     branches: [main, develop]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -18,6 +19,8 @@ jobs:
         run: python scripts/test_build_release.py
       - name: Real archive startup and checksums
         run: python scripts/check_release_smoke.py
+      - name: Isolated HA beta package contracts
+        run: python -m unittest discover -s scripts -p test_build_beta.py -v
   python:
     runs-on: ubuntu-latest
     strategy:
@@ -42,35 +45,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: node distrikt/tests/test_frontend.cjs
-      - run: node distrikt/tests/test_address_source_ui.cjs
-      - run: node distrikt/tests/test_backup_save.cjs
-      - run: node distrikt/tests/test_map_gestures.cjs
-      - run: node distrikt/tests/test_welcome.cjs
-      - run: node distrikt/tests/test_onboarding.cjs
-      - run: node distrikt/tests/test_i18n.cjs
-      - run: node distrikt/tests/test_desk_language.cjs
-      - run: node distrikt/tests/test_publisher_search.cjs
-      - run: node distrikt/tests/test_digital_card.cjs
-      - run: node distrikt/tests/test_work_lists_language.cjs
-      - run: node distrikt/tests/test_dashboard_controls.cjs
-      - run: node distrikt/tests/test_card_workflow_language.cjs
-      - run: node distrikt/tests/test_settings_language.cjs
-      - run: node distrikt/tests/test_report_language.cjs
-      - run: node distrikt/tests/test_map_overview_language.cjs
-      - run: node distrikt/tests/test_address_workflow_language.cjs
-      - run: node distrikt/tests/test_geo_workflow_language.cjs
-      - run: node distrikt/tests/test_setup_workflow_language.cjs
-      - run: node distrikt/tests/test_share_workflow_language.cjs
-      - run: node distrikt/tests/test_request_safety.cjs
-      - run: node distrikt/tests/test_confirmation_safety.cjs
-      - run: node distrikt/tests/test_transfer_safety.cjs
-      - run: node distrikt/tests/test_write_followups.cjs
-      - run: node distrikt/tests/test_domain_errors.cjs
-      - run: node distrikt/tests/test_special_write_safety.cjs
-      - run: node distrikt/tests/test_login_ui.cjs
-      - run: node distrikt/tests/test_dialog_focus.cjs
-      - run: node distrikt/tests/test_print_workflow.cjs
+      - name: All synthetic JavaScript contracts
+        run: for testfile in distrikt/tests/test_*.cjs; do node "$testfile" || exit 1; done
       - name: Install isolated browser test tool
         run: |
           npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1

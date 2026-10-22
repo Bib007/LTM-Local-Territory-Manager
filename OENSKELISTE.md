@@ -1,6 +1,14 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel status · 21.10.2026
+## Aktuel status · 22.10.2026
+
+Beta.61 er nu verificeret udgivet fra `cd95b1b130bebe07c9ffc3d2c5fe380ca5058253`. HA-gate [39639385202](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39639385202) er completed/success efter genkørsel af det afbrudte Mac-job; Mac-prøven startede og bestod uden kodeændring. Alle øvrige job og publicering er grønne. Den særskilte Platformskontrol 39639385166 og Checks 39639385138 er også completed/success. Udgivelsens HA-ZIP matcher SHA-256 `224a0b14302aa3169e5e8e983fda3e1902938a32b284a498e61851831b4f1200`. Betagrenen er læst tilbage som beta.61/8788; main er fortsat 1.11.1/8787. W81 er afsluttet: automatiske grænse-/inddelingsforslag er ude af aktiv app og API, mens kode/prøver, manuel korttegning, IB-import og eksisterende data bevares.
+
+Fremdrift: 67 af 81 ønsker afsluttet/afklaret, 14 åbne, cirka 83 %. W78 afventer ejerens samme HA-hentning; W61 afventer ekstern GitHub-oprydning. W06/W28/W56 kræver fortsat sikkerhedsafklaring. W16, W58 og W74 forbliver parkeret som aftalt. ADS-fanen i Google-planen er oprettet med synlighed, målgruppe, præsentation, lancering og frivillig feedback. Den er en idé-/lanceringsplan, ikke en igangsat kampagne.
+
+Stabil klargøring 22.10.2026: udgivelsesjobbet på develop er koblet direkte til genbrugelige Checks og Platformskontrol fra samme commit. Det venter på alle program-, browser-, Mac-/Windows-, HA- og pakkekontroller og må kun publicere fra main. Checks kører nu alle `test_*.cjs`, også prøver som manglede i den tidligere håndholdte liste, samt HA-betapakkeprøver. README på dansk/engelsk er rettet for gammel beta.21/70 %-status, stabil grundversion, rundtur, demolink og den fjernede autofordeling. YAML/dependens-/rettigheds-/versionskontrol samt pakkeprøver og arkivstart er udført lokalt; faktisk stabil publicering er ikke forsøgt. Ingen ny beta eller ændret appkode er nødvendig til denne klargøring.
+
+## Historik · kontrolstatus registreret 21.10.2026
 
 Senest fuldt verificerede udgivelse er beta.60 fra runtime-commit 16e9e2c5138560ea49e5631ffa739697e59d669f. Alle HA-job inklusive publicering i 39636542723 og Platformskontrol 39636542738 er completed/success. Den særskilte Checks-kørsel fejlede efter en helsidesoptagelse ændrede den simulerede touchvisning. Kontrolrettelsen i 2ce4cacd6b3df5190a2d33180f05e168686b6dd8 tager et viewportbillede og bevarer alle læsbarheds-/skriftstørrelseskrav; Checks 39637398049 er completed/success. Denne testændring giver en identisk programpakke: HA-ZIP-SHA256 99ce9d2265e43f8b38cac47d96050ff14460c6185f55b7b39a17a1ea3616c72d matcher den udgivne pakke. Betakanalen er læst tilbage som beta.60/8788. Main er stabil 1.11.1. Ingen udgivet beta er overskrevet.
 

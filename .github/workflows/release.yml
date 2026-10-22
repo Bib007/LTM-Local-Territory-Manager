@@ -10,7 +10,13 @@ concurrency:
   group: stable-release
   cancel-in-progress: false
 jobs:
+  checks:
+    uses: ./.github/workflows/check.yml
+  platforms:
+    uses: ./.github/workflows/platforms.yml
   release:
+    if: github.ref == 'refs/heads/main'
+    needs: [checks, platforms]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,23 +27,6 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-      - run: python -m unittest discover -s distrikt/tests -v
-      - run: TZ=Europe/Copenhagen node distrikt/tests/test_frontend.cjs
-      - run: node distrikt/tests/test_welcome.cjs
-      - run: node distrikt/tests/test_onboarding.cjs
-      - run: node distrikt/tests/test_i18n.cjs
-      - run: node distrikt/tests/test_desk_language.cjs
-      - run: node distrikt/tests/test_work_lists_language.cjs
-      - run: node distrikt/tests/test_dashboard_controls.cjs
-      - run: node distrikt/tests/test_card_workflow_language.cjs
-      - run: node distrikt/tests/test_settings_language.cjs
-      - run: node distrikt/tests/test_report_language.cjs
-      - run: node distrikt/tests/test_map_overview_language.cjs
-      - run: node distrikt/tests/test_address_workflow_language.cjs
-      - run: python scripts/test_build_release.py
       - run: python scripts/build_release.py
       - name: Create versioned release once
         env:

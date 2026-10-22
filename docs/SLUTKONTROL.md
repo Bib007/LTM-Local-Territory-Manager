@@ -2,7 +2,7 @@
 
 [English](SLUTKONTROL.en.md)
 
-Kontrolgrundlag: beta.60 har beståede program-, platform-, pakke- og browserkontroller. Beta.61 er implementeret med W81 på kildecommit cd95b1b130bebe07c9ffc3d2c5fe380ca5058253. Program-, browser-, Windows-, HA- og pakkekontroller er bestået; Mac-jobbet står i GitHubs kø, og automatisk udgivelse afventer dette. Beta.61 er endnu ikke registreret udgivet. Main er fortsat stabil 1.11.1. Den faste udviklingsplan er afsluttet; hele ønskekøen er ikke et krav til næste stabile udgave.
+Kontrolgrundlag: beta.61 er verificeret udgivet 22.10.2026 fra kildecommit cd95b1b130bebe07c9ffc3d2c5fe380ca5058253. Program-, browser-, Mac-, Windows-, HA- og pakkekontroller er bestået. Det tidligere afbrudte Mac-job er genkørt uden kodeændring, og HA-udgivelsesgaten er completed/success. Main er fortsat stabil 1.11.1. Den faste udviklingsplan er afsluttet; hele ønskekøen er ikke et krav til næste stabile udgave.
 
 ## Gentagelige kontroller
 
@@ -11,7 +11,7 @@ Kontrolgrundlag: beta.60 har beståede program-, platform-, pakke- og browserkon
 - Browser: `scripts/check_geo_browser.cjs` og `scripts/check_access_browser.cjs`, med Playwright 1.56.1 som isoleret testværktøj via `PLAYWRIGHT_MODULE`. Ingen browserafhængighed tilføjes appen. 320/390/768/1440 pixels, fiktivt login/API, rigtig DOM, dialogfokus, front/bagside samt samlet rapport som PDF. Eksterne tjenester erstattes af prøvesvar.
 - Pakning: `python scripts/test_build_release.py` og `python -m unittest discover -s scripts -p test_build_beta.py -v`. Kontrollerer fuldstændige formularer, vejledningslinks, checksum, reproducerbar ZIP, programfiler uden runtime-data og separat betakanal.
 - Faktiske pakker: `python scripts/check_release_smoke.py` prøver reproducerbar ZIP, alle HA-checksums og faktisk start af den udpakkede app med tomme midlertidige data og korrekt versionsvisning. `python scripts/build_release.py` og `python scripts/build_beta.py --output /tmp/ltm-ha-beta-review`. ZIP-integritet, indholdsfortegnelse og checksum kontrolleres. Tomme originalformularer og importskabelonen medfølger; private databaser, nøgler og forbindelsesfiler gør ikke.
-- GitHub kræver desuden programprøver på flere Python-versioner, Mac-/Windows-startprøver og HA-containerkontrol før automatisk betaudgivelse. En stabil udgivelse er et særskilt trin.
+- GitHub kræver desuden programprøver på flere Python-versioner, Mac-/Windows-startprøver og HA-containerkontrol før automatisk betaudgivelse. På develop er det stabile udgivelsesflow nu koblet til de samme genbrugelige Checks- og Platformskontrol-workflows fra præcis samme commit. Publiceringsjobbet afhænger af begge, kræver main og bevarer versionskontrol samt uforanderlige udgivne pakker. Selve stabile publicering køres først ved den særskilte promovering til main.
 
 ## Afsluttede områder
 

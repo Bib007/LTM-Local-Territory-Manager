@@ -13,19 +13,19 @@
 
 ## New setup and card import on develop
 
-First launch asks about assignments only or maps, KML, existing card divisions and do-not-call records. Your answers create a personal plan and an optional tour through the real application pages. Reopen it from Settings.
+First launch asks about assignments only or maps, KML, existing card divisions and do-not-call records. Your answers create a personal plan. A tour through the real application pages completes first-time setup; reopen it from Settings later.
 
 Already divided your addresses into cards? Download the Excel template from **Settings → Advanced → Import existing territory cards**. XLSX and CSV are reviewed locally; every error must be fixed before creating cards together. [Card import guide](docs/KORTIMPORT.en.md).
 
 ## Start here
 
-**Development version: 1.12.0-beta.21.** This branch prepares the next version. Use [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) for stable installations. The ordinary HA link below follows main. [Readiness plan: 70%](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
+**Development branch: develop.** This branch prepares the next version. Use [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) for stable installations. The ordinary HA link below follows main. Beta has a separate app and port; see the [beta guide](docs/BETA.md). The fixed development plan is complete; [release verification](docs/SLUTKONTROL.en.md) records the remaining stable-release steps.
 
 [Add LTM to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
-The stable baseline is **1.11.0**. The installed application interface is currently Danish. A separate Danish/English browser demo is now in the repository; [publishing instructions](docs/DEMO-HOSTING.en.md) explain the remaining hosting setup. The demo has no public URL yet. Guided onboarding is prepared on a development branch; full app translation remains in progress. Read [the known limitations](docs/LIMITATIONS.en.md) before relying on a feature.
+The stable baseline is **1.11.1**. Danish is the default language. Development includes English controls; complete translation is still under review. A separate fictional browser demo is [available here](https://bib007.github.io/LTM-Local-Territory-Manager/). Its live browser verification remains outstanding. Read [the known limitations](docs/LIMITATIONS.en.md) before relying on a feature.
 
-- **Mac / Windows:** download the packaged ZIP from [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases), extract it, install Python 3.9+ once, then open the matching `Start-Distrikt` launcher in `Distrikt-lokal`. No Docker or pip packages needed.
+- **Mac / Windows:** download the packaged ZIP from the [latest stable release](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), extract it, install Python 3.9+ once, then open the matching `Start-Distrikt` launcher in `Distrikt-lokal`. No Docker or pip packages needed.
 - **From source:** open `distrikt/Start-Distrikt.command` on Mac or `distrikt/Start-Distrikt.cmd` on Windows. Alternatively: `python3 distrikt/app/server.py`. Use a verified release when updating a working installation.
 - **Home Assistant OS:** an optional app with its own LAN address and login. [Installation and updates](docs/INSTALL.en.md#home-assistant-os). It does not use Ingress or Nabu Casa.
 
@@ -40,10 +40,12 @@ New installation? Start with [your first session](docs/FIRST-STEPS.en.md). Googl
 - Check territories out and in; see what is assigned, in the carry folder or in the storage box.
 - Add temporary numbered cards first and fill in addresses and boundaries later.
 - Manage publishers, assignments, completion history, notes and tasks.
-- Draw/import boundaries, select individual addresses, ignore non-visit addresses and propose card divisions.
+- Draw/import boundaries, select individual addresses and ignore non-visit addresses.
 - Keep do-not-call records locally; print them on the card back.
 - Print card fronts/backs, S-13 and reports by service year (1 September–31 August).
 - Optionally publish an approved PNG to Google Drive with a stable QR link. Databases and do-not-call lists are never uploaded by this feature.
+
+On develop, automatic boundary and card division proposals are paused from beta.61. Use the manual map editor. Existing cards, address downloads and local do-not-call import are preserved; the [generator implementation is retained for future development](docs/ARKIVERET-AUTOFORDELING.md).
 
 ## Local data, deliberate sharing
 
