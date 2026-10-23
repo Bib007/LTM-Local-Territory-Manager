@@ -74,7 +74,7 @@ const contracts={};const initial=run('JSON.stringify(state)');
  };
  run("api=realApi;GeoUI.preview=realPreview;state.revision='before-real-save';GeoUI.whole=false;GeoUI.target='';GeoUI.ids=new Set(['a1']);GeoUI.polygon=[[10,55],[10.01,55],[10,55.01]];GeoUI.dirty=true;openDialog('<p>Real API confirmation</p>')");
  await run("GeoUI.save('103',{kind:'By'})");assert.equal(run('GeoUI.target'),'created');assert.equal(run('GeoUI.dirty'),false);assert.equal(run('state.revision'),'after-real-save');assert.equal(get('dialog').open,false);
- assert.equal(realRequests.find(r=>r.body?.action==='geo.assign').body.data._revision,'before-real-save');
+ assert.equal(Object.hasOwn(realRequests.find(r=>r.body?.action==='geo.assign').body.data,'_revision'),false);
  run('GeoUI.whole=true;GeoUI.dirty=true');await run('GeoUI.saveBoundary(true)');assert.equal(run('GeoUI.dirty'),false);assert.equal(run('state.revision'),'after-real-boundary');
  // A late download acknowledgement registers its job but cannot close a newer dialog; duplicate starts stop.
  const pollActual=run('GeoUI.poll');let releaseDownload;c.pendingDownload=new Promise(r=>releaseDownload=r);run("GeoUI.busy=false;GeoUI.poll=()=>{};GeoUI.showJob=()=>{};api=()=>pendingDownload;openDialog('<form>DOWNLOAD FORM</form>')");const download=run("GeoUI.download('road',{road:'Fictional'})");await assert.rejects(run("GeoUI.download('road',{road:'Fictional'})"));run("openDialog('<form>NEWER DOWNLOAD DRAFT</form>')");releaseDownload({json:async()=>({job_id:'FICTIONAL_JOB'})});await download;assert.equal(run('GeoUI.job'),'FICTIONAL_JOB');assert.equal(get('dialog').open,true);assert.match(get('dialog').innerHTML,/NEWER DOWNLOAD DRAFT/);

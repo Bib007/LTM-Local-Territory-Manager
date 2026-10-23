@@ -64,7 +64,6 @@ async function api(path,body){
  const controller=typeof AbortController==='function'?new AbortController():null,timer=controller?setTimeout(()=>controller.abort(),writing?60000:30000):null;
  try{
  const previousState=state,previousRevision=state?.revision;
- if(path==='/api/mutate'&&state?.revision)body={...body,data:{...body.data,_revision:state.revision}};
  let r;try{r=await fetch(path,{method:body?'POST':'GET',headers:{'X-Distrikt-Token':token,...(body?{'Content-Type':'application/json'}:{})},...(controller?{signal:controller.signal}:{}),...(body?{body:JSON.stringify(body)}:{})});}
  catch(error){if(error?.name==='AbortError'){const failure=problem(writing?'Ændringen tog for lang tid at bekræfte. Genindlæs data og kontrollér før du prøver igen.':'Kontrollen tog for lang tid. Forbindelsen er ikke nødvendigvis afbrudt. Prøv et mindre område eller prøv igen.',writing?'uncertain':'timeout');if(writing)WriteGuard.mark(failure);throw failure;}Workspace.connectionChanged('offline');const failure=problem(writing?'Forbindelsen blev afbrudt. Ændringen kan være nået frem; genindlæs data og kontrollér før du prøver igen.':'Ingen forbindelse til appen. Kontrollér Wi-Fi / VPN.',writing?'uncertain':'connection');if(writing)WriteGuard.mark(failure);throw failure;}
  if(!r.ok){

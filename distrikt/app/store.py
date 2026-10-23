@@ -218,8 +218,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def guarded_mutate(self, action, data):
         self.purge_expired()
         with self.transaction():
-            if data.get('_revision') is not None and data['_revision']!=self.revision:
-                raise ValueError('Data er ændret fra en anden fane eller enhed. Genindlæs data før du gemmer; dine felter er ikke overskrevet.')
+            # Cross-tab revision rejection is paused until user profiles are designed.
             self._tracking={}
             try:
                 result = self._mutate(action, data)

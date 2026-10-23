@@ -65,7 +65,7 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertIn('repository.yaml',names)
             self.assertIn('README.da.md',names)
             self.assertIn('README.en.md',names)
-            self.assertIn('ROADMAP.md',names)
+            self.assertIn('docs/planning/ROADMAP.md',names)
             self.assertIn('CONTRIBUTING.md',names)
             self.assertIn('assets/brand/logo-light.svg',names)
             self.assertEqual( archive.read('Home-Assistant/distrikt/icon.png'),b'FICTIONAL_ICON')
@@ -79,7 +79,7 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertIn('Home-Assistant/distrikt/README.md',names)
             self.assertIn('Home-Assistant/distrikt/CHANGELOG.md',names)
             self.assertIn('Home-Assistant/distrikt/translations/da.yaml',names)
-            self.assertIn('CONTRIBUTING.en.md',names)
+            self.assertIn('docs/CONTRIBUTING.en.md',names)
             self.assertIn('Home-Assistant/SHA256SUMS.txt',names)
             self.assertFalse(any(n.startswith('data/') or n.endswith('.sqlite3') for n in names))
             self.assertFalse(any(b'DO_NOT_PACKAGE_PRIVATE_TEST_RECORD' in archive.read(n) for n in names))
@@ -90,11 +90,12 @@ class ReleaseArchiveTests(unittest.TestCase):
     def test_portable_guide_links_reach_included_documents(self):
         self.add('README.md','[Notices](distrikt/THIRD-PARTY.md)\n')
         self.add('docs/INSTALL.md','[Sharing](../distrikt/GOOGLE-DRIVE-OPSAETNING.md)\n')
+        self.add('docs/help/nested.md','[Sharing](../../distrikt/GOOGLE-DRIVE-OPSAETNING.md)\n[Install](../INSTALL.md)\n')
         self.add('distrikt/THIRD-PARTY.md','# Fictional notices\n')
         self.add('distrikt/GOOGLE-DRIVE-OPSAETNING.md','# Fictional sharing guide\n')
         with zipfile.ZipFile(self.build('links')) as archive:
             import posixpath,re
-            for name in ('README.md','docs/INSTALL.md'):
+            for name in ('README.md','docs/INSTALL.md','docs/help/nested.md'):
                 for target in re.findall(r'\]\(([^)]+)\)',archive.read(name).decode()):
                     resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
                     self.assertIn(resolved,archive.namelist())

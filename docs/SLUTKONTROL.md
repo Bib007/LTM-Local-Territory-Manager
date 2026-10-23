@@ -19,9 +19,9 @@ Kortoversigt, adresser/kortkontrol, geografisk editor/import, avanceret opsætni
 
 ## Lokale ejerprøver
 
-Fysisk printer, egen HA/telefon/VPN, eget Google-samtykke og adgang ved aflevering/genudlevering, egen Datafordeler-konto samt eventuel skærmlæser står særskilt. Følg [restlisten](../Dette-skal-hjaelpes-manuelt.md). Disse punkter markeres ikke som afprøvet af de automatiske kontroller.
+Fysisk printer, egen HA/telefon/VPN, eget Google-samtykke og adgang ved aflevering/genudlevering, egen Datafordeler-konto samt eventuel skærmlæser står særskilt. Følg [restlisten](help/Dette-skal-hjaelpes-manuelt.md). Disse punkter markeres ikke som afprøvet af de automatiske kontroller.
 
-Se [print](PRINT.md), [installation](INSTALL.md), [betakanal](BETA.md), [begrænsninger](LIMITATIONS.md) og [køreplan](../KOREPLAN.md).
+Se [print](PRINT.md), [installation](INSTALL.md), [betakanal](BETA.md), [begrænsninger](LIMITATIONS.md) og [køreplan](planning/KOREPLAN.md).
 
 [Kladde til næste stabile udgivelse](NAESTE-STABILE-UDGAVE.md) samler nyheder, opdateringsvej og de begrænsninger, der skal være synlige ved publicering.
 

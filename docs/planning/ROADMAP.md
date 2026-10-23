@@ -11,8 +11,8 @@ Dansk er hovedsprog. Den offentlige grundudgave er 1.11.1. Videre udvikling omfa
 
 Den samme kodebase bruges til Mac, Windows og Home Assistant. Installationer med rigtige data fortsætter på én hovedinstallation. En udviklingsprøve bruger egne opdigtede data og sin egen datamappe.
 
-Ændringer udgives først som almindelige opdateringer, når de relevante program-, formular- og pakkekontroller består. Se [ændringslisten](CHANGELOG.md) og [kendte begrænsninger](docs/LIMITATIONS.md).
+Ændringer udgives først som almindelige opdateringer, når de relevante program-, formular- og pakkekontroller består. Se [ændringslisten](../../CHANGELOG.md) og [kendte begrænsninger](../LIMITATIONS.md).
 
 [Næste versions nummererede køreplan](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/KOREPLAN.md).
 
-Små sammenhængende funktioner udgives løbende som nummererede HA-betaer med en kort testliste. Se [betavejledningen](docs/BETA.md). Betaversioner genbruges ikke til ændret kode; `main` og den seneste stabile release ændres ikke ved en beta.
+Små sammenhængende funktioner udgives løbende som nummererede HA-betaer med en kort testliste. Se [betavejledningen](../BETA.md). Betaversioner genbruges ikke til ændret kode; `main` og den seneste stabile release ændres ikke ved en beta.

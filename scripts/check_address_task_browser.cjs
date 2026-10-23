@@ -13,7 +13,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  if(u.pathname==='/api/ping')return json({ok:true});
  if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
  if(u.pathname==='/api/mutate'){
-  const data=route.request().postDataJSON();assert.equal(data.action,'address.task.configure');assert.equal(data.data._revision,state.revision);writes.push(data.data);
+  const data=route.request().postDataJSON();assert.equal(data.action,'address.task.configure');assert.equal(Object.hasOwn(data.data,'_revision'),false);writes.push(data.data);
   Object.assign(state.address_task,data.data,{status:data.data.enabled?'scheduled':'idle',next_due:'2026-10-22T02:15:00Z'});state.revision='fictional-'+(writes.length+1);return json({ok:true,result:{ok:true},revision:state.revision});
  }
  const file=path.join(root,u.pathname==='/'?'index.html':u.pathname.slice(1));assert.ok(file.startsWith(root+path.sep));
@@ -31,4 +31,4 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  assert.match(await page.locator('#addressTask').innerText(),/Venter og prøver igen/);
  if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`address-task-${width}.png`),fullPage:true});}
  await page.evaluate(()=>{state.address_task.available=false;render();});assert.equal(await page.locator('#addressTask').count(),0);assert.deepEqual(errors,[]);await context.close();
-}console.log('HA address task: dashboard counts, task configuration, revision-guarded writes, review navigation, retry status, desktop exclusion and four screen widths passed.');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
+}console.log('HA address task: dashboard counts, task configuration, writes without cross-tab rejection, review navigation, retry status, desktop exclusion and four screen widths passed.');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

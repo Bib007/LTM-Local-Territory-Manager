@@ -15,13 +15,13 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  if(u.pathname==='/api/state')return json(state);if(u.pathname==='/api/geo')return json({addresses:[],buildings:[],roads:[],info:{},status:{},main_boundary:null});if(u.pathname==='/api/geo/job')return json({status:'idle'});if(u.pathname==='/api/ping')return json({ok:true});if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
  if(u.pathname==='/api/export/backup')return route.fulfill({contentType:'application/zip',body:Buffer.from('fictional-backup-bytes')});
  if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action.startsWith('setup.history-import.')){
-  const body=route.request().postDataJSON();assert.equal(body.data._revision,state.revision);writes.push(body);
+  const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);writes.push(body);
   if(body.action.endsWith('.preview')){const allocation=body.data.content.includes('forkynder'),bad=body.data.content.includes('missing'),rows=allocation?[{line:2,number:'3',publisher:'Fiktiv <import>',publisher_action:'new',assigned:'2026-09-02',returned:'',date:'',kind:'loan',loan_state:'active',status:'ready',message:''}]:[{line:2,number:bad?'missing <script>':'1',date:'2026-09-02',status:bad?'error':'ready',message:bad?'Kortnummeret mangler eller er ikke entydigt. Opret eller ret kortet først.':''},{line:3,number:'1',date:'2026-09-01',status:'duplicate',message:'Allerede kendt eller gentaget; medtages ikke.'}];state.fictionalAllocationPreview=allocation;return json({result:{token:'fictional-history-token',csv:body.data.content,rows,count:allocation||bad?0:1,loan_count:allocation?1:0,publisher_count:allocation?1:0,errors:bad?1:0,cutoff:'2024-10-17',today:state.today},revision:state.revision});}
   assert.equal(body.data.token,'fictional-history-token');assert.equal(body.data.confirm,'IMPORTÉR HISTORIK');const allocation=state.fictionalAllocationPreview;
   if(allocation){state.publishers.push({id:'fictional-imported-person',name:'Fiktiv <import>'});state.loans.push({id:'fictional-active-import',card_id:'box',publisher_id:'fictional-imported-person',assigned:'2026-09-02',cycle_start:'2026-09-02',returned:null});}else state.completions.push({id:'fictional-import',card_id:'folder',date:'2026-09-02',visits:0,visits_unknown:true});state.revision+='-history';return json({result:{count:allocation?0:1,loans:allocation?1:0,publishers:allocation?1:0},revision:state.revision});
  }
  if(u.pathname==='/api/mutate'&&['note.save','note.complete'].includes(route.request().postDataJSON().action)){
-  const body=route.request().postDataJSON();assert.equal(body.data._revision,state.revision);writes.push(body);const day=new Date(state.today+'T00:00:00Z'),weekday=(day.getUTCDay()+6)%7;
+  const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);writes.push(body);const day=new Date(state.today+'T00:00:00Z'),weekday=(day.getUTCDay()+6)%7;
   if(body.action==='note.save'){
    const note=state.notes.find(n=>n.id===body.data.id)||{id:'recurring-fictional',date:state.today,created:state.today,resolved:false};note.text=body.data.text;note.card_id=body.data.card_id;
    if(body.data.recurrence){const delta=(body.data.recurrence.weekday-weekday+7)%7;day.setUTCDate(day.getUTCDate()+delta);note.recurrence={...body.data.recurrence,next_due:day.toISOString().slice(0,10)};}else delete note.recurrence;
@@ -30,13 +30,13 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
   state.revision+='-weekly';return json({result:{},revision:state.revision});
  }
  if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action.startsWith('backup.')){
-  const body=route.request().postDataJSON();assert.equal(body.data._revision,state.revision);writes.push(body);
+  const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);writes.push(body);
   if(body.action==='backup.snooze'){const day=new Date(state.today+'T00:00:00Z');day.setUTCDate(day.getUTCDate()+1);state.settings.backup_snoozed_until=day.toISOString().slice(0,10);}
   else{const entry={id:body.data.id,status:body.data.status,at:state.today+'T12:00:00Z'};state.settings.backup_history=[entry];if(entry.status!=='created'){state.settings.last_backup=entry.at;delete state.settings.backup_snoozed_until;}}
   state.revision+='-backup';return json({result:{},revision:state.revision});
  }
- if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action==='note.resolve'){const body=route.request().postDataJSON();assert.equal(body.data._revision,state.revision);assert.equal(body.data.id,'task-open');writes.push(body);state.notes.find(n=>n.id===body.data.id).resolved=body.data.resolved;state.revision+='-task';return json({result:{},revision:state.revision});}
- if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();assert.equal(body.action,'loan.finish');assert.equal(body.data._revision,state.revision);assert.equal(body.data.id,'loan-two');assert.equal(body.data.complete,false);assert.equal(body.data.retain,false);writes.push(body);state.loans.find(l=>l.id===body.data.id).returned=body.data.date;state.cards.find(c=>c.id==='two').in_folder=false;state.revision+='-return';return json({result:{},revision:state.revision});}
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action==='note.resolve'){const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(body.data.id,'task-open');writes.push(body);state.notes.find(n=>n.id===body.data.id).resolved=body.data.resolved;state.revision+='-task';return json({result:{},revision:state.revision});}
+ if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();assert.equal(body.action,'loan.finish');assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(body.data.id,'loan-two');assert.equal(body.data.complete,false);assert.equal(body.data.retain,false);writes.push(body);state.loans.find(l=>l.id===body.data.id).returned=body.data.date;state.cards.find(c=>c.id==='two').in_folder=false;state.revision+='-return';return json({result:{},revision:state.revision});}
  const file=u.pathname==='/'?'index.html':u.pathname.slice(1);assert.ok(!file.includes('..'));return route.fulfill({path:path.join(root,file)});
  });
  const activate=locator=>touch?locator.tap():locator.click();

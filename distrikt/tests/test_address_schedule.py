@@ -46,11 +46,12 @@ class AddressScheduleTests(unittest.TestCase):
     def due(self):
         self.configure();self.now+=timedelta(days=1)
     def complete(self):self.scheduler.tick();self.scheduler.tick()
-    def test_configuration_is_ha_only_guarded_validated_and_does_not_run_immediately(self):
+    def test_configuration_is_ha_only_validated_and_does_not_run_immediately(self):
         for field,value in [('days',0),('days',True),('days',31),('time','25:00'),('enabled','yes')]:
             data=dict(enabled=True,days=7,time='02:00',_revision=self.store.revision);data[field]=value
             with self.assertRaises(ValueError):self.scheduler.configure(data)
-        with self.assertRaises(ValueError):self.scheduler.configure(dict(enabled=True,days=7,time='02:00',_revision='old'))
+        self.scheduler.configure(dict(enabled=True,days=7,time='02:00',_revision='old'))
+        self.scheduler.configure(dict(enabled=True,days=7,time='02:00'))
         self.scheduler.available=False
         with self.assertRaises(ValueError):self.configure()
         self.scheduler.available=True;self.configure();self.scheduler.tick()
@@ -130,8 +131,7 @@ class AddressTaskHTTPTests(unittest.TestCase):
         self.api('/api/mutate',data)
         saved=self.api('/api/state');self.assertEqual(saved['address_task']['days'],3);self.assertEqual(saved['address_task']['time'],'02:15');self.assertEqual(saved['areas'],[])
         self.assertNotEqual(saved['revision'],state['revision'])
-        with self.assertRaises(urllib.error.HTTPError) as error:self.api('/api/mutate',data)
-        self.assertEqual(error.exception.code,400)
+        self.api('/api/mutate',data)  # Stale cross-tab revisions no longer block configuration.
         self.server.address_schedule.available=False
         data['data']['_revision']=saved['revision']
         with self.assertRaises(urllib.error.HTTPError):self.api('/api/mutate',data)

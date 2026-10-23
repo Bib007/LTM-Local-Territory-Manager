@@ -2,7 +2,7 @@
 
 [English](INSTALL.en.md) · [Kom i gang](FIRST-STEPS.md)
 
-**Stabil udgave: 1.12.0.** Brug den almindelige repositoryadresse til HA; `develop` er til næste version og er ikke en almindelig opdateringskilde.
+**Stabil udgave: 1.12.1.** Brug den almindelige repositoryadresse til HA; `develop` er til næste version og er ikke en almindelig opdateringskilde.
 
 Vil du prøve nye funktioner løbende ved siden af den stabile app, så følg [HA-betavejledningen](BETA.md).
 

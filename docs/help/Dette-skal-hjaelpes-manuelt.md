@@ -10,11 +10,11 @@
 
 ## Valgfrit
 
-- Google-konto og OAuth-samtykke til QR-deling: [Google Drive og QR](docs/GOOGLE-DRIVE.md).
-- Router-VPN ved adgang udefra: [Installation](docs/INSTALL.md).
-- Pages ved offentlig webdemo: [Demoudgivelse](docs/DEMO-HOSTING.md).
+- Google-konto og OAuth-samtykke til QR-deling: [Google Drive og QR](../GOOGLE-DRIVE.md).
+- Router-VPN ved adgang udefra: [Installation](../INSTALL.md).
+- Pages ved offentlig webdemo: [Demoudgivelse](../DEMO-HOSTING.md).
 
-Fremtidige repository-opdateringer hentes i HA. Privat backup tages gennem appen. [Kom i gang](docs/FIRST-STEPS.md).
+Fremtidige repository-opdateringer hentes i HA. Privat backup tages gennem appen. [Kom i gang](../FIRST-STEPS.md).
 
 ## Ejerprøver efter udviklingskontrol
 
@@ -24,4 +24,4 @@ Fremtidige repository-opdateringer hentes i HA. Privat backup tages gennem appen
 - Egen Datafordeler-konto og adresseopdatering på installationen.
 - Egen skærmlæser/hjælpemidler, hvis de bruges.
 
-Disse lokale prøver markeres ikke som udført af automatiske test. Se [printvejledningen](docs/PRINT.md) og [slutkontrollen](docs/SLUTKONTROL.md). Ønskelisten er en separat kø efter den faste køreplan.
+Disse lokale prøver markeres ikke som udført af automatiske test. Se [printvejledningen](../PRINT.md) og [slutkontrollen](../SLUTKONTROL.md). Ønskelisten er en separat kø efter den faste køreplan.

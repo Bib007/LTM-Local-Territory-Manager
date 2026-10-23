@@ -1,5 +1,10 @@
 # Ændringsliste
 
+## 1.12.1 · Arbejd videre uden unødig genindlæsning
+
+Fjerner den generelle afvisning af ændringer fra andre faner/enheder, indtil brugerprofiler og samtidig redigering bliver udviklet samlet. Kort kan fortsat udleveres og rettes, når Google-delingen skifter status i baggrunden. Kontrol af kort, datoer og dobbelte udleveringer er bevaret. [Læs nyheder og opdateringsråd](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/RELEASE-NOTES.md).
+
+
 ## 1.12.0 · Mere overblik over dine distriktskort
 
 En samlet opstartsguide, import af eksisterende kort og udleveringer, bedre telefon-/tabletbetjening og et tydeligere overblik i det daglige. Arbejd med adresser og kort, gem opgaver, print oversigter, og vælg selv, om du vil dele kortbilleder med QR-koder.

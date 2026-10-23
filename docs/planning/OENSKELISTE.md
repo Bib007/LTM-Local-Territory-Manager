@@ -1,5 +1,21 @@
 # Ønskeliste og nye opgaver
 
+## Akut rettelse til 1.12.1 · klargøring 23.10.2026
+
+W89: Ejeren oplever, at stabil 1.12.0 afviser udlevering og kortændringer med beskeden om ændringer fra anden fane/enhed, også ved menuskift. Google-genforbindelse fik udlevering til at virke igen. En fiktiv prøve reproducerer, at Google-adgangsfejl ændrer baggrundsstatus og dermed gør en åben formular forældet. Ejeren har efterfølgende udtrykkeligt bestilt den generelle synkroniserings-/revisionsafvisning fjernet indtil brugerprofiler (W65) udvikles samlet.
+
+1.12.1 fjerner det generelle revisionskrav ved almindelige ændringer og indstilling af adressekontrol. Nye klientkald sender ikke længere dette krav; ældre åbne faners felt ignoreres. Lås/atomisk gemning, login/token, inputkontrol, eksisterende udlån, konkret import-/kortforhåndsvisning, ukendt gemmeresultat og udtrykkelig godkendelse af billeddeling bevares. Samtidig redigering bruger nu senest gemte ændring; dette er et udtrykkeligt ejerønske og skal gentænkes med profiler, ikke automatisk genindføres. Klargøring er ikke en verificeret udgivelse.
+
+Nye ønsker fra Google-planen registreres samtidig. W87 er efter ejerens seneste besked taget med i 1.12.1; W88 venter:
+
+| Nr. | Ønske | Prioritet/status |
+| --- | --- | --- |
+| W87 | Færre løse filer på GitHub-forsiden | Saml egnede dokumenter i mapper, så nye brugere hurtigere ser introduktionen. Ejeren har udtrykkeligt valgt denne udgave. Planer og hjælpedokumenter samles i docs/planning og docs/help; links og arkivpakning tilpasses. Afventer verifikation. |
+| W88 | Platformneutrale tekster i HA | Adressehentning må ikke hævde at filtrere “på din Mac”, når appen kører på HA. Brug “på dit system” eller tilsvarende korrekt tekst. Gennemgå tilsvarende tekster; registreret, ikke rettet i denne hotfix. |
+| W89 | Afvist udlevering/redigering · −1 | Akut. Fjern generel synkroniseringsafvisning nu; afklar samtidig redigering igen med W65/brugerprofiler. Afventer verificeret 1.12.1. |
+
+Fremdrift ved registrering: 68/89 afsluttet/afklaret, 21 åbne, cirka 76 %. Ønskernes kildetekster bevares indtil registreringen er læst tilbage.
+
 ## Stabil udgivelse 1.12.0 · klargjort 23.10.2026
 
 Ejeren har bestilt udgivelse og bedt om, at ADS-planens relevante punkter gennemføres først. Forsiden på dansk og engelsk forklarer nu målgruppe, daglige fordele, lokal opbevaring og valgene Home Assistant / Mac / Windows i almindeligt brugersprog. Direkte demo-, installations- og feedbacklinks står øverst. Tre skærmbilleder viser den faktiske app med udelukkende opdigtede oplysninger. Et delingsbillede er klargjort. Udgivelsesnoterne ligger særskilt, så brugeren får et kort overblik frem for hele udviklingshistorikken. Den stabile publicering kræver fortsat alle udgivelseskontroller. About-felter og aktivering af delingsbillede kræver separat adgang til GitHubs indstillinger; de må ikke betegnes udført før læsekontrol.
@@ -21,7 +37,7 @@ Beta.62 er udgivet fra `f94b9c29c6e114f035f9b7ee6516e0f939ddcf46`. [HA beta rele
 
 [Checks 39968497622](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39968497622) har grønne sikkerheds-, Python- og pakkejob; det særskilte JavaScript-job står stadig ved installation af browsertestværktøjet ved denne registrering. Det må ikke betegnes bestået. Main er fortsat stabil 1.11.1; ingen promovering er udført.
 
-Den aftalte alternative manuelle sikkerhedsgennemgang er dokumenteret i [rapporten](docs/SIKKERHEDSGENNEMGANG-2026-10.md). De to konkrete fund er rettet; der er ikke identificeret yderligere konkrete sikkerhedsblokeringer i de gennemgåede stier for den dokumenterede LAN/VPN-model. Codex Security er ikke kørt. W06's større arkitekturændringer og W56 er fortsat ikke leveret. GitHub Support er efter ejerens beslutning ikke en udgivelsesblokering.
+Den aftalte alternative manuelle sikkerhedsgennemgang er dokumenteret i [rapporten](../SIKKERHEDSGENNEMGANG-2026-10.md). De to konkrete fund er rettet; der er ikke identificeret yderligere konkrete sikkerhedsblokeringer i de gennemgåede stier for den dokumenterede LAN/VPN-model. Codex Security er ikke kørt. W06's større arkitekturændringer og W56 er fortsat ikke leveret. GitHub Support er efter ejerens beslutning ikke en udgivelsesblokering.
 
 ## Aktuel status · 23.10.2026
 
@@ -31,7 +47,7 @@ Fremdrift: 68 af 82 ønsker afsluttet/afklaret, 14 åbne, cirka 83 %. W78 er eje
 
 Stabil klargøring 22.10.2026: udgivelsesjobbet på develop er koblet direkte til genbrugelige Checks og Platformskontrol fra samme commit. Det venter på alle program-, browser-, Mac-/Windows-, HA- og pakkekontroller og må kun publicere fra main. Checks kører nu alle `test_*.cjs`, også prøver som manglede i den tidligere håndholdte liste, samt HA-betapakkeprøver. README på dansk/engelsk er rettet for gammel beta.21/70 %-status, stabil grundversion, rundtur, demolink og den fjernede autofordeling. YAML/dependens-/rettigheds-/versionskontrol samt pakkeprøver og arkivstart er udført lokalt; faktisk stabil publicering er ikke forsøgt. Ingen ny beta eller ændret appkode er nødvendig til denne klargøring.
 
-Stabil klargøring er nu CI-verificeret på `b62557c3854d67757ca04515ad6c7c183b4b5010`: [Checks 39792385082](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39792385082) og [Platformskontrol 39792385358](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39792385358) er begge completed/success. De genbrugelige kontroller er prøvet som selvstændige workflows; selve stabile publicering er fortsat ikke startet. En [kladde til næste stabile udgivelse](docs/NAESTE-STABILE-UDGAVE.md) samler nyheder, opdateringsvej, kanaler, kendte begrænsninger og de åbne ejer-/sikkerhedspunkter. Kladden ændrer ingen appkode eller udgivet betapakke og er kontrolleret gennem pakning samt faktisk arkivstart.
+Stabil klargøring er nu CI-verificeret på `b62557c3854d67757ca04515ad6c7c183b4b5010`: [Checks 39792385082](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39792385082) og [Platformskontrol 39792385358](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39792385358) er begge completed/success. De genbrugelige kontroller er prøvet som selvstændige workflows; selve stabile publicering er fortsat ikke startet. En [kladde til næste stabile udgivelse](../NAESTE-STABILE-UDGAVE.md) samler nyheder, opdateringsvej, kanaler, kendte begrænsninger og de åbne ejer-/sikkerhedspunkter. Kladden ændrer ingen appkode eller udgivet betapakke og er kontrolleret gennem pakning samt faktisk arkivstart.
 
 ## Ejerprøver og næste stabile udgave · 23.10.2026
 
@@ -51,7 +67,7 @@ Næste ønskede kontrol er Codex Security på den aktuelle develop-kode. Securit
 
 ## Manuel sikkerhedsgennemgang · beta.62 klargjort · 23.10.2026
 
-Ejeren har valgt en manuel kodegennemgang med automatiske kontroller som alternativ til Codex Security-pluginet. Den er udført med kildecommit `303541e557edc6c0301f8f925d31a94c74d1e0d4` som udgangspunkt; rapport, fund, rettelser, dækning og begrænsninger findes i [sikkerhedsgennemgangen](docs/SIKKERHEDSGENNEMGANG-2026-10.md). Codex Security må ikke betegnes kørt.
+Ejeren har valgt en manuel kodegennemgang med automatiske kontroller som alternativ til Codex Security-pluginet. Den er udført med kildecommit `303541e557edc6c0301f8f925d31a94c74d1e0d4` som udgangspunkt; rapport, fund, rettelser, dækning og begrænsninger findes i [sikkerhedsgennemgangen](../SIKKERHEDSGENNEMGANG-2026-10.md). Codex Security må ikke betegnes kørt.
 
 To konkrete punkter er håndteret til beta.62: opdatering af pypdf 6.10.0 til 6.21.2 og parserbaseret DTD-afvisning i XLSX også ved UTF-16. Pakningen afviser nu kendte nøgle-/loginfilnavne, og CI får en fælles sikkerhedskontrol, som indgår før beta og stabil publicering. Lokalt består 479 Python-prøver med én forventet overspringning, alle JavaScript-prøver, 20 pakkeprøver, faktisk arkivstart, Bandits kontrol for high severity og pip-audit af de tre medleverede Python-biblioteker. Ingen kendte advisories efter opdateringen i den sidstnævnte afgrænsning.
 

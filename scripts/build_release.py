@@ -14,7 +14,7 @@ REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fiel
 PDF_DEPENDENCIES=('pypdf-6.21.2.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
 BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json'}
-ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','KOREPLAN.md','Dette-skal-hjaelpes-manuelt.md','Dette-skal-hjaelpes-manuelt.en.md')
+ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','docs/planning/ROADMAP.md','CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png')
 
@@ -65,7 +65,9 @@ def files():
         p=ROOT/'assets'/'screenshots'/name
         if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe public screenshot: '+name)
         result['assets/screenshots/'+name]=(p.read_bytes(),0o644)
-    for p in sorted((ROOT/'docs').glob('*.md')):result['docs/'+p.name]=(p.read_bytes(),0o644)
+    for p in sorted((ROOT/'docs').rglob('*.md')):
+        if p.is_symlink():raise ValueError('Unsafe documentation symlink: '+str(p))
+        result[p.relative_to(ROOT).as_posix()]=(p.read_bytes(),0o644)
     p=ROOT/'demo'/'README.md'
     if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe demo guide.')
     result['demo/README.md']=(p.read_bytes(),0o644)
@@ -73,7 +75,15 @@ def files():
     for name,(raw,mode) in list(result.items()):
         if name in ROOT_DOCS or name.startswith('docs/'):
             if name.endswith('.md'):
-                text=raw.decode().replace('](distrikt/','](Distrikt-lokal/').replace('](../distrikt/','](../Distrikt-lokal/')
+                def portable_link(match):
+                    target=match.group(1)
+                    if target.startswith(('#','/')) or re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*:',target):return match.group(0)
+                    dest,separator,anchor=target.partition('#')
+                    resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),dest))
+                    if not resolved.startswith('distrikt/'):return match.group(0)
+                    resolved='Distrikt-lokal/'+resolved[len('distrikt/'):]
+                    return ']('+posixpath.relpath(resolved,posixpath.dirname(name) or '.')+(separator+anchor if separator else '')
+                text=re.sub(r'\]\(([^)\s]+)',portable_link,raw.decode())
                 result[name]=(text.encode(),mode)
     p=ROOT/'Opdater-Home-Assistant-Mac.command';result[p.name]=(p.read_bytes(),0o755)
     prefix='Home-Assistant/distrikt/'
