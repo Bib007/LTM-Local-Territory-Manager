@@ -1,5 +1,33 @@
 # Ønskeliste og nye opgaver
 
+## Aktuel oversigt · beta.63 udgivet · 23.10.2026
+
+Beta.63 er verificeret udgivet fra `44986fa1c3747e0e6804f3c67c84474ad32b55cd`. HA beta release 39999579826 og Platformskontrol 39999579682 er completed/success. Den offentlige HA-pakke matcher lokal SHA256 `57ff3569ba26fba369ce7fe0116f49fd878007c9cdf9d31d3d5573b3fa4eaa27`. Betakanalen viser 1.12.2-beta.63 på 8788; stabil er fortsat 1.12.1. W88/W90/W91/W96 er afsluttet, og stable-rettelsen W89 er bevaret. W87 er afsluttet: PR 6 er sammenlagt efter grøn Checks 40000854053 og Platformskontrol 40000854029. Main er bbb26f665f8654ec84a5634d4404889564f33726 med fire rodfiler; den stabile appversion og allerede udgivne pakker bevares. Den særskilte ekstra Checks 39999579684 står fortsat ved installation af browserprøveværktøjet; de fulde browserprøver er bestået i betaens egen præcise udgivelsesgate.
+
+W99 · Prioritet −1 · Vis de konkrete åbne opgaver i den grafiske oversigt øverst i Google-planen. Udført: oversigten viser nu næste betarunder, senere ønsker, afklaringer og pauser med opgave-ID'er og synlig status. Nyregistrerede opgaver skal fremover også ind i denne oversigt, ikke kun historikken.
+
+W100 · Ryd ubrugte GitHub-grene, så kun main, develop og beta normalt er tilbage. Gennemgå først hver grens ændringer og bevarede commits. Aktive grene beholdes, indtil arbejdet er sikret og sammenlagt; main/develop/beta, tags, udgivelser og brugerdata må ikke slettes. Registreret og gennemgås. GitHub-pluginet kan ikke slette grene, og kommandolinjen mangler login til skrivning. Browseren viser GitHub-login; sletning afventer sikker indlogning, ikke yderligere kodearbejde.
+
+Ejeren ønsker nu flere sammenhængende rettelser pr. beta; den tidligere grænse på højst tre punkter er afløst af dette valg. Antallet styres af sammenhæng og kontrollernes omfang. W93 er fortsat åben: en fiktiv HTTP-prøve med 15.000 adresser/180 kort målte selve sletningen til 0,017 sek., genhentning af 3,39 MB geodata til 0,322 sek. og almindeligt overblik til 0,007 sek. Ejerens konkrete HA-/telefonforsinkelse er ikke reproduceret; efterbehandling/overførsel undersøges videre.
+
+| Næste arbejde | Status |
+| --- | --- |
+| W87 · Fire rodfiler på den almindelige GitHub-forside | Afsluttet på main og develop |
+| W100 · Ryd gamle grene | Afventer GitHub-login til sletning |
+| W93 · Langsom gemning/permanent sletning | Undersøgelse |
+| W82/W86 · Aktivitet, antal og mindre adressehentninger | Næste samlede betarunde |
+| W94/W95 · Import og samlet Opfølgninger | Samlet betjening efter afhængigheder |
+| W85 · Kort/IB fra billeder og mange filer | Tidligt importarbejde |
+| W92 · Programversion i feedback | Formularundersøgelse |
+| W98 · Lyst udseende | Planlagt |
+| W37/W97 · Demoens produktdesign | Planlagt |
+| W74/W84 · Egen hosting og iPhone/VPN-genvej | Planlagt undersøgelse |
+| W65/W83 · Profiler, samtidighed og første profilguide | Afklaring; generel synkroniseringsafvisning forbliver pauset |
+| W06/W08/W13/W27/W28/W56/W58/W61/W67 | Separate sikkerheds-, rapport-, sprog- og ejerafklaringer; ingen automatisk lukning |
+| W16 · Vejnet/autokort | På pause |
+
+Fremdrift efter W87/W99: 75/100 afsluttet/afklaret, 25 åbne, cirka 75 %. W100 er fortsat åben. Kildetekster for W99/W100 ryddes først efter læsekontrol i planen og på GitHub. Den aktuelle oversigt går foran de historiske kandidatstatusser nedenfor.
+
 ## Beta.63 klargjort · 23.10.2026
 
 Stabil 1.12.1 er udgivet med rettelsen af W89 og seks dokumenter flyttet fra roden. W87 genåbnes efter det skærpede ønske om højst 3–4 løse rodfiler og færre dubletvejledninger. Udgivet 1.12.1 ændres ikke. Betaen skal bevare rettelsen, der pauser generel synkroniseringsafvisning indtil profiler.

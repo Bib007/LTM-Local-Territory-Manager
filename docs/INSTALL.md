@@ -32,7 +32,7 @@ En eksisterende **lokalt installeret** app kan opdateres i den samme lokale mapp
 1. Hent en privat backup under **Indstillinger → Backup og gendannelse** i appen.
 2. Stop kun Distrikt i HA. Afinstallér ikke appen.
 3. Pak den komplette udgivelses-ZIP ud på din Mac, og forbind til HA's `local_apps`-deling.
-4. Start `scripts/Opdater-Home-Assistant-Mac.command` med `bash`, og vælg den delte **local_apps**-mappe.
+4. Find `Opdater-Home-Assistant-Mac.command` i `scripts`-mappen (i 1.12.1 og ældre pakker ligger den i hovedmappen). Start filen med `bash`, og vælg den delte **local_apps**-mappe.
 5. Vent på **FÆRDIG**. Ved **STOP** skal kopieringsfejlen løses, mens appen forbliver stoppet.
 6. Vælg **Kontroller for opdateringer → Opdater → Start** i HA. Behold de eksisterende indstillinger.
 

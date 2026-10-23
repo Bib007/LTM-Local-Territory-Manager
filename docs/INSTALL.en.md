@@ -38,7 +38,7 @@ If home Wi-Fi works but VPN does not, check the VPN's LAN routes/firewall and us
 1. In the running app, download a private backup from **Indstillinger → Backup og gendannelse**. Keep it outside shared cloud folders.
 2. Stop **only Distrikt** in Home Assistant. Do not uninstall it.
 3. Extract the new release ZIP locally on your Mac. Mount HA's `local_apps` Samba share in Finder.
-4. In Terminal, type `bash ` and drag `Opdater-Home-Assistant-Mac.command` from the ZIP’s `scripts` folder into the same line. Press Enter.
+4. In Terminal, type `bash ` and drag `Opdater-Home-Assistant-Mac.command` into the same line. Find it in the ZIP’s `scripts` folder, or in the main folder in version 1.12.1 and earlier. Press Enter.
 5. Choose the mounted **local_apps** folder, not the app's nested folder. The helper checks source files, copies with `rsync --inplace`, verifies copied bytes and updates `config.yaml` last. This avoids Samba's `._*` temporary-file restriction. It does not delete extra files or copy databases.
 6. Wait for **FÆRDIG**. On **STOP**, leave the app stopped and resolve the reported copy error before updating.
 7. In HA's app store, select **⋮ → Kontroller for opdateringer**, open the existing Distrikt app, choose **Opdater**, then **Start**.
