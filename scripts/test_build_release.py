@@ -39,6 +39,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.add('CHANGELOG.md',self.changelog)
         self.add('distrikt/CHANGELOG.md',self.changelog)
         for name in release.BRAND_FILES:self.add('assets/brand/'+name,'invented vector fixture')
+        for name in release.SCREENSHOT_FILES:self.add('assets/screenshots/'+name,'invented screenshot fixture')
         self.add('docs/INSTALL.md','# Fictional installation guide\n')
         self.add('demo/README.md','# Fictional demo guide\n')
         self.add('data/kort.sqlite3','DO_NOT_PACKAGE_PRIVATE_TEST_RECORD')

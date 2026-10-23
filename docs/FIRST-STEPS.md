@@ -2,7 +2,7 @@
 
 [English](FIRST-STEPS.en.md) · [Installation](INSTALL.md)
 
-Fra beta.23 er der én samlet opsætningsguide. På en tom installation åbnes den automatisk og forklarer lokal drift, én fælles HA-installation, backup og valgfri Google-deling. Vælg enkel udlevering eller kortfunktion, KML/GeoJSON, din måde at oprette kort på og eventuel IB-import.
+LTM starter med én samlet opsætningsguide. På en tom installation åbnes den automatisk og forklarer lokal drift, én fælles HA-installation, backup og valgfri Google-deling. Vælg enkel udlevering eller kortfunktion, KML/GeoJSON, din måde at oprette kort på og eventuel IB-import.
 
 Vælg **Gem og start rundtur** efter spørgsmålene. Svarene gemmes, men først **Afslut rundtur** markerer opsætningen som fuldført. Derefter lukkes guiden, og forsiden viser din personlige plan med genveje til de rigtige værktøjer. Rundturen opretter ingen kort, adresser eller IB. **Fortsæt senere** eller lukning afbryder uden at fuldføre; en gemt, uafsluttet plan genåbnes ved næste start. Tidligere fuldførte installationer tvinges ikke gennem rundturen igen. Genåbn samme guide under **Indstillinger → Generelt**.
 
@@ -49,7 +49,7 @@ Hver registreret gennemgang tæller, også flere gennemgange af samme kort. Ansl
 ## 5. Tilføj detaljerne
 
 - Importér eller tegn den samlede grænse, kontrollér den, og hent adresser indenfor. Virkelige KML-filer og registreringer bliver private.
-- Udfyld eksisterende kort enkeltvis, eller tegn hvert kort og vælg adresser i korteditoren. Automatiske inddelingsforslag er sat på pause fra beta.61.
+- Udfyld eksisterende kort enkeltvis, eller tegn hvert kort og vælg adresser i korteditoren. Du tegner og kontrollerer selv kortgrænserne.
 - Vælg IB fra det konkrete korts egne adresser.
 - Brug almindeligt papir til den første printtilpasning, og gem printerprofilen.
 - [Google Drive og QR](GOOGLE-DRIVE.md) er valgfrit.

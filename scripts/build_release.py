@@ -16,6 +16,7 @@ BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
 BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json'}
 ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','KOREPLAN.md','Dette-skal-hjaelpes-manuelt.md','Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
+SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png')
 
 def version():
     value=re.search(r"^VERSION='([^']+)'",(SRC/'app/server.py').read_text(),re.M).group(1)
@@ -60,6 +61,10 @@ def files():
         p=ROOT/'assets'/'brand'/n
         if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe brand asset: '+n)
         result['assets/brand/'+n]=(p.read_bytes(),0o644)
+    for name in SCREENSHOT_FILES:
+        p=ROOT/'assets'/'screenshots'/name
+        if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe public screenshot: '+name)
+        result['assets/screenshots/'+name]=(p.read_bytes(),0o644)
     for p in sorted((ROOT/'docs').glob('*.md')):result['docs/'+p.name]=(p.read_bytes(),0o644)
     p=ROOT/'demo'/'README.md'
     if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe demo guide.')

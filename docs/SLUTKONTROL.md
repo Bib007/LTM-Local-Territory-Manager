@@ -2,7 +2,7 @@
 
 [English](SLUTKONTROL.en.md)
 
-Kontrolgrundlag: beta.61 er verificeret udgivet 22.10.2026 fra kildecommit cd95b1b130bebe07c9ffc3d2c5fe380ca5058253. Program-, browser-, Mac-, Windows-, HA- og pakkekontroller er bestået. Det tidligere afbrudte Mac-job er genkørt uden kodeændring, og HA-udgivelsesgaten er completed/success. Main er fortsat stabil 1.11.1. Den faste udviklingsplan er afsluttet; hele ønskekøen er ikke et krav til næste stabile udgave.
+Kontrolgrundlag: beta.62 er verificeret udgivet 23.10.2026 fra kildecommit f94b9c29c6e114f035f9b7ee6516e0f939ddcf46. Program-, browser-, Mac-, Windows-, HA- og pakkekontroller er bestået. Det tidligere afbrudte Mac-job er genkørt uden kodeændring, og HA-udgivelsesgaten er completed/success. Main er fortsat stabil 1.11.1. Den faste udviklingsplan er afsluttet; hele ønskekøen er ikke et krav til næste stabile udgave.
 
 ## Gentagelige kontroller
 
@@ -42,3 +42,7 @@ Ejerafklaring 23.10.2026: Drive og gendannelse fungerer uden problemer og er god
 ## Manuel sikkerhedskontrol · kandidat beta.62
 
 Efter ejerens valg er den alternative [manuelle kodegennemgang](SIKKERHEDSGENNEMGANG-2026-10.md) udført. To konkrete punkter er rettet: forældet PDF-afhængighed og XLSX DTD-kontrol ved UTF-16. Lokale sikkerheds-/regressionsprøver er bestået. Den præcise kandidats CI-/platformkontroller skal fortsat være grønne før udgivelse. Codex Security er ikke kørt; systempakker, komplet belastningstest og uafhængig penetrationstest er ikke dækket. W06-arkitektur og W56 beskrives fortsat som ikke leveret.
+
+## Stabil 1.12.0 · udgivelsesbeslutning 23.10.2026
+
+Ejeren har godkendt publicering. ADS-planens relevante præsentationspunkter er indarbejdet i forside, billeder, startlinks og særskilte brugerrettede udgivelsesnoter. Den alternative manuelle sikkerhedsgennemgang med de to rettelser er gennemført og beskrevet i rapporten; den må ikke betegnes en Codex Security-scanning. De tidligere åbne beslutninger ovenfor er afklaret ved ejerens efterfølgende godkendelse. Ekstern oprydning, fremtidig arkitektur og nøglebackup er fortsat ikke gennemført. Den stabile kandidat skal stadig bestå sin egen fulde automatiske udgivelseskontrol.

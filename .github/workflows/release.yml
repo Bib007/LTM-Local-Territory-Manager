@@ -42,4 +42,4 @@ jobs:
             echo "Release v$VERSION already exists; keeping its assets unchanged."
             exit 0
           fi
-          gh release create "v$VERSION" "dist/LTM-v$VERSION.zip" "dist/LTM-v$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "LTM $VERSION" --notes-file CHANGELOG.md
+          gh release create "v$VERSION" "dist/LTM-v$VERSION.zip" "dist/LTM-v$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "LTM $VERSION · Mere overblik over dine distriktskort" --notes-file docs/RELEASE-NOTES.md

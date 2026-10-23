@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.0 · Mere overblik over dine distriktskort
+
+En samlet opstartsguide, import af eksisterende kort og udleveringer, bedre telefon-/tabletbetjening og et tydeligere overblik i det daglige. Arbejd med adresser og kort, gem opgaver, print oversigter, og vælg selv, om du vil dele kortbilleder med QR-koder.
+
+Læs [nyhederne og opdateringsvejledningen](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/RELEASE-NOTES.md). Tag en privat sikkerhedskopi i appen før opdatering.
+
 ## 1.12.0-beta.62 · Sikkerhedskontrol før stabil
 
 - Opdatér den lokale PDF-læser fra pypdf 6.10.0 til 6.21.2 med kendte rettelser til ressourceforbrug. Bevar separat importproces, tids-/hukommelsesgrænser og lokal behandling.

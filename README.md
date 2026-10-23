@@ -1,77 +1,96 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
-  <img alt="Local Territory Manager – JW" src="assets/brand/logo-light.svg" width="640">
+  <img alt="LTM · Local Territory Manager" src="assets/brand/logo-light.svg" width="580">
 </picture>
 
-# Local Territory Manager – JW
+# Dine distriktskort. Ét samlet overblik.
 
-**Distriktsadministration på din egen computer eller Home Assistant.** Et uofficielt værktøj til Jehovas Vidner, vibe coded med **OpenAI Codex** og udviklet med udgangspunkt i arbejdet ved distriktsdisken.
+**Hold styr på kort, udleveringer og gennemgange — med dine registreringer på dit eget system.**
 
-[English](README.en.md) · [Installation](docs/INSTALL.md) · [Kom i gang](docs/FIRST-STEPS.md) · [Privatliv](docs/PRIVACY.md) · [Udviklingsplan](ROADMAP.md) · [Manuelle punkter](Dette-skal-hjaelpes-manuelt.md)
+LTM er et gratis, uofficielt værktøj til distriktsarbejdet i Jehovas Vidners menigheder. Se, hvilke kort der er ude, find et ledigt kort, og registrer en aflevering samme sted. Du kan begynde med de papirkort, du allerede har, og tilføje adresser og korttegning senere.
 
-## Ny opstart og kortimport på develop
+**[Prøv demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](docs/INSTALL.md) · [Idéer og feedback](https://tally.so/r/KpY0ZV)**
 
-Første start spørger til enkel udlevering eller kortfunktion, KML, eksisterende kortfordeling og IB. Svarene giver en personlig plan. Førstegangsopsætningen afsluttes med en rundtur i appen, som kan genåbnes under Indstillinger.
+Demoen åbner uden installation eller konto og viser opdigtede eksempler.
 
-Har du allerede fordelt adresser på kort og områder, kan du hente Excel-skabelonen i **Indstillinger → Avanceret → Importér eksisterende distriktskort**. XLSX og CSV kontrolleres lokalt; alle fejl skal rettes før samlet oprettelse. [Kortimport](docs/KORTIMPORT.md) og [nye ønsker](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/develop/OENSKELISTE.md).
+## Mere overblik i det daglige
 
-## Kom i gang
+- **Find det rigtige kort.** Se kort i mappen, kort i kassen og kort, som er udleveret.
+- **Registrer udlevering og aflevering.** Find en forkynder, vælg et kort, og behold historikken samlet.
+- **Kom i gang med dine eksisterende kort.** Start med kortnumrene, eller indlæs en liste fra Excel. Guiden hjælper dig videre.
+- **Arbejd med adresser og kort.** Tegn grænser, vælg adresser, og få overblik på et samlet kort.
+- **Print, når du har brug for det.** Lav kortforsider, IB-bagsider, S-13 og oversigter.
+- **Husk næste opgave.** Gem noter og opfølgning ved kortene, og følg med i gennemgangene.
 
-**Udviklingsgren: develop.** Denne gren klargør næste version. Brug [main](https://github.com/Bib007/LTM-Local-Territory-Manager/tree/main) til stabil installation. Den almindelige HA-knap nedenfor følger main. Betakanalen har separat app og port; følg [betavejledningen](docs/BETA.md). Den faste udviklingsplan er afsluttet; [slutkontrollen](docs/SLUTKONTROL.md) viser, hvad der mangler før næste stabile udgave.
+## Se LTM i brug
+
+Skærmbillederne viser programmet med opdigtede eksempler.
+
+**Overblik over kortene og de næste opgaver**
+
+![LTM-forsiden med kortstatus, gennemgange og opgaver](assets/screenshots/overblik.png)
+
+**En enkel arbejdsgang til udlevering og aflevering**
+
+![Daglig brug i LTM med valg af kort og forkynder](assets/screenshots/udlevering.png)
+
+**Kortets oplysninger samlet ét sted**
+
+![Et opdigtet distriktskort med oplysninger og adresser](assets/screenshots/distriktskort.png)
+
+## Vælg, hvordan du vil bruge LTM
+
+**Seneste stabile udgave: 1.12.0**
+
+| Brug LTM på | Sådan kommer du i gang |
+| --- | --- |
+| **Home Assistant** | Tilføj LTM, og installer appen **Distrikt**. Du kan derefter åbne den samme installation fra din computer, telefon eller iPad derhjemme. |
+| **Mac eller Windows** | Hent programpakken, pak den ud, og følg startvejledningen. Du skal installere Python én gang, hvis det ikke allerede er på computeren. |
 
 [![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
-**1.11.1** er det stabile udgangspunkt. Den videre udvikling følger [udviklingsplanen](ROADMAP.md).
+**[Hent til Mac og Windows](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest) · [Trin for trin](docs/INSTALL.md) · [Første gang med LTM](docs/FIRST-STEPS.md)**
 
-- **Home Assistant OS:** Brug knappen ovenfor, og vælg **Distrikt → Installer** i HA. Senere programopdateringer hentes direkte i HA. [Dansk installationsguide](docs/INSTALL.md).
-- **Mac / Windows:** Hent den komplette stabile ZIP fra [seneste stabile udgivelse](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest). Installer Python 3.9 eller nyere én gang, og åbn den relevante `Start-Distrikt`-fil i `Distrikt-lokal`. Docker og pip-pakker er ikke nødvendige.
-- **Eksisterende installation:** Bevar den fungerende app og dens data. Følg [opdateringsvejledningen](docs/INSTALL.md), og tag en privat sikkerhedskopi først.
+Har du allerede LTM? Hent en privat sikkerhedskopi i appen, før du opdaterer, og følg [opdateringsvejledningen](docs/INSTALL.md). Bruger du prøveudgaven, har den sine egne data; de flyttes ikke automatisk til den stabile app.
 
-Home Assistant kan holde appen tændt hjemme, mens den samme installation åbnes fra telefon, iPad eller computer. Udefra forbindes enheden til **VPN på egen router**, hvorefter appens private adresse åbnes. Appen har eget login og egen port; den bruger ikke Ingress eller Nabu Casa.
+## Dine registreringer bliver hos dig
 
-## Funktioner
+Kort, forkyndere, IB, udleveringer og noter gemmes på den computer eller Home Assistant, hvor du kører LTM. Der kræves ingen LTM-konto eller abonnement, og appen sender ikke brugsstatistik til udvikleren.
 
-- Udleverede distriktskort, kort i mappen og kort i kassen.
-- Forkyndere, udleverings- og gennemgangshistorik, opgaver og noter.
-- Midlertidige kortnumre, som senere kan få adresser, grænser og print.
-- OpenStreetMap, KML/GeoJSON-import, adressevalg og markering af adresser, der skal ses bort fra.
-- IB opbevaret lokalt og udskrevet på kortets bagside.
-- Print af forsider, bagsider, S-13 og rapporter efter tjenesteår: 1. september–31. august.
-- Valgfri Google Drive-deling af et gennemgået PNG-kort med stabil QR-kode.
+Kortbaggrunde og adresseopslag bruger internettet. Du kan desuden vælge at dele et gennemgået kortbillede via Google Drive, så det kan åbnes med en QR-kode. Det er et tilvalg: databaser, forkyndere, IB-lister og udleveringshistorik sendes ikke med kortbilledet. Alle med et åbent billedlink kan se og videresende billedet.
 
-På develop er automatiske forslag til distriktsgrænser og kortinddeling sat på pause fra beta.61. Brug den manuelle korteditor. Eksisterende kort, adressehentning og lokal IB-import bevares; generatorens kode ligger i [arkivet til senere udvikling](docs/ARKIVERET-AUTOFORDELING.md).
+**Tag sikkerhedskopier i selve LTM. Home Assistants almindelige backup indeholder ikke LTM's registreringer.**
 
-[Åbn webdemoen direkte](https://bib007.github.io/LTM-Local-Territory-Manager/) uden installation eller GitHub-login. Den bruger udelukkende opdigtede data og kan ikke åbne eller importere installationens private data. [Om demoen](demo/README.md).
+[Privatliv og deling](docs/PRIVACY.md) · [Sikkerhedskopiering og flytning](docs/INSTALL.md#backup-flytning-og-tilbageførsel)
 
-## Data bliver på eget system
+## Spørgsmål, før du går i gang
 
-Databaser med kort, forkyndere, IB, udleveringer og noter bliver på maskinen, der kører programmet. De medfølger ikke i kildekoden eller installationspakken. Programmet har ingen udviklerkonto, analyseindsamling eller AI-forbindelse.
+**Skal alle mine papirkort være lagt ind først?**
 
-Kortbaggrunde, offentlige adresseopslag og valgfri Google-deling bruger eksterne tjenester. Det er derfor ikke en app, der fungerer helt uden internet. Google-funktionen uploader et udtrykkeligt godkendt kortbillede; den uploader ikke databaser, forkyndere, IB-liste eller udlånsdata. Alle med billedets offentlige link kan se og videresende det.
+Nej. Start med kortnumrene og de kort, der allerede er udleveret. Adresser og korttegning kan komme senere.
 
-Lokal drift giver kontrol over data og adgang. Den er ikke i sig selv en garanti for overholdelse af persondataregler eller gældende instruktioner. [Læs de konkrete datastrømme](docs/PRIVACY.md).
+**Skal jeg have Home Assistant?**
 
-## KML fra JW HUB
+Nej. Du kan også bruge LTM på en Mac eller Windows-computer.
 
-Har du de rette tilladelser i JW HUB, kan du ifølge mine erfaringer hente en KML-fil over menighedens samlede distrikt. Brug eksportmuligheden med din egen autoriserede adgang, og kontrollér grænsen efter import. Den virkelige fil skal blive privat.
+**Kan jeg bruge min telefon eller iPad?**
 
-## Idéer og feedback
+Ja, de kan åbne den samme installation på hjemmenetværket. Vil du bruge den udefra, kræver det en forbindelse til dit hjemmenetværk via din egen VPN. Se [vejledningen](docs/INSTALL.md#brug-mobilen-udefra).
 
-Har du et forslag eller en kommentar til LTM? Åbn [Idéer og feedback](https://tally.so/r/KpY0ZV). Formularen hos Tally kræver hverken konto eller e-mail. Du kan vedhæfte op til tre billeder (JPG/JPEG/PNG/WebP, højst 10 MB hver). Indsendt tekst og bilag gemmes i projektejerens Tally-arbejdsrum; LTM sender ingen lokale data automatisk. Brug kun fiktive eksempler uden IB, rigtige distriktskort, personoplysninger eller adgangskoder. Uden kontaktoplysninger kan vi ikke svare personligt. [GitHub-issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) er fortsat en mulighed for brugere med GitHub-konto.
+**Kan jeg tage eksisterende oplysninger med?**
 
-## Åbent projekt
+Du kan indlæse kort fra en Excel-liste og hente gennemgange og udleveringer fra de understøttede S-13-filer. Du ser og godkender oplysningerne, før de gemmes. [Kortimport](docs/KORTIMPORT.md) · [S-13-import](docs/DAILY-WORKSPACE.md).
 
-Det hele er vibe coded med Codex. Jeg lover ikke, at alt virker; input og fejlmeldinger er velkomne. Brug opdigtede eksempler i issues. Vedhæft aldrig rigtige databaser, forkyndernavne, IB-adresser, adgangskoder, forbindelsesfiler eller sikkerhedskopier.
+**Findes LTM på engelsk?**
 
-Projektet er ikke udgivet, godkendt eller understøttet af jw.org, JW HUB eller Home Assistant. Koden er MIT-licenseret; de tomme formularer og medfølgende tredjepartskode har særskilte rettigheder. Se [kendte begrænsninger](docs/LIMITATIONS.md) og [tredjepartsoplysninger](distrikt/THIRD-PARTY.md).
+Dansk er hovedsproget. Du kan vælge engelsk i appen, men enkelte tekster og de originale formularer er fortsat danske.
 
-## Udvikling
+## Har du en idé eller fundet en fejl?
 
-```sh
-python3 -m unittest discover -s distrikt/tests -v
-TZ=Europe/Copenhagen node distrikt/tests/test_frontend.cjs
-python3 scripts/test_build_release.py
-python3 scripts/build_release.py
-```
+Brug [Idéer og feedback](https://tally.so/r/KpY0ZV). Du behøver ingen konto eller e-mailadresse, og du kan vedhæfte billeder. Send kun opdigtede eksempler, uden rigtige personoplysninger, IB, sikkerhedskopier eller adgangskoder. Det, du selv indsender, gemmes hos Tally.
 
-Python er programmets kørselskrav. Node bruges til udviklingskontroller. Prøver skal bruge isolerede, opdigtede data. Dokumentation og opsætningsguides skrives på dansk først, med engelsk som ekstra valg. [Bidrag og dokumentationsregler](CONTRIBUTING.md).
+## Om projektet
+
+LTM er et uofficielt projekt og er ikke udgivet eller godkendt af Jehovas Vidner, jw.org, JW HUB eller Home Assistant. Det udvikles med hjælp fra OpenAI Codex. Koden er frit tilgængelig; [licens](LICENSE) og [oplysninger om de medfølgende materialer](distrikt/THIRD-PARTY.md) kan læses her.
+
+[English](README.en.md) · [Vejledninger og begrænsninger](docs/LIMITATIONS.md) · [Nyheder i 1.12.0](docs/RELEASE-NOTES.md) · [Billede til deling](assets/screenshots/deling.png) · [Bidrag til projektet](CONTRIBUTING.md)
