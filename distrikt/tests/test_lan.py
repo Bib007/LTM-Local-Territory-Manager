@@ -27,6 +27,58 @@ class LANTests(unittest.TestCase):
         req=urllib.request.Request(self.server.origin+path,json.dumps(data).encode() if data is not None else None,h)
         return (client or self.client).open(req,timeout=5)
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
+    def test_sensitive_route_matrix_requires_session_and_request_token(self):
+        routes=[('/api/state',None),('/api/geo',None),('/api/storage',None),
+                ('/api/activity',None),('/api/map',None),('/api/data-info',None),
+                ('/api/export/backup',None),('/api/export/s13?year=2026',None),
+                ('/api/restore/safety?name=foer-import-fake.zip',None),
+                ('/api/address-source/status',None),('/api/share/status',None),
+                ('/api/share/qr?card_id=fake',None),
+                ('/api/mutate',{'action':'settings.save','data':{}}),
+                ('/api/beta/reset',{}),('/api/restore/apply',{}),
+                ('/api/restore/preview',{}),('/api/address-source/connect',{}),
+                ('/api/address-source/disconnect',{}),('/api/share/connect',{}),
+                ('/api/share/disconnect',{}),('/api/share/publish',{}),
+                ('/api/share/withdraw',{}),('/api/geo/download',{}),
+                ('/api/export/readable/prepare',{})]
+        before=self.s.revision
+        for path,data in routes:
+            with self.subTest(path=path,stage='no session'):
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    self.req(path,data,{'X-Distrikt-Token':self.server.token})
+                self.assertEqual(error.exception.code,401)
+        self.login().close()
+        for path,data in routes:
+            with self.subTest(path=path,stage='wrong token'):
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    self.req(path,data,{'X-Distrikt-Token':'invalid-token'})
+                self.assertEqual(error.exception.code,403)
+        self.assertEqual(self.s.revision,before)
+        self.assertFalse(self.server.address_source.status()['configured'])
+        self.assertFalse(self.server.sharing.drive.connected())
+
+    def test_secrets_and_encoded_paths_are_not_served_as_static_files(self):
+        self.login().close()
+        for path in ('/drive-auth.json','/datafordeler-auth.json','/access.json',
+                     '/run.json','/../access.json','/%2e%2e/access.json',
+                     '/vendor/../../access.json','/api/restore/safety?name=../../access.json'):
+            with self.subTest(path=path):
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    self.req(path,headers={'X-Distrikt-Token':self.server.token})
+                self.assertIn(error.exception.code,(400,404))
+                body=error.exception.read()
+                self.assertNotIn(b'Fiktiv-kode-12345',body)
+                self.assertNotIn(b'"salt"',body)
+
+    def test_foreign_origin_cannot_write_even_with_session_and_token(self):
+        self.login().close();before=self.s.revision
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.req('/api/mutate',{'action':'publisher.save','data':{'name':'Fiktiv CSRF'}},
+                     {'Origin':'https://example.invalid','X-Forwarded-For':'127.0.0.1'})
+        self.assertEqual(error.exception.code,403)
+        self.assertEqual(self.s.revision,before)
+        self.assertEqual(self.s.all('publishers'),[])
+
     def test_beta_reset_endpoint_requires_beta_login_token_and_idle_downloads(self):
         self.login().close();self.s.mutate('card.save',{'number':'FAKE','temporary':True})
         payload={'confirmation':'NULSTIL BETA','revision':self.s.revision}

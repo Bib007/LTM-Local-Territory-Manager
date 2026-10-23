@@ -11,8 +11,9 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
 REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
-PDF_DEPENDENCIES=('pypdf-6.10.0.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
+PDF_DEPENDENCIES=('pypdf-6.21.2.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
+BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json'}
 ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','KOREPLAN.md','Dette-skal-hjaelpes-manuelt.md','Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 
@@ -33,7 +34,7 @@ def files():
         for p in sorted((SRC/section).rglob('*')):
             if not p.is_file() or '__pycache__' in p.parts:continue
             if p.is_symlink():raise ValueError('Symlink not allowed in release: '+str(p))
-            if p.suffix in BLOCKED_SUFFIXES:raise ValueError('Private/runtime file in source tree: '+str(p))
+            if p.suffix in BLOCKED_SUFFIXES or p.name in BLOCKED_NAMES:raise ValueError('Private/runtime file in source tree: '+str(p))
             relative=p.relative_to(SRC).as_posix()
             if any(part.startswith('.') for part in p.relative_to(SRC).parts):continue
             result['Distrikt-lokal/'+relative]=(p.read_bytes(),0o644)

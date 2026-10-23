@@ -38,3 +38,7 @@ W16/automatisk inddeling er parkeret og fjernet fra aktiv app. W65 flerbruger er
 Ejeropfølgning 23.10.2026: Den generelle HA-prøve er bekræftet bestået og skal ikke bestilles igen. API-adressehentningen og demoens første åbning er nu også ejerbekræftet. Separat gendannelse og fysiske print-/QR-prøver registreres kun ved konkret bekræftelse. Feedbackmenuen forenkles før stabil; W82 er udtrykkeligt placeret efter stabil.
 
 Ejerafklaring 23.10.2026: Drive og gendannelse fungerer uden problemer og er godkendt af ejeren. GitHub Support er udtrykkeligt fjernet som udgivelsesblokering; gammel offentlig historik er ikke dermed dokumenteret ryddet. Den ønskede Codex Security-scanning er ikke startet: scanner-/preflightadgang mangler i den aktuelle session. W28 forbliver åben.
+
+## Manuel sikkerhedskontrol · kandidat beta.62
+
+Efter ejerens valg er den alternative [manuelle kodegennemgang](SIKKERHEDSGENNEMGANG-2026-10.md) udført. To konkrete punkter er rettet: forældet PDF-afhængighed og XLSX DTD-kontrol ved UTF-16. Lokale sikkerheds-/regressionsprøver er bestået. Den præcise kandidats CI-/platformkontroller skal fortsat være grønne før udgivelse. Codex Security er ikke kørt; systempakker, komplet belastningstest og uafhængig penetrationstest er ikke dækket. W06-arkitektur og W56 beskrives fortsat som ikke leveret.

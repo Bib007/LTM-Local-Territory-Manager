@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.0-beta.62 · Sikkerhedskontrol før stabil
+
+- Opdatér den lokale PDF-læser fra pypdf 6.10.0 til 6.21.2 med kendte rettelser til ressourceforbrug. Bevar separat importproces, tids-/hukommelsesgrænser og lokal behandling.
+- Afvis DTD/XML-entiteter i XLSX-parseren uanset XML-kodning; almindelige UTF-16-ark fungerer fortsat.
+- Udvid API-prøver for login, tokens, fremmed Origin og filstier. Tilføj afhængighedskontrol og kontrol af alvorlige statiske Python-fund før beta/stabil publicering.
+- Forenkl menupunktet Idéer og feedback. Adressehentning og Drive/gendannelse er ejerbekræftet; løbende adressestatus (W82) ligger efter stabil.
+
 ## 1.12.0-beta.61 · Manuel kortinddeling og klargøring til stabil udgivelse
 
 - W81: fjern automatiske grænse- og inddelingsforslag fra aktiv opsætning. Gamle personlige planer peger på manuel korttegning; IB-import og eksisterende data bevares.

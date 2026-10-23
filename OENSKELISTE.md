@@ -26,6 +26,14 @@ Ejeren har udtrykkeligt afklaret: GitHub Supports restoprydning (W61) skal ikke 
 
 Næste ønskede kontrol er Codex Security på den aktuelle develop-kode. Security-skillen er tilgængelig, men de nødvendige scanner-/preflightværktøjer og referencer kunne ikke tilgås i denne session, heller ikke efter plugin-søgning. Ingen Codex Security-scanning er startet, og W28 er fortsat åben. En eventuel senere scanning skal registrere den præcise kildecommit og afgrænse fund i forhold til appens LAN/VPN-model.
 
+## Manuel sikkerhedsgennemgang · beta.62 klargjort · 23.10.2026
+
+Ejeren har valgt en manuel kodegennemgang med automatiske kontroller som alternativ til Codex Security-pluginet. Den er udført med kildecommit `303541e557edc6c0301f8f925d31a94c74d1e0d4` som udgangspunkt; rapport, fund, rettelser, dækning og begrænsninger findes i [sikkerhedsgennemgangen](docs/SIKKERHEDSGENNEMGANG-2026-10.md). Codex Security må ikke betegnes kørt.
+
+To konkrete punkter er håndteret til beta.62: opdatering af pypdf 6.10.0 til 6.21.2 og parserbaseret DTD-afvisning i XLSX også ved UTF-16. Pakningen afviser nu kendte nøgle-/loginfilnavne, og CI får en fælles sikkerhedskontrol, som indgår før beta og stabil publicering. Lokalt består 479 Python-prøver med én forventet overspringning, alle JavaScript-prøver, 20 pakkeprøver, faktisk arkivstart, Bandits kontrol for high severity og pip-audit af de tre medleverede Python-biblioteker. Ingen kendte advisories efter opdateringen i den sidstnævnte afgrænsning.
+
+W28's aftalte alternative kodegennemgang er lokalt gennemført; udgivelseskontroller på kandidatcommit mangler før beta.62 kan betegnes verificeret udgivet. W06 er vurderet for den uændrede lokale LAN/VPN-model; særskilt AppArmor/non-root/ingress er anbefalinger til senere, ikke implementerede rettelser. W56 er fortsat et fremtidsønske. Support/W61 er ikke en blokering efter ejerens beslutning; Drive/gendannelse og API-adressehentning er ejerbekræftet. Main er fortsat 1.11.1. W82 forbliver efter næste stabile udgivelse.
+
 ## Historik · kontrolstatus registreret 21.10.2026
 
 Senest fuldt verificerede udgivelse er beta.60 fra runtime-commit 16e9e2c5138560ea49e5631ffa739697e59d669f. Alle HA-job inklusive publicering i 39636542723 og Platformskontrol 39636542738 er completed/success. Den særskilte Checks-kørsel fejlede efter en helsidesoptagelse ændrede den simulerede touchvisning. Kontrolrettelsen i 2ce4cacd6b3df5190a2d33180f05e168686b6dd8 tager et viewportbillede og bevarer alle læsbarheds-/skriftstørrelseskrav; Checks 39637398049 er completed/success. Denne testændring giver en identisk programpakke: HA-ZIP-SHA256 99ce9d2265e43f8b38cac47d96050ff14460c6185f55b7b39a17a1ea3616c72d matcher den udgivne pakke. Betakanalen er læst tilbage som beta.60/8788. Main er stabil 1.11.1. Ingen udgivet beta er overskrevet.

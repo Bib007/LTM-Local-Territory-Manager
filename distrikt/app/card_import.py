@@ -18,6 +18,11 @@ MAX_BYTES=2000000
 def norm(value):return re.sub(r'\s+',' ',str(value or '').strip()).casefold()
 def template_csv():return ('\ufeff'+';'.join(HEADERS)+'\r\n').encode('utf-8')
 
+class NoDTD(ET.TreeBuilder):
+    def doctype(self,name,pubid,system):
+        # Parser-level rejection also covers UTF-16 XML inside XLSX files.
+        raise ValueError('Regnearket indeholder ikke-understøttede XML-deklarationer.')
+
 def xlsx_rows(raw):
     """Read values from the named input sheet; never evaluate formulas or links."""
     try:
@@ -30,7 +35,7 @@ def xlsx_rows(raw):
             def xml(name):
                 content=archive.read(name)
                 if b'<!DOCTYPE' in content.upper() or b'<!ENTITY' in content.upper():raise ValueError('Regnearket indeholder ikke-understøttede XML-deklarationer.')
-                return ET.fromstring(content)
+                return ET.fromstring(content,parser=ET.XMLParser(target=NoDTD()))
             book=xml('xl/workbook.xml');sheets=book.findall('s:sheets/s:sheet',NS)
             chosen=next((s for s in sheets if s.get('name')=='Distriktskort'),None)
             if chosen is None:

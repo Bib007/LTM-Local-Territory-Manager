@@ -1,3 +1,13 @@
+# Beta.62 · Sikkerhedskontrol før stabil
+
+PDF-læseren er opdateret til pypdf 6.21.2. XLSX-import afviser DTD/entiteter i alle understøttede XML-kodninger. API-prøverne dækker beskyttede ruter uden session eller korrekt token, fremmed Origin og forsøg på at hente private filer. Den korte feedbackmenu er med.
+
+Prøv almindelig S-13 PDF-import og kortimport med den lokale forhåndsvisning. Eksisterende data bevares. Google Support/W61 blokerer efter ejerens beslutning ikke stabil; sagen er ikke erklæret afsluttet. W82 om aktivitet og adresseantal er planlagt efter stabil. Se [sikkerhedsgennemgangen](SIKKERHEDSGENNEMGANG-2026-10.md) for fund og afgrænsning.
+
+Denne kandidat skal gennem alle udgivelseskontroller før den betegnes udgivet. Main er fortsat stabil 1.11.1.
+
+---
+
 # LTM 1.12.0-beta.61
 
 W81 · Automatiske forslag til distriktsgrænser og kortinddeling er sat på pause.

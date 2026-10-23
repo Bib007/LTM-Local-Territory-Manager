@@ -75,7 +75,7 @@ class HistoryImportTests(unittest.TestCase):
         p=self.s.mutate('setup.history-import.preview',data)
         self.assertEqual(p['count'],0);self.assertEqual(p['rows'][0]['number'],'001');self.assertEqual(p['rows'][0]['date'],self.day)
         sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app/vendor_py'))
-        sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app/vendor_py/pypdf-6.10.0.zip'))
+        sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app/vendor_py/pypdf-6.21.2.zip'))
         from pypdf import PdfReader,PdfWriter
         writer=PdfWriter(clone_from=str(Path(__file__).resolve().parents[1]/'templates/S-13-fillable.pdf'))
         writer.update_page_form_field_values(writer.pages[0],{'row_01.number':'001','row_01.assignment_1.completed':date.fromisoformat(self.day).strftime('%d.%m.%Y')})
@@ -194,7 +194,7 @@ class S13LoanImportTests(unittest.TestCase):
 
     def test_original_fillable_s13_reads_unicode_names_and_unreturned_allocations(self):
         self.card2();folder=Path(__file__).resolve().parents[1]
-        sys.path.insert(0,str(folder/'app/vendor_py'));sys.path.insert(0,str(folder/'app/vendor_py/pypdf-6.10.0.zip'))
+        sys.path.insert(0,str(folder/'app/vendor_py'));sys.path.insert(0,str(folder/'app/vendor_py/pypdf-6.21.2.zip'))
         from pypdf import PdfWriter
         writer=PdfWriter(clone_from=str(folder/'templates/S-13-fillable.pdf'))
         writer.update_page_form_field_values(writer.pages[0],{'row_01.number':'001','row_01.assignment_1.person':'Fiktiv Ω A','row_01.assignment_1.assigned':self.ago(80),'row_01.assignment_1.completed':self.ago(30),'row_02.number':'002','row_02.assignment_1.person':'Fiktiv B','row_02.assignment_1.assigned':self.ago(20)})

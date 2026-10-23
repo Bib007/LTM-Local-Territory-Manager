@@ -6,7 +6,7 @@ from pathlib import Path
 
 def read(raw):
     sys.path.insert(0,str(Path(__file__).with_name('vendor_py')))
-    sys.path.insert(0,str(Path(__file__).with_name('vendor_py')/'pypdf-6.10.0.zip'))
+    sys.path.insert(0,str(Path(__file__).with_name('vendor_py')/'pypdf-6.21.2.zip'))
     import pypdf
     from pypdf import filters
     filters.ZLIB_MAX_OUTPUT_LENGTH=8000000

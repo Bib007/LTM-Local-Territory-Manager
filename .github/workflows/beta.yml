@@ -10,6 +10,8 @@ concurrency:
   group: ha-beta-release
   cancel-in-progress: false
 jobs:
+  security:
+    uses: ./.github/workflows/security.yml
   checks:
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
@@ -93,7 +95,7 @@ jobs:
       - run: docker run --rm --env LTM_CHANNEL=beta --entrypoint python3 ltm-ha-beta -c "import sys,tempfile; sys.path.insert(0, '/opt/distrikt/app'); from access import Access,LOGIN; assert 'Beta' in LOGIN; d=tempfile.TemporaryDirectory(); assert Access(d.name,'Fictional-pass-123').cookie_name=='distrikt_beta_session'"
   publish:
     if: github.ref == 'refs/heads/develop'
-    needs: [checks, python-compatibility, desktop, home-assistant]
+    needs: [security, checks, python-compatibility, desktop, home-assistant]
     runs-on: ubuntu-latest
     permissions:
       contents: write

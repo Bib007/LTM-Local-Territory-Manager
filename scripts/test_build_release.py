@@ -53,7 +53,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):return release.build(self.root/folder)
 
     def test_missing_local_pdf_dependency_blocks_release(self):
-        (self.source/'app/vendor_py/pypdf-6.10.0.zip').unlink()
+        (self.source/'app/vendor_py/pypdf-6.21.2.zip').unlink()
         with self.assertRaisesRegex(ValueError,'missing local PDF dependency'):self.build('missing-pdf')
 
     def test_complete_portable_docs_and_no_data(self):
@@ -134,6 +134,16 @@ class ReleaseArchiveTests(unittest.TestCase):
     def test_missing_excel_template_blocks_release(self):
         (self.source/'app/kort-import-skabelon.xlsx').unlink()
         with self.assertRaisesRegex(ValueError,'missing Excel import template'):self.build('output')
+
+    def test_accidental_credential_json_in_program_tree_blocks_release(self):
+        for name in ('drive-auth.json','datafordeler-auth.json','access.json','run.json'):
+            with self.subTest(name=name):
+                path=self.source/'app'/name
+                path.write_text('{"credential":"FICTIONAL_TEST_ONLY"}')
+                try:
+                    with self.assertRaisesRegex(ValueError,'Private/runtime'):
+                        release.files()
+                finally:path.unlink()
 
     def test_accidental_database_in_program_tree_blocks_release(self):
         self.add('distrikt/app/accidental.sqlite3','fake private test record')

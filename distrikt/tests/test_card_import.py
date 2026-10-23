@@ -33,6 +33,31 @@ class CardImportTests(unittest.TestCase):
     def tearDown(self):self.s.close();self.tmp.cleanup()
     def preview(self,rows=ROWS):return self.s.mutate('setup.card-import.preview',csv_file(rows))
     def apply(self,p,**kw):return self.s.mutate('setup.card-import.apply',{'token':p['token'],'confirm':'IMPORTÉR KORT',**kw})
+    def test_xlsx_dtd_is_rejected_before_entity_expansion_in_every_encoding(self):
+        original=xlsx_file(ROWS)
+        for encoding in ('utf-8','utf-16','utf-16-be'):
+            with self.subTest(encoding=encoding):
+                out=io.BytesIO()
+                with zipfile.ZipFile(io.BytesIO(base64.b64decode(original['content']))) as source,zipfile.ZipFile(out,'w') as target:
+                    for name in source.namelist():
+                        raw=source.read(name)
+                        if name=='xl/workbook.xml':
+                            xml=raw.decode().replace('<sheets>','<unused>&probe;</unused><sheets>')
+                            raw=('<?xml version="1.0" encoding="'+('UTF-16' if encoding=='utf-16-be' else encoding)+'"?><!DOCTYPE workbook [<!ENTITY probe "FIKTIV_ENTITY">]>'+xml).encode(encoding)
+                        target.writestr(name,raw)
+                with self.assertRaisesRegex(ValueError,'XML-deklarationer'):
+                    read_rows({'name':'fiktiv.xlsx','content':base64.b64encode(out.getvalue()).decode()})
+
+    def test_xlsx_utf16_without_dtd_still_imports(self):
+        original=xlsx_file(ROWS);out=io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(base64.b64decode(original['content']))) as source,zipfile.ZipFile(out,'w') as target:
+            for name in source.namelist():
+                raw=('<?xml version="1.0" encoding="UTF-16"?>'+source.read(name).decode()).encode('utf-16')
+                target.writestr(name,raw)
+        rows=read_rows({'name':'fiktiv.xlsx','content':base64.b64encode(out.getvalue()).decode()})
+        self.assertEqual(len(rows),len(ROWS)+1)
+        self.assertEqual(rows[1][1][0],'001')
+
     def test_new_onboarding_requires_tour_and_preserves_unknown_fields(self):
         answers={'mode':'desk','boundary':'later','cards':'numbers','ib':'later'}
         self.s.mutate('setup.onboarding.save',{'answers':answers})

@@ -33,7 +33,7 @@ Stabil HA og beta er separate installationer med egne data og login. Den stabile
 
 ## Uafklaret før offentliggørelse
 
-API-adressehentning, generel HA-drift samt Drive og gendannelse er ejerbekræftet. Ejeren har besluttet, at W61's eksterne GitHub-oprydning ikke blokerer næste stabile udgivelse; oprydningen er ikke dokumenteret færdig. Relevante print-/QR-prøver og afgrænsningen af W06/W28/W56 skal fremgå af den endelige beslutning. En fuld sikkerhedsscanning er ikke dokumenteret. Åbne punkter må ikke præsenteres som beståede.
+API-adressehentning, generel HA-drift samt Drive og gendannelse er ejerbekræftet. Ejeren har besluttet, at W61's eksterne GitHub-oprydning ikke blokerer næste stabile udgivelse; oprydningen er ikke dokumenteret færdig. Relevante print-/QR-prøver og afgrænsningen af W06/W28/W56 skal fremgå af den endelige beslutning. Den aftalte alternative manuelle sikkerhedsgennemgang med Bandit, afhængighedskontrol og isolerede prøver er dokumenteret i [rapporten](SIKKERHEDSGENNEMGANG-2026-10.md). Rettelser klargøres som beta.62 og kræver egne grønne udgivelseskontroller. Codex Security og en uafhængig penetrationstest er ikke kørt. Åbne punkter må ikke præsenteres som beståede.
 
 Det stabile publiceringsflow på develop kræver de fulde program-/browser-/pakkeprøver samt Mac, Windows og HA-container på samme commit. Kun publiceringsjobbet har skriverettigheder, det kræver main, og eksisterende udgivne versioner overskrives ikke. Flowet erstatter ikke de lokale ejerprøver eller beslutningen om at promovere en version til main.
 

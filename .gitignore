@@ -5,8 +5,11 @@ __pycache__/
 *.db-*
 *.log
 *.zip
+!distrikt/app/vendor_py/pypdf-6.21.2.zip
 run.json
 drive-auth.json
+datafordeler-auth.json
+access.json
 *credentials*.json
 client_secret*.json
 .env*
