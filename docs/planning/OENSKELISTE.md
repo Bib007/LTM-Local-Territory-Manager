@@ -1,8 +1,10 @@
 # Ønskeliste og nye opgaver
 
-## Beta.65 · under udvikling · 23.10.2026
+## Beta.65 · afventer udgivelseskontrol · 23.10.2026
 
 Den samlede beta.65 omfatter W93, W82 og W86: undgå unødig genhentning af alle geodata efter almindelig sletning/gendannelse; vis reel aktivitet og dubletfrit antal modtagne adresser; lad opslagets størrelsesgrænse udløse bounded opdeling i mindre udsnit. Ingen tidsprognose eller kunstigt antal. Pause, genoptagelse, kildevalidering og beskyttelse mod usikkert gemmeresultat bevares. Ejerens konkrete HA-/telefonforsinkelse er ikke målt; rettelsen adresserer den påviste ekstra dataoverførsel. W82/W86 afsluttes først efter udgivelseskontrol. W93 er delvist leveret; eventuel resterende HA-ventetid er fortsat åben. En gennemgang af beta.64-kandidaten fandt ekstra geodatahentning ved almindelig kortgemning; beta.65 afgrænser optimeringen til de handlinger, der allerede genhentede kortdata, og bevarer konservativ adfærd med ældre servere. Browserprøven venter nu på afsluttet opstart før en fiktiv fejl vises.
+
+Beta.65-kandidat: `66450705d9f159ecb5cc81a7b6a4ff94c5f9e282`, præcist træ `ebf1834d438268a7b949143fe2d0c8960182f1c1`. Lokalt består 487 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver, rigtig arkivopstart og browserprøver ved 320/390/768/1440 px samt fire telefon-/tabletstørrelser med berøring. HA-betaens lokale ZIP er 1.184.271 bytes / 121 filer med SHA256 `ba1f79573fc3f8c2e04e2a23adf1c04c01efc73d277b87ea851cfaa98eef55a2`; separat betaidentitet/port 8788 er kontrolleret. Udgivelseskontrol 40010353744 afventer den ældre kontrol 40009054668, som står ved installation af browserværktøjerne. Checks 40010353775 og Platformskontrol 40010353967 er startet. Ingen bekræftet beta.65-udgivelse endnu; fremdrift bevares 75/100 og 25 åbne. Den tidligere WebKit-prøves opstartsrace er rettet i 53d5b2d2df3fdab8eea1e66547c977e5fd6f3613. Almindelig kortgemning får en særskilt regressionstest mod ekstra geodatahentning. Stabil er fortsat 1.12.1. Endelig CI, kanalversion og offentlig pakke skal læses tilbage før W82/W86 afsluttes; W93 forbliver delvist åben for eventuel øvrig HA-ventetid.
 
 W100 er udsat efter ejerens udtrykkelige valg: fortsæt udviklingen og vent med grenoprydning. Ingen nye loginforsøg eller grensletninger hører til denne runde.
 
@@ -20,8 +22,8 @@ Ejeren ønsker nu flere sammenhængende rettelser pr. beta; den tidligere græns
 | --- | --- |
 | W87 · Fire rodfiler på den almindelige GitHub-forside | Afsluttet på main og develop |
 | W100 · Ryd gamle grene | Udsat efter ejerens valg |
-| W93 · Langsom gemning/permanent sletning | Under udvikling i beta.65 |
-| W82/W86 · Aktivitet, antal og mindre adressehentninger | Under udvikling i beta.65 |
+| W93 · Langsom gemning/permanent sletning | Afventer beta.65-kontrol |
+| W82/W86 · Aktivitet, antal og mindre adressehentninger | Afventer beta.65-kontrol |
 | W94/W95 · Import og samlet Opfølgninger | Samlet betjening efter afhængigheder |
 | W85 · Kort/IB fra billeder og mange filer | Tidligt importarbejde |
 | W92 · Programversion i feedback | Formularundersøgelse |
