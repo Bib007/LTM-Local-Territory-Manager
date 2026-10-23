@@ -1,6 +1,6 @@
 # Ønskeliste og nye opgaver
 
-## Ny betarunde · ønsker modtaget 23.10.2026
+## Beta.63 klargjort · 23.10.2026
 
 Stabil 1.12.1 er udgivet med rettelsen af W89 og seks dokumenter flyttet fra roden. W87 genåbnes efter det skærpede ønske om højst 3–4 løse rodfiler og færre dubletvejledninger. Udgivet 1.12.1 ændres ikke. Betaen skal bevare rettelsen, der pauser generel synkroniseringsafvisning indtil profiler.
 
@@ -16,9 +16,11 @@ Stabil 1.12.1 er udgivet med rettelsen af W89 og seks dokumenter flyttet fra rod
 | W97 | Webdemo med samme design som appen | Faktisk produktlayout med fiktive data; alle funktioner behøver ikke virke. Bevar tydelig demoafgrænsning. |
 | W98 | Lyst udseende | Alternativ til mørkt, med vedvarende valg og kontrol af kontrast, formularer, kort og telefon/tablet. |
 
-Alle ni nye ønsker har prioriteten “LTM vælger”. Første samlede beta omfatter stable-rettelsen, W88/W90/W91/W96 og den skærpede W87-oprydning; W93 undersøges samtidig. Adressehentning W82/W86 følger derefter, og import/opfølgninger W85/W94/W95 samles efter afhængigheder. Vejnet/autokort er fortsat parkeret. Nye punkter er registreret, ikke markeret udgivet.
+Alle ni nye ønsker har prioriteten “LTM vælger”. Første samlede beta omfatter stable-rettelsen, W88/W90/W91/W96 og den skærpede W87-oprydning; W93 undersøges samtidig. Adressehentning W82/W86 følger derefter, og import/opfølgninger W85/W94/W95 samles efter afhængigheder. Vejnet/autokort er fortsat parkeret. W87-oprydningen efterlader fire rodfiler inklusive projektets filtreringsfil: README, licens, HA-repositoryfil og filtrering. Ændringsliste, engelsk introduktion, bidragsvejledning, Mac-hjælp og platformsregler ligger i relevante mapper. Relative vejledningslinks og billeder samt pakkeindhold er tilpasset. W87/W88/W90/W91/W96 er klargjort til 1.12.2-beta.63; de er ikke markeret afsluttet før udgivelseskontrollerne er bestået. W93 er fortsat åben: efter en skrivekvittering genhenter klienten både geodata (ved sletning) og almindeligt overblik, før den viser færdigstatus. Ingen konkret flaskehals er endnu reproduceret med en realistisk fiktiv datamængde; ingen slette-/lagringsbeskyttelse er fjernet.
 
 Aktuel fremdrift ved registrering: 69/98 afsluttet/afklaret, 29 åbne, cirka 70 %. W89 er afsluttet, W87 er delvist leveret og genåbnet. Google-kildetekster ryddes efter læsekontrol af registreringen på GitHub og i hovedplanen.
+
+Lokalt består 481 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 15 programpakkeprøver, fem beta-pakkeprøver og rigtig arkivopstart. Faktisk browserbrug ved 320/390/768/1440 px dækker opgaver og fjernede visninger. Produktionsrendererens SVG→PNG-prøve måler 30 % baggrund over hvidt og uændrede røde prikker/numre; tæt/spredt kort og mobil/desktop er visuelt gennemgået. Endelig CI og HA-betapublicering udestår. Ingen privat data eller faktiske tjenesteopslag indgår.
 
 ## Akut rettelse til 1.12.1 · klargøring 23.10.2026
 

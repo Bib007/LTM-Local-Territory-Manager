@@ -1,5 +1,14 @@
 # Ændringsliste
 
+## 1.12.2-beta.63 · Flere små forbedringer i daglig brug
+
+- Ugentlige opgaver tæller først fra den dag, de skal udføres. Når de markeres udført, fortsætter de til næste dato med bevaret historik.
+- Digitale kort har en lysere baggrund, så røde besøgsprikker og husnumre er tydeligere. Tidligere delte billeder opdateres først, når et nyt billede godkendes.
+- Tekster om lokal lagring og adressehentning passer nu også til Home Assistant, Windows og andre enheder.
+- Gemte visninger vises ved den geografiske kortoversigt.
+- GitHub-forsiden har fire løse filer. Engelsk introduktion, bidragsvejledning og Mac-hjælp ligger i mapper; den gamle danske dublet er fjernet.
+- Rettelsen fra 1.12.1 er med: almindelig gemning og udlevering kræver ikke genindlæsning efter ændringer i baggrunden.
+
 ## 1.12.1 · Arbejd videre uden unødig genindlæsning
 
 Fjerner den generelle afvisning af ændringer fra andre faner/enheder, indtil brugerprofiler og samtidig redigering bliver udviklet samlet. Kort kan fortsat udleveres og rettes, når Google-delingen skifter status i baggrunden. Kontrol af kort, datoer og dobbelte udleveringer er bevaret. [Læs nyheder og opdateringsråd](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/RELEASE-NOTES.md).

@@ -14,7 +14,7 @@ REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fiel
 PDF_DEPENDENCIES=('pypdf-6.21.2.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
 BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json'}
-ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','docs/planning/ROADMAP.md','CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
+ROOT_DOCS=('repository.yaml','README.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png')
 
@@ -49,11 +49,11 @@ def files():
         p=ROOT/n
         if not p.is_file():raise ValueError('Missing release document: '+n)
         result[n]=(p.read_bytes(),0o644)
-    # HA reads the app-folder changelog, not the repository's root changelog.
+    # HA reads its app-folder changelog; docs/ holds the matching project copy.
     # Reject drift before either the portable or beta package can be published.
-    changelog=result['CHANGELOG.md'][0]
+    changelog=result['docs/CHANGELOG.md'][0]
     if result['Home-Assistant/distrikt/CHANGELOG.md'][0]!=changelog:
-        raise ValueError('Project and HA changelogs differ. Sync distrikt/CHANGELOG.md from CHANGELOG.md.')
+        raise ValueError('Project and HA changelogs differ. Sync distrikt/CHANGELOG.md from docs/CHANGELOG.md.')
     newest=re.search(r'^##[ \t]+([^\s]+)',changelog.decode('utf-8'),re.M)
     if not newest or newest.group(1)!=version():
         raise ValueError('Changelog must list the current version first.')
@@ -85,11 +85,11 @@ def files():
                     return ']('+posixpath.relpath(resolved,posixpath.dirname(name) or '.')+(separator+anchor if separator else '')
                 text=re.sub(r'\]\(([^)\s]+)',portable_link,raw.decode())
                 result[name]=(text.encode(),mode)
-    p=ROOT/'Opdater-Home-Assistant-Mac.command';result[p.name]=(p.read_bytes(),0o755)
+    p=ROOT/'scripts'/'Opdater-Home-Assistant-Mac.command';result['scripts/'+p.name]=(p.read_bytes(),0o755)
     prefix='Home-Assistant/distrikt/'
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))
     result['Home-Assistant/SHA256SUMS.txt']=(manifest.encode(),0o644)
-    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
+    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: docs/README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
     validate_links(result)
     return result
 

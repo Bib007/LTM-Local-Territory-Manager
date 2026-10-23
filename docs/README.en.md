@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
-  <img alt="LTM · Local Territory Manager" src="assets/brand/logo-light.svg" width="580">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/brand/logo-dark.svg">
+  <img alt="LTM · Local Territory Manager" src="../assets/brand/logo-light.svg" width="580">
 </picture>
 
 # Your territory cards. One clear overview.
@@ -9,7 +9,7 @@
 
 LTM is a free, unofficial tool for territory administration in congregations of Jehovah’s Witnesses. Find an available card, record an assignment or return, and keep its history together. Start with your existing paper cards and add addresses and maps when you are ready.
 
-**[Try the demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](docs/INSTALL.en.md) · [Ideas and feedback](https://tally.so/r/KpY0ZV)**
+**[Try the demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](INSTALL.en.md) · [Ideas and feedback](https://tally.so/r/KpY0ZV)**
 
 The demo uses fictional examples and needs no installation or account. The feedback form is currently in Danish.
 
@@ -26,20 +26,20 @@ The demo uses fictional examples and needs no installation or account. The feedb
 
 These pictures show the application with fictional examples. Danish is the main language; English can be selected, although some text and the original forms remain Danish.
 
-![Card status and upcoming tasks in LTM](assets/screenshots/overblik.png)
+![Card status and upcoming tasks in LTM](../assets/screenshots/overblik.png)
 
-![Choosing a territory card and publisher](assets/screenshots/udlevering.png)
+![Choosing a territory card and publisher](../assets/screenshots/udlevering.png)
 
-![A fictional territory card and its address list](assets/screenshots/distriktskort.png)
+![A fictional territory card and its address list](../assets/screenshots/distriktskort.png)
 
 ## Choose where to use LTM
 
 **Latest stable version: 1.12.1**
 
 - **Home Assistant:** add LTM and install **Distrikt**. Open the same installation from your computer, phone or iPad on your home network.
-- **Mac or Windows:** [download the program](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), extract it and follow the [installation guide](docs/INSTALL.en.md). Install Python once if it is not already available.
+- **Mac or Windows:** [download the program](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), extract it and follow the [installation guide](INSTALL.en.md). Install Python once if it is not already available.
 
-[Add to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager) · [Your first session](docs/FIRST-STEPS.en.md)
+[Add to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager) · [Your first session](FIRST-STEPS.en.md)
 
 Already using LTM? Download a private backup inside the app before updating. A beta installation has separate records; these are not automatically moved into the stable app.
 
@@ -51,7 +51,7 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 
 **Use LTM’s own backup feature. Home Assistant’s ordinary backup does not include LTM’s records.**
 
-[Privacy and sharing](docs/PRIVACY.en.md) · [Updating and moving your records](docs/INSTALL.en.md)
+[Privacy and sharing](PRIVACY.en.md) · [Updating and moving your records](INSTALL.en.md)
 
 ## Before you start
 
@@ -69,6 +69,6 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 
 ## About LTM
 
-LTM is an unofficial project, not produced or approved by Jehovah’s Witnesses, jw.org, JW HUB or Home Assistant. It is developed with help from OpenAI Codex. [License](LICENSE) · [Third-party notices](distrikt/THIRD-PARTY.md).
+LTM is an unofficial project, not produced or approved by Jehovah’s Witnesses, jw.org, JW HUB or Home Assistant. It is developed with help from OpenAI Codex. [License](../LICENSE) · [Third-party notices](../distrikt/THIRD-PARTY.md).
 
-[Dansk](README.md) · [Known limitations](docs/LIMITATIONS.en.md) · [Contributing](docs/CONTRIBUTING.en.md)
+[Dansk](../README.md) · [Known limitations](LIMITATIONS.en.md) · [Contributing](CONTRIBUTING.en.md)

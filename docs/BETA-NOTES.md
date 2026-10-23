@@ -1,3 +1,21 @@
+# LTM 1.12.2-beta.63 · Små ting, der gør hverdagen lettere
+
+Denne beta samler flere ønsker i én opdatering. Den indeholder også rettelsen fra den stabile 1.12.1, så kort kan redigeres, udleveres og afleveres uden den unødige besked om genindlæsning.
+
+- **Opgaver:** Fremtidige ugentlige opgaver tæller først på den planlagte dag. Udførte gentagelser flyttes til næste dato; historikken bevares.
+- **Digitale kort:** Baggrunden er mere hvid, mens prikker, husnumre og grænse står tydeligt.
+- **Tekster:** Adressehentning og lokal lagring omtaler dit lokale system frem for at antage, at du bruger en Mac.
+- **Gemte visninger:** Findes ved den geografiske kortoversigt.
+- **GitHub-forsiden:** Fire løse filer; de øvrige vejledninger og hjælpere er samlet i mapper.
+
+Åbn appen på ny efter opdatering. Prøv en gentagende opgave med en fremtidig dato, markér en forfalden opgave udført, og kontrollér tælleren. Dan en ny forhåndsvisning af et digitalt kort for at se den lysere baggrund. Allerede delte billeder og QR-links ændres ikke ved opdateringen; godkend et nyt billede, når du ønsker at opdatere det.
+
+Hvis flere redigerer samme oplysninger, bliver den senest gemte ændring stående. Samtidig redigering tages op igen med brugerprofiler. Den stabile kanal forbliver 1.12.1.
+
+Denne kandidat skal bestå alle udgivelseskontroller, før den betegnes udgivet. Ønskerne om langsom gemning, samlet import/opfølgning, adressehentning, lys tilstand og ny demo er fortsat åbne.
+
+---
+
 # Beta.62 · Sikkerhedskontrol før stabil
 
 PDF-læseren er opdateret til pypdf 6.21.2. XLSX-import afviser DTD/entiteter i alle understøttede XML-kodninger. API-prøverne dækker beskyttede ruter uden session eller korrekt token, fremmed Origin og forsøg på at hente private filer. Den korte feedbackmenu er med.

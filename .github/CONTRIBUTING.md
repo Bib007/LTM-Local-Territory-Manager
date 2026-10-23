@@ -1,12 +1,12 @@
 # Bidrag til LTM
 
-[English](docs/CONTRIBUTING.en.md)
+[English](../docs/CONTRIBUTING.en.md)
 
 Har du en idé eller feedback? Brug [feedbackformularen hos Tally](https://tally.so/r/KpY0ZV) uden konto eller e-mail. Indsendt tekst og billeder gemmes hos Tally; brug kun fiktive eksempler uden IB, rigtige distriktskort eller personoplysninger. Du kan også oprette eller kommentere [GitHub-issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) med GitHub-login. Udviklere kan indsende kodeændringer som pull requests.
 
 ## Dansk først
 
-README, almindelige manualer, installations- og opsætningsguides skrives på **dansk som hovedsprog**. Den almindelige filsti, fx `README.md` eller `docs/INSTALL.md`, skal vise den danske udgave. Engelsk er et ekstra valg i den tilsvarende `.en.md`-fil, med en synlig sproggenvej i begge udgaver. Eksisterende links til `README.da.md` skal fortsat virke.
+README, almindelige manualer, installations- og opsætningsguides skrives på **dansk som hovedsprog**. Den almindelige filsti, fx `README.md` eller `docs/INSTALL.md`, skal vise den danske udgave. Engelsk er et ekstra valg i den tilsvarende `.en.md`-fil, med en synlig sproggenvej i begge udgaver. Efter ejerens ønske er den gamle danske dublet fjernet; `README.md` er den danske indgang.
 
 Opdatér begge sprog ved ændringer i arbejdsgange. Filnavne, kodeeksempler, formularnavne og menuer skal svare til den faktiske version. Hvis noget endnu ikke er udgivet, skal det fremgå. Standardguiden må ikke give indtryk af, at en udviklingsbranch allerede kan installeres.
 

@@ -1,8 +1,7 @@
 #!/bin/bash
 # Run from the unpacked release. Only program files are copied; no database access.
 set -euo pipefail
-release_version='1.11.1'
-script_dir="$(cd "$(dirname "$0")" && pwd)"
+script_dir="$(cd "$(dirname "$0")/.." && pwd)"
 source_dir="$script_dir/Home-Assistant/distrikt"
 manifest="$script_dir/Home-Assistant/SHA256SUMS.txt"
 work_dir=''
@@ -21,8 +20,10 @@ if [ "$(uname -s)" != 'Darwin' ]; then
 fi
 if [ ! -f "$source_dir/app/server.py" ] || [ ! -f "$source_dir/config.yaml" ] || [ ! -f "$manifest" ]; then
   echo 'Pak hele ZIP-filen ud på din Mac, og kør hjælpen derfra.'
-  echo 'Hjælpen skal ligge ved siden af mappen Home-Assistant.'; exit 1
+  echo 'Mappen scripts skal ligge ved siden af mappen Home-Assistant.'; exit 1
 fi
+release_version=$(/usr/bin/sed -n 's/^version: "\(.*\)"$/\1/p' "$source_dir/config.yaml")
+if [ -z "$release_version" ]; then echo 'Ukendt programversion. Hent programpakken igen.'; exit 1; fi
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/distrikt-update.XXXXXX")"
 echo "Distrikt $release_version — kopi af programfiler til Home Assistant"
 echo 'Distrikt skal være stoppet i Home Assistant inden kopieringen.'
@@ -65,5 +66,5 @@ echo
 echo "FÆRDIG: Alle Distrikt $release_version-programfiler er kopieret og SHA-256-kontrolleret."
 echo 'Nu: Home Assistant → Appbutik → ⋮ → Kontroller for opdateringer.'
 echo "Åbn eksisterende Distrikt → Opdater til $release_version → Start."
-echo 'Åbn http://192.168.1.147:8787 og tryk Cmd+Shift+R.'
+echo 'Åbn din sædvanlige LTM-adresse og tryk Cmd+Shift+R.'
 echo 'Afinstaller ikke appen, og importer ikke en databasebackup ved almindelig opdatering.'

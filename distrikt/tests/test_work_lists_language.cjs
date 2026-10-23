@@ -80,6 +80,19 @@ tagged.push({dataset:{ui:'Kort',uiParams:'broken-json'},textContent:''});assert.
   {id:'general',text:'Fiktiv generel opgave',card_id:null,resolved:false,date:'2026-10-01'});Workspace.taskFilter='open';`);
  let html=run('Workspace.tasks()');assert.match(html,/Fiktiv gammel &lt;opfølgning&gt;/);assert.match(html,/Fiktiv generel opgave/);assert.doesNotMatch(html,/FIKTIV_DONE_TASK|data-value="notes"|data-work="make-task"/);
  assert.match(run('Navigation.html()'),/class="navTaskCount"[^>]*>3<\/span>/);
+ const beforeTasks=run('JSON.stringify(state.notes)');
+ run("state.notes.push({id:'weekly-next',card_id:'folder',text:'FIKTIV_FUTURE',recurrence:{frequency:'weekly',weekday:6,next_due:'2026-10-17'},resolved:false})");
+ assert.equal(run('Workspace.actionableTasks().length'),3,'Tomorrow does not count as due');
+ assert.match(run('Navigation.html()'),/class="navTaskCount"[^>]*>3<\/span>/);
+ assert.match(run('Workspace.tasks()'),/FIKTIV_FUTURE/,'Future tasks remain available in the task list');
+ run("state.today='2026-10-17'");
+ assert.equal(run('Workspace.actionableTasks().length'),4,'A weekly task counts on its due date');
+ run("state.today='2026-10-18'");
+ assert.equal(run('Workspace.actionableTasks().length'),4,'Overdue work continues to count');
+ run("state.notes.at(-1).recurrence.next_due='2026-10-24'");
+ assert.equal(run('Workspace.actionableTasks().length'),3,'Completion schedules the next date without a premature badge');
+ c.beforeTasks=beforeTasks;run("state.notes=JSON.parse(beforeTasks);state.today='2026-10-16'");
+
  assert.match(run("taskBadge('folder')"),/2 open tasks/);assert.equal(run("taskBadge('box')"),'');
  run("Workspace.taskFilter='done'");assert.match(run('Workspace.tasks()'),/FIKTIV_DONE_TASK/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv generel opgave/);
  run("Workspace.noteForm('old')");assert.doesNotMatch(get('dialog').innerHTML,/name="task"|New task \/ note/);assert.match(get('dialog').innerHTML,/Fiktiv gammel &lt;opfølgning&gt;/);

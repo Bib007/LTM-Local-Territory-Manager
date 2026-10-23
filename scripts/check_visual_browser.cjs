@@ -36,7 +36,7 @@ if(out)fs.mkdirSync(out,{recursive:true});
    const recipe={publicCard:{id:'fake',number:dense?'F36':'F3',name:dense?'Fiktivt tæt bykort':'Fiktivt spredt kort',map_color:'#477596',geo_polygon:points},publicMembers:members,publicTemplate:template,...(raster?{backgroundImage:canvas.toDataURL(),viewBounds:[10,55,10.02,55.02]}:{})};
    const svg=MapExport.svg('fake',recipe),doc=new DOMParser().parseFromString(svg,'image/svg+xml');
    if(doc.querySelector('parsererror'))throw Error('Invalid SVG');
-   const layer=doc.querySelector('[data-map-background]');if(layer.getAttribute('opacity')!=='.5')throw Error('Missing background-only attenuation');
+   const layer=doc.querySelector('[data-map-background]');if(layer.getAttribute('opacity')!=='.3')throw Error('Missing background-only attenuation');
    const dots=[...doc.querySelectorAll('circle')];if(dots.length!==members.reduce((n,a)=>n+a.count,0)||dots.some(n=>n.closest('[data-map-background]')))throw Error('Visit dots must remain full-strength');
    const labels=[...doc.querySelectorAll('text[font-size="20"][paint-order="stroke"]')];if(labels.length!==members.length||labels.some(n=>n.closest('[data-map-background]')))throw Error('House numbers must remain full-strength');
    if(doc.querySelector('[stroke-dasharray="12 7"]').closest('[data-map-background]'))throw Error('Boundary must remain full-strength');

@@ -23,7 +23,7 @@ module.exports=async(browser,out)=>{
     if(u.pathname==='/api/geo/job')return json({status:'idle'});
     if(u.pathname==='/api/ping')return json({ok:true});
     if(u.pathname==='/api/share/status')return json({connected:true,account:'Fictional',cards:[]});
-    if(u.pathname==='/api/share/prepare')return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:5});
+    if(u.pathname==='/api/share/prepare')return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:6});
     throw Error('Unexpected API request '+u.pathname);
    }
    if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
@@ -36,23 +36,23 @@ module.exports=async(browser,out)=>{
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
   const result=await page.evaluate(async()=>{
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
-   if(!pending||pending.render_revision!==5)throw Error('Missing current preview');
+   if(!pending||pending.render_revision!==6)throw Error('Missing current preview');
    if(doc.querySelectorAll('[data-ltm-brand] svg').length!==1||doc.querySelector('[data-ltm-brand] text')?.textContent!=='Local Territory Manager')throw Error('Missing public project identity');
    const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
    const pixel=(x,y)=>[...ctx.getImageData(Math.round(x),Math.round(y),1,1).data],circle=doc.querySelector('circle');
    const dot=pixel(+circle.getAttribute('cx'),+circle.getAttribute('cy')+80);
-   // A solid known tile at 50% over white gives RGB 148,173,193 (±1 rounding).
+   // A solid known tile at 30% over white gives RGB 191,206,218 (±1 rounding).
    let backgroundSamples=0,labelPixels=0;
-   for(let y=300;y<1400;y+=40)for(let x=140;x<1500;x+=40){const p=pixel(x,y);if(p.slice(0,3).every((v,i)=>Math.abs(v-[148,173,193][i])<=1))backgroundSamples++;}
+   for(let y=300;y<1400;y+=40)for(let x=140;x<1500;x+=40){const p=pixel(x,y);if(p.slice(0,3).every((v,i)=>Math.abs(v-[191,206,218][i])<=1))backgroundSamples++;}
    const data=ctx.getImageData(40,200,1540,1310).data;
    for(let i=0;i<data.length;i+=4)if(data[i]===140&&data[i+1]===28&&data[i+2]===28)labelPixels++;
    return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dot,backgroundSamples,labelPixels,svg:window.actualPreviewSvg};
   });
   assert.deepEqual([result.width,result.height],[2200,1560]);assert.deepEqual(result.dot,[198,40,40,255],'Visit dot remains full-strength red');
-  assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains half-opacity OSM tiles over white');assert.ok(result.labelPixels>20,'House number remains full-strength dark red');
-  assert.match(result.svg,/<g data-map-background="muted" opacity=".5"><image /);assert.ok(!calls.includes('/api/share/publish'),'Preview never uploads');assert.deepEqual(errors,[]);
+  assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains 30%-opacity OSM tiles over white');assert.ok(result.labelPixels>20,'House number remains full-strength dark red');
+  assert.match(result.svg,/<g data-map-background="muted" opacity=".3"><image /);assert.ok(!calls.includes('/api/share/publish'),'Preview never uploads');assert.deepEqual(errors,[]);
   if(out)fs.writeFileSync(path.join(out,'drive-actual-preview.png'),Buffer.from(result.png,'base64'));
-  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 50% white-backed tiles, opaque red visits/labels and explicit upload approval passed.');
+  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 30% white-backed tiles, opaque red visits/labels and explicit upload approval passed.');
  }finally{await context.close();}
 };
