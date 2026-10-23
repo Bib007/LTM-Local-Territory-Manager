@@ -24,10 +24,10 @@ class WorkspaceTests(unittest.TestCase):
  def test_note_to_task_keeps_text(self):
   c=self.card();n=self.s.mutate('note.save',{'card_id':c,'text':'Fiktiv note'})['id']
   self.s.mutate('note.task',{'id':n});self.assertTrue(self.s.get('notes',n)['task'])
- def test_stale_revision_is_rejected_without_overwrite(self):
+ def test_cross_tab_revision_rejection_is_paused_until_profiles(self):
   rev=self.s.revision;c=self.card()
-  with self.assertRaisesRegex(ValueError,'anden fane'):self.s.mutate('card.save',{'id':c,'number':'99','temporary':True,'_revision':rev})
-  self.assertEqual(self.s.get('cards',c)['number'],'1')
+  self.s.mutate('card.save',{'id':c,'number':'99','temporary':True,'_revision':rev})
+  self.assertEqual(self.s.get('cards',c)['number'],'99')
  def test_undo_folder_then_redo_not_available(self):
   c=self.card();self.s.mutate('folder.set',{'ids':[c],'in_folder':True});self.assertTrue(self.s.state()['undo_available'])
   self.s.mutate('workflow.undo',{});self.assertFalse(self.s.get('cards',c)['in_folder']);self.assertFalse(self.s.state()['undo_available'])

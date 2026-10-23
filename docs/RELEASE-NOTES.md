@@ -1,39 +1,21 @@
-# LTM 1.12.0 · Mere overblik over dine distriktskort
+# LTM 1.12.1 · Udlever kort uden unødige afbrydelser
 
-LTM 1.12.0 er klar. Den nye udgave gør det lettere at komme i gang med dine eksisterende kort og holde styr på det daglige distriktsarbejde.
+Du kan igen arbejde videre med kort og udleveringer uden beskeden om ændringer fra en anden fane eller enhed.
 
-## Det får du
+## Det er rettet
 
-- **En god start.** En guide og en rundtur hjælper dig med at vælge, hvordan du vil arbejde. Du behøver ikke lægge alle adresser ind, før du begynder at registrere udleveringer.
-- **Dine eksisterende oplysninger med fra begyndelsen.** Indlæs kort fra en Excel-liste eller gennemgange og udleveringer fra de understøttede S-13-filer. Du gennemgår og godkender oplysningerne først.
-- **Bedre overblik i hverdagen.** Se kort i mappen, kort i kassen og udleverede kort. Find historik, gem opgaver, og følg gennemgangene.
-- **Kort og adresser samlet.** Tegn distriktsgrænser, vælg adresser, og arbejd med dit område på et samlet kort.
-- **Nemmere brug på telefon og iPad.** Større trykflader, mere plads til felterne og tydeligere forklaringer, hvis noget ikke kan gemmes.
-- **Print og valgfri QR-deling.** Print kort og oversigter, eller del et godkendt kortbillede via Google Drive. Private lister og udleveringsoplysninger sendes ikke med kortbilledet.
+- Kort kan udleveres, afleveres og redigeres, selv om Google-forbindelsen ændrer status i baggrunden.
+- Den generelle kontrol, der krævede genindlæsning efter ændringer andre steder, er fjernet indtil videre.
+- Samtidig redigering bliver taget op igen sammen med brugerprofiler. Hvis flere redigerer samme oplysninger nu, bliver den senest gemte ændring stående.
 
-## Prøv LTM
+Kontrollen af kort, datoer og allerede udleverede kort er bevaret. Problemer med Google vises stadig under deling; billeddeling og almindelig kortadministration er fortsat adskilte arbejdsgange.
 
-**[Åbn demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md) · [Se billeder og muligheder](https://github.com/Bib007/LTM-Local-Territory-Manager)**
+## Sådan opdaterer du
 
-Demoen kræver ingen installation eller konto og bruger kun opdigtede eksempler.
+**Home Assistant:** Hent en privat sikkerhedskopi i LTM, og opdatér **Distrikt** til **1.12.1**. Åbn appen på ny bagefter. Hvis opdateringen ikke vises med det samme, vælg **Kontrollér for opdateringer** i appbutikken.
 
-- **Home Assistant:** Tilføj LTM, og vælg appen **Distrikt**. Har du den allerede, kan du opdatere den i Home Assistant.
-- **Mac og Windows:** Hent **LTM-v1.12.0.zip** nedenfor, pak hele filen ud, og følg startvejledningen. Python skal være installeret på computeren.
+**Mac og Windows:** Hent **LTM-v1.12.1.zip**, og følg [opdateringsvejledningen](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md).
 
-## Har du allerede LTM?
+Dine gemte kort og din historik bevares ved en almindelig opdatering af samme installation.
 
-Hent en **privat sikkerhedskopi i selve LTM**, før du opdaterer. Home Assistants almindelige backup indeholder ikke LTM’s registreringer. Behold din fungerende installation, og følg [opdateringsvejledningen](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md).
-
-Den stabile app og prøveudgaven har hver deres data. Hvis du kommer fra prøveudgaven, flyttes oplysningerne gennem appens sikkerhedskopi og gendannelse; de dukker ikke automatisk op i den stabile app. Google-forbindelse og adgang til adresseopslag sættes op særskilt ved flytning. Har mål-installationen allerede delte billeder, guider appen dig gennem den nødvendige oprydning først.
-
-## Godt at vide
-
-LTM gemmer dine registreringer på dit eget system. Kortbaggrunde, adresseopslag og valgfri billeddeling bruger internettet. Brug fra telefon og iPad udenfor hjemmet kræver din egen VPN-forbindelse.
-
-Dansk er hovedsproget. Engelsk kan vælges, men nogle tekster og de originale formularer er stadig danske. Kortgrænser tegnes og kontrolleres manuelt.
-
-## Hjælp os med næste udgave
-
-Har du en idé eller fundet en fejl? Brug [Idéer og feedback](https://tally.so/r/KpY0ZV), også med billeder og uden krav om en konto. Send kun opdigtede eksempler uden private oplysninger.
-
-LTM er gratis og uofficielt og er ikke udgivet eller godkendt af Jehovas Vidner.
+[Prøv demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](https://github.com/Bib007/LTM-Local-Territory-Manager) · [Idéer og feedback](https://tally.so/r/KpY0ZV)

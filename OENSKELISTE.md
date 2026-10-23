@@ -1,5 +1,21 @@
 # Ønskeliste og nye opgaver
 
+## Akut rettelse til 1.12.1 · klargøring 23.10.2026
+
+W89: Ejeren oplever, at stabil 1.12.0 afviser udlevering og kortændringer med beskeden om ændringer fra anden fane/enhed, også ved menuskift. Google-genforbindelse fik udlevering til at virke igen. En fiktiv prøve reproducerer, at Google-adgangsfejl ændrer baggrundsstatus og dermed gør en åben formular forældet. Ejeren har efterfølgende udtrykkeligt bestilt den generelle synkroniserings-/revisionsafvisning fjernet indtil brugerprofiler (W65) udvikles samlet.
+
+1.12.1 fjerner det generelle revisionskrav ved almindelige ændringer og indstilling af adressekontrol. Nye klientkald sender ikke længere dette krav; ældre åbne faners felt ignoreres. Lås/atomisk gemning, login/token, inputkontrol, eksisterende udlån, konkret import-/kortforhåndsvisning, ukendt gemmeresultat og udtrykkelig godkendelse af billeddeling bevares. Samtidig redigering bruger nu senest gemte ændring; dette er et udtrykkeligt ejerønske og skal gentænkes med profiler, ikke automatisk genindføres. Klargøring er ikke en verificeret udgivelse.
+
+Nye ønsker fra Google-planen registreres samtidig, men implementeres ikke i denne akutte rettelse:
+
+| Nr. | Ønske | Prioritet/status |
+| --- | --- | --- |
+| W87 | Færre løse filer på GitHub-forsiden | Saml egnede dokumenter i mapper, så nye brugere hurtigere ser introduktionen. Næste planlagte stabile udgave; ikke del af den akutte fejlrettelse. Bevar HA-krævede rodfiler og installationslinks. |
+| W88 | Platformneutrale tekster i HA | Adressehentning må ikke hævde at filtrere “på din Mac”, når appen kører på HA. Brug “på dit system” eller tilsvarende korrekt tekst. Gennemgå tilsvarende tekster; registreret, ikke rettet i denne hotfix. |
+| W89 | Afvist udlevering/redigering · −1 | Akut. Fjern generel synkroniseringsafvisning nu; afklar samtidig redigering igen med W65/brugerprofiler. Afventer verificeret 1.12.1. |
+
+Fremdrift ved registrering: 68/89 afsluttet/afklaret, 21 åbne, cirka 76 %. Ønskernes kildetekster bevares indtil registreringen er læst tilbage.
+
 ## Stabil udgivelse 1.12.0 · klargjort 23.10.2026
 
 Ejeren har bestilt udgivelse og bedt om, at ADS-planens relevante punkter gennemføres først. Forsiden på dansk og engelsk forklarer nu målgruppe, daglige fordele, lokal opbevaring og valgene Home Assistant / Mac / Windows i almindeligt brugersprog. Direkte demo-, installations- og feedbacklinks står øverst. Tre skærmbilleder viser den faktiske app med udelukkende opdigtede oplysninger. Et delingsbillede er klargjort. Udgivelsesnoterne ligger særskilt, så brugeren får et kort overblik frem for hele udviklingshistorikken. Den stabile publicering kræver fortsat alle udgivelseskontroller. About-felter og aktivering af delingsbillede kræver separat adgang til GitHubs indstillinger; de må ikke betegnes udført før læsekontrol.

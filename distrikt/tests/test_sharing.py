@@ -49,6 +49,23 @@ class SharingTests(unittest.TestCase):
         return self.s.mutate('loan.finish',{'id':self.loan,'date':'2026-01-02','complete':retain,'retain':retain})
     def issue_again(self):
         self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-03','initial':True})['id']
+    def test_google_failure_does_not_block_card_edits_or_issuance(self):
+        self.enqueue();self.p.process_one();self.finish()
+        self.s.mutate('folder.set',{'ids':[self.c],'in_folder':True})
+        revision=self.s.state()['revision'];self.p.drive.fail=True
+        self.p.process_one()
+        self.assertEqual(self.row()['status'],'access_retry')
+        self.assertTrue(self.row()['possibly_public'])
+        self.assertNotEqual(self.s.revision,revision,'Exercise a real background status change')
+        self.s.mutate('card.save',dict(self.s.get('cards',self.c),name='Opdigtet rettelse',_revision=revision))
+        revision=self.s.revision
+        # Another failure must not block issuing the card after its local edit.
+        self.p.sync_access(self.row())
+        result=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,
+            'date':'2026-01-03','_revision':revision})
+        self.assertEqual(self.s.active_loan(self.c)['id'],result['id'])
+        self.assertTrue(self.p.status()['cards'][0]['access_pending'])
+
     def test_upload_before_issue_is_private_but_qr_is_printable(self):
         self.finish();self.enqueue();self.p.process_one()
         row=self.row();self.assertEqual(row['status'],'ready');self.assertEqual(row['url'],'')

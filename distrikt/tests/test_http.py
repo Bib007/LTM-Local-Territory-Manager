@@ -24,6 +24,27 @@ class HTTPTests(unittest.TestCase):
         h.update(headers or {})
         req=urllib.request.Request(self.server.origin+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
         return urllib.request.urlopen(req,timeout=3)
+    def test_edit_issue_and_return_survive_status_changes_and_menu_reads(self):
+        from datetime import date
+        day=date.today().isoformat()
+        card=self.store.mutate('card.save',{'number':'101','temporary':True})['id']
+        self.store.mutate('folder.set',{'ids':[card],'in_folder':True})
+        with self.request('/api/state') as response:original=json.load(response)
+        for path in ('/api/geo','/api/share/status','/api/data-info'):
+            with self.request(path) as response:json.load(response)
+        with self.store.transaction():self.store.put('maps',{'id':'publication:fictional','entity':'publication','card_id':card,'status':'access_retry'})
+        self.assertNotEqual(original['revision'],self.store.revision)
+        def change(action,data):
+            # Also accepts requests from a tab opened before this hotfix.
+            with self.request('/api/mutate',{'action':action,'data':dict(data,_revision=original['revision'])}) as response:return json.load(response)
+        change('card.save',{'id':card,'number':'101','name':'Opdigtet rettelse','temporary':True})
+        loan=change('loan.issue',{'card_id':card,'publisher_name':'Opdigtet forkynder','date':day})['result']['id']
+        with self.assertRaises(urllib.error.HTTPError):change('loan.issue',{'card_id':card,'publisher_name':'Andet eksempel','date':day})
+        self.assertEqual(len(self.store.all('loans')),1)
+        change('loan.finish',{'id':loan,'date':day,'complete':False})
+        self.assertIsNone(self.store.active_loan(card))
+        self.assertEqual(self.store.get('cards',card)['name'],'Opdigtet rettelse')
+
     def test_history_import_local_ui_and_authenticated_atomic_write(self):
         from datetime import date,timedelta
         with self.request('/history-import-ui.js') as response:self.assertIn(b'HistoryImportUI',response.read())

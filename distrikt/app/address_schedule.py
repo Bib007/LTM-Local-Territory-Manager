@@ -37,7 +37,6 @@ class AddressSchedule:
             if type(enabled)!=bool or type(days)!=int or not 1<=days<=30 or not isinstance(clock,str) or not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d',clock):
                 raise ValueError('Vælg 1–30 dage og et gyldigt klokkeslæt.')
             with self.store.transaction():
-                if data.get('_revision')!=self.store.revision:raise ValueError('Data er ændret. Genindlæs opgaven før du gemmer.')
                 row=self.row()
                 if row.get('run'):
                     if enabled:raise ValueError('Vent på den igangværende adressekontrol, før tidsplanen ændres.')

@@ -34,7 +34,7 @@ These pictures show the application with fictional examples. Danish is the main 
 
 ## Choose where to use LTM
 
-**Latest stable version: 1.12.0**
+**Latest stable version: 1.12.1**
 
 - **Home Assistant:** add LTM and install **Distrikt**. Open the same installation from your computer, phone or iPad on your home network.
 - **Mac or Windows:** [download the program](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), extract it and follow the [installation guide](docs/INSTALL.en.md). Install Python once if it is not already available.
