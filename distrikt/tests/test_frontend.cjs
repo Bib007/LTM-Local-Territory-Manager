@@ -43,7 +43,7 @@ assert.equal(run('missingAddresses().length'),1);
 run("query='';addressTab='Mangler på kort';addressPostcode='';addressPage=0;");assert(run("addressesPage().includes('Tilføj til kort')"));assert(run("addressesPage().includes('Se bort fra')"));
 run("addressTab='Inden for kortgrænse'");assert(run("addressesPage().includes('Grænse for kort 3')"));
 run("addressTab='IB'");assert(run("addressesPage().includes('Tilføj IB')"));
-run("addressTab='Genprint'");assert(run("addressesPage().includes('Kort til genprint')"));
+run("page='Opfølgninger';Workspace.followupFilter='reprint'");assert(run("Workspace.followups().includes('Print ændrede forsider')"));
 assert.equal(run("elapsedSince('2026-01-31','2026-02-28')"),'1 måned og 0 dage siden');
 assert.equal(run("elapsedSince('2025-09-06','2026-10-06')"),'13 måneder og 0 dage siden');
 assert.equal(run("elapsedSince(null)"),'Ingen dato registreret');

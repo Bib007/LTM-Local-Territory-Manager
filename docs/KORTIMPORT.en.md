@@ -2,7 +2,7 @@
 
 [Dansk](KORTIMPORT.md)
 
-Use this when addresses are already divided into numbered cards and named areas. Open the first-use guide or **Settings → Advanced → Import existing territory cards**. Maps are optional.
+Use this when addresses are already divided into numbered cards and named areas. Open the first-use guide or **Settings → Import → Open card import**. Maps are optional.
 
 1. Download the Excel template. Fill in the **Distriktskort** sheet; **Vejledning** contains Danish instructions and fictional examples. Keep the Danish column headings.
 2. Use one row per exact address or apartment. Repeat the card number. Area, card name and territory type can be given on the first row for each card; repeated values must agree.

@@ -41,8 +41,8 @@ run(`state=${original};I18n.set('da')`);
 for(const language of ['da','en']){
  run(`I18n.set('${language}')`);const html=run('Workspace.dashboard()');
  assert.match(html,/>4<\/strong>/);assert.match(html,/>14<\/strong>/);assert.match(html,/>67%<\/strong>/);
- assert.equal((html.match(/class="attentionCard"/g)||[]).length,1);
- assert.match(html,/Forkynder &lt;invented&gt;/);assert(!html.includes('<invented>'));
+ assert.equal((html.match(/class="attentionCard"/g)||[]).length,0);assert.match(html,/data-work="followups"/);assert.doesNotMatch(html,/revisionSummary/);
+ assert(!html.includes('<invented>'));
  assert.equal((html.match(/data-ui="[a-z]{3} \{year\}"/g)||[]).length,24);
  assert.match(html,/aria-hidden="true"/);assert.match(html,/class="srOnly"/);
  assert.match(html,language==='en'?/Service year 2026\/2027/:/Tjenesteår 2026\/2027/);

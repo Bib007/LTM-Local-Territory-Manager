@@ -2,7 +2,7 @@
 
 [English](KORTIMPORT.en.md)
 
-Brug importen, når adresser allerede er fordelt på kortnumre og områder. Den findes i spørgsmålsguiden og under **Indstillinger → Avanceret → Importér eksisterende distriktskort**. Den virker også, når du begynder uden kortfunktion.
+Brug importen, når adresser allerede er fordelt på kortnumre og områder. Den findes i spørgsmålsguiden og under **Indstillinger → Import → Åbn kortimport**. Den virker også, når du begynder uden kortfunktion.
 
 1. Hent Excel-skabelonen i appen. Fanen **Distriktskort** er tom og klar til udfyldning; **Vejledning** forklarer felterne med opdigtede eksempler.
 2. Udfyld én række pr. konkret adresse eller lejlighed. Gentag kortnummeret på hver række. Område, kortnavn og distriktstype kan udfyldes ved første adresse på kortet; gentagne oplysninger skal være ens.

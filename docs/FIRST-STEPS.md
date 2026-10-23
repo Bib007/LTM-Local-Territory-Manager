@@ -8,7 +8,9 @@ Vælg **Gem og start rundtur** efter spørgsmålene. Svarene gemmes, men først 
 
 Har du valgt kortfunktion, er **Forbind adressekilden · egen API-nøgle** en del af planen. Se [Datafordeler-vejledningen](DATAFORDELER.md); nøglen oprettes hos Datafordeleren og indtastes kun i din lokale app.
 
-Har du adresserne fordelt i forvejen, vælg **Adresserne er allerede fordelt på kort**, eller åbn importen under **Indstillinger → Avanceret**. [Excel og CSV](KORTIMPORT.md) forklarer skabelonen.
+Har du adresserne fordelt i forvejen, vælg **Adresserne er allerede fordelt på kort**, eller åbn importen under **Indstillinger → Import**. [Excel og CSV](KORTIMPORT.md) forklarer skabelonen.
+
+Åbn **Opfølgninger** for at se kortkontrol, hver ændret printside, udleveringer over fire måneder og adresseændringer. Hvert selvstændigt forhold får sin egen linje og tæller. Private opgaver og ugentlige gentagelser findes under **Opgaver**.
 
 Alle papirkort behøver ikke være digitaliseret, før LTM tages i brug. Begynd med kortnumre og eksisterende udleveringer, og tilføj adresser, grænser og print senere på de samme kort.
 

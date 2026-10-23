@@ -19,15 +19,15 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  const file=path.join(root,u.pathname==='/'?'index.html':u.pathname.slice(1));assert.ok(file.startsWith(root+path.sep));
  return u.pathname==='/'?route.fulfill({contentType:'text/html',body:fs.readFileSync(file,'utf8').replace('__TOKEN__','FICTIONAL_TOKEN')}):route.fulfill({path:file});
  });
- await page.goto('http://ltm.address-task.test/');await page.waitForFunction(()=>state!==null);
+ await page.goto('http://ltm.address-task.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
  await page.evaluate(()=>{page='Forside';render();});
  assert.match(await page.locator('#addressTask').innerText(),/2 nye · 1 ændrede · 1 foreslået fjernet/);
  await page.locator('#addressTask [data-work=tasks]').click();await page.locator('#addressTask [data-work=address-task]').click();
  const form=page.locator('[data-work-form=address-task]');await form.locator('[name=enabled]').check();await form.locator('[name=days]').fill('3');await form.locator('[name=time]').fill('02:15');await form.locator('button.primary').click();
  await page.waitForFunction(()=>!el('dialog').open);assert.deepEqual({enabled:writes[0].enabled,days:writes[0].days,time:writes[0].time},{enabled:true,days:3,time:'02:15'});
  assert.ok(await page.locator('#addressTask').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'Task panel fits narrow displays');
- await page.locator('#addressTask [data-work=address-changes]').click();await page.locator('#dialog [data-work=accept-address]').waitFor();assert.match(await page.locator('#dialog').innerText(),/Fiktiv vej 1/);await page.evaluate(()=>closeDialog());
- await page.evaluate(()=>{state.address_task={...state.address_task,status:'waiting',run:{id:'fictional'},retry_at:'2026-10-22T03:00:00Z',message:'Venter efter fiktiv netfejl'};render();});
+ await page.locator('#addressTask [data-work=address-changes]').click();await page.locator('.followupRow [data-work=accept-address]').waitFor();assert.match(await page.locator('.followupRow').innerText(),/Fiktiv vej 1/);assert.equal(await page.evaluate(()=>page),'Opfølgninger');
+ await page.evaluate(()=>{page='Opgaver';state.address_task={...state.address_task,status:'waiting',run:{id:'fictional'},retry_at:'2026-10-22T03:00:00Z',message:'Venter efter fiktiv netfejl'};render();});
  assert.match(await page.locator('#addressTask').innerText(),/Venter og prøver igen/);
  if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`address-task-${width}.png`),fullPage:true});}
  await page.evaluate(()=>{state.address_task.available=false;render();});assert.equal(await page.locator('#addressTask').count(),0);assert.deepEqual(errors,[]);await context.close();

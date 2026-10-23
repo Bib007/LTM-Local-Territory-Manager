@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.2-beta.66 · Import og opfølgninger samlet
+
+- Import af historik, distriktskort og IB findes nu under Indstillinger → Import. Du gennemgår og godkender stadig oplysningerne, før de gemmes.
+- Den nye menu Opfølgninger samler kortkontrol, genprint, langvarige udleveringer og adresseændringer. Hvert forhold får sin egen linje og tæller; forside og bagside tæller hver for sig.
+- Forsiden åbner det fælles overblik. Genprint og kortkontrol er flyttet fra Kort og adresser, så du har ét sted at følge op.
+- Søgning, filtre og dansk/engelsk er med i det nye overblik. Åbning af import eller opfølgninger ændrer ingen registreringer.
+- Forbedringerne fra beta.65 med tydelig adressehentning og mindre unødig dataoverførsel er med.
+
 ## 1.12.2-beta.65 · Mindre ventetid og tydelig adressehentning
 
 Samler forbedringerne nedenfor og sikrer samtidig, at almindelig kortgemning ikke starter en ekstra hentning af kortdata.
