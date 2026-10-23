@@ -25,6 +25,7 @@ const reset=()=>run("WriteGuard.reviewed();state=JSON.parse(JSON.stringify(fixtu
  await run("mutate('recovery.purge',{batch:'fictional-task-batch'},{close:false})");
  assert.equal(geoLoads,0,'Non-geographic deletion does not transfer all address/map data');
  answer=async request=>response(request.url==='/api/state'?{...fixture,revision:'r1'}:{result:{},revision:'saved-card',geo_changed:true});
+ await run("mutate('card.save',{id:'fictional-card',name:'Fictional updated name'},{close:false})");assert.equal(geoLoads,0,'Ordinary card saves do not introduce a new geographic transfer');
  await run("mutate('delete',{module:'cards',id:'fictional-card'},{close:false})");assert.equal(geoLoads,1,'Changed geographic ownership is refreshed');
  answer=async request=>response(request.url==='/api/state'?{...fixture,revision:'r1'}:{result:{},revision:'old-server'});
  await run("mutate('restore',{batch:'fictional-batch'},{close:false})");assert.equal(geoLoads,2,'Older servers retain the conservative refresh');

@@ -1,8 +1,8 @@
 # Ønskeliste og nye opgaver
 
-## Beta.64 · under udvikling · 23.10.2026
+## Beta.65 · under udvikling · 23.10.2026
 
-Næste samlede beta omfatter W93, W82 og W86: undgå unødig genhentning af alle geodata efter almindelig sletning/gendannelse; vis reel aktivitet og dubletfrit antal modtagne adresser; lad opslagets størrelsesgrænse udløse bounded opdeling i mindre udsnit. Ingen tidsprognose eller kunstigt antal. Pause, genoptagelse, kildevalidering og beskyttelse mod usikkert gemmeresultat bevares. Ejerens konkrete HA-/telefonforsinkelse er ikke målt; rettelsen adresserer den påviste ekstra dataoverførsel. Punkterne afsluttes først efter udgivelseskontrol.
+Den samlede beta.65 omfatter W93, W82 og W86: undgå unødig genhentning af alle geodata efter almindelig sletning/gendannelse; vis reel aktivitet og dubletfrit antal modtagne adresser; lad opslagets størrelsesgrænse udløse bounded opdeling i mindre udsnit. Ingen tidsprognose eller kunstigt antal. Pause, genoptagelse, kildevalidering og beskyttelse mod usikkert gemmeresultat bevares. Ejerens konkrete HA-/telefonforsinkelse er ikke målt; rettelsen adresserer den påviste ekstra dataoverførsel. W82/W86 afsluttes først efter udgivelseskontrol. W93 er delvist leveret; eventuel resterende HA-ventetid er fortsat åben. En gennemgang af beta.64-kandidaten fandt ekstra geodatahentning ved almindelig kortgemning; beta.65 afgrænser optimeringen til de handlinger, der allerede genhentede kortdata, og bevarer konservativ adfærd med ældre servere. Browserprøven venter nu på afsluttet opstart før en fiktiv fejl vises.
 
 W100 er udsat efter ejerens udtrykkelige valg: fortsæt udviklingen og vent med grenoprydning. Ingen nye loginforsøg eller grensletninger hører til denne runde.
 
@@ -20,8 +20,8 @@ Ejeren ønsker nu flere sammenhængende rettelser pr. beta; den tidligere græns
 | --- | --- |
 | W87 · Fire rodfiler på den almindelige GitHub-forside | Afsluttet på main og develop |
 | W100 · Ryd gamle grene | Udsat efter ejerens valg |
-| W93 · Langsom gemning/permanent sletning | Under udvikling i beta.64 |
-| W82/W86 · Aktivitet, antal og mindre adressehentninger | Under udvikling i beta.64 |
+| W93 · Langsom gemning/permanent sletning | Under udvikling i beta.65 |
+| W82/W86 · Aktivitet, antal og mindre adressehentninger | Under udvikling i beta.65 |
 | W94/W95 · Import og samlet Opfølgninger | Samlet betjening efter afhængigheder |
 | W85 · Kort/IB fra billeder og mange filer | Tidligt importarbejde |
 | W92 · Programversion i feedback | Formularundersøgelse |

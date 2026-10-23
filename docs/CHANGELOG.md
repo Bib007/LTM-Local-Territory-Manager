@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.2-beta.65 · Mindre ventetid og tydelig adressehentning
+
+Samler forbedringerne nedenfor og sikrer samtidig, at almindelig kortgemning ikke starter en ekstra hentning af kortdata.
+
 ## 1.12.2-beta.64 · Bedre overblik under adressehentning
 
 - Adressehentning viser, hvad den arbejder med, og hvor mange adresser der er modtaget. Antallet tælles uden dubletter ved nye forsøg. Der vises ingen gættet resttid.

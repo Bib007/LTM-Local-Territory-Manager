@@ -1,4 +1,4 @@
-# LTM 1.12.2-beta.64 · Se, at adressehentningen arbejder
+# LTM 1.12.2-beta.65 · Se, at adressehentningen arbejder
 
 Denne beta samler tre ønsker om adressehentning og ventetid ved gemning.
 
