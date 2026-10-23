@@ -4,7 +4,7 @@
 
 Beta.61 er nu verificeret udgivet fra `cd95b1b130bebe07c9ffc3d2c5fe380ca5058253`. HA-gate [39639385202](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39639385202) er completed/success efter genkørsel af det afbrudte Mac-job; Mac-prøven startede og bestod uden kodeændring. Alle øvrige job og publicering er grønne. Den særskilte Platformskontrol 39639385166 og Checks 39639385138 er også completed/success. Udgivelsens HA-ZIP matcher SHA-256 `224a0b14302aa3169e5e8e983fda3e1902938a32b284a498e61851831b4f1200`. Betagrenen er læst tilbage som beta.61/8788; main er fortsat 1.11.1/8787. W81 er afsluttet: automatiske grænse-/inddelingsforslag er ude af aktiv app og API, mens kode/prøver, manuel korttegning, IB-import og eksisterende data bevares.
 
-Fremdrift: 68 af 82 ønsker afsluttet/afklaret, 14 åbne, cirka 83 %. W78 er ejerbekræftet afsluttet 23.10.2026: API-adressehentning virker, men er langsom. W82 er registreret til efter næste stabile udgave; W61 afventer ekstern GitHub-oprydning. W06/W28/W56 kræver fortsat sikkerhedsafklaring. W16, W58 og W74 forbliver parkeret som aftalt. ADS-fanen i Google-planen er oprettet med synlighed, målgruppe, præsentation, lancering og frivillig feedback. Den er en idé-/lanceringsplan, ikke en igangsat kampagne.
+Fremdrift: 68 af 82 ønsker afsluttet/afklaret, 14 åbne, cirka 83 %. W78 er ejerbekræftet afsluttet 23.10.2026: API-adressehentning virker, men er langsom. W82 er registreret til efter næste stabile udgave; W61 afventer ekstern GitHub-oprydning, men ejeren har 23.10.2026 besluttet, at supportsagen ikke blokerer næste stabile udgivelse. Drive/gendannelse er ejerbekræftet uden problemer. W06/W28/W56 kræver fortsat afgrænsning. W16, W58 og W74 forbliver parkeret som aftalt. ADS-fanen i Google-planen er oprettet med synlighed, målgruppe, præsentation, lancering og frivillig feedback. Den er en idé-/lanceringsplan, ikke en igangsat kampagne.
 
 Stabil klargøring 22.10.2026: udgivelsesjobbet på develop er koblet direkte til genbrugelige Checks og Platformskontrol fra samme commit. Det venter på alle program-, browser-, Mac-/Windows-, HA- og pakkekontroller og må kun publicere fra main. Checks kører nu alle `test_*.cjs`, også prøver som manglede i den tidligere håndholdte liste, samt HA-betapakkeprøver. README på dansk/engelsk er rettet for gammel beta.21/70 %-status, stabil grundversion, rundtur, demolink og den fjernede autofordeling. YAML/dependens-/rettigheds-/versionskontrol samt pakkeprøver og arkivstart er udført lokalt; faktisk stabil publicering er ikke forsøgt. Ingen ny beta eller ændret appkode er nødvendig til denne klargøring.
 
@@ -19,6 +19,12 @@ W23-opfølgning før stabil: Forkort menupunktet Idéer og feedback til titel og
 ### W82 · Løbende status under adressehentning · efter næste stabile udgivelse
 
 Vis, hvad adressehentningen laver, og et stigende antal, fx “Henter adresser … 240 hentet”, så brugeren kan se, at arbejdet fortsætter. Brug faktiske statusoplysninger fra den aktive hentning, også under langsomme API-svar, genforsøg og pause. Vis ikke estimeret tid, resterende tid, samlet længde eller en beregnet procent. Ønsket er registreret, ikke implementeret, og må ikke forsinke næste stabile udgivelse. Status uden nye modtagne adresser må ikke vise en opdigtet stigning.
+
+## Sikkerhedsafgrænsning før main · 23.10.2026
+
+Ejeren har udtrykkeligt afklaret: GitHub Supports restoprydning (W61) skal ikke forhindre en ny udgivelse; selve oprydningen er fortsat uafsluttet og må ikke betegnes gennemført. Drive og gendannelse fungerer uden problemer ifølge ejeren og er derfor ikke åbne ejerblokeringer.
+
+Næste ønskede kontrol er Codex Security på den aktuelle develop-kode. Security-skillen er tilgængelig, men de nødvendige scanner-/preflightværktøjer og referencer kunne ikke tilgås i denne session, heller ikke efter plugin-søgning. Ingen Codex Security-scanning er startet, og W28 er fortsat åben. En eventuel senere scanning skal registrere den præcise kildecommit og afgrænse fund i forhold til appens LAN/VPN-model.
 
 ## Historik · kontrolstatus registreret 21.10.2026
 
