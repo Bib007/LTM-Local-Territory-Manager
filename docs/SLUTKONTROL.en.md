@@ -19,9 +19,9 @@ Map overview, addresses/card checks, geographic editing/import, advanced setup/l
 
 ## Local owner checks
 
-Physical printing, the actual HA/phone/VPN, Google consent and access on return/reassignment, the configured Datafordeler account and any screen reader remain separate. Follow the [owner checklist](../Dette-skal-hjaelpes-manuelt.en.md). Automated verification does not mark these as tested.
+Physical printing, the actual HA/phone/VPN, Google consent and access on return/reassignment, the configured Datafordeler account and any screen reader remain separate. Follow the [owner checklist](help/Dette-skal-hjaelpes-manuelt.en.md). Automated verification does not mark these as tested.
 
-See [printing](PRINT.en.md), [installation](INSTALL.en.md), [beta](BETA.md), [limitations](LIMITATIONS.en.md) and the [fixed plan](../KOREPLAN.md).
+See [printing](PRINT.en.md), [installation](INSTALL.en.md), [beta](BETA.md), [limitations](LIMITATIONS.en.md) and the [fixed plan](planning/KOREPLAN.md).
 
 ## Next stable release gates
 

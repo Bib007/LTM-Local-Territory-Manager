@@ -10,6 +10,8 @@ Du kan igen arbejde videre med kort og udleveringer uden beskeden om ændringer 
 
 Kontrollen af kort, datoer og allerede udleverede kort er bevaret. Problemer med Google vises stadig under deling; billeddeling og almindelig kortadministration er fortsat adskilte arbejdsgange.
 
+GitHub-forsiden har også færre løse filer. Planer og hjælpedokumenter er samlet i mapper, så introduktionen er lettere at finde.
+
 ## Sådan opdaterer du
 
 **Home Assistant:** Hent en privat sikkerhedskopi i LTM, og opdatér **Distrikt** til **1.12.1**. Åbn appen på ny bagefter. Hvis opdateringen ikke vises med det samme, vælg **Kontrollér for opdateringer** i appbutikken.

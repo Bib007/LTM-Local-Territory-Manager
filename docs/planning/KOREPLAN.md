@@ -35,7 +35,7 @@ Beta.22 afslutter printbetjening, programpakke og slutkontrol. Printdialogens fe
 
 Pakkekontrollen fandt seks eksisterende brudte vejledningslinks. De linkede filer følger nu med; alle relative Markdown-links kontrolleres ved pakning. Original S-12-PDF er et krævet aktiv. Den komplette program-ZIP og separate HA-beta er bygget med checksum; identiske inddata giver identiske ZIP-filer. GitHub-gates kontrollerer desuden Python-varianter, Mac, Windows og HA før betaudgivelse. Status for udgivelsen skal læses på GitHub; lokale prøver er ikke i sig selv en udgivelse.
 
-Se [printvejledning](docs/PRINT.md), [slutkontrol](docs/SLUTKONTROL.md) og [lokal restliste](Dette-skal-hjaelpes-manuelt.md). Fysisk print, egen HA/telefon/VPN, eget Google-/Datafordeler-samtykke og eventuel skærmlæser er udtrykkeligt ejerprøver. Main er fortsat stabil 1.11.1. Ønskelisten er ikke behandlet i denne afslutning.
+Se [printvejledning](../PRINT.md), [slutkontrol](../SLUTKONTROL.md) og [lokal restliste](../help/Dette-skal-hjaelpes-manuelt.md). Fysisk print, egen HA/telefon/VPN, eget Google-/Datafordeler-samtykke og eventuel skærmlæser er udtrykkeligt ejerprøver. Main er fortsat stabil 1.11.1. Ønskelisten er ikke behandlet i denne afslutning.
 
 ## Punkt 7 · login, tastatur og fokus
 

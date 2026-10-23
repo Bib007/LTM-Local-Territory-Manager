@@ -1,6 +1,6 @@
 # Bidrag til LTM
 
-[English](CONTRIBUTING.en.md)
+[English](docs/CONTRIBUTING.en.md)
 
 Har du en idé eller feedback? Brug [feedbackformularen hos Tally](https://tally.so/r/KpY0ZV) uden konto eller e-mail. Indsendt tekst og billeder gemmes hos Tally; brug kun fiktive eksempler uden IB, rigtige distriktskort eller personoplysninger. Du kan også oprette eller kommentere [GitHub-issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) med GitHub-login. Udviklere kan indsende kodeændringer som pull requests.
 
@@ -20,8 +20,10 @@ Offentlig kildekode og programpakker må kun indeholde gennemgåede programfiler
 
 ## Ændringer og kontrol
 
-Bevar de separate SQLite-filer, ukendte felter, importforhåndsvisninger, revisionskontrol og udtrykkelige bekræftelser ved sletning/erstatning. En almindelig programopdatering må ikke erstatte eksisterende databaser. Undgå nye afhængigheder, hvis standardbiblioteket og de medfølgende filer kan løse opgaven.
+Bevar de separate SQLite-filer, ukendte felter, importforhåndsvisninger, konkrete godkendelseskontroller og udtrykkelige bekræftelser ved sletning/erstatning. En almindelig programopdatering må ikke erstatte eksisterende databaser. Undgå nye afhængigheder, hvis standardbiblioteket og de medfølgende filer kan løse opgaven.
 
 Kør relevante Python- og JavaScript-kontroller. Ændringer i lagring, geometri, adgang eller offentlig eksport kræver meningsfuld kontrol. Ved ændringer i betjeningen gennemgås både bred og smal skærm. Oplys, hvad der ikke er kontrolleret på fysisk udstyr.
 
 Bed ikke om begrænsede dokumenter, andres login eller adgang til andres JW HUB-konto.
+
+Generel afvisning af almindelige ændringer på grund af andre faner/enheder er efter ejerens valg sat på pause i 1.12.1. Afklar samtidig redigering igen sammen med brugerprofiler; genindfør ikke kontrollen som en rutinerettelse.

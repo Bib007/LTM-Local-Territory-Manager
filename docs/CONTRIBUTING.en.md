@@ -1,6 +1,6 @@
 # Contributing
 
-[Dansk](CONTRIBUTING.md)
+[Dansk](../CONTRIBUTING.md)
 
 **Documentation is Danish first.** Primary README/manual/setup paths contain Danish. English is an optional corresponding `.en.md` file. Keep both versions and language links current. A clean public installation repository receives only reviewed source, empty templates and fictional fixtures; it must not inherit private development history.
 

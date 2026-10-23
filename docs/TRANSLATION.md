@@ -17,6 +17,6 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Dialoglabels, tastatur og fokus | Klargjort og prøvet med native Chromium-dialoger |
 | Printbetjening | Dansk/engelsk klargjort og prøvet; originale formularer og dansk rapportindhold bevares |
 
-[Køreplan](../KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
+[Køreplan](planning/KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
 
 Førstegangsopsætningen, den personlige plan, rundturen og Excel-/CSV-importens betjening kan vælges på dansk eller engelsk. XLSX-skabelonens kolonneoverskrifter er danske på begge sprog, så filformatet er entydigt. Fælles domænefejl og lokal IB-import er klargjort; øvrig fejldækning kontrolleres fortsat. IMPORTÉR IB er samme bekræftelsesord på begge sprog. Automatisk kortinddeling og OPRET KORT-forløbet er arkiveret fra beta.61; de arkiverede sprog-/payloadprøver bevares til senere udvikling.
