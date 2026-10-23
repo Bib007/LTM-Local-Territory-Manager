@@ -1,21 +1,22 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.65 udgivet · beta.66 klargøres · 23.10.2026
+## Aktuel oversigt · beta.66 udgivet · 23.10.2026
 
-Beta.65 er verificeret udgivet fra `66450705d9f159ecb5cc81a7b6a4ff94c5f9e282`. HA beta release 40010353744 og Platformskontrol 40010353967 er completed/success. Den offentlige pakke er 1.184.271 bytes med SHA256 `ba1f79573fc3f8c2e04e2a23adf1c04c01efc73d277b87ea851cfaa98eef55a2`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.65 på port 8788. Stabil er fortsat 1.12.1. W82/W86 er afsluttet: reel aktivitet og dubletfrit antal modtagne adresser; bounded opdeling i mindre udsnit ved opslagets grænse; bevarede checkpoints og samme kildesnapshot ved genoptagelse. Den særskilte ekstra Checks 40010353775 var ved seneste læsning fortsat i gang; den fulde udgivelsesgate er bestået inklusive WebKit.
+Beta.66 er verificeret udgivet fra `80f3258af1acf2febacd2016d5c2ae86603d6551`, træ `b08bb38ccebd5bc2f93f801b30cd7e868a054936`. HA beta release 40012949488, Checks 40012949416 og Platformskontrol 40012949441 er alle completed/success. Den offentlige HA-beta ZIP har 121 filer, 1.186.440 bytes og SHA256 `5df1b2a5f22a804d4f2ec356fb39d4a5338ac86586140582422404c86f0e4639`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.66 på port 8788. W94/W95 er afsluttet. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.66).
+
+Tidligere betarunde: beta.65 blev verificeret udgivet fra `66450705d9f159ecb5cc81a7b6a4ff94c5f9e282`. HA beta release 40010353744 og Platformskontrol 40010353967 er completed/success. Den offentlige pakke er 1.184.271 bytes med SHA256 `ba1f79573fc3f8c2e04e2a23adf1c04c01efc73d277b87ea851cfaa98eef55a2`, identisk med den lokale pakke. Ved beta.65-udgivelsen viste betakanalen den version på port 8788. Stabil er fortsat 1.12.1. W82/W86 er afsluttet: reel aktivitet og dubletfrit antal modtagne adresser; bounded opdeling i mindre udsnit ved opslagets grænse; bevarede checkpoints og samme kildesnapshot ved genoptagelse. Den fulde beta.65-udgivelsesgate er bestået inklusive WebKit.
 
 W93 er delvist leveret, fortsat åben: sletning/gendannelse uden kortændringer genhenter ikke alle geodata, almindelig kortgemning får ingen ekstra geodatahentning, og en bekræftet gemning vises, mens oversigten opdateres. Ejerens konkrete HA-/telefonforsinkelse er ikke målt. Der er ikke genindført generel revisions-/synkroniseringsafvisning. Konkrete import-/delingsgodkendelser, atomisk lagring og beskyttelse ved usikkert gemmeresultat bevares.
 
-Beta.66 samler W94 og W95. Indstillinger → Import har én indgang til S-13/historik, kortimport og lokal IB-import; de eksisterende forhåndsvisninger, valideringer og godkendelser bevares. Opfølgninger samler kortkontrol, genprint, udleveringer over fire måneder og adresseændringer. En ændret forside og bagside er hver sit punkt. En udleveret ændret IB-bagside tælles kun én gang. Gentagne adresse-ID'er skaber ikke dubletpunkter; samme adresse valgt på to kort vises på begge berørte kort. Samling og åbning er læsning; intet oprettes automatisk i Opgaver eller deles. Den nye menu har søgning, filtre og samme tæller som rækkerne. Forsidens kortoversigt åbner dette fælles overblik; de gamle indgange under Kort og adresser er flyttet. Privatopgaver og ugentlige gentagelser bevares under Opgaver. W94/W95 afsluttes først efter udgivelseskontrol og læsekontrol af den offentliggjorte pakke.
+Beta.66 samler W94 og W95. Indstillinger → Import har én indgang til S-13/historik, kortimport og lokal IB-import; de eksisterende forhåndsvisninger, valideringer og godkendelser bevares. Opfølgninger samler kortkontrol, genprint, udleveringer over fire måneder og adresseændringer. En ændret forside og bagside er hver sit punkt. En udleveret ændret IB-bagside tælles kun én gang. Gentagne adresse-ID'er skaber ikke dubletpunkter; samme adresse valgt på to kort vises på begge berørte kort. Samling og åbning er læsning; intet oprettes automatisk i Opgaver eller deles. Den nye menu har søgning, filtre og samme tæller som rækkerne. Forsidens kortoversigt åbner dette fælles overblik; de gamle indgange under Kort og adresser er flyttet. Privatopgaver og ugentlige gentagelser bevares under Opgaver. W94/W95 er afsluttet efter grøn udgivelseskontrol og læsekontrol af den offentliggjorte pakke.
 
-Lokalt for beta.66: 487 Python-prøver (én forventet overspringning), hele JavaScript-suiten inklusive den nye opfølgningsprøve, 20 pakkeprøver og reel arkivopstart består. Faktisk browserbrug dækker 320/390/768/1440 px, fire telefon-/tabletstørrelser med berøring, alle tre importindgange, 11 selvstændige forhold i en fiktiv liste, 3 printpunkter, særskilt godkendelse af forsiden og bevaret bagside, filter/søgning/sprogskift samt uændrede skrivepayloads. Adressekontrollens indgang åbner den fælles liste. Layout er visuelt gennemgået ved mobil/desktop. Den lokale HA-beta ZIP har SHA256 `5df1b2a5f22a804d4f2ec356fb39d4a5338ac86586140582422404c86f0e4639`. Endelig GitHub-kontrol og offentlig pakke udestår.
+Lokalt for beta.66: 487 Python-prøver (én forventet overspringning), hele JavaScript-suiten inklusive den nye opfølgningsprøve, 20 pakkeprøver og reel arkivopstart består. Faktisk browserbrug dækker 320/390/768/1440 px, fire telefon-/tabletstørrelser med berøring, alle tre importindgange, 11 selvstændige forhold i en fiktiv liste, 3 printpunkter, særskilt godkendelse af forsiden og bevaret bagside, filter/søgning/sprogskift samt uændrede skrivepayloads. Adressekontrollens indgang åbner den fælles liste. Layout er visuelt gennemgået ved mobil/desktop. Den lokale HA-beta ZIP har SHA256 `5df1b2a5f22a804d4f2ec356fb39d4a5338ac86586140582422404c86f0e4639`. GitHubs fulde kontrol og den offentlige pakke er nu også verificeret som beskrevet øverst.
 
 W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver. W100/grenoprydning er udsat efter ejerens udtrykkelige valg; ingen loginforsøg eller grensletninger udføres i denne runde. W87 er afsluttet på main og develop: fire rodfiler; vejledninger og hjælpere ligger i relevante mapper. Ejeren ønsker flere sammenhængende forbedringer pr. beta; tidligere maksimum på tre punkter er afløst.
 
 | Næste arbejde | Status |
 | --- | --- |
 | W93 · Langsom gemning/permanent sletning | Unødig genhentning rettet i beta.65; eventuel øvrig HA-ventetid åben |
-| W94/W95 · Import og samlet Opfølgninger | Beta.66 klargøres; endnu ikke udgivet |
 | W85 · Kort/IB fra billeder og mange filer | Tidligt importarbejde |
 | W92 · Programversion i feedback | Undersøg det faktiske formularfelt; kun version må sendes automatisk |
 | W98 · Lyst udseende | Planlagt |
@@ -26,7 +27,7 @@ W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver.
 | W16 · Vejnet/autokort | På pause |
 | W100 · Ryd gamle grene | Udsat efter ejerens valg |
 
-Fremdrift efter beta.65: 77/100 afsluttet/afklaret, 23 åbne, cirka 77 %. W93/W94/W95/W100 er fortsat åbne. Den aktuelle oversigt går foran de historiske kandidatstatusser nedenfor.
+Fremdrift efter beta.66: 79/100 afsluttet/afklaret, 21 åbne, cirka 79 %. W94/W95 er afsluttet. W93 er fortsat delvist åben; W100 er udsat efter ejerens valg. Den aktuelle oversigt går foran de historiske kandidatstatusser nedenfor.
 
 ## Beta.63 klargjort · 23.10.2026
 
