@@ -10,7 +10,13 @@ concurrency:
   group: stable-release
   cancel-in-progress: false
 jobs:
+  checks:
+    uses: ./.github/workflows/check.yml
+  platforms:
+    uses: ./.github/workflows/platforms.yml
   release:
+    if: github.ref == 'refs/heads/main'
+    needs: [checks, platforms]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,12 +27,6 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-      - run: python -m unittest discover -s distrikt/tests -v
-      - run: TZ=Europe/Copenhagen node distrikt/tests/test_frontend.cjs
-      - run: python scripts/test_build_release.py
       - run: python scripts/build_release.py
       - name: Create versioned release once
         env:
@@ -42,4 +42,4 @@ jobs:
             echo "Release v$VERSION already exists; keeping its assets unchanged."
             exit 0
           fi
-          gh release create "v$VERSION" "dist/LTM-v$VERSION.zip" "dist/LTM-v$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "LTM $VERSION" --notes-file CHANGELOG.md
+          gh release create "v$VERSION" "dist/LTM-v$VERSION.zip" "dist/LTM-v$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "LTM $VERSION · Mere overblik over dine distriktskort" --notes-file docs/RELEASE-NOTES.md

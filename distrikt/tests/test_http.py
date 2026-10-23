@@ -24,11 +24,110 @@ class HTTPTests(unittest.TestCase):
         h.update(headers or {})
         req=urllib.request.Request(self.server.origin+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
         return urllib.request.urlopen(req,timeout=3)
+    def test_history_import_local_ui_and_authenticated_atomic_write(self):
+        from datetime import date,timedelta
+        with self.request('/history-import-ui.js') as response:self.assertIn(b'HistoryImportUI',response.read())
+        card=self.store.mutate('card.save',{'number':'001'})['id'];day=(date.today()-timedelta(days=30)).isoformat()
+        payload={'action':'setup.history-import.preview','data':{'name':'fictional.csv','content':'kortnummer;dato\n001;'+day}}
+        with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/mutate',payload,token=False)
+        self.assertEqual(caught.exception.code,403)
+        revision=self.store.revision
+        with self.request('/api/mutate',payload) as response:preview=json.load(response)['result']
+        self.assertEqual(self.store.revision,revision);self.assertFalse(self.store.all('completions'))
+        with self.request('/api/mutate',{'action':'setup.history-import.apply','data':{'token':preview['token'],'confirm':'IMPORTÉR HISTORIK','_revision':revision}}) as response:self.assertEqual(json.load(response)['result']['count'],1)
+        self.assertEqual(self.store.all('completions')[0]['card_id'],card)
+
+    def test_readable_export_requires_token_and_preserves_data(self):
+        import io,zipfile
+        revision=self.store.revision
+        for path in ('prepare','image','finish'):
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/export/readable/'+path,{},token=False)
+            self.assertEqual(caught.exception.code,403)
+        with self.request('/api/export/readable/prepare',{}) as response:job=json.load(response)
+        with self.request('/api/export/readable/finish',{'token':job['token']}) as response:
+            self.assertEqual(response.headers['Content-Type'],'application/zip')
+            self.assertEqual(response.headers['Cache-Control'],'no-store')
+            with zipfile.ZipFile(io.BytesIO(response.read())) as archive:self.assertIn('PDF/04-alle-opgaver.pdf',archive.namelist())
+        self.assertEqual(self.store.revision,revision)
+        with self.request('/readable-export-ui.js') as response:self.assertIn(b'ReadableExportUI',response.read())
+
+    def test_archived_division_rejects_all_http_entrypoints_without_touching_cards(self):
+        self.store.mutate('card.save',{'number':'001'})
+        before=self.store.state();revision=self.store.revision
+        with patch.object(self.server.setup_jobs,'start') as start, patch.object(self.server.store,'mutate') as mutate:
+            for action in ('setup.preview','setup.adjust.preview','setup.apply'):
+                for asynchronous in (False,True):
+                    with self.assertRaises(urllib.error.HTTPError) as caught:
+                        self.request('/api/mutate',{'action':action,'data':{'_async':asynchronous,'_revision':revision}})
+                    self.assertEqual(caught.exception.code,400)
+                    self.assertIn('sat på pause',json.load(caught.exception)['error'])
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/setup/job?id=old-job')
+            self.assertEqual(caught.exception.code,400)
+            start.assert_not_called();mutate.assert_not_called()
+        self.assertEqual(self.store.revision,revision);self.assertEqual(self.store.state(),before)
+
+    def test_parameterized_validation_metadata_keeps_original_error_and_does_not_write(self):
+        before=self.store.revision
+        cases=[
+            ({'action':'setup.defaults','data':{'target':0}},'Besøg pr. kort skal være mellem 1 og 1000.','{label} skal være mellem {low} og {high}.',{'label':'Besøg pr. kort','low':1,'high':1000}),
+            ({'action':'setup.ib.preview','data':{'content':'vejnavn;husnummer;postnummer\nFiktiv;1;9999','date':'not-a-date'}},'Dato skal være en gyldig dato.','{field} skal være en gyldig dato.',{'field':'Dato'}),
+        ]
+        for payload,original,key,params in cases:
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/mutate',payload)
+            self.assertEqual(caught.exception.code,400)
+            body=json.load(caught.exception)
+            self.assertEqual(body,{'error':original,'ui_error':{'key':key,'params':params}})
+            self.assertEqual(self.store.revision,before)
+    def test_address_source_api_keeps_key_private_and_requires_token(self):
+        schema=b'type Query { DAR_Adresse: String DAR_Husnummer: String DAR_Postnummer: String }'
+        fake_key='FICTIONAL_ADDRESS_KEY_123456'
+        for path,body in [('/api/address-source/status',None),('/api/address-source/connect',{'api_key':fake_key}),('/api/address-source/check',{}),('/api/address-source/disconnect',{})]:
+            with self.assertRaises(urllib.error.HTTPError) as error:self.request(path,body,token=False)
+            self.assertEqual(error.exception.code,403)
+        with patch.object(self.server.address_source,'_request',side_effect=[schema,b'{"data":{"__typename":"Query"}}']):
+            with self.request('/api/address-source/connect',{'api_key':fake_key}) as response:self.assertTrue(json.load(response)['configured'])
+        for path in ['/api/address-source/status','/api/state','/api/geo']:
+            with self.request(path) as response:self.assertNotIn(fake_key,response.read().decode())
+        with self.request('/api/address-source/disconnect',{}) as response:self.assertFalse(json.load(response)['configured'])
+        with self.request('/address-source-ui.js') as response:self.assertIn(b'AddressSourceUI',response.read())
+
+    def test_state_version_matches_running_server_in_both_channels(self):
+        from server import VERSION
+        for beta in (False,True):
+            self.server.beta=beta
+            with self.request('/api/state') as response:state=json.load(response)
+            with self.request('/api/ping',token=False) as response:ping=json.load(response)
+            self.assertEqual(state['version'],VERSION)
+            self.assertEqual(state['version'],ping['version'])
+            self.assertEqual(state['beta'],beta)
+
+    def test_dar_diagnostic_requires_token_and_does_not_mutate_store(self):
+        before = self.store.revision
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request('/api/address-source/diagnose', {}, token=False)
+        self.assertEqual(caught.exception.code, 403)
+        with patch('dar_diagnostic.diagnose', return_value={'status': 'COMPLETE', 'probes': []}) as probe:
+            with self.request('/api/address-source/diagnose', {}) as response:
+                self.assertEqual(json.load(response), {'status': 'COMPLETE', 'probes': []})
+            probe.assert_called_once_with(self.server.address_source)
+        self.assertEqual(self.store.revision, before)
+
     def test_local_printing_code_is_available_with_app_security_policy(self):
         with self.request('/printing.js') as response:
             self.assertEqual(response.status,200)
             self.assertIn(b'function printOptions',response.read())
             self.assertIn("script-src 'self'",response.headers['Content-Security-Policy'])
+
+    def test_navigation_language_asset_and_desktop_stop_control(self):
+        with self.request('/i18n.js') as response:
+            self.assertEqual(response.status,200)
+            self.assertIn(b'const I18n=',response.read())
+            self.assertIn("script-src 'self'",response.headers['Content-Security-Policy'])
+        with self.request('/') as response:
+            html=response.read().decode()
+            self.assertIn('data-action="stop" data-ui="Luk den lokale app"',html)
+            self.assertIn('/i18n.js',html)
+            self.assertNotIn('Lokalt på din Mac',html)
     def test_large_private_payload_is_gzipped_without_public_cache(self):
         import gzip
         with self.store.transaction():

@@ -4,15 +4,19 @@ from pathlib import Path
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
-REQUIRED=('S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
+REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
+PDF_DEPENDENCIES=('pypdf-6.21.2.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
-ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md')
+BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json'}
+ROOT_DOCS=('repository.yaml','README.md','README.da.md','README.en.md','LICENSE','CHANGELOG.md','ROADMAP.md','CONTRIBUTING.md','CONTRIBUTING.en.md','KOREPLAN.md','Dette-skal-hjaelpes-manuelt.md','Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
+SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png')
 
 def version():
     value=re.search(r"^VERSION='([^']+)'",(SRC/'app/server.py').read_text(),re.M).group(1)
@@ -21,14 +25,17 @@ def version():
     return value
 
 def files():
+    for dependency in PDF_DEPENDENCIES:
+        if not (SRC/'app/vendor_py'/dependency).is_file():raise ValueError('Release incomplete: missing local PDF dependency: '+dependency)
     missing=[n for n in REQUIRED if not (SRC/'templates'/n).is_file()]
     if missing:raise ValueError('Release incomplete: missing blank form assets: '+', '.join(missing))
+    if not (SRC/'app'/'kort-import-skabelon.xlsx').is_file():raise ValueError('Release incomplete: missing Excel import template.')
     result={}
     for section in ('app','templates','tests','translations'):
         for p in sorted((SRC/section).rglob('*')):
             if not p.is_file() or '__pycache__' in p.parts:continue
             if p.is_symlink():raise ValueError('Symlink not allowed in release: '+str(p))
-            if p.suffix in BLOCKED_SUFFIXES:raise ValueError('Private/runtime file in source tree: '+str(p))
+            if p.suffix in BLOCKED_SUFFIXES or p.name in BLOCKED_NAMES:raise ValueError('Private/runtime file in source tree: '+str(p))
             relative=p.relative_to(SRC).as_posix()
             if any(part.startswith('.') for part in p.relative_to(SRC).parts):continue
             result['Distrikt-lokal/'+relative]=(p.read_bytes(),0o644)
@@ -36,17 +43,32 @@ def files():
     for p in sorted(SRC.iterdir()):
         if p.is_file() and p.suffix in ('.cmd','.command','.md'):
             result['Distrikt-lokal/'+p.name]=(p.read_bytes(),0o755 if p.suffix=='.command' else 0o644)
-    for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md'):
+    for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md','icon.png','logo.png'):
         p=SRC/n;result['Home-Assistant/distrikt/'+n]=(p.read_bytes(),0o755 if n=='run.sh' else 0o644)
     for n in ROOT_DOCS:
         p=ROOT/n
         if not p.is_file():raise ValueError('Missing release document: '+n)
         result[n]=(p.read_bytes(),0o644)
+    # HA reads the app-folder changelog, not the repository's root changelog.
+    # Reject drift before either the portable or beta package can be published.
+    changelog=result['CHANGELOG.md'][0]
+    if result['Home-Assistant/distrikt/CHANGELOG.md'][0]!=changelog:
+        raise ValueError('Project and HA changelogs differ. Sync distrikt/CHANGELOG.md from CHANGELOG.md.')
+    newest=re.search(r'^##[ \t]+([^\s]+)',changelog.decode('utf-8'),re.M)
+    if not newest or newest.group(1)!=version():
+        raise ValueError('Changelog must list the current version first.')
     for n in BRAND_FILES:
         p=ROOT/'assets'/'brand'/n
         if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe brand asset: '+n)
         result['assets/brand/'+n]=(p.read_bytes(),0o644)
+    for name in SCREENSHOT_FILES:
+        p=ROOT/'assets'/'screenshots'/name
+        if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe public screenshot: '+name)
+        result['assets/screenshots/'+name]=(p.read_bytes(),0o644)
     for p in sorted((ROOT/'docs').glob('*.md')):result['docs/'+p.name]=(p.read_bytes(),0o644)
+    p=ROOT/'demo'/'README.md'
+    if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe demo guide.')
+    result['demo/README.md']=(p.read_bytes(),0o644)
     # Shared guides use repository paths; portable copies use the desktop folder.
     for name,(raw,mode) in list(result.items()):
         if name in ROOT_DOCS or name.startswith('docs/'):
@@ -58,7 +80,19 @@ def files():
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))
     result['Home-Assistant/SHA256SUMS.txt']=(manifest.encode(),0o644)
     result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
+    validate_links(result)
     return result
+
+def validate_links(entries):
+    """All relative Markdown destinations must exist inside the archive."""
+    for name,(raw,_) in entries.items():
+        if not name.endswith('.md'):continue
+        for target in re.findall(r'\]\(([^)\s]+)',raw.decode('utf-8')):
+            target=target.split('#',1)[0]
+            if not target or ':' in target or target.startswith('/'):continue
+            resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
+            if resolved not in entries and not any(n.startswith(resolved.rstrip('/')+'/') for n in entries):
+                raise ValueError('Broken packaged guide link: '+name+' -> '+target)
 
 def build(output):
     entries=files();output.mkdir(parents=True,exist_ok=True);path=output/('LTM-v'+version()+'.zip')

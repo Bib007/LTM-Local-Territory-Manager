@@ -1,9 +1,46 @@
-name: Idea / idé
-description: Suggest an improvement.
+name: "Idé eller feedback"
+description: "Foreslå en funktion, del en forbedring eller giv feedback til LTM."
+title: "[Idé] "
+labels: []
 body:
-  - type: textarea
-    id: problem
+  - type: markdown
     attributes:
-      label: What would this help you do? / Hvad vil det hjælpe dig med?
+      value: |
+        Tak fordi du hjælper med at forbedre LTM!
+
+        **Dette er et offentligt GitHub-issue.** Skriv kun opdigtede eksempler. Del aldrig navne på forkyndere, IB-adresser, rigtige distriktskort, databaser, sikkerhedskopier, adgangskoder eller billeder med personoplysninger. Det gælder også vedhæftninger og kommentarer.
+
+        Du skal være logget ind på GitHub for at indsende. Billeder og tegninger kan indsættes i tekstfeltet nedenfor via GitHubs vedhæftningsfunktion. Undlad at vedhæfte filer med følsomme oplysninger.
+  - type: dropdown
+    id: category
+    attributes:
+      label: Hvad drejer det sig om?
+      options:
+        - Ny funktion
+        - Forbedring af en eksisterende funktion
+        - Design og brugervenlighed
+        - Anden feedback
     validations:
       required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Beskriv dit forslag
+      description: "Hvad ønsker du ændret, og hvorfor? Brug opdigtede eksempler."
+      placeholder: "Det ville være nemmere at ..."
+    validations:
+      required: true
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Billeder, skitser eller andre bilag (valgfrit)
+      description: "Indsæt eller træk billeder ind her ved hjælp af GitHub. Husk at sløre/fjerne alle private oplysninger først."
+      placeholder: "Indsæt en skitse eller et anonymiseret skærmbillede her."
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: Yderligere kommentarer (valgfrit)
+    validations:
+      required: false

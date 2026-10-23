@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
-from server import Server, acquire_lock
+from server import Server, acquire_lock, VERSION
 from access import Access, private_client
 
 class LANTests(unittest.TestCase):
@@ -27,6 +27,80 @@ class LANTests(unittest.TestCase):
         req=urllib.request.Request(self.server.origin+path,json.dumps(data).encode() if data is not None else None,h)
         return (client or self.client).open(req,timeout=5)
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
+    def test_sensitive_route_matrix_requires_session_and_request_token(self):
+        routes=[('/api/state',None),('/api/geo',None),('/api/storage',None),
+                ('/api/activity',None),('/api/map',None),('/api/data-info',None),
+                ('/api/export/backup',None),('/api/export/s13?year=2026',None),
+                ('/api/restore/safety?name=foer-import-fake.zip',None),
+                ('/api/address-source/status',None),('/api/share/status',None),
+                ('/api/share/qr?card_id=fake',None),
+                ('/api/mutate',{'action':'settings.save','data':{}}),
+                ('/api/beta/reset',{}),('/api/restore/apply',{}),
+                ('/api/restore/preview',{}),('/api/address-source/connect',{}),
+                ('/api/address-source/disconnect',{}),('/api/share/connect',{}),
+                ('/api/share/disconnect',{}),('/api/share/publish',{}),
+                ('/api/share/withdraw',{}),('/api/geo/download',{}),
+                ('/api/export/readable/prepare',{})]
+        before=self.s.revision
+        for path,data in routes:
+            with self.subTest(path=path,stage='no session'):
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    self.req(path,data,{'X-Distrikt-Token':self.server.token})
+                self.assertEqual(error.exception.code,401)
+        self.login().close()
+        for path,data in routes:
+            with self.subTest(path=path,stage='wrong token'):
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    self.req(path,data,{'X-Distrikt-Token':'invalid-token'})
+                self.assertEqual(error.exception.code,403)
+        self.assertEqual(self.s.revision,before)
+        self.assertFalse(self.server.address_source.status()['configured'])
+        self.assertFalse(self.server.sharing.drive.connected())
+
+    def test_secrets_and_encoded_paths_are_not_served_as_static_files(self):
+        self.login().close()
+        for path in ('/drive-auth.json','/datafordeler-auth.json','/access.json',
+                     '/run.json','/../access.json','/%2e%2e/access.json',
+                     '/vendor/../../access.json','/api/restore/safety?name=../../access.json'):
+            with self.subTest(path=path):
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    self.req(path,headers={'X-Distrikt-Token':self.server.token})
+                self.assertIn(error.exception.code,(400,404))
+                body=error.exception.read()
+                self.assertNotIn(b'Fiktiv-kode-12345',body)
+                self.assertNotIn(b'"salt"',body)
+
+    def test_foreign_origin_cannot_write_even_with_session_and_token(self):
+        self.login().close();before=self.s.revision
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.req('/api/mutate',{'action':'publisher.save','data':{'name':'Fiktiv CSRF'}},
+                     {'Origin':'https://example.invalid','X-Forwarded-For':'127.0.0.1'})
+        self.assertEqual(error.exception.code,403)
+        self.assertEqual(self.s.revision,before)
+        self.assertEqual(self.s.all('publishers'),[])
+
+    def test_beta_reset_endpoint_requires_beta_login_token_and_idle_downloads(self):
+        self.login().close();self.s.mutate('card.save',{'number':'FAKE','temporary':True})
+        payload={'confirmation':'NULSTIL BETA','revision':self.s.revision}
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload)
+        self.assertEqual(error.exception.code,404)
+        self.assertEqual(len(self.s.state()['cards']),1)
+        self.server.beta=True
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertTrue(json.load(response)['beta'])
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload,{'X-Distrikt-Token':'wrong'})
+        self.assertEqual(error.exception.code,403)
+        self.server.downloads.active='FAKE_DOWNLOAD'
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload)
+        self.assertEqual(error.exception.code,400)
+        self.server.downloads.active=None
+        with self.req('/api/beta/reset',payload) as response:result=json.load(response)
+        self.assertEqual(self.s.state()['cards'],[])
+        with self.req('/api/restore/safety?name='+result['safety_backup'],headers={'X-Distrikt-Token':self.server.token}) as response:self.assertTrue(response.read().startswith(b'PK'))
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(response.status,200)
+        self.req('/api/logout',{}).close()
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/beta/reset',payload)
+        self.assertEqual(error.exception.code,401)
+
     def test_ip_binding_never_needs_reverse_dns(self):
         with patch('socket.getfqdn',side_effect=RuntimeError('DNS must not be needed')):
             local=Server(('127.0.0.1',0),self.s)
@@ -44,7 +118,7 @@ class LANTests(unittest.TestCase):
             cookie=r.headers['Set-Cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('SameSite=Strict',cookie)
         with self.req('/') as r:
             html=r.read().decode();self.assertIn(self.server.token,html);self.assertIn('Log ud',html);self.assertNotIn('data-action="stop"',html)
-        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],'1.11.1')
+        with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as r:self.assertEqual(json.load(r)['version'],VERSION)
         with self.assertRaises(urllib.error.HTTPError) as error:self.req('/api/state')
         self.assertEqual(error.exception.code,403)
     def test_wrong_password_and_foreign_origin_are_rejected(self):
@@ -53,6 +127,28 @@ class LANTests(unittest.TestCase):
     def test_logout_revokes_session(self):
         self.login().close();self.req('/api/logout',{}).close()
         with self.assertRaises(urllib.error.HTTPError):self.req('/api/state',headers={'X-Distrikt-Token':self.server.token})
+    def test_beta_and_stable_cookies_work_together_on_the_same_host(self):
+        with tempfile.TemporaryDirectory() as folder:
+            beta_store=Store(folder)
+            with patch.dict('os.environ',{'LTM_CHANNEL':'beta'}):beta=Server(('127.0.0.1',0),beta_store,access_host='192.168.1.77',password='Fiktiv-beta-12345')
+            thread=threading.Thread(target=beta.serve_forever,daemon=True);thread.start()
+            def beta_req(path,data=None):
+                headers={'Host':'192.168.1.77:'+str(beta.server_port),'X-Distrikt-Token':beta.token}
+                if data is not None:headers['Content-Type']='application/json'
+                return self.client.open(urllib.request.Request(beta.origin+path,json.dumps(data).encode() if data is not None else None,headers),timeout=5)
+            try:
+                with self.login() as response:self.assertIn('distrikt_session=',response.headers['Set-Cookie'])
+                with beta_req('/api/login',{'password':'Fiktiv-beta-12345'}) as response:self.assertIn('distrikt_beta_session=',response.headers['Set-Cookie'])
+                self.s.mutate('card.save',{'number':'120','temporary':True})
+                with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(len(json.load(response)['cards']),1)
+                with beta_req('/api/state') as response:self.assertEqual(json.load(response)['cards'],[])
+                beta_store.mutate('card.save',{'number':'BETA-FAKE','temporary':True})
+                with beta_req('/api/beta/reset',{'confirmation':'NULSTIL BETA','revision':beta_store.revision}) as response:self.assertEqual(response.status,200)
+                self.assertEqual(beta_store.state()['cards'],[]);self.assertEqual(len(self.s.state()['cards']),1)
+                with beta_req('/api/logout',{}) as response:self.assertIn('distrikt_beta_session=',response.headers['Set-Cookie'])
+                with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(response.status,200)
+                with self.assertRaises(urllib.error.HTTPError):beta_req('/api/state')
+            finally:beta.shutdown();beta.server_close();thread.join();beta_store.close()
     def test_no_ingress_or_proxy_trust(self):
         with self.assertRaises(urllib.error.HTTPError):self.req('/',headers={'Host':'ha.ui.nabu.casa'})
         with self.assertRaises(urllib.error.HTTPError):self.req('/api/state',headers={'X-Forwarded-For':'127.0.0.1','X-Ingress-Path':'/api/hassio_ingress/x','X-Distrikt-Token':self.server.token})
@@ -70,3 +166,30 @@ class LANTests(unittest.TestCase):
     def test_front_qr_image_requires_lan_session(self):
         with self.assertRaises(urllib.error.HTTPError) as error:self.req('/card-qr.svg?card_id=fake')
         self.assertEqual(error.exception.code,401)
+
+    def test_navigation_language_asset_keeps_lan_login_boundary(self):
+        with self.req('/') as response:
+            login=response.read().decode()
+            self.assertIn('id="loginPassword"',login)
+            self.assertIn('for="loginPassword"',login)
+            self.assertIn('id="loginLanguage"',login)
+            self.assertIn('src="/login.js"',login)
+            self.assertNotIn('src="/i18n.js"',login)
+        with self.req('/login.js') as response:
+            self.assertIn(b'const LoginText=',response.read())
+            self.assertEqual(response.headers['Cache-Control'],'no-store')
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/app.js')
+        self.assertEqual(error.exception.code,401)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.req('/i18n.js')
+        self.assertEqual(error.exception.code,401)
+        self.login().close()
+        with self.req('/i18n.js') as response:
+            self.assertIn(b'const I18n=',response.read())
+            self.assertEqual(response.headers['Cache-Control'],'no-store')
+        with self.req('/brand-logo.svg') as response:
+            self.assertEqual(response.headers['Content-Type'],'image/svg+xml')
+            self.assertIn(b'Local Territory Manager',response.read())
+        with self.req('/') as response:
+            html=response.read().decode()
+            self.assertIn('data-action="logout" data-ui="Log ud"',html)
+            self.assertNotIn('data-action="stop"',html)

@@ -21,7 +21,7 @@ class GeoStore(MainBoundaryStore):
     def geo_info(self):
         if self._info_cache is not None:return self._info_cache
         rows=self.all('geo');self._info_cache={'addresses':sum(r.get('entity')=='address' for r in rows),'buildings':sum(r.get('entity')=='building' for r in rows),
-            'roads':sum(r.get('entity')=='road' for r in rows),'downloads':[r for r in rows if r.get('entity')=='download'],
+            'roads':sum(r.get('entity')=='road' for r in rows),'dividers':sum(r.get('entity')=='divider' for r in rows),'changes':sum(r.get('entity')=='address_change' for r in rows),'downloads':[r for r in rows if r.get('entity')=='download'],
             'postcodes':[r for r in rows if r.get('entity')=='postcode_download'],
             'token_custom':bool((self.get('geo','config') or {}).get('token'))}
         return self._info_cache
@@ -49,7 +49,7 @@ class GeoStore(MainBoundaryStore):
                         if w<=x<=e and s<=y<=n and point_in_polygon([x,y],poly):item['within'].append({'card_id':c['id'],'card_number':c['number']})
                 statuses[a['id']]=item
             self._geo_cache={'addresses':addresses,'status':statuses,'buildings':[r for r in rows if r.get('entity')=='building'],
-                'roads':[r for r in rows if r.get('entity')=='road'],'info':self.geo_info(),'main_boundary':self.main_boundary(),'main_boundary_download':self.get('geo','main-boundary-download'),
+                'roads':[r for r in rows if r.get('entity')=='road'],'dividers':[r for r in rows if r.get('entity')=='divider'],'info':self.geo_info(),'main_boundary':self.main_boundary(),'main_boundary_download':self.get('geo','main-boundary-download'),
                 'changes':[r for r in rows if r.get('entity')=='address_change']}
             return self._geo_cache
     def geo_mutate(self,action,data):
@@ -115,22 +115,31 @@ class GeoStore(MainBoundaryStore):
                         item['source_id']=item['id'];item['id']=old['id']
                     known_addresses[address_key(item)]=item
                     if old and old.get('type_override'):item['type']=old['type'];item['type_override']=True
-                elif entity in ('road','building'):
+                elif entity in ('road','building','divider'):
                     points=raw.get('points')
                     if not isinstance(points,list) or not 2<=len(points)<=15000:raise ValueError('Ugyldig vej- eller bygningsgeometri.')
                     points=[valid_coordinate(p) for p in points]
                     if entity=='building' and len(points)<4:raise ValueError('Ugyldig bygning.')
                     item.update(id=text(raw.get('id'),160,True),points=points,name=text(raw.get('name'),160),building_type=text(raw.get('building_type'),80),road_type=text(raw.get('road_type'),80))
+                    if entity=='divider':
+                        kind=raw.get('divider_type')
+                        if kind not in ('river','stream','canal','rail'):raise ValueError('Ugyldig type for vandløb eller jernbane.')
+                        item.update(divider_type=kind,layer=text(raw.get('layer') or '0',20),bridge=text(raw.get('bridge'),40),tunnel=text(raw.get('tunnel'),40))
                 else:raise ValueError('Importen indeholder en ukendt objekttype.')
                 item['downloaded_at']=stamp()
                 if entity=='address' and review:
+                    if data.get('review_all') and self.get('geo',item['id']) is None:old=None
                     fields=('road','number','postcode','floor','door','lng','lat','count','type','retired')
-                    differs=old and any(old.get(k)!=item.get(k) for k in fields)
-                    if differs or (not old and (road,post) in known_roads):
+                    differs=old and (bool(old.get('_deleted_at')) or any(old.get(k)!=item.get(k) for k in fields))
+                    if differs or (not old and (data.get('review_all') or (road,post) in known_roads)):
                         before=self.get('geo',item['id'])
-                        self.put('geo',{'id':'change:'+item['id'],'entity':'address_change','kind':'changed' if before else 'new','before':before,'after':item,'at':stamp()})
+                        self.put('geo',{'id':'change:'+item['id'],'entity':'address_change','kind':'changed' if before else 'new','before':before,'after':item,'at':stamp(),**({'check_run':data['check_run']} if data.get('check_run') else {})})
                         imported_ids.add(item['id']);count+=1;continue
-                    if old:item=old
+                    if old:
+                        item=old
+                        if data.get('review_all'):
+                            pending=self.get('geo','change:'+item['id'])
+                            if pending and pending.get('check_run'):self.db.execute('DELETE FROM geo.records WHERE id=?',(pending['id'],))
                 self.put('geo',item)
                 if entity=='address' and old and old.get('_deleted_at'):
                     self.db.execute('UPDATE geo.records SET deleted_at=NULL,batch=NULL WHERE id=?',(item['id'],))

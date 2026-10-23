@@ -4,6 +4,12 @@
 
 Demoen er en statisk browserapp med opdigtede data. Kun de udtrykkeligt tilladte demofiler offentliggøres. Den private Python/SQLite-server køres ikke online af demoen.
 
+## Offentlig adresse kontrolleret
+
+[Åbn webdemoen](https://bib007.github.io/LTM-Local-Territory-Manager/). Kontrolleret 16.10.2026 uden login: forsiden og alle seks JavaScript/CSS/logo-aktiver svarede HTTP 200. Rodadressen er korrekt; `/demo/` svarer 404. Serveringen er fra Pages-artefaktets rod, selv om kildefilerne ligger i repositoryets demo-mappe. De hentede filer er sammenlignet med den kontrollerede demokode.
+
+En levende browsers første åbning, OSM-fliser, mobil og print står særskilt; HTTP-kontrollen alene beviser ikke de funktioner.
+
 ## Ejeropsætning på GitHub
 
 Pages er valgfrit og er ikke nødvendigt for installation i Home Assistant.

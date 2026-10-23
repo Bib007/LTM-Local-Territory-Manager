@@ -12,6 +12,7 @@ from geo_store import GeoStore
 from admin_store import AdminStore
 from workflow_store import WorkflowStore
 from setup_store import SetupStore
+from ui_errors import UIError
 
 MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkyndere',
            'loans': 'udleveringer', 'completions': 'gennemgange', 'ib': 'ib',
@@ -28,9 +29,9 @@ def valid_day(value, field='Dato', future=False):
     try:
         d = date.fromisoformat(str(value))
     except (ValueError, TypeError):
-        raise ValueError(field + ' skal være en gyldig dato.')
+        raise UIError('{field} skal være en gyldig dato.',field=field)
     if not future and d > date.today():
-        raise ValueError(field + ' må ikke ligge i fremtiden.')
+        raise UIError('{field} må ikke ligge i fremtiden.',field=field)
     return d.isoformat()
 
 def new_id():
@@ -81,11 +82,12 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             os.chmod(path, 0o600)
         self.db.commit()
         with self.transaction():
+            self.migrate_tasks()
             # Remove the credential belonging to the retired aerial-photo feature only.
             self.db.execute("DELETE FROM geo.records WHERE id = ?",('basemap-config',))
             if not self.get('settings', 'config'):
-                self.put('settings', {'id': 'config', 'congregation': '', 'folder_minimum': 30,
-                    'rural_mode': 'auto', 'rural_minimum': 5, 'require_revision': False, 'schema': 1})
+                self.put('settings', {'id': 'config', 'congregation': '', 'folder_minimum': 0,
+                    'rural_mode': 'auto', 'rural_minimum': 0, 'require_revision': False, 'schema': 1})
         self.purge_expired()
 
     @contextmanager
@@ -110,6 +112,20 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             raise ValueError('Ukendt datafil.')
         return 'main' if module == 'settings' else module
 
+    def migrate_tasks(self):
+        """Keep the legacy storage/API names; promote records without changing their content.
+
+        Called inside the startup/restore transaction. Deleted rows retain their
+        original recovery batch and timestamps; activity summaries are not tasks.
+        """
+        for row in self.db.execute('SELECT id,payload FROM notes.records').fetchall():
+            item=json.loads(row['payload'])
+            if item.get('entity')!='activity' and item.get('task') is not True:
+                item['task']=True
+                self._dirty_modules.add('notes')
+                self.db.execute('UPDATE notes.records SET payload=? WHERE id=?',
+                                (json.dumps(item,ensure_ascii=False),row['id']))
+
     def all(self, module, deleted=False):
         sql = 'SELECT * FROM ' + self.alias(module) + '.records WHERE deleted_at IS ' + ('NOT NULL' if deleted else 'NULL')
         rows = self.db.execute(sql).fetchall()
@@ -122,6 +138,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         return None
 
     def put(self, module, item):
+        if module=='notes' and item.get('entity')!='activity':item=dict(item,task=True)
         self._dirty_modules.add(module)
         self.workflow_track(module,item['id'])
         self.db.execute('INSERT INTO ' + self.alias(module) + '.records(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload', (item['id'], json.dumps(item, ensure_ascii=False)))
@@ -140,6 +157,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
             result['settings'] = self.get('settings', 'config')
+            try:
+                result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
+            except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
             result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
             result['archived_cards']=[c for c in result['cards'] if c.get('archived')]
@@ -149,7 +169,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             result['maps'] = [{k: v for k, v in m.items() if k != 'image'} for m in self.all('maps') if m.get('entity')!='publication']
             result['recovery'] = self.recovery()
             result['today'] = today()
-            result['version'] = '1.11.1'
+            result['version'] = '1.12.0-beta.7'
             result['geo_info'] = self.geo_info()
             return result
 
@@ -203,6 +223,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self._tracking={}
             try:
                 result = self._mutate(action, data)
+                self.onboarding_after_write(action,data)
                 if action in ('restore','delete','recovery.purge','history.cleanup'):self._dirty_modules.update(MODULES)
                 touched=self._tracking
                 changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.alias(m)+'.records WHERE id=?',(i,)).fetchone()])
@@ -219,7 +240,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields)})
-                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.task','completion.record','visit.save','ib.save','revision.approve')
+                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120} if changed and reversible else None
             finally:self._tracking=None
         if candidate:
@@ -229,7 +250,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
 
     def _mutate(self, action, data, *, geographic=False):
         if action.startswith('setup.'):return self.setup_mutate(action,data)
-        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','note.task'):
+        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete'):
             return self.workflow_mutate(action,data)
         if action in ('card.bulk.preview','card.bulk.create','card.bulk.edit.preview','card.bulk.edit','loan.correct.preview','loan.correct'):
             return self.admin_mutate(action,data)
@@ -281,6 +302,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Tilføj en vejliste eller behold kortet som midlertidigt.')
             if old and (old.get('address_ids') or old.get('geo_addresses')) and normalized != old.get('addresses', []) and not geographic:
                 raise ValueError('Vejlisten følger de valgte huse. Brug Tegn og vælg adresser for at ændre den.')
+            if old and old.get('imported_addresses') and normalized!=old.get('addresses',[]):
+                by_unit={(a['road'],a['numbers']):a for a in normalized}
+                card['imported_addresses']=[dict(a,count=by_unit[(a['road'],a['numbers'])]['count'],type=by_unit[(a['road'],a['numbers'])]['type']) for a in old['imported_addresses'] if (a['road'],a['numbers']) in by_unit]
             card['addresses'] = normalized
             if old and (old.get('addresses', []) != normalized or old['number'] != number or old.get('name') != card['name'] or (old.get('area_id') != card['area_id'] and not card['name'])):
                 card['front_revision'] = True
@@ -329,16 +353,18 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         if action == 'note.save':
             c=self.require('cards',data['card_id']) if data.get('card_id') else None
             item=dict(self.require('notes',data['id']) if data.get('id') else {'id':new_id(),'date':today(),'created':now(),'resolved':False})
-            if item.get('entity')=='activity':raise ValueError('Vælg en note.')
+            if item.get('entity')=='activity':raise ValueError('Vælg en opgave.')
             item['card_id']=c['id'] if c else None
-            item['task']=bool(data.get('task',item.get('task',False)))
+            item['task']=True
             item['text']=clean_text(data.get('text'),1000,True)
+            if 'recurrence' in data:self.task_configure(item,data['recurrence'])
             self.put('notes',item);return {'id':item['id']}
         if action == 'note.resolve':
             item=self.require('notes',data.get('id'))
-            if item.get('entity')=='activity':raise ValueError('Vælg en note.')
+            if item.get('entity')=='activity':raise ValueError('Vælg en opgave.')
+            if item.get('recurrence'):raise ValueError('Vælg en tilbagevendende opgave og markér den aktuelle forekomst udført.')
             if item.get('card_id'):self.require('cards',item['card_id'])
-            if type(data.get('resolved'))!=bool:raise ValueError('Ugyldig notestatus.')
+            if type(data.get('resolved'))!=bool:raise ValueError('Ugyldig opgavestatus.')
             item.update(resolved=data['resolved'],resolved_at=now() if data['resolved'] else None)
             self.put('notes',item);return {'id':item['id']}
         if action == 'loan.finish':
@@ -414,8 +440,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             return {'batch': batch}
         if action == 'settings.save':
             c = dict(self.require('settings', 'config'))
-            minimum = int(data.get('folder_minimum', 30))
-            rural = int(data.get('rural_minimum', 5))
+            minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
+            rural = int(data.get('rural_minimum', c.get('rural_minimum',0)))
             mode = data.get('rural_mode', 'auto')
             if mode == 'auto':
                 rural = min(rural, minimum)
@@ -423,6 +449,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Kontrollér minimum og antal landkort.')
             c.update(congregation=clean_text(data.get('congregation'), 100), folder_minimum=minimum,
                 rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')))
+            if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
+                c['folder_minimum_configured']=True
             self.put('settings', c)
             return {}
         if action == 'completion.record':
@@ -481,7 +509,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             payload = dict(data)
             address_id = clean_text(payload.get('address_id'), 160)
             if address_id:
-                addresses = c.get('geo_addresses') or [self.get('geo', ident) for ident in c.get('address_ids', [])]
+                addresses = c.get('geo_addresses') or c.get('imported_addresses') or [self.get('geo', ident) for ident in c.get('address_ids', [])]
                 address = next((a for a in addresses if a and a.get('id') == address_id), None)
                 if not address:
                     raise ValueError('Adressen er ikke på dette distriktskort. Vælg en adresse fra kortets liste.')

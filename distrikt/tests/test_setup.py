@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store,MODULES
-from territory_partition import partition,split_polygon,area,overlaps,contained
+from territory_partition import partition,split_polygon,split_polygon_line,area,overlaps,contained
 from geography import point_in_polygon
 from setup_store import ib_template
 
@@ -22,6 +22,33 @@ class PartitionTests(unittest.TestCase):
             for i,a in enumerate(parts):
                 self.assertTrue(contained(a,p))
                 self.assertFalse(any(overlaps(a,b) for b in parts[i+1:]))
+    def test_oblique_cut_is_not_axis_aligned_and_preserves_concave_components(self):
+        # An affine map inclines the actual cut; no invented addresses or road data.
+        transform=lambda p:[round(p[0]+.3*(p[1]-55),7),round(p[1]+.2*(p[0]-10),7)]
+        outer=[transform(p) for p in C_POLY]
+        # Inverse x coordinate: x - .3*y = 10.02 - .3*55.
+        for poly in (outer,list(reversed(outer))):
+            parts=split_polygon_line(poly,(1,-.3),10.02-.3*55)
+            self.assertEqual(len(parts),3)
+            self.assertAlmostEqual(sum(abs(area(p)) for p in parts),abs(area(poly)),places=8)
+            for i,p in enumerate(parts):
+                self.assertTrue(contained(p,poly))
+                self.assertFalse(any(overlaps(p,q) for q in parts[i+1:]))
+            # Sample both sides and every arm, including points close to the cut.
+            for x in (10.005,10.015,10.019,10.021,10.035):
+                for y in (55.005,55.02,55.035):
+                    point=transform([x,y])
+                    self.assertEqual(sum(point_in_polygon(point,p) for p in parts),int(point_in_polygon(point,poly)))
+    def test_oblique_line_scaling_direction_and_invalid_cuts(self):
+        normal=(1,-.7);cut=10.019-.7*55.021
+        first=split_polygon_line(POLY,normal,cut)
+        scaled=split_polygon_line(POLY,(2,-1.4),2*cut)
+        reverse=split_polygon_line(POLY,(-1,.7),-cut)
+        canonical=lambda parts:sorted(sorted(map(tuple,p)) for p in parts)
+        self.assertEqual(canonical(first),canonical(scaled));self.assertEqual(canonical(first),canonical(reverse))
+        for normal,cut in (((0,0),0),((float('nan'),1),0),((1,1),float('inf')),((1,1),65),((1,1),80)):
+            with self.assertRaises(ValueError):split_polygon_line(POLY,normal,cut)
+
     def test_generated_polygons_cover_parent_without_overlap_and_keep_all_visits(self):
         rng=random.Random(7)
         for poly in (POLY,C_POLY,[[10,55],[10.04,55.005],[10.03,55.04],[10,55.03]]):
@@ -40,6 +67,35 @@ class PartitionTests(unittest.TestCase):
                 self.assertTrue(contained(p['polygon'],poly))
                 self.assertTrue(all(point_in_polygon([a['lng'],a['lat']],p['polygon']) for a in p['members']))
                 self.assertFalse(any(overlaps(p['polygon'],q['polygon']) for q in parts[i+1:]))
+    def test_actual_oblique_road_is_preferred_and_not_extrapolated(self):
+        road={'name':'Fiktivt skråt skel','points':[[9.99,54.999],[10.05,55.029]]}
+        addresses=[{'id':str(i),'road':'Testvej','number':str(i),'postcode':'9999','lng':x,'lat':y,'count':1} for i,(x,y) in enumerate(((10.005,55.003),(10.015,55.006),(10.025,55.009),(10.005,55.022),(10.015,55.026),(10.025,55.032)))]
+        parts=partition(POLY,addresses,3,roads=[road])
+        self.assertEqual(len(parts),2)
+        self.assertEqual(sorted(p['visits'] for p in parts),[3,3])
+        self.assertTrue(all('Fiktivt skråt skel' in p['warning'] for p in parts))
+        shared=set(map(tuple,parts[0]['polygon']))&set(map(tuple,parts[1]['polygon']))
+        self.assertEqual(len(shared),2);a,b=sorted(shared)
+        self.assertNotEqual(a[0],b[0]);self.assertNotEqual(a[1],b[1])
+        self.assertEqual({a['id'] for p in parts for a in p['members']},{str(i) for i in range(6)})
+        self.assertAlmostEqual(sum(abs(area(p['polygon'])) for p in parts),abs(area(POLY)),places=8)
+        self.assertFalse(overlaps(parts[0]['polygon'],parts[1]['polygon']))
+        self.assertTrue(all(contained(p['polygon'],POLY) for p in parts))
+        reversed_road=dict(road,points=list(reversed(road['points'])))
+        self.assertEqual(parts,partition(POLY,list(reversed(addresses)),3,roads=[reversed_road]))
+        # A short middle fragment cannot be extended into an invented boundary.
+        short=dict(road,points=[[10.015,55.0115],[10.025,55.0165]])
+        fallback=partition(POLY,addresses,3,roads=[short])
+        self.assertTrue(all('Geometrisk deling' in p['warning'] for p in fallback))
+        self.assertFalse(any('Fiktivt skråt skel' in p['warning'] for p in fallback))
+    def test_road_cut_never_splits_units_at_a_house(self):
+        addresses=[dict(a,road='Husvej',number='1' if i<2 else str(i)) for i,a in enumerate(records(8))]
+        addresses[0].update(lng=10.014,lat=55.015);addresses[1].update(lng=10.016,lat=55.015)
+        road={'name':'Fiktivt skel','points':[[10.015,54.99],[10.015,55.05]]}
+        parts=partition(POLY,addresses,4,roads=[road])
+        owners=[p for p in parts if any(a['id']=='fake0' for a in p['members'])]
+        self.assertEqual(len(owners),1);self.assertIn('fake1',[a['id'] for a in owners[0]['members']])
+
     def test_house_units_stay_together_even_above_target(self):
         a=[dict(r,id='unit'+str(i),road='Fiktiv bolig',number='1',floor=str(i),lng=10.02,lat=55.02) for i,r in enumerate(records(30))]
         p=partition(POLY,a,10);self.assertEqual(len(p),1);self.assertEqual(p[0]['visits'],30);self.assertTrue(p[0]['warning'])
@@ -101,6 +157,60 @@ class SetupTests(unittest.TestCase):
         p=self.preview();self.s.mutate('card.save',{'number':'100','temporary':True})
         with self.assertRaises(ValueError):self.apply(p)
         with self.assertRaisesRegex(ValueError,'100'):self.preview()
+    def test_preview_uses_local_road_and_apply_keeps_all_addresses(self):
+        self.s.mutate('geo.import',{'records':[{'id':'test-through-road','entity':'road','name':'Fiktiv gennemgående vej','points':[[9.99,55.0125],[10.05,55.0125]]}],'source':'Fiktiv test','label':'Lokal vej'})
+        p=self.preview(target=40)
+        self.assertEqual(len(p['cards']),2)
+        self.assertTrue(all('Fiktiv gennemgående vej' in c['warning'] for c in p['cards']))
+        shared=set(map(tuple,p['cards'][0]['polygon']))&set(map(tuple,p['cards'][1]['polygon']))
+        self.assertEqual({y for x,y in shared},{55.0125})
+        self.assertEqual(self.s.all('cards'),[])
+        self.apply(p)
+        self.assertEqual({a for c in self.s.all('cards') for a in c['address_ids']},{a['id'] for a in records()})
+
+    def test_curved_preview_can_be_edited_and_applied_without_losing_addresses(self):
+        curve=[[9.99,55.0125],[10.014,55.0125],[10.014,55.0135],[10.023,55.0135],[10.023,55.0125],[10.05,55.0125]]
+        self.s.mutate('geo.import',{'records':[{'id':'test-curved-road','entity':'road','name':'Fiktiv Kurvevej','points':curve}],'source':'Fiktiv test','label':'Kurvet vej'})
+        p=self.preview(target=40)
+        self.assertEqual(len(p['cards']),2)
+        self.assertTrue(all('Fiktiv Kurvevej' in c['warning'] for c in p['cards']))
+        shared=set(map(tuple,p['cards'][0]['polygon']))&set(map(tuple,p['cards'][1]['polygon']))
+        self.assertTrue(set(map(tuple,curve[1:-1])).issubset(shared))
+        edits=[dict(key=c['key'],number=c['number'],name=c['name'],polygon=[[x,y+.0002 if [x,y]==curve[2] else y] for x,y in c['polygon']]) for c in p['cards']]
+        adjusted=self.s.mutate('setup.adjust.preview',{'token':p['token'],'cards':edits})
+        self.assertEqual(sum(c['visits'] for c in adjusted['cards']),80)
+        self.assertEqual(self.s.all('cards'),[])
+        self.apply(adjusted)
+        ids=[a for c in self.s.all('cards') for a in c['address_ids']]
+        self.assertEqual(len(ids),80);self.assertEqual(len(set(ids)),80)
+
+    def test_branching_road_preview_can_be_adjusted_and_applied_atomically(self):
+        curve=[[9.99,55.0125],[10.014,55.0125],[10.014,55.0135],[10.023,55.0135],[10.023,55.0125],[10.05,55.0125]]
+        roads=[{'id':'network-'+str(i),'entity':'road','name':'Fiktiv Forgrenet vej','points':points} for i,points in enumerate((curve[:3],curve[2:4],curve[3:],[curve[2],[10.016,55.0145]]))]
+        self.s.mutate('geo.import',{'records':roads,'source':'Fiktiv test','label':'Forgrening'})
+        p=self.preview(target=40)
+        self.assertEqual(len(p['cards']),2)
+        self.assertEqual(sorted(c['visits'] for c in p['cards']),[40,40])
+        self.assertTrue(all('Fiktiv Forgrenet vej' in c['warning'] and 'Geometrisk' not in c['warning'] for c in p['cards']))
+        self.assertEqual(self.s.all('cards'),[])
+        edits=[dict(key=c['key'],number=c['number'],name=c['name'],polygon=[[x,y+.0001 if [x,y]==curve[2] else y] for x,y in c['polygon']]) for c in p['cards']]
+        adjusted=self.s.mutate('setup.adjust.preview',{'token':p['token'],'cards':edits})
+        self.assertEqual(sum(c['visits'] for c in adjusted['cards']),80)
+        with self.assertRaises(ValueError):self.apply(adjusted,confirm='yes')
+        self.assertEqual(self.s.all('cards'),[])
+        self.apply(adjusted)
+        ids=[a for c in self.s.all('cards') for a in c['address_ids']]
+        self.assertEqual(len(ids),80)
+        self.assertEqual(set(ids),{a['id'] for a in records()})
+        self.assertFalse(overlaps(*(c['geo_polygon'] for c in self.s.all('cards'))))
+        self.assertTrue(all(contained(c['geo_polygon'],POLY) for c in self.s.all('cards')))
+    def test_local_road_change_invalidates_a_preview_without_writing_cards(self):
+        p=self.preview()
+        self.s.mutate('geo.import',{'records':[{'id':'fake-road','entity':'road','name':'Fiktiv vej','points':[[10,55.015],[10.04,55.02]]}],'source':'Fiktiv test','label':'Vejstykke'})
+        with self.assertRaisesRegex(ValueError,'ændret'):self.apply(p)
+        self.assertEqual(self.s.all('cards'),[])
+        self.assertTrue(self.preview())
+
     def test_confirmation_and_atomic_rollback(self):
         p=self.preview()
         with self.assertRaises(ValueError):self.apply(p,confirm='yes')

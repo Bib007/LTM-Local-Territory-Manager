@@ -36,6 +36,48 @@ class AdminTests(unittest.TestCase):
             self.assertTrue(self.s.mutate('card.bulk.preview',{'numbers':numbers})['duplicates'])
             with self.assertRaises(ValueError):self.s.mutate('card.bulk.create',{'numbers':numbers})
             self.assertEqual(self.s.all('cards'),[])
+
+    def test_inclusive_range_padding_preview_and_creation(self):
+        data={'numbering_mode':'range','range_start':'0','range_end':'300','range_digits':'4','kind':'Land'}
+        before=self.s.revision;preview=self.s.mutate('card.bulk.preview',data)
+        self.assertEqual(preview['count'],301);self.assertEqual(preview['numbers'][0],'0000')
+        self.assertEqual(preview['numbers'][-1],'0300');self.assertEqual(preview['duplicates'],[])
+        self.assertEqual(self.s.mutate('card.bulk.preview',dict(data,range_end='499'))['count'],500)
+        self.assertEqual(self.s.all('cards'),[]);self.assertEqual(self.s.revision,before)
+        self.assertEqual(self.s.mutate('card.bulk.create',data)['count'],301)
+        self.assertEqual([c['number'] for c in self.s.all('cards')],preview['numbers'])
+
+    def test_range_prefix_no_padding_and_single_number(self):
+        for start,end,prefix,first,last,count in [(0,99,'k','k0','k99',100),(100,199,'b','b100','b199',100),(7,7,'Æ','Æ7','Æ7',1)]:
+            result=self.s.mutate('card.bulk.preview',{'numbering_mode':'range','range_start':start,'range_end':end,'range_prefix':prefix})
+            self.assertEqual((result['numbers'][0],result['numbers'][-1],result['count']),(first,last,count))
+        data={'numbering_mode':'range','range_start':999999999,'range_end':999999999,'range_digits':29,'range_prefix':'k'}
+        self.assertEqual(len(self.s.mutate('card.bulk.preview',data)['numbers'][0]),30)
+
+    def test_range_duplicate_recheck_is_atomic_case_insensitive_and_reserves_deleted(self):
+        data={'numbering_mode':'range','range_start':0,'range_end':2,'range_prefix':'k'}
+        self.assertEqual(self.s.mutate('card.bulk.preview',data)['duplicates'],[])
+        ident=self.card('K1');before=self.s.get('cards',ident)
+        self.assertEqual(self.s.mutate('card.bulk.preview',data)['duplicates'],['k1'])
+        with self.assertRaises(ValueError):self.s.mutate('card.bulk.create',data)
+        self.assertEqual(self.s.all('cards'),[before])
+        with self.s.transaction():self.s.put('cards',dict(before,archived=True))
+        self.assertEqual(self.s.mutate('card.bulk.preview',data)['duplicates'],['k1'])
+        with self.assertRaises(ValueError):self.s.mutate('card.bulk.create',data)
+        self.s.mutate('delete',{'module':'cards','id':ident})
+        with self.assertRaises(ValueError):self.s.mutate('card.bulk.create',data)
+        self.assertEqual(self.s.all('cards'),[])
+
+    def test_invalid_ranges_never_create_partial_records(self):
+        base={'numbering_mode':'range','range_start':0,'range_end':1,'range_digits':0,'range_prefix':''}
+        invalid=[{'range_start':-1},{'range_start':True},{'range_start':'0.5'},{'range_start':1000000000},
+                 {'range_end':-1},{'range_start':2},{'range_end':500},{'range_digits':30},{'range_digits':-1},
+                 {'range_prefix':'ab'},{'range_prefix':'7'},{'range_prefix':'<'},{'range_prefix':None},
+                 {'numbering_mode':'unknown'}]
+        for change in invalid:
+            with self.subTest(change=change):
+                with self.assertRaises(ValueError):self.s.mutate('card.bulk.create',dict(base,**change))
+                self.assertEqual(self.s.all('cards'),[])
     def test_quick_limit_and_invalid_area(self):
         for data in ({'numbers':' '.join(map(str,range(501)))},{'numbers':'1','area_id':'absent'},{'numbers':'1','kind':'Bad'}):
             with self.assertRaises(ValueError):self.s.mutate('card.bulk.create',data)

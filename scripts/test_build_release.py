@@ -19,10 +19,14 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.root_patch=patch.object(release,'ROOT',self.root)
         self.src_patch=patch.object(release,'SRC',self.source)
         self.root_patch.start();self.src_patch.start()
+        for name in release.PDF_DEPENDENCIES:self.add('distrikt/app/vendor_py/'+name,'invented local dependency fixture')
+        self.add('distrikt/app/kort-import-skabelon.xlsx','invented spreadsheet fixture')
         self.add('distrikt/app/server.py',"VERSION='9.9.0'\n")
         self.add('distrikt/config.yaml','version: "9.9.0"\n')
         self.add('distrikt/Dockerfile','FROM fictional-image\n')
         self.add('distrikt/run.sh','#!/bin/sh\n')
+        self.add('distrikt/icon.png','FICTIONAL_ICON')
+        self.add('distrikt/logo.png','FICTIONAL_LOGO')
         self.add('distrikt/DOCS.md','# Fictional instructions\n')
         self.add('distrikt/README.md','# Fictional app introduction\n')
         self.add('distrikt/CHANGELOG.md','# Fictional app changes\n')
@@ -31,8 +35,13 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.add('Opdater-Home-Assistant-Mac.command','#!/bin/bash\n')
         for name in release.REQUIRED:self.add('distrikt/templates/'+name,'invented form fixture')
         for name in release.ROOT_DOCS:self.add(name,'# Fictional project document\n')
+        self.changelog='# Fictional changes\n\n## 9.9.0 · Current version\n\nNew changes.\n\n## 9.8.0 · Previous version\n\nPreserved history.\n'
+        self.add('CHANGELOG.md',self.changelog)
+        self.add('distrikt/CHANGELOG.md',self.changelog)
         for name in release.BRAND_FILES:self.add('assets/brand/'+name,'invented vector fixture')
+        for name in release.SCREENSHOT_FILES:self.add('assets/screenshots/'+name,'invented screenshot fixture')
         self.add('docs/INSTALL.md','# Fictional installation guide\n')
+        self.add('demo/README.md','# Fictional demo guide\n')
         self.add('data/kort.sqlite3','DO_NOT_PACKAGE_PRIVATE_TEST_RECORD')
 
     def tearDown(self):
@@ -43,6 +52,10 @@ class ReleaseArchiveTests(unittest.TestCase):
 
     def build(self,folder):
         with contextlib.redirect_stdout(io.StringIO()):return release.build(self.root/folder)
+
+    def test_missing_local_pdf_dependency_blocks_release(self):
+        (self.source/'app/vendor_py/pypdf-6.21.2.zip').unlink()
+        with self.assertRaisesRegex(ValueError,'missing local PDF dependency'):self.build('missing-pdf')
 
     def test_complete_portable_docs_and_no_data(self):
         output=self.build('first')
@@ -55,10 +68,14 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertIn('ROADMAP.md',names)
             self.assertIn('CONTRIBUTING.md',names)
             self.assertIn('assets/brand/logo-light.svg',names)
+            self.assertEqual( archive.read('Home-Assistant/distrikt/icon.png'),b'FICTIONAL_ICON')
+            self.assertEqual( archive.read('Home-Assistant/distrikt/logo.png'),b'FICTIONAL_LOGO')
             self.assertIn('assets/brand/logo-dark.svg',names)
             self.assertIn('docs/INSTALL.md',names)
             self.assertIn('Distrikt-lokal/app/server.py',names)
             self.assertIn('Home-Assistant/distrikt/app/server.py',names)
+            self.assertIn('Home-Assistant/distrikt/app/kort-import-skabelon.xlsx',names)
+            self.assertIn('Distrikt-lokal/app/kort-import-skabelon.xlsx',names)
             self.assertIn('Home-Assistant/distrikt/README.md',names)
             self.assertIn('Home-Assistant/distrikt/CHANGELOG.md',names)
             self.assertIn('Home-Assistant/distrikt/translations/da.yaml',names)
@@ -82,12 +99,52 @@ class ReleaseArchiveTests(unittest.TestCase):
                     resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
                     self.assertIn(resolved,archive.namelist())
 
+    def test_changelog_matches_in_desktop_ha_and_project_archive(self):
+        with zipfile.ZipFile(self.build('changelog')) as archive:
+            for name in ('CHANGELOG.md','Distrikt-lokal/CHANGELOG.md','Home-Assistant/distrikt/CHANGELOG.md'):
+                self.assertEqual(archive.read(name),self.changelog.encode())
+
+    def test_stale_ha_changelog_blocks_release(self):
+        self.add('distrikt/CHANGELOG.md','# Fictional changes\n\n## 9.8.0 · Previous version\n')
+        with self.assertRaisesRegex(ValueError,'changelogs differ'):self.build('stale')
+
+    def test_current_version_must_be_first_in_changelog(self):
+        old_first=self.changelog.replace('## 9.9.0 · Current version','## 9.8.0 · Old version',1)
+        for name in ('CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,old_first+'\n## 9.9.0 · Misplaced version\n')
+        with self.assertRaisesRegex(ValueError,'current version first'):self.build('old-first')
+
+    def test_missing_changelog_version_blocks_release(self):
+        for name in ('CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,'# Fictional changes\n')
+        with self.assertRaisesRegex(ValueError,'current version first'):self.build('missing-version')
+
+    def test_all_packaged_relative_links_are_validated(self):
+        self.add('docs/OTHER.md','[Missing](../missing-guide.md)\n')
+        with self.assertRaisesRegex(ValueError,'Broken packaged guide link'):self.build('broken')
+
+    def test_original_s12_pdf_is_required(self):
+        (self.source/'templates/S-12-original.pdf').unlink()
+        with self.assertRaisesRegex(ValueError,'missing blank form assets'):self.build('missing')
+
     def test_identical_inputs_make_identical_zip_bytes(self):
         self.assertEqual(self.build('first').read_bytes(),self.build('second').read_bytes())
 
     def test_missing_original_form_blocks_release(self):
         (self.source/'templates/S-13-background.jpg').unlink()
         with self.assertRaisesRegex(ValueError,'missing blank form assets'):self.build('output')
+
+    def test_missing_excel_template_blocks_release(self):
+        (self.source/'app/kort-import-skabelon.xlsx').unlink()
+        with self.assertRaisesRegex(ValueError,'missing Excel import template'):self.build('output')
+
+    def test_accidental_credential_json_in_program_tree_blocks_release(self):
+        for name in ('drive-auth.json','datafordeler-auth.json','access.json','run.json'):
+            with self.subTest(name=name):
+                path=self.source/'app'/name
+                path.write_text('{"credential":"FICTIONAL_TEST_ONLY"}')
+                try:
+                    with self.assertRaisesRegex(ValueError,'Private/runtime'):
+                        release.files()
+                finally:path.unlink()
 
     def test_accidental_database_in_program_tree_blocks_release(self):
         self.add('distrikt/app/accidental.sqlite3','fake private test record')

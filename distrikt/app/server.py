@@ -18,25 +18,35 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from store import Store, MODULES
 from pdf_export import s13_pdf
+from readable_export import ReadableExport
 from geodata import Downloads
 from access import Access, LOGIN, private_client, write_private
 from portable import Restores, snapshot, MAX_ARCHIVE
 from sharing import Publications
+from address_source import Datafordeler
+from address_schedule import AddressSchedule
+from setup_jobs import SetupJobs
+from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.11.1'
+VERSION='1.12.0'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
     def server_bind(self):
-        # Explicit IP listeners do not need reverse DNS during local startup.
+        # All listeners bind an explicit IP. Reverse DNS is unnecessary and can
+        # delay local startup on macOS/offline networks. Keep the bound address.
         TCPServer.server_bind(self)
         self.server_name,self.server_port=self.socket.getsockname()[:2]
     def __init__(self, address, store, access_host=None, password=None):
         super().__init__(address,Handler)
         self.store=store
-        self.downloads=Downloads(store)
+        self.readable=ReadableExport(store)
+        self.setup_jobs=SetupJobs(store)
+        self.beta=os.environ.get('LTM_CHANNEL')=='beta'
+        self.address_source=Datafordeler(store.root)
+        self.downloads=Downloads(store,self.address_source)
         self.token=secrets.token_urlsafe(32)
         self.origin='http://127.0.0.1:%s'%self.server_port
         self.access=Access(store.root,password) if access_host else None
@@ -57,6 +67,7 @@ class Server(ThreadingHTTPServer):
             self.public_url='http://%s:%s'%(host,self.server_port)
         self.restores=Restores(store,VERSION)
         self.sharing=Publications(store)
+        self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args):
@@ -93,34 +104,40 @@ class Handler(BaseHTTPRequestHandler):
         return True
     def do_GET(self):
         parsed=urlsplit(self.path);path=parsed.path;q=parse_qs(parsed.query)
-        public=path in ('/','/login.js','/style.css','/api/ping')
+        public=path in ('/','/login.js','/style.css','/brand-mark.svg','/api/ping')
         if not self.allowed(public=public):return
         try:
             if path=='/api/ping':return self.send({'app':'Distrikt','version':VERSION})
             if path=='/':
                 if self.server.access and not self.server.access.valid(self.headers.get('Cookie')):return self.send(LOGIN.encode(),'text/html')
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.token)
-                if self.server.access:html=html.replace('Lokalt på din Mac','Privat server · LAN / VPN').replace('Kun på denne computer','På din private server').replace('<button class="stop" data-action="stop">Luk den lokale app</button>','<button class="stop" data-action="logout">Log ud</button>')
-                else:html=html.replace('Lokalt på din Mac','Lokalt på din computer').replace('Kun på denne computer','Kun på denne computer')
+                if self.server.access:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/app.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
+            if path in ('/brand-mark.svg','/brand-logo.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
             if path=='/s12-template.png':return self.send((APP.parent/'templates'/'S-12-source.png').read_bytes(),'image/png')
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
             if path.startswith('/api/') and not self.allowed(token=True):return
+            if path=='/api/setup/card-template.xlsx':
+                return self.send((APP/'kort-import-skabelon.xlsx').read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=LTM-kort-import-skabelon.xlsx'})
+            if path=='/api/setup/card-template.csv':
+                from card_import import template_csv
+                return self.send(template_csv(),'text/csv',headers={'Content-Disposition':'attachment; filename=LTM-kort-import-skabelon.csv'})
             if path=='/api/setup/ib-template.csv':
                 from setup_store import ib_template
                 return self.send(ib_template(),'text/csv',headers={'Content-Disposition':'attachment; filename=IB-import-skabelon.csv'})
             if path=='/api/geo':return self.send(self.server.store.geo_state())
+            if path=='/api/setup/job':raise UIError('Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.')
             if path=='/api/geo/job':return self.send(self.server.downloads.status(q.get('id',[''])[0]))
             if path=='/api/geo/suggest':return self.send(self.server.downloads.suggest(q.get('road',[''])[0],q.get('postcode',[''])[0]))
             if path=='/api/state':
                 self.server.store.purge_expired()
                 with self.server.store.lock:
-                    result=self.server.store.state();result['public_maps']=self.server.sharing.front_links()
+                    result=self.server.store.state();result['version']=VERSION;result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links();result['address_task']=self.server.address_schedule.status()
                 return self.send(result)
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/activity':return self.send({'items':self.server.store.activity()})
@@ -133,15 +150,16 @@ class Handler(BaseHTTPRequestHandler):
                 if not 2000<=year<=2200:raise ValueError('Ugyldigt tjenesteår.')
                 return self.send(s13_pdf(self.server.store.state(),year),'application/pdf')
             if path=='/api/export/backup':return self.send(snapshot(self.server.store,VERSION),'application/zip',headers={'Content-Disposition':'attachment; filename="Distrikt-sikkerhedskopi.zip"'})
+            if path=='/api/address-source/status':return self.send(self.server.address_source.status())
             if path=='/api/share/status':return self.send(self.server.sharing.status())
             if path=='/api/share/qr':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0]),'image/svg+xml')
             if path=='/api/restore/safety':
                 name=q.get('name',[''])[0]
-                if not name.startswith('foer-import-') or Path(name).name!=name or not name.endswith('.zip'):raise ValueError('Ukendt sikkerhedskopi.')
+                if not name.startswith(('foer-import-','foer-beta-nulstilling-')) or Path(name).name!=name or not name.endswith('.zip'):raise ValueError('Ukendt sikkerhedskopi.')
                 return self.send((self.server.store.root/'backups'/name).read_bytes(),'application/zip')
             if path=='/api/data-info':return self.send({'path':str(self.server.store.root),'cutoff':self.server.store.history_cutoff(),'server_mode':bool(self.server.access),'address':self.server.public_url})
             return self.send({'error':'Siden findes ikke.'},status=404)
-        except (ValueError,KeyError,TypeError) as e:self.send({'error':str(e)},status=400)
+        except (ValueError,KeyError,TypeError) as e:self.send(error_payload(e),status=400)
         except Exception:self.send({'error':'Lokal læsefejl. Data er ikke sendt nogen steder.'},status=500)
     def do_POST(self):
         if self.path=='/api/login':
@@ -152,7 +170,7 @@ class Handler(BaseHTTPRequestHandler):
                 length=int(self.headers.get('Content-Length',0))
                 if not 0<length<4096:raise ValueError('Ugyldigt login.')
                 data=json.loads(self.rfile.read(length));session=self.server.access.login(data.get('password'),self.client_address[0])
-                return self.send({'ok':True},headers={'Set-Cookie':'distrikt_session='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
+                return self.send({'ok':True},headers={'Set-Cookie':self.server.access.cookie_name+'='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
             except (ValueError,TypeError,AttributeError):return self.send({'error':'Forkert adgangskode eller for mange forsøg. Vent fem minutter efter gentagne forsøg.'},status=401)
         if not self.allowed(token=True):return
         if self.path=='/api/restore/preview':
@@ -161,19 +179,41 @@ class Handler(BaseHTTPRequestHandler):
                 length=int(self.headers.get('Content-Length',0))
                 if not 0<length<=MAX_ARCHIVE:raise ValueError('Sikkerhedskopien må højst fylde 100 MB.')
                 return self.send(self.server.restores.preview(self.rfile.read(length)))
-            except ValueError as error:return self.send({'error':str(error)},status=400)
+            except ValueError as error:return self.send(error_payload(error),status=400)
         if self.headers.get('Content-Type','').split(';')[0]!='application/json':return self.send({'error':'Ugyldigt format.'},status=415)
         try:
             length=int(self.headers.get('Content-Length',0))
             if not 0<length<=16000000:raise ValueError('Forespørgslen er for stor eller tom.')
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
+            if self.path=='/api/export/readable/prepare':return self.send(self.server.readable.prepare())
+            if self.path=='/api/export/readable/image':return self.send(self.server.readable.image(data))
+            if self.path=='/api/export/readable/finish':return self.send(self.server.readable.finish(data.get('token')),'application/zip',headers={'Content-Disposition':'attachment; filename="LTM-laesearkiv.zip"'})
             if self.path=='/api/logout':
                 if self.server.access:self.server.access.logout(self.headers.get('Cookie'))
-                return self.send({'ok':True},headers={'Set-Cookie':'distrikt_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'})
+                cookie_name=self.server.access.cookie_name if self.server.access else 'distrikt_session'
+                return self.send({'ok':True},headers={'Set-Cookie':cookie_name+'=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'})
+            if self.path=='/api/beta/reset':
+                if not self.server.beta:return self.send({'error':'Nulstilling findes kun i betakanalen.'},status=404)
+                # Hold this lock until commit: a concurrent request cannot start a download.
+                with self.server.address_schedule.lock, self.server.downloads.lock:
+                    if self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før nulstilling eller gendannelse.')
+                    if self.server.downloads.active:raise ValueError('Vent på adressehentningen, eller sæt den på pause før nulstilling.')
+                    with self.server.sharing.lock:
+                        result=self.server.restores.reset_beta(data.get('confirmation'),data.get('revision'))
+                    self.server.downloads.jobs.clear();self.server.downloads.suggestion_cache.clear()
+                return self.send(result)
             if self.path=='/api/restore/apply':
-                if self.server.downloads.status().get('status')=='running':raise ValueError('Sæt adressehentningen på pause før import.')
-                with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))
+                with self.server.address_schedule.lock, self.server.downloads.lock:
+                    if self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før nulstilling eller gendannelse.')
+                    if self.server.downloads.active:raise ValueError('Sæt adressehentningen på pause før import.')
+                    with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))
+            if self.path=='/api/address-source/connect':return self.send(self.server.address_source.connect(data.get('api_key')))
+            if self.path=='/api/address-source/check':return self.send(self.server.address_source.check())
+            if self.path=='/api/address-source/diagnose':
+                from dar_diagnostic import diagnose
+                return self.send(diagnose(self.server.address_source))
+            if self.path=='/api/address-source/disconnect':return self.send(self.server.address_source.disconnect())
             if self.path=='/api/share/connect':
                 with self.server.sharing.lock:
                     before=self.server.sharing.drive.status();old_auth=json.loads(self.server.sharing.drive.path.read_text()) if self.server.sharing.drive.connected() else None
@@ -195,12 +235,21 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/share/publish':return self.send(self.server.sharing.enqueue(data))
             if self.path=='/api/share/withdraw':return self.send(self.server.sharing.withdraw(data.get('card_id')))
             if self.path=='/api/share/retry':return self.send(self.server.sharing.retry(data.get('card_id')))
-            if self.path=='/api/geo/download':return self.send(self.server.downloads.start(data.get('kind'),data.get('data',{})))
+            if self.path=='/api/geo/download':
+                with self.server.address_schedule.lock:
+                    if self.server.address_schedule.busy():raise ValueError('Den automatiske adressekontrol kører eller venter på genprøve. Vent før en manuel hentning.')
+                    return self.send(self.server.downloads.start(data.get('kind'),data.get('data',{})))
             if self.path=='/api/geo/pause':return self.send(self.server.downloads.pause(data.get('job_id')))
             if self.path=='/api/mutate':
-                if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
-                result=self.server.store.mutate(data.get('action'),data.get('data',{}))
-                return self.send({'ok':True,'result':result,'revision':self.server.store.revision})
+                # W81: retain implementation in setup_store/setup_jobs for later development,
+                # but reject both synchronous and asynchronous public entry points.
+                if data.get('action') in ('setup.preview','setup.adjust.preview','setup.apply'):
+                    raise UIError('Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.')
+                with self.server.address_schedule.lock:
+                    if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.')
+                    if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
+                    result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
+                    return self.send({'ok':True,'result':result,'revision':self.server.store.revision})
             if self.path=='/api/open-data':
                 if not self.server.access:
                     if sys.platform=='darwin':subprocess.Popen(['/usr/bin/open',str(self.server.store.root)])
@@ -210,7 +259,7 @@ class Handler(BaseHTTPRequestHandler):
                 if self.server.access:raise ValueError('Stop serverversionen fra Home Assistant.')
                 self.send({'ok':True});threading.Thread(target=self.server.shutdown,daemon=True).start();return
             return self.send({'error':'Ukendt handling.'},status=404)
-        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send({'error':str(e)},status=400)
+        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send(error_payload(e),status=400)
         except Exception:self.send({'error':'Ændringen blev ikke gemt. Prøv igen; eksisterende data er bevaret.'},status=500)
 
 def running(data):
@@ -273,6 +322,7 @@ def main():
     if lock is None:return
     store=Store(data);server=Server(('0.0.0.0',args.port) if args.lan else ('127.0.0.1',0),store,access_host=args.access_host if args.lan else None,password=os.environ.pop('DISTRIKT_PASSWORD',None) if args.lan else None)
     server.sharing.start()
+    server.address_schedule.start()
     run={'url':server.origin,'token':server.token,'pid':os.getpid(),'version':VERSION}
     runpath=data/'run.json';runpath.write_text(json.dumps(run));os.chmod(runpath,0o600)
     def cleanup_loop():
@@ -284,7 +334,7 @@ def main():
     signal.signal(signal.SIGTERM,shutdown);signal.signal(signal.SIGINT,shutdown)
     try:server.serve_forever(poll_interval=.2)
     finally:
-        stop_event.set();server.sharing.close();server.server_close();store.close()
+        stop_event.set();server.address_schedule.close();server.sharing.close();server.server_close();store.close()
         try:runpath.unlink()
         except FileNotFoundError:pass
         lock.close()

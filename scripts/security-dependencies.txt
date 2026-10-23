@@ -1,0 +1,5 @@
+# Runtime Python libraries bundled with LTM. No optional PDF/QR extras are used.
+# pypdf sources are loaded from vendor_py/pypdf-6.21.2.zip.
+pypdf==6.21.2
+qrcode==8.2
+typing_extensions==4.16.0

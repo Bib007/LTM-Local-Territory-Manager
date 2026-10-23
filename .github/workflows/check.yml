@@ -4,9 +4,12 @@ on:
     branches: [main, develop]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
+  security:
+    uses: ./.github/workflows/security.yml
   packaging:
     runs-on: ubuntu-latest
     steps:
@@ -16,6 +19,10 @@ jobs:
           python-version: '3.12'
       - name: Fictional package privacy and reproducibility checks
         run: python scripts/test_build_release.py
+      - name: Real archive startup and checksums
+        run: python scripts/check_release_smoke.py
+      - name: Isolated HA beta package contracts
+        run: python -m unittest discover -s scripts -p test_build_beta.py -v
   python:
     runs-on: ubuntu-latest
     strategy:
@@ -40,6 +47,36 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: node distrikt/tests/test_frontend.cjs
+      - name: All synthetic JavaScript contracts
+        run: for testfile in distrikt/tests/test_*.cjs; do node "$testfile" || exit 1; done
+      - name: Install isolated browser test tool
+        run: |
+          npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
+          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
+          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
+      - name: Offline geographic editor browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
+      - name: Unified setup and required tour browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_onboarding_browser.cjs
+      - name: Offline daily use and publisher returns
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_desk_browser.cjs
+      - name: Touch phone and tablet daily workflows in Chromium
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_desk_browser.cjs
+      - name: Touch phone and tablet daily workflows in WebKit
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_desk_browser.cjs
+      - name: Offline login and keyboard workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
+      - name: Fictional header and digital map visual checks
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_visual_browser.cjs
+      - name: HA scheduled address task browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_address_task_browser.cjs
+      - name: Fictional visual review images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fictional-visual-checks
+          path: ${{ runner.temp }}/ltm-visual
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Syntax check
         run: find distrikt/app -maxdepth 1 -name '*.js' -exec node --check {} \;

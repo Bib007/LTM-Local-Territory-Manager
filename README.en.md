@@ -1,66 +1,74 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
-  <img alt="Local Territory Manager – JW" src="assets/brand/logo-light.svg" width="640">
+  <img alt="LTM · Local Territory Manager" src="assets/brand/logo-light.svg" width="580">
 </picture>
 
-[Dansk](README.md)
+# Your territory cards. One clear overview.
 
-# Local Territory Manager – JW
+**Keep track of territory cards, assignments and completed work, with your records on your own system.**
 
-**Private territory administration, on your own computer.** An unofficial, community-built tool for Jehovah’s Witnesses. Vibe coded with **OpenAI Codex**, shaped by practical use at the territory desk.
+LTM is a free, unofficial tool for territory administration in congregations of Jehovah’s Witnesses. Find an available card, record an assignment or return, and keep its history together. Start with your existing paper cards and add addresses and maps when you are ready.
 
-[Dansk](README.md) · [Installation](docs/INSTALL.en.md) · [Privacy](docs/PRIVACY.en.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md)
+**[Try the demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](docs/INSTALL.en.md) · [Ideas and feedback](https://tally.so/r/KpY0ZV)**
 
-## Start here
+The demo uses fictional examples and needs no installation or account. The feedback form is currently in Danish.
 
-**Stable version: 1.11.1.** Install directly in Home Assistant or download the [Mac / Windows package](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest). Blank territory card, do-not-call and S-13 forms are included. Standard documentation is Danish, with English as an additional option.
+## Everyday work, made clearer
 
-[Add LTM to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
+- See cards that are assigned, in the carry folder or in the storage box.
+- Record assignments and returns, and find each card’s history.
+- Start with card numbers, or bring an existing list from Excel.
+- Draw boundaries, select addresses and use a shared map overview.
+- Print card fronts, do-not-call backs, S-13 and summaries.
+- Keep notes and follow-up tasks with your cards.
 
-The installed application interface is Danish. The separate [browser demo](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/demo/README.md) supports Danish and English and uses fictional data. It cannot access or import your installation’s private records. See the [known limitations](docs/LIMITATIONS.en.md) for feature details.
+## A look inside
 
-- **Mac / Windows:** download the packaged ZIP from [Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases), extract it, install Python 3.9+ once, then open the matching `Start-Distrikt` launcher in `Distrikt-lokal`. No Docker or pip packages needed.
-- **From source:** open `distrikt/Start-Distrikt.command` on Mac or `distrikt/Start-Distrikt.cmd` on Windows. Alternatively: `python3 distrikt/app/server.py`. Use a verified release when updating a working installation.
-- **Home Assistant OS:** an optional app with its own LAN address and login. [Installation and updates](docs/INSTALL.en.md#home-assistant-os). It does not use Ingress or Nabu Casa.
+These pictures show the application with fictional examples. Danish is the main language; English can be selected, although some text and the original forms remain Danish.
 
-Home Assistant support exists because I did not have another spare computer available at the time. The desktop versions remain first-class ways to run the same application; data can be moved using a private export/import.
+![Card status and upcoming tasks in LTM](assets/screenshots/overblik.png)
 
-**The everyday advantage of HA hosting:** leave the app running at home and use it on your phone, iPad or computer while away. Connect your device to a **VPN on your own router**, then open the app's private LAN address in the browser. The VPN must allow access to the HA machine's network. This does not require exposing the app to the public internet or using Nabu Casa.
+![Choosing a territory card and publisher](assets/screenshots/udlevering.png)
 
-New installation? Start with [your first session](docs/FIRST-STEPS.en.md). Google sharing has its own [optional Drive/QR guide](docs/GOOGLE-DRIVE.en.md).
+![A fictional territory card and its address list](assets/screenshots/distriktskort.png)
 
-## What it does
+## Choose where to use LTM
 
-- Check territories out and in; see what is assigned, in the carry folder or in the storage box.
-- Add temporary numbered cards first and fill in addresses and boundaries later.
-- Manage publishers, assignments, completion history, notes and tasks.
-- Draw/import boundaries, select individual addresses, ignore non-visit addresses and propose card divisions.
-- Keep do-not-call records locally; print them on the card back.
-- Print card fronts/backs, S-13 and reports by service year (1 September–31 August).
-- Optionally publish an approved PNG to Google Drive with a stable QR link. Databases and do-not-call lists are never uploaded by this feature.
+**Latest stable version: 1.12.0**
 
-## Local data, deliberate sharing
+- **Home Assistant:** add LTM and install **Distrikt**. Open the same installation from your computer, phone or iPad on your home network.
+- **Mac or Windows:** [download the program](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), extract it and follow the [installation guide](docs/INSTALL.en.md). Install Python once if it is not already available.
 
-SQLite databases stay on the machine running the app. There is no developer account, analytics service or AI endpoint in the application. Online maps, public address lookups and optional Google Drive use outside services; this is **not an entirely offline application**.
+[Add to Home Assistant](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager) · [Your first session](docs/FIRST-STEPS.en.md)
 
-Local storage gives you control over data and access. It is **not a guarantee of GDPR compliance**. You remain responsible for retention, backups, access and the instructions applicable to your congregation. See [the actual data flows](docs/PRIVACY.en.md).
+Already using LTM? Download a private backup inside the app before updating. A beta installation has separate records; these are not automatically moved into the stable app.
 
-## KML from JW HUB
+## Your records stay with you
 
-In my experience, you can download a KML file covering the congregation’s entire territory from JW HUB if your account has the appropriate permissions and access. Use the export options available to your own account, then import and review the boundary in LTM. Never post the actual file in GitHub issues or send it to AI.
+Cards, publishers, do-not-call records, assignments and notes are stored on the computer or Home Assistant running LTM. No LTM account or subscription is required, and the app does not send usage statistics to its developer.
 
-## Built in the open
+Map backgrounds, address searches and optional Google Drive sharing use the internet. You may choose to share a reviewed card image using a QR code. This does not upload databases, publisher records, do-not-call lists or assignment history. Anyone with an open image link can view and forward the image.
 
-This project is vibe coded with Codex. I cannot promise that everything works. Please report bugs and suggest improvements, using **made-up examples only**. Never attach real territory databases, publisher names, addresses marked do-not-call, Google tokens or backups to an issue.
+**Use LTM’s own backup feature. Home Assistant’s ordinary backup does not include LTM’s records.**
 
-The software is provided as-is. It is not produced, approved or supported by jw.org, JW HUB or Home Assistant. Brand names identify their respective services. Source code is MIT licensed; third-party code and form templates keep their separate rights. [Third-party notices](distrikt/THIRD-PARTY.md).
+[Privacy and sharing](docs/PRIVACY.en.md) · [Updating and moving your records](docs/INSTALL.en.md)
 
-## Development
+## Before you start
 
-```sh
-python3 -m unittest discover -s distrikt/tests -v
-TZ=Europe/Copenhagen node distrikt/tests/test_frontend.cjs
-python3 scripts/build_release.py
-```
+**Do I need to enter every paper card first?** No. Begin with card numbers and existing assignments; add addresses and maps later.
 
-Python is the only runtime requirement; Node is used for development checks. Tests use isolated fictional data. [Contributing](CONTRIBUTING.en.md).
+**Do I need Home Assistant?** No. Mac and Windows are also supported.
+
+**Can I use my phone away from home?** Yes, using your own VPN connection to your home network. See the installation guide.
+
+**Can I bring existing records?** You can import cards from Excel and supported S-13 records. Review and approve the results before they are saved.
+
+## Ideas and feedback
+
+[Send feedback](https://tally.so/r/KpY0ZV) without an account or email address. The form accepts pictures and currently uses Danish. Submit fictional examples only, without private records, real do-not-call details, backups or passwords. Your submitted text and pictures are stored by Tally.
+
+## About LTM
+
+LTM is an unofficial project, not produced or approved by Jehovah’s Witnesses, jw.org, JW HUB or Home Assistant. It is developed with help from OpenAI Codex. [License](LICENSE) · [Third-party notices](distrikt/THIRD-PARTY.md).
+
+[Dansk](README.md) · [Known limitations](docs/LIMITATIONS.en.md) · [Contributing](CONTRIBUTING.en.md)

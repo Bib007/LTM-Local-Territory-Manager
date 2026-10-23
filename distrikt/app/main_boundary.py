@@ -4,6 +4,7 @@ import json
 import re
 import uuid
 from admin_store import signature
+from address_checkpoint import GRAPHQL_SOURCE
 from geography import valid_polygon, point_in_polygon
 
 class MainBoundaryStore:
@@ -41,17 +42,24 @@ class MainBoundaryStore:
             if action.endswith('.tile'):
                 records=data.get('records',[])
                 if any(not point_in_polygon([a['lng'],a['lat']],boundary['points']) for a in records):raise ValueError('Udtrækket indeholder adresser udenfor grænsen.')
-                for offset in range(0,len(records),20000):self.geo_mutate('geo.import',{'records':records[offset:offset+20000],'source':'DAR / Datafordeleren','label':'Samlet distriktsgrænse','review_changes':manifest.get('review_changes',False)})
+                for offset in range(0,len(records),20000):self.geo_mutate('geo.import',{'records':records[offset:offset+20000],'source':'DAR / Datafordeleren','label':'Samlet distriktsgrænse','review_changes':manifest.get('review_changes',False),'review_all':manifest.get('review_all',False),'check_run':manifest.get('check_run')})
                 lines=data.get('lines',[])
                 for offset in range(0,len(lines),20000):self.geo_mutate('geo.import',{'records':lines[offset:offset+20000],'source':'DAR / Datafordeleren','label':'Officielle vejlinjer · samlet grænse'})
             if manifest.get('status')=='complete':
                 if any(t.get('status')!='done' for t in manifest['tiles']):raise ValueError('Grænseudtrækket er endnu ikke komplet.')
                 seen={ident for tile in manifest['tiles'] for ident in tile.get('address_ids',[])}
+                if not seen and manifest.get('source_id')==GRAPHQL_SOURCE and any(a.get('entity')=='address' and not a.get('retired') and point_in_polygon([a['lng'],a['lat']],boundary['points']) for a in self.all('geo')):
+                    raise ValueError('DAR returnerede ingen adresser, selv om området har lokale adresser. Den tomme opdatering er ikke godkendt; eksisterende adresser er bevaret. Prøv en enkelt vej eller opdater området igen.')
                 for a in self.all('geo'):
                     if a.get('entity')=='address' and a.get('verified') and a.get('source','').startswith('DAR') and not a.get('retired') and a['id'] not in seen and a.get('source_id') not in seen and point_in_polygon([a['lng'],a['lat']],boundary['points']):
                         if manifest.get('review_changes'):
-                            self.put('geo',{'id':'change:'+a['id'],'entity':'address_change','kind':'retired','before':a,'after':dict(a,retired=True,retired_at=stamp()),'at':stamp()})
+                            self.put('geo',{'id':'change:'+a['id'],'entity':'address_change','kind':'retired','before':a,'after':dict(a,retired=True,retired_at=stamp()),'at':stamp(),**({'check_run':manifest['check_run']} if manifest.get('check_run') else {})})
                         else:a['retired']=True;a['retired_at']=stamp();self.put('geo',a)
+            if manifest.get('status')=='complete' and manifest.get('review_all'):
+                for change in self.all('geo'):
+                    after=change.get('after') or {}
+                    if change.get('entity')=='address_change' and change.get('check_run') and change.get('check_run')!=manifest.get('check_run') and 'lng' in after and point_in_polygon([after['lng'],after['lat']],boundary['points']):
+                        self.db.execute('DELETE FROM geo.records WHERE id=?',(change['id'],))
             manifest['updated_at']=stamp();self.put('geo',manifest);return {}
         if action=='geo.main.save':
             points=valid_polygon(data.get('points'),limit=5000)

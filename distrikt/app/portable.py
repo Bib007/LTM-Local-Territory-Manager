@@ -11,6 +11,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from store import MODULES
+from ui_errors import UIError
 
 MAX_ARCHIVE=100*1024*1024
 MAX_EXPANDED=512*1024*1024
@@ -61,15 +62,15 @@ class Restores:
                             db=sqlite3.connect(p.as_uri()+'?mode=ro&immutable=1',uri=True)
                             try:
                                 db.execute('PRAGMA trusted_schema=OFF')
-                                if db.execute('PRAGMA user_version').fetchone()[0]!=1:raise ValueError('Ukendt databaseversion: '+name)
+                                if db.execute('PRAGMA user_version').fetchone()[0]!=1:raise UIError('Ukendt databaseversion: {file}',file=name)
                                 objects=db.execute("SELECT type,name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").fetchall()
-                                if objects!=[('table','records')]:raise ValueError('Ugyldig databasestruktur: '+name)
+                                if objects!=[('table','records')]:raise UIError('Ugyldig databasestruktur: {file}',file=name)
                                 columns=[r[1] for r in db.execute('PRAGMA table_info(records)')]
-                                if columns!=['id','payload','deleted_at','batch']:raise ValueError('Ugyldigt databaseformat: '+name)
-                                if db.execute('PRAGMA quick_check').fetchone()[0]!='ok':raise ValueError('Beskadiget database: '+name)
+                                if columns!=['id','payload','deleted_at','batch']:raise UIError('Ugyldigt databaseformat: {file}',file=name)
+                                if db.execute('PRAGMA quick_check').fetchone()[0]!='ok':raise UIError('Beskadiget database: {file}',file=name)
                                 for row in db.execute('SELECT id,payload,deleted_at,batch FROM records'):
                                     item=json.loads(row[1])
-                                    if not isinstance(item,dict) or item.get('id')!=row[0]:raise ValueError('Ugyldig post i '+name)
+                                    if not isinstance(item,dict) or item.get('id')!=row[0]:raise UIError('Ugyldig post i {file}',file=name)
                                     items.append(tuple(row))
                             finally:db.close()
                         rows[module]=items;counts[module]=sum(r[2] is None for r in items)
@@ -83,10 +84,15 @@ class Restores:
                         if module=='loans' and row[2] is None and item.get('publisher_id') not in publishers:raise ValueError('Sikkerhedskopien har udlån uden tilhørende forkynder.')
         except (zipfile.BadZipFile,sqlite3.Error,json.JSONDecodeError,RuntimeError,UnicodeError) as exc:
             raise ValueError('Sikkerhedskopien er ugyldig eller beskadiget.') from exc
+        # Match the lists shown by Store.state(); retain raw counts for callers
+        # that inspect all stored records, including archived cards and activity.
+        visible_counts=dict(counts)
+        visible_counts['cards']=sum(r[2] is None and not json.loads(r[1]).get('archived') for r in rows['cards'])
+        visible_counts['notes']=sum(r[2] is None and json.loads(r[1]).get('entity')!='activity' for r in rows['notes'])
         token=secrets.token_urlsafe(32)
         with self.store.lock:
             self.pending={token:{'rows':rows,'expires':time.monotonic()+600,'digest':digest(self.store)}}
-        return {'token':token,'counts':counts,'warning':'Import erstatter alle lokale registreringer. Der gemmes automatisk en sikkerhedskopi af de nuværende data først. Hvis denne installation allerede har delte kort, skal deres offentlige adgang fjernes under Deling og QR før import.'}
+        return {'token':token,'counts':counts,'visible_counts':visible_counts,'warning':'Import erstatter alle lokale registreringer. Der gemmes automatisk en sikkerhedskopi af de nuværende data først. Hvis denne installation allerede har delte kort, skal deres offentlige adgang fjernes under Deling og QR før import.'}
     def apply(self,token):
         with self.store.lock:
             if any(r.get('entity')=='publication' and r.get('file_id') and r.get('status')!='private' for r in self.store.all('maps')):
@@ -103,10 +109,33 @@ class Restores:
                     alias=self.store.alias(module)
                     self.store.db.execute('DELETE FROM '+alias+'.records')
                     self.store.db.executemany('INSERT INTO '+alias+'.records(id,payload,deleted_at,batch) VALUES(?,?,?,?)',rows)
+                self.store.migrate_tasks()
                 # Never resume public uploads from a different installation or an older backup.
                 for item in self.store.all('maps'):
                     if item.get('entity')=='publication':
                         item.update(status='review',error='Kontrollér kortbilledet og publicér igen efter import.')
                         item.pop('queued_png',None);self.store.put('maps',item)
+            self.pending.clear()
+            return {'ok':True,'safety_backup':filename}
+
+    def reset_beta(self,confirmation,revision):
+        """Called only by the beta-gated HTTP route, under the sharing lock."""
+        with self.store.lock:
+            if confirmation!='NULSTIL BETA':raise ValueError('Skriv NULSTIL BETA for at bekræfte.')
+            if revision!=self.store.revision:raise ValueError('Data er ændret. Genindlæs og kontrollér nulstillingen igen.')
+            if any(r.get('entity')=='publication' and r.get('file_id') and
+                   (r.get('status')!='private' or r.get('possibly_public') or r.get('url'))
+                   for r in self.store.all('maps')+self.store.all('maps',deleted=True)):
+                raise ValueError('Fjern først offentlig adgang til kortene under Deling og QR. Nulstilling må ikke efterlade offentlige billeder uden registrering.')
+            folder=self.store.root/'backups';folder.mkdir(mode=0o700,exist_ok=True)
+            filename='foer-beta-nulstilling-'+datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+secrets.token_hex(3)+'.zip'
+            target=folder/filename
+            target.write_bytes(snapshot(self.store,self.version));os.chmod(target,0o600)
+            with self.store.transaction():
+                self.store._dirty_modules.update(MODULES)
+                for module in MODULES:self.store.db.execute('DELETE FROM '+self.store.alias(module)+'.records')
+                self.store.put('settings',{'id':'config','congregation':'','folder_minimum':0,
+                    'rural_mode':'auto','rural_minimum':0,'require_revision':False,'schema':1})
+            self.store.workflow_init()
             self.pending.clear()
             return {'ok':True,'safety_backup':filename}

@@ -2,7 +2,7 @@
 
 [English](CONTRIBUTING.en.md)
 
-Små, forståelige ændringer er velkomne. Opret en fejlmelding med et opdigtet eksempel, eller en pull request, der forklarer den ændrede adfærd og kontrollen af den.
+Har du en idé eller feedback? Brug [feedbackformularen hos Tally](https://tally.so/r/KpY0ZV) uden konto eller e-mail. Indsendt tekst og billeder gemmes hos Tally; brug kun fiktive eksempler uden IB, rigtige distriktskort eller personoplysninger. Du kan også oprette eller kommentere [GitHub-issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) med GitHub-login. Udviklere kan indsende kodeændringer som pull requests.
 
 ## Dansk først
 

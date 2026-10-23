@@ -1,8 +1,8 @@
 // Pure rendering and planning tests; no browser or user data is contacted.
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
 let src=fs.readFileSync(path.join(__dirname,'../app/app.js'),'utf8');src=src.slice(0,src.indexOf("document.addEventListener('input'"));
-const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',className:'',style:{},dataset:{},showModal(){},close(){},querySelector(){return null}});return nodes.get(id);};
-const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),getElementById:get},window:{addEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
+const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,{id,innerHTML:'',textContent:'',className:'',style:{},dataset:{},classList:{toggle(){}},addEventListener(){},removeEventListener(){},setAttribute(){},showModal(){},close(){},querySelector(){return null}});return nodes.get(id);};
+const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),getElementById:get},window:{addEventListener(){},removeEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/publisher-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
 run(`state={cards:[],areas:[],publishers:[],loans:[],completions:[],ib:[],visits:[],maps:[],recovery:[],settings:{folder_minimum:30,rural_mode:'manual',rural_minimum:5,require_revision:false,congregation:''},today:'2026-10-06',version:'1.2.0'}`);
 for(const p of ['Udlevering','Distrikter','Udleverede distriktskort','Forkyndere','Rapporter','Adresser','Kortopsætning','Indstillinger']){run(`page='${p}';render()`);assert(get('app').innerHTML.length>150,p);}
 run(`for(let i=0;i<40;i++)state.cards.push({id:'c'+i,number:String(i),temporary:true,kind:i<8?'Land':'By',in_folder:false,last_completed:i===0?null:'2026-01-01',addresses:[]});`);
@@ -38,7 +38,7 @@ console.log('Geographic selection, publisher profiles and front-print rendering 
 assert.equal(run("RoadSearch.normalize('Gammel Fiktivvej')"),run("RoadSearch.normalize('Gl. Fiktivvej')"));
 assert.equal(run("RoadSearch.local('gammel', '9999').length"),0);
 run(`GeoUI.data.addresses.push({id:'miss',road:'Gl. Fiktivvej',number:'3',postcode:'9999',floor:'',door:'',lng:10.001,lat:55.001,count:1,type:'Hus',label:'Gl. Fiktivvej 3'});GeoUI.data.status={a1:{card_id:'c3',card_number:'3'},a2:{card_id:'c3',card_number:'3'},miss:{within:[{card_id:'c3',card_number:'3'}]}};`);
-assert.equal(run("RoadSearch.local('gammel Fiktivvej', '9999')[0].road"),'Gl. Fiktivvej');
+assert.equal(run("RoadSearch.local('gammel fiktivvej', '9999')[0].road"),'Gl. Fiktivvej');
 assert.equal(run('missingAddresses().length'),1);
 run("query='';addressTab='Mangler på kort';addressPostcode='';addressPage=0;");assert(run("addressesPage().includes('Tilføj til kort')"));assert(run("addressesPage().includes('Se bort fra')"));
 run("addressTab='Inden for kortgrænse'");assert(run("addressesPage().includes('Grænse for kort 3')"));
@@ -88,7 +88,7 @@ assert.equal((printHTML.match(/class="sheet"/g)||[]).length,2);assert(printHTML.
 assert(run("printDocument([state.cards[1]],'back',defaultPrintProfile('back')).includes('94mm 146mm')"));
 assert.throws(()=>run("printSettings({...defaultPrintProfile('front'),x:'0; color:red'})"));
 run("state.cards[1].front_revision=true;printRevisions('front')");assert(get('dialog').innerHTML.includes('data-ids='));
-run("issue('c4',true)");assert(get('dialog').innerHTML.includes('localPublisherNames'));assert(!get('dialog').innerHTML.includes('name="new_publisher"'));
+run("issue('c4',true)");assert(get('dialog').innerHTML.includes('data-publisher-search'));assert(!get('dialog').innerHTML.includes('name="new_publisher"'));
 run("deskTab='Udlever';page='Udlevering';render()");assert(!get('app').innerHTML.includes('id="serviceYear"'));assert(get('nav').innerHTML.includes('Daglig brug'));
 console.log('Desk, day-count, print-profile, batch-print and local person-search tests passed.');
 run("editCard('c3')");assert(get('dialog').innerHTML.includes('Vejlisten følger de valgte huse'));assert(get('dialog').innerHTML.includes('<fieldset disabled>'));
@@ -144,9 +144,13 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  await run("Navigation.go('2:0')");assert.equal(run('reportTab'),'Rapport');
  run("page='Kortopsætning';GeoUI.dirty=true;window.confirm=()=>false");await run("Navigation.go('1:0')");assert.equal(run('page'),'Kortopsætning');assert.equal(run('GeoUI.dirty'),true);
  run("window.confirm=()=>true;GeoUI.dirty=false;page='Distrikter';status='Alle';render()");
- assert(!get('nav').innerHTML.includes('<details'));assert(get('nav').innerHTML.includes('Forside'));assert(get('nav').innerHTML.includes('Distriktskort'));assert(!get('nav').innerHTML.includes('Printprofiler'));assert(run("table(state.cards).includes('tabindex=\"0\"')"));
+ assert(!get('nav').innerHTML.includes('<details'));assert(get('nav').innerHTML.includes('Forside'));assert(get('nav').innerHTML.includes('Idéer og feedback'));assert(get('nav').innerHTML.includes('https://tally.so/r/KpY0ZV'));assert(get('nav').innerHTML.includes('rel="noopener noreferrer"'));assert(get('nav').innerHTML.includes('Distriktskort'));assert(!get('nav').innerHTML.includes('Printprofiler'));assert(run("table(state.cards).includes('tabindex=\"0\"')"));
  run("rowEvent={type:'click',preventDefault(){this.prevented=true;}};rowTarget={closest(selector){return selector==='[data-card-row]'?{dataset:{cardRow:'c4'}}:null;}};Navigation.selectRow(rowTarget,rowEvent)");assert.equal(run('selected'),'c4');assert.equal(run('rowEvent.prevented'),true);
  run("rowEvent.prevented=false;buttonTarget={closest(){return {}}};Navigation.selectRow(buttonTarget,rowEvent)");assert.equal(run('rowEvent.prevented'),false);
+ // The header logo uses the same guarded home navigation as the sidebar.
+ const shell=fs.readFileSync(path.join(__dirname,'../app/index.html'),'utf8');assert(/<button class="brand" data-navigation="0:0"/.test(shell));
+ run("page='Kortopsætning';GeoUI.dirty=true;window.confirm=()=>false");await run("Navigation.go('0:0')");assert.equal(run('page'),'Kortopsætning');
+ run("window.confirm=()=>true;state.notes=[]");await run("Navigation.go('0:0')");assert.equal(run('page'),'Forside');
  // An ordinary local mount cannot cause a tile request; road mode preserves zoom.
  run("MapBackground.mode='local';tileCalls=[];fitCalls=0;L={tileLayer:(url,options)=>{tileCalls.push({url,options});return {on(){return this;},addTo(){return this;}}}};fakeMap={removeLayer(){}};MapBackground.attach('testMap',fakeMap,()=>{},()=>{fitCalls++})");assert.equal(run('tileCalls.length'),0);
  await run("MapBackground.change('testMap','road')");assert.equal(run('tileCalls.length'),1);assert.equal(run('fitCalls'),0);assert(run("tileCalls[0].url.startsWith('https://tile.openstreetmap.org/')"));assert(!run("tileCalls[0].url.includes('TEST')"));
@@ -187,14 +191,14 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("DistrictMap.map=null;MapBackground.detach('districtMap');document.createElement=originalCreateElement;state.ib=[]");
  // Return notes are local reminders, safely rendered and excluded from public exports.
  run("state.notes=[{id:'note-test',card_id:'c3',date:state.today,created:'2026-01-01',text:'PRIVATE_NOTE <script>bad</script>',resolved:false}];detail('c3','Noter')");
- assert(get('dialog').innerHTML.includes('Noter · 1'));assert(get('dialog').innerHTML.includes('&lt;script&gt;'));assert(!get('dialog').innerHTML.includes('<script>bad'));
- assert(!run("MapExport.svg('c3').includes('PRIVATE_NOTE')"));assert(run("notesList().includes('Markér håndteret')"));
+ assert(get('dialog').innerHTML.includes('Opgaver · 1'));assert(get('dialog').innerHTML.includes('&lt;script&gt;'));assert(!get('dialog').innerHTML.includes('<script>bad'));
+ assert(!run("MapExport.svg('c3').includes('PRIVATE_NOTE')"));assert(run("notesList().includes('Markér udført')"));
  run("state.loans.push({id:'note-loan',card_id:'c3',publisher_id:'p1',cycle_start:'2026-01-01'});finish('note-loan')");assert(get('dialog').innerHTML.includes('name="note"'));assert(get('dialog').innerHTML.includes('Tilføj IB')||get('dialog').innerHTML.includes('tilføj IB'));
  assert(run("printDocument([card('c3')],'front',{paper:'cut',mode:'data',width:146,height:94,x:0,y:0}).includes('top:calc(17% - 1mm)')"));
  // Report labels fit polygon area/width and OSM snapshot is embedded in print without private notes.
  assert(run("ReportMap.label([[0,0],[100,0],[100,100],[0,100]],'120').size")<=13);
  assert(run("ReportMap.label([[0,0],[30,0],[30,30],[0,30]],'120').size")<run("ReportMap.label([[0,0],[100,0],[100,100],[0,100]],'120').size"));
- assert.equal(run("ReportMap.label([[0,0],[2,0],[2,100],[0,100]],'120').size"),0);
+ assert.equal(run("ReportMap.label([[0,0],[2,0],[2,100],[0,100]],'120').size"),11);
  run("savedReportCards=state.cards;savedReportCompletions=state.completions;savedReportYear=year;state.cards=[{id:'report-test',number:'120',geo_polygon:[[10,55],[10.015,55],[10.015,55.015],[10,55.015]]}];state.completions=[{card_id:'report-test',date:state.today}];year=serviceYear(state.today);ReportMap.map=captureMap;ReportMap.tiles={isLoading:()=>false};document.createElement=()=>({getContext:()=>({drawImage(){}}),toDataURL:()=> 'data:image/png;base64,AAAA'})");
  run("savedMainBoundary=GeoUI.data.main_boundary;GeoUI.data.main_boundary={points:[[9.995,54.995],[10.019,54.995],[10.019,55.019],[9.995,55.019]]};ReportMap.fit()");
  assert.equal(run('fitArgs.bounds.length'),8);assert.equal(run('fitArgs.bounds[0][1]'),9.995);
@@ -211,7 +215,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
 
  // Public renderer takes only the server-provided recipe, never private local notes or extra units.
  run("publicRecipe={publicCard:{id:'c3',number:'PUBLIC120',name:'Offentligt navn & <test>',geo_polygon:[[10,55],[10.02,55],[10.02,55.02]],map_color:'#123abc'},publicMembers:[{id:'public-one',road:'Offentlig testvej',number:'42',lng:10.005,lat:55.005,count:1}]}");
- const publicSvg=run("MapExport.svg('c3',publicRecipe)");assert(publicSvg.includes('PUBLIC120'));assert(publicSvg.includes('Offentligt navn &amp; &lt;test&gt;'));assert(publicSvg.includes('Husk at tjekke efter IB på det fysiske distriktskort'));assert(publicSvg.includes('fill="#b3261e"')); assert(publicSvg.includes('Offentlig testvej'));assert(publicSvg.includes('42'));assert(!publicSvg.includes('PRIVATE_'));assert(!publicSvg.includes('Eksempelvej'));assert.equal((publicSvg.match(/<circle /g)||[]).length,1);
+ const publicSvg=run("MapExport.svg('c3',{...publicRecipe,publicTemplate:'data:image/png;base64,AAAA'})");assert(publicSvg.includes('PUBLIC120'));assert(publicSvg.includes('Offentligt navn &amp; &lt;test&gt;'));assert(publicSvg.includes('Husk at tjekke efter IB på det fysiske distriktskort'));assert(publicSvg.includes('fill="#b3261e"')); assert(publicSvg.includes('Offentlig testvej'));assert(publicSvg.includes('42'));assert(!publicSvg.includes('PRIVATE_'));assert(!publicSvg.includes('Eksempelvej'));assert.equal((publicSvg.match(/<circle /g)||[]).length,1);
  assert(run("TransferUI.html().includes('backupImport')"));assert(run("ShareUI.html().includes('Deling og QR')"));assert(run("Navigation.groups[2][1].some(item=>item[1]==='Indstillinger')"));
  run("ShareUI.data={connected:true,account:'fake@example.invalid',cards:[{card_id:'c3',number:'120',error:'<script>',status:'queued'}]}");
  assert(run("ShareUI.content().includes('Venter på upload')"));assert(run("ShareUI.content().includes('&lt;script&gt;')"));assert(!run("ShareUI.content().includes('<script>')"));
@@ -251,7 +255,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
 // Hidden one-time setup, escaped user labels and explicit confirmations.
 setImmediate(()=>{
  run("SetupUI.options={numbering:'prefix',start:101,block:100,target:50};SetupUI.areas=[{id:'',name:'<test>',prefix:'F',kind:'By'}];SetupUI.ibDate='2026-10-15'");
- assert(run("SetupUI.advanced().includes('Førstegangsopsætning')"));
+ assert(!run("SetupUI.advanced().includes('Kortinddeling og nummerering')"));
  assert(!run("Navigation.html().includes('Opsæt distrikter')"));
  assert(run("SetupUI.areasPage().includes('&lt;test&gt;')"));
  assert(run(`SetupUI.areasPage().includes('value="101"')`));
@@ -262,3 +266,15 @@ setImmediate(()=>{
  assert(run("SetupUI.ibPage().includes('IMPORTÉR IB')"));assert(!run("SetupUI.ibPage().includes('<test>')"));
  console.log('Hidden setup, number standards, escaped previews and typed creation/IB confirmations passed.');
 });
+
+// Closed maps keep a printable QR; pending Google requests must never look closed.
+{
+ const snapshot=run('JSON.stringify(state)');
+ run("state.cards=[{id:'shared-test',number:'120',name:'Fiktivt kort',geo_polygon:[[10,55],[10.1,55],[10.1,55.1]]}];ShareUI.data={connected:true,account:'fictional@example.invalid',cards:[{card_id:'shared-test',status:'ready',front_url:'https://drive.google.com/file/d/FICTIONAL/view',url:'',issued:false,access_pending:false}]}");
+ let content=run('ShareUI.content()');assert(content.includes('QR-kode'));assert(!content.includes('Åbn preview'));assert(content.includes('Lukket · kortet er ikke udleveret'));
+ run("ShareUI.data.cards[0]={...ShareUI.data.cards[0],status:'access_retry',url:ShareUI.data.cards[0].front_url,access_pending:true,error:'SIMULATED <failure>'}");
+ content=run('ShareUI.content()');assert(content.includes('Afventer lukning hos Google'));assert(content.includes('billedet kan stadig være offentligt'));assert(content.includes('Prøv adgangsændring igen'));assert(content.includes('SIMULATED &lt;failure&gt;'));assert(!content.includes('Åbn preview'));assert(!content.includes('Lukket · kortet er ikke udleveret'));
+ run("ShareUI.data.cards[0].status='access_failed'");assert(run('ShareUI.content()').includes('Adgangsændring stoppet'));
+ context.shareStateSnapshot=snapshot;run('state=JSON.parse(shareStateSnapshot);ShareUI.data=null');
+ console.log('Loan-driven sharing: closed/pending/failed access labels, stable QR and escaped errors passed.');
+}

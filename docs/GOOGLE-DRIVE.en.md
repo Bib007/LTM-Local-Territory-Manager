@@ -8,6 +8,12 @@ The private databases, publishers, assignments, notes and do-not-call list are n
 
 The installed app is currently Danish. The menu and file names below are the actual Danish names, not labels that depend on a future full English translation.
 
+## Digital card in beta.12
+
+From beta.12 the shared image has a new layout with a clear card number/name, a large map and a small printed-front miniature in the corner. The miniature reuses the blank S-12 front and the physical front’s road-row formatter, but is built only from approved public addresses. It does not copy an image of the private card. DNC details, notes and holder records are excluded.
+
+Existing QR links and the loan-driven access cycle are preserved. Older layouts are marked under Sharing and QR. Choose **Opdater Google Drive-upload**, review the entire image and miniature, and explicitly approve publication. A layout update does not upload anything by itself. The QR still opens a PNG image on Google Drive; no new public website is created.
+
 ## 1. Create your own Google client
 
 1. Sign in to [Google Cloud Console](https://console.cloud.google.com/) with your chosen account and create a project. A dedicated account makes later handover easier.
@@ -44,6 +50,16 @@ Delete the connection file from Downloads afterwards. Treat it like a password: 
 6. Open the preview link in a private browser without Google login and scan the printed QR with a phone.
 
 Sharing is read-only for anyone with the link. It is not an interactive territory app, and link recipients can save or forward the image. Keeping Drive's public discovery option off is not a promise that the content is confidential.
+
+## Access follows the loan
+
+An approved image can be uploaded privately and its QR printed before the card is issued. LTM enables public read access when the card is issued and removes it when the card is returned. Completing a round while keeping the card leaves access open. Reissuing the card reopens the same approved file without uploading it again. If Google changes its actual viewer link, the front is marked for reprinting; check the QR after first enabling public access. Outdated images require a new approved preview. A manual withdrawal stays private until a new publication.
+
+Only file-permission requests are sent to Google, not the loan history or publisher identity. The app must be running and connected to Google. The status distinguishes pending/failed changes from confirmed closure. After five unsuccessful attempts, use **Prøv adgangsændring igen**. Pending replacement uploads do not postpone the attempt to close the old image on return.
+
+The same QR link works for everyone who has it, including former card holders when it reopens. This closes access between loans; it is not access restricted to the current holder. Downloaded copies cannot be recalled. Owners, separately invited accounts and inherited folder permissions may still permit access. Do not move the image into a publicly shared folder or grant separate access if it must follow LTM's loan status.
+
+Closed links show Google's own access page. LTM does not customize that page, approve access requests, or introduce another public website. Test privately with a non-sensitive fictional card: prepare, issue, return and reissue using the same QR, checking access in a signed-out browser at each step.
 
 ## Updating the image
 

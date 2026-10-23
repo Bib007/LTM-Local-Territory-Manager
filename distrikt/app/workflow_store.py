@@ -1,13 +1,27 @@
 """Local workflow tools. Activity stores summaries only; undo payloads stay in RAM."""
 import copy
 import json
+import re
 import time
 import uuid
+from datetime import date, timedelta
 from geography import enclosing_outline, street_rows
 from admin_store import signature
 
 
 class WorkflowStore:
+    def task_configure(self,item,recurrence):
+        if recurrence is None:
+            item.pop('recurrence',None);return
+        if not isinstance(recurrence,dict) or recurrence.get('frequency')!='weekly' or type(recurrence.get('weekday')) is not int or not 0<=recurrence['weekday']<=6:
+            raise ValueError('Vælg ingen gentagelse eller en ugedag.')
+        previous=item.get('recurrence') or {};weekday=recurrence['weekday']
+        due=previous.get('next_due') if previous.get('frequency')=='weekly' and previous.get('weekday')==weekday else None
+        if not due:
+            day=date.today();due=(day+timedelta(days=(weekday-day.weekday())%7)).isoformat()
+        item['recurrence']={'frequency':'weekly','weekday':weekday,'next_due':due}
+        item['resolved']=False
+
     def workflow_init(self):
         self.revision=uuid.uuid4().hex
         self._geo_cache=None
@@ -28,6 +42,16 @@ class WorkflowStore:
 
     def workflow_mutate(self,action,data):
         from store import clean_text, now
+        if action=='note.complete':
+            item=self.require('notes',data.get('id'));recurrence=item.get('recurrence') or {}
+            if item.get('entity')=='activity' or recurrence.get('frequency')!='weekly':raise ValueError('Vælg en tilbagevendende opgave.')
+            if item.get('card_id'):self.require('cards',item['card_id'])
+            due=recurrence['next_due'];day=date.today()
+            if data.get('due')!=due or due>day.isoformat():raise ValueError('Opgaven er ikke forfalden eller er allerede håndteret. Opdater oversigten.')
+            history=list(item.get('task_history') or []);history.append({'due':due,'date':day.isoformat(),'at':now()})
+            delta=(recurrence['weekday']-day.weekday())%7 or 7
+            item.update(task_history=history,resolved=False,resolved_at=now(),recurrence={**recurrence,'next_due':(day+timedelta(days=delta)).isoformat()})
+            self.put('notes',item);return {'id':item['id']}
         if action=='filter.save':
             config=dict(self.require('settings','config'));views=list(config.get('saved_views',[]))
             name=clean_text(data.get('name'),60,True)
@@ -41,7 +65,26 @@ class WorkflowStore:
         if action=='filter.delete':
             config=dict(self.require('settings','config'));config['saved_views']=[v for v in config.get('saved_views',[]) if v['id']!=data.get('id')];self.put('settings',config);return {}
         if action=='backup.record':
-            config=dict(self.require('settings','config'));config['last_backup']=now();self.put('settings',config);return {}
+            status=data.get('status','download_started');ident=data.get('id') or uuid.uuid4().hex
+            if status not in ('created','download_started','file_saved') or not isinstance(ident,str) or not re.fullmatch(r'[A-Za-z0-9-]{1,64}',ident):
+                raise ValueError('Ugyldig backupregistrering.')
+            config=dict(self.require('settings','config'));history=list(config.get('backup_history') or [])
+            existing=next((entry for entry in history if entry['id']==ident),None)
+            if existing:
+                if existing['status']==status:return {}
+                if existing['status']!='created' or status=='created':raise ValueError('Ugyldig backupregistrering.')
+                entry={**existing,'status':status,'at':now()};history=[entry if item['id']==ident else item for item in history]
+            else:
+                if data.get('id') and status!='created':raise ValueError('Ugyldig backupregistrering.')
+                entry={'id':ident,'created':now(),'at':now(),'status':status};history.append(entry)
+            config['backup_history']=history[-100:]
+            if status!='created':
+                config['last_backup']=entry['at'];config.pop('backup_snoozed_until',None)
+            self.put('settings',config);return {}
+        if action=='backup.snooze':
+            config=dict(self.require('settings','config'))
+            config['backup_snoozed_until']=(date.today()+timedelta(days=1)).isoformat()
+            self.put('settings',config);return {}
         if action=='workflow.undo':
             entry=self._undo
             if not entry or entry['until']<time.monotonic() or entry['revision']!=self.revision:raise ValueError('Fortryd er udløbet, eller data er ændret siden handlingen.')
@@ -55,7 +98,7 @@ class WorkflowStore:
             return self.restructure(action,data)
         if action=='note.task':
             n=self.require('notes',data.get('id'))
-            if n.get('entity')=='activity':raise ValueError('Vælg en note.')
+            if n.get('entity')=='activity':raise ValueError('Vælg en opgave.')
             n['task']=True;n['resolved']=False;self.put('notes',n);return {'id':n['id']}
         if action=='address.change.review':
             self._dirty_modules.add('geo')

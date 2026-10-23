@@ -2,9 +2,15 @@
 
 [Dansk](FIRST-STEPS.md)
 
+From beta.23 there is one unified setup guide. An empty installation opens it automatically. It explains local data, one shared HA installation, private backups and optional Google sharing. Answer the questions, then choose **Save and start tour**.
+
+Answers are saved first; **Finish tour** marks setup complete. The guide closes and the overview displays your plan with direct links to the actual tools. The tour creates no cards, addresses or do-not-call records. **Continue later** or closing interrupts without completing setup; a saved unfinished plan resumes on the next start. Existing completed installations are not forced through the tour again. Reopen the same guide under **Settings → General**.
+
+With maps selected, the plan includes **Connect the address source · your own API key**. Follow the [Datafordeler guide](DATAFORDELER.en.md) and enter your key only in your local app.
+
 You do not need to digitise every paper card before using LTM. Begin with the card numbers and existing assignments. Add geography and printing later, on those same records.
 
-These instructions describe the installed app. The browser demo uses invented records and does not import your data. The installed interface is currently Danish, so the button names below match what you actually see.
+These instructions describe the installed app. The browser demo uses invented records and does not import your data. The app defaults to Danish and offers English controls. Original forms and report content remain Danish.
 
 ## 1. Start the right installation
 
@@ -35,16 +41,16 @@ Open a publisher to check their active cards. A number-only temporary card can b
 | Kort i kassen | Available cards in the storage box at home |
 | Aflever til kassen | Return the card to the storage box |
 | Gennemgået | Record completion |
-| Opgaver og noter | Follow-up tasks and notes |
+| Opgaver | Follow-up tasks · open tasks counted only |
 
-Put the cards you actually carry into the folder in the app. When assigning one, select its publisher and date. When it is returned, record whether it was completed and optionally add a note/task, for example to review a do-not-call entry later. **Returns go to the box**, not automatically back into the folder.
+Put the cards you actually carry into the folder in the app. When assigning one, select its publisher and date. When it is returned, record whether it was completed and optionally add a task, for example to review a do-not-call entry later. **Returns go to the box**, not automatically back into the folder.
 
 Each recorded completion counts, including repeated completions of the same card. The visit total is an estimate based on the card's address/unit count; it is not a record of individual calls made. A service year runs from **1 September to 31 August**.
 
 ## 5. Add detail when ready
 
 - Import/draw the congregation's outer boundary, review it, then fetch addresses inside it. Keep your actual KML and records private.
-- Fill in existing cards individually. Automatic division is an advanced proposal for creating new cards; review it before creation.
+- Fill in existing cards individually, or draw each card and select addresses in the map editor. Automatic division proposals are paused from beta.61.
 - Select do-not-call entries from the card's own addresses. The English abbreviation is DNC; the installed Danish app uses IB.
 - Test front/back printing on ordinary paper and save your printer profiles before using pre-cut cards.
 - Google Drive is optional. Follow [Drive and QR setup](GOOGLE-DRIVE.en.md) only if you want approved public map images.

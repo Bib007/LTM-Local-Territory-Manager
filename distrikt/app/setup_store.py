@@ -1,6 +1,7 @@
 """One-time local setup and IB imports; previews in RAM, writes in existing files."""
 import csv
 import io
+import json
 import re
 import time
 import uuid
@@ -9,6 +10,7 @@ from datetime import date
 from admin_store import signature
 from geography import valid_polygon,point_in_polygon
 from territory_partition import partition,contained,overlaps
+from ui_errors import UIError,error_payload
 
 IB_HEADERS=['kortnummer','vejnavn','husnummer','postnummer','etage','dør','dato']
 
@@ -17,8 +19,8 @@ def clean(value):return re.sub(r'\s+',' ',str(value or '').strip()).casefold()
 def ib_number(a):return a['number']+(', '+' '.join(str(a[k]) for k in ('floor','door') if a.get(k)) if a.get('floor') or a.get('door') else '')
 def bounded_int(value,low,high,label):
     try:n=int(str(value))
-    except (ValueError,TypeError):raise ValueError(label+' skal være et helt tal.') from None
-    if not low<=n<=high:raise ValueError(f'{label} skal være mellem {low} og {high}.')
+    except (ValueError,TypeError):raise UIError('{label} skal være et helt tal.',label=label) from None
+    if not low<=n<=high:raise UIError('{label} skal være mellem {low} og {high}.',label=label,low=low,high=high)
     return n
 
 def defaults(data):
@@ -31,8 +33,52 @@ def defaults(data):
 
 
 class SetupStore:
+    def onboarding_after_write(self,action,data):
+        """Advance only from a successful domain write, within its transaction.
+
+        Connection checks and whole-list owner reviews remain explicit. Opening
+        a form, previewing data, restarting or reading state cannot complete tasks.
+        """
+        events={
+            'settings.save':('congregation','folder'),
+            'print.profile.save':('printing',),
+            'publisher.save':('publisher',),
+            'card.save':('cards',),'card.bulk.create':('cards',),
+            'setup.card-import.apply':('cards',),'setup.apply':('cards',),
+            'geo.main.save':('boundary',),'setup.ib.apply':('ib',),
+            'backup.record':('backup',),
+            'setup.onboarding.save':('congregation','folder','printing','publisher','cards','boundary','ib','backup'),
+        }
+        if action not in events:return
+        config=dict(self.require('settings','config'));previous=config.get('onboarding') or {}
+        answers=previous.get('answers') or {}
+        if not previous.get('completed') or not answers:return
+        tasks=dict(previous.get('tasks') or {});updated=dict(tasks)
+        checks={
+            'congregation':bool(config.get('congregation')),
+            'folder':config.get('folder_minimum_configured') is True,
+            'printing':all(side in (config.get('print_profiles') or {}) for side in ('front','back')),
+            'publisher':lambda:bool(self.all('publishers')),
+            'cards':lambda:bool([c for c in self.all('cards') if not c.get('archived')]),
+            'boundary':lambda:bool(self.main_boundary()),
+            'ib':lambda:bool(self.all('ib')),
+            'backup':bool(config.get('last_backup')) and data.get('status')!='created',
+        }
+        for event in events[action]:
+            task=answers.get('cards') if event=='cards' else ('kml' if answers.get('boundary')=='yes' else 'boundary') if event=='boundary' else event
+            if event=='boundary' and answers.get('mode')!='map' or event=='ib' and answers.get('ib')!='yes':continue
+            if updated.get(task) in ('done','skipped'):continue
+            if event=='folder' and action=='settings.save':
+                row=self._tracking.get(('settings','config')) if self._tracking is not None else None
+                before=json.loads(row[1]) if row else {}
+                if data.get('folder_minimum_confirmed') is not True and before.get('folder_minimum')==config.get('folder_minimum'):continue
+            check=checks[event]
+            if (check() if callable(check) else check):updated[task]='done'
+        if updated!=tasks:
+            config['onboarding']={**previous,'tasks':updated};self.put('settings',config)
+
     def setup_signature(self,ib=False):
-        return signature([self.main_boundary(),self.all('cards')+self.all('cards',deleted=True),self.all('ignored'),[a for a in self.all('geo') if a.get('entity')=='address'],[a for a in self.all('settings') if a.get('id')!='config'],self.all('ib') if ib else []])
+        return signature([self.main_boundary(),self.all('cards')+self.all('cards',deleted=True),self.all('ignored'),[a for a in self.all('geo') if a.get('entity') in ('address','road','divider')],[a for a in self.all('settings') if a.get('id')!='config'],self.all('ib') if ib else []])
     def setup_remember(self,kind,payload):
         now=time.monotonic();self._setup_previews={k:v for k,v in self._setup_previews.items() if v['until']>now}
         if len(self._setup_previews)>=6:self._setup_previews.pop(next(iter(self._setup_previews)))
@@ -41,7 +87,7 @@ class SetupStore:
     def setup_require_preview(self,data,kind):
         p=self._setup_previews.get(data.get('token'))
         if not p or p['kind']!=kind or p['until']<=time.monotonic():raise ValueError('Forhåndsvisningen er udløbet. Lav et nyt forslag.')
-        if self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, områder eller IB er ændret. Lav en ny forhåndsvisning.')
+        if self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, veje, områder eller IB er ændret. Lav en ny forhåndsvisning.')
         return p['payload']
     def setup_plan(self,data):
         options=defaults(data);main=self.main_boundary()
@@ -58,13 +104,13 @@ class SetupStore:
             name=clean_text(existing['name'] if existing else raw.get('name'),80,True)
             if clean(name) in seen:raise ValueError('Et område er valgt flere gange.')
             seen.add(clean(name))
-            if not ident and any(clean(a.get('name'))==clean(name) for a in self.all('settings')+self.all('settings',deleted=True) if a.get('id')!='config' and not a.get('entity')):raise ValueError('Området '+name+' findes allerede. Vælg det fra listen.')
+            if not ident and any(clean(a.get('name'))==clean(name) for a in self.all('settings')+self.all('settings',deleted=True) if a.get('id')!='config' and not a.get('entity')):raise UIError('Området {name} findes allerede. Vælg det fra listen.',name=name)
             points=raw.get('polygon') or (main['points'] if len(raw_areas)==1 else None)
             poly=valid_polygon(points,limit=5000);corners+=len(poly)
             if corners>20000:raise ValueError('Områdegrænserne må samlet have højst 20.000 hjørner. Opret færre områder ad gangen.')
-            if not contained(poly,main['points']):raise ValueError('Områdegrænsen for '+name+' går udenfor ydergrænsen.')
+            if not contained(poly,main['points']):raise UIError('Områdegrænsen for {name} går udenfor ydergrænsen.',name=name)
             for other in areas:
-                if overlaps(poly,other['polygon']):raise ValueError('Områdegrænserne for '+name+' og '+other['name']+' overlapper. Ret dem før oprettelse.')
+                if overlaps(poly,other['polygon']):raise UIError('Områdegrænserne for {name} og {other} overlapper. Ret dem før oprettelse.',name=name,other=other['name'])
             prefix=clean_text(raw.get('prefix'),10).upper()
             if options['numbering']=='prefix' and not re.fullmatch(r'[A-ZÆØÅ]{1,6}',prefix):raise ValueError('Angiv 1–6 områdeforbogstaver, fx F eller B.')
             kind=raw.get('kind','Ukendt')
@@ -92,29 +138,63 @@ class SetupStore:
         boxes=[(min(p[0] for p in a['polygon']),min(p[1] for p in a['polygon']),max(p[0] for p in a['polygon']),max(p[1] for p in a['polygon'])) for a in areas]
         for a in eligible:
             point=[a['lng'],a['lat']];owners=[i for i,(region,(w,s,e,n)) in enumerate(zip(areas,boxes)) if w<=a['lng']<=e and s<=a['lat']<=n and point_in_polygon(point,region['polygon'])]
-            if len(owners)>1:raise ValueError('Adressen '+a['label']+' ligger på flere områdegrænser. Flyt en grænse en smule.')
+            if len(owners)>1:raise UIError('Adressen {address} ligger på flere områdegrænser. Flyt en grænse en smule.',address=a['label'])
             if not owners:uncovered+=1
             else:buckets[owners[0]].append(a)
+        local_roads=[r for r in self.all('geo') if r.get('entity')=='road']
+        local_dividers=[r for r in self.all('geo') if r.get('entity')=='divider']
         proposed=[];next_number=options['start'];numbers={c['number'].casefold() for c in cards}
         for i,(region,members) in enumerate(zip(areas,buckets)):
             if not members:continue
-            parts=partition(region['polygon'],members,region['target'])
-            if options['numbering']=='hundreds' and len(parts)>options['block']:raise ValueError('Området '+region['name']+' kræver flere numre end den valgte områdeblok. Vælg en større blok.')
+            parts=partition(region['polygon'],members,region['target'],roads=local_roads,dividers=local_dividers)
+            if options['numbering']=='hundreds' and len(parts)>options['block']:raise UIError('Området {name} kræver flere numre end den valgte områdeblok. Vælg en større blok.',name=region['name'])
             for j,part in enumerate(parts):
                 if len(part['members'])>10000:raise ValueError('Et kort har over 10.000 adresser. Inddel det berørte område manuelt.')
                 number=str(next_number if options['numbering']=='continuous' else region['start']+j)
                 if options['numbering']=='prefix':number=region['prefix']+number
                 next_number+=1
-                if number.casefold() in numbers:raise ValueError('Kortnummer '+number+' findes allerede eller er reserveret i Gendan ved fejl. Vælg et andet startnummer eller forbogstav.')
+                if number.casefold() in numbers:raise UIError('Kortnummer {number} findes allerede eller er reserveret i Gendan ved fejl. Vælg et andet startnummer eller forbogstav.',number=number)
                 numbers.add(number.casefold());roads=Counter()
                 for a in part['members']:roads[a['road']]+=a.get('count',1)
                 road=sorted(roads,key=lambda r:(-roads[r],r.casefold()))[0]
-                proposed.append({'key':str(len(proposed)),'number':number,'name':(region['name']+' – '+road)[:100],'area_index':i,'area_name':region['name'],'kind':region['kind'],'polygon':part['polygon'],'address_ids':[a['id'] for a in part['members']],'visits':part['visits'],'warning':part['warning']})
+                proposed.append({'key':str(len(proposed)),'number':number,'name':(region['name']+' – '+road)[:100],'area_index':i,'area_name':region['name'],'kind':region['kind'],'polygon':part['polygon'],'address_ids':[a['id'] for a in part['members']],'visits':part['visits'],'warning':part['warning'],'warning_ui':part.get('warning_ui',[])})
         if not proposed:raise ValueError('Ingen ledige adresser indenfor de valgte områder. Hent adresser først, eller kontrollér eksisterende kort og Se bort fra.')
         if len(proposed)>500:raise ValueError('Forslaget giver over 500 kort. Opret færre områder ad gangen.')
         payload={'areas':areas,'cards':proposed,'options':options,'uncovered':uncovered,'excluded':dict(excluded),'visits':sum(c['visits'] for c in proposed)}
         return dict(payload,token=self.setup_remember('cards',payload))
     def setup_mutate(self,action,data):
+        if action=='setup.history-import.preview':
+            from history_import import preview
+            return preview(self,data)
+        if action=='setup.history-import.apply':
+            from history_import import apply
+            return apply(self,data)
+        if action=='setup.card-import.preview':
+            from card_import import preview
+            return preview(self,data)
+        if action=='setup.card-import.apply':
+            from card_import import apply
+            return apply(self,data)
+        if action=='setup.onboarding.task':
+            config=dict(self.require('settings','config'));previous=config.get('onboarding') or {};answers=previous.get('answers') or {}
+            if not previous.get('completed') or not answers:raise ValueError('Afslut opsætningsguiden først.')
+            allowed={'desk','backup','congregation','folder','printing','sharing','publisher',answers.get('cards')}
+            if answers.get('mode')=='map':allowed.update(('data','kml' if answers.get('boundary')=='yes' else 'boundary'))
+            if answers.get('ib')=='yes':allowed.add('ib')
+            task=data.get('task');status=data.get('status')
+            if not isinstance(task,str) or task not in allowed or status not in ('pending','done','skipped'):raise ValueError('Vælg et gyldigt trin og en status fra opgavelisten.')
+            tasks=dict(previous.get('tasks') or {});tasks[task]=status
+            config['onboarding']={**previous,'tasks':tasks};self.put('settings',config);return {}
+        if action=='setup.onboarding.save':
+            answers=data.get('answers')
+            choices={'mode':('desk','map'),'boundary':('yes','later'),'cards':('numbers','excel','auto','manual'),'ib':('yes','later')}
+            if not isinstance(answers,dict) or set(answers)!=set(choices) or any(answers[k] not in allowed for k,allowed in choices.items()):raise ValueError('Vælg et svar på alle spørgsmål.')
+            if answers['mode']=='desk' and (answers['boundary']!='later' or answers['cards']=='auto'):raise ValueError('Automatisk inddeling kræver kortfunktion.')
+            tour=data.get('tour_completed',False)
+            if not isinstance(tour,bool):raise ValueError('Ugyldig status for rundtur.')
+            config=dict(self.require('settings','config'));previous=config.get('onboarding') or {}
+            config['onboarding']={**previous,'version':2,'answers':dict(answers),'completed':bool(previous.get('completed')) or tour,'tour_completed':bool(previous.get('tour_completed')) or tour}
+            self.put('settings',config);return {}
         if action=='setup.preview':return self.setup_plan(data)
         if action=='setup.adjust.preview':
             import copy
@@ -130,7 +210,7 @@ class SetupStore:
                 c['polygon']=valid_polygon(e.get('polygon'),limit=5000)
                 if len({tuple(p) for p in c['polygon']})!=len(c['polygon']):raise ValueError('Et hjørne er gentaget. Flyt hjørnerne fra hinanden.')
                 c['number']=str(e.get('number',c['number'])).strip()[:30];c['name']=str(e.get('name',c['name'])).strip()[:100]
-                if not contained(c['polygon'],plan['areas'][c['area_index']]['polygon']):raise ValueError('Kort '+c['number']+' går udenfor sit område. Flyt grænsen tilbage.')
+                if not contained(c['polygon'],plan['areas'][c['area_index']]['polygon']):raise UIError('Kort {number} går udenfor sit område. Flyt grænsen tilbage.',number=c['number'])
             for i,region in enumerate(plan['areas']):
                 cards=[c for c in revised['cards'] if c['area_index']==i]
                 if not cards:continue
@@ -153,6 +233,7 @@ class SetupStore:
                         houses[house]=c['key']
                     c['address_ids']=ids;c['visits']=sum(address_lookup[a].get('count',1) for a in ids)
                     c['warning']='Kontrollér besøgstallet efter grænseændringen.' if not region['target']*.5<=c['visits']<=region['target']*1.5 else ''
+                    c['warning_ui']=[]
             return dict(revised,token=self.setup_remember('cards',revised))
         if action=='setup.defaults':
             config=dict(self.require('settings','config'));config['setup_defaults']=defaults(data);self.put('settings',config);return {}
@@ -168,7 +249,7 @@ class SetupStore:
                 edit=by_key.get(c['key'])
                 if not edit:raise ValueError('Et kort mangler i listen.')
                 number=clean_text(edit.get('number'),30,True);name=clean_text(edit.get('name'),100,True)
-                if number.casefold() in existing:raise ValueError('Kortnummer '+number+' findes allerede eller er gentaget.')
+                if number.casefold() in existing:raise UIError('Kortnummer {number} findes allerede eller er gentaget.',number=number)
                 existing.add(number.casefold());prepared.append(dict(c,number=number,name=name))
             area_ids={};ids=[]
             for i,a in enumerate(plan['areas']):
@@ -213,7 +294,7 @@ class SetupStore:
         default_day=valid_day(data.get('date') or date.today().isoformat())
         cards=[c for c in self.all('cards') if not c.get('archived')];by_number={clean(c['number']):c for c in cards};lookup=defaultdict(list)
         for c in cards:
-            for a in c.get('geo_addresses') or [self.get('geo',i) for i in c.get('address_ids',[])]:
+            for a in c.get('geo_addresses') or c.get('imported_addresses') or [self.get('geo',i) for i in c.get('address_ids',[])]:
                 if a:lookup[(clean(a['road']),clean(a['number']),str(a['postcode']))].append((c,a))
         ibs=self.all('ib');seen=set();rows=[]
         for line,values in enumerate(reader,2):
@@ -235,7 +316,7 @@ class SetupStore:
                 c,a=candidates[0];key=(c['id'],a['id']);day=valid_day(v.get('date') or default_day)
                 duplicate=key in seen or any(i['card_id']==c['id'] and (i.get('address_id')==a['id'] or clean(i.get('road'))==clean(a['road']) and clean(i.get('number')) in (clean(ib_number(a)),clean(a['number']))) for i in ibs)
                 row.update(status='existing' if duplicate else 'new',card_number=c['number'],label=a.get('label') or a['road']+' '+ib_number(a),date=day,record={'card_id':c['id'],'address_id':a['id'],'road':a['road'],'number':ib_number(a),'date':day});seen.add(key)
-            except (ValueError,TypeError) as error:row['error']=str(error)
+            except (ValueError,TypeError) as error:row.update(error_payload(error))
             rows.append(row)
         if not rows:raise ValueError('Importfilen indeholder ingen IB-linjer. Udfyld skabelonen først.')
         payload={'rows':rows,'new':sum(r['status']=='new' for r in rows),'existing':sum(r['status']=='existing' for r in rows),'errors':sum(r['status']=='error' for r in rows)}

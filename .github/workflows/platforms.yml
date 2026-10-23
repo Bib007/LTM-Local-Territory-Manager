@@ -6,6 +6,7 @@ on:
     branches: [main, develop]
     paths: ['distrikt/**', '.github/workflows/platforms.yml']
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:

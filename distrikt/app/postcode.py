@@ -7,6 +7,7 @@ import copy
 import re
 from datetime import datetime, timezone
 from geography import decode_dar, utm32_to_wgs84
+from address_checkpoint import REST_SOURCE, GRAPHQL_SOURCE, checkpoint_source, require_source
 
 HOST='services.datafordeler.dk'
 BASE='/DAR/DAR/3.0.0/rest/'
@@ -19,6 +20,13 @@ class SourceUnavailable(ValueError):
     pass
 
 class SourceTimeout(SourceUnavailable):pass
+class SourceLimit(SourceUnavailable):pass
+
+class SourceTransient(SourceUnavailable):
+    """A sanitized read failure that may be retried after a bounded cooldown."""
+    def __init__(self,message,retry_after=0):
+        super().__init__(message)
+        self.retry_after=retry_after
 
 def rest_addresses(items,postcode,road):
     normalized=[]
@@ -71,6 +79,7 @@ class PostcodeDownload:
         raise ValueError('DAR-udtrækket er for stort til én hentning.')
 
     def discover_postcode(self,post,progress):
+        if self.source_id()==GRAPHQL_SOURCE:return self.graph_discover_postcode(post,progress)
         self.check_cancel();progress(message='Finder postnummer og den officielle vejliste…',completed=0,total=0)
         snapshot=datetime.now(timezone.utc).isoformat(timespec='seconds')
         temporal={'VirkningFra':snapshot,'RegistreringFra':snapshot,'Status':3}
@@ -82,7 +91,7 @@ class PostcodeDownload:
         if not roads:raise ValueError('Ingen gældende veje fundet i postnummeret.')
         if any(not r.get('vejnavn') for r in roads):raise ValueError('Vejlisten var ufuldstændig.')
         manifest={'id':'postcode:'+post,'entity':'postcode_download','postcode':post,'name':posts[0].get('navn',''),
-            'snapshot':snapshot,'source':'DAR / Datafordeleren','status':'running','roads':[
+            'snapshot':snapshot,'source':'DAR / Datafordeleren','source_id':REST_SOURCE,'status':'running','roads':[
                 {'id':r['id_lokalId'],'road':r['vejnavn'],'status':'pending','count':0} for r in sorted(roads,key=lambda r:r['vejnavn'].casefold())]}
         # Store the official road geometry immediately, without any OSM dependency.
         lines=rest_road_lines(roads)
@@ -92,10 +101,13 @@ class PostcodeDownload:
     def bulk_road(self,road,post,progress):
         with self.store.lock:manifest=copy.deepcopy(self.store.get('geo','postcode:'+post))
         if not manifest:manifest=self.discover_postcode(post,progress)
+        require_source(manifest,self.source_id(),self.source_schema())
         matches=[r for r in manifest['roads'] if r['road'].casefold()==road.casefold()]
         if len(matches)!=1:raise ValueError('Vejen kunne ikke findes entydigt i den officielle vejliste.')
+        if checkpoint_source(manifest)==GRAPHQL_SOURCE:
+            return self.graph_adapter(manifest['snapshot'],manifest.get('schema_sha256')).road_group(matches[0].get('ids',[matches[0]['id']]),postcode=post)['addresses']
         progress(message='Henter den lange vej i flere sider…',total=0,completed=0)
-        items=self.rest_pages('adresse',{'NavngivenVej':matches[0]['id'],'Status':3},
+        items=self.rest_pages('adresse',{'NavngivenVej':matches[0]['id'],'Status':3,'VirkningFra':manifest['snapshot'],'RegistreringFra':manifest['snapshot']},
             lambda count:progress(message=f'Henter {road}… {count} adresser læst'))
         return rest_addresses(items,post,matches[0]['road'])
 
@@ -105,6 +117,7 @@ class PostcodeDownload:
         ident='postcode:'+post
         with self.store.lock:manifest=copy.deepcopy(self.store.get('geo',ident))
         if data.get('refresh') or not manifest:manifest=self.discover_postcode(post,progress)
+        require_source(manifest,self.source_id(),self.source_schema())
         temporal={'VirkningFra':manifest['snapshot'],'RegistreringFra':manifest['snapshot'],'Status':3}
         total=len(manifest['roads']);done=sum(r['status']=='done' for r in manifest['roads'])
         manifest['status']='running';self.store.mutate('geo.postcode.save',{'manifest':manifest})
@@ -114,13 +127,20 @@ class PostcodeDownload:
                 self.check_cancel()
                 progress(message=f"Henter {r['road']} · {post}…",completed=done,total=total,postcode=post)
                 try:
-                    items=self.rest_pages('adresse',dict(temporal,NavngivenVej=r['id']),
-                        lambda count:progress(message=f"Henter {r['road']}… {count} adresser læst"))
-                    addresses=rest_addresses(items,post,r['road'])
+                    if checkpoint_source(manifest)==GRAPHQL_SOURCE:
+                        result=self.graph_adapter(manifest['snapshot'],manifest.get('schema_sha256')).road_group(r.get('ids',[r['id']]),postcode=post)
+                        if result['road']!=r['road']:raise ValueError('Vejnavnet stemte ikke med den gemte vejliste.')
+                        addresses=result['addresses']
+                    else:
+                        items=self.rest_pages('adresse',dict(temporal,NavngivenVej=r['id']),
+                            lambda count:progress(message=f"Henter {r['road']}… {count} adresser læst"))
+                        addresses=rest_addresses(items,post,r['road'])
                     r.update(status='done',count=len(addresses));r.pop('error',None)
                     # Address import, retirement and checkpoint commit in one local transaction.
                     self.store.mutate('geo.postcode.road',{'manifest':manifest,'road':r['road'],'records':addresses})
                     done+=1
+                except SourceUnavailable as e:
+                    r.update(status='error',error=str(e));self.store.mutate('geo.postcode.save',{'manifest':manifest});break
                 except ValueError as e:
                     r.update(status='error',error=str(e));self.store.mutate('geo.postcode.save',{'manifest':manifest})
                 progress(completed=done,total=total)
