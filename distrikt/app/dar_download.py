@@ -5,7 +5,7 @@ import time
 from address_checkpoint import GRAPHQL_SOURCE, REST_SOURCE
 from dar_adapter import DarAdapter
 from dar_query import DarQuery
-from dar_paging import IncompleteResult
+from dar_paging import IncompleteResult, IncompleteLimit
 from geography import utm32_to_wgs84
 from postcode import SourceUnavailable, SourceTimeout, SourceLimit, SourceTransient, Paused
 
@@ -61,6 +61,12 @@ class DarDownload:
 
     def graph_adapter(self, snapshot=None, schema_sha256=None):
         expected_schema = schema_sha256 if schema_sha256 is not None else self.source_schema()
+        stages={'DAR_Adressepunkt':'Finder adressepunkter…','DAR_Husnummer':'Finder husnumre og lejligheder…',
+                'DAR_Adresse':'Henter adresser…','DAR_NavngivenVej':'Kontrollerer vejnavne…','DAR_Postnummer':'Kontrollerer postnumre…'}
+        def on_page(entity,nodes):
+            if entity=='DAR_Adresse':self.received_addresses('dar:'+row['id_lokalId'] for row in nodes)
+            with self.lock:
+                if self.active:self.jobs[self.active]['activity']=stages[entity]
         def request(query):
             with self.lock:
                 job=self.active
@@ -98,7 +104,7 @@ class DarDownload:
                 with self.lock:
                     if job:self.jobs[job]['message']=stage
                 return result
-        return DarAdapter(DarQuery(request, snapshot=snapshot, check_cancel=self.check_cancel))
+        return DarAdapter(DarQuery(request, snapshot=snapshot, check_cancel=self.check_cancel, on_page=on_page))
 
     def graph_discover_postcode(self, post, progress):
         self.check_cancel()
@@ -129,18 +135,21 @@ class DarDownload:
         schema=self.source_schema();tiles=boundary_tiles(points);seen=set();roads=set();warnings=[];index=0
         while index<len(tiles):
             self.check_cancel();tile=tiles[index]
-            progress(message=f'Henter komplette DAR-adresser i udsnit {index+1} af {len(tiles)}…',completed=index,total=len(tiles))
+            progress(message=f'Henter komplette DAR-adresser i udsnit {index+1} af {len(tiles)}…',completed=index,total=len(tiles),activity='Henter adresser fra området…')
             try:
                 result=self.graph_adapter(snapshot,schema).tile(tile['bbox'])
                 addresses=[a for a in result['addresses'] if point_in_polygon([a['lng'],a['lat']],points) and a['id'] not in seen]
                 self.check_cancel()
+                progress(activity='Kontrollerer og gemmer adresser lokalt…')
                 for offset in range(0,len(addresses),20000):
                     self.store.mutate('geo.import',{'records':addresses[offset:offset+20000],'source':'DAR / Datafordeleren','label':'DAR-adresser i vist udsnit','review_changes':True})
                 seen.update(a['id'] for a in addresses);roads.update((a['road'],a['postcode']) for a in addresses)
-            except (SourceTimeout,SourceLimit) as error:
+            except (SourceTimeout,SourceLimit,IncompleteLimit) as error:
                 children=smaller_tiles(tile)
                 if children and len(tiles)+3<=500:
-                    tiles[index:index+1]=children;continue
+                    tiles[index:index+1]=children
+                    progress(activity='Deler området i mindre udsnit og fortsætter…')
+                    continue
                 warnings.append('DAR-udsnit '+str(index+1)+': '+str(error));break
             except ValueError as error:
                 warnings.append('DAR-udsnit '+str(index+1)+': '+str(error));break

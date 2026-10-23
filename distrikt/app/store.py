@@ -47,6 +47,7 @@ def clean_text(value, maxlen=100, required=False):
 
 class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def __init__(self, root):
+        self.geo_generation=0
         self.workflow_init()
         self.root = Path(root).expanduser().resolve()
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -101,7 +102,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 self.db.commit()
                 if self.db.total_changes!=before:
                     self.revision=uuid.uuid4().hex
-                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored'}):self._geo_cache=None
+                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored'}):
+                        self._geo_cache=None
+                        self.geo_generation=getattr(self,'geo_generation',0)+1
                     if not self._dirty_modules or 'geo' in self._dirty_modules:self._info_cache=None
             except Exception:
                 self.db.rollback()
@@ -177,7 +180,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
         with self.transaction():
             for m in MODULES:
-                self.db.execute('DELETE FROM ' + self.alias(m) + '.records WHERE deleted_at IS NOT NULL AND deleted_at<=?', (cutoff,))
+                cursor=self.db.execute('DELETE FROM ' + self.alias(m) + '.records WHERE deleted_at IS NOT NULL AND deleted_at<=?', (cutoff,))
+                if cursor.rowcount:self._dirty_modules.add(m)
 
     def recovery(self):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
@@ -223,7 +227,6 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             try:
                 result = self._mutate(action, data)
                 self.onboarding_after_write(action,data)
-                if action in ('restore','delete','recovery.purge','history.cleanup'):self._dirty_modules.update(MODULES)
                 touched=self._tracking
                 changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.alias(m)+'.records WHERE id=?',(i,)).fetchone()])
                 if changed and not action.startswith(('geo.import','geo.postcode','geo.main.download')):
@@ -604,6 +607,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             for module in MODULES:
                 if module=='maps':continue
                 cursor=self.db.execute('DELETE FROM '+self.alias(module)+'.records WHERE deleted_at IS NOT NULL AND batch=?',(batch,))
+                if cursor.rowcount:self._dirty_modules.add(module)
                 count+=cursor.rowcount
             if not count:raise ValueError('Posten findes ikke længere i Gendan ved fejl.')
             return {'count':count}
@@ -631,6 +635,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                     raise ValueError('Gendan kortet først.')
                 if module == 'loans' and not item.get('returned') and self.active_loan(item['card_id']):
                     raise ValueError('Kortet har allerede et nyt aktivt udlån.')
+                self._dirty_modules.add(module)
                 self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=NULL,batch=NULL WHERE id=?', (item['id'],))
                 if module == 'settings' and item.get('restore_cards'):
                     for ident in item['restore_cards']:
