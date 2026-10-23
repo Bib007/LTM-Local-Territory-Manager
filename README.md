@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Betaer udgives i små trin, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
+Betaer samler flere sammenhængende forbedringer, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
 
 ## Installer betakanalen én gang
 
