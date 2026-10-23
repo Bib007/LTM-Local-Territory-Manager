@@ -1,5 +1,13 @@
 # Ønskeliste og nye opgaver
 
+## Sikkerhedsrettelser udgivet · 23.10.2026
+
+Beta.62 er udgivet fra `f94b9c29c6e114f035f9b7ee6516e0f939ddcf46`. [HA beta release 39968497662](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39968497662) og [Platformskontrol 39968497663](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39968497663) er completed/success. Betaens sikkerheds-, Python-, browser/touch-, Mac-/Windows- og HA-prøver er bestået. Betakanalen er læst tilbage som beta.62/8788. Den publicerede pakkes SHA256 `5c977497284ae617670e01ca6d1baa68415723569981df6b91286aaac037e568` matcher den lokalt kontrollerede, reproducerbare ZIP.
+
+[Checks 39968497622](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39968497622) har grønne sikkerheds-, Python- og pakkejob; det særskilte JavaScript-job står stadig ved installation af browsertestværktøjet ved denne registrering. Det må ikke betegnes bestået. Main er fortsat stabil 1.11.1; ingen promovering er udført.
+
+Den aftalte alternative manuelle sikkerhedsgennemgang er dokumenteret i [rapporten](docs/SIKKERHEDSGENNEMGANG-2026-10.md). De to konkrete fund er rettet; der er ikke identificeret yderligere konkrete sikkerhedsblokeringer i de gennemgåede stier for den dokumenterede LAN/VPN-model. Codex Security er ikke kørt. W06's større arkitekturændringer og W56 er fortsat ikke leveret. GitHub Support er efter ejerens beslutning ikke en udgivelsesblokering.
+
 ## Aktuel status · 23.10.2026
 
 Beta.61 er nu verificeret udgivet fra `cd95b1b130bebe07c9ffc3d2c5fe380ca5058253`. HA-gate [39639385202](https://github.com/Bib007/LTM-Local-Territory-Manager/actions/runs/39639385202) er completed/success efter genkørsel af det afbrudte Mac-job; Mac-prøven startede og bestod uden kodeændring. Alle øvrige job og publicering er grønne. Den særskilte Platformskontrol 39639385166 og Checks 39639385138 er også completed/success. Udgivelsens HA-ZIP matcher SHA-256 `224a0b14302aa3169e5e8e983fda3e1902938a32b284a498e61851831b4f1200`. Betagrenen er læst tilbage som beta.61/8788; main er fortsat 1.11.1/8787. W81 er afsluttet: automatiske grænse-/inddelingsforslag er ude af aktiv app og API, mens kode/prøver, manuel korttegning, IB-import og eksisterende data bevares.
