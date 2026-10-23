@@ -93,4 +93,4 @@ Brug [Idéer og feedback](https://tally.so/r/KpY0ZV). Du behøver ingen konto el
 
 LTM er et uofficielt projekt og er ikke udgivet eller godkendt af Jehovas Vidner, jw.org, JW HUB eller Home Assistant. Det udvikles med hjælp fra OpenAI Codex. Koden er frit tilgængelig; [licens](LICENSE) og [oplysninger om de medfølgende materialer](distrikt/THIRD-PARTY.md) kan læses her.
 
-[English](README.en.md) · [Vejledninger og begrænsninger](docs/LIMITATIONS.md) · [Nyheder i 1.12.1](docs/RELEASE-NOTES.md) · [Billede til deling](assets/screenshots/deling.png) · [Bidrag til projektet](CONTRIBUTING.md)
+[English](docs/README.en.md) · [Vejledninger og begrænsninger](docs/LIMITATIONS.md) · [Nyheder i 1.12.1](docs/RELEASE-NOTES.md) · [Billede til deling](assets/screenshots/deling.png) · [Bidrag til projektet](.github/CONTRIBUTING.md)
