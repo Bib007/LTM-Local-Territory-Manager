@@ -29,7 +29,7 @@ from setup_jobs import SetupJobs
 from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.63'
+VERSION='1.12.2-beta.64'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -248,8 +248,12 @@ class Handler(BaseHTTPRequestHandler):
                 with self.server.address_schedule.lock:
                     if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.')
                     if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
-                    result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
-                    return self.send({'ok':True,'result':result,'revision':self.server.store.revision})
+                    with self.server.store.lock:
+                        generation=getattr(self.server.store,'geo_generation',0)
+                        result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
+                        response={'ok':True,'result':result,'revision':self.server.store.revision,
+                            'geo_changed':getattr(self.server.store,'geo_generation',0)!=generation}
+                    return self.send(response)
             if self.path=='/api/open-data':
                 if not self.server.access:
                     if sys.platform=='darwin':subprocess.Popen(['/usr/bin/open',str(self.server.store.root)])

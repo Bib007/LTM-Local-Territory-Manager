@@ -73,7 +73,8 @@ class DownloadRetryTests(unittest.TestCase):
         def respond(request,timeout):
             self.assertEqual(timeout,120)
             self.assertIn('DAR-adresseside',self.d.status('test')['message'])
-            self.assertIn('højst 120 sek.',self.d.status('test')['message'])
+            self.assertTrue(self.d.status('test')['waiting'])
+            self.assertNotIn('sek.',self.d.status('test')['message'])
             return self.response(0)
         with patch('urllib.request.urlopen',side_effect=respond):self.assertEqual(self.request(),0)
         self.assertEqual(self.d.status('test')['message'],'Henter udsnit 7…')

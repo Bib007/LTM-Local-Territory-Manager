@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.64 · Bedre overblik under adressehentning
+
+- Adressehentning viser, hvad den arbejder med, og hvor mange adresser der er modtaget. Antallet tælles uden dubletter ved nye forsøg. Der vises ingen gættet resttid.
+- Større adresseområder deles også i mindre udsnit, når ét opslag kræver for mange forespørgsler. Færdige udsnit bevares, hvis hentningen må fortsættes senere.
+- Gemning viser tydeligt, når ændringen er gemt, mens oversigten opdateres. Sletning og gendannelse af oplysninger uden kortændringer henter ikke længere alle kortdata igen.
+- Rettelsen fra stabil 1.12.1 er bevaret: almindelig gemning og udlevering kræver ikke unødig genindlæsning.
+
 ## 1.12.2-beta.63 · Flere små forbedringer i daglig brug
 
 - Ugentlige opgaver tæller først fra den dag, de skal udføres. Når de markeres udført, fortsætter de til næste dato med bevaret historik.

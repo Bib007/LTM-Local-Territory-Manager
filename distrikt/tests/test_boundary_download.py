@@ -11,6 +11,7 @@ from geodata import Downloads
 from geography import wgs84_to_utm32,utm32_to_wgs84
 from boundary_download import boundary_tiles,smaller_tiles
 from postcode import HOST,BASE,Paused,SourceUnavailable,SourceTimeout
+from dar_paging import IncompleteLimit
 from test_postcode import unit
 
 POLY=[[8.995,54.995],[9.035,54.995],[9.035,55.005],[8.995,55.005]]
@@ -128,6 +129,33 @@ class BoundaryDownloadTests(unittest.TestCase):
         self.s.close();self.s=Store(self.tmp.name);self.d=Downloads(self.s);calls.clear()
         self.d.request=source;self.assertFalse(self.run_download()['complete']);self.assertEqual(len(calls),1)
         self.assertEqual(self.s.get('geo','main-boundary-download')['tiles'][0]['bbox'],bbox)
+
+    def test_request_budget_splits_only_unfinished_scope_and_resumes_after_restart(self):
+        points=[[8.995,54.995],[9.16,54.995],[9.16,55.035],[8.995,55.035]]
+        self.s.mutate('geo.main.save',{'points':points});original=boundary_tiles(points);second=original[1]['bbox'];calls=[]
+        def source(host,path,params=None,query=None):
+            bbox=[params[k] for k in ('Vest','Syd','Oest','Nord')];calls.append(bbox)
+            if bbox==second:raise IncompleteLimit('DAR-opslaget kræver for mange anmodninger. Vælg et mindre område.')
+            if len(calls)==4:raise SourceUnavailable('Fiktiv afbrydelse')
+            return 0 if params.get('count') else []
+        self.d.request=source;self.assertFalse(self.run_download()['complete'])
+        manifest=self.s.get('geo','main-boundary-download');snapshot=manifest['snapshot']
+        self.assertEqual(len(manifest['tiles']),len(original)+3)
+        self.assertEqual(manifest['tiles'][0]['status'],'done')
+        self.assertNotIn(second,[t['bbox'] for t in manifest['tiles']])
+        self.s.close();self.s=Store(self.tmp.name);self.d=Downloads(self.s);resumed=[]
+        def finish(host,path,params=None,query=None):
+            resumed.append([params[k] for k in ('Vest','Syd','Oest','Nord')]);return 0 if params.get('count') else []
+        self.d.request=finish;self.assertTrue(self.run_download()['complete'])
+        self.assertNotIn(original[0]['bbox'],resumed)
+        self.assertEqual(self.s.get('geo','main-boundary-download')['snapshot'],snapshot)
+
+    def test_exhausted_request_budget_stops_at_bounded_smallest_scope(self):
+        calls=[]
+        def source(*args,**kwargs):calls.append(1);raise IncompleteLimit('Fiktiv opslagsgrænse')
+        self.d.request=source;result=self.run_download()
+        self.assertFalse(result['complete']);self.assertLessEqual(len(calls),3)
+        self.assertEqual(self.s.get('geo','main-boundary-download')['status'],'partial')
 
     def test_empty_count_needs_no_address_page(self):
         calls=self.mock_source([]);self.assertTrue(self.run_download()['complete'])

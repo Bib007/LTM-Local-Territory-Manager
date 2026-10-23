@@ -45,6 +45,23 @@ class HTTPTests(unittest.TestCase):
         self.assertIsNone(self.store.active_loan(card))
         self.assertEqual(self.store.get('cards',card)['name'],'Opdigtet rettelse')
 
+    def test_write_acknowledgement_requests_geodata_only_for_affected_records(self):
+        def change(action,data):
+            with self.request('/api/mutate',{'action':action,'data':data}) as response:return json.load(response)
+        note=change('note.save',{'text':'Fiktiv opgave'})
+        self.assertFalse(note['geo_changed'])
+        deleted=change('delete',{'module':'notes','id':note['result']['id']})
+        self.assertFalse(deleted['geo_changed'])
+        self.assertFalse(change('restore',{'batch':deleted['result']['batch']})['geo_changed'])
+        deleted=change('delete',{'module':'notes','id':note['result']['id']})
+        self.assertFalse(change('recovery.purge',{'batch':deleted['result']['batch']})['geo_changed'])
+        card=change('card.save',{'number':'F101','temporary':True})
+        self.assertTrue(card['geo_changed'])
+        deleted=change('delete',{'module':'cards','id':card['result']['id']})
+        self.assertTrue(deleted['geo_changed'])
+        self.assertTrue(change('restore',{'batch':deleted['result']['batch']})['geo_changed'])
+
+
     def test_history_import_local_ui_and_authenticated_atomic_write(self):
         from datetime import date,timedelta
         with self.request('/history-import-ui.js') as response:self.assertIn(b'HistoryImportUI',response.read())

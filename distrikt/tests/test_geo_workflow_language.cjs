@@ -38,6 +38,16 @@ const contracts={};const initial=run('JSON.stringify(state)');
   assert.equal(run('JSON.stringify(state)'),initial);
  }
  assert.deepEqual(contracts.en,contracts.da);
+ // Live status reports work and real received rows without timers, totals or progress percentages.
+ for(const lang of ['da','en']){
+  run(`I18n.set('${lang}');GeoUI.showJob({status:'running',kind:'boundary',activity:'Henter adresser…',message:'Udsnit 1 af 999',received_count:42,completed:1,total:999,waiting:true})`);
+  const live=get('geoDownloadStatus').innerHTML;
+  assert.match(live,lang==='en'?/42 addresses received/:/42 adresser modtaget/);
+  assert.doesNotMatch(live,/999|sek\.|seconds|%/);
+  assert.match(live,/data-geo="pause"/);
+  run("GeoUI.showJob({status:'running',kind:'boundary',retry_delay:60,retry_attempt:1,retry_stage:'Old stage',received_count:42})");
+  assert.doesNotMatch(get('geoDownloadStatus').innerHTML,/60|Old stage/);
+ }
  run("I18n.set('en');GeoUI.whole=false;GeoUI.target='c1';GeoUI.dirty=false");
  // A draft change, another editor session and a newer request each invalidate a late selection.
  let release;c.pending=new Promise(r=>release=r);run('GeoUI.preview=()=>pending');let pending=run("GeoUI.selectPreview({mode:'range'})");run("GeoUI.ids.add('a2');GeoUI.polygon.push([10.02,55.02]);GeoUI.dirty=true");release({addresses:[],ignored:[],conflicts:[],outline:[]});await pending;assert.equal(run('GeoUI.ids.size'),2);assert.equal(run('GeoUI.polygon.length'),4);

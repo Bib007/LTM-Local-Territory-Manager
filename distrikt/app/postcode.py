@@ -74,7 +74,9 @@ class PostcodeDownload:
             ids=[r.get('id_lokalId') for r in batch]
             if any(not i or i in seen for i in ids) or len(set(ids))!=len(ids):
                 raise ValueError('DAR-kilden gentog en side. Eksisterende lokale data er bevaret; prøv igen.')
-            seen.update(ids);rows.extend(batch);progress(len(rows))
+            seen.update(ids);rows.extend(batch)
+            if endpoint=='adresse':self.received_addresses('dar:'+r['id_lokalId'] for r in batch if str(r.get('status'))=='3' and isinstance(r['id_lokalId'],str))
+            progress(len(rows))
             if len(batch)<PAGE_SIZE:return rows
         raise ValueError('DAR-udtrækket er for stort til én hentning.')
 

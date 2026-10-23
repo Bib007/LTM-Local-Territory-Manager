@@ -1,6 +1,7 @@
 """End-to-end download/store integration with invented GraphQL data only."""
 import copy
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -35,6 +36,48 @@ def two_roads():
 
 
 class DarDownloadTests(unittest.TestCase):
+    def test_live_stages_count_valid_received_addresses_without_ids_or_duplicates(self):
+        self.download.active='job';self.download.jobs['job']={'status':'running','kind':'boundary','message':'Henter område','received_count':0}
+        original=self.source.query;observed=[]
+        def query(value):
+            observed.append(self.download.status('job'))
+            return original(value)
+        self.source.query=query
+        adapter=self.download.graph_adapter()
+        first=adapter.tile([549950,6169950,550150,6170050])
+        count=len(first['addresses']);self.assertGreater(count,0)
+        self.assertEqual(self.download.status('job')['received_count'],count)
+        adapter.tile([549950,6169950,550150,6170050])
+        self.assertEqual(self.download.status('job')['received_count'],count)
+        counts=[r['received_count'] for r in observed]
+        self.assertEqual(counts,sorted(counts))
+        self.assertTrue(any(r.get('activity')=='Finder adressepunkter…' for r in observed))
+        self.assertTrue(any(r.get('activity')=='Henter adresser…' for r in observed))
+        self.assertNotIn('dar:a1',json.dumps(observed))
+        self.assertFalse(self.store.geo_state()['addresses'],'Reading progress never imports incomplete joins')
+
+    def test_real_request_budget_is_split_into_complete_smaller_graphql_tiles(self):
+        from geography import utm32_to_wgs84
+        from dar_query import DarQuery
+        rows=two_roads()
+        for row,point in zip(rows['DAR_Adressepunkt'],[(549750,6169750),(550250,6170250)]):
+            row['position']['wkt']='POINT (%s %s)'%point
+        self.provider=Provider(rows);self.source=Source(self.provider);self.download=Downloads(self.store,self.source)
+        bounds=[549500,6169500,550500,6170500]
+        polygon=[utm32_to_wgs84(x,y) for x,y in [(549490,6169490),(550510,6169490),(550510,6170510),(549490,6170510)]]
+        self.store.mutate('geo.main.save',{'points':polygon})
+        collect=DarQuery.collect_many
+        def limited(query,*args,**kwargs):return collect(query,*args,**dict(kwargs,max_requests=1))
+        with patch('boundary_download.boundary_tiles',return_value=[{'bbox':bounds,'status':'pending','count':0}]),patch.object(DarQuery,'collect_many',limited):
+            result=self.download.boundary({},lambda **kw:None)
+        self.assertTrue(result['complete'])
+        manifest=self.store.get('geo','main-boundary-download')
+        self.assertEqual(len(manifest['tiles']),4)
+        self.assertTrue(all(t['status']=='done' for t in manifest['tiles']))
+        self.assertEqual(result['fetched_count'],len(rows['DAR_Adresse']))
+        snapshots={re.search(r'virkningstid: ("[^"]+")',q)[1] for q in self.provider.calls}
+        self.assertEqual(len(snapshots),1)
+
     def test_graph_transient_read_retries_same_snapshot_query_and_restores_status(self):
         original=self.source.query;calls=[]
         self.download.active='job';self.download.jobs['job']={'status':'running','message':'Henter udsnit 2 af 32…'}

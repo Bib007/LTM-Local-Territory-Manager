@@ -22,6 +22,7 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
     def __init__(self,store,address_source=None):
         self.store=store;self.jobs={};self.lock=threading.Lock();self.active=None;self.cancel_event=threading.Event()
         self.suggestion_cache={}
+        self._received_addresses=set()
         self.address_source=address_source if address_source is not None else (Datafordeler(store.root) if store is not None else None)
     def start(self,kind,data):
         if kind not in ('road','area','osm','postcode','boundary'):raise ValueError('Ukendt hentning.')
@@ -29,7 +30,9 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
             if self.active:raise ValueError('En hentning kører allerede. Vent på den før næste område.')
             ident=uuid.uuid4().hex
             self.cancel_event.clear()
+            self._received_addresses.clear()
             self.jobs[ident]={'id':ident,'kind':kind,'status':'running','message':'Forbereder hentning af offentlige data…','completed':0,'total':0}
+            if kind!='osm':self.jobs[ident]['received_count']=0
             self.active=ident
         thread=threading.Thread(target=self.run,args=(ident,kind,dict(data)),daemon=True);thread.start()
         return {'job_id':ident}
@@ -39,12 +42,19 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
             if not ident:return {'status':'idle'}
             if ident not in self.jobs:raise ValueError('Hentningen findes ikke i denne session.')
             result=dict(self.jobs[ident])
-            started=result.pop('request_started',None);label=result.pop('request_label','');limit=result.pop('request_timeout',0)
+            started=result.pop('request_started',None);label=result.pop('request_label','');result.pop('request_timeout',None)
             if result['status']=='running' and started is not None:
-                elapsed=max(0,int(time.monotonic()-started))
-                result['message']+=f' · {label}: venter på svar ({elapsed} sek., højst {limit} sek. uden data)'
+                result['waiting']=True
+                result['message']+=f' · {label}: venter på svar'
             return result
+    def received_addresses(self,identities):
+        """Count actual public addresses, never requests, guesses or duplicates."""
+        with self.lock:
+            if self.active:
+                self._received_addresses.update(identities)
+                self.jobs[self.active]['received_count']=len(self._received_addresses)
     def update(self,ident,**values):
+        if 'message' in values and 'activity' not in values:values['activity']=None
         with self.lock:self.jobs[ident].update(values)
     def pause(self,ident):
         with self.lock:
@@ -64,7 +74,7 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
         except ValueError as e:self.update(ident,status='error',message=str(e))
         except Exception:self.update(ident,status='error',message='Hentning mislykkedes. Eksisterende lokale data er bevaret; prøv igen senere.')
         finally:
-            with self.lock:self.active=None
+            with self.lock:self.active=None;self._received_addresses.clear()
     def request(self,host,path,params=None,query=None):
         if host not in ('adressevaelger.dk','overpass-api.de','services.datafordeler.dk'):raise ValueError('Ukendt datakilde.')
         url='https://'+host+path
@@ -178,7 +188,8 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
                     result=self.request('adressevaelger.dk','/adresser',{'id_lokalids':','.join(ids[offset:offset+30]),'token':token})
                     items=result.get('adresser',[])
                     if {a.get('id_lokalid') for a in items}!={a for a in ids[offset:offset+30]}:raise ValueError('Adressekilden returnerede et ufuldstændigt opslag. Prøv igen senere.')
-                    addresses += decode_dar(items);progress(completed=min(offset+30,len(ids)),message='Henter adresser og kendte lejligheder…')
+                    decoded=decode_dar(items);self.received_addresses(a['id'] for a in decoded)
+                    addresses += decoded;progress(completed=min(offset+30,len(ids)),message='Henter adresser og kendte lejligheder…')
             else:
                 houses=self.request('adressevaelger.dk','/husnumre/soeg',params).get('fund',[])
                 if not houses or len(houses)>=200 or not all(h.get('type')=='husnummer' for h in houses):
@@ -187,12 +198,15 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
                     progress(total=len(houses))
                     for i,h in enumerate(houses):
                         items=self.request('adressevaelger.dk','/husnumre/'+h['id']+'/adresser',{'token':token}).get('adresser',[])
-                        addresses+=decode_dar(items);progress(completed=i+1,message='Henter husnumre med alle kendte lejligheder…')
+                        decoded=decode_dar(items);self.received_addresses(a['id'] for a in decoded)
+                        addresses+=decoded;progress(completed=i+1,message='Henter husnumre med alle kendte lejligheder…')
         # Reject fuzzy neighbouring streets/postcodes rather than silently choose one.
         roads=sorted({a['road'] for a in addresses if a['postcode']==post})
         if len(roads)!=1:raise ValueError('Søgningen matcher flere eller ingen veje. Brug det præcise vejnavn og postnummer.')
         addresses=[a for a in addresses if a['road']==roads[0] and a['postcode']==post]
         if not addresses:raise ValueError('Ingen gældende adresser med koordinater blev fundet.')
+        self.received_addresses(a['id'] for a in addresses)
+        progress(activity='Kontrollerer og gemmer adresser lokalt…')
         result=self.store.mutate('geo.import',{'records':addresses,'label':roads[0]+' · '+post,'source':source,'complete_road':{'road':roads[0],'postcode':post},'review_changes':True})
         bbox=[min(a['lng'] for a in addresses)-.001,min(a['lat'] for a in addresses)-.001,max(a['lng'] for a in addresses)+.001,max(a['lat'] for a in addresses)+.001]
         warnings=[]

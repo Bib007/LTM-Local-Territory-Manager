@@ -1,6 +1,12 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.63 udgivet · 23.10.2026
+## Beta.64 · under udvikling · 23.10.2026
+
+Næste samlede beta omfatter W93, W82 og W86: undgå unødig genhentning af alle geodata efter almindelig sletning/gendannelse; vis reel aktivitet og dubletfrit antal modtagne adresser; lad opslagets størrelsesgrænse udløse bounded opdeling i mindre udsnit. Ingen tidsprognose eller kunstigt antal. Pause, genoptagelse, kildevalidering og beskyttelse mod usikkert gemmeresultat bevares. Ejerens konkrete HA-/telefonforsinkelse er ikke målt; rettelsen adresserer den påviste ekstra dataoverførsel. Punkterne afsluttes først efter udgivelseskontrol.
+
+W100 er udsat efter ejerens udtrykkelige valg: fortsæt udviklingen og vent med grenoprydning. Ingen nye loginforsøg eller grensletninger hører til denne runde.
+
+## Senest udgivet · beta.63 · 23.10.2026
 
 Beta.63 er verificeret udgivet fra `44986fa1c3747e0e6804f3c67c84474ad32b55cd`. HA beta release 39999579826 og Platformskontrol 39999579682 er completed/success. Den offentlige HA-pakke matcher lokal SHA256 `57ff3569ba26fba369ce7fe0116f49fd878007c9cdf9d31d3d5573b3fa4eaa27`. Betakanalen viser 1.12.2-beta.63 på 8788; stabil er fortsat 1.12.1. W88/W90/W91/W96 er afsluttet, og stable-rettelsen W89 er bevaret. W87 er afsluttet: PR 6 er sammenlagt efter grøn Checks 40000854053 og Platformskontrol 40000854029. Main er bbb26f665f8654ec84a5634d4404889564f33726 med fire rodfiler; den stabile appversion og allerede udgivne pakker bevares. Den særskilte ekstra Checks 39999579684 står fortsat ved installation af browserprøveværktøjet; de fulde browserprøver er bestået i betaens egen præcise udgivelsesgate.
 
@@ -13,9 +19,9 @@ Ejeren ønsker nu flere sammenhængende rettelser pr. beta; den tidligere græns
 | Næste arbejde | Status |
 | --- | --- |
 | W87 · Fire rodfiler på den almindelige GitHub-forside | Afsluttet på main og develop |
-| W100 · Ryd gamle grene | Afventer GitHub-login til sletning |
-| W93 · Langsom gemning/permanent sletning | Undersøgelse |
-| W82/W86 · Aktivitet, antal og mindre adressehentninger | Næste samlede betarunde |
+| W100 · Ryd gamle grene | Udsat efter ejerens valg |
+| W93 · Langsom gemning/permanent sletning | Under udvikling i beta.64 |
+| W82/W86 · Aktivitet, antal og mindre adressehentninger | Under udvikling i beta.64 |
 | W94/W95 · Import og samlet Opfølgninger | Samlet betjening efter afhængigheder |
 | W85 · Kort/IB fra billeder og mange filer | Tidligt importarbejde |
 | W92 · Programversion i feedback | Formularundersøgelse |
