@@ -1694,6 +1694,7 @@ const I18n={
   "Generel · uden distriktskort":"General · no territory card",
   "Tekst":"Text",
   "Opgave, som skal udføres":"Task to be completed",
+  "Tekst og billeder gemmes hos Tally.":"Text and images are stored by Tally.",
   "Tally · uden konto eller e-mail":"Tally · no account or email required",
   "Kun fiktive eksempler. Indsendt tekst og billeder gemmes hos Tally.":"Fictional examples only. Submitted text and images are stored by Tally.",
   "Postnummer · til adresser fra den ældre kilde":"Postcode · for addresses from the legacy source",
