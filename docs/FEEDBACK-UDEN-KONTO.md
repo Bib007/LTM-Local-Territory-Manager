@@ -39,3 +39,7 @@ Læst 21.10.2026:
 - [Tally: MCP](https://tally.so/help/mcp): oprettelse og vedligeholdelse via en tilsluttet konto.
 - [Tally: Self email notifications](https://tally.so/help/self-email-notifications): eventuelle ejerbeskeder konfigureres hos formularens ejer. Afsenderen behøver ikke angive e-mail. Ingen mailbesked er aktiveret her.
 - [GitHub: Creating an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue) og [Configuring notifications](https://docs.github.com/en/subscriptions-and-notifications/get-started/configuring-notifications): GitHubs eksisterende issue-/svaradgang er knyttet til en GitHub-konto; notifications-reply-adresser er ikke en konto-fri indsendelseskanal, der må indbygges i appen.
+
+## Kortere menutekst før næste stabile udgave · 23.10.2026
+
+Menupunktet hedder fortsat “Idéer og feedback” og viser kun én kort hjælpelinje: “Tekst og billeder gemmes hos Tally.” Oplysninger om konto/e-mail, fiktive eksempler og bilag står i selve formularen. Formularlink, åbning i ny fane og fravær af automatisk vedhæftning er bevaret.

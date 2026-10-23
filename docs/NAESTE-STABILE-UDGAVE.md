@@ -1,6 +1,6 @@
 # Næste stabile LTM · kladde til udgivelsesnoter
 
-Status 22.10.2026: Den stabile kanal er fortsat **1.11.1**. Den verificerede betakanal er **1.12.0-beta.61**. Dette er en kladde til næste stabile udgave, ikke en udgivelsesmeddelelse. Den [afsluttende kontrol](SLUTKONTROL.md) skal være afklaret før promovering til main.
+Status 23.10.2026: Den stabile kanal er fortsat **1.11.1**. Den verificerede betakanal er **1.12.0-beta.61**. Dette er en kladde til næste stabile udgave, ikke en udgivelsesmeddelelse. Den [afsluttende kontrol](SLUTKONTROL.md) skal være afklaret før promovering til main.
 
 ## Det vigtigste siden den stabile grundudgave
 
@@ -24,7 +24,7 @@ Stabil HA og beta er separate installationer med egne data og login. Den stabile
 
 ## Kendte begrænsninger, der skal med i den endelige meddelelse
 
-- Adressehentning er afhængig af adressekilde og netforbindelse. W78's konkrete afbrudte hentning på ejerens HA er endnu ikke bekræftet løst. Gemte, færdige udsnit bevares; dette er ikke en garanti for, at et vedvarende netproblem forsvinder.
+- Adressehentning er afhængig af adressekilde og netforbindelse. Ejeren har 23.10.2026 bekræftet, at API-adressehentningen virker, men opleves langsom. Løbende aktivitet og adresseantal (W82) er planlagt efter næste stabile udgave. Gemte, færdige udsnit bevares; dette er ikke en garanti for, at et vedvarende netproblem forsvinder.
 - Natlig adressekontrol er et tilvalg. Egen aktivering, tidszone, faktisk natlig kørsel og fortsættelse efter genstart kontrolleres på installationen, hvis funktionen bruges.
 - Fuld engelsk oversættelse er ikke afsluttet. Brugerdata og kanoniske værdier oversættes ikke; originale formularer og relevante rapporttekster er danske.
 - Fysisk print, rigtige Google-samtykker/QR-links og ejerens HA/telefon skal kontrolleres lokalt. Fiktive browserprøver erstatter ikke disse prøver.
@@ -33,7 +33,7 @@ Stabil HA og beta er separate installationer med egne data og login. Den stabile
 
 ## Uafklaret før offentliggørelse
 
-W78's ejerprøve, den korte HA-/backupslutprøve, W61's eksterne GitHub-oprydning og afgrænsningen af W06/W28/W56 skal fremgå af den endelige beslutning. En fuld sikkerhedsscanning er ikke dokumenteret. Åbne punkter må ikke præsenteres som beståede.
+API-adressehentning og generel HA-drift er ejerbekræftet. Særskilt gendannelse/print/QR, W61's eksterne GitHub-oprydning og afgrænsningen af W06/W28/W56 skal fremgå af den endelige beslutning. En fuld sikkerhedsscanning er ikke dokumenteret. Åbne punkter må ikke præsenteres som beståede.
 
 Det stabile publiceringsflow på develop kræver de fulde program-/browser-/pakkeprøver samt Mac, Windows og HA-container på samme commit. Kun publiceringsjobbet har skriverettigheder, det kræver main, og eksisterende udgivne versioner overskrives ikke. Flowet erstatter ikke de lokale ejerprøver eller beslutningen om at promovere en version til main.
 

@@ -28,9 +28,11 @@ Se [print](PRINT.md), [installation](INSTALL.md), [betakanal](BETA.md), [begræn
 ## Konkret vej til næste stabile udgave
 
 1. W81-beta: kontrollér fravær af automatiske forslag, manuel korttegning, lokal IB-import og bevarede kort. Kræv grønne program-, browser-, platform- og HA-pakkekontroller på den præcise udgivelseskode.
-2. W78 på ejerens HA: gentag den tidligere afbrudte adressehentning. Kontrollér fortsættelse, færdige udsnit og eventuel fejlkode. En fortsat fejl afklares før denne adressearbejdsgang erklæres stabil.
+2. W78 på ejerens HA er bekræftet bestået 23.10.2026: API-adressehentning virker, men opleves langsom. W82 om løbende aktivitet og antal adresser er registreret til efter næste stabile udgave.
 3. Ejerens korte slutprøve: tag privat backup, opdatér beta, genstart, log ind fra telefon, prøv udlevering/aflevering og gendannelse til en separat prøveinstallation. Kontrollér print/QR, hvis de bruges; afprøv natlig adressekontrol, hvis den aktiveres.
 4. Afklar status på W61-oprydning hos GitHub og de åbne sikkerhedspunkter W06/W28/W56. Der er ikke dokumenteret en fuld sikkerhedsscanning eller krypteret nøglebackup. Den eksisterende LAN/VPN-adgangsmodel er ikke ændret. Før publicering skal åbne punkter være løst eller eksplicit afgrænset i udgivelsesnoterne sammen med ejeren.
 5. Saml endelige begrænsninger, versionsnummer, ændringslog, opgraderings-/backupvej og pakkechecksums. Promovér først den verificerede kode til main og opret stabil udgivelse som et særskilt trin.
 
-W16/automatisk inddeling er parkeret og fjernet fra aktiv app. W65 flerbruger er ikke bestilt. W74 hosting venter til efter stabil; W08 arkivering vurderes bagefter. Webdemoens manglende live-kontrol holdes særskilt fra lokal/HA-udgivelse. W58 fuld engelsk færdiggørelse står fortsat åbent; udgivelsen må ikke love fuld oversættelse før kontrol.
+W16/automatisk inddeling er parkeret og fjernet fra aktiv app. W65 flerbruger er ikke bestilt. W74 hosting venter til efter stabil; W08 arkivering vurderes bagefter. Ejeren har 23.10.2026 bekræftet, at webdemoen ser fin ud; en samlet demosynkronisering og særskilte arbejdsgange markeres ikke automatisk bestået. W58 fuld engelsk færdiggørelse står fortsat åbent; udgivelsen må ikke love fuld oversættelse før kontrol.
+
+Ejeropfølgning 23.10.2026: Den generelle HA-prøve er bekræftet bestået og skal ikke bestilles igen. API-adressehentningen og demoens første åbning er nu også ejerbekræftet. Separat gendannelse og fysiske print-/QR-prøver registreres kun ved konkret bekræftelse. Feedbackmenuen forenkles før stabil; W82 er udtrykkeligt placeret efter stabil.
