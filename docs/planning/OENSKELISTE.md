@@ -1,5 +1,25 @@
 # Ønskeliste og nye opgaver
 
+## Ny betarunde · ønsker modtaget 23.10.2026
+
+Stabil 1.12.1 er udgivet med rettelsen af W89 og seks dokumenter flyttet fra roden. W87 genåbnes efter det skærpede ønske om højst 3–4 løse rodfiler og færre dubletvejledninger. Udgivet 1.12.1 ændres ikke. Betaen skal bevare rettelsen, der pauser generel synkroniseringsafvisning indtil profiler.
+
+| Nr. | Ønske | Afgrænsning og rækkefølge |
+| --- | --- | --- |
+| W90 | Mere hvid/udfadet baggrund på digitale kort | Første samlede beta. Bevar tydelige prikker, numre, grænse og aktiv godkendelse før ændring af allerede delte billeder. |
+| W91 | Gentagende opgaver og korrekt opgavetæller | Første samlede beta. Udført fører allerede ugentlige opgaver videre med historik. Tæl fremtidige opgaver først fra forfaldsdagen, og forklar gentagelsen. Almindelige åbne opgaver tæller fortsat. |
+| W92 | Automatisk LTM-version i Tally | Undersøg faktisk felt og understøttet forudfyldning. Kun programversion må medsendes automatisk, ingen private data. |
+| W93 | Langsom gemning/permanent sletning | Undersøg med fiktiv reproduktion, også om menuskift blot viser en allerede gemt handling. Bevar slettebekræftelse, atomisk lagring og usikker-resultatbeskyttelse. |
+| W94 | Én Import-fane under Indstillinger | Flyt indgange til S-13/historik, kort og IB. Bevar importforhåndsvisninger og validering. Samles med relevant importarbejde. |
+| W95 | Samlet Opfølgninger | Flyt Kortkontrol, Kort med ændrede sider og relevante genprintpunkter. Hvert forhold har egen linje og tæller, også flere på samme kort. Undgå dublering. |
+| W96 | Gemte visninger kun på faktisk geografisk kortoversigt | Første samlede beta. Fjern kontrollen fra almindelige kort-/adresselister, og bevar brugerens gemte præferencer. |
+| W97 | Webdemo med samme design som appen | Faktisk produktlayout med fiktive data; alle funktioner behøver ikke virke. Bevar tydelig demoafgrænsning. |
+| W98 | Lyst udseende | Alternativ til mørkt, med vedvarende valg og kontrol af kontrast, formularer, kort og telefon/tablet. |
+
+Alle ni nye ønsker har prioriteten “LTM vælger”. Første samlede beta omfatter stable-rettelsen, W88/W90/W91/W96 og den skærpede W87-oprydning; W93 undersøges samtidig. Adressehentning W82/W86 følger derefter, og import/opfølgninger W85/W94/W95 samles efter afhængigheder. Vejnet/autokort er fortsat parkeret. Nye punkter er registreret, ikke markeret udgivet.
+
+Aktuel fremdrift ved registrering: 69/98 afsluttet/afklaret, 29 åbne, cirka 70 %. W89 er afsluttet, W87 er delvist leveret og genåbnet. Google-kildetekster ryddes efter læsekontrol af registreringen på GitHub og i hovedplanen.
+
 ## Akut rettelse til 1.12.1 · klargøring 23.10.2026
 
 W89: Ejeren oplever, at stabil 1.12.0 afviser udlevering og kortændringer med beskeden om ændringer fra anden fane/enhed, også ved menuskift. Google-genforbindelse fik udlevering til at virke igen. En fiktiv prøve reproducerer, at Google-adgangsfejl ændrer baggrundsstatus og dermed gør en åben formular forældet. Ejeren har efterfølgende udtrykkeligt bestilt den generelle synkroniserings-/revisionsafvisning fjernet indtil brugerprofiler (W65) udvikles samlet.
