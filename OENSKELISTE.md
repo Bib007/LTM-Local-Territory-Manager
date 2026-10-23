@@ -4,15 +4,16 @@
 
 Ejeren har bestilt udgivelse og bedt om, at ADS-planens relevante punkter gennemføres først. Forsiden på dansk og engelsk forklarer nu målgruppe, daglige fordele, lokal opbevaring og valgene Home Assistant / Mac / Windows i almindeligt brugersprog. Direkte demo-, installations- og feedbacklinks står øverst. Tre skærmbilleder viser den faktiske app med udelukkende opdigtede oplysninger. Et delingsbillede er klargjort. Udgivelsesnoterne ligger særskilt, så brugeren får et kort overblik frem for hele udviklingshistorikken. Den stabile publicering kræver fortsat alle udgivelseskontroller. About-felter og aktivering af delingsbillede kræver separat adgang til GitHubs indstillinger; de må ikke betegnes udført før læsekontrol.
 
-### W83–W85 · Nye ønsker fra Google-planen · efter stabil udgivelse
+### W83–W86 · Nye ønsker fra Google-planen · efter stabil udgivelse
 
 | Nr. | Ønske | Afgrænsning |
 | --- | --- | --- |
 | W83 | Startguide ved første login med en ny profil | Hører sammen med fremtidige profiler/flerbrugerønsker i W65. Vis en relevant introduktion, når en ny profil bruges første gang. Registreret, ikke implementeret. |
 | W84 | iPhone-genvej til VPN ved åbning af LTM | Undersøg en Apple-genvej, der forbinder VPN ved åbning og afbryder igen bagefter. Afhænger af telefonens og VPN-appens muligheder; ingen automatisk adgang eller færdig løsning loves. Registreret, ikke implementeret. |
-| W85 | Opret distriktskort fra foto af S-12 og IB-bagside | Undersøg lokal tekstgenkendelse uden ekstern AI som førstevalg, flere bagsidelayouts, kortoprettelse og match mod eksisterende adresser. Manglende adresser og foreslåede ændringer skal kunne gennemgås; grænsen tegnes særskilt. Ejeren ønsker dette tidligt efter stabil udgivelse. Registreret, ikke implementeret. |
+| W85 | Opret distriktskort fra foto af S-12 og IB-bagside | Undersøg lokal tekstgenkendelse uden ekstern AI som førstevalg, flere bagsidelayouts, kortoprettelse og match mod eksisterende adresser. Manglende adresser markeres til gennemgang under adresseændringer. Undersøg afsluttende grænsetegning og masseupload af en mappe/flere billeder med front og bagside i kø, så mange kort kan indlæses samlet. Ejeren ønsker dette tidligt efter stabil udgivelse. Registreret, ikke implementeret. |
+| W86 | Adressehentning opdelt i mindre bidder ved anmodningsgrænsen | Ejeren ser “Udsnit 2: DAR-opslaget kræver for mange anmodninger. Vælg et mindre område.” Undersøg automatisk opdeling med bevaret fremdrift, pause/genforsøg og tydelig ufuldstændighed. Må ikke fjerne grænser eller fejlagtigt godkende ufuldstændige data. Registreret til efter stabil udgivelse, ikke rettet nu. |
 
-Fremdrift efter registrering: 68 af 85 ønsker afsluttet/afklaret, 17 åbne, cirka 80 %. Ønskernes kildetekster i Google er bevaret. W82 med løbende aktivitet/antal under adressehentning ligger fortsat efter stabil udgivelse, uden tidsestimat eller procent. Der skal ikke inviteres personer som del af lanceringsarbejdet.
+Fremdrift efter registrering: 68 af 86 ønsker afsluttet/afklaret, 18 åbne, cirka 79 %. Ønskernes kildetekster i Google er bevaret. W82 med løbende aktivitet/antal under adressehentning ligger fortsat efter stabil udgivelse, uden tidsestimat eller procent. Der skal ikke inviteres personer som del af lanceringsarbejdet.
 
 ## Sikkerhedsrettelser udgivet · 23.10.2026
 
