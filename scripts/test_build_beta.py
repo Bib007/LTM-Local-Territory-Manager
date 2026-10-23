@@ -18,7 +18,7 @@ class BetaBuildTests(unittest.TestCase):
         self.add('distrikt/run.sh','#!/bin/sh\nset -euo pipefail\npython app/server.py --port 8787 --data-dir /data/distrikt\n')
         self.add('distrikt/app/index.html','<title>Local Territory Manager – JW</title><body><b>LTM</b>')
         self.changelog=self.fixture.changelog.replace('9.9.0','9.9.0-beta.1')
-        self.add('CHANGELOG.md',self.changelog)
+        self.add('docs/CHANGELOG.md',self.changelog)
         self.add('distrikt/CHANGELOG.md',self.changelog)
         self.add('docs/BETA.md','# Fiktiv betavejledning\n')
     def tearDown(self):self.fixture.tearDown()
