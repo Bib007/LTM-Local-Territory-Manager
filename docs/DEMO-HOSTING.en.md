@@ -37,3 +37,7 @@ The JavaScript model/render checks do not replace those final browser checks. Op
 
 - [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)
 - [Custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
+
+## Design snapshot · beta.68
+
+The demo now uses the controlled product CSS/theme/logo snapshot described in [the demo guide](../demo/README.md). The build checks an explicit public asset allowlist and SHA256 values. Browser checks cover both themes, four screen widths, local fictional assignment and the absence of application API calls. The Python server and private data are excluded. Publishing this demo does not update the stable Home Assistant app.
