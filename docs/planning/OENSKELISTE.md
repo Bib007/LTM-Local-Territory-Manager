@@ -1,23 +1,32 @@
 # Ønskeliste og nye opgaver
 
-## Ejerafklaring og næste beta · 24.10.2026
+## Aktuel oversigt · beta.69 udgivet · 24.10.2026
 
-W93: Ejeren har allerede beskrevet den konkrete fejl: permanent sletning fortsætter med ventestatus, men vises færdig ved menuskift. Der efterspørges ingen ny generel HA-prøve. Klienten venter efter en bekræftet handling på et separat oversigtskald; ingen bevidst minimumsventetid er fundet. Den nye kandidat beder om en fuld lokal oversigt i samme svar som skrivekvitteringen og bruger den uden et ekstra oversigtskald. Serveren samler kvittering og oversigt under samme lås. Geodata opdateres stadig, når de faktisk er ændret. Ældre servere beholder genhentning, men en bekræftet ændring vises som gemt imens. Mangelfulde/modstridende oversigter kræver kontrol uden automatisk gentagelse af skrivningen. Ejerens konkrete installation er ikke målt her; status for levering afventer udgivelseskontrollen.
+Beta.69 er verificeret udgivet fra `bc4c2d4e9aef3ad550b209c6d322b9cdba9f688c`, træ `eaed1fa7deede5a622ed2d1757a7bd455602790d`. HA beta release 40086726887, Checks 40086726881 og Platformskontrol 40086726900 er completed/success. Den offentlige HA-pakke har 124 filer, 1.192.323 bytes og SHA256 `2be0ab83e37b8526e8395826177a428e26e68a7b68072683709ffbfe0f23aaa7`, identisk med den lokale pakke. Tag og betakanal er læst tilbage som beta.69 på 8788. Stabil release, tag, pakke og main-konfiguration er fortsat 1.12.1. [Beta.69](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.69).
 
-W92 udgår efter ejerens valg. Der skal ikke bruges mere tid på versionsnummer i Tally. W84 er en privat huskenote om iPhone og egen VPN, ikke en appfunktion. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt; det skal ikke afklares igen, hvem der på forhånd må hvad. Samtidighed og eventuelle konfliktvalg behandles senere sammen med profiler. Den almindelige synkroniseringsafvisning forbliver pauset. Ingen større loginændring eller grenoprydning indføres her.
+W93 er afsluttet for ventetiden efter bekræftet gemning/permanent sletning. Serveren sender den fulde lokale oversigt med den ønskede skrivekvittering, samlet under samme lås. Klienten viser resultatet på den aktuelle side uden et ekstra oversigtskald. En ældre server understøttes fortsat; bekræftet gemning vises som gemt, mens den gamle genhentning færdiggøres. Geodata opdateres stadig, når de faktisk er berørt. Ingen bevidst minimumsventetid er fundet eller indført. Manglende/modstridende svar kræver fortsat kontrol uden automatisk gentagelse. Ejerens HA er ikke fjernmålt, og der bestilles ingen ny generel HA-prøve.
 
-Fremdrift efter ejerafklaringen og to nye ønsker: 85/102 afsluttet/afklaret, 17 åbne, cirka 83 %. W92 og W84 er afklaret, uden at der påstås nye appfunktioner leveret. W93 forbliver åben indtil den konkrete rettelse har bestået udgivelseskontrollen. Den aktuelle oversigt går foran ældre statusafsnit nedenfor.
+W102 er afsluttet: Datafordeleren administreres under Indstillinger → Forbindelser. Hent adresser og opstartsguiden åbner den samme side. Gemte nøgler bevares, indtastningen tømmes efter indsendelse, og ingen nøgle vises i status. Den fælles formularhåndtering behandler kun sine egne formularer, så en allerede tømt nøgle ikke udløser en ekstra valideringsbesked efter tilslutning. Vejledningen på dansk/engelsk følger den nye placering. Andre forbindelser kan tilføjes senere; Google Drive administreres fortsat under Deling og QR.
 
-### Nye ønsker modtaget fra Google-planen
+Validering: 488 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver og faktisk arkivstart består. Lokale browserprøver dækker sletning på samme side uden ekstra oversigts-/geodatakald, nøgleformular/genvej og tomt nøglefelt uden ekstra validering, sprog, mobil/desktop, korteditor, opstartsguide, login i begge temaer, natlig adressekontrol og demo. En ekstra virkelig HTTP-/browserprøve mod en midlertidig opdigtet installation gennemfører både permanent sletning og noteoprettelse fra svarenes oversigter uden menuskift, genindlæsning eller eksterne kald. CI på den præcise udgivelsescommit dækker også WebKit, Windows, Mac, HA og sikkerhed. Kandidatkontrollen fangede henvisninger til den gamle formularplacering: kortprøven blev opdateret, og opstartsguidens rigtige genvej blev flyttet og prøvet før udgivelse. De tidligere kandidater blev ikke udgivet.
+
+Ejerafklaring: W92 om versionsnummer i Tally er udgået. W84 er en privat iPhone/VPN-huskenote, ikke en appfunktion. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt og skal ikke afklares igen. Samtidighed og eventuelle konfliktvalg behandles samlet med profiler. Den generelle synkroniseringsafvisning forbliver pauset; grenoprydning er fortsat udsat.
+
+Fremdrift efter levering og tre nye ønsker: 87/103 afsluttet/afklaret, 16 åbne, cirka 84 %. W93/W102 er afsluttet. W101 er undersøgt og forbliver åben til valg af adfærd. W103 om overlappende kortgrænser er modtaget under udgivelseskontrollen og planlagt til næste runde; W85/foto-OCR og IB-billeder er fortsat åbne. Den aktuelle oversigt går foran historiske kandidatstatusser nedenfor.
+
+### Nye ønsker modtaget fra Google-planen · W101–W103
 
 | Nr. | Ønske | Status og prioritet |
 | --- | --- | --- |
 | W101 | Undersøg en anden løsning til digitale kort: adgang ved den præcise QR-kode, begrænset videresendelse og eventuelt udløb efter fx tre timer | Undersøgelse, LTM vælger tidspunkt. Afklar forskellen på QR-kode, link med hemmelig adgang og tidsbegrænset session. Ingen ny deling, udbyder eller sikkerhedsgaranti indføres uden vurdering. Ingen IB må flyttes til cloud. |
-| W102 | Datafordelerens API-nøgle under Indstillinger → Forbindelser, med plads til senere forbindelser | LTM vælger. Medtages i beta.69-kandidaten. Flyt den eksisterende nøgleformular og kontrol, bevar gemt nøgle og en genvej fra adressehentning. Ingen ny forbindelse eller godkendelse af andre tjenester. |
+| W102 | Datafordelerens API-nøgle under Indstillinger → Forbindelser, med plads til senere forbindelser | Afsluttet i verificeret beta.69. Eksisterende nøgleformular og kontrol er flyttet; gemt nøgle og genveje fra adressehentning og opstartsguide bevares. Ingen ny forbindelse eller godkendelse af andre tjenester. |
+| W103 | Advarsel i Opfølgninger, når distriktskortgrænser overlapper | Modtaget under beta.69-kontrollen. LTM vælger prioritet; næste runde. Vis konkrete berørte kort uden automatisk at ændre grænser. Skeln mellem overlap, fælles kant og dobbeltvalgte adresser. Registreret, ikke implementeret. |
 
-Ønskerne og deres prioritet er bevaret her før rydning af kildetekster. W101 forbliver åben; W102 lukkes først efter verificeret udgivelse.
+Ønskerne og deres prioritet er gemt og læst tilbage på GitHub i `d539fcd04b5ccc132f743f82a5ef43dbb24a5b25`. De to kildetekster og prioriteringer er derefter ryddet fra ønsketabellen; overskrifter, tomme rækker og Bilag er bevaret. W101 forbliver åben; W102 er afsluttet efter verificeret udgivelse. W103 er registreret her før rydning af dens kildetekst.
 
-## Aktuel oversigt · beta.68 og ny demo udgivet · 24.10.2026
+W101: [Undersøgelsen af QR-adgang](QR-ADGANG.md) forklarer tidsbegrænsede links og browsersessioner med primære kilder. Et almindeligt link kan få udløb, men en kopieret gyldig QR-kode eller adgangsværdi er ikke dermed udelelig. Google Drives offentlige linkrettighed understøtter ikke den dokumenterede udløbsindstilling. Der skal vælges, hvornår udløb begynder, og om samme trykte kode skal kunne bruges igen. Ingen ny tjeneste eller deling er sat i drift.
+
+## Historik · beta.68 og ny demo udgivet · 24.10.2026
 
 Beta.68 er verificeret udgivet fra `36b6cc7e7eff675e0a21b5f5dc2d97b3e104b43e`, træ `76c040f805a1d4beb2c726aadd9c5191261f2373`. HA beta release 40072344919 og Checks 40072344998 er completed/success. Den offentlige HA-pakke har 124 filer, 1.191.529 bytes og SHA256 `9270b27c45ee8ee81252b8e4505aa5a825c89b86cba4121c864480a74a5650d6`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.68; stabil er fortsat 1.12.1. W98/W37/W97/W27 er afsluttet. [Beta.68](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.68).
 
@@ -53,9 +62,9 @@ W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver.
 
 | Næste arbejde | Status |
 | --- | --- |
-| W93 · Langsom gemning/permanent sletning | Unødig genhentning rettet i beta.65; eventuel øvrig HA-ventetid åben |
+| W103 · Overlappende distriktskortgrænser | Næste runde: konkret advarsel i Opfølgninger uden automatiske grænseændringer |
 | W85 · Kort/IB fra billeder og mange filer | Deltrin udgivet i beta.67: kø til Excel/CSV; foto/OCR/IB-billedkø fortsat åbent |
-| W92 · Programversion i feedback | Udgået 24.10.2026 efter ejerens valg; ingen versionsforudfyldning |
+| W101 · QR-adgang og udløb | Undersøgt i QR-ADGANG.md; valg af adfærd udestår, ingen ny deling indført |
 | W74 · Egen hosting | Planlagt undersøgelse efter stabil; W84 er privat huskenote uden for appkøen |
 | W65/W83 · Adminpanel, rettigheder og første profilguide | Adminpanel til brugere og egne roller er aftalt; samtidighed behandles samlet med profiler. Generel synkroniseringsafvisning forbliver pauset |
 | W06/W08/W13/W28/W56/W58/W61/W67 | Separate sikkerheds-, rapport-, sprog- og ejerafklaringer; ingen automatisk lukning |
