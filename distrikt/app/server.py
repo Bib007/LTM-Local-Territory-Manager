@@ -29,7 +29,7 @@ from setup_jobs import SetupJobs
 from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.68'
+VERSION='1.12.2-beta.69'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -68,6 +68,13 @@ class Server(ThreadingHTTPServer):
         self.restores=Restores(store,VERSION)
         self.sharing=Publications(store)
         self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
+
+    def app_state(self):
+        """The same local overview for page reads and confirmed write responses."""
+        with self.store.lock:
+            result=self.store.state()
+            result.update(version=VERSION,beta=self.beta,public_maps=self.sharing.front_links(),address_task=self.address_schedule.status())
+            return result
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args):
@@ -136,9 +143,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/geo/suggest':return self.send(self.server.downloads.suggest(q.get('road',[''])[0],q.get('postcode',[''])[0]))
             if path=='/api/state':
                 self.server.store.purge_expired()
-                with self.server.store.lock:
-                    result=self.server.store.state();result['version']=VERSION;result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links();result['address_task']=self.server.address_schedule.status()
-                return self.send(result)
+                return self.send(self.server.app_state())
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/activity':return self.send({'items':self.server.store.activity()})
             if path=='/api/map':
@@ -253,6 +258,8 @@ class Handler(BaseHTTPRequestHandler):
                         result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
                         response={'ok':True,'result':result,'revision':self.server.store.revision,
                             'geo_changed':getattr(self.server.store,'geo_generation',0)!=generation}
+                        if data.get('include_state') is True and not str(data.get('action','')).endswith('.preview'):
+                            response['state']=self.server.app_state()
                     return self.send(response)
             if self.path=='/api/open-data':
                 if not self.server.access:

@@ -9,7 +9,7 @@ Updated 24 October 2026. Downloads with an individual API key are implemented. T
 1. Sign in to [Datafordeler Administration](https://portal.datafordeler.dk/).
 2. Create an IT system and an API key for public data. LTM uses DAR, not personal registers. An OAuth Shared Secret is a different credential and cannot replace the API key.
 3. Keep the key private, for example in a password manager. Never send it in chat, feedback or GitHub.
-4. Open **Cards and addresses → Download addresses → Datafordeleren · egen API-nøgle**, or open **Kortdata** in the card editor. Paste the key and choose **Kontrollér og gem nøgle**.
+4. Open **Settings → Connections → Datafordeleren · egen API-nøgle**. **Download addresses** also has a shortcut to the connection settings. Paste the key and choose **Kontrollér og gem nøgle**.
 5. LTM checks access and its expected DAR schema. The input is cleared after submission; a rejected replacement preserves the previous key.
 
 A green connection confirms the connection, not a number of downloaded addresses.

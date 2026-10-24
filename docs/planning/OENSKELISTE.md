@@ -1,5 +1,22 @@
 # Ønskeliste og nye opgaver
 
+## Ejerafklaring og næste beta · 24.10.2026
+
+W93: Ejeren har allerede beskrevet den konkrete fejl: permanent sletning fortsætter med ventestatus, men vises færdig ved menuskift. Der efterspørges ingen ny generel HA-prøve. Klienten venter efter en bekræftet handling på et separat oversigtskald; ingen bevidst minimumsventetid er fundet. Den nye kandidat beder om en fuld lokal oversigt i samme svar som skrivekvitteringen og bruger den uden et ekstra oversigtskald. Serveren samler kvittering og oversigt under samme lås. Geodata opdateres stadig, når de faktisk er ændret. Ældre servere beholder genhentning, men en bekræftet ændring vises som gemt imens. Mangelfulde/modstridende oversigter kræver kontrol uden automatisk gentagelse af skrivningen. Ejerens konkrete installation er ikke målt her; status for levering afventer udgivelseskontrollen.
+
+W92 udgår efter ejerens valg. Der skal ikke bruges mere tid på versionsnummer i Tally. W84 er en privat huskenote om iPhone og egen VPN, ikke en appfunktion. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt; det skal ikke afklares igen, hvem der på forhånd må hvad. Samtidighed og eventuelle konfliktvalg behandles senere sammen med profiler. Den almindelige synkroniseringsafvisning forbliver pauset. Ingen større loginændring eller grenoprydning indføres her.
+
+Fremdrift efter ejerafklaringen og to nye ønsker: 85/102 afsluttet/afklaret, 17 åbne, cirka 83 %. W92 og W84 er afklaret, uden at der påstås nye appfunktioner leveret. W93 forbliver åben indtil den konkrete rettelse har bestået udgivelseskontrollen. Den aktuelle oversigt går foran ældre statusafsnit nedenfor.
+
+### Nye ønsker modtaget fra Google-planen
+
+| Nr. | Ønske | Status og prioritet |
+| --- | --- | --- |
+| W101 | Undersøg en anden løsning til digitale kort: adgang ved den præcise QR-kode, begrænset videresendelse og eventuelt udløb efter fx tre timer | Undersøgelse, LTM vælger tidspunkt. Afklar forskellen på QR-kode, link med hemmelig adgang og tidsbegrænset session. Ingen ny deling, udbyder eller sikkerhedsgaranti indføres uden vurdering. Ingen IB må flyttes til cloud. |
+| W102 | Datafordelerens API-nøgle under Indstillinger → Forbindelser, med plads til senere forbindelser | LTM vælger. Medtages i beta.69-kandidaten. Flyt den eksisterende nøgleformular og kontrol, bevar gemt nøgle og en genvej fra adressehentning. Ingen ny forbindelse eller godkendelse af andre tjenester. |
+
+Ønskerne og deres prioritet er bevaret her før rydning af kildetekster. W101 forbliver åben; W102 lukkes først efter verificeret udgivelse.
+
 ## Aktuel oversigt · beta.68 og ny demo udgivet · 24.10.2026
 
 Beta.68 er verificeret udgivet fra `36b6cc7e7eff675e0a21b5f5dc2d97b3e104b43e`, træ `76c040f805a1d4beb2c726aadd9c5191261f2373`. HA beta release 40072344919 og Checks 40072344998 er completed/success. Den offentlige HA-pakke har 124 filer, 1.191.529 bytes og SHA256 `9270b27c45ee8ee81252b8e4505aa5a825c89b86cba4121c864480a74a5650d6`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.68; stabil er fortsat 1.12.1. W98/W37/W97/W27 er afsluttet. [Beta.68](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.68).
@@ -12,7 +29,7 @@ Beta.68 samler W98 (lyst/mørkt/følg enhed, lokal browserpræference uden serve
 
 W27: officielle DAR-/overgangssider er genkontrolleret 24.10.2026; fristen er fortsat 15.01.2027. Ejeren har allerede bekræftet fungerende HA-adressehentning. De aktive vejledninger på dansk/engelsk fjerner historiske afsnit, der stadig krævede den generelle afprøvning, og beskriver aktuelle menuer, aktivitet/antal, genoptagelse og Opfølgninger. Det er dokumentationsgennemgang, ikke et nyt opslag med ejerens nøgle eller ny bekræftelse af et bestemt geografisk område.
 
-W85/foto-OCR og W92/formularfelt kræver fortsat særskilt arbejde; ingen cloud-OCR eller gættet forudfyldning er indført. W100/grenoprydning forbliver udsat. Tælleren er efter verificeret levering 83/100.
+W85/foto-OCR kræver fortsat særskilt arbejde; ingen cloud-OCR er indført. W92 er udgået efter ejerens valg; W84 er flyttet til privat huskenote. W100/grenoprydning forbliver udsat. Aktuelt 85/102 afsluttet/afklaret, 17 åbne efter to nye ønsker.
 
 Beta.67 er verificeret udgivet fra `6840b6aa16ce160a3fcc9b69d01f6e8aad005b27`, træ `d89cd8a237058f6fd081cb45fa46941dfa040a61`. HA beta release 40070456961, Checks 40070456935 og Platformskontrol 40070456898 er alle completed/success. Den offentlige HA-pakke matcher den lokale SHA256 `a4838037231b09391ee91fbce168ae241077821cb92ed4458c8cd7e45d8af24d` og har 1.187.624 bytes. Betakanalen viser 1.12.2-beta.67. Stabil er fortsat 1.12.1. Filkøen er leveret; W85 forbliver åben for fotos/OCR og IB-billedkø. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.67).
 
@@ -38,9 +55,9 @@ W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver.
 | --- | --- |
 | W93 · Langsom gemning/permanent sletning | Unødig genhentning rettet i beta.65; eventuel øvrig HA-ventetid åben |
 | W85 · Kort/IB fra billeder og mange filer | Deltrin udgivet i beta.67: kø til Excel/CSV; foto/OCR/IB-billedkø fortsat åbent |
-| W92 · Programversion i feedback | Undersøg det faktiske formularfelt; kun version må sendes automatisk |
-| W74/W84 · Egen hosting og iPhone/VPN-genvej | Planlagt undersøgelse |
-| W65/W83 · Profiler, samtidighed og første profilguide | Afklaring; generel synkroniseringsafvisning forbliver pauset |
+| W92 · Programversion i feedback | Udgået 24.10.2026 efter ejerens valg; ingen versionsforudfyldning |
+| W74 · Egen hosting | Planlagt undersøgelse efter stabil; W84 er privat huskenote uden for appkøen |
+| W65/W83 · Adminpanel, rettigheder og første profilguide | Adminpanel til brugere og egne roller er aftalt; samtidighed behandles samlet med profiler. Generel synkroniseringsafvisning forbliver pauset |
 | W06/W08/W13/W28/W56/W58/W61/W67 | Separate sikkerheds-, rapport-, sprog- og ejerafklaringer; ingen automatisk lukning |
 | W16 · Vejnet/autokort | På pause |
 | W100 · Ryd gamle grene | Udsat efter ejerens valg |
@@ -55,7 +72,7 @@ Stabil 1.12.1 er udgivet med rettelsen af W89 og seks dokumenter flyttet fra rod
 | --- | --- | --- |
 | W90 | Mere hvid/udfadet baggrund på digitale kort | Første samlede beta. Bevar tydelige prikker, numre, grænse og aktiv godkendelse før ændring af allerede delte billeder. |
 | W91 | Gentagende opgaver og korrekt opgavetæller | Første samlede beta. Udført fører allerede ugentlige opgaver videre med historik. Tæl fremtidige opgaver først fra forfaldsdagen, og forklar gentagelsen. Almindelige åbne opgaver tæller fortsat. |
-| W92 | Automatisk LTM-version i Tally | Undersøg faktisk felt og understøttet forudfyldning. Kun programversion må medsendes automatisk, ingen private data. |
+| W92 | Automatisk LTM-version i Tally | Udgået efter ejerens valg 24.10.2026. Feedbackformularen og det almindelige link bevares. |
 | W93 | Langsom gemning/permanent sletning | Undersøg med fiktiv reproduktion, også om menuskift blot viser en allerede gemt handling. Bevar slettebekræftelse, atomisk lagring og usikker-resultatbeskyttelse. |
 | W94 | Én Import-fane under Indstillinger | Flyt indgange til S-13/historik, kort og IB. Bevar importforhåndsvisninger og validering. Samles med relevant importarbejde. |
 | W95 | Samlet Opfølgninger | Flyt Kortkontrol, Kort med ændrede sider og relevante genprintpunkter. Hvert forhold har egen linje og tæller, også flere på samme kort. Undgå dublering. |
@@ -94,7 +111,7 @@ Ejeren har bestilt udgivelse og bedt om, at ADS-planens relevante punkter gennem
 | Nr. | Ønske | Afgrænsning |
 | --- | --- | --- |
 | W83 | Startguide ved første login med en ny profil | Hører sammen med fremtidige profiler/flerbrugerønsker i W65. Vis en relevant introduktion, når en ny profil bruges første gang. Registreret, ikke implementeret. |
-| W84 | iPhone-genvej til VPN ved åbning af LTM | Undersøg en Apple-genvej, der forbinder VPN ved åbning og afbryder igen bagefter. Afhænger af telefonens og VPN-appens muligheder; ingen automatisk adgang eller færdig løsning loves. Registreret, ikke implementeret. |
+| W84 | Privat iPhone/VPN-huskenote | Afklaret 24.10.2026: ikke en appfunktion eller åben udviklingsopgave. Huskenoten bliver i ejerens private plan. |
 | W85 | Opret distriktskort fra foto af S-12 og IB-bagside | Undersøg lokal tekstgenkendelse uden ekstern AI som førstevalg, flere bagsidelayouts, kortoprettelse og match mod eksisterende adresser. Manglende adresser markeres til gennemgang under adresseændringer. Undersøg afsluttende grænsetegning og masseupload af en mappe/flere billeder med front og bagside i kø, så mange kort kan indlæses samlet. Ejeren ønsker dette tidligt efter stabil udgivelse. Registreret, ikke implementeret. |
 | W86 | Adressehentning opdelt i mindre bidder ved anmodningsgrænsen | Ejeren ser “Udsnit 2: DAR-opslaget kræver for mange anmodninger. Vælg et mindre område.” Undersøg automatisk opdeling med bevaret fremdrift, pause/genforsøg og tydelig ufuldstændighed. Må ikke fjerne grænser eller fejlagtigt godkende ufuldstændige data. Registreret til efter stabil udgivelse, ikke rettet nu. |
 

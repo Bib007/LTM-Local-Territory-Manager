@@ -9,7 +9,7 @@ Opdateret 24.10.2026. Adressehentning med egen nøgle er implementeret. Ejeren h
 1. Åbn [Datafordeler Administration](https://portal.datafordeler.dk/), og opret eller log ind på din egen konto.
 2. Opret et **IT-system**, fx “LTM lokal”, og en tilhørende **API-key** til offentlige data. LTM bruger DAR og behøver ikke adgang til personregistre. En OAuth Shared Secret er en anden type oplysning og kan ikke bruges som API-key.
 3. Gem nøglen sikkert, fx i din adgangskodehåndtering. Send den aldrig i chat, feedback eller til GitHub.
-4. Åbn **Kort og adresser → Hent adresser → Datafordeleren · egen API-nøgle**. Du kan også åbne **Kortdata** fra korteditoren. Indsæt nøglen, og vælg **Kontrollér og gem nøgle**.
+4. Åbn **Indstillinger → Forbindelser → Datafordeleren · egen API-nøgle**. Under **Hent adresser** er der også en genvej til forbindelsen. Indsæt nøglen, og vælg **Kontrollér og gem nøgle**.
 5. Feltet tømmes efter indsendelse. Ved en afvist erstatningsnøgle bevares den tidligere gemte nøgle.
 
 LTM kontrollerer adgang og det forventede DAR-skema før gemning. Grøn forbindelse betyder, at forbindelsen er kontrolleret; det er ikke i sig selv et antal hentede adresser.
