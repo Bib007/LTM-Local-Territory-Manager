@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.68 · Vælg dit udseende og prøv det nye overblik
+
+- Vælg Mørkt, Lyst eller Følg enheden nederst i menuen. Valget huskes i din browser og kan skiftes uden at miste åbne formularer.
+- Demoen bruger appens fælles designfiler og viser den samme opbygning på forside, genveje og nøgletal. Den har eksempelvisninger for Opfølgninger og Kort og adresser; alle oplysninger er stadig opdigtede.
+- Adressevejledningen er gennemgået på dansk og engelsk med aktuelle menuer, hentestatus, genoptagelse og gennemgang af adresseændringer. Gamle beskeder om en manglende afprøvning er fjernet.
+- Filkøen fra beta.67 er med. Automatisk genkendelse af billeder er fortsat under planlægning.
+
 ## 1.12.2-beta.67 · Flere kortfiler i kø
 
 - Vælg op til 20 Excel-/CSV-filer til kortimport. Hver fil får sin egen forhåndsvisning og godkendelse; næste fil importeres ikke automatisk.

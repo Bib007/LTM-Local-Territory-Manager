@@ -1580,6 +1580,7 @@ const I18n={
   "Spring denne fil over":"Skip this file",
   "Filen er importeret. Kontrollér næste fil, når du er klar.":"The file has been imported. Review the next file when you are ready.",
   "Filer gemmes én ad gangen. Lukning eller en fejl fortryder ikke allerede godkendte filer.":"Files are saved one at a time. Closing or an error does not undo files already approved.",
+  "Udseende":"Appearance",
   "Gemte visninger":"Saved views",
   "Vælg visning…":"Choose a view…",
   "Gem denne visning":"Save this view",
