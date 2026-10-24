@@ -4,12 +4,12 @@
  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
  <meta name="description" content="Try Local Territory Manager with entirely fictional Bornholm data. No download, login or real congregation data.">
  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; base-uri 'none'; form-action 'none'">
- <title>LTM · Demo</title><link rel="icon" href="mark.svg" type="image/svg+xml"><link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="demo.css">
+ <script src="shared/theme.js"></script><title>LTM · Demo</title><link rel="icon" href="mark.svg" type="image/svg+xml"><link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="demo.css"><link rel="stylesheet" href="shared/style.css"><link rel="stylesheet" href="shared/workspace.css"><link rel="stylesheet" href="shared/theme.css">
  <script src="vendor/leaflet.js" defer></script><script src="model.js" defer></script><script src="demo.js" defer></script>
 </head>
 <body>
- <header><button id="menu" aria-label="Åbn menu" aria-controls="demoSidebar" aria-expanded="false" class="menu">☰</button><a href="#home" data-go="home" class="brand"><img src="mark.svg" width="39" height="39" alt=""><span><b>LTM</b><small>Local Territory Manager · JW</small></span></a><div class="headerTools"><span class="demoBadge">DEMO</span><select id="language" aria-label="Language"><option value="da">Dansk</option><option value="en">English</option></select><a href="https://github.com/Bib007/LTM-Local-Territory-Manager" target="_blank" rel="noopener" class="github">GitHub ↗</a></div></header>
- <aside id="demoSidebar"><div class="navName">BORNHOLM · DEMO</div><nav id="nav"></nav><div class="asideNote" id="asideNote"></div></aside>
+ <header><button id="menu" aria-label="Åbn menu" aria-controls="demoSidebar" aria-expanded="false" class="mobileMenu menu">☰</button><a href="#home" data-go="home" class="brand"><img class="brandCompact" src="mark.svg" width="40" height="40" alt=""><div class="brandIdentity"><img class="brandWordmark" src="brand-logo.svg" width="360" height="66" alt="Local Territory Manager – JW"><b>LTM</b></div></a><div class="headerTools"><span class="demoBadge">DEMO</span><select id="language" aria-label="Language"><option value="da">Dansk</option><option value="en">English</option></select><a href="https://github.com/Bib007/LTM-Local-Territory-Manager" target="_blank" rel="noopener" class="github">GitHub ↗</a></div></header>
+ <aside id="demoSidebar"><div class="navName">BORNHOLM · DEMO</div><nav id="nav"></nav><div id="appearance"></div><div class="asideNote" id="asideNote"></div></aside>
  <main><div id="notice" class="notice" role="note"></div><div id="content"></div><footer id="footer"></footer></main>
  <dialog id="dialog"></dialog><div id="toast" role="status" hidden></div>
  <noscript>This demo needs JavaScript. All example records are fictional.</noscript>

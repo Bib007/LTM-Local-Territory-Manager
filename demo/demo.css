@@ -6,3 +6,11 @@
 .grid2>*,.grid4>*{min-width:0}.ringRow{flex-wrap:wrap}.ringRow .legend{flex:1 1 150px;width:auto;min-width:0}
 @media(max-width:1100px){.grid2{grid-template-columns:minmax(0,1fr)}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){aside,button{transition:none!important}}
+
+/* Layout adapters only; the public snapshot uses the real product styles. */
+:root{--panel:var(--surface);--panel2:var(--surface2)}
+.demoBadge{white-space:nowrap}.headerTools{flex-shrink:0}.pageTitle h1{font-size:28px;font-weight:500}.tableWrap{border-radius:0}.demoNotice{margin-bottom:20px}.ringCenter{background:var(--surface)}
+@media(max-width:750px){header .brand{max-width:110px}.headerTools{gap:5px}header .github{display:none}.headerTools select{max-width:84px}.headerTools .demoBadge{font-size:9px}aside{width:230px}main{margin-left:0}header .menu{display:block}.dashboardHero{gap:14px}.dashboardShortcuts{gap:8px}}
+.chart{gap:4px}.barItem{min-width:0}.barItem small{font-size:10px}.dashboardTrend{min-width:0}
+
+@media(max-width:450px){.barItem small{font-size:8px}}
