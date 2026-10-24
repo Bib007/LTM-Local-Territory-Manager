@@ -85,3 +85,7 @@ Behold tidligere programpakke og tilhørende backup lokalt. Gå ikke tilbage ove
 - [Lokale HA-apps](https://developers.home-assistant.io/docs/apps/tutorial/)
 - [Google Drive og QR](GOOGLE-DRIVE.md)
 - [Privatliv og datastrømme](PRIVACY.md)
+
+### Lokal IB-import fra billeder · beta
+
+HA-betaen med billedimport medtager lokal Tesseract med dansk og engelsk. På Mac/Windows skal motor og sprogdata installeres på maskinen, hvor LTM kører. En telefon med adgang til LTM på HA behøver ingen motor. Se [trin, godkendelse, begrænsninger og desktopinstallation](../distrikt/DOCS.md#ib-fra-billeder--beta).

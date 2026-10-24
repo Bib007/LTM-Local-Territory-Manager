@@ -40,3 +40,23 @@ Forbind telefon eller computer til VPN på egen router, og åbn samme private ap
 - Adgangskoden kan ændres i HA-konfigurationen efterfulgt af genstart. Sessioner udløber efter 12 timer eller genstart.
 
 [Fuld dansk installationsguide](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md) · [Valgfri Google og QR](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/GOOGLE-DRIVE.md)
+
+## IB fra billeder · beta
+
+Under **Indstillinger → Import → IB fra billeder** kan du indlæse fotos af IB-bagsider. Dette er et deltrin: billeder af S-12-forsider opretter endnu ikke distriktskort.
+
+1. Vælg PNG-/JPEG-billeder, højst 20, højst 12 MB hver og 60 MB samlet. HEIC og PDF skal først gemmes som PNG eller JPEG. Originalerne bliver i browseren; en klargjort PNG sendes til dit eget lokale LTM-system.
+2. Vælg det rigtige kort for billedet. Ret den genkendte tekst og vælg **Lav redigerbare forslag**. En tydelig adresse med en dato sidst på linjen, fx `Fiktivvej 8 - 24.10.2026`, kan give et forslag. Lejligheder kræver korrekt etage og dør. Eksemplet er opdigtet.
+3. Kontrollér hver linje mod billedet. Vælg en adresse fra kortet og ret datoen, eller spring linjen over. Overskrifter, støj og uklare linjer bliver ikke stiltiende ignoreret. Genkendelsen kan tage fejl, især ved håndskrift, skygger og flere spalter.
+4. Vælg **Kontrollér IB-forslag**, gennemgå resultatet, skriv **IMPORTÉR IB** og godkend. Intet gemmes ved alene at vælge eller læse et billede. Dobbeltregistrerede IB springes over; eksisterende IB overskrives ikke. Besøgstal og forsider ændres ikke; berørte bagsider skal ajourføres.
+5. Vælg selv, hvornår næste billede skal læses. Kortvalget nulstilles pr. billede. Lukning eller fejl fortryder ikke tidligere godkendte billeder. Ved ukendt gemmeresultat skal du kontrollere med **Opdater** før et nyt forsøg.
+
+Genkendelsen bruger lokal Tesseract. Ingen ekstern AI, cloud-OCR eller fjernserver modtager billederne eller IB-teksten. Midlertidige billed-/tekstfiler slettes efter læsningen. Resultater opbevares kortvarigt i serverens hukommelse og fjernes ved afslutning, spring over, lukning eller efter fem minutter. Appens almindelige IB-data lagres først efter din godkendelse.
+
+### Motor på Home Assistant, Mac og Windows
+
+HA-betaen med billedimport installerer motoren samt danske og engelske sprogdata, når appens image bygges. Genstart/opdatér appen som normalt. Motoren hentes ikke under billedlæsningen.
+
+På Mac og Windows skal Tesseract installeres separat på den maskine, hvor **LTM-serveren** kører. Det er ikke nødvendigt på en telefon, der åbner en eksisterende HA-installation. På Mac beskriver [Tesseracts officielle installationsguide](https://tesseract-ocr.github.io/tessdoc/Installation.html) Homebrew og MacPorts. Ved Homebrew kan motor og ekstra sprog installeres med `brew install tesseract tesseract-lang`. På Windows henviser den officielle guide til Windows-installationer; medtag dansk (`dan`) og engelsk (`eng`) og gør `tesseract` tilgængelig på PATH eller i den almindelige installationsmappe `Program Files/Tesseract-OCR`. LTM kører ingen automatisk installationskommando på desktop.
+
+Åbn importen igen efter installation. Appen viser, om motoren er tilgængelig. Hvis kun engelsk er installeret, vises en advarsel om at kontrollere æ, ø og å. Håndskrift er ikke garanteret genkendt; ret teksten manuelt eller brug den eksisterende CSV-import.

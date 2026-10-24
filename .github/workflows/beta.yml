@@ -105,6 +105,10 @@ jobs:
       - run: python scripts/build_beta.py --output /tmp/ha-beta
       - run: docker build --build-arg BUILD_VERSION=beta-ci --build-arg BUILD_ARCH=amd64 --tag ltm-ha-beta /tmp/ha-beta/distrikt
       - run: docker run --rm --entrypoint python3 ltm-ha-beta /opt/distrikt/app/server.py --help
+      - name: Kontrollér lokal OCR og danske sprogdata
+        run: docker run --rm --entrypoint python3 ltm-ha-beta -c "import sys; sys.path.insert(0, '/opt/distrikt/app'); from photo_ocr import PhotoOCR; status=PhotoOCR().available(); assert status['available'] and set(status['languages'])=={'dan','eng'}, status"
+      - name: Læs et opdigtet billede med den faktiske OCR-motor
+        run: docker run --rm --env PYTHONPATH=/opt/distrikt/app --volume "$PWD/scripts:/probe:ro" --entrypoint python3 ltm-ha-beta /probe/check_photo_ocr.py --require-danish
       - run: docker run --rm --env LTM_CHANNEL=beta --entrypoint python3 ltm-ha-beta -c "import sys,tempfile; sys.path.insert(0, '/opt/distrikt/app'); from access import Access,LOGIN; assert 'Beta' in LOGIN; d=tempfile.TemporaryDirectory(); assert Access(d.name,'Fictional-pass-123').cookie_name=='distrikt_beta_session'"
   publish:
     if: github.ref == 'refs/heads/develop'

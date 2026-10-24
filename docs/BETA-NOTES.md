@@ -1,9 +1,9 @@
-# LTM 1.12.2-beta.70 · Overlappende kortgrænser
+# LTM 1.12.2-beta.71 · IB fra billeder
 
-**Opfølgninger** advarer nu, når to distriktskortgrænser dækker et fælles areal. Du kan åbne begge berørte kort og finde advarslen ved at søge på et af kortenes numre eller navne.
+Under **Indstillinger → Import → IB fra billeder** kan du vælge flere billeder af IB-bagsider. Billedet læses på dit lokale LTM-system. Ret teksten, vælg kort og kontrollér adresser og datoer, før du skriver **IMPORTÉR IB** og godkender.
 
-En fælles kant eller et fælles hjørne udløser ingen advarsel. Adresser valgt på flere kort vises fortsat som egne punkter. Kontrollen ændrer ingen grænser eller adresser; du retter selv kortene, hvis overlappet er utilsigtet.
+Hver linje skal kobles til en adresse på det valgte kort eller springes over ved dit valg. Intet importeres alene ved at vælge et billede. Køen fortsætter kun, når du vælger næste billede, og allerede godkendte billeder bevares, hvis du lukker.
 
-Fotoimport, lokal tekstgenkendelse og IB-billedkø er endnu ikke med. Den stabile kanal forbliver 1.12.1.
+HA-betaen har dansk og engelsk tekstgenkendelse med. Mac og Windows kræver en lokal Tesseract-installation; se vejledningen. Håndskrift og uklare fotos kan kræve manuel rettelse. PNG og JPEG understøttes; HEIC og PDF skal først gemmes som et understøttet billede.
 
-[Ønsker og næste arbejde](planning/OENSKELISTE.md)
+S-12-forsider er endnu ikke med, og W85 er fortsat åben. Stabil forbliver 1.12.1.

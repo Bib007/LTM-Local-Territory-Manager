@@ -1,6 +1,14 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.70 udgivet · 24.10.2026
+## Aktuel oversigt · beta.71 under kontrol · 24.10.2026
+
+W85-deltrin: IB-bagsider fra PNG/JPEG i lokal billedkø er implementeret til beta.71-kontrol. Hvert billede kræver valgt kort, redigerbar tekst, gennemgåede lokale adresse-/lejlighedsmatches og datoer samt eksisterende forhåndsvisning/IMPORTÉR IB. Ukendte linjer skal rettes eller springes over aktivt. Næste billede startes manuelt; sene svar og ændrede forslag kan ikke godkende en ny kladde. Godkendte filer bevares ved lukning/fejl. Grænser, besøgstal og forsider ændres ikke automatisk.
+
+Asynkron lokal Tesseract med faste argumenter, valideret/begrænset PNG, tidsgrænse, én aktiv læsning og oprydning. Originalbilleder bliver i browseren; kun en klargjort PNG sendes til eget lokale LTM-system. Ingen cloud-OCR eller ekstern AI. HA-pakken får danske/engelske sprogdata og en motorprøve i CI; Mac/Windows kræver en separat lokal installation med tydelig status/vejledning. W85 er ikke afsluttet: S-12-forsider og resten af foto-kortoprettelsen mangler. Fremdrift bevares på 89/103, 14 åbne, cirka 86 %. Stabil er fortsat 1.12.1; senest verificerede beta er beta.70.
+
+Lokalt består 498 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver og faktisk arkivstart. Browserforløb ved fire desktopbredder og fire telefon-/tabletvisninger i lyst tema består. En ny fiktiv PNG og `scripts/check_photo_ocr.py` bruges til rigtig native OCR i HA-gaten; samme prøve består lokalt med engelsk. Målrettede prøver dækker filgrænser, login/CSRF, manglende motor, afbrydelse, timeout, private midlertidige filer, præcise lejligheder, konkret godkendelse, dubletter og bagsidens ajourføring. Faktisk installeret OCR læser en opdigtet prøve korrekt med engelsk; dansk er ikke installeret på udviklingsmaskinen og skal prøves i HA-image. Browserforløb med fiktive OCR-svar dækker redigering, ukendt linje, spring over, forhåndsvisningsnulstilling, kø, begge sprog og skærmstørrelser. Den fulde gate og udgivelsespakken er endnu ikke verificeret. Alle fire Google-faner er tidligere læst i denne runde; ønskelisten er genkontrolleret og er tom.
+
+## Historik · beta.70 udgivet · 24.10.2026
 
 W103 er afsluttet i verificeret beta.70 fra `dff75020941651dbd69f6f0458c2ab9aa26c1e9d`, træ `5ffb543a3e54de6ed4684e57399350bad90c5568`. HA beta release 40088657518 og Checks 40088657595 er completed/success. Den præcise HA-gate omfatter sikkerhed, Python 3.9/3.13, fuld browserkontrol i Chromium/WebKit, Mac, Windows og HA. Platformskontrol 40088251235 bestod på første kandidat; der er ikke startet en særskilt Platformskontrol på slutcommiten, men dens samme platformprøver bestod i slutcommitens HA-gate. Den første kandidats demo-race stoppede korrekt udgivelsen; ingen fejlet gate er omgået.
 

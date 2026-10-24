@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.2-beta.71 · Lokal IB-import fra billeder
+
+Indstillinger → Import har nu IB fra billeder. Vælg op til 20 PNG-/JPEG-billeder i kø. Hvert billede læses på det lokale LTM-system, får sit eget kortvalg og redigerbar tekst samt forslag. Hver linje skal have en adresse fra det valgte kort og en kontrolleret dato eller springes over ved dit valg. Forhåndsvisningen og IMPORTÉR IB kræves før gemning. Næste billede startes manuelt; tidligere godkendte filer bevares ved lukning eller fejl.
+
+HA-pakken medtager lokal Tesseract med dansk og engelsk. På Mac og Windows kræves en separat lokal Tesseract-installation; appen viser, hvis den mangler. Ingen ekstern AI, cloud-OCR eller automatisk adresseoprettelse bruges. S-12-forsider, automatisk fortolkning af flere spalter og fuld W85 er fortsat åbne. Håndskrift og uklare billeder kan kræve manuel rettelse.
+
 ## 1.12.2-beta.70 · Overlappende kortgrænser
 
 Opfølgninger advarer, når to gemte distriktskortgrænser dækker et fælles areal. Hver berørt kombination vises én gang med links til begge kort. Du kan søge på begge kortnumre og navne. Fælles kanter og hjørner udløser ingen advarsel; adresser valgt på flere kort vises fortsat som egne punkter.

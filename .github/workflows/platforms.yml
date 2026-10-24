@@ -36,5 +36,9 @@ jobs:
         run: docker build --build-arg BUILD_VERSION=ci --build-arg BUILD_ARCH=amd64 --tag ltm-ha-smoke distrikt
       - name: Kontrollér programstart
         run: docker run --rm --entrypoint python3 ltm-ha-smoke /opt/distrikt/app/server.py --help
+      - name: Kontrollér lokal OCR og danske sprogdata
+        run: docker run --rm --entrypoint python3 ltm-ha-smoke -c "import sys; sys.path.insert(0, '/opt/distrikt/app'); from photo_ocr import PhotoOCR; status=PhotoOCR().available(); assert status['available'] and set(status['languages'])=={'dan','eng'}, status"
+      - name: Læs et opdigtet billede med den faktiske OCR-motor
+        run: docker run --rm --env PYTHONPATH=/opt/distrikt/app --volume "$PWD/scripts:/probe:ro" --entrypoint python3 ltm-ha-smoke /probe/check_photo_ocr.py --require-danish
       - name: Kontrollér medfølgende QR-bibliotek
         run: docker run --rm --entrypoint python3 ltm-ha-smoke -c "import sys; sys.path.insert(0, '/opt/distrikt/app/vendor_py'); import qrcode; code=qrcode.QRCode(); code.add_data('https://example.invalid/fictional-demo'); code.make(); assert code.get_matrix()"

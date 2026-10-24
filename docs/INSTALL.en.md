@@ -72,3 +72,11 @@ Keep the previous program ZIP for rollback. Do not downgrade after a future inco
 - [Google Drive and QR setup — English](GOOGLE-DRIVE.en.md)
 - [Google Drive — dansk](../distrikt/GOOGLE-DRIVE-OPSAETNING.md)
 - [First session with LTM](FIRST-STEPS.en.md)
+
+### Local do-not-call photo import (beta)
+
+The beta's **Settings → Import → Do-not-call entries from photos** reads PNG/JPEG images on your own LTM server. Review the recognized text, choose the card, select an exact local card address and a date for every line (or explicitly skip it), then review the preview and type `IMPORTÉR IB`. Choosing an image does not write records. Previously approved images remain imported if you close the queue. Handwriting and complex layouts may require manual editing. S-12 fronts are not supported yet.
+
+The HA beta includes Tesseract with Danish and English data in its container image. On Mac/Windows, install Tesseract and its `dan`/`eng` language data on the machine running LTM; a phone using HA needs no OCR installation. See the [official installation guide](https://tesseract-ocr.github.io/tessdoc/Installation.html). Homebrew users can install `tesseract tesseract-lang`; Windows users can follow the installations linked by that guide and enable PATH or the standard Program Files/Tesseract-OCR location. LTM does not automatically install software on desktop. The import shows when the engine or Danish data is missing.
+
+Images and text are not sent to an external AI or OCR service. Temporary files are removed after local recognition; unapproved OCR results are RAM-only and expire after five minutes. Only explicit approval adds do-not-call entries to the local database. Only addresses already on the chosen card can be imported. HEIC/PDF must first be converted to PNG/JPEG. Limits: 20 images, 12 MB per original and 60 MB total.
