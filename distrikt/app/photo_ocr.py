@@ -105,7 +105,9 @@ class PhotoOCR:
             for job in self.jobs.values():
                 job['stop'].set()
                 if job.get('timer'):job['timer'].cancel()
+            workers=[job['thread'] for job in self.jobs.values() if job.get('thread')]
             self.jobs.clear()
+        for worker in workers:worker.join(1)
     def _run(self,ident,raw,engine,language,stop):
         text='';error='';process=None
         try:

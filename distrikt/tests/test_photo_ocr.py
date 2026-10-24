@@ -75,6 +75,17 @@ class PhotoOCRTests(unittest.TestCase):
             while not processes and time.monotonic()<until:time.sleep(.01)
             with self.assertRaises(ValueError):service.start({'png':base64.b64encode(png()).decode()})
             service.cancel(ident);self.assertTrue(processes[0].killed);self.assertTrue(processes[0].assert_source);self.assertFalse(processes[0].directory.exists());self.assertIsNone(service.active)
+    def test_shutdown_waits_for_active_process_and_temp_cleanup(self):
+        service=ocr.PhotoOCR();processes=[]
+        class Slow(FakeProcess):
+            def __init__(self,*a,**kw):super().__init__(*a,**kw);self.returncode=None
+        def create(*a,**kw):p=Slow(*a,**kw);processes.append(p);return p
+        with patch.object(ocr,'engine_path',return_value='FICTIONAL_ENGINE'),patch.object(service,'available',return_value={'available':True,'languages':['eng']}),patch.object(ocr.subprocess,'Popen',side_effect=create):
+            service.start({'png':base64.b64encode(png()).decode()})
+            until=time.monotonic()+2
+            while not processes and time.monotonic()<until:time.sleep(.01)
+            service.close();self.assertTrue(processes[0].killed);self.assertFalse(processes[0].directory.exists());self.assertFalse(service.jobs);self.assertIsNone(service.active)
+
     def test_timeout_and_errors_do_not_leak_native_diagnostics_or_paths(self):
         service=ocr.PhotoOCR()
         with patch.object(ocr,'engine_path',return_value='FICTIONAL_ENGINE'),patch.object(service,'available',return_value={'available':True,'languages':['eng']}),patch.object(ocr.subprocess,'Popen',side_effect=OSError('/private/example NEVER_SHOW')):
