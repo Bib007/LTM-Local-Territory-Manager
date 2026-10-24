@@ -30,7 +30,7 @@ from photo_ocr import PhotoOCR
 from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.71'
+VERSION='1.12.2-beta.72'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):

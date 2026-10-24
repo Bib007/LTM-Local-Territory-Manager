@@ -1,10 +1,10 @@
 # W85 · Lokal fotoimport · teknisk forundersøgelse 24.10.2026
 
-## Ny status · beta.71-kandidat
+## Ny status · beta.72-kandidat
 
 IB-billedkø er implementeret til kontrol: højst 20 PNG/JPEG-originaler, lokal klargøring, asynkron native OCR, redigerbar tekst, separat kortvalg pr. billede, præcise lokale adresse-/lejlighedsmatches, eksplicit linjespring, påkrævede datoer, eksisterende IB-forhåndsvisning og IMPORTÉR IB. HA medtager dansk/engelsk motor og sprogdata. Mac/Windows bruger en separat lokal Tesseract-installation og viser manglende motor/dansk. Ingen cloud-/AI-tjeneste eller automatisk adresseoprettelse. Native proces har tidsgrænse, én aktiv læsning, stop/oprydning, faste argumenter og ingen diagnostik med private filnavne/tekst.
 
-W85 er **fortsat åben**: S-12-forsider, fuld foto-kortoprettelse, manglende adresseopfølgninger og mere layoutfortolkning mangler. OCR er et forslag, ikke en garanti for håndskrift eller flerespaltede billeder. Nedenstående er den historiske forundersøgelse fra før implementeringen. Beta.71 er endnu ikke verificeret udgivet.
+W85 er **fortsat åben**: S-12-forsider, fuld foto-kortoprettelse, manglende adresseopfølgninger og mere layoutfortolkning mangler. OCR er et forslag, ikke en garanti for håndskrift eller flerespaltede billeder. Nedenstående er den historiske forundersøgelse fra før implementeringen. Beta.72 er endnu ikke verificeret udgivet. Ved serverlukning afventes nu også oprydning af en aktiv OCR-proces.
 
 ## Historisk forundersøgelse
 

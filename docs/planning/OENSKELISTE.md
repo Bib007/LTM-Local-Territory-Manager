@@ -1,8 +1,10 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.71 under kontrol · 24.10.2026
+## Aktuel oversigt · beta.72 under kontrol · 24.10.2026
 
-W85-deltrin: IB-bagsider fra PNG/JPEG i lokal billedkø er implementeret til beta.71-kontrol. Hvert billede kræver valgt kort, redigerbar tekst, gennemgåede lokale adresse-/lejlighedsmatches og datoer samt eksisterende forhåndsvisning/IMPORTÉR IB. Ukendte linjer skal rettes eller springes over aktivt. Næste billede startes manuelt; sene svar og ændrede forslag kan ikke godkende en ny kladde. Godkendte filer bevares ved lukning/fejl. Grænser, besøgstal og forsider ændres ikke automatisk.
+Beta.71-kandidaterne er under udgivelseskontrol. Første kandidat 5a34bc6 fik grøn faktisk dansk/engelsk HA-OCR og platforme, men WebKit-prøvens netværkskontrol afviste en egen lokal blob-URL. Prøven er rettet til kun at tillade blobs fra LTM-adressen; eksterne kald er fortsat afvist. En efterfølgende rettelse sikrer proces-/filoprydning ved serverlukning og er prøvet særskilt. Den samles i beta.72, så en beta.71, der allerede er i køen, ikke overskrives. Ingen af disse nyere kandidater er endnu markeret verificeret udgivet i denne oversigt.
+
+W85-deltrin: IB-bagsider fra PNG/JPEG i lokal billedkø er implementeret til beta.72-kontrol. Hvert billede kræver valgt kort, redigerbar tekst, gennemgåede lokale adresse-/lejlighedsmatches og datoer samt eksisterende forhåndsvisning/IMPORTÉR IB. Ukendte linjer skal rettes eller springes over aktivt. Næste billede startes manuelt; sene svar og ændrede forslag kan ikke godkende en ny kladde. Godkendte filer bevares ved lukning/fejl. Grænser, besøgstal og forsider ændres ikke automatisk.
 
 Asynkron lokal Tesseract med faste argumenter, valideret/begrænset PNG, tidsgrænse, én aktiv læsning og oprydning. Originalbilleder bliver i browseren; kun en klargjort PNG sendes til eget lokale LTM-system. Ingen cloud-OCR eller ekstern AI. HA-pakken får danske/engelske sprogdata og en motorprøve i CI; Mac/Windows kræver en separat lokal installation med tydelig status/vejledning. W85 er ikke afsluttet: S-12-forsider og resten af foto-kortoprettelsen mangler. Fremdrift bevares på 89/103, 14 åbne, cirka 86 %. Stabil er fortsat 1.12.1; senest verificerede beta er beta.70.
 

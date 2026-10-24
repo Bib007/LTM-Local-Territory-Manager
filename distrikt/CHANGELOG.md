@@ -1,5 +1,9 @@
 # Ændringsliste
 
+## 1.12.2-beta.72 · IB-billeder og sikker afslutning
+
+IB fra billeder omfatter nu også kontrolleret afslutning, når selve LTM lukkes under en billedlæsning. Den lokale OCR-proces stoppes og dens midlertidige filer ryddes op, før serveren lukker. Kø, kortvalg, redigerbar tekst, præcise adresser/datoer og godkendelse er som i beta.71. Ingen ekstern AI eller cloud-OCR. S-12-forsider er fortsat ikke med.
+
 ## 1.12.2-beta.71 · Lokal IB-import fra billeder
 
 Indstillinger → Import har nu IB fra billeder. Vælg op til 20 PNG-/JPEG-billeder i kø. Hvert billede læses på det lokale LTM-system, får sit eget kortvalg og redigerbar tekst samt forslag. Hver linje skal have en adresse fra det valgte kort og en kontrolleret dato eller springes over ved dit valg. Forhåndsvisningen og IMPORTÉR IB kræves før gemning. Næste billede startes manuelt; tidligere godkendte filer bevares ved lukning eller fejl.
