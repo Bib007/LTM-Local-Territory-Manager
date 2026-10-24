@@ -1,6 +1,8 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.66 udgivet · beta.67 under udvikling · 24.10.2026
+## Aktuel oversigt · beta.67 udgivet · 24.10.2026
+
+Beta.67 er verificeret udgivet fra `6840b6aa16ce160a3fcc9b69d01f6e8aad005b27`, træ `d89cd8a237058f6fd081cb45fa46941dfa040a61`. HA beta release 40070456961, Checks 40070456935 og Platformskontrol 40070456898 er alle completed/success. Den offentlige HA-pakke matcher den lokale SHA256 `a4838037231b09391ee91fbce168ae241077821cb92ed4458c8cd7e45d8af24d` og har 1.187.624 bytes. Betakanalen viser 1.12.2-beta.67. Stabil er fortsat 1.12.1. Filkøen er leveret; W85 forbliver åben for fotos/OCR og IB-billedkø. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.67).
 
 Beta.67 leverer et afgrænset deltrin af W85: højst 20 Excel/CSV-kortfiler i en lokal kø (2 MB pr. fil, 20 MB samlet). Hver fil får en frisk forhåndsvisning efter tidligere importer og skal godkendes særskilt. Næste fil starter kun ved aktivt valg. Spring over ugyldiggør ventende svar og frigiver filreferencen; lukning fjerner resterende filer fra browserens kø. Tidligere godkendte filer rulles ikke tilbage. Ukendt gemmeresultat beskyttes fortsat af den eksisterende skrivebeskyttelse. Fotos/OCR og IB-billedkø er ikke implementeret; W85 forbliver åben, og fremdriften er stadig 79/100.
 
@@ -23,7 +25,7 @@ W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver.
 | Næste arbejde | Status |
 | --- | --- |
 | W93 · Langsom gemning/permanent sletning | Unødig genhentning rettet i beta.65; eventuel øvrig HA-ventetid åben |
-| W85 · Kort/IB fra billeder og mange filer | Deltrin i beta.67: kø til Excel/CSV; foto/OCR/IB-billedkø fortsat åbent |
+| W85 · Kort/IB fra billeder og mange filer | Deltrin udgivet i beta.67: kø til Excel/CSV; foto/OCR/IB-billedkø fortsat åbent |
 | W92 · Programversion i feedback | Undersøg det faktiske formularfelt; kun version må sendes automatisk |
 | W98 · Lyst udseende | Planlagt |
 | W37/W97 · Demoens produktdesign | Planlagt |
