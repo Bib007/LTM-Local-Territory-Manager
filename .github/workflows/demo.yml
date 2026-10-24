@@ -1,10 +1,10 @@
 name: Demo checks and Pages
 on:
   pull_request:
-    paths: ['demo/**', 'scripts/build_demo.py', '.github/workflows/demo.yml']
+    paths: ['demo/**', 'scripts/build_demo.py', 'scripts/sync_demo_design.py', 'scripts/test_build_demo.py', 'scripts/check_demo_browser.cjs', '.github/workflows/demo.yml']
   push:
     branches: [main]
-    paths: ['demo/**', 'scripts/build_demo.py', '.github/workflows/demo.yml']
+    paths: ['demo/**', 'scripts/build_demo.py', 'scripts/sync_demo_design.py', 'scripts/test_build_demo.py', 'scripts/check_demo_browser.cjs', '.github/workflows/demo.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,7 +25,14 @@ jobs:
       - run: node demo/test_model.cjs
       - run: node demo/test_ui.cjs
       - run: node --check demo/demo.js
+      - run: python scripts/test_build_demo.py
       - run: python scripts/build_demo.py
+      - name: Install isolated browser tool
+        run: |
+          npm install --prefix "$RUNNER_TEMP/ltm-demo-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
+          node "$RUNNER_TEMP/ltm-demo-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
+      - name: Fictional browser layouts, themes and local workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-demo-browser/node_modules/playwright" node scripts/check_demo_browser.cjs
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && !github.event.repository.private
         with:

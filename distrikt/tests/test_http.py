@@ -173,7 +173,7 @@ class HTTPTests(unittest.TestCase):
         with self.request('/api/geo',headers={'Accept-Encoding':'gzip'}) as response:
             self.assertEqual(response.headers['Content-Encoding'],'gzip');self.assertEqual(response.headers['Cache-Control'],'no-store')
             self.assertEqual(len(json.loads(gzip.decompress(response.read()))['addresses']),500)
-        for asset in ('/workspace.js','/workspace.css'):
+        for asset in ('/workspace.js','/workspace.css','/theme.js','/theme.css','/brand-logo-light.svg'):
             with self.request(asset) as response:self.assertEqual(response.status,200)
     def test_bootstrap_and_headers(self):
         with self.request('/',token=False) as r:

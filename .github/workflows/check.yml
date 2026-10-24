@@ -49,11 +49,24 @@ jobs:
           node-version: '24'
       - name: All synthetic JavaScript contracts
         run: for testfile in distrikt/tests/test_*.cjs; do node "$testfile" || exit 1; done
+      - name: Fictional demo and shared product design
+        run: |
+          python scripts/sync_demo_design.py --check
+          python scripts/test_build_demo.py
+          node demo/test_model.cjs
+          node demo/test_ui.cjs
+          python scripts/build_demo.py
       - name: Install isolated browser test tool
         run: |
           npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
+      - name: Light appearance and preserved local drafts
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_THEME=light node scripts/check_desk_browser.cjs
+      - name: Light touch appearance in WebKit
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_THEME=light LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit node scripts/check_desk_browser.cjs
+      - name: Fictional product-layout demo browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_demo_browser.cjs
       - name: Offline geographic editor browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
       - name: Unified setup and required tour browser workflows

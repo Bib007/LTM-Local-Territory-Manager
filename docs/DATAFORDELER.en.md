@@ -1,62 +1,54 @@
-# Your own Datafordeler API key
+# Address downloads with your own Datafordeler key
 
 [Dansk](DATAFORDELER.md)
 
-1. Open [Datafordeler Administration](https://portal.datafordeler.dk/) and sign in to your own account.
-2. Create an IT system, for example “LTM local”. Open **API-Keys**, choose **Opret**, and create an API key for public data. LTM uses DAR and needs no access to personal registers.
-3. Copy the key, which Datafordeler displays only once. Save it in your own password manager if needed.
-4. In your local LTM, open **Kortdata → Datafordeleren · egen API-nøgle**, paste the key into the password field, and choose **Kontrollér og gem nøgle**. LTM checks the DAR v3 schema and connectivity before saving. A failed replacement preserves the previous key.
+Updated 24 October 2026. Downloads with an individual API key are implemented. The owner has confirmed working Home Assistant downloads; the earlier general owner test is no longer pending. A new installation still needs its own connection.
 
-From beta.8, a saved key routes new road, postcode and boundary downloads through **DAR GraphQL**. Complete pages and local joins retain stable address IDs, floors and doors. Without a key, the existing source is used; DAR REST is scheduled to retire on 15 January 2027. Search suggestions still use the separate official Adressevælger service.
+## Connect
 
-Development tests use fictional responses. First try one public road in your own installation and check house numbers and apartment units before downloading a larger area. Testing your real account and HA installation remains a separate owner step.
+1. Sign in to [Datafordeler Administration](https://portal.datafordeler.dk/).
+2. Create an IT system and an API key for public data. LTM uses DAR, not personal registers. An OAuth Shared Secret is a different credential and cannot replace the API key.
+3. Keep the key private, for example in a password manager. Never send it in chat, feedback or GitHub.
+4. Open **Cards and addresses → Download addresses → Datafordeleren · egen API-nøgle**, or open **Kortdata** in the card editor. Paste the key and choose **Kontrollér og gem nøgle**.
+5. LTM checks access and its expected DAR schema. The input is cleared after submission; a rejected replacement preserves the previous key.
 
-From beta.39, rejected queries show a sanitized GQL category for schema/filters, data access, size limits or another rejection. Only known codes and field names are shown. Recognized size errors trigger bounded smaller lookups; other failures stop. Try one road first and report only the app's GQL diagnostic if it fails. The beta.38 owner test failed for both a road and the boundary, so working live downloads remain unconfirmed.
+A green connection confirms the connection, not a number of downloaded addresses.
 
-Beta.38 corrects a point-lifecycle error that could return zero addresses with a valid saved key. Points use a different lifecycle from addresses/houses, and service responses may omit point status. Older GraphQL boundary checkpoints are fetched again automatically; you can also choose **Opdater hele området**. An empty result gives a clear warning and cannot retire all existing local addresses. A real road and area still need testing with your own key.
+## Download and follow progress
 
-From beta.30, downloads with your own key no longer require the legacy suggestion service. If suggestions fail, enter the exact official road name and postcode and choose **Hent vej**. Suggestions remain optional help. A small map-area download still gets buildings/road names from OSM, then uses GraphQL for their addresses.
+Start with one road or a small area on a new installation. With a saved key, LTM uses DAR GraphQL independently of Adressevælger road suggestions. If suggestions fail, enter the exact official road name and postcode. OpenStreetMap background, buildings and road geometry are a separate source.
 
-**Can I create a key after 15 January 2027? Yes.** The date closes the old REST access; it is not a deadline for creating API keys. API-key/OAuth access and GraphQL continue afterwards, and new users register in Datafordeler Administration. Connect the new access before the closure to avoid an interruption to new address downloads. An expired or lost key can be replaced in Administration and saved in LTM. See the [official transition description](https://datafordeler.dk/vejledning/transitionsnetvaerk/).
+For the overall boundary, use **Samlet distriktsgrænse → Hent/fortsæt**. From beta.65, status shows the current stage and unique addresses received. These may differ from the final count inside the exact boundary. The final result states the count and whether the download is complete. There is no estimated remaining time.
 
-## Current status
+Large requests can be split into smaller tiles within fixed limits. Completed parts survive a pause or connection failure. Resume with the same source and snapshot. An incomplete result remains incomplete; an empty result does not by itself mean existing addresses should be removed.
 
-DAR GraphQL import is implemented and uses your own API key. From beta.23, the setup plan links directly to the local key guide. Create an account, an IT system and an API key in Datafordeler Administration, then enter the key in your local LTM. There is no shared application key.
+## Resume or refresh
 
-The official REST retirement date remains **15 January 2027**. The [authority announcement](https://www.klimadatastyrelsen.dk/om-klimadatastyrelsen/nyheder/nyhedsarkiv/2026/jun/paralleldrift-paa-datafordeleren-ophoerer-den-15-januar-2027) and [DAR GraphQL access guide](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/) were checked again on 17 October 2026. Address suggestion access is separate. Existing local records remain available; testing your own key with a public road and small area on your own HA is still an owner step.
+A checkpoint retains its source, snapshot and schema fingerprint. Completed parts are skipped on resume. Source changes or a changed schema require a new download/update or restoration of the original connection; existing local addresses are preserved when resume is refused.
 
-## Resuming downloads
+Review new, changed and retired addresses under **Follow-ups → Address changes**. Approved register changes still need incorporating into the relevant cards. Cards are not changed automatically, and approval of a printed physical card side is a separate action.
 
-A checkpoint retains its source, schema fingerprint and fixed registration/effect time. Completed roads or tiles are skipped after pause/restart. Incomplete results cannot be saved as complete. Source failures stop at the current part and preserve local addresses.
+## Problems
 
-A REST checkpoint cannot resume using GraphQL. A GraphQL checkpoint cannot resume without its connection. Choose a **new download/update** when switching sources or after a schema change, or restore the previous connection. Existing local addresses are preserved. Existing address-change review remains in place for postcode and boundary refreshes.
+- Rejected access: check the correct API key and IT system. For a new key, wait and retry the connection check deliberately. Share only the app's sanitized diagnostic, never a key or raw response.
+- Network errors: completed parts remain saved. Resume when the connection works. A network error does not automatically mean the key is wrong.
+- Request limits: bounded subdivision is attempted. If the final result is still incomplete, the download is not finished.
+- Use **Kontrollér gemt forbindelse** to check again. Removing the saved key preserves cards and addresses.
 
-## Local storage and privacy
+Automated development tests use fictional provider responses. They do not verify a user's chosen real geographic area.
 
-The key stays in the installation's private data folder, separate from SQLite. It is omitted from status, geographic data and portable backups, so configure it again on another installation. Beta data reset preserves the connection. **Kontrollér gemt forbindelse** rechecks it; **Fjern gemt nøgle** removes the credential while preserving local records.
+## Privacy and moving installations
 
-Only the fixed official Datafordeler host receives the key for authentication. Connectivity checks send no local records. Downloads send public road/postcode/entity lookups or rectangular tiles. The exact territory boundary is filtered locally. Cards, publishers and do-not-call records are never sent. Do not send your key in chat, screenshots or GitHub feedback.
+The key is stored separately in the private data directory and is excluded from normal backups. Reconnect after moving installations. Resetting beta test data preserves the connection.
 
-For rejected access, check that this is an API key for the right IT system, rather than an OAuth shared secret. For network failures, resume later. Replace expired or deactivated keys locally. [Official API-key instructions](https://confluence.kds.dk/pages/viewpage.action?pageId=187105503).
+Datafordeler receives authentication and public address queries. The exact territory boundary is filtered locally; cards, publishers and do-not-call entries are not sent to the provider. Adressevælger is a separate suggestion service, normally using the recommended public token. Do not enter the Datafordeler key in the Adressevælger token field.
 
-A newly created API key can take up to **15 minutes** to become active. This is only one possible reason for rejected access, not an explanation for every failure. After 15 minutes, explicitly retry **Kontrollér gemt forbindelse**. Network/server errors remain separate. [Official Administration guide](https://datafordeler.dk/media/lggned4a/20260219-datafordeler-administration.pdf).
+## January 2027 transition
 
-## Read-only diagnostics in beta.40
+The authority still states **15 January 2027** for retirement of non-modernized services, including old REST access. This is not a deadline for creating keys. Modernized API-key/OAuth and GraphQL access continues; new users register in Datafordeler Administration. The transition does not delete locally saved records.
 
-Choose **Check DAR lookups** under the Datafordeler connection. It compares the actual projections and filters using fictional search values in plain and aliased queries. The check saves no addresses, changes no connection or checkpoints, and shows no raw provider messages. It takes up to one minute. An accepted fictional lookup does not confirm a real address download; W62 remains open.
+Official sources checked 24 October 2026:
 
-## Address downloads from beta.41
-
-The beta.40 check accepted plain requests and rejected aliases and multiple root fields. From beta.41, address downloads therefore use separate plain requests. The read-only check retains its alias/batch probes for diagnostics; rejection of those probes is expected and does not mean downloads still use aliases. After updating, try one road and then Fetch/continue for the combined territory boundary. Share only counts or sanitized errors, never the key. Large downloads may take longer; interrupted or incomplete requests are not stored as complete.
-
-## Adressevælger and Datafordeler are separate connections
-
-Adressevælger supplies online road suggestions as you type. Suggestions still use Adressevælger when Datafordeler is connected. Without a saved Datafordeler key, LTM also uses Adressevælger for address downloads; with a key, addresses are fetched through Datafordeler's DAR GraphQL service.
-
-You normally do not need to enter an Adressevælger token. LTM automatically uses the default token recommended by KDS. Enter your separate Datafordeler API key under **Datafordeler · your API key**, never in the Adressevælger field.
-
-Under **Map data → Road suggestions · Adressevælger**, the status shows whether the default or a custom token is used. The saved value is not displayed. **Advanced · change Adressevælger token** lets you replace it. Leave the field blank and choose **Save token choice** to restore the default; your Datafordeler key is kept.
-
-Turn off online road suggestions beside the road field to use suggestions from locally saved roads only. Online suggestions send the search text and optional postcode to Adressevælger. Card selections, do-not-call records and publisher names are not part of the suggestion request. **Fetch road** remains a separate online action.
-
-[The official KDS guide to Adressevælger tokens and planned user access management](https://confluence.kds.dk/display/ADV/Brugerstyring) was checked on 19 October 2026. Access arrangements may change; changing an Adressevælger token does not replace creating a Datafordeler key.
+- [Authority retirement announcement](https://www.klimadatastyrelsen.dk/om-klimadatastyrelsen/nyheder/nyhedsarkiv/2026/jun/paralleldrift-paa-datafordeleren-ophoerer-den-15-januar-2027)
+- [DAR GraphQL access requirements](https://datafordeler.dk/dataoversigt/danmarks-adresseregister-dar/dar-graphql/)
+- [Transition guidance](https://datafordeler.dk/vejledning/transitionsnetvaerk/)

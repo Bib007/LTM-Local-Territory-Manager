@@ -1,6 +1,12 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.67 udgivet · 24.10.2026
+## Aktuel oversigt · beta.68 under udvikling · 24.10.2026
+
+Beta.68 samler W98 (lyst/mørkt/følg enhed, lokal browserpræference uden serverændringer), W37/W97 (kontrolleret produktdesign i den opdigtede demo) og afsluttende guidegennemgang W27. Ingen ønske lukkes før kontrol og udgivelse. Temaet skifter uden at bygge formularer om; kortsymboler, eksport og print har egne farver. Logo, tekst, statusmærker og formularfelter er tilpasset lys baggrund. Demoens offentlige designfiler er et eksplicit, kontrolsumssikret snapshot af produktfilerne; betaens gate kontrollerer, at de matcher. Ingen Python-server, private filer eller import offentliggøres. Demoen skal udgives separat gennem en demo-begrænset PR til main, så stabil 1.12.1 ikke ændres.
+
+W27: officielle DAR-/overgangssider er genkontrolleret 24.10.2026; fristen er fortsat 15.01.2027. Ejeren har allerede bekræftet fungerende HA-adressehentning. De aktive vejledninger på dansk/engelsk fjerner historiske afsnit, der stadig krævede den generelle afprøvning, og beskriver aktuelle menuer, aktivitet/antal, genoptagelse og Opfølgninger. Det er dokumentationsgennemgang, ikke et nyt opslag med ejerens nøgle eller ny bekræftelse af et bestemt geografisk område.
+
+W85/foto-OCR og W92/formularfelt kræver fortsat særskilt arbejde; ingen cloud-OCR eller gættet forudfyldning er indført. W100/grenoprydning forbliver udsat. Tælleren står fortsat på 79/100 indtil verificeret levering.
 
 Beta.67 er verificeret udgivet fra `6840b6aa16ce160a3fcc9b69d01f6e8aad005b27`, træ `d89cd8a237058f6fd081cb45fa46941dfa040a61`. HA beta release 40070456961, Checks 40070456935 og Platformskontrol 40070456898 er alle completed/success. Den offentlige HA-pakke matcher den lokale SHA256 `a4838037231b09391ee91fbce168ae241077821cb92ed4458c8cd7e45d8af24d` og har 1.187.624 bytes. Betakanalen viser 1.12.2-beta.67. Stabil er fortsat 1.12.1. Filkøen er leveret; W85 forbliver åben for fotos/OCR og IB-billedkø. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.67).
 

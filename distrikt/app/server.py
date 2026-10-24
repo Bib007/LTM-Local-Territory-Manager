@@ -29,7 +29,7 @@ from setup_jobs import SetupJobs
 from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.67'
+VERSION='1.12.2-beta.68'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -104,7 +104,7 @@ class Handler(BaseHTTPRequestHandler):
         return True
     def do_GET(self):
         parsed=urlsplit(self.path);path=parsed.path;q=parse_qs(parsed.query)
-        public=path in ('/','/login.js','/style.css','/brand-mark.svg','/api/ping')
+        public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/api/ping')
         if not self.allowed(public=public):return
         try:
             if path=='/api/ping':return self.send({'app':'Distrikt','version':VERSION})
@@ -113,11 +113,11 @@ class Handler(BaseHTTPRequestHandler):
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.token)
                 if self.server.access:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
-            if path in ('/brand-mark.svg','/brand-logo.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
             if path=='/s12-template.png':return self.send((APP.parent/'templates'/'S-12-source.png').read_bytes(),'image/png')
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')

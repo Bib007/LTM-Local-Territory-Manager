@@ -1,0 +1,9 @@
+// Per-browser appearance must never save application records or replace a draft.
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const listeners={},mediaEvents={},stored=new Map(),root={dataset:{},style:{}},draft={value:'UNSAVED FICTIONAL DRAFT'},logo={setAttribute(k,v){this[k]=v;}};
+const c={localStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)},document:{documentElement:root,getElementById:()=>null,querySelectorAll:()=>[logo],addEventListener(k,fn){listeners[k]=fn;}},window:{matchMedia(){return c.media;},addEventListener(k,fn){listeners[k]=fn;}},media:{matches:true,addEventListener(k,fn){mediaEvents[k]=fn;}}};vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/theme.js'),'utf8'),c);const run=s=>vm.runInContext(s,c);
+assert.equal(root.dataset.theme,'dark');run("Theme.set('light')");assert.equal(root.dataset.theme,'light');assert.equal(logo.src,'brand-logo-light.svg');assert.equal(stored.get('ltm-appearance'),'light');
+run("Theme.set('system')");assert.equal(root.dataset.theme,'light');c.media.matches=false;mediaEvents.change();assert.equal(root.dataset.theme,'dark');run("Theme.set('light')");mediaEvents.change();assert.equal(root.dataset.theme,'light');
+run("Theme.set('invalid')");assert.equal(run('Theme.choice'),'light');listeners.storage({key:'ltm-appearance',newValue:'dark'});assert.equal(root.dataset.theme,'dark');assert.equal(draft.value,'UNSAVED FICTIONAL DRAFT');
+c.localStorage.setItem=()=>{throw Error('blocked');};run("Theme.set('light')");assert.equal(root.dataset.theme,'light');assert.match(run("Theme.html('en')"),/Follow device/);assert.match(run("Theme.html('da')"),/Følg enheden/);
+console.log('Appearance: safe defaults, local persistence/failure, OS changes, cross-tab preference and fixed safe choices passed.');

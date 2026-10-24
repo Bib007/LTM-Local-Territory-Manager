@@ -31,3 +31,7 @@ Dansk vises som standard, og engelsk kan vælges. OSM-fliser kræver internet og
 
 - [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)
 - [Pages-workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
+
+## Fælles produktdesign · beta.68
+
+Demoen bruger appens kontrollerede CSS-, tema- og logosnapshot som beskrevet i [demovejledningen](../demo/README.md). Bygningen tillader kun bestemte offentlige filer og kontrollerer deres kontrolsummer. Browserprøver dækker begge temaer, fire skærmbredder, lokal udlevering med opdigtede data og fravær af kald til appens API. Python-server og private data medfølger ikke. En opdatering af demoen ændrer ikke den stabile Home Assistant-app.
