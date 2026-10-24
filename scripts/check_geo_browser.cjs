@@ -62,10 +62,11 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   await page.evaluate(()=>GeoUI.areaSource(false));assert.equal(await areaAddresses.isDisabled(),false);
   if(out)await page.screenshot({path:path.join(out,`map-data-source-${width}.png`),fullPage:true});
   await page.getByText('Hent veje, bygninger, vandløb og jernbaner i det viste udsnit',{exact:true}).click();
-  await page.getByText('Datafordeleren · egen API-nøgle',{exact:true}).click();
+  await page.locator('#dialog [data-work=connections]').click();
+  assert.equal(await page.locator('#settings-connections').isVisible(),true);
   await page.locator('[data-address-source=diagnose]').click();await page.waitForFunction(()=>el('addressSourceDiagnostic').textContent.includes('COMPLETE'));
   assert.match(await page.locator('#addressSourceDiagnostic').innerText(),/DAR_Husnummer.*batch.*GQL-REJECTED/);
-  assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'DAR diagnostic fits narrow dialogs');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'DAR diagnostic fits narrow connection settings');
   const diagnosticBefore=await page.locator('#addressSourceDiagnostic').innerText();await page.evaluate(()=>{I18n.set('en');Navigation.localize();});
   assert.equal(await page.locator('[data-address-source=diagnose]').innerText(),'Check DAR lookups');
   assert.equal(await page.locator('#addressSourceDiagnostic').innerText(),diagnosticBefore);
