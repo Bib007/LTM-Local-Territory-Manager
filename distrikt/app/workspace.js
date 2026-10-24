@@ -1,5 +1,45 @@
 'use strict';
 /* Private local workspace. No task, history or search content is shared publicly. */
+/* Positive-area intersection of saved simple rings, in local longitude/latitude.
+   Open scanline intervals exclude shared edges/vertices. Proper edge crossings
+   catch narrow intersections between sample bands. No addresses or map service
+   are needed. Cache only geometry; labels and card objects always come from state. */
+const BoundaryOverlap={
+ epsilon:1e-10,stamp:null,pairs:[],
+ ring(points){
+  if(!Array.isArray(points)||points.length<3||points.some(p=>!Array.isArray(p)||p.length!==2||!p.every(Number.isFinite)))return null;
+  const origin=points[0],area=points.reduce((sum,p,i)=>{const q=points[(i+1)%points.length];return sum+(p[0]-origin[0])*(q[1]-origin[1])-(q[0]-origin[0])*(p[1]-origin[1]);},0);
+  if(Math.abs(area)<=this.epsilon*this.epsilon)return null;
+  const edges=points.map((p,i)=>[p,points[(i+1)%points.length]]),xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
+  return {points,edges,box:[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]};
+ },
+ intersects(a,b){
+  const e=this.epsilon,left=Math.max(a.box[0],b.box[0]),right=Math.min(a.box[2],b.box[2]),bottom=Math.max(a.box[1],b.box[1]),top=Math.min(a.box[3],b.box[3]);
+  if(right-left<=e||top-bottom<=e)return false;
+  const intervals=(ring,y)=>{
+   const xs=[];for(const [p,q] of ring.edges)if((p[1]>y)!==(q[1]>y))xs.push(p[0]+(y-p[1])*(q[0]-p[0])/(q[1]-p[1]));
+   xs.sort((x,y)=>x-y);return xs;
+  };
+  const levels=[...new Set([bottom,top,...a.points.map(p=>p[1]),...b.points.map(p=>p[1])].filter(y=>y>=bottom&&y<=top))].sort((x,y)=>x-y);
+  for(let k=1;k<levels.length;k++){
+   if(levels[k]-levels[k-1]<=e)continue;
+   const y=(levels[k]+levels[k-1])/2,xs=intervals(a,y),ys=intervals(b,y);let i=0,j=0;
+   while(i+1<xs.length&&j+1<ys.length){if(Math.min(xs[i+1],ys[j+1])-Math.max(xs[i],ys[j])>e)return true;if(xs[i+1]<ys[j+1])i+=2;else j+=2;}
+  }
+  const side=(p,q,r)=>{const cross=(q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]),t=e*Math.hypot(q[0]-p[0],q[1]-p[1]);return cross>t?1:cross<-t?-1:0;};
+  for(const [p,q] of a.edges)for(const [r,s] of b.edges){
+   if(Math.max(p[0],q[0])<Math.min(r[0],s[0])||Math.max(r[0],s[0])<Math.min(p[0],q[0])||Math.max(p[1],q[1])<Math.min(r[1],s[1])||Math.max(r[1],s[1])<Math.min(p[1],q[1]))continue;
+   if(side(p,q,r)*side(p,q,s)<0&&side(r,s,p)*side(r,s,q)<0)return true;
+  }
+  return false;
+ },
+ collect(cards){
+  const stamp=JSON.stringify(cards.map(c=>[c.id,c.geo_polygon]));if(stamp===this.stamp)return this.pairs;
+  const rings=cards.map(c=>({id:c.id,ring:this.ring(c.geo_polygon)})).filter(c=>c.ring).sort((a,b)=>a.ring.box[0]-b.ring.box[0]),pairs=[];
+  for(let i=0;i<rings.length;i++)for(let j=i+1;j<rings.length&&rings[j].ring.box[0]<rings[i].ring.box[2]-this.epsilon;j++)if(this.intersects(rings[i].ring,rings[j].ring))pairs.push([rings[i].id,rings[j].id]);
+  this.stamp=stamp;this.pairs=pairs;return pairs;
+ }
+};
 const Workspace={memory:{},taskFilter:'open',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',
  restructureStamp(form){return JSON.stringify([form.dataset.mode,form.dataset.source,[...new FormData(form)]]);},
  async previewRestructure(form,payload){
@@ -139,16 +179,20 @@ const Workspace={memory:{},taskFilter:'open',taskQuery:'',activityData:[],histor
    if(c.front_revision)add('reprint',[c.id,'front'],'Kortets forside skal genprintes',{...extra,side:'front'});
    if(c.back_revision)add('reprint',[c.id,'back'],loanFor(c.id)?'Udleveret fysisk kort · IB-bagsiden skal ajourføres':'IB-bagsiden skal genprintes',{...extra,side:'back'});
   }
+  for(const [first,second] of BoundaryOverlap.collect([...cards.values()])){
+   const a=cards.get(first),b=cards.get(second);
+   add('checks',['overlap',...[first,second].sort()],'Grænsen overlapper kort {number} · kontrollér begge kort',{card:a,relatedCard:b,params:{number:b.number}});
+  }
   for(const loan of state.loans||[])if(!loan.returned&&cards.has(loan.card_id)&&loan.cycle_start&&fourMonths(loan.cycle_start)<state.today)add('loans',[loan.id],'Udleveret over fire måneder',{card:cards.get(loan.card_id),loan});
   for(const change of GeoUI.data.changes||[])add('addresses',[change.id],({new:'Ny adresse',changed:'Ændret adresse',retired:'Udgået adresse'})[change.kind]||'Adresseændring',{change});
   return results.sort((a,b)=>cmp(a.card?.number||'',b.card?.number||'')||cmp(a.category,b.category)||cmp(a.key,b.key));
  },
  followupRow(item){
   const c=item.card,change=item.change,label=change&&(change.after.label||[change.after.road,change.after.number].join(' '));
-  return `<article class="line followupRow" data-followup="${esc(item.key)}" data-category="${item.category}"><div>${c?`<strong>${ui('Kort')} ${esc(c.number)}</strong><small>${esc(c.name||'')}</small>`:`<strong>${esc(label)}</strong>`}<p>${ui(item.text,item.params)}</p>${item.loan?`<small>${esc(publisherName(item.loan.publisher_id))} · ${ui('Udleveret')} ${fmt(item.loan.assigned)}</small>`:''}${change?.before?`<small>${ui('Før:')} ${esc(change.before.label)} · ${ui('{count} besøg',{count:change.before.count})}<br>${ui('Efter:')} ${esc(label)} · ${ui('{count} besøg',{count:change.after.count})}</small>`:''}</div><div class="actions">${c?`<button data-action="detail" data-id="${esc(c.id)}">${ui('Åbn kort')}</button>`:''}${item.side?`<button data-action="print-options" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Print forside':'Print bagside')}</button><button data-action="approve" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Godkend forside':'Godkend bagside')}</button>`:''}${change?`<button data-work="accept-address" data-id="${esc(change.id)}">${ui('Godkend')}</button><button data-work="reject-address" data-id="${esc(change.id)}">${ui('Afvis')}</button>`:''}</div></article>`;
+  return `<article class="line followupRow" data-followup="${esc(item.key)}" data-category="${item.category}"><div>${c?`<strong>${ui('Kort')} ${esc(c.number)}</strong><small>${esc(c.name||'')}</small>`:`<strong>${esc(label)}</strong>`}<p>${ui(item.text,item.params)}</p>${item.loan?`<small>${esc(publisherName(item.loan.publisher_id))} · ${ui('Udleveret')} ${fmt(item.loan.assigned)}</small>`:''}${change?.before?`<small>${ui('Før:')} ${esc(change.before.label)} · ${ui('{count} besøg',{count:change.before.count})}<br>${ui('Efter:')} ${esc(label)} · ${ui('{count} besøg',{count:change.after.count})}</small>`:''}</div><div class="actions">${c?`<button data-action="detail" data-id="${esc(c.id)}">${ui('Åbn kort')}</button>`:''}${item.relatedCard?`<button data-action="detail" data-id="${esc(item.relatedCard.id)}">${ui('Åbn kort {number}',{number:item.relatedCard.number})}</button>`:''}${item.side?`<button data-action="print-options" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Print forside':'Print bagside')}</button><button data-action="approve" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Godkend forside':'Godkend bagside')}</button>`:''}${change?`<button data-work="accept-address" data-id="${esc(change.id)}">${ui('Godkend')}</button><button data-work="reject-address" data-id="${esc(change.id)}">${ui('Afvis')}</button>`:''}</div></article>`;
  },
  followups(){
-  const items=this.followupItems(),q=(this.followupQuery||'').trim().toLocaleLowerCase(),tabs=[['all','Alle'],['checks','Kortkontrol'],['reprint','Genprint'],['loans','Udleveringer'],['addresses','Adresseændringer']],visible=items.filter(r=>(this.followupFilter==='all'||r.category===this.followupFilter)&&[r.card?.number,r.card?.name,I18n.format(r.text,r.params),r.change?.after?.label,r.loan&&publisherName(r.loan.publisher_id)].join(' ').toLocaleLowerCase().includes(q));
+  const items=this.followupItems(),q=(this.followupQuery||'').trim().toLocaleLowerCase(),tabs=[['all','Alle'],['checks','Kortkontrol'],['reprint','Genprint'],['loans','Udleveringer'],['addresses','Adresseændringer']],visible=items.filter(r=>(this.followupFilter==='all'||r.category===this.followupFilter)&&[r.card?.number,r.card?.name,r.relatedCard?.number,r.relatedCard?.name,I18n.format(r.text,r.params),r.change?.after?.label,r.loan&&publisherName(r.loan.publisher_id)].join(' ').toLocaleLowerCase().includes(q));
   return `<div class="tabs followupTabs">${tabs.map(([key,label])=>`<button data-work="followup-filter" data-value="${key}" class="${this.followupFilter===key?'active':''}" aria-pressed="${this.followupFilter===key}">${ui(label)} · ${items.filter(r=>key==='all'||r.category===key).length}</button>`).join('')}</div><div class="toolbar"><input data-work-input="followups" value="${esc(this.followupQuery||'')}" ${I18n.attribute('placeholder','Søg kort, adresse eller opfølgning')} ${I18n.attribute('aria','Søg opfølgninger')}></div><section class="panel"><p class="hint">${ui('Hvert punkt tæller for sig. Forside og bagside vises hver for sig; godkend først en side, når den er kontrolleret og printet.')}</p>${this.followupFilter==='reprint'?`<div class="actions"><button data-action="print-revisions" data-side="front" ${!items.some(r=>r.side==='front')?'disabled':''}>${ui('Print ændrede forsider')}</button><button data-action="print-revisions" data-side="back" ${!items.some(r=>r.side==='back')?'disabled':''}>${ui('Print ændrede bagsider')}</button></div>`:''}<p data-followup-count>${ui('Til opfølgning: {count}',{count:visible.length})}</p>${visible.slice(0,this.followupLimit).map(r=>this.followupRow(r)).join('')||empty(ui('Ingen punkter i denne visning.'))}${visible.length>this.followupLimit?`<button data-work="more-followups">${ui('Vis flere')}</button>`:''}</section><p class="hint">${ui('Kortkontrol ændrer ikke dine kort. Adresseændringer kræver særskilt godkendelse og skal derefter indarbejdes på relevante kort.')}</p><button data-work="missing">${ui('Vis adresser uden kort')}</button>`;
  },
  async openFollowups(filter='all'){

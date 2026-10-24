@@ -3,6 +3,8 @@
 const I18n={
  current:'da',
  english:{
+ "Grænsen overlapper kort {number} · kontrollér begge kort":"The boundary overlaps card {number} · review both cards",
+ "Åbn kort {number}":"Open card {number}",
  "Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.":"Automatic card division is paused. Use the map editor to create cards.",
  "Lokal IB-import":"Local do-not-call import",
  "Beregningen kører på din server. Store områder kan tage tid; forslag opretter ingen kort.":"The calculation is running on your server. Large areas can take time; previews do not create cards.",

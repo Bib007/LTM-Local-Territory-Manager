@@ -1,6 +1,14 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.69 udgivet · 24.10.2026
+## Aktuel oversigt · beta.70 under kontrol · 24.10.2026
+
+W103 er implementeret til beta.70: Opfølgninger viser ét punkt pr. par kort med egentligt arealoverlap, med links til begge kort og søgning på begge kortnumre/navne. Fælles kanter/hjørner giver ingen advarsel. Dobbeltvalgte adresser har fortsat egne punkter. Ingen gemte grænser eller adresser ændres. Beregningen bruger kun lokale polygoner, med grænseboksfiltrering og cache frem til ændrede grænser; kortnavne og kortlinks følger aktuelle data.
+
+Målrettede prøver dækker krydsende, sammenfaldende, indlejrede og konkave grænser, fælles kanter/hjørner, ugyldige/tomme grænser, cache ved ændring/sletning, særskilte adressekonflikter, begge links, dansk/engelsk og 500 deterministiske rektangelpar. Lokalt består 488 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver, faktisk arkivstart, demo-/designkontrol samt browserforløb ved 320/390/768/1440 px og touch ved 390/844/768/1024 px i lyst tema. Begge kortlinks og fravær af skrivninger er prøvet. WebKit mangler lokalt og afventer CI. Udgivelseskontrol på den præcise commit pågår. W103 er ikke markeret afsluttet før verificeret udgivelse. Fremdrift bevares indtil da på 87/103, 16 åbne, cirka 84 %.
+
+Alle fire Google-faner er læst ved start; ønskelisten er tom. Ingen ny prioritet −1 er modtaget. Develop var rent på 0332af2988a7e5df92c45caf50692583d6252764; beta.69 var senest udgivet. Ingen AGENTS.md blev fundet i checkoutet eller overordnede mapper. W85/foto-OCR og IB-billeder er fortsat næste selvstændige opgave. Ingen OCR-motor eller cloud-upload er indført. Stabil forbliver 1.12.1; grenoprydning er fortsat udsat.
+
+## Historik · beta.69 udgivet · 24.10.2026
 
 Beta.69 er verificeret udgivet fra `bc4c2d4e9aef3ad550b209c6d322b9cdba9f688c`, træ `eaed1fa7deede5a622ed2d1757a7bd455602790d`. HA beta release 40086726887, Checks 40086726881 og Platformskontrol 40086726900 er completed/success. Den offentlige HA-pakke har 124 filer, 1.192.323 bytes og SHA256 `2be0ab83e37b8526e8395826177a428e26e68a7b68072683709ffbfe0f23aaa7`, identisk med den lokale pakke. Tag og betakanal er læst tilbage som beta.69 på 8788. Stabil release, tag, pakke og main-konfiguration er fortsat 1.12.1. [Beta.69](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.69).
 

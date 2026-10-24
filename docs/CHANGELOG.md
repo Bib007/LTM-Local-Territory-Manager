@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.2-beta.70 · Overlappende kortgrænser
+
+Opfølgninger advarer, når to gemte distriktskortgrænser dækker et fælles areal. Hver berørt kombination vises én gang med links til begge kort. Du kan søge på begge kortnumre og navne. Fælles kanter og hjørner udløser ingen advarsel; adresser valgt på flere kort vises fortsat som egne punkter.
+
+Kontrollen bruger de lokalt gemte grænser og ændrer ingen kort eller adresser. Grænser skal rettes manuelt, hvis overlappet er utilsigtet. Dansk/engelsk og telefon/tablet understøttes. Foto- og IB-genkendelse er fortsat under udvikling.
+
 ## 1.12.2-beta.69 · Færdig, når ændringen er gemt
 
 - Permanent sletning og almindelige ændringer får den opdaterede oversigt med, når gemningen bekræftes. Du skal derfor ikke vente på en ekstra hentning eller skifte menu for at se resultatet.

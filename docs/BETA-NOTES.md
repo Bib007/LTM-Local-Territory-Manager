@@ -1,11 +1,9 @@
-# LTM 1.12.2-beta.69 · Færdig, når ændringen er gemt
+# LTM 1.12.2-beta.70 · Overlappende kortgrænser
 
-Når du sletter permanent eller gemmer en ændring, får appen den nye oversigt med i bekræftelsen. Det fjerner den ekstra ventetid på at hente oversigten bagefter. Resultatet vises på den side, du allerede står på.
+**Opfølgninger** advarer nu, når to distriktskortgrænser dækker et fælles areal. Du kan åbne begge berørte kort og finde advarslen ved at søge på et af kortenes numre eller navne.
 
-Sletning skal stadig bekræftes. Hvis appen ikke kan afgøre, hvad der blev gemt, skal du kontrollere oplysningerne med Opdater, før du prøver igen. Ændringer bliver ikke sendt igen automatisk.
+En fælles kant eller et fælles hjørne udløser ingen advarsel. Adresser valgt på flere kort vises fortsat som egne punkter. Kontrollen ændrer ingen grænser eller adresser; du retter selv kortene, hvis overlappet er utilsigtet.
 
-Datafordelerens nøgle og forbindelseskontrol er flyttet til **Indstillinger → Forbindelser**. Din gemte nøgle bevares. Fra **Hent adresser** kan du åbne forbindelsesindstillingerne direkte.
-
-Denne beta bevarer lyst/mørkt udseende, samlet Import og Opfølgninger samt køen til Excel-/CSV-filer. Foto- og IB-genkendelse er endnu ikke med. Den stabile kanal forbliver 1.12.1.
+Fotoimport, lokal tekstgenkendelse og IB-billedkø er endnu ikke med. Den stabile kanal forbliver 1.12.1.
 
 [Ønsker og næste arbejde](planning/OENSKELISTE.md)

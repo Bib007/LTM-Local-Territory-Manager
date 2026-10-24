@@ -34,6 +34,14 @@ run(`state={today:'2026-10-23',cards:[
  assert.deepEqual(contracts[0],contracts[1]);
  run('state.cards[0].front_revision=false');assert.equal(run('Workspace.followupItems().length'),10);assert.equal(run("Workspace.followupItems().filter(r=>r.side==='back').length"),1,'Approving a front leaves its changed back pending');
  run("mutate=async(action,data)=>{writes.push({action,data});GeoUI.data.changes=[];};");await run("Workspace.handle('accept-address',{id:'change'})");assert.equal(writes.length,1);assert.deepEqual(JSON.parse(JSON.stringify(writes[0])),{action:'address.change.review',data:{id:'change',decision:'accept'}});assert.equal(get('dialog').open,false,'Review on the page stays on the page');
+ // One issue per overlapping pair, with independent duplicate-address checks.
+ run("state.cards[0].geo_polygon=[[10,55],[10.01,55],[10,55.01]];state.cards[1].name='Related <fictional>';Workspace.followupFilter='checks';Workspace.followupQuery='';");
+ assert.equal(run('Workspace.followupItems().filter(r=>r.relatedCard).length'),1);
+ assert.equal(run("Workspace.followupItems().filter(r=>r.text==='Adresse valgt på flere kort: {address}').length"),2);
+ const overlapHTML=run('Workspace.followupItems().filter(r=>r.relatedCard).map(r=>Workspace.followupRow(r)).join("")');
+ assert.match(overlapHTML,/data-id="one"/);assert.match(overlapHTML,/data-id="two"/);assert.doesNotMatch(overlapHTML,/data-action="approve"/);
+ for(const lang of ['da','en']){run(`I18n.set('${lang}');Workspace.followupQuery='Related <fictional>'`);assert.match(run('Workspace.followups()'),/Grænsen overlapper|The boundary overlaps/);}
+ run("state.cards[0].geo_polygon=[[11,55],[11.01,55],[11,55.01]]");assert.equal(run('Workspace.followupItems().filter(r=>r.relatedCard).length'),0);
  // A late geographic load cannot navigate away from a newer page or dialog.
  let release;c.pending=new Promise(r=>release=r);run("GeoUI.load=()=>pending;page='Forside'");let waiting=run("Workspace.openFollowups('checks')");await new Promise(r=>setImmediate(r));run("page='Opgaver'");release();await waiting;assert.equal(run('page'),'Opgaver');
  c.pending=new Promise(r=>release=r);run("page='Forside'");waiting=run('Workspace.openFollowups()');await new Promise(r=>setImmediate(r));run("openDialog('<form>NEWER DRAFT</form>')");release();await waiting;assert.equal(run('page'),'Forside');assert.match(get('dialog').innerHTML,/NEWER DRAFT/);
