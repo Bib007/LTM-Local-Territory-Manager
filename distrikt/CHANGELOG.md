@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.67 · Flere kortfiler i kø
+
+- Vælg op til 20 Excel-/CSV-filer til kortimport. Hver fil får sin egen forhåndsvisning og godkendelse; næste fil importeres ikke automatisk.
+- Se den aktuelle fil, importerede filer og filer, du har sprunget over. Allerede godkendte filer bevares ved lukning eller fejl.
+- Grænsen er 2 MB pr. fil og 20 MB samlet. Filerne behandles fortsat på dit eget system.
+- Dette er første trin mod lettere masseimport. Fotos og automatisk tekstgenkendelse er endnu ikke med.
+
 ## 1.12.2-beta.66 · Import og opfølgninger samlet
 
 - Import af historik, distriktskort og IB findes nu under Indstillinger → Import. Du gennemgår og godkender stadig oplysningerne, før de gemmes.

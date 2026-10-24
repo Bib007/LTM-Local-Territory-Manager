@@ -28,3 +28,7 @@ Importen læser højst 2 MB, 10.000 adresser, 500 kort og 300 adresser pr. kort.
 De præcise adresser følger med i privat backup og kan matches ved lokal IB-import. Rettes vejlisten manuelt, følger adresseudvalget de rækker, der beholdes. Der tilføjes ikke automatisk IB ved kortimport, og IB reducerer ikke kortets samlede besøgstal.
 
 Udfyldte filer med virkelige adresser skal blive på dit eget system. Brug opdigtede eksempler i fejlmeldinger.
+
+## Flere filer
+
+Vælg op til 20 Excel-/CSV-filer, højst 2 MB pr. fil og 20 MB samlet. Godkend hver fil særskilt, og vælg derefter **Kontrollér næste fil**. En fil kan springes over. Tidligere godkendte filer bevares ved lukning eller fejl. Dette gælder kortfiler; billeder og IB-filer er endnu ikke med i køen.

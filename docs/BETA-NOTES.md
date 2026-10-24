@@ -1,13 +1,13 @@
-# LTM 1.12.2-beta.66 · Færre steder at lede
+# LTM 1.12.2-beta.67 · Flere kortfiler i kø
 
-Denne beta samler import og opfølgninger, så de er lettere at finde i hverdagen.
+Du kan nu vælge flere Excel-/CSV-filer under **Indstillinger → Import → Åbn kortimport**.
 
-- **Indstillinger → Import:** Her finder du historik fra S-13/CSV, distriktskort fra Excel/CSV og din lokale IB-liste. Du ser stadig en forhåndsvisning og godkender oplysningerne, før de gemmes.
-- **Opfølgninger:** Én menu samler kortkontrol, genprint, udleveringer over fire måneder og adresseændringer. Har samme kort flere forhold, får hvert forhold sin egen linje og tæller. En ændret forside og bagside tæller hver for sig.
-- **Find det relevante:** Filtrér listen eller søg efter kort, adresse eller opfølgning. Forsiden åbner det samme overblik. Opgaver og ugentlige gentagelser findes fortsat under Opgaver.
+Se og godkend én fil ad gangen. Derefter vælger du selv, hvornår næste fil skal kontrolleres. Du kan springe en fil over. Oversigten viser, hvilke filer der er importeret eller sprunget over.
 
-Åbn appen på ny efter opdatering. Prøv de tre valg under Import, og åbn Opfølgninger. Godkend først en printside, når du har kontrolleret og printet den. Adresseændringer skal fortsat godkendes og indarbejdes på de relevante kort.
+Vælg højst 20 filer, højst 2 MB pr. fil og 20 MB i alt. Allerede godkendte filer bliver gemt, selv om du senere lukker importen eller møder en fejl. Eksisterende kort overskrives fortsat ikke; gentagne kortnumre skal rettes før godkendelse.
 
-Forbedringerne fra beta.65 er med: adressehentning viser sit arbejde og antal modtagne adresser, og store opslag deles i mindre udsnit. Unødig hentning af kortdata efter sletning er fjernet. Almindelig gemning og udlevering kræver fortsat ikke unødig genindlæsning. Den stabile kanal forbliver 1.12.1.
+Dette er et første trin mod lettere masseimport. Fotos, automatisk tekstgenkendelse og kø til IB-billeder er endnu ikke med. IB behandles fortsat gennem den særskilte lokale import.
+
+Åbn appen på ny efter opdatering. Prøv gerne med to små kortfiler, og gennemgå hver fil inden godkendelse. Den stabile kanal forbliver 1.12.1.
 
 [Tidligere betanoter](BETA-HISTORIK.md) · [Ønsker og næste arbejde](planning/OENSKELISTE.md)

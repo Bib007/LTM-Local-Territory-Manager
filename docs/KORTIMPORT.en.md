@@ -15,3 +15,7 @@ Required columns are **Kortnummer** (card number), **Vejnavn** (road), **Husnumm
 Limits: 2 MB, 10,000 addresses, 500 cards and 300 addresses per card. No online address service receives the file. Add coordinates and boundaries later. Existing cards and history are never overwritten; deleted numbers reserved for recovery remain unavailable.
 
 Exact apartments are included in private backups and can be matched by local do-not-call import. Editing a road list keeps exact address selections for retained rows. Card import creates no do-not-call entries, and those entries do not reduce visit totals. Keep real files private; use fictional examples in bug reports.
+
+## Multiple files
+
+Choose up to 20 Excel/CSV files, up to 2 MB each and 20 MB in total. Approve each file separately, then choose **Review next file**. You can skip a file. Previously approved files remain saved after closing or an error. The queue currently supports card files, not images or do-not-call files.

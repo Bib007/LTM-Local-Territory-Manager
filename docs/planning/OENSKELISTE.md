@@ -1,6 +1,12 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.66 udgivet · 23.10.2026
+## Aktuel oversigt · beta.66 udgivet · beta.67 under udvikling · 24.10.2026
+
+Beta.67 leverer et afgrænset deltrin af W85: højst 20 Excel/CSV-kortfiler i en lokal kø (2 MB pr. fil, 20 MB samlet). Hver fil får en frisk forhåndsvisning efter tidligere importer og skal godkendes særskilt. Næste fil starter kun ved aktivt valg. Spring over ugyldiggør ventende svar og frigiver filreferencen; lukning fjerner resterende filer fra browserens kø. Tidligere godkendte filer rulles ikke tilbage. Ukendt gemmeresultat beskyttes fortsat af den eksisterende skrivebeskyttelse. Fotos/OCR og IB-billedkø er ikke implementeret; W85 forbliver åben, og fremdriften er stadig 79/100.
+
+OCR-afklaringen: HA-pakken indeholder aktuelt kun Python, ingen OCR-motor. Næste trin skal vælge og pakke lokal genkendelse til HA/Mac/Windows, validere billedformater/størrelse/orientering og vise redigerbare forslag før kort-/IB-match og eksplicit godkendelse. Prøvegrundlaget skal bruge fiktive for-/bagsider, usikre tegn, flere layouts og dubletter. Ingen ekstern AI eller billedoverførsel til cloud indføres som genvej.
+
+W92 undersøgt: Tally dokumenterer forudfyldning via et faktisk konfigureret hidden field og koblet standardværdi (https://tally.so/help/pre-populate-form-fields). Den konkrete formular https://tally.so/r/KpY0ZV kunne ikke læses (HTTP 403/ikke tilgængelig). Feltnavn og kobling er derfor ikke verificeret. Intet gættet versionsparameter er tilføjet; W92 er fortsat åben. Ingen private data eller formularindsendelser er brugt i undersøgelsen.
 
 Beta.66 er verificeret udgivet fra `80f3258af1acf2febacd2016d5c2ae86603d6551`, træ `b08bb38ccebd5bc2f93f801b30cd7e868a054936`. HA beta release 40012949488, Checks 40012949416 og Platformskontrol 40012949441 er alle completed/success. Den offentlige HA-beta ZIP har 121 filer, 1.186.440 bytes og SHA256 `5df1b2a5f22a804d4f2ec356fb39d4a5338ac86586140582422404c86f0e4639`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.66 på port 8788. W94/W95 er afsluttet. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.66).
 
@@ -17,7 +23,7 @@ W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver.
 | Næste arbejde | Status |
 | --- | --- |
 | W93 · Langsom gemning/permanent sletning | Unødig genhentning rettet i beta.65; eventuel øvrig HA-ventetid åben |
-| W85 · Kort/IB fra billeder og mange filer | Tidligt importarbejde |
+| W85 · Kort/IB fra billeder og mange filer | Deltrin i beta.67: kø til Excel/CSV; foto/OCR/IB-billedkø fortsat åbent |
 | W92 · Programversion i feedback | Undersøg det faktiske formularfelt; kun version må sendes automatisk |
 | W98 · Lyst udseende | Planlagt |
 | W37/W97 · Demoens produktdesign | Planlagt |
