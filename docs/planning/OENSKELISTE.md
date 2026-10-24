@@ -1,6 +1,20 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.70 under kontrol · 24.10.2026
+## Aktuel oversigt · beta.70 udgivet · 24.10.2026
+
+W103 er afsluttet i verificeret beta.70 fra `dff75020941651dbd69f6f0458c2ab9aa26c1e9d`, træ `5ffb543a3e54de6ed4684e57399350bad90c5568`. HA beta release 40088657518 og Checks 40088657595 er completed/success. Den præcise HA-gate omfatter sikkerhed, Python 3.9/3.13, fuld browserkontrol i Chromium/WebKit, Mac, Windows og HA. Platformskontrol 40088251235 bestod på første kandidat; der er ikke startet en særskilt Platformskontrol på slutcommiten, men dens samme platformprøver bestod i slutcommitens HA-gate. Den første kandidats demo-race stoppede korrekt udgivelsen; ingen fejlet gate er omgået.
+
+Den offentlige HA-pakke har 124 filer, 1.193.828 komprimerede bytes og SHA256 `9e82725257f5e8f9370d27754b23dfba281751f86e8a0f716056ac9f63f4a782`. Den er hentet fra udgivelsen og matcher lokal pakke byte for byte; ZIP-integritet, tag og udgivelsescommit er kontrolleret. Betakanalen er læst tilbage som beta.70 på 8788; main er fortsat stabil 1.12.1 på 8787. [Beta.70](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.70).
+
+Opfølgninger viser ét punkt pr. overlappende kortpar med links til begge kort og søgning på begge kortnumre/navne. Fælles kanter og hjørner giver ingen advarsel. Dobbeltvalgte adresser vises fortsat særskilt. Ingen kort, grænser eller adresser ændres. Lokalt bestod 488 Python-prøver (én forventet overspringning), JavaScript-suiten, 20 pakkeprøver, rigtig arkivstart og browser-/touchforløb i mørkt/lyst tema. En ekstra uafhængig beregning med separerende akser stemte med 10.000 deterministiske konvekse polygonpar. Mobilvisningen er visuelt gennemset i begge temaer. Demoens udviklingskode undgår ventende Canvas-tegninger efter hurtige sideskift; offentlig demo er ikke genudgivet i denne runde.
+
+W85 er fortsat åben. [Forundersøgelsen](FOTOIMPORT.md) beskriver eksisterende importforløb, pakningskrav og en faktisk lokal Tesseract-prøve med tre trykte, opdigtede ASCII-varianter. Ingen OCR-afhængighed eller foto-API er indført. Dansk, håndskrift, fotolayout, redigerbare forslag og IB-billedkø mangler. Ingen private billeder eller cloud-genkendelse er anvendt.
+
+Ny ekstern ejerstatus fra Google-planen: W100 er afsluttet i separat oprydningsarbejde, og kun main/develop/beta er bevaret. Dette erstatter de ældre noter om udsat grenoprydning. Denne udviklingsrunde har ikke slettet grene eller ændret oprydningen. W61/Supports restoprydning er fortsat et separat åbent punkt. Den nye status er læst i Google-planen; ikke udledt af at denne beta er udgivet.
+
+Fremdrift inklusive W100 og W103: **89/103 afsluttet/afklaret, 14 åbne, cirka 86 %**. Ønskelisten er genkontrolleret efter udgivelsen og er tom. Næste konkrete arbejde er W85/fotoimport. W65's aftalte adminpanel fastholdes, W101 afventer senere valg, og ingen stabil udgivelse er bestilt.
+
+## Historik · beta.70 under kontrol · 24.10.2026
 
 W103 er implementeret til beta.70: Opfølgninger viser ét punkt pr. par kort med egentligt arealoverlap, med links til begge kort og søgning på begge kortnumre/navne. Fælles kanter/hjørner giver ingen advarsel. Dobbeltvalgte adresser har fortsat egne punkter. Ingen gemte grænser eller adresser ændres. Beregningen bruger kun lokale polygoner, med grænseboksfiltrering og cache frem til ændrede grænser; kortnavne og kortlinks følger aktuelle data.
 
@@ -30,7 +44,7 @@ Fremdrift efter levering og tre nye ønsker: 87/103 afsluttet/afklaret, 16 åbne
 | --- | --- | --- |
 | W101 | Undersøg en anden løsning til digitale kort: adgang ved den præcise QR-kode, begrænset videresendelse og eventuelt udløb efter fx tre timer | Undersøgelse, LTM vælger tidspunkt. Afklar forskellen på QR-kode, link med hemmelig adgang og tidsbegrænset session. Ingen ny deling, udbyder eller sikkerhedsgaranti indføres uden vurdering. Ingen IB må flyttes til cloud. |
 | W102 | Datafordelerens API-nøgle under Indstillinger → Forbindelser, med plads til senere forbindelser | Afsluttet i verificeret beta.69. Eksisterende nøgleformular og kontrol er flyttet; gemt nøgle og genveje fra adressehentning og opstartsguide bevares. Ingen ny forbindelse eller godkendelse af andre tjenester. |
-| W103 | Advarsel i Opfølgninger, når distriktskortgrænser overlapper | Modtaget under beta.69-kontrollen. LTM vælger prioritet; næste runde. Vis konkrete berørte kort uden automatisk at ændre grænser. Skeln mellem overlap, fælles kant og dobbeltvalgte adresser. Registreret, ikke implementeret. |
+| W103 | Advarsel i Opfølgninger, når distriktskortgrænser overlapper | Modtaget under beta.69-kontrollen. LTM vælger prioritet; næste runde. Vis konkrete berørte kort uden automatisk at ændre grænser. Skeln mellem overlap, fælles kant og dobbeltvalgte adresser. Afsluttet i verificeret beta.70; se aktuel oversigt. |
 
 Ønskerne og deres prioritet er gemt og læst tilbage på GitHub i `d539fcd04b5ccc132f743f82a5ef43dbb24a5b25`. De to kildetekster og prioriteringer er derefter ryddet fra ønsketabellen; overskrifter, tomme rækker og Bilag er bevaret. W101 forbliver åben; W102 er afsluttet efter verificeret udgivelse. W103 er registreret her før rydning af dens kildetekst.
 
