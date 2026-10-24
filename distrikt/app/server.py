@@ -26,14 +26,18 @@ from sharing import Publications
 from address_source import Datafordeler
 from address_schedule import AddressSchedule
 from setup_jobs import SetupJobs
+from photo_ocr import PhotoOCR
 from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.70'
+VERSION='1.12.2-beta.71'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
+    def server_close(self):
+        if hasattr(self,'photo_ocr'):self.photo_ocr.close()
+        super().server_close()
     def server_bind(self):
         # All listeners bind an explicit IP. Reverse DNS is unnecessary and can
         # delay local startup on macOS/offline networks. Keep the bound address.
@@ -44,6 +48,7 @@ class Server(ThreadingHTTPServer):
         self.store=store
         self.readable=ReadableExport(store)
         self.setup_jobs=SetupJobs(store)
+        self.photo_ocr=PhotoOCR()
         self.beta=os.environ.get('LTM_CHANNEL')=='beta'
         self.address_source=Datafordeler(store.root)
         self.downloads=Downloads(store,self.address_source)
@@ -114,13 +119,15 @@ class Handler(BaseHTTPRequestHandler):
         public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/api/ping')
         if not self.allowed(public=public):return
         try:
+            if path=='/api/photo/status':return self.send(self.server.photo_ocr.available())
+            if path=='/api/photo/job':return self.send(self.server.photo_ocr.status(q.get('id',[''])[0]))
             if path=='/api/ping':return self.send({'app':'Distrikt','version':VERSION})
             if path=='/':
                 if self.server.access and not self.server.access.valid(self.headers.get('Cookie')):return self.send(LOGIN.encode(),'text/html')
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.token)
                 if self.server.access:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -191,6 +198,8 @@ class Handler(BaseHTTPRequestHandler):
             if not 0<length<=16000000:raise ValueError('Forespørgslen er for stor eller tom.')
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
+            if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))
+            if self.path=='/api/photo/cancel':return self.send(self.server.photo_ocr.cancel(data.get('id')))
             if self.path=='/api/export/readable/prepare':return self.send(self.server.readable.prepare())
             if self.path=='/api/export/readable/image':return self.send(self.server.readable.image(data))
             if self.path=='/api/export/readable/finish':return self.send(self.server.readable.finish(data.get('token')),'application/zip',headers={'Content-Disposition':'attachment; filename="LTM-laesearkiv.zip"'})
