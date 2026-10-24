@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.69 · Færdig, når ændringen er gemt
+
+- Permanent sletning og almindelige ændringer får den opdaterede oversigt med, når gemningen bekræftes. Du skal derfor ikke vente på en ekstra hentning eller skifte menu for at se resultatet.
+- Hvis forbindelsen afbrydes eller svaret ikke kan læses, bliver du stadig bedt om at kontrollere resultatet, før du prøver igen.
+- Datafordelerens nøgle og forbindelseskontrol findes nu under Indstillinger → Forbindelser. Hent adresser har en genvej dertil. Din gemte nøgle bevares.
+- Udseende, samlet Import og Opfølgninger samt filkøen fra de seneste betaer er med.
+
 ## 1.12.2-beta.68 · Vælg dit udseende og prøv det nye overblik
 
 - Vælg Mørkt, Lyst eller Følg enheden nederst i menuen. Valget huskes i din browser og kan skiftes uden at miste åbne formularer.
