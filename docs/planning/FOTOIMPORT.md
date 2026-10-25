@@ -1,6 +1,12 @@
 # W85 · Lokal fotoimport · teknisk forundersøgelse 24.10.2026
 
-## Ny status · beta.72 verificeret udgivet
+## Aktuel status · beta.73 verificeret udgivet · 25.10.2026
+
+Ejerens fejlmelding om PNG/JPG/JPEG er reproduceret mod den rigtige HTTP-server: CSP blokerede appens egne blob-billeder allerede før OCR. Beta.73 tillader disse lokale billeder. De tidligere browserprøver brugte svar uden produktionsserverens sikkerhedsregler; den nye `scripts/check_photo_browser.cjs` starter en midlertidig, adgangsbeskyttet server med kun opdigtede data og bevarer de faktiske headers. Prøven fejler med den gamle billedregel og består efter rettelsen i Chromium/WebKit. Den dækker alle tre filendelser, lokal klargøring/læsning, redigerbare forslag, aktivt fravalg af ekstra linjer, forhåndsvisning og udtrykkelig importgodkendelse. Den køres i både Checks og HA-udgivelsesgaten. Separat native dansk/engelsk OCR-prøve i HA og lokal engelsk motor er også bestået.
+
+Beta.73 fra `1dac3f9331f64cefe7d57627325326916db4052f` er verificeret med grønne kontroller, hentet identisk pakke og læsekontrol af alle betakanalens filer. W104 er afsluttet; **W85 er fortsat åben**. S-12-forsider, foto-kortoprettelse, yderligere layoutfortolkning og adresseopfølgninger mangler stadig. Ingen privat ejerinstallation er fjernmålt, og ingen cloud-tjeneste er anvendt.
+
+## Historik · beta.72 verificeret udgivet
 
 IB-billedkø er implementeret til kontrol: højst 20 PNG/JPEG-originaler, lokal klargøring, asynkron native OCR, redigerbar tekst, separat kortvalg pr. billede, præcise lokale adresse-/lejlighedsmatches, eksplicit linjespring, påkrævede datoer, eksisterende IB-forhåndsvisning og IMPORTÉR IB. HA medtager dansk/engelsk motor og sprogdata. Mac/Windows bruger en separat lokal Tesseract-installation og viser manglende motor/dansk. Ingen cloud-/AI-tjeneste eller automatisk adresseoprettelse. Native proces har tidsgrænse, én aktiv læsning, stop/oprydning, faste argumenter og ingen diagnostik med private filnavne/tekst.
 
