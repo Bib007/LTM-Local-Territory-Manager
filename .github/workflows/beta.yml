@@ -53,6 +53,10 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 node scripts/check_desk_browser.cjs
       - name: Touch phone and tablet daily workflows in WebKit
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit node scripts/check_desk_browser.cjs
+      - name: Real server image import and security policy
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_photo_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_photo_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks

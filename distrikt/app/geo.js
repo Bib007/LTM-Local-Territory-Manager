@@ -2,7 +2,7 @@
 /* Public data stored locally; online backgrounds are optional. */
 const GeoUI={
   data:{addresses:[],buildings:[],roads:[],dividers:[],info:{}},loaded:false,map:null,layers:null,markers:[],draftLayer:null,
-  session:0,previewSequence:0,saveBusy:false,
+  session:0,previewSequence:0,saveBusy:false,loadSequence:0,
   drawColor:'#477596',whole:false,target:'',ids:new Set(),polygon:[],mode:'choose',dirty:false,focus:[],view:null,job:null,jobTimer:null,busy:false,notice:'',rangeRoad:'',rangePost:'',pendingRange:null,
   // Capture values, not references: a late response must never replace a newer draft.
   draftStamp(includeRevision=true){const form=el('geoRangeForm'),range=form?.elements?[...form.elements].filter(e=>e.name).map(e=>[e.name,e.value,e.checked]):null;return JSON.stringify([page,this.session,this.whole,this.target,[...this.ids].sort(),this.polygon,this.drawColor,this.mode,this.dirty,includeRevision?state.revision:null,range]);},
@@ -25,7 +25,7 @@ const GeoUI={
   setNotice(key,params={},suffix=''){this.noticeUI={key,params,suffix};this.notice=I18n.format(key,params)+(suffix?' '+I18n.text(suffix):'');this.noticeUI.value=this.notice;},
   noticeHTML(){const n=this.noticeUI;return n&&n.value===this.notice?ui(n.key,n.params)+(n.suffix?' '+ui(n.suffix):''):esc(this.notice);},
   localize(){this.areaPostcode();const hint=el('geoModeHint');if(hint)hint.innerHTML=ui(this.modeHint());const n=this.noticeUI;if(n&&n.value===this.notice)this.setNotice(n.key,n.params,n.suffix);},
-  async load(){this.data=await(await api('/api/geo')).json();this.loaded=true;},
+  async load(){const sequence=++this.loadSequence,data=await(await api('/api/geo')).json();if(sequence!==this.loadSequence)return;this.data=data;this.loaded=true;if(typeof Navigation!=='undefined')Navigation.paintFollowupCount();},
   dispose(){if(this.map){const c=this.map.getCenter();this.view={center:[c.lat,c.lng],zoom:this.map.getZoom()};MapBackground.detach('geographicEditor');this.map.remove();this.map=null;}},
   canLeave(){return !this.dirty||window.confirm(I18n.text(this.whole?'Den samlede grænse er ikke gemt. Vil du forlade den og kassere tegningen?':'Dit adressevalg er ikke gemt på kortet endnu. Vil du forlade det og kassere valget?'));},
   openCard(id){if(!this.canLeave())return;this.session++;this.dispose();MapBackground.mode='road';this.whole=false;this.target=id||'';const c=card(id);this.drawColor=cardColor(c);this.ids=new Set(c?.address_ids||[]);this.polygon=(c?.geo_polygon||[]).map(p=>p.slice());this.mode='choose';this.focus=[];this.manualPoint=null;this.dirty=false;this.notice='';this.view=null;page='Kortopsætning';query='';render();},

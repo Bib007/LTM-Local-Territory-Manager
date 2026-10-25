@@ -1,6 +1,28 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.72 udgivet · 24.10.2026
+## Aktuel oversigt · beta.73 klargøres · 25.10.2026
+
+**To nye ejerfejl er registreret med fuld tekst og prioritet nedenfor.** Senest verificerede udgave er fortsat beta.72; stabil er 1.12.1. W104/W105 er rettet lokalt, men er ikke afsluttet før den præcise udgivelsescommit, kontrollerne, den offentlige pakke og betakanalen er verificeret.
+
+- **W104 · IB-billeder:** Den rigtige servers Content Security Policy blokerede egne lokale blob-billeder. Derfor fejlede PNG/JPG/JPEG allerede før OCR, og der kom ingen tekst til forslag. Billedreglen tillader nu lokale blob-billeder; script- og forbindelsesreglerne er uændrede. Ingen cloud-upload indføres. En ny browserprøve mod den faktiske, adgangsbeskyttede HTTP-server fejler på beta.72 med `img-src: blob` og består efter rettelsen. Den dækker alle tre filendelser, lokal læsning, redigerbare forslag, aktivt fravalg af ukendte linjer, forhåndsvisning og udtrykkelig godkendelse før import.
+- **W105 · Tæller ved Opfølgninger:** Geodata blev først indlæst ved åbning af kort/Opfølgninger, så tælleren manglede ved første åbning. De lokale data hentes nu ved opstart i baggrunden. Tælleren opdateres også efter geodatahentning, uden at åbne felter genopbygges. Den rigtige browserprøve kontrollerer tallet før første besøg på fanen, efter IB-import og mens en kladde med fokus forbliver uændret.
+
+W85 er fortsat åben: S-12-forsider, foto-kortoprettelse og yderligere layoutfortolkning mangler. Den nye IB-fejl må ikke skjules af den tidligere leveringsstatus. Google-planen er gennemgået i alle seks faner; den har nu kort Overblik, Ønskeliste, Plan & aftaler, Bilag, Historik og Synlighed · ADS. Originale ønsker, tabeller, historik og referencebilledet er bevaret. Ingen offentlig kampagne er startet.
+
+Lokalt består 499 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver, faktisk arkivstart, demoens manifestkontrol og desktop-/touchforløb i Chromium. Den nye prøve mod rigtig HTTP/login/CSP består på 390 og 1440 px både med deterministisk OCR-svar og den faktiske lokale Tesseract-motor (engelsk). Den oprindelige fejl er først reproduceret på den uændrede billedregel. WebKit og HA-containerens danske/engelske motor afventer den præcise CI-kandidat.
+
+Ved registrering er **89/105 afsluttet/afklaret, 16 åbne, cirka 85 %**. De to nye fejl har ejerprioritet “du bestemmer”; LTM vælger henholdsvis 1 og 2. Ingen nye generelle ejerprøver eller stabile udgivelser bestilles.
+
+### Nye fejl fra Google-ønskelisten · 25.10.2026
+
+| Nr. | Fuld kildetekst | Prioritet og behandling |
+| --- | --- | --- |
+| W104 | IB fra billede virker overhovedet ikke<br>hverken med jpg, jpeg, eller png… den melder bare fejl, også hvis man siger den skal lave redigerbare foresalg… | Ejer: “du bestemmer”. LTM: 1, først. Lokal rettelse under kontrol; W85 forbliver åben. |
+| W105 | Tallet ved opfølgninger opdater først når mna trykker på fanen…. mærkeligt hva | Ejer: “du bestemmer”. LTM: 2, samme fejlrettelsesbeta. Lokal rettelse under kontrol. |
+
+Kildeteksterne står fortsat i Google-ønskelisten, indtil registreringen er gemt og læst tilbage på GitHub. “Registreret” er ikke “afsluttet”.
+
+## Historik · beta.72 udgivet · 24.10.2026
 
 **W85-deltrin leveret: IB fra billeder.** Indstillinger → Import har lokal kø til op til 20 PNG/JPEG-billeder. Hvert billede kræver særskilt kortvalg, redigerbar tekst, en adresse/lejlighed på det valgte kort og en gennemgået dato pr. linje. Ukendte linjer skal rettes eller springes over ved et aktivt valg. Eksisterende IB-forhåndsvisning og IMPORTÉR IB kræves før gemning. Næste billede startes manuelt; allerede godkendte filer bevares ved fejl/lukning. Grænser, besøgstal og forsider ændres ikke automatisk. Berørte IB-bagsider markeres til ajourføring.
 
