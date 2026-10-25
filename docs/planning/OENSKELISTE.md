@@ -2,15 +2,25 @@
 
 ## Aktuel oversigt · beta.73 udgivet · 25.10.2026
 
+### Ejerbeslutning · prioritet −1 · alt OCR-arbejde på pause
+
+Ny besked i Google-ønskelisten, fuld kildetekst:
+
+> IB fra billeder virker nu, men giver ingen mening i den tekst der kommer, vi venter med alt ocr lignende funktioner, og sætter dem på pause!
+
+**Ejerprioritet: −1. W85 sættes på pause med det samme.** Ingen videre udvikling af OCR, IB-billedfortolkning, S-12-forsider eller foto-kortoprettelse, før ejeren udtrykkeligt genoptager arbejdet. Det er en statusændring på W85, ikke et ekstra ønske eller en afslutning. W104's tekniske rettelse af billedåbning er nu ejerbekræftet, men OCR-tekstens anvendelighed er ikke godkendt. Syntetiske OCR-prøver er ikke en godkendelse af resultatet på ejerens billeder.
+
+**Næste aktive opgave er W74 · egen hosting.** W85 og W16 er på pause. Fremdrift er fortsat 91/105 afsluttet/afklaret og 14 åbne (heraf to på pause), cirka 87 %. Denne beslutning går foran tidligere noter om, at W85/fotoimport er næste opgave. Google-kildeteksten og prioriteten bevares; den nye beslutning registreres i begge planer. Ingen appkode, eksisterende data, udgivet beta eller stabil version ændres ved denne planopdatering.
+
 **W104/W105 er afsluttet i verificeret beta.73.** IB-billeder i PNG/JPG/JPEG kan åbnes og læses lokalt efter rettelse af appens billedregel. Opfølgningstælleren indlæses ved opstart og opdateres efter geodatahentning uden at genopbygge åbne felter. Sene opstartsdata kan ikke erstatte en nyere indlæsning. Redigerbare forslag, kontrollerede adresser/datoer og udtrykkelig importgodkendelse bevares. Ingen ekstern AI eller cloud-OCR er indført.
 
 Udgivelsescommit: `1dac3f9331f64cefe7d57627325326916db4052f`, træ `a605386892c0ca3ea56e1704a4112db1532b1590`. HA beta release **40230496198**, Checks **40230496204** og Platformskontrol **40230496245** er alle completed/success på den præcise commit. Den nye browserprøve mod rigtig adgangsbeskyttet HTTP-server og faktiske sikkerhedsregler består i Chromium og WebKit ved 390/1440 px med alle tre filendelser, forslag, fravalg af uvedkommende linjer og godkendt import. Den bekræfter også, at tælleren vises før første besøg på fanen, opdateres efter IB-import og bevarer en åben kladdes felt, tekst og fokus. HA-containeren læser et opdigtet billede med dansk/engelsk Tesseract; lokale browserforløb bruger også den faktiske engelske motor. Ingen ny generel ejerprøve er bestilt.
 
 Offentlig HA-pakke: **126 filer, 1.205.458 komprimerede bytes**, SHA256 `410f730be12acf23f89b94fca2d71c2538dcb0434e79e412ad8c3a5af200b4e1`. Den udgivne ZIP er hentet og matcher den lokale pakke byte for byte; ZIP-integritet og tag er kontrolleret. Alle 126 filer i den publicerede betakanal matcher lokal pakning fra udgivelseskilden. Beta viser **1.12.2-beta.73 på 8788**, main er fortsat **stabil 1.12.1 på 8787**. [Beta.73](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.73).
 
-Fremdrift: **91/105 afsluttet/afklaret, 14 åbne, cirka 87 %**. W85 er fortsat åben; næste del er S-12-forsider og kortoprettelse fra billeder med redigerbare forslag og konkret godkendelse. Derefter følger W74/egen hosting og de øvrige åbne punkter i planen. Profiler, QR-valg, privat VPN-huskenote og den pauserede generelle synkroniseringsafvisning ændres ikke.
+Fremdrift: **91/105 afsluttet/afklaret, 14 åbne, cirka 87 %**. W85 er åben, men sat på pause efter ejerens nye beslutning ovenfor. Næste aktive arbejde er W74/egen hosting og derefter de øvrige åbne punkter i planen. Profiler, QR-valg, privat VPN-huskenote og den pauserede generelle synkroniseringsafvisning ændres ikke.
 
-Google-planens seks faner er gennemgået. Overblik og Plan & aftaler er opdateret med faktisk udgivelsesstatus. De to originale fejltekster og ejerprioriteten “du bestemmer” er bevaret i Ønskeliste og markeret med W104/W105 som rettet i beta.73; der er ingen nye ubehandlede ønsker ved slutkontrollen. Fuld registrering/prioritet er læst tilbage på GitHub før statusmarkeringen. Automatisk godkendelseskontrol afviste rydning af originalteksterne; den sikre løsning bevarer dem som kvittering. Ingen grene er slettet og ingen stabil udgivelse er udført.
+Google-planens seks faner er gennemgået. Overblik og Plan & aftaler er opdateret med faktisk udgivelsesstatus. De to originale fejltekster og ejerprioriteten “du bestemmer” er bevaret i Ønskeliste og markeret med W104/W105 som rettet i beta.73; en efterfølgende besked med prioritet −1 pauser nu W85 som beskrevet øverst. Fuld registrering/prioritet er læst tilbage på GitHub før statusmarkeringen. Automatisk godkendelseskontrol afviste rydning af originalteksterne; den sikre løsning bevarer dem som kvittering. Ingen grene er slettet og ingen stabil udgivelse er udført.
 
 ## Historik · beta.73 under kontrol · 25.10.2026
 

@@ -1,6 +1,12 @@
 # W85 · Lokal fotoimport · teknisk forundersøgelse 24.10.2026
 
-## Aktuel status · beta.73 verificeret udgivet · 25.10.2026
+## Aktuel status · alt OCR-arbejde på pause · 25.10.2026
+
+**Ejerbeslutning, prioritet −1:** Billederne kan åbnes i beta.73, men den genkendte tekst er ikke brugbar hos ejeren. Alt OCR-lignende arbejde, herunder IB-billedfortolkning, S-12-forsider og foto-kortoprettelse, sættes på pause. Genoptag kun efter ny udtrykkelig besked fra ejeren. W85 forbliver åbent og tæller ikke som afsluttet. Næste aktive opgave er W74/egen hosting.
+
+Beta.73's rettelse af selve billedåbningen og dens syntetiske prøver er stadig dokumenteret nedenfor; de beviser ikke, at genkendelsen af ejerens billeder er brugbar. Denne planændring fjerner ingen eksisterende funktion, ændrer ingen gemte data og udgiver ingen ny version. Fuld kildetekst og prioritet står i `OENSKELISTE.md` og er bevaret i Google-planens ønskeliste.
+
+## Historik · beta.73 verificeret udgivet · 25.10.2026
 
 Ejerens fejlmelding om PNG/JPG/JPEG er reproduceret mod den rigtige HTTP-server: CSP blokerede appens egne blob-billeder allerede før OCR. Beta.73 tillader disse lokale billeder. De tidligere browserprøver brugte svar uden produktionsserverens sikkerhedsregler; den nye `scripts/check_photo_browser.cjs` starter en midlertidig, adgangsbeskyttet server med kun opdigtede data og bevarer de faktiske headers. Prøven fejler med den gamle billedregel og består efter rettelsen i Chromium/WebKit. Den dækker alle tre filendelser, lokal klargøring/læsning, redigerbare forslag, aktivt fravalg af ekstra linjer, forhåndsvisning og udtrykkelig importgodkendelse. Den køres i både Checks og HA-udgivelsesgaten. Separat native dansk/engelsk OCR-prøve i HA og lokal engelsk motor er også bestået.
 
