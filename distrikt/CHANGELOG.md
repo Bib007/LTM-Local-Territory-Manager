@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.2-beta.73 · Billedimport og opfølgninger
+
+- IB-billeder i PNG, JPG og JPEG kan åbnes og læses lokalt. En fejl i appens billedregler er rettet.
+- Tallet ved Opfølgninger indlæses fra start, uden at du skal åbne fanen først.
+- Billedimport kræver stadig gennemgang af adresser og datoer samt din godkendelse.
+
 ## 1.12.2-beta.72 · IB-billeder og sikker afslutning
 
 IB fra billeder omfatter nu også kontrolleret afslutning, når selve LTM lukkes under en billedlæsning. Den lokale OCR-proces stoppes og dens midlertidige filer ryddes op, før serveren lukker. Kø, kortvalg, redigerbar tekst, præcise adresser/datoer og godkendelse er som i beta.71. Ingen ekstern AI eller cloud-OCR. S-12-forsider er fortsat ikke med.

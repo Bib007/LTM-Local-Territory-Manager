@@ -264,7 +264,10 @@ const Workspace={memory:{},taskFilter:'open',taskQuery:'',activityData:[],histor
   case 'restructure':{const payload={mode:form.dataset.mode,ids:form.dataset.mode==='split'?[form.dataset.source]:fd.getAll('ids'),number:data.number,name:data.name,address_ids:fd.getAll('address_ids')};await this.previewRestructure(form,payload);break;}
  }},
  applyView(id){const item=(state.settings.saved_views||[]).find(v=>v.id===id);if(!item)return;this.remember();const v=item.view;page=['Distrikter','Kortoversigt','Adresser'].includes(v.page)?v.page:'Distrikter';query=v.query||'';area=v.area||'';status=v.status||'Alle';addressTab=v.addressTab||'Mangler på kort';addressPostcode=v.addressPostcode||'';if(page==='Kortoversigt'&&v.filters)OverviewMap.filters={...OverviewMap.filters,...v.filters};render();toast('Visning: '+item.name);},
- boot(){if(typeof window.addEventListener!=='function')return;window.addEventListener('offline',()=>this.connectionChanged('offline'));window.addEventListener('online',()=>{this.connectionIssue=true;this.checkConnection(true);});if(typeof window.setInterval==='function')window.setInterval(()=>this.checkConnection(),30000);}
+ boot(){if(typeof window.addEventListener!=='function')return;window.addEventListener('offline',()=>this.connectionChanged('offline'));window.addEventListener('online',()=>{this.connectionIssue=true;this.checkConnection(true);});if(typeof window.setInterval==='function')window.setInterval(()=>this.checkConnection(),30000);
+  // Populate follow-ups on first opening, without redrawing a page/form the user opened meanwhile.
+  if(typeof GeoUI!=='undefined'&&!GeoUI.loaded)GeoUI.load().then(()=>{if(page==='Forside'){const summary=document.querySelector('.dashboardAttention');if(summary)summary.outerHTML=this.followupsSummary();}}).catch(error=>toast(error));
+ }
 
 };
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-work]');if(!b)return;e.preventDefault();const generation=openDialog.generation,origin=page;try{await Workspace.handle(b.dataset.work,b.dataset);}catch(error){toast(error);const node=el('formError');if(node&&generation===openDialog.generation&&page===origin)I18n.errorContent(node,error);}});
