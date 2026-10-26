@@ -356,6 +356,7 @@ def main(argv=None):
     stop_event=threading.Event();threading.Thread(target=cleanup_loop,daemon=True).start()
     def shutdown(signum,frame):threading.Thread(target=server.shutdown,daemon=True).start()
     signal.signal(signal.SIGTERM,shutdown);signal.signal(signal.SIGINT,shutdown)
+    if hasattr(signal,'SIGBREAK'):signal.signal(signal.SIGBREAK,shutdown)
     try:server.serve_forever(poll_interval=.2)
     finally:
         stop_event.set();server.address_schedule.close();server.sharing.close();server.server_close();store.close()

@@ -4,6 +4,7 @@ import http.cookiejar
 import io
 import json
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -113,7 +114,7 @@ class StartGuideTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             data=Path(directory);Access(data,'Fictional-private-123')
             with socket.socket() as probe:probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
-            process=subprocess.Popen([sys.executable,str(Path(launcher.server.__file__)),'--serve','--lan','--bind','127.0.0.1','--access-host','127.0.0.1','--port',str(port),'--data-dir',directory,'--no-browser'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+            process=subprocess.Popen([sys.executable,str(Path(launcher.server.__file__)),'--serve','--lan','--bind','127.0.0.1','--access-host','127.0.0.1','--port',str(port),'--data-dir',directory,'--no-browser'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP} if os.name=='nt' else {}))
             try:
                 for _ in range(150):
                     if process.poll() is not None:self.fail('Fictional bound server failed to start')
@@ -128,7 +129,12 @@ class StartGuideTests(unittest.TestCase):
                 req=urllib.request.Request(info['url']+'/api/state',headers={'X-Distrikt-Token':info['token']})
                 with client.open(req,timeout=3) as response:self.assertEqual(json.load(response)['cards'],[])
             finally:
-                process.terminate();process.wait(timeout=8)
+                # terminate() is a hard TerminateProcess on Windows, bypassing finally.
+                # Exercise a real console stop on both platforms, including all cleanup.
+                process.send_signal(signal.CTRL_BREAK_EVENT if os.name=='nt' else signal.SIGINT)
+                try:process.wait(timeout=8)
+                except subprocess.TimeoutExpired:
+                    process.kill();process.wait(timeout=5);raise
                 if process.stderr:process.stderr.close()
             self.assertFalse((data/'run.json').exists());self.assertTrue((data/'access.json').exists())
 
