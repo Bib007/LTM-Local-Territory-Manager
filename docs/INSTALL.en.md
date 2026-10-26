@@ -1,5 +1,9 @@
 # Installation and updates / installation og opdatering
 
+## New beta startup guide for local/server use
+
+See [Self-hosting](SELF-HOSTING.en.md) for the shared Windows/Mac/Linux launcher, separate local/server data and private server login. Python is still required; this is the first W74 step.
+
 [Dansk](INSTALL.md)
 
 ## Mac

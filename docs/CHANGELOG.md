@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.74 · Startguide til egen computer og server
+
+- Ny fælles startguide til Mac, Windows og Linux med valg af lokal brug eller privat server.
+- Serveren får eget login og data, lytter på den valgte private adresse og åbner ingen browser.
+- Udgivelsen har nu også en samlet programpakke til egen computer. Python skal fortsat installeres separat.
+- W74 er delvist leveret; et separat appvindue og selvstændige installationer mangler. OCR-arbejdet er fortsat på pause.
+
 ## 1.12.2-beta.73 · Billedimport og opfølgninger
 
 - IB-billeder i PNG, JPG og JPEG kan åbnes og læses lokalt. En fejl i appens billedregler er rettet.

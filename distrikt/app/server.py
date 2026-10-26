@@ -30,7 +30,7 @@ from photo_ocr import PhotoOCR
 from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.73'
+VERSION='1.12.2-beta.74'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -314,8 +314,12 @@ def acquire_lock(path):
         return stream
     except OSError:stream.close();return None
 
-def main():
-    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--port',type=int,default=8787);args=p.parse_args()
+def main(argv=None):
+    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
+    if args.bind:
+        try:address=ipaddress.IPv4Address(args.bind)
+        except ValueError:raise ValueError('Vælg en privat IPv4-adresse til serveren.') from None
+        if not args.lan or not private_client(str(address)) or address.is_unspecified:raise ValueError('En bestemt netværksadresse kræver privat servertilstand.')
     data=Path(args.data_dir).expanduser().resolve();data.mkdir(parents=True,exist_ok=True,mode=0o700)
     if args.lan and (not args.serve or not args.access_host):raise ValueError('Servertilstand kræver --serve --lan --access-host med en lokal IP-adresse.')
     if args.stop:stop_running(data);return
@@ -340,10 +344,10 @@ def main():
     if info:return
     lock=acquire_lock(data/'app.lock')
     if lock is None:return
-    store=Store(data);server=Server(('0.0.0.0',args.port) if args.lan else ('127.0.0.1',0),store,access_host=args.access_host if args.lan else None,password=os.environ.pop('DISTRIKT_PASSWORD',None) if args.lan else None)
+    store=Store(data);server=Server((args.bind or '0.0.0.0',args.port) if args.lan else ('127.0.0.1',0),store,access_host=args.access_host if args.lan else None,password=os.environ.pop('DISTRIKT_PASSWORD',None) if args.lan else None)
     server.sharing.start()
     server.address_schedule.start()
-    run={'url':server.origin,'token':server.token,'pid':os.getpid(),'version':VERSION}
+    run={'url':server.origin,'public_url':server.public_url,'token':server.token,'pid':os.getpid(),'version':VERSION}
     runpath=data/'run.json';runpath.write_text(json.dumps(run));os.chmod(runpath,0o600)
     def cleanup_loop():
         while not stop_event.wait(60):

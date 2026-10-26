@@ -97,6 +97,7 @@ jobs:
           python-version: '3.12'
       - run: python -m unittest discover -s distrikt/tests -p test_portable.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+      - run: python -m unittest discover -s distrikt/tests -p test_start_guide.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_lan.py -v
   home-assistant:
     if: github.ref == 'refs/heads/develop'
@@ -142,6 +143,7 @@ jobs:
               exit 0
             fi
           fi
+          python scripts/build_release.py
           python scripts/build_beta.py --output "$RUNNER_TEMP/ha-beta"
           gh auth setup-git
           git -C "$RUNNER_TEMP/ha-beta" init
@@ -155,5 +157,5 @@ jobs:
           git -C "$RUNNER_TEMP/ha-beta" diff --cached --quiet || git -C "$RUNNER_TEMP/ha-beta" commit -m "HA beta $BETA_VERSION from $GITHUB_SHA"
           git -C "$RUNNER_TEMP/ha-beta" push origin HEAD:beta
           if ! gh release view "v$BETA_VERSION" >/dev/null 2>&1; then
-            gh release create "v$BETA_VERSION" "dist/LTM-HA-v$BETA_VERSION.zip" "dist/LTM-HA-v$BETA_VERSION.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "LTM $BETA_VERSION · HA-beta" --notes-file docs/BETA-NOTES.md
+            gh release create "v$BETA_VERSION" "dist/LTM-HA-v$BETA_VERSION.zip" "dist/LTM-HA-v$BETA_VERSION.zip.sha256" "dist/LTM-v$BETA_VERSION.zip" "dist/LTM-v$BETA_VERSION.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "LTM $BETA_VERSION · HA-beta" --notes-file docs/BETA-NOTES.md
           fi

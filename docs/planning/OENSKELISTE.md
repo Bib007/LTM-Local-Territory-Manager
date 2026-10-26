@@ -1,6 +1,16 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.73 udgivet · 25.10.2026
+## Aktuel oversigt · W74-deltrin / beta.74 under kontrol · 26.10.2026
+
+**W74 · første del af egen hosting er implementeret og under kontrol.** En fælles startguide i programpakken tilbyder lokal brug eller privat server på Mac/Windows/Linux. Serveren bindes til brugerens valgte private IPv4-adresse, åbner ingen browser og stoppes med Ctrl+C. Adgangskoden indtastes skjult med gentagelse; kun den eksisterende saltede hash gemmes lokalt. Startvalg indeholder ingen adgangskode. Lokal/server og beta/stabil har adskilte mapper; eksisterende data flyttes ikke automatisk. En kørende server skifter ikke stiltiende adresse/port. De gamle lokale startfiler bevares.
+
+Beta.74 får også en samlet desktop-ZIP på den samme prerelease ved siden af HA-pakken. Dansk/engelsk vejledning beskriver valg, opdatering, flytning via godkendt backup og konkret macOS-godkendelse af startfilen. Linux-startfil er med; Windows/Mac-startfiler får faktiske automatiske start/genbrugsprøver. En ekstra arkivprøve starter den nye guide fra den udpakkede programpakke. Ingen afhængigheder hentes automatisk ved start.
+
+**W74 er stadig åben.** Python skal installeres separat. App-lignende separat vindue, selvstændige platformspakker med Python og automatisk systemtjeneste mangler. Ingen fysisk installation hos ejeren er prøvet. Den nye menu er på dansk; engelsk vejledning følger med, W58 er ikke afsluttet. [Vejledning](../SELF-HOSTING.md).
+
+**OCR/W85 og W16 er fortsat på pause.** Alle seks Google-faner er læst ved start; der er ingen nye ubehandlede ønsker ud over den allerede registrerede OCR-pause. Stabil forbliver 1.12.1, senest verificerede beta er beta.73. Fremdrift er uændret **91/105, 14 åbne (to på pause), cirka 87 %**. Beta.74 er ikke markeret verificeret udgivet før præcis commit, CI, begge offentlige pakker og betakanal er kontrolleret. Ingen grene slettes.
+
+## Historik · beta.73 og OCR-pause · 25.10.2026
 
 ### Ejerbeslutning · prioritet −1 · alt OCR-arbejde på pause
 

@@ -32,3 +32,7 @@ Se [betaudgivelserne](https://github.com/Bib007/LTM-Local-Territory-Manager/rele
 Før hver ny beta opdateres versionsnummeret i serveren, HA-konfigurationen og tilhørende tilstands-/versionsprøver samt den korte betanote. Nummeret genbruges ikke til ændret kode. Workflowet kræver grøn programkontrol, Mac, Windows og bygning af HA-betapakken før offentliggørelse. En beta er en GitHub-prerelease og ændrer ikke den seneste stabile udgivelse.
 
 HA understøtter en grengiven repositoryadresse: [officiel vejledning](https://contributors.home-assistant.io/apps/guides/repository/).
+
+## Beta på Mac, Windows eller Linux
+
+Fra beta.74 har udgivelsen også en samlet **LTM-v…zip** med en ny lokal/server-startguide. Hent den komplette ZIP frem for HA-pakken, og følg [Egen hosting](SELF-HOSTING.md). Betaens desktopdata holdes adskilt fra stabil og HA. Python er stadig nødvendig.

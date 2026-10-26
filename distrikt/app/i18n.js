@@ -3,6 +3,8 @@
 const I18n={
  current:'da',
  english:{
+ "En bestemt netværksadresse kræver privat servertilstand.":"Binding a specific network address requires private server mode.",
+ "Vælg en privat IPv4-adresse til serveren.":"Choose a private IPv4 address for the server.",
  "IB fra billeder":"Do-not-call entries from photos",
  "Billedet læses på dit lokale LTM-system. Ingen ekstern AI eller billedtjeneste bruges.":"The image is read on your local LTM system. No external AI or image service is used.",
  "Vælg kort for hvert billede. Ret teksten, kontrollér hver adresse og dato, og godkend før import. Håndskrift og uklare fotos kan kræve manuel rettelse.":"Choose a card for each image. Edit the text, check every address and date, and approve before importing. Handwriting and unclear photos may need manual correction.",

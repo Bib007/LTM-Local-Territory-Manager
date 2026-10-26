@@ -26,6 +26,7 @@ jobs:
           python-version: '3.12'
       - run: python -m unittest discover -s distrikt/tests -p test_portable.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+      - run: python -m unittest discover -s distrikt/tests -p test_start_guide.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_lan.py -v
   home-assistant:
     name: Home Assistant amd64

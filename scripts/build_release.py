@@ -13,7 +13,7 @@ SRC=ROOT/'distrikt'
 REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
 PDF_DEPENDENCIES=('pypdf-6.21.2.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
-BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json'}
+BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json'}
 ROOT_DOCS=('repository.yaml','README.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png')
@@ -41,8 +41,8 @@ def files():
             result['Distrikt-lokal/'+relative]=(p.read_bytes(),0o644)
             if section in ('app','templates','translations'):result['Home-Assistant/distrikt/'+relative]=(p.read_bytes(),0o644)
     for p in sorted(SRC.iterdir()):
-        if p.is_file() and p.suffix in ('.cmd','.command','.md'):
-            result['Distrikt-lokal/'+p.name]=(p.read_bytes(),0o755 if p.suffix=='.command' else 0o644)
+        if p.is_file() and p.suffix in ('.cmd','.command','.sh','.md') and p.name!='run.sh':
+            result['Distrikt-lokal/'+p.name]=(p.read_bytes(),0o755 if p.suffix in ('.command','.sh') else 0o644)
     for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md','icon.png','logo.png'):
         p=SRC/n;result['Home-Assistant/distrikt/'+n]=(p.read_bytes(),0o755 if n=='run.sh' else 0o644)
     for n in ROOT_DOCS:
@@ -89,7 +89,7 @@ def files():
     prefix='Home-Assistant/distrikt/'
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))
     result['Home-Assistant/SHA256SUMS.txt']=(manifest.encode(),0o644)
-    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: docs/README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
+    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: docs/README.en.md.\nMac/Windows/Linux: se docs/SELF-HOSTING.md for den nye Start-LTM-guide i Distrikt-lokal. Python installeres separat. De gamle Start-Distrikt-filer er bevaret til eksisterende lokal brug.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
     validate_links(result)
     return result
 
