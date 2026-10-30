@@ -1,10 +1,16 @@
 """Fictional snapshots: do not lose independent edits or hide real collisions."""
 import copy
+import concurrent.futures
 import sys
+import tempfile
+import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
-from concurrent_edits import reconcile
+from concurrent_edits import reconcile,commit_reviewed
+from portable import Restores,snapshot
+from store import Store
 
 
 class ConcurrentEditsTests(unittest.TestCase):
@@ -42,6 +48,87 @@ class ConcurrentEditsTests(unittest.TestCase):
         self.assertEqual(r['record']['id'],'1');self.assertEqual(r['record']['name'],'B')
         with self.assertRaises(ValueError):reconcile({}, {}, {}, ('_revision',))
         with self.assertRaises(ValueError):reconcile({}, {}, {'x':float('nan')}, ('x',))
+
+    def test_two_threads_save_different_fields_without_losing_either(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=Store(directory)
+            try:
+                base={'id':'fictional-note','text':'Fiktiv','resolved':False,'task':True}
+                with store.transaction():store.put('notes',base)
+                barrier=threading.Barrier(2)
+                def save(actor,changes):
+                    proposed={**base,**changes};barrier.wait(timeout=5)
+                    return commit_reviewed(store,'notes',base['id'],base,proposed,('text','resolved'),actor,lambda db,row:db.put('notes',row))
+                with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                    futures=[pool.submit(save,'fictional-a',{'text':'Fiktiv ændring'}),pool.submit(save,'fictional-b',{'resolved':True})]
+                    self.assertEqual([f.result(timeout=10)['conflicts'] for f in futures],[0,0])
+                saved=store.require('notes',base['id']);self.assertEqual(saved['text'],'Fiktiv ændring');self.assertTrue(saved['resolved'])
+                self.assertEqual([x for x in store.all('settings') if x.get('entity')=='edit-conflict'],[])
+            finally:store.close()
+
+    def test_collision_is_recorded_atomically_and_never_exposed_as_an_area(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=Store(directory)
+            try:
+                base={'id':'fictional-note','text':'Start','task':True}
+                with store.transaction():store.put('notes',base)
+                for actor,text in [('fictional-a','Første'),('fictional-b','Anden')]:
+                    result=commit_reviewed(store,'notes',base['id'],base,{**base,'text':text},('text',),actor,lambda db,row:db.put('notes',row))
+                self.assertEqual(result['conflicts'],1);self.assertEqual(store.require('notes',base['id'])['text'],'Anden')
+                conflict=next(x for x in store.all('settings') if x.get('entity')=='edit-conflict')
+                self.assertEqual((conflict['base']['value'],conflict['saved']['value'],conflict['incoming']['value']),('Start','Første','Anden'))
+                self.assertEqual(conflict['incoming_actor_id'],'fictional-b');self.assertFalse(conflict['resolved'])
+                self.assertFalse(any(x['id']==conflict['id'] for x in store.state()['areas']))
+            finally:store.close()
+
+    def test_failed_notice_rolls_back_the_record_and_all_notices(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=Store(directory)
+            try:
+                base={'id':'fictional-note','text':'Start','task':True}
+                with store.transaction():store.put('notes',{**base,'text':'Første'})
+                real_put=store.put
+                def fail_notice(module,row):
+                    if row.get('entity')=='edit-conflict':raise RuntimeError('Synthetic storage failure')
+                    return real_put(module,row)
+                with patch.object(store,'put',side_effect=fail_notice),self.assertRaises(RuntimeError):
+                    commit_reviewed(store,'notes',base['id'],base,{**base,'text':'Anden'},('text',),'fictional-b',lambda db,row:db.put('notes',row))
+                self.assertEqual(store.require('notes',base['id'])['text'],'Første')
+                self.assertEqual([x for x in store.all('settings') if x.get('entity')=='edit-conflict'],[])
+            finally:store.close()
+
+    def test_two_concurrent_conflicting_saves_keep_both_and_survive_backup(self):
+        with tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
+            store=Store(source);restored=Store(target)
+            try:
+                base={'id':'fictional-note','text':'Start','task':True}
+                with store.transaction():store.put('notes',base)
+                barrier=threading.Barrier(2)
+                def save(actor,value):
+                    barrier.wait(timeout=5)
+                    return commit_reviewed(store,'notes',base['id'],base,{**base,'text':value},('text',),actor,lambda db,row:db.put('notes',row))
+                with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                    results=[pool.submit(save,'fictional-a','Første'),pool.submit(save,'fictional-b','Anden')]
+                    self.assertEqual(sorted(f.result(timeout=10)['conflicts'] for f in results),[0,1])
+                conflict=next(x for x in store.all('settings') if x.get('entity')=='edit-conflict')
+                self.assertEqual({conflict['saved']['value'],conflict['incoming']['value']},{'Første','Anden'})
+                restore=Restores(restored,'fictional');preview=restore.preview(snapshot(store,'fictional'));restore.apply(preview['token'])
+                self.assertEqual(restored.require('settings',conflict['id']),conflict)
+                self.assertEqual(restored.require('notes',base['id']),store.require('notes',base['id']))
+            finally:store.close();restored.close()
+
+    def test_an_already_saved_identical_change_does_not_write_again(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=Store(directory)
+            try:
+                base={'id':'fictional-note','text':'Start','task':True}
+                with store.transaction():store.put('notes',base)
+                proposal={**base,'text':'Samme'}
+                commit_reviewed(store,'notes',base['id'],base,proposal,('text',),'fictional-a',lambda db,row:db.put('notes',row))
+                revision=store.revision
+                result=commit_reviewed(store,'notes',base['id'],base,proposal,('text',),'fictional-b',lambda db,row:self.fail('Unchanged record must not be rewritten'))
+                self.assertFalse(result['changed']);self.assertEqual(store.revision,revision)
+            finally:store.close()
 
 
 if __name__=='__main__':unittest.main()

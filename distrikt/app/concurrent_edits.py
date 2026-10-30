@@ -7,6 +7,8 @@ values or session tokens in logs.
 """
 from copy import deepcopy
 import json
+import uuid
+from datetime import datetime, timezone
 
 
 def _value(record,field):
@@ -39,3 +41,38 @@ def reconcile(base,current,proposed,editable_fields):
         if incoming['present']:merged[field]=deepcopy(incoming['value'])
         else:merged.pop(field,None)
     return {'record':merged,'conflicts':conflicts}
+
+
+def commit_reviewed(store,module,ident,base,proposed,editable_fields,actor_id,apply_record):
+    """Prototype: save one merged record and all notices in one existing transaction.
+
+    This is intentionally not wired to an API. The future integration MUST
+    authenticate the caller, verify a session-bound server snapshot, authorize
+    each field and supply the regular domain validation/write path as callback.
+    Conflict notices are ordinary local settings records so existing backups do
+    not acquire a new, incompatible SQLite table. They can contain private data.
+    """
+    if module not in ('cards','notes','publishers','ib') or not isinstance(ident,str) or not ident:
+        raise ValueError('Unsupported record')
+    if not isinstance(actor_id,str) or not actor_id or len(actor_id)>100:
+        raise ValueError('An authenticated actor is required')
+    if not callable(apply_record) or not isinstance(base,dict) or not isinstance(proposed,dict) or base.get('id')!=ident or proposed.get('id')!=ident:
+        raise ValueError('A validated record and matching snapshot are required')
+    with store.transaction():
+        current=store.require(module,ident)
+        result=reconcile(base,current,proposed,editable_fields)
+        if _equal(current,result['record']) and not result['conflicts']:
+            return {'id':ident,'conflicts':0,'changed':False}
+        # The callback must enforce the domain's normal validation and side effects.
+        apply_record(store,deepcopy(result['record']))
+        actual=store.require(module,ident)
+        for field in editable_fields:
+            if not _equal(_value(actual,field),_value(result['record'],field)):
+                raise ValueError('The validated write did not preserve the reviewed change')
+        for conflict in result['conflicts']:
+            store.put('settings',{'id':'edit-conflict:'+uuid.uuid4().hex,'entity':'edit-conflict',
+                'module':module,'record_id':ident,'incoming_actor_id':actor_id,
+                'at':datetime.now(timezone.utc).isoformat(timespec='seconds'),
+                'field':conflict['field'],'base':conflict['base'],'saved':conflict['saved'],
+                'incoming':conflict['incoming'],'resolved':False})
+    return {'id':ident,'conflicts':len(result['conflicts']),'changed':True}
