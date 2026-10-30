@@ -2,8 +2,10 @@
 import contextlib
 import http.cookiejar
 import io
+import ipaddress
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -29,8 +31,15 @@ class StartGuideTests(unittest.TestCase):
     def tearDown(self):self.environment.stop()
 
     def test_private_interface_discovery_reaches_the_bound_server_without_proxy(self):
-        # A second loopback address proves discovery uses the bound interface, not 127.0.0.1.
+        # macOS does not automatically configure 127.0.0.2 on loopback; use a
+        # local private IPv4 from its own interfaces. No packets go to an external host.
         host='127.0.0.2'
+        if sys.platform=='darwin':
+            listing=subprocess.run(['/sbin/ifconfig'],capture_output=True,text=True,check=True).stdout
+            candidates=re.findall(r'^\s*inet\s+(\d+\.\d+\.\d+\.\d+)\b',listing,re.M)
+            networks=[ipaddress.ip_network(n) for n in ('10.0.0.0/8','172.16.0.0/12','192.168.0.0/16')]
+            host=next((h for h in candidates if h!='172.30.32.2' and any(ipaddress.IPv4Address(h) in n for n in networks)),None)
+            if not host:self.fail('Mac platform test requires an available private IPv4 interface')
         with tempfile.TemporaryDirectory() as directory:
             data=Path(directory);store=Store(data);srv=launcher.server.Server((host,0),store,access_host=host,password='Fictional-private-123')
             thread=threading.Thread(target=srv.serve_forever,daemon=True);thread.start()
