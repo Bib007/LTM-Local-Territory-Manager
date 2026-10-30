@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from concurrent_edits import reconcile,commit_reviewed
+from edit_snapshots import EditSnapshots
 from portable import Restores,snapshot
 from store import Store
 
@@ -116,6 +117,29 @@ class ConcurrentEditsTests(unittest.TestCase):
                 self.assertEqual(restored.require('settings',conflict['id']),conflict)
                 self.assertEqual(restored.require('notes',base['id']),store.require('notes',base['id']))
             finally:store.close();restored.close()
+
+    def test_session_bound_bases_reconcile_two_real_concurrent_transactions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=Store(directory);snapshots=EditSnapshots()
+            try:
+                base={'id':'fictional-note','text':'Start','resolved':False,'task':True}
+                with store.transaction():store.put('notes',base)
+                tokens={actor:snapshots.create(actor,'notes',base['id'],store.require('notes',base['id'])) for actor in ('a','b')}
+                barrier=threading.Barrier(2)
+                def save(actor,value):
+                    with snapshots.claim(tokens[actor],actor,'notes',base['id']) as server_base:
+                        barrier.wait(timeout=5)
+                        return commit_reviewed(store,'notes',base['id'],server_base,{**server_base,'text':value},('text',),actor,lambda db,row:db.put('notes',row))
+                with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                    futures=[pool.submit(save,'a','Første'),pool.submit(save,'b','Anden')]
+                    self.assertEqual(sorted(f.result(timeout=10)['conflicts'] for f in futures),[0,1])
+                notice=next(x for x in store.all('settings') if x.get('entity')=='edit-conflict')
+                self.assertEqual(notice['base']['value'],'Start')
+                self.assertEqual({notice['saved']['value'],notice['incoming']['value']},{'Første','Anden'})
+                for actor in tokens:
+                    with self.assertRaises(ValueError):
+                        with snapshots.claim(tokens[actor],actor,'notes',base['id']):pass
+            finally:store.close()
 
     def test_an_already_saved_identical_change_does_not_write_again(self):
         with tempfile.TemporaryDirectory() as directory:
