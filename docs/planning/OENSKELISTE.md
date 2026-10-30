@@ -1,10 +1,12 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.75 under kontrol · 30.10.2026
+## Aktuel oversigt · beta.75 udgivet · 30.10.2026
 
 Beta.74 er udgivet fra `54821ef4e98f4dac62d5234ec043eaa47790eeee`. HA beta release 40401076156, Checks 40401076193 og Platformskontrol 40401076016 er completed/success. De hentede HA- og desktop-ZIP-filer matcher byte for byte lokale pakker fra denne commit; alle 127 filer på betakanalen matcher den samme kilde. Den nye startguide er et deltrin af W74: lokal eller privat server på Mac/Windows/Linux, separate beta-/serverdata, eget login og Python installeret separat. W74 er stadig åben; appvindue, selvstændige installationer og automatisk serverstart mangler.
 
-En efterfølgende gennemgang fandt, at serveren i beta.74 kunne lytte på den valgte private IPv4-adresse, men den interne statuskontrol forsøgte at kontakte 127.0.0.1. En kørende server kunne derfor ikke genfindes korrekt. Beta.75 bruger lytteadressens private URL og direkte lokal statuskontrol uden proxy. En rigtig lokal HTTP-prøve på en anden loopback-adresse viser, at serveren genfindes med en ugyldig proxykonfiguration. Godkendte private værter valideres; offentlige adresser og URL'er med ekstra felter afvises. Ingen generel tvungen genindlæsning indføres. Beta.75 er ikke færdigmeldt, før kontrollen af præcis commit, begge pakker og betakanalen er bestået.
+En efterfølgende gennemgang fandt, at serveren i beta.74 kunne lytte på den valgte private IPv4-adresse, men den interne statuskontrol forsøgte at kontakte 127.0.0.1. En kørende server kunne derfor ikke genfindes korrekt. Beta.75 bruger lytteadressens private URL og direkte lokal statuskontrol uden proxy. En rigtig lokal HTTP-prøve viser, at serveren genfindes med en ugyldig proxykonfiguration. Godkendte private værter valideres; offentlige adresser og URL'er med ekstra felter afvises. Ingen generel tvungen genindlæsning indføres.
+
+**Beta.75 er verificeret udgivet** fra `19ada08e8ab95473d72fa068dc88d8158a20df1e`. HA beta release **41138249061**, Checks **41138249075** og Platformskontrol **41138248969** er bestået. De to offentlige ZIP-filer er hentet og sammenlignet byte for byte med lokale pakker fra samme kilde: HA 1.208.776 bytes, SHA256 `0f84d7ab68b28a5726b031d4f6c485a439ecb61c12a8bbc22cdc9709ae41c59b`; desktop 3.494.429 bytes, SHA256 `b327998ff53504be9ef5f4554adc6923dcbfd08814c736a4f7ed56f53de44ab1`. Alle 127 filer på betakanalen matcher den lokalt byggede kanal; beta bruger 8788, stabil 1.12.1 bruger 8787. Ingen ejerinstallation er fjernmålt. [Beta.75](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.75).
 
 ### Ejerens nye retning · W65/W83
 
@@ -16,6 +18,8 @@ Ejeren ønsker nu, at der arbejdes på profiler og databaseflow, når de aktuell
 > Og en, revisionspåmindelse på forsiden hvis 2 har gemt samme ting, men med forskellige rettelser/udgangspunkter
 
 Dette er en uddybning af W65/W83, ikke en ny afsluttet funktion. Adminpanelet skal styre brugere, egne roller og rettigheder, som allerede aftalt. Tillad samtidige uafhængige ændringer; ved modsatrettede ændringer på samme oplysninger skal begge grundlag/rettelser bevares til konkret gennemgang, og en påmindelse på forsiden vises. Et muligt overblik over aktive brugere er et ønske, ikke et bevis på præcis tilstedeværelse. Beskyt private data, sessionsoplysninger og rettigheder server-side. Planlæg sammen med profiler; genindfør ikke den gamle generelle afvisning for almindelige gemninger. Ingen brugerprofiler eller ny konflikthåndtering er endnu frigivet.
+
+**Arbejdet er påbegyndt på den separate gren `work/w65-brugere-20261030`.** Isolerede prototyper til konti/administratorstyrede roller, nyligt aktive brugere, sessionsbundne redigeringsudgangspunkter og konfliktbevarende databasetransaktion er prøvet med opdigtede data. Ingen af dem er tilsluttet appen. Rettighedskontrol af alle serverens læse- og skriveveje, beskyttelse af følsomme data i samlet status, sikker loginmigration og gendannelse, brugerflade og lokal fuldforløbsprøve mangler før frigivelse. Prototypebeskrivelse: `docs/planning/BRUGERE-SAMTIDIG.md` på arbejdsgrenen.
 
 W85/OCR og W16 er fortsat på pause. Stabil er 1.12.1. Fremdrift bevares på **91/105 afsluttet/afklaret, 14 åbne, cirka 87 %**; nye detaljer til et eksisterende punkt øger ikke totalen. Ingen ny generel ejerprøve er bestilt.
 
