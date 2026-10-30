@@ -138,7 +138,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'missing Excel import template'):self.build('output')
 
     def test_accidental_credential_json_in_program_tree_blocks_release(self):
-        for name in ('drive-auth.json','datafordeler-auth.json','access.json','run.json'):
+        for name in ('drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json','profiles.json','profiles.tmp'):
             with self.subTest(name=name):
                 path=self.source/'app'/name
                 path.write_text('{"credential":"FICTIONAL_TEST_ONLY"}')
