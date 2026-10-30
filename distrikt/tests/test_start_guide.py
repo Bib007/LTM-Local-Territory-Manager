@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 import urllib.error
@@ -19,12 +20,27 @@ from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 import launcher
 from access import Access,write_private
+from store import Store
 
 
 class StartGuideTests(unittest.TestCase):
     def setUp(self):
         self.environment=patch.dict(os.environ,dict(os.environ));self.environment.start()
     def tearDown(self):self.environment.stop()
+
+    def test_private_interface_discovery_reaches_the_bound_server_without_proxy(self):
+        # A second loopback address proves discovery uses the bound interface, not 127.0.0.1.
+        host='127.0.0.2'
+        with tempfile.TemporaryDirectory() as directory:
+            data=Path(directory);store=Store(data);srv=launcher.server.Server((host,0),store,access_host=host,password='Fictional-private-123')
+            thread=threading.Thread(target=srv.serve_forever,daemon=True);thread.start()
+            try:
+                self.assertEqual(srv.origin,'http://'+host+':'+str(srv.server_port))
+                write_private(data/'run.json',{'url':srv.origin,'public_url':srv.public_url,'token':srv.token})
+                # Invalid proxy must not intercept discovery of this local listener.
+                with patch.dict(os.environ,{'http_proxy':'http://127.0.0.1:1','HTTP_PROXY':'http://127.0.0.1:1','no_proxy':'','NO_PROXY':''}):
+                    self.assertEqual(launcher.server.running(data)['public_url'],srv.public_url)
+            finally:srv.shutdown();srv.server_close();thread.join();store.close()
 
     def test_platform_start_file_reuses_its_own_local_data(self):
         folder=Path(__file__).resolve().parents[1]

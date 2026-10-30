@@ -1,5 +1,11 @@
 # Ændringsliste
 
+## 1.12.2-beta.75 · Privat server på valgt adresse
+
+- Startguiden genfinder nu serveren på den private adresse, den faktisk lytter på.
+- Serverens statuskontrol bruger den lokale forbindelse direkte.
+- Beta.74s startguide og adskilte data er bevaret. W74 er fortsat åbent.
+
 ## 1.12.2-beta.74 · Startguide til egen computer og server
 
 - Ny fælles startguide til Mac, Windows og Linux med valg af lokal brug eller privat server.

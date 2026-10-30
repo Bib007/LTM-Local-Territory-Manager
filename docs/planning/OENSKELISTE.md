@@ -1,6 +1,25 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · W74-deltrin / beta.74 under kontrol · 26.10.2026
+## Aktuel oversigt · beta.75 under kontrol · 30.10.2026
+
+Beta.74 er udgivet fra `54821ef4e98f4dac62d5234ec043eaa47790eeee`. HA beta release 40401076156, Checks 40401076193 og Platformskontrol 40401076016 er completed/success. De hentede HA- og desktop-ZIP-filer matcher byte for byte lokale pakker fra denne commit; alle 127 filer på betakanalen matcher den samme kilde. Den nye startguide er et deltrin af W74: lokal eller privat server på Mac/Windows/Linux, separate beta-/serverdata, eget login og Python installeret separat. W74 er stadig åben; appvindue, selvstændige installationer og automatisk serverstart mangler.
+
+En efterfølgende gennemgang fandt, at serveren i beta.74 kunne lytte på den valgte private IPv4-adresse, men den interne statuskontrol forsøgte at kontakte 127.0.0.1. En kørende server kunne derfor ikke genfindes korrekt. Beta.75 bruger lytteadressens private URL og direkte lokal statuskontrol uden proxy. En rigtig lokal HTTP-prøve på en anden loopback-adresse viser, at serveren genfindes med en ugyldig proxykonfiguration. Godkendte private værter valideres; offentlige adresser og URL'er med ekstra felter afvises. Ingen generel tvungen genindlæsning indføres. Beta.75 er ikke færdigmeldt, før kontrollen af præcis commit, begge pakker og betakanalen er bestået.
+
+### Ejerens nye retning · W65/W83
+
+Ejeren ønsker nu, at der arbejdes på profiler og databaseflow, når de aktuelle opgaver er håndteret. Fuld besked:
+
+> Kan du fortsætte
+> Hvis du løber tør for ting du kan lave lige nu og her, skal du bare begynde på versionen hvor man har forskellige brugere… det der er beskrevet i dokumentet, og gør database flowet, klar til at flere kan ved en fejl komme til at redigere ting samtidig, eller bare samtidig på forskellige ting
+> Måske en online country i toppen, af hvem der er på
+> Og en, revisionspåmindelse på forsiden hvis 2 har gemt samme ting, men med forskellige rettelser/udgangspunkter
+
+Dette er en uddybning af W65/W83, ikke en ny afsluttet funktion. Adminpanelet skal styre brugere, egne roller og rettigheder, som allerede aftalt. Tillad samtidige uafhængige ændringer; ved modsatrettede ændringer på samme oplysninger skal begge grundlag/rettelser bevares til konkret gennemgang, og en påmindelse på forsiden vises. Et muligt overblik over aktive brugere er et ønske, ikke et bevis på præcis tilstedeværelse. Beskyt private data, sessionsoplysninger og rettigheder server-side. Planlæg sammen med profiler; genindfør ikke den gamle generelle afvisning for almindelige gemninger. Ingen brugerprofiler eller ny konflikthåndtering er endnu frigivet.
+
+W85/OCR og W16 er fortsat på pause. Stabil er 1.12.1. Fremdrift bevares på **91/105 afsluttet/afklaret, 14 åbne, cirka 87 %**; nye detaljer til et eksisterende punkt øger ikke totalen. Ingen ny generel ejerprøve er bestilt.
+
+## Historik · W74-deltrin / beta.74 under kontrol · 26.10.2026
 
 **W74 · første del af egen hosting er implementeret og under kontrol.** En fælles startguide i programpakken tilbyder lokal brug eller privat server på Mac/Windows/Linux. Serveren bindes til brugerens valgte private IPv4-adresse, åbner ingen browser og stoppes med Ctrl+C. Adgangskoden indtastes skjult med gentagelse; kun den eksisterende saltede hash gemmes lokalt. Startvalg indeholder ingen adgangskode. Lokal/server og beta/stabil har adskilte mapper; eksisterende data flyttes ikke automatisk. En kørende server skifter ikke stiltiende adresse/port. De gamle lokale startfiler bevares.
 

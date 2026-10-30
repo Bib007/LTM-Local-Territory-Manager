@@ -30,7 +30,7 @@ from photo_ocr import PhotoOCR
 from ui_errors import UIError,error_payload
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.74'
+VERSION='1.12.2-beta.75'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -53,7 +53,8 @@ class Server(ThreadingHTTPServer):
         self.address_source=Datafordeler(store.root)
         self.downloads=Downloads(store,self.address_source)
         self.token=secrets.token_urlsafe(32)
-        self.origin='http://127.0.0.1:%s'%self.server_port
+        # A listener bound to one LAN interface cannot be reached through loopback.
+        self.origin='http://%s:%s'%('127.0.0.1' if self.server_name=='0.0.0.0' else self.server_name,self.server_port)
         self.access=Access(store.root,password) if access_host else None
         self.hosts={'127.0.0.1:%s'%self.server_port}
         self.public_url=self.origin
@@ -287,9 +288,9 @@ def running(data):
         info=json.loads((data/'run.json').read_text())
         url=info['url']
         parsed=urlsplit(url)
-        if parsed.scheme!='http' or parsed.hostname!='127.0.0.1':return None
+        if parsed.scheme!='http' or not private_client(parsed.hostname) or parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment:return None
         req=urllib.request.Request(url+'/api/ping')
-        with urllib.request.urlopen(req,timeout=1) as r:
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req,timeout=1) as r:
             ping=json.load(r)
         if ping.get('app')=='Distrikt':return dict(info,version=ping['version'])
     except Exception:pass
