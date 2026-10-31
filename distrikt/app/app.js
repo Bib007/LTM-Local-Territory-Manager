@@ -48,7 +48,7 @@ class RequestError extends Error{
  }
 }
 const WriteGuard={uncertain:false,needsReview:false,loginExpired:false,error:null,epoch:0,
- writes(path,body){return !!body&&!(path==='/api/mutate'&&typeof body.action==='string'&&body.action.endsWith('.preview'))&&!['/api/profiles/heartbeat','/api/photo/read','/api/photo/cancel','/api/share/prepare','/api/restore/preview','/api/profiles/backup/preview','/api/address-source/check','/api/open-data','/api/logout','/api/shutdown','/api/geo/pause'].includes(path);},
+ writes(path,body){return !!body&&!(path==='/api/mutate'&&typeof body.action==='string'&&body.action.endsWith('.preview'))&&!['/api/runtime/test','/api/profiles/heartbeat','/api/photo/read','/api/photo/cancel','/api/share/prepare','/api/restore/preview','/api/profiles/backup/preview','/api/address-source/check','/api/open-data','/api/logout','/api/shutdown','/api/geo/pause'].includes(path);},
  assert(epoch=this.epoch){if(this.uncertain||this.needsReview||epoch!==this.epoch)throw new RequestError('Kontrollér den tidligere ændring med Opdater, før du gemmer igen.','blocked',0,'',true);if(this.loginExpired)throw new RequestError('Login er udløbet · log ind igen.','login',401,'',true);},
  mark(error){this.uncertain=true;this.error=error;this.epoch++;clearTimeout(autosaveTimer);failed(error);},
  requireRefresh(error){this.needsReview=true;this.error=error;this.epoch++;clearTimeout(autosaveTimer);failed(error);},

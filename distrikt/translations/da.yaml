@@ -5,5 +5,8 @@ configuration:
   password:
     name: Appens adgangskode
     description: Mindst 12 tegn. Dette er Distrikts eget login. Adgangskoden bliver på din installation.
+  drift_status:
+    name: Driftsstatus til Home Assistant
+    description: Aflevér et lokalt livstegn og begrænset driftsstatus uden distriktsdata. Opskriften til telefonbeskeder findes i appens indstillinger. Slå også din automation fra, hvis du stopper afleveringen.
 network:
   8787/tcp: Privat webside med eget login, kun LAN/VPN

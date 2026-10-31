@@ -10,6 +10,13 @@ Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41
 
 **W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Fremdrift ved registrering af de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**; beta.77-status nedenfor er nyere. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
 
+
+### Beta.78-kandidat · adressekontrol og HA-driftsbeskeder
+
+W111 er gemt på develop som `137a87fa589cdf08a7de99bb6aee3706f71f0ea5`; Checks **41228675773**, Platformskontrol **41228675787** og HA beta release-kontroller **41228675791** er grønne. Ingen eksisterende beta blev overskrevet. W110 er nu integreret lokalt med separat stabil/beta-livstegn, begrænset driftsindhold, vedvarende pres, gentagne afbrydelser, importklar beskedopskrift, telefonvalg/egne noter og en udtrykkelig prøvevej. Den aktuelle suite har **586 Python-prøver**, JavaScript, pakker og browserforløbet på rigtig lokal server. Home Assistant **2026.10.4**'s egne blueprint-/handlings-/hændelsesskemaer og besked-/livstegnskabeloner er også prøvet med opdigtede data.
+
+Kandidaten har versionsnummer **1.12.2-beta.78** og skal gennem de samlede udgivelseskontroller før publicering. **Senest verificerede beta er stadig .77; W110/W111 er endnu ikke afsluttet.** [HA-status, opsætning og adgangens omfang](../HA-DRIFTSSTATUS.md). Core-API-rettigheden er ny; den almindelige loginarkitektur og de private data er bevaret. Ejerens HA er ikke åbnet, og ingen besked er sendt til ejerens enhed. Den konkrete nye prøve er en opsætning/prøvebesked, ikke en gentaget generel HA-prøve.
+
 ### W111 · genforsøg og synlig venten · prøvet lokalt, ikke frigivet
 
 Adressekontrollen har nu hurtige, begrænsede genforsøg, bevaret kildeventetid, længere arbejdsrunder med genoptageligt checkpoint, ressourcepause og en tydelig årsag til venten. 579 Python-prøver, JavaScript-suiten, pakkeprøver og fire browserbredder består med opdigtede data. [Afgrænsning og kontrol](ADRESSEKONTROL-GENFORSOEG.md). Ændringen sendes til samlet kontrol på develop; den er ikke med i beta.77 og tæller endnu ikke som afsluttet. W110's HA-status og notifikationer er fortsat en særskilt åben opgave. Ingen målinger eller private oplysninger sendes ud af systemet af det lokale ressourcegrundlag.

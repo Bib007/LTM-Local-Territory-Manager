@@ -78,6 +78,23 @@ class ProfilesIntegrationTests(unittest.TestCase):
             with self.subTest(action=action),self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,state,action,data)
             self.assertEqual(error.exception.code,403)
 
+    def test_runtime_test_uses_current_settings_permission_and_no_private_payload(self):
+        from runtime_status import RuntimeStatus
+        sent=[]
+        self.server.runtime_status=RuntimeStatus(self.server.address_schedule,'fictional',True,enabled=True,token='fictional-secret',
+            pressure=lambda:{'available':True,'high':False},transport=lambda *args:sent.append(args))
+        self.server.runtime_status.publish()
+        reader,role,_=self.reader(['settings.manage'])
+        self.assertTrue(self.state(reader)['runtime_status']['available'])
+        self.assertTrue(self.value('/api/runtime/test',{},reader)['ok'])
+        self.assertEqual(sent[-1],('events/ltm_status_test',{'entity_id':'sensor.ltm_beta_drift'},'fictional-secret'))
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view']},self.admin)
+        self.assertNotIn('runtime_status',self.state(reader))
+        for path,data in [('/api/runtime/status',None),('/api/runtime/test',{})]:
+            with self.assertRaises(urllib.error.HTTPError) as error:self.request(path,data,reader)
+            self.assertEqual(error.exception.code,403)
+        self.assertEqual(len(sent),2,'Revoked access cannot send another event')
+
     def test_management_permission_does_not_grant_data_or_backup(self):
         manager,_,_=self.reader(['users.manage'])
         state=self.state(manager)

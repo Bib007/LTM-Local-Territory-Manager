@@ -2,7 +2,7 @@ name: HA beta release
 on:
   push:
     branches: [develop]
-    paths: ['distrikt/**', 'scripts/**', 'docs/BETA*.md', '.github/workflows/beta.yml']
+    paths: ['distrikt/**', 'scripts/**', 'homeassistant/**', '.github/workflows/ha-status.yml', 'docs/BETA*.md', '.github/workflows/beta.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,6 +12,8 @@ concurrency:
 jobs:
   security:
     uses: ./.github/workflows/security.yml
+  ha-status-blueprint:
+    uses: ./.github/workflows/ha-status.yml
   checks:
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
@@ -121,7 +123,7 @@ jobs:
       - run: docker run --rm --env LTM_CHANNEL=beta --entrypoint python3 ltm-ha-beta -c "import sys,tempfile; sys.path.insert(0, '/opt/distrikt/app'); from access import Access,LOGIN; assert 'Beta' in LOGIN; d=tempfile.TemporaryDirectory(); assert Access(d.name,'Fictional-pass-123').cookie_name=='distrikt_beta_session'"
   publish:
     if: github.ref == 'refs/heads/develop'
-    needs: [security, checks, python-compatibility, desktop, home-assistant]
+    needs: [security, checks, python-compatibility, desktop, home-assistant, ha-status-blueprint]
     runs-on: ubuntu-latest
     permissions:
       contents: write

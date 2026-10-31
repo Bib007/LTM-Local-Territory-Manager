@@ -1,5 +1,5 @@
 name: Distrikt
-version: "1.12.2-beta.77"
+version: "1.12.2-beta.78"
 slug: distrikt
 init: false
 description: "Lokalt overblik over distriktskort, udleveringer, gennemgange og print"
@@ -15,7 +15,7 @@ backup_exclude:
 ingress: false
 host_network: false
 hassio_api: false
-homeassistant_api: false
+homeassistant_api: true
 ports:
   8787/tcp: 8787
 ports_description:
@@ -24,6 +24,8 @@ webui: "http://[HOST]:[PORT:8787]/"
 options:
   access_host: "homeassistant.local"
   password: ""
+  drift_status: true
 schema:
   access_host: str
   password: password
+  drift_status: bool
