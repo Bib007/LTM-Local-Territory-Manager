@@ -1,24 +1,26 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.76 med profiler verificeret udgivet · 31.10.2026
+## Aktuel oversigt · beta.77 med profilrettelser verificeret udgivet · 31.10.2026
 
-Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.76 med profiler er verificeret udgivet; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.77 med profilrettelser er verificeret udgivet; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
 
 **W65/W83:** Den første integrerede profilbeta er frigivet i **1.12.2-beta.76** fra `65ee595170b413e03186e0427447ac4c15fc99c8`. Personligt login aktiveres fra eksisterende adgang; administratoren opretter konti og egne roller/rettigheder. Samtidige uafhængige rettelser sammenføjes, og modsatrettede rettelser bevares med udgangspunkt til gennemgang og påmindelse på forsiden. Nylig aktivitet (90 sek.), individuel introduktion, ændrede rettigheder under sessionen, lokal kontobackup/gendannelse og beskyttelse ved ukendt gemmeresultat er med. Lokal stop/opdatering og begrænset udlånsret er kontrolleret. Den generelle revisionsafvisning er ikke genindført.
 
 Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41208420483** er completed/success på denne commit, inklusive Chromium/WebKit, Python 3.9/3.12/3.13, Mac, Windows, HA og pakker. Begge offentlige ZIP-filer matcher lokale pakker byte for byte; alle **142 filer** på betakanalen `21040c5829bbf7d3f7309f0068757b5484d99f11` matcher samme kilde. [Præcis verificering og kontrolsummer](BETA-76-VERIFICERING.md). Ingen ejerinstallation eller private data er brugt. Codex Security er ikke kørt.
 
-**W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Aktuel fremdrift efter de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
+**W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Fremdrift ved registrering af de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**; beta.77-status nedenfor er nyere. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
 
-### Profilopfølgning · beta.77-kandidat under kontrol
+### Profilopfølgning · beta.77 verificeret udgivet
 
-W112 (prioritet −1), W113–W115 og de konkrete profilrettelser er implementeret og prøvet lokalt: rollevalg for backup-påmindelse, egne faner og samlede forbindelser, tydeligere opfølgninger, velkomst, valg af konfliktrettelse med straks-opdateret påmindelse samt kontobackup/gendannelse i appen. 572 Python-prøver og den udvidede browserprøve består med opdigtede data. [Detaljer](BRUGERE-SAMTIDIG.md). Ikke frigivet endnu; senest verificerede udgave er fortsat beta.76. Planens afslutningstal ændres først efter verificeret frigivelse.
+**Beta.77 er verificeret udgivet** fra `ffb7638abae22925c54792b02109393dd5643ce1`. W112 (prioritet −1) og W113–W115 er frigivet sammen med ejerens konkrete profilrettelser: rollevalg for backup-påmindelse, egne faner og samlede forbindelser, tydeligere opfølgninger, velkomst, valg af konfliktrettelse med straks-opdateret påmindelse og kontobackup/gendannelse i appen. Checks **41226343976** og HA beta release **41226343968** er grønne på selve udgivelseskilden, inklusive Mac/Windows/HA og Chromium/WebKit. Begge offentlige pakker og alle **144 filer** på betakanalen matcher samme kilde. [Præcis verificering](BETA-77-VERIFICERING.md), herunder afgrænsningen af den selvstændige platformskontrol på samme programkode.
+
+**Aktuel fremdrift: 98/119 afsluttet eller afklaret, 21 åbne, cirka 82 %.** W65 er fortsat åben til stabilslutkontrol. W111's genforsøg og ressourcepause er nu under lokal udvikling, ikke frigivet i beta.77. W106–W108, W110 og W117 mangler også før næste stabile. Stabil 1.12.1, OCR-pausen og det parkerede W16 er uændrede.
 
 ### Nye input efter profilbetaen · 31.10.2026
 
 Alle syv Google-faner er genlæst. Fuld tekst, kildeprioriteter og ejersvar er bevaret i [nye profilinput](INPUT-2026-10-31-PROFILBETA.md). **W112 har prioritet −1 og kommer først:** administratoren skal kunne styre backup-påmindelsen pr. rolle. Derefter følger fejlrettelserne fra ejerens profilprøve, overskuelig konfliktgennemgang med valg af rettelse, synlig kontobackup og egne indstillingsfaner (W113/W114), tydeligere opfølgninger (W115) og en personlig hilsen. W117 om lokal IB-import fra XLSX og manuelle adresser skal med før næste stabile. W116's manuelle opdelingsforslag, W118's synlighedsplan og W119's valgfrie ansvarshavende er registreret; W101's enkle hosting tages efter næste stabile. W85/OCR og W16 genoptages ikke.
 
-**Aktuel registrering: 94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %.** Faldet i procent skyldes otte nye planpunkter, ikke bortfald af frigivne funktioner. W83 er også ejerbekræftet; W65 er fortsat åben. De nye punkter er registreret, ikke frigivet. Denne status går foran den tidligere registrering nedenfor.
+**Registrering før beta.77: 94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %.** Faldet i procent skyldes otte nye planpunkter, ikke bortfald af frigivne funktioner. W83 er også ejerbekræftet; W65 er fortsat åben. De nye punkter er registreret, ikke frigivet. Denne status går foran den tidligere registrering nedenfor.
 
 ### W109 · ny aktuel regel for svartabellen · prioritet −1
 
