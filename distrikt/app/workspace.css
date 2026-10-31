@@ -138,3 +138,5 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .photoRow{padding:12px 0;border-bottom:1px solid var(--border,#6b7f90)}
 .photoRow p{white-space:pre-wrap;overflow-wrap:anywhere}
 #photoImport textarea{width:100%;box-sizing:border-box}
+/* Incomplete IB rows remain readable when warnings wrap on a phone. */
+.setupIBRows .line>span{min-width:0;width:100%}.setupIBRows .line small{display:block;white-space:normal;line-height:1.6}.setupIBRows .line small.notice{margin:10px 0 0;padding:10px;border-radius:5px}

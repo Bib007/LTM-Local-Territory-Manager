@@ -23,7 +23,7 @@ class NoDTD(ET.TreeBuilder):
         # Parser-level rejection also covers UTF-16 XML inside XLSX files.
         raise ValueError('Regnearket indeholder ikke-understøttede XML-deklarationer.')
 
-def xlsx_rows(raw):
+def xlsx_rows(raw,sheet_name='Distriktskort'):
     """Read values from the named input sheet; never evaluate formulas or links."""
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
@@ -37,9 +37,9 @@ def xlsx_rows(raw):
                 if b'<!DOCTYPE' in content.upper() or b'<!ENTITY' in content.upper():raise ValueError('Regnearket indeholder ikke-understøttede XML-deklarationer.')
                 return ET.fromstring(content,parser=ET.XMLParser(target=NoDTD()))
             book=xml('xl/workbook.xml');sheets=book.findall('s:sheets/s:sheet',NS)
-            chosen=next((s for s in sheets if s.get('name')=='Distriktskort'),None)
+            chosen=next((s for s in sheets if s.get('name')==sheet_name),None)
             if chosen is None:
-                if len(sheets)!=1:raise ValueError('Brug skabelonens fane Distriktskort, eller gem som CSV.')
+                if len(sheets)!=1:raise ValueError('Brug skabelonens fane '+sheet_name+', eller gem som CSV.')
                 chosen=sheets[0]
             rels={r.get('Id'):r for r in xml('xl/_rels/workbook.xml.rels')}
             rel=rels.get(chosen.get('{'+NS['r']+'}id'))
@@ -79,7 +79,7 @@ def xlsx_rows(raw):
     except (zipfile.BadZipFile,KeyError,ET.ParseError,RuntimeError,OverflowError) as error:
         raise ValueError('XLSX-filen kunne ikke læses. Gem som .xlsx eller CSV fra skabelonen.') from error
 
-def read_rows(data):
+def read_rows(data,sheet_name='Distriktskort'):
     filename=str(data.get('name','')).lower()
     if filename.endswith('.xlsx'):
         encoded=data.get('content','')
@@ -87,7 +87,7 @@ def read_rows(data):
         try:raw=base64.b64decode(encoded,validate=True)
         except (ValueError,binascii.Error):raise ValueError('Regnearket kunne ikke afkodes.') from None
         if len(raw)>MAX_BYTES:raise ValueError('Filen må højst fylde 2 MB.')
-        return xlsx_rows(raw)
+        return xlsx_rows(raw,sheet_name)
     if not filename.endswith('.csv'):raise ValueError('Vælg en .xlsx- eller .csv-fil. Gem gamle .xls-filer som .xlsx først.')
     raw=data.get('content','')
     if not isinstance(raw,str) or len(raw.encode('utf-8'))>MAX_BYTES:raise ValueError('Filen må højst fylde 2 MB.')

@@ -95,6 +95,27 @@ class ProfilesIntegrationTests(unittest.TestCase):
             self.assertEqual(error.exception.code,403)
         self.assertEqual(len(sent),2,'Revoked access cannot send another event')
 
+    def test_excel_ib_template_manual_import_and_postcode_merge_use_current_rights(self):
+        with self.request('/api/setup/ib-template.xlsx',session=self.admin) as response:
+            self.assertTrue(response.read().startswith(b'PK'))
+        base=self.state(self.admin)
+        preview=self.change(self.admin,base,'setup.ib.preview',{'content':'kortnummer;vejnavn;husnummer\nF101;Fiktiv vej;2'})['result']
+        with self.assertRaises(urllib.error.HTTPError):self.change(self.admin,base,'setup.ib.apply',{'token':preview['token'],'confirm':'IMPORTÉR IB'})
+        self.change(self.admin,self.state(self.admin),'setup.ib.apply',{'token':preview['token'],'confirm':'IMPORTÉR IB','acknowledge':True})
+        other=self.login('Fiktiv admin','Fiktiv-password-123');initial=self.state(self.admin);other_initial=self.state(other);ib=initial['ib'][0]
+        self.assertEqual(ib['missing_fields'],['postcode'])
+        self.change(self.admin,initial,'ib.save',{**ib,'postcode':'9999'})
+        self.change(other,other_initial,'ib.save',{**ib,'date':'2026-10-02','postcode':''})
+        merged=self.state(self.admin);saved=merged['ib'][0]
+        self.assertEqual((saved['postcode'],saved['date']),('9999','2026-10-02'))
+        self.assertEqual(saved['missing_fields'],[]);self.assertEqual(merged['profile']['conflicts'],0)
+        # Conflicting edits retain both postcodes and their true observed base.
+        other_merged=self.state(other)
+        self.change(self.admin,merged,'ib.save',{**saved,'postcode':'9998'})
+        self.change(other,other_merged,'ib.save',{**saved,'postcode':'9997'})
+        review=self.value('/api/profiles/conflicts',session=self.admin)
+        self.assertTrue(any(r['field']=='postcode' for r in review))
+
     def test_management_permission_does_not_grant_data_or_backup(self):
         manager,_,_=self.reader(['users.manage'])
         state=self.state(manager)

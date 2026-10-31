@@ -1,11 +1,11 @@
-# LTM 1.12.2-beta.78 · Adressekontrol og driftsbeskeder
+# LTM 1.12.2-beta.79 · IB fra Excel
 
-Adressekontrollen bevarer færdige udsnit og kan fortsætte hurtigt efter korte afbrydelser. Gentagne problemer, ventetid fra adressekilden og ressourcepres giver en passende pause. Visningen forklarer den seneste afbrydelse og næste forsøg. Længere arbejdsrunder kan genoptages.
+- Hent en tom Excel-skabelon, og upload XLSX eller CSV direkte i appen. Filen behandles lokalt.
+- Importér også uden postnummer. Manglende oplysninger og ekstra kolonner vises tydeligt før import.
+- Angiv kortnummer i filen, eller vælg et standardkort. En adresse uden sikkert match kan bevares som en manuel IB-linje på det valgte kort. Der gættes ingen geografisk adresse.
+- Gennemgå advarslerne og bekræft importen. Dubletter springes over, og eksisterende IB overskrives ikke. Kun bagsiden markeres til genprint; besøgstal, grænser og udleveringer bevares.
+- En mangelpåmindelse bliver på IB-listen, indtil postnummeret tilføjes. Samtidige uafhængige rettelser bevares; forskellige postnummerrettelser går til gennemgang.
 
-I Home Assistant kan LTM nu vise driftsstatus. Under **Indstillinger → Backup og vedligeholdelse → Drift og beskeder** findes en klar beskedopskrift. Importér den, vælg beta og din telefon, tilføj eventuelle egne noter, og gem. **Send én prøvebesked** afprøver beskeden uden at skabe en fejl eller ændre data. Normale pauser giver ingen fejlbesked; opskriften kan også opdage manglende livstegn.
+Prøv et lille opdigtet regneark, også med manglende postnummer og en adresse uden match. Kontrollér den manuelle linje på det valgte kort og tilføj postnummeret bagefter. Brug ikke rigtige IB i offentlig feedback. [Vejledning](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/v1.12.2-beta.79/docs/IB-EXCEL.md).
 
-HA-appen får adgang til Home Assistants lokale API for at aflevere status og den udtrykkelige prøve. Forbindelsen har administrativ HA-adgang; LTM bruger kun faste lokale status- og prøveveje. Afleveringen kan slås fra med **drift_status** i HA-appens konfiguration. Det tilbagekalder ikke selve API-rettigheden. [Opsætning, måling og adgangens omfang](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/v1.12.2-beta.78/docs/HA-DRIFTSSTATUS.md).
-
-Prøv kun den nye opsætning, én prøvebesked med din note og genoptagelse af en konkret afbrudt adressekontrol med opdigtede betaoplysninger. Fremkald ikke rigtig overbelastning. De allerede godkendte generelle HA-, Drive- og datagendannelsesprøver gentages ikke.
-
-Alle tidligere profilrettelser og kontobackup er med. Datoer på onlinekort, vejintervaller, tjenestegrupper og IB fra Excel mangler stadig før næste stabile. OCR og automatisk kortinddeling er fortsat på pause. Stabil er fortsat 1.12.1.
+Denne beta indeholder også profilrettelser, kontobackup, adressekontrol og HA-driftsbeskeder fra de tidligere betaer. Datoer på onlinekort, vejintervaller og tjenestegrupper mangler stadig før næste stabile. OCR og automatisk kortinddeling er på pause. Stabil er fortsat 1.12.1.

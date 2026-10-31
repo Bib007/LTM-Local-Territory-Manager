@@ -8,7 +8,7 @@ SAVE={
  'card.save':('cards',set('number name area_id kind temporary map_color addresses'.split())),
  'publisher.save':('publishers',{'name'}),
  'note.save':('notes',{'text','card_id','recurrence'}),
- 'ib.save':('ib',{'address_id','road','number','date'}),
+ 'ib.save':('ib',{'address_id','road','number','date','postcode'}),
  'area.save':('settings',{'name'}),
  'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision'}),
  'visit.save':('visits',{'date','note'}),
@@ -20,7 +20,7 @@ SAVE={
 REVIEW_FIELDS={
  'cards':set('number name area_id kind temporary map_color addresses geo_polygon address_ids geo_addresses imported_addresses polygon in_folder last_completed front_revision back_revision'.split()),
  'publishers':{'name'},'notes':{'text','card_id','recurrence','resolved','task_history'},
- 'ib':{'address_id','road','number','date'},
+ 'ib':{'address_id','road','number','date','postcode'},
  'visits':{'date','note'},'loans':{'assigned','cycle_start','returned','publisher_id'},
  'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision name print_profiles saved_views'.split()),
  'maps':{'image','name'},
@@ -55,6 +55,7 @@ class ReviewedMutation:
             if field=='map_color' and isinstance(value,str):return value.lower()
             if field in ('name','number','text','road') and isinstance(value,str):return value.strip()
             if field in ('area_id','address_id','card_id'):return value or None
+            if field=='postcode':return value or ''
             return value
         unchanged={f for f in fields if f in draft and _equal(canonical(f,draft[f]),canonical(f,original.get(f)))}
         trial=deepcopy(draft)

@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.79 · IB fra Excel
+
+- Hent Excel-skabelon, og upload XLSX eller CSV direkte i den lokale app.
+- Gennemgå manglende oplysninger og manuelle linjer. Adresser uden sikkert match kan skrives på et valgt kort efter din bekræftelse.
+- Se og ret et manglende postnummer bagefter. Dubletter og eksisterende IB bevares; kun bagsiden markeres til genprint.
+- Samtidige dato- og postnummerrettelser bevares. Forskellige rettelser til samme postnummer gemmes til gennemgang.
+
 ## 1.12.2-beta.78 · Adressekontrol og driftsbeskeder
 
 - Adressekontrollen prøver hurtigt igen efter korte afbrydelser og bevarer færdige udsnit. Gentagne fejl, kildeventetid og ressourcepres giver en passende pause.

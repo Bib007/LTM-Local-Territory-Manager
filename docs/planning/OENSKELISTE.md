@@ -4,6 +4,10 @@
 
 Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.77 med profilrettelser er verificeret udgivet; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
 
+### W117 · beta.79-kandidat med IB fra Excel
+
+Excel-skabelon, lokal XLSX/CSV-upload, synlige mangler, udtrykkeligt godkendte manuelle linjer på et valgt kort, dubletter, vedvarende postnummerpåmindelse og normal efterfølgende rettelse er integreret og prøvet lokalt. 594 Python-prøver, JavaScript, målrettet rigtig HTTP/browser og mobilvisning består. To sessioners uafhængige dato-/postnummerrettelser bevares; modstridende postnumre gemmes til gennemgang. [Vejledning og afgrænsning](../IB-EXCEL.md). Ingen OCR genoptaget. Kandidaten er 1.12.2-beta.79; udgivelseskontroller og offentlig pakkekontrol mangler. Senest verificerede beta er stadig .78; fremdriften er fortsat 100/119 og 19 åbne.
+
 ### Beta.78 · verificeret udgivet · gældende status
 
 **Beta.78 er verificeret udgivet** fra `e591b684854e58698df6dcd7e9ac83ba38356d5b`. W110 og W111 er frigivet. Checks **41230111622**, Platformskontrol **41230111642** og HA beta release **41230111692** er completed/success på samme præcise kilde. Begge offentlige ZIP-pakker og alle **146 filer** på betakanalen matcher lokale bygninger byte for byte. [Præcis verificering](BETA-78-VERIFICERING.md). HA-driftsstatusens nye lokale Core-API-rettighed og afgrænsning er beskrevet i vejledningen; ejerens telefonlevering er ikke afprøvet.

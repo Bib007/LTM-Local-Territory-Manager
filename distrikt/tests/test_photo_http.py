@@ -50,7 +50,12 @@ class PhotoHTTPTests(unittest.TestCase):
         result=post('setup.ib.apply',{'token':preview['token'],'confirm':'IMPORTÉR IB'})
         self.assertEqual(result['result']['count'],1);self.assertEqual(len(result['state']['ib']),1);self.assertTrue(self.store.get('cards',card)['back_revision']);self.assertFalse(self.store.get('cards',card)['front_revision'])
         duplicate=post('setup.ib.preview',{'content':content})['result'];self.assertEqual(duplicate['new'],0);self.assertEqual(duplicate['existing'],1)
-        wrong=post('setup.ib.preview',{'content':content.replace(';1;tv;',';1;th;')})['result'];self.assertEqual(wrong['errors'],1)
+        # W117 extends the shared manual file importer. A different unit may
+        # be reviewed as unlinked text, never silently bound or auto-applied.
+        wrong=post('setup.ib.preview',{'content':content.replace(';1;tv;',';1;th;')})['result']
+        self.assertEqual(wrong['warnings'],1);self.assertFalse(wrong['rows'][0]['record'].get('address_id'))
+        with self.assertRaises(urllib.error.HTTPError):post('setup.ib.apply',{'token':wrong['token'],'confirm':'IMPORTÉR IB'})
+        self.assertEqual(len(self.store.all('ib')),1)
 
     def test_read_start_cancel_never_modify_database_or_expose_images(self):
         self.login();before=self.store.revision

@@ -33,7 +33,7 @@ from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.78'
+VERSION='1.12.2-beta.79'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -170,6 +170,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path=='/api/setup/ib-template.csv':
                 from setup_store import ib_template
                 return self.send(ib_template(),'text/csv',headers={'Content-Disposition':'attachment; filename=IB-import-skabelon.csv'})
+            if path=='/api/setup/ib-template.xlsx':
+                from ib_import import template_xlsx
+                return self.send(template_xlsx(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=IB-import-skabelon.xlsx'})
             if path=='/api/geo':return self.send(self.server.store.geo_state())
             if path=='/api/setup/job':raise UIError('Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.')
             if path=='/api/geo/job':return self.send(self.server.downloads.status(q.get('id',[''])[0]))

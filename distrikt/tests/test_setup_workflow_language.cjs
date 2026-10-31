@@ -41,5 +41,11 @@ const contract=html=>(html.match(/(?:data-setup|data-setup-option|data-setup-are
  // Failed/oversize files cannot leave an earlier valid token or invisible old CSV available for approval.
  run("page='Opstart';SetupUI.ib={...ib,errors:0};SetupUI.ibContent='OLD FILE'");c.large={size:2000001,text(){throw Error('Must not read oversized file');}};await run('SetupUI.readIB(large,fileNode)');assert.equal(run('SetupUI.ib'),null);assert.equal(run('SetupUI.ibContent'),'');assert.match(get('setupError').textContent,/2 MB/);
  run("api=async()=>{throw Error('FICTIONAL FAILURE')};SetupUI.ibContent='FICTIONAL CSV'");await run('SetupUI.previewIB()');assert.equal(run('SetupUI.ib'),null);assert.match(get('setupError').textContent,/FICTIONAL FAILURE/);
- console.log('Advanced setup/IB: bilingual forms, canonical types/numbering/confirmation payloads, escaped private samples, stale proposals, out-of-order files, date/navigation invalidation and failed-file approval guards passed.');
+ // A preview may observe current server data after another user has saved.
+ // A different, newer client state arriving during that request still wins.
+ run("SetupUI.ibContent='FICTIONAL CSV';state.revision='old';api=async()=>{state.revision='server-observed';return {json:async()=>({result:ib,revision:'server-observed'})};}");
+ await run('SetupUI.previewIB()');assert.ok(run('SetupUI.ib'));
+ c.pending=new Promise(r=>release=r);run("SetupUI.ib=null;api=()=>pending");pending=run('SetupUI.previewIB()');run("state.revision='newer-state'");release({json:async()=>({result:ib,revision:'older-response'})});await pending;
+ assert.equal(run('SetupUI.ib'),null);assert.match(get('setupError').textContent,/changed during the check/);
+ console.log('Advanced setup/IB: bilingual forms, canonical types/numbering/confirmation payloads, escaped private samples, stale proposals, current preview basis, out-of-order files, date/navigation invalidation and failed-file approval guards passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
