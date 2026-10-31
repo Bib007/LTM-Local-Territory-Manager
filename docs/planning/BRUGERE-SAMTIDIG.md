@@ -1,5 +1,9 @@
 # Brugere og samtidige ændringer · W65/W83
 
+## Seneste sammenhængende kontrol · beta.80 · 1.11.2026
+
+Profiler er fortsat integreret i den almindelige app og med i verificeret beta.80. [Præcis kilde, kontroller, pakker og kanal](BETA-80-VERIFICERING.md). 601 programprøver samt Chromium/WebKit og platformskontroller består på samme udgivelsescommit. Browserforløbet genprøver aktivering, to brugeres uafhængige gemninger, konfliktvalg/kvittering, straks-opdateret påmindelse, ændrede rettigheder, ukendt gemmeresultat, kontobackup/gendannelse og login. Det omfatter nu også kortimport, ukendte besøgstal og uændret tidligere grundlag efter normal efterfølgende rettelse. Projektionslaget bevarer markeringen af ukendt besøgstal. W65 er stadig åben til stabilslutkontrol; ingen ny stabil version er udgivet.
+
 ## Opfølgning på ejerens beta.76-prøve · beta.77 verificeret frigivet
 
 Ejeren bekræfter, at profilgrundforløbet virker, introduktionen kun kommer første gang, og tilladelserne passer. De konkrete tilbagemeldinger er bevaret i [nye input](INPUT-2026-10-31-PROFILBETA.md) og Google-historikken.

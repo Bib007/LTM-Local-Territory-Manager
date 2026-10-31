@@ -1,20 +1,24 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.79 verificeret udgivet · 31.10.2026
+## Aktuel oversigt · beta.80 verificeret udgivet · 1.11.2026
 
-Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.77 med profilrettelser er verificeret udgivet; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.80 er verificeret udgivet med profiler og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
 
-### Beta.79 · verificeret udgivet · gældende status
+### Beta.80 · verificeret udgivet · gældende status
+
+W107 er frigivet fra `cf92787808b820edf72121400f0a901512ef47b3`: registerkort, importerede vejintervaller, ukendte besøgstal og senere geografisk adressevalg på samme kort. Checks **41250233958**, Platformskontrol **41250234017** og HA beta release **41250234027** er completed/success på samme præcise kilde; 601 Python-prøver og de normale browser-/platforms-/pakkekontroller består. Begge offentlige ZIP-pakker og alle **147 filer** på betakanalen er sammenlignet byte for byte med lokale bygninger. [Præcis verificering](BETA-80-VERIFICERING.md).
+
+**Aktuel fremdrift: 102/119 afsluttet eller afklaret, 17 åbne, cirka 86 %.** W65 er fortsat åben til stabilslutkontrol. W106 og W108 samt den afgrænsede W13-kontrol og sprogslutkontrollen mangler før næste stabile. De konkrete W107-prøver er klar i Google-tabellen. Allerede godkendte generelle HA-/Drive-/datagendannelsesprøver gentages ikke. Ingen OCR genoptaget. Historiske kandidatstatusser nedenfor går ikke foran denne oversigt.
+
+### Beta.79 · tidligere verificeret udgivelse
 
 **Beta.79 er verificeret udgivet** fra `9c15398b90a582eadd85c0318a599343fa93cec2` med W117: Excel-/CSV-import af IB, tydelige mangler, gennemgåede manuelle linjer på valgte kort, postnummerpåmindelse og normal efterfølgende rettelse. Checks **41247984241**, Platformskontrol **41247984256** og HA beta release **41247984304** er completed/success på samme præcise kilde. Begge offentlige pakker og alle **147 filer** på betakanalen matcher lokale bygninger byte for byte. [Præcis verificering](BETA-79-VERIFICERING.md). Første kandidat blev stoppet før publicering, så en bevist fejl ved hurtigt filskift kunne rettes og alle kontroller køres igen.
 
-**Aktuel fremdrift: 101/119 afsluttet eller afklaret, 18 åbne, cirka 85 %.** W65 er fortsat åben til stabilslutkontrol. W106–W108 mangler før næste stabile; W107's registerkort/intervaller og ukendte besøgstal er integreret og prøvet lokalt i almindelig app og browser. Beta.80 er kandidat; offentlig udgivelse og pakkekontrol mangler. Det er ikke med i beta.79. Ingen OCR genoptaget. Stabil er fortsat 1.12.1. De specifikke nye W117-prøver er klar i den opdaterede tabel; allerede godkendte generelle HA-/Drive-/datagendannelsesprøver gentages ikke. Tidligere kandidatstatus nedenfor er historik.
+### W107 · lokal kontrol før verificeret beta.80
 
-### W107 · beta.80-kandidat med manuelle vejlinjer
+Excel-/CSV-import accepterer rene kortnumre og bogstavelige intervaller. Ukendt besøgstal bevares i redigering, print, CSV, profilers datavisning og nye gennemgange. Senere geografisk adressevalg bevarer samme kortnummer, IB og tidligere hændelser. Ingen automatisk fortolkning af interval eller bagudrettet ændring af ukendte besøgstal. Den opdaterede Excel-skabelon er gennemset visuelt og kontrolleret for bevarede faner, tekstformater, frysning og valideringsregler. 599 samlede Python-prøver (én forventet udeladelse), seks målrettede interval-/registerprøver, hele JavaScript-sættet, almindeligt Chromium-forløb med rigtig lokal server, 16 pakkeprøver, fem betaprøver og rigtig arkiv-/opstartskontrol består. Efterfølgende er samtlige udgivelseskontroller og offentlig pakke-/kanalverifikation bestået på ovenstående kilde. W107 tæller nu som frigivet.
 
-Excel-/CSV-import accepterer rene kortnumre og bogstavelige intervaller. Ukendt besøgstal bevares i redigering, print, CSV, profilers datavisning og nye gennemgange. Senere geografisk adressevalg bevarer samme kortnummer, IB og tidligere hændelser. Ingen automatisk fortolkning af interval eller bagudrettet ændring af ukendte besøgstal. Den opdaterede Excel-skabelon er gennemset visuelt og kontrolleret for bevarede faner, tekstformater, frysning og valideringsregler. 599 samlede Python-prøver (én forventet udeladelse), seks målrettede interval-/registerprøver, hele JavaScript-sættet, almindeligt Chromium-forløb med rigtig lokal server, 16 pakkeprøver, fem betaprøver og rigtig arkiv-/opstartskontrol består. Samlede udgivelseskontroller og offentlig verifikation følger; W107 tælles fortsat åben.
-
-### W117 · beta.79-kandidat med IB fra Excel
+### W117 · historisk kandidatstatus før beta.79
 
 Første kandidat `133095991bfbaad30e518d5adfe7e3c4c8720bab` blev stoppet før publicering (kørsel **41232252899**), så en bevist fejl ved hurtigt filskift kunne rettes. Den rettede udgave består målrettet JavaScript og det rigtige browserforløb med en forsinket ældre forespørgsel og nyere XLSX-indlæsning. Alle udgivelseskontroller køres igen på den rettede kilde. Ingen beta.79 er publiceret eller overskrevet.
 
@@ -116,7 +120,7 @@ Ejerprioritet, fuld tekst:
 
 > du bestemmer, men med i næste stable version ihvertfald
 
-**LTM vælger prioritet 1; skal med før næste stabile udgave.** Kortregister og manuelle/importerede vejlinjer skal kunne bruges uden først at matche alle geografiske adresser. Intervaller som 1–19 skal bevares på printforsiden. Den geografiske kontrol skal være et senere, selvvalgt forløb, og et interval må ikke ubemærket blive til et gættet antal adresser eller besøg. Undersøg de eksisterende import-/nummerfunktioner, og genbrug dem, hvor de allerede opfylder ønsket. Registreret, ikke implementeret eller frigivet. Fuld kildetekst og prioritet er bevaret i Google-historikken og på GitHub.
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Kortregister og manuelle/importerede vejlinjer skal kunne bruges uden først at matche alle geografiske adresser. Intervaller som 1–19 skal bevares på printforsiden. Den geografiske kontrol skal være et senere, selvvalgt forløb, og et interval må ikke ubemærket blive til et gættet antal adresser eller besøg. Frigivet i verificeret beta.80; den eksisterende import, normale kortredigering og geografiske udvælgelse er udvidet og genbrugt. [Kilde, prøver og offentlige pakker](BETA-80-VERIFICERING.md). Fuld kildetekst og prioritet er bevaret i Google-historikken og på GitHub.
 
 ### W108 · tjenestegrupper og import af gruppeliste · 31.10.2026
 
@@ -129,7 +133,7 @@ Ejerprioritet, fuld tekst:
 
 > du bestemmer, men med i næste stable version ihvertfald
 
-**LTM vælger prioritet 1; skal med før næste stabile udgave.** Tjenestegruppetilknytning og markering af gruppetilsynsmand, assistent og pioner er distriktsoplysninger, ikke automatisk tildeling af brugerrettigheder. Administratoren styrer fortsat appens rettigheder. Gruppeimport skal foregå lokalt med forhåndsvisning, kontrol af dubletter og udtrykkelig godkendelse; ingen rigtige navne eller gruppelister bruges i offentlige prøver. Ingen OCR genoptages. Undersøg eksisterende udlånsregler før nye begrænsninger indføres. Registreret, ikke implementeret eller frigivet.
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Tjenestegruppetilknytning og markering af gruppetilsynsmand, assistent og pioner er distriktsoplysninger, ikke automatisk tildeling af brugerrettigheder. Administratoren styrer fortsat appens rettigheder. Gruppeimport skal foregå lokalt med forhåndsvisning, kontrol af dubletter og udtrykkelig godkendelse; ingen rigtige navne eller gruppelister bruges i offentlige prøver. Ingen OCR genoptages. Kodekontrol 1.11.2026: den almindelige udlevering tillader allerede flere forskellige kort til samme forkynder; kun dobbelt udlevering af det enkelte kort afvises. Der er derfor ikke grundlag for at indføre en ny personbegrænsning eller give konto-adgang ud fra tjenestefunktion. Gruppefelter og import er endnu ikke implementeret eller frigivet.
 
 ### Ejerens procesbesked · VIGTIG INFO · 31.10.2026
 
