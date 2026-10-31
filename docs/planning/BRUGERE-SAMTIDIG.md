@@ -32,3 +32,13 @@ Den nye oversigt er **ikke** en erstatning for den eksisterende `/api/state`: ko
 6. Udrulning skal bevare eksisterende installationer og login, håndtere migration/backup/rollback samt afprøves med to samtidige sessionsforløb på rigtig lokal server, inkl. rettighedsændringer, mistet forbindelse og gendannelse. Ingen reelle brugerdata bruges i prøver.
 
 Disse punkter er arbejdsgrundlag, ikke leverede funktioner. Opbevaringstid for aktivitetslog og konkrete valg ved konfliktløsning er ikke fastlagt; undgå at opfinde ejerbeslutninger. OCR og automatisk kortinddeling forbliver på pause.
+
+## Samlet lokal profilprøve · 31.10.2026
+
+Et separat HTTP-forløb samler nu login, bruger-/rollepanel, nyligt aktive brugere og udtrykkelig konfliktkvittering. Det binder kun til 127.0.0.1 på en ledig port og kan ikke startes fra den almindelige LTM-startguide. Konti skal være initialiseret af ejeren på forhånd; der er ingen offentlig oprettelse af første administrator. Der bruges HttpOnly/SameSite-cookie og et separat forespørgselstoken pr. session samt kontrol af vært og origin. Adgangskoder, brugernavne og forespørgsler logges ikke.
+
+Fire HTTP-prøver verificerer login, oprettelse af roller og brugere, begrænset adgang, deaktivering, afvisning af forkert origin/sessionstoken, logout og beskyttelse af sidste administrator. Den gamle `/api/state` og backup-API findes ikke i denne prøve; de må ikke tilsluttes uden adgangskontrol. Browserprøven ligger i `scripts/check_profile_browser.cjs` og bruger kun midlertidige opdigtede konti.
+
+**Stadig åbent før frigivelse:** overgangen fra eksisterende login, administratorgendannelse og kontobackup, alle almindelige appfunktioner med rettigheder, samtidige domænevaliderede gemninger med sideeffekter/aktivitet, håndtering af ukendt gemmeresultat, samlet konfliktvisning i appens forside og engelsk. Profilprøven er ikke en ny betaudgivelse eller en færdig flerbrugerudgave.
+
+Browserforløbet er nu bestået i Chromium med projektets Playwright 1.56.1: rigtig HTTP/login, rolle- og brugeroprettelse, logout, begrænset bruger og mobilbredde 390 px uden vandret overløb. Ingen eksterne forbindelser tillades i prøven. Et mobilbillede er visuelt kontrolleret. Dette dækker profilprøven, ikke den endnu manglende integration med hele appen.
