@@ -519,12 +519,18 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                     raise ValueError('Adressen er ikke på dette distriktskort. Vælg en adresse fra kortets liste.')
                 payload['road'] = address['road']
                 payload['number'] = address['number'] + (', ' + ' '.join(str(address[k]) for k in ('floor', 'door') if address.get(k)) if address.get('floor') or address.get('door') else '')
+                payload['postcode'] = str(address.get('postcode') or '')
                 if any(i['id'] != item['id'] and i['card_id'] == c['id'] and (i.get('address_id') == address_id or i['road'].casefold() == payload['road'].casefold() and i['number'].casefold() == payload['number'].casefold()) for i in self.all('ib')):
                     raise ValueError('Denne adresse er allerede registreret som IB.')
                 item['address_id'] = address_id
             elif 'address_id' in payload:
                 item.pop('address_id', None)
             item.update(road=clean_text(payload.get('road'), 120, True), number=clean_text(payload.get('number'), 80, True), date=valid_day(payload.get('date')))
+            if 'postcode' in payload:
+                postcode=clean_text(payload.get('postcode'),4)
+                if postcode and not re.fullmatch(r'\d{4}',postcode):raise ValueError('Postnummer skal være fire cifre eller stå tomt.')
+                item['postcode']=postcode
+                item['missing_fields']=[] if postcode else ['postcode']
             self.put('ib', item)
             c['back_revision'] = True
             self.put('cards', c)

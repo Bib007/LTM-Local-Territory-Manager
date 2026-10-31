@@ -27,6 +27,7 @@ GET={
  '/api/export/backup':READ_ALL|{'backup.export'}, '/api/restore/safety':READ_ALL|{'backup.export'},
  '/api/setup/card-template.xlsx':('cards.edit',), '/api/setup/card-template.csv':('cards.edit',),
  '/api/setup/ib-template.csv':('ib.edit',),
+ '/api/setup/ib-template.xlsx':('ib.edit',),
  '/api/photo/status':('ib.view','ib.edit'), '/api/photo/job':('ib.view','ib.edit'),
 }
 POST={
@@ -122,7 +123,7 @@ FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
  'publishers':{'id','name'},
  'loans':set('id card_id publisher_id assigned cycle_start returned initial'.split()),
- 'ib':set('id card_id address_id road number date'.split()),
+ 'ib':set('id card_id address_id road number date postcode missing_fields'.split()),
  'notes':set('id card_id loan_id completion_id text date created resolved resolved_at task recurrence task_history'.split()),
  'completions':set('id card_id loan_id date assigned previous_completed visits'.split()),
  'visits':{'id','date','note'},
