@@ -30,14 +30,16 @@ from photo_ocr import PhotoOCR
 from ui_errors import UIError,error_payload
 from profile_accounts import ProfileAccounts
 from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
+from runtime_status import RuntimeStatus
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.77'
+VERSION='1.12.2-beta.78'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
     def server_close(self):
+        if hasattr(self,'runtime_status'):self.runtime_status.close()
         if hasattr(self,'photo_ocr'):self.photo_ocr.close()
         super().server_close()
     def server_bind(self):
@@ -78,12 +80,14 @@ class Server(ThreadingHTTPServer):
         self.restores=Restores(store,VERSION)
         self.sharing=Publications(store)
         self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
+        self.runtime_status=RuntimeStatus(self.address_schedule,VERSION,self.beta)
 
     def app_state(self,profile_token=None):
         """The same local overview for page reads and confirmed write responses."""
         with self.accounts.lock,self.store.lock:
             result=self.store.state()
             result.update(version=VERSION,beta=self.beta,public_maps=self.sharing.front_links(),address_task=self.address_schedule.status())
+            result['runtime_status']=self.runtime_status.status()
             if self.profiles.enabled:
                 if profile_token is None:raise PermissionError('Profile session required')
                 return self.profiles.state(profile_token,result)
@@ -174,6 +178,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 self.server.store.purge_expired()
                 return self.send(self.server.app_state(self.profile_token()))
             if path=='/api/storage':return self.send(self.server.store.storage_info())
+            if path=='/api/runtime/status':return self.send(self.server.runtime_status.status())
             if path=='/api/activity':return self.send({'items':self.server.store.activity()})
             if path=='/api/map':
                 with self.server.store.lock:
@@ -231,6 +236,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
             if self.profile_post(self.path,data):return
+            if self.path=='/api/runtime/test':return self.send(self.server.runtime_status.test_notification())
             if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))
             if self.path=='/api/photo/cancel':return self.send(self.server.photo_ocr.cancel(data.get('id')))
             if self.path=='/api/export/readable/prepare':return self.send(self.server.readable.prepare())
@@ -393,6 +399,7 @@ def main(argv=None):
     store=Store(data);server=Server((args.bind or '0.0.0.0',args.port) if args.lan else ('127.0.0.1',0),store,access_host=args.access_host if args.lan else None,password=os.environ.pop('DISTRIKT_PASSWORD',None) if args.lan else None)
     server.sharing.start()
     server.address_schedule.start()
+    server.runtime_status.start()
     run={'url':server.origin,'public_url':server.public_url,'token':server.token,'pid':os.getpid(),'version':VERSION}
     runpath=data/'run.json';runpath.write_text(json.dumps(run));os.chmod(runpath,0o600)
     def cleanup_loop():

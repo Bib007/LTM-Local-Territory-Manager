@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.78 · Adressekontrol og driftsbeskeder
+
+- Adressekontrollen prøver hurtigt igen efter korte afbrydelser og bevarer færdige udsnit. Gentagne fejl, kildeventetid og ressourcepres giver en passende pause.
+- Se den seneste afbrydelse, fremdriften og tidspunktet for næste forsøg. Længere arbejdsrunder kan genoptages.
+- Vis LTM-driftsstatus i Home Assistant. Importér en klar beskedopskrift, vælg din telefon og tilføj egne noter. En særskilt prøve sender én besked uden overbelastning eller dataændringer.
+- HA-appen får adgang til Home Assistants lokale API for at aflevere status. Afleveringen kan slås fra i appens HA-indstillinger. Se vejledningen om adgangens omfang.
+
 ## 1.12.2-beta.77 · Profilrettelser og backup i appen
 
 - Vælg den tidligere eller senere rettelse i en tydeligere konfliktvisning. Påmindelsen opdateres straks efter gennemgang.

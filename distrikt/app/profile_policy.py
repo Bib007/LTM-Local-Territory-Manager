@@ -19,6 +19,7 @@ GET={
  '/api/geo':('cards.view','geo.view'), '/api/geo/job':('geo.view',),
  '/api/geo/suggest':('geo.view',), '/api/map':('cards.view','geo.view'),
  '/api/storage':('settings.manage',), '/api/data-info':('settings.manage',),
+ '/api/runtime/status':('settings.manage',),
  '/api/activity':('activity.view',), '/api/address-source/status':('connections.manage',),
  '/api/share/status':('sharing.manage','cards.view'),
  '/api/share/qr':('sharing.manage','cards.view'), '/card-qr.svg':('sharing.manage','cards.view'),
@@ -30,6 +31,7 @@ GET={
 }
 POST={
  '/api/logout':(), '/api/profiles/heartbeat':(),
+ '/api/runtime/test':('settings.manage',),
  '/api/profiles/intro/complete':(),
  '/api/profiles/users/save':('users.manage',), '/api/profiles/roles/save':('users.manage',),
  '/api/profiles/conflicts/acknowledge':(),
@@ -146,6 +148,7 @@ def state_for(raw,user):
     if 'sharing.manage' in p:result['public_maps']=deepcopy(raw['public_maps'])
     if 'settings.manage' in p:
         result['address_task']=deepcopy(raw['address_task'])
+        result['runtime_status']=deepcopy(raw.get('runtime_status',{}))
     if 'backup.notify' in p:result['backup_last_day']=raw['backup_last_day']
     if READ_ALL|WRITE_ALL|{'backup.restore'}<=p:result['recovery']=deepcopy(raw['recovery'])
     result['profile']={'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision']}
