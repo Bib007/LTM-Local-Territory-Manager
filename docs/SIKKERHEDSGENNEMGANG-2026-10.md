@@ -1,3 +1,9 @@
+## Opfølgning · PDF-afhængighed 31.10.2026
+
+Den almindelige CI-kontrol med pip-audit fandt syv nye advisories i den hidtil medfølgende pypdf 6.21.2. Den officielt udgivne 6.21.4 er hentet fra PyPI, verificeret mod udgiverens SHA256 og pakket reproducerbart som lokal kilde-ZIP. Licensen er uændret. Den afgrænsede S-13-proces, tids-/hukommelsesgrænser og fravær af netværk ved import bevares. Den nye afhængighed skal gennem samme udgivelseskontrol; ingen kendt-advisory-undtagelse er indført.
+
+Kilde: [pypdf 6.21.4, officielle udgivelsesnoter](https://github.com/py-pdf/pypdf/releases/tag/6.21.4). Dette er løbende afhængighedsvedligeholdelse, ikke en Codex Security-scanning eller en gentagelse af hele den tidligere gennemgang.
+
 # Sikkerhedsgennemgang før stabil · 23.10.2026
 
 ## Resultat og kodegrundlag

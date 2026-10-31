@@ -6,7 +6,7 @@ Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne beta
 
 **W65/W83:** Profiler er nu koblet til den almindelige app i udviklingskoden. Den eksisterende adgang godkender første administrator; aktivering er et udtrykkeligt valg og flytter ingen distriktsdata. Egne roller/rettigheder, individuel introduktion, nylig aktivitet (90 sekunder), afgrænset `/api/state`, standardafvisning af ukendte serverhandlinger, kontogendannelse og særskilt lokal kontobackup er med. Uafhængige rettelser sammenføjes gennem normal domænevalidering; konkrete konflikter gemmes atomisk og vises på forsiden. Adgangsændringer ved samtidige administratorrettelser bevares til gennemgang uden at vinde konflikten automatisk. Adgangskodehashes udleveres ikke i gennemgangen.
 
-Den almindelige apps lokale Chromium-forløb med Playwright 1.56.1 består: aktivering, login, egne roller/brugere, to sessionsforløb, automatisk gemning, konfliktgennemgang og en mistet gemmekvittering uden dobbelt gemning. Mobilvisningen ved 390 px er visuelt kontrolleret. De samlede lokale Python-/JavaScript- og pakkeprøver er gennemført; præcise afsluttende resultater føres i profilnotatet. **Dette er lokal udviklingskontrol, ikke en frigivet profilversion eller en ejerprøve.** Samlet Chromium/WebKit-, Mac-, Windows- og HA-kontrol af den endelige kandidat mangler før frigivelse. Den gamle generelle revisionsafvisning er ikke genindført.
+Den almindelige apps lokale Chromium-forløb med Playwright 1.56.1 består: aktivering, login, egne roller/brugere, to sessionsforløb, automatisk gemning, konfliktgennemgang og en mistet gemmekvittering uden dobbelt gemning. Mobilvisningen ved 390 px er visuelt kontrolleret. De samlede lokale Python-/JavaScript- og pakkeprøver er gennemført; præcise afsluttende resultater føres i profilnotatet. **Dette er lokal udviklingskontrol, ikke en frigivet profilversion eller en ejerprøve.** På profilcommit c2a6afe966d64e59a32cb1a01b9d95efc412b6e9 er Platformskontrol 41204416121 (Mac/Windows/HA), Python 3.9/3.12/3.13 og pakning bestået. Browserforløbene kører fortsat. Afhængighedskontrollen stoppede med syv nye advisories for pypdf 6.21.2; udviklingskoden opdateres til officiel 6.21.4, og dens 23 PDF-importprøver samt 16 pakkeprøver består lokalt. Ny samlet kontrol af rettelsen mangler. Codex Security er ikke kørt. Den gamle generelle revisionsafvisning er ikke genindført.
 
 ### W106 · datoer på det digitale kort · nyt ønske 31.10.2026
 
@@ -20,7 +20,40 @@ Ejerprioritet, fuld tekst:
 
 **LTM vælger prioritet 1; skal med før næste stabile udgave.** Begge datoer skal bygge på de faktisk registrerede hændelser. Undgå navne og IB på det offentlige kort. Den eksisterende onlineversion er et godkendt PNG-billede, så datoændringer kræver et gennemtænkt opdateringsforløb; gamle udleveringsdatoer må ikke fejlagtigt præsenteres som aktuelle. Ønsket er registreret og undersøgt, ikke implementeret eller frigivet. Kildeteksten og prioriteten bevares i Google-dokumentet.
 
-Alle seks faner er genkontrolleret. W106 er det eneste nye ubehandlede ønske. W85/OCR og W16 forbliver på pause; W92 er droppet og W84 er en privat huskenote. Fremdrift efter det nye ønske: **91/106 afsluttet eller afklaret, 15 åbne, cirka 86 %**. W65/W83 tæller fortsat som åbne. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
+### W107 · importerede vejintervaller og gradvis kortlægning · 31.10.2026
+
+Fuld tekst fra Google-ønskelisten:
+
+> Lav import for distriktkort muligt, at have intervaller, fx 1-19, som så vil blive skrevet på kortet, herefter kan man så vælge alle adresserne på et kort, og sikre sig om det passer…. dette gøres dog efter hele importen og i eget tempo, ikke i selve importprocessen, så man egetnlig også i startguiden kan vælge, “hold styr på kort” uden at bruge vejkort funktionen, her kan du altså ha alle distriktskortnumrene, men også lave manuelle linjer på kortet, eller få dem impoteret, så man senre lidt efter lidt kan begynde at bruge vejkortet…..
+
+Ejerprioritet, fuld tekst:
+
+> du bestemmer, men med i næste stable version ihvertfald
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Kortregister og manuelle/importerede vejlinjer skal kunne bruges uden først at matche alle geografiske adresser. Intervaller som 1–19 skal bevares på printforsiden. Den geografiske kontrol skal være et senere, selvvalgt forløb, og et interval må ikke ubemærket blive til et gættet antal adresser eller besøg. Undersøg de eksisterende import-/nummerfunktioner, og genbrug dem, hvor de allerede opfylder ønsket. Registreret, ikke implementeret eller frigivet. Kildetekst og prioritet bevares.
+
+### W108 · tjenestegrupper og import af gruppeliste · 31.10.2026
+
+Fuld tekst fra Google-ønskelisten:
+
+> Mulighed for tjenestegruppe inddeling af forkyndere, og valg af Gruppe tilsynsmand, og Assistent, samt Pionerere….
+> da der oftest er mulighed for at de 3 typer, har flere kort da de bruger mere tid i forkyndelsen. gør det også muligt at uploade gruppeliste som import, så alle forkyndere bliver oprettet i systemet
+
+Ejerprioritet, fuld tekst:
+
+> du bestemmer, men med i næste stable version ihvertfald
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Tjenestegruppetilknytning og markering af gruppetilsynsmand, assistent og pioner er distriktsoplysninger, ikke automatisk tildeling af brugerrettigheder. Administratoren styrer fortsat appens rettigheder. Gruppeimport skal foregå lokalt med forhåndsvisning, kontrol af dubletter og udtrykkelig godkendelse; ingen rigtige navne eller gruppelister bruges i offentlige prøver. Ingen OCR genoptages. Undersøg eksisterende udlånsregler før nye begrænsninger indføres. Registreret, ikke implementeret eller frigivet.
+
+### Ejerens procesbesked · VIGTIG INFO · 31.10.2026
+
+Fuld kildetekst:
+
+> Husk lige at fjerne disse ønsker fra listen når de er rykket ind i plan/aftaler / overblik
+
+Kildeprioritet: **VIGTIG INFO**. Dette er en arbejdsaftale, ikke et ekstra appønske: Fjern kun de præcise overførte tekster/prioriteter, når fuld tekst og prioritet er gemt og læst tilbage i planen og på GitHub. Bevar ønsketabellens overskrifter og tomme rækker samt Bilag. Registrering er fortsat ikke implementering eller frigivelse.
+
+Alle seks faner er genkontrolleret. W106–W108 er nye ønsker til næste stabile udgave. W85/OCR og W16 forbliver på pause; W92 er droppet og W84 er en privat huskenote. Fremdrift efter det nye ønske: **91/108 afsluttet eller afklaret, 17 åbne, cirka 84 %**. W65/W83 tæller fortsat som åbne. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
 
 ## Historik · beta.75 udgivet · 30.10.2026
 

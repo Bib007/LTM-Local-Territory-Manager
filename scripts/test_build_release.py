@@ -54,7 +54,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):return release.build(self.root/folder)
 
     def test_missing_local_pdf_dependency_blocks_release(self):
-        (self.source/'app/vendor_py/pypdf-6.21.2.zip').unlink()
+        (self.source/'app/vendor_py/pypdf-6.21.4.zip').unlink()
         with self.assertRaisesRegex(ValueError,'missing local PDF dependency'):self.build('missing-pdf')
 
     def test_complete_portable_docs_and_no_data(self):

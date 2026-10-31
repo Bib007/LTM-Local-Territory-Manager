@@ -11,7 +11,7 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
 REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
-PDF_DEPENDENCIES=('pypdf-6.21.2.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
+PDF_DEPENDENCIES=('pypdf-6.21.4.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log','.tmp')
 BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json','profiles.json','profiles.tmp'}
 ROOT_DOCS=('repository.yaml','README.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
