@@ -86,7 +86,36 @@ Kildeprioritet: **VIGTIG INFO**. Dette er en arbejdsaftale, ikke et ekstra appø
 
 W106–W108 og procesbeskeden er nu læst tilbage fra GitHub og Google-planen/Historik. Derefter er kun deres præcise kildetekster og prioriteter ryddet fra Ønskeliste med revisionskontrol. Tabellens overskrifter, tomme rækker og Bilag er bevaret.
 
-Alle seks faner er genkontrolleret. W106–W108 og W110 er nye ønsker til næste stabile udgave. W109 er udført som dokumentoversigt. W85/OCR og W16 forbliver på pause; W92 er droppet og W84 er en privat huskenote. Fremdrift efter det nye ønske: **92/110 afsluttet eller afklaret, 18 åbne, cirka 84 %**. W65/W83 tæller fortsat som åbne. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
+### Nye præciseringer og ejersvar · 31.10.2026
+
+Alle syv Google-faner er genkontrolleret, inklusive den nye svartabel. Nye kildetekster og prioriteter:
+
+> Github support svarer ikke rigtig, måske vi skal finde en anden måde at kontakte dem på?
+
+Prioritet: **bare når vi ikke har travlt, så nok efter næste stable**. Uddybning af W61: undersøg senere officielle kontaktmuligheder; ingen besked sendes på ejerens vegne, ingen loginoprydning eller udgivelsesblokering.
+
+> Skriv også gerne andre ting du gerne vil have svar på, sprøgsmål eller ideer du vil ha godkendt, i den nye tabel ;)
+
+Prioritet: **-1!!!!!!!!!**. W109 udvides som løbende arbejdsaftale: alle reelle nye spørgsmål, idéforslag til ejerbeslutning og konkrete senere prøver føjes til samme tabel med tidspunkt og status, uden at overskrive svar. Rutinemæssige udviklingsvalg kræver ikke et nyt ejersvar.
+
+> mulighed for en EXE app til pc, og DMG til mac, både en til servertool, men også en til styringen af systemet…. så alt ikke skal afhænge af browseren, hvis vi løber i problemer med kompatibilitet med browser osv??
+
+Prioritet: **du bestemmer, om det er en god ide, og evt hvornår den skal udføres**. Uddybning af W74, ikke et nyt nummer: selvstændige Windows-/Mac-pakker til server og appvindue undersøges efter kernefunktionerne til næste stabile. En pakket webvisning bruger stadig en browsermotor og garanterer ikke frihed for kompatibilitetsfejl. W74 er registreret, ikke færdig eller frigivet; eksisterende ZIP/startguide er ikke EXE/DMG.
+
+Ejersvar fra den nye tabel, fuld tekst:
+
+- **Nr. 1 / W108:** “PDF, så tænker bare det skal være en excel importfil ligesom de andre imports”. Brug en lokal Excel-skabelon/import; intet PDF-OCR genoptages.
+- **Nr. 2 / W67:** “Det var en fejl, dette ønske skal slettes”. W67 er droppet efter ejerens besked og fjernes fra den aktive kø; historikken bevares, ingen eksisterende adressedata slettes.
+- **Nr. 3 / W13:** “Vi skal kun have info om, gennemgang det sidste stykke tid (år og tjenesteår) og info om antal distrikter der findes, og hvor mange der ikke er gennemgået inden for et år (kalendar år, 12 måneder bagud) samt om det er udleveret eller ej”. Afgræns rapporten til disse oplysninger. Skeln tydeligt mellem kalenderår, tjenesteår og rullende 12 måneder; opfølgningslisten genindføres ikke. Funktionstilstanden kontrolleres mod koden før afslutning.
+- **Nr. 4 / W101:** “jeg kan ikke huske hvad min tanke var med dette…..”. Der vælges ikke automatisk et udløb; senere forslag skal forklares konkret.
+- **Nr. 5 / W101:** “Den skal kunne genbruges så vi bliber fri for at printe nyt distriktkort hvergang”. Genbrug af den trykte kode er nu besluttet. Den trykte kode genbruges; intet tidsudløb indføres på baggrund af den nye besked.
+
+- **Nr. 6 / W101: “den skal bare være åben…. men måske vi kunne lave en landingpage hvorpå de lå? som rediricter til google drive, men kan vise en lidt flottere og mere personlig, side hvor der forklares dette kort ikke er udleveret, og hvis der er noget skal man melde fejl til den og den mail… eller endda udfylde en formular osv…. men også med mulighed når man scanner qr kode, t den måske kunne sige ca “dette er et digitalt kort som viser hvordan du kan finde rundt i distriktet, der vises ingen IB og dermed erstatter den IKKE det fysiske kort… osv””.
+- **Nr. 7 / W06: “jeg fatter ikke hvad du mener med dette…. ;)”.
+
+W101: Åben adgang er besluttet. Undersøg senere et konkret forslag til præsentationsside med Drive-link, udleveringsstatus, forklaring om IB/fysisk kort og mulig fejlmelding. Ingen ny hosting eller offentlig kontaktformular er bestilt til opsætning nu. W06: Den uklare godkendelsesforespørgsel er erstattet af en forklaring; ingen ejerhandling kræves, før et konkret fremtidigt adgangsforslag foreligger.
+
+**93/110 afsluttet eller afklaret, 17 åbne, cirka 85 %** efter W109 og ejerens afvisning af W67. W106–W108 og W110 skal med før næste stabile; W65/W83 er fortsat åbne og ikke frigivet. W85/OCR og W16 er på pause, W92 droppet, W84 privat. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
 
 ## Historik · beta.75 udgivet · 30.10.2026
 
