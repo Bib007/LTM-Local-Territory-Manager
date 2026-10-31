@@ -82,7 +82,8 @@ class DarDownload:
                     if expected_schema != self.source_schema():
                         raise SourceUnavailable('Datafordelerens skema er ændret under hentningen. Start en ny opdatering; lokale adresser er bevaret.')
                 except SourceTransient as error:
-                    if attempt==2:raise SourceUnavailable(str(error)+' Automatisk genprøvet 2 gange.') from None
+                    if error.retry_after>60:raise
+                    if attempt==2:raise SourceTransient(str(error)+' Automatisk genprøvet 2 gange.',error.retry_after) from None
                     delay=max((2,5)[attempt],error.retry_after)
                     with self.lock:
                         if job:
@@ -95,6 +96,7 @@ class DarDownload:
                     raise
                 except ValueError as error:
                     # Datafordeler.query has already removed provider text and keys.
+                    if isinstance(error,SourceUnavailable):raise
                     raise SourceUnavailable(str(error)) from None
                 finally:
                     with self.lock:

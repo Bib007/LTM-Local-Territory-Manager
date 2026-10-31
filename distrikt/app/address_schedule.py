@@ -6,6 +6,7 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from admin_store import signature
+from runtime_pressure import resource_pressure
 
 RECORD='address-check-task'
 
@@ -19,14 +20,18 @@ def next_night(current,days,clock):
     return iso(naive.astimezone(timezone.utc))
 
 class AddressSchedule:
-    def __init__(self,store,downloads,available=False,clock=utcnow):
+    def __init__(self,store,downloads,available=False,clock=utcnow,pressure=None):
         self.store=store;self.downloads=downloads;self.available=available;self.clock=clock
+        self.pressure=pressure if pressure is not None else lambda:resource_pressure()['high']
         self.lock=threading.RLock();self.stop=threading.Event();self.thread=None;self.job=None
     def row(self):return copy.deepcopy(self.store.get('settings',RECORD) or {'id':RECORD,'entity':'address_task','enabled':False,'days':7,'time':'02:00','status':'idle'})
     def status(self):
         with self.store.lock:
             row=self.row();row['available']=self.available
             row['pending']=self.store.geo_info().get('changes',0)
+            if self.job:
+                job=self.downloads.status(self.job)
+                row['progress']={k:job[k] for k in ('completed','total','received_count') if k in job}
         return row
     def busy(self):
         with self.store.lock:return bool(self.row().get('run'))
@@ -46,6 +51,7 @@ class AddressSchedule:
                 if enabled and not self.store.main_boundary():raise ValueError('Gem den samlede distriktsgrænse før automatisk adressekontrol.')
                 if enabled and not self.downloads.address_source.status().get('configured'):raise ValueError('Forbind Datafordeleren under Kortdata først.')
                 row.update(enabled=enabled,days=days,time=clock,status='scheduled' if enabled else 'idle',next_due=next_night(self.clock(),0,clock))
+                row.pop('retry_at',None);row.pop('last_problem',None)
                 if row['next_due']<=iso(self.clock()):row['next_due']=next_night(self.clock(),1,clock)
                 self.store.put('settings',row)
             return {'ok':True}
@@ -90,15 +96,36 @@ class AddressSchedule:
                         for a in self.store.all('geo'):
                             if a.get('entity')=='address_change' and a.get('check_run')==run.get('id'):counts[a['kind']]+=1
                         row.update(status='complete',completed_at=iso(current),last_result=counts,message='Adressekontrollen er færdig. Gennemgå og godkend ændringerne.',next_due=next_night(current,row['days'],row['time']))
-                        row.pop('retry_at',None);self.store.put('settings',row)
+                        for key in ('retry_at','retry_reason','retry_streak','last_problem'):row.pop(key,None)
+                        self.store.put('settings',row)
                     return
                 with self.store.transaction():
-                    row=self.row();attempt=row.get('attempt',0)+1
-                    row.update(status='waiting',attempt=attempt,retry_at=iso(current+timedelta(minutes=min(360,15*2**min(attempt-1,5)))),message='Adressekontrollen venter efter en afbrydelse. Færdige udsnit er bevaret; den prøver automatisk igen.')
+                    row=self.row();run=row.get('run',{})
+                    manifest=self.store.get('geo','main-boundary-download') or {}
+                    done=sum(t.get('status')=='done' for t in manifest.get('tiles',[]))
+                    streak=1 if done>run.get('completed_tiles',0) else row.get('retry_streak',0)+1
+                    run['completed_tiles']=done
+                    retry=result.get('retry') or {}
+                    retry={**retry,**{key:job[key] for key in ('reason','retryable','retry_after') if key in job}}
+                    reason=job.get('reason') or retry.get('reason','interrupted')
+                    source_delay=max(0,min(31*86400,int(job.get('retry_after') or retry.get('retry_after') or 0)))
+                    delay=0 if streak<=3 else min(3600,60*2**min(streak-4,6))
+                    if retry.get('retryable') is False:delay=max(delay,3600)
+                    if reason=='budget':delay=max(delay,900);run.pop('cycle_started',None)
+                    if reason=='pressure':delay=max(delay,60)
+                    if job.get('status')=='paused' and reason=='interrupted':delay=max(delay,900)
+                    delay=max(delay,source_delay)
+                    problem=job.get('message') if job.get('status') in ('error','paused') else next(iter(result.get('warnings') or []),'Et udsnit er ikke færdigt endnu.')
+                    message=('Et midlertidigt problem genprøves ved næste kontroltrin. Færdige udsnit er bevaret.' if delay==0 else 'Adressekontrollen holder en kort pause før næste forsøg. Færdige udsnit er bevaret.')
+                    row.update(status='waiting',attempt=row.get('attempt',0)+1,retry_streak=streak,retry_reason=reason,retry_at=iso(current+timedelta(seconds=delay)),last_problem=str(problem)[:500],message=message)
                     self.store.put('settings',row)
                 return
-            if row.get('run') and row.get('retry_at','')>iso(current):return
+            if row.get('retry_at','')>iso(current):return
             if not row.get('run') and row.get('next_due','9999')>iso(current):return
+            if self.pressure():
+                with self.store.transaction():
+                    row=self.row();row.update(status='waiting',retry_reason='pressure',retry_at=iso(current+timedelta(seconds=60)),message='Systemet er under vedvarende ressourcepres. Kontrollens fremdrift bevares; prøver igen efter en kort pause.');self.store.put('settings',row)
+                return
             # The shared Downloads reservation rejects simultaneous interactive work.
             with self.downloads.lock:
                 if self.downloads.active:return
@@ -108,11 +135,16 @@ class AddressSchedule:
                 key=signature(boundary['points']);run=row.get('run')
                 if run and run['boundary_key']!=key:
                     row.pop('run',None);row.update(status='waiting',next_due=next_night(current,1,row['time']),message='Grænsen er ændret. En ny kontrol køres næste nat.');self.store.put('settings',row);return
-                if not run:run={'id':uuid.uuid4().hex,'boundary_key':key};row.update(run=run,attempt=0,started_at=iso(current))
+                if not run:run={'id':uuid.uuid4().hex,'boundary_key':key};row.update(run=run,attempt=0,retry_streak=0,started_at=iso(current))
+                cycle=datetime.fromisoformat(run.get('cycle_started',iso(current)))
+                remaining=10800-(current-cycle).total_seconds()
+                if remaining<=0:
+                    run.pop('cycle_started',None);row.update(status='waiting',retry_reason='budget',retry_at=iso(current+timedelta(minutes=15)),message='Arbejdsrundens tidsgrænse er nået. Færdige udsnit bevares; kontrollen fortsætter efter en kort pause.');self.store.put('settings',row);return
+                run.setdefault('cycle_started',iso(current))
                 manifest=self.store.get('geo','main-boundary-download') or {}
                 refresh=manifest.get('check_run')!=run['id']
-                row.update(status='running',message='Kontrollerer adresser indenfor den samlede grænse…');self.store.put('settings',row)
-            try:self.job=self.downloads.start('boundary',{'refresh':refresh,'review_all':True,'check_run':run['id']})['job_id']
+                row.update(status='running',message='Kontrollerer adresser indenfor den samlede grænse…');row.pop('retry_at',None);self.store.put('settings',row)
+            try:self.job=self.downloads.start('boundary',{'refresh':refresh,'review_all':True,'check_run':run['id'],'max_seconds':remaining})['job_id']
             except ValueError:
                 with self.store.transaction():
-                    row=self.row();row.update(status='waiting',retry_at=iso(current+timedelta(minutes=15)));self.store.put('settings',row)
+                    row=self.row();row.update(status='waiting',retry_at=iso(current+timedelta(seconds=10)),message='En anden hentning er startet. Kontrollens fremdrift bevares.');self.store.put('settings',row)

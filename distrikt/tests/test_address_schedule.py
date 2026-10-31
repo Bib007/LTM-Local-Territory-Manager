@@ -14,7 +14,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from address_schedule import AddressSchedule, RECORD
 from store import Store
 from geodata import Downloads
-from postcode import SourceUnavailable
+from postcode import SourceUnavailable,SourceTransient,WorkBudget
 from test_postcode import unit
 from test_boundary_download import POLY
 
@@ -23,15 +23,16 @@ class AddressScheduleTests(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory();self.store=Store(self.tmp.name)
         self.store.mutate('geo.main.save',{'points':POLY})
         self.downloads=Downloads(self.store);self.downloads.address_source=Mock()
+        self.downloads.pressure=lambda:False
         self.downloads.address_source.status.return_value={'configured':True}
         # Explicitly use the fictional legacy adapter; no provider is contacted.
         self.downloads.source_id=lambda:'dar-rest-v3';self.downloads.source_schema=lambda:None
         self.now=datetime(2026,10,21,12,tzinfo=timezone.utc)
-        self.scheduler=AddressSchedule(self.store,self.downloads,True,lambda:self.now)
+        self.scheduler=AddressSchedule(self.store,self.downloads,True,lambda:self.now,pressure=lambda:False)
         self.rows=[unit('a')];self.fail=False;self.calls=[]
         def request(host,path,params=None,query=None):
             self.calls.append(copy.deepcopy(params))
-            if self.fail:raise SourceUnavailable('Fiktiv netfejl')
+            if self.fail:raise SourceTransient('Fiktiv netfejl')
             return len(self.rows) if params.get('count') else copy.deepcopy(self.rows) if params['page']==1 else []
         self.downloads.request=request
         def start(kind,data):
@@ -69,8 +70,9 @@ class AddressScheduleTests(unittest.TestCase):
         self.due();self.fail=True;self.complete();waiting=self.scheduler.status()
         self.assertEqual(waiting['status'],'waiting');self.assertEqual(self.store.geo_state()['changes'],[])
         snapshot=self.store.get('geo','main-boundary-download')['snapshot'];count=len(self.calls)
-        self.scheduler=AddressSchedule(self.store,self.downloads,True,lambda:self.now)
-        self.scheduler.tick();self.assertEqual(len(self.calls),count)
+        self.scheduler=AddressSchedule(self.store,self.downloads,True,lambda:self.now,pressure=lambda:False)
+        self.scheduler.tick();self.assertGreater(len(self.calls),count)
+        self.scheduler.tick()
         self.now+=timedelta(minutes=16);self.fail=False;self.complete()
         self.assertEqual(self.scheduler.status()['status'],'complete')
         self.assertEqual(self.store.get('geo','main-boundary-download')['snapshot'],snapshot)
@@ -88,7 +90,7 @@ class AddressScheduleTests(unittest.TestCase):
     def test_persisted_retry_survives_store_close_and_reopen(self):
         self.due();self.fail=True;self.complete();before=self.scheduler.status()
         self.store.close();self.store=Store(self.tmp.name);self.downloads.store=self.store
-        self.scheduler=AddressSchedule(self.store,self.downloads,True,lambda:self.now)
+        self.scheduler=AddressSchedule(self.store,self.downloads,True,lambda:self.now,pressure=lambda:False)
         self.assertEqual(self.scheduler.status()['run'],before['run'])
         self.now+=timedelta(minutes=16);self.fail=False;self.complete()
         self.assertEqual(self.scheduler.status()['status'],'complete')
@@ -107,6 +109,47 @@ class AddressScheduleTests(unittest.TestCase):
         # REST empty snapshots are allowed by the existing adapter, but still only stage removal.
         self.assertFalse(self.store.get('geo','dar:old').get('retired'))
         self.assertEqual(self.store.geo_state()['changes'][0]['kind'],'retired')
+
+    def test_fast_transient_retries_back_off_only_after_repeated_no_progress(self):
+        self.due();self.fail=True
+        for attempt in range(1,5):
+            self.complete();status=self.scheduler.status()
+            self.assertEqual(status['attempt'],attempt)
+            self.assertEqual(status['retry_at']<=self.now.isoformat(timespec='seconds'),attempt<=3)
+        before=len(self.calls);self.scheduler.tick();self.assertEqual(len(self.calls),before)
+        self.now+=timedelta(seconds=61);self.fail=False;self.complete()
+        self.assertEqual(self.scheduler.status()['status'],'complete')
+        self.assertNotIn('last_problem',self.scheduler.status())
+
+    def test_source_cooldown_and_pressure_pause_do_not_spin_or_discard_progress(self):
+        self.due();original=self.downloads.request
+        problem=SourceUnavailable('Fiktiv kildebegrænsning');problem.retry_after=120
+        def limited(*args,**kwargs):raise problem
+        self.downloads.request=limited;self.complete();status=self.scheduler.status()
+        self.assertEqual(status['retry_reason'],'source')
+        self.assertEqual(datetime.fromisoformat(status['retry_at'])-self.now,timedelta(seconds=120))
+        self.downloads.request=original;self.now+=timedelta(seconds=121)
+        self.scheduler.pressure=lambda:True;self.scheduler.tick()
+        self.assertEqual(self.scheduler.status()['retry_reason'],'pressure');self.assertFalse(self.calls)
+        self.now+=timedelta(seconds=61);self.scheduler.pressure=lambda:False;self.complete()
+        self.assertEqual(self.scheduler.status()['status'],'complete')
+
+    def test_three_hour_work_round_resumes_same_checkpoint_after_a_short_pause(self):
+        self.due();self.fail=True;self.complete()
+        snapshot=self.store.get('geo','main-boundary-download')['snapshot'];calls=len(self.calls)
+        self.now+=timedelta(hours=3,seconds=1);self.scheduler.tick()
+        self.assertEqual(self.scheduler.status()['retry_reason'],'budget');self.assertEqual(len(self.calls),calls)
+        self.now+=timedelta(minutes=16);self.fail=False;self.complete()
+        self.assertEqual(self.scheduler.status()['status'],'complete')
+        self.assertEqual(self.store.get('geo','main-boundary-download')['snapshot'],snapshot)
+
+    def test_background_download_yields_at_its_time_budget_without_claiming_completion(self):
+        self.downloads.active='budget-job';self.downloads.jobs['budget-job']={'status':'running'}
+        with patch.object(self.downloads,'boundary',side_effect=lambda data,progress:self.downloads.check_cancel()),patch('geodata.time.monotonic',side_effect=[100,101]):
+            self.downloads.run('budget-job','boundary',{'check_run':'fictional','max_seconds':1})
+        job=self.downloads.status('budget-job')
+        self.assertEqual((job['status'],job['reason']),('paused','budget'))
+        self.assertIsNone(self.downloads.active);self.assertFalse(self.downloads.background_work)
 
 class AddressTaskHTTPTests(unittest.TestCase):
     def setUp(self):

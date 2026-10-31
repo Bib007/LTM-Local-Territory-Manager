@@ -97,6 +97,14 @@ class DarDownloadTests(unittest.TestCase):
         self.assertEqual(self.download.jobs['job']['message'],'Henter udsnit 2 af 32…')
         self.assertNotIn('request_started',self.download.jobs['job'])
 
+    def test_long_source_cooldown_is_preserved_without_blocking_the_worker(self):
+        problem=SourceUnavailable('Fiktiv kildebegrænsning');problem.retry_after=600
+        self.source.query=Mock(side_effect=problem)
+        with patch.object(self.download.cancel_event,'wait') as wait:
+            with self.assertRaises(SourceUnavailable) as error:self.download.graph_adapter().discover_postcode('9999')
+        self.assertEqual(error.exception.retry_after,600)
+        self.assertEqual(self.source.query.call_count,1);wait.assert_not_called()
+
     def test_graph_transient_exhaustion_pause_and_schema_change_never_import_partial(self):
         self.source.query=Mock(side_effect=SourceTransient('Fiktiv afbrydelse'))
         with patch.object(self.download.cancel_event,'wait',return_value=False) as wait:

@@ -14,6 +14,8 @@ BASE='/DAR/DAR/3.0.0/rest/'
 PAGE_SIZE=100
 
 class Paused(Exception):pass
+class WorkBudget(Paused):pass
+class WorkPressure(Paused):pass
 
 class SourceUnavailable(ValueError):
     """Source-wide failure: stop bulk iteration after bounded request retries."""

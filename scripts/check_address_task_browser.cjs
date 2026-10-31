@@ -27,8 +27,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  await page.waitForFunction(()=>!el('dialog').open);assert.deepEqual({enabled:writes[0].enabled,days:writes[0].days,time:writes[0].time},{enabled:true,days:3,time:'02:15'});
  assert.ok(await page.locator('#addressTask').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'Task panel fits narrow displays');
  await page.locator('#addressTask [data-work=address-changes]').click();await page.locator('.followupRow [data-work=accept-address]').waitFor();assert.match(await page.locator('.followupRow').innerText(),/Fiktiv vej 1/);assert.equal(await page.evaluate(()=>page),'Opfølgninger');
- await page.evaluate(()=>{page='Opgaver';state.address_task={...state.address_task,status:'waiting',run:{id:'fictional'},retry_at:'2026-10-22T03:00:00Z',message:'Venter efter fiktiv netfejl'};render();});
+ await page.evaluate(()=>{page='Opgaver';state.address_task={...state.address_task,status:'waiting',run:{id:'fictional'},retry_at:'2026-10-22T03:00:00Z',message:'Venter efter fiktiv netfejl',last_problem:'Fiktiv kildebesked <kontrol>',retry_streak:4,progress:{completed:2,total:5}};render();});
  assert.match(await page.locator('#addressTask').innerText(),/Venter og prøver igen/);
+ assert.match(await page.locator('#addressTask').innerText(),/Fiktiv kildebesked <kontrol>/);
+ assert.match(await page.locator('#addressTask').innerText(),/Udsnit kontrolleret: 2 af 5/);
+ assert.match(await page.locator('#addressTask').innerText(),/Afbrydelser siden ny fremdrift: 4/);
+ assert.equal(await page.locator('#addressTask kontrol').count(),0,'Provider status is escaped');
  if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`address-task-${width}.png`),fullPage:true});}
+ await page.evaluate(()=>{page='Forside';state.address_task={available:true,enabled:true,status:'waiting',days:30,time:'02:00',retry_at:'2026-10-22T03:00:00Z',message:'Systemet holder en kort pause på grund af ressourcepres.'};render();});
+ assert.match(await page.locator('#addressTask').innerText(),/Næste forsøg:/,'A first check waiting on pressure stays visible');
  await page.evaluate(()=>{state.address_task.available=false;render();});assert.equal(await page.locator('#addressTask').count(),0);assert.deepEqual(errors,[]);await context.close();
 }console.log('HA address task: dashboard counts, task configuration, writes without cross-tab rejection, review navigation, retry status, desktop exclusion and four screen widths passed.');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

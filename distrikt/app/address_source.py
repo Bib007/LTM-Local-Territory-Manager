@@ -80,7 +80,10 @@ class Datafordeler:
             if error.code in (429,500,502,503):
                 message='Datafordeleren er midlertidigt utilgængelig (HTTP '+str(error.code)+'). Prøv igen senere.'
                 cooldown=error.headers.get('Retry-After','') if error.headers else ''
-                if cooldown and (not cooldown.isdigit() or int(cooldown)>60):raise SourceUnavailable(message) from None
+                if cooldown and (not cooldown.isdigit() or int(cooldown)>60):
+                    problem=SourceUnavailable(message)
+                    if cooldown.isdigit():problem.retry_after=min(31*86400,int(cooldown))
+                    raise problem from None
                 delay=max(60 if error.code==429 else 0,int(cooldown) if cooldown else 0)
                 raise SourceTransient(message,delay) from None
             if query is not None and error.code in (400,422):

@@ -10,6 +10,10 @@ Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41
 
 **W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Fremdrift ved registrering af de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**; beta.77-status nedenfor er nyere. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
 
+### W111 · genforsøg og synlig venten · prøvet lokalt, ikke frigivet
+
+Adressekontrollen har nu hurtige, begrænsede genforsøg, bevaret kildeventetid, længere arbejdsrunder med genoptageligt checkpoint, ressourcepause og en tydelig årsag til venten. 579 Python-prøver, JavaScript-suiten, pakkeprøver og fire browserbredder består med opdigtede data. [Afgrænsning og kontrol](ADRESSEKONTROL-GENFORSOEG.md). Ændringen sendes til samlet kontrol på develop; den er ikke med i beta.77 og tæller endnu ikke som afsluttet. W110's HA-status og notifikationer er fortsat en særskilt åben opgave. Ingen målinger eller private oplysninger sendes ud af systemet af det lokale ressourcegrundlag.
+
 ### Profilopfølgning · beta.77 verificeret udgivet
 
 **Beta.77 er verificeret udgivet** fra `ffb7638abae22925c54792b02109393dd5643ce1`. W112 (prioritet −1) og W113–W115 er frigivet sammen med ejerens konkrete profilrettelser: rollevalg for backup-påmindelse, egne faner og samlede forbindelser, tydeligere opfølgninger, velkomst, valg af konfliktrettelse med straks-opdateret påmindelse og kontobackup/gendannelse i appen. Checks **41226343976** og HA beta release **41226343968** er grønne på selve udgivelseskilden, inklusive Mac/Windows/HA og Chromium/WebKit. Begge offentlige pakker og alle **144 filer** på betakanalen matcher samme kilde. [Præcis verificering](BETA-77-VERIFICERING.md), herunder afgrænsningen af den selvstændige platformskontrol på samme programkode.

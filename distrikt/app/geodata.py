@@ -10,7 +10,8 @@ import urllib.parse
 import urllib.request
 import uuid
 from geography import decode_dar, valid_coordinate
-from postcode import PostcodeDownload, Paused, SourceUnavailable, SourceTimeout
+from postcode import PostcodeDownload, Paused, WorkBudget, WorkPressure, SourceUnavailable, SourceTimeout, SourceTransient
+from runtime_pressure import resource_pressure
 from boundary_download import BoundaryDownload
 from dar_download import DarDownload
 from address_source import Datafordeler
@@ -23,6 +24,8 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
         self.store=store;self.jobs={};self.lock=threading.Lock();self.active=None;self.cancel_event=threading.Event()
         self.suggestion_cache={}
         self._received_addresses=set()
+        self.deadline=None;self.background_work=False
+        self.pressure=lambda:resource_pressure()['high']
         self.address_source=address_source if address_source is not None else (Datafordeler(store.root) if store is not None else None)
     def start(self,kind,data):
         if kind not in ('road','area','osm','postcode','boundary'):raise ValueError('Ukendt hentning.')
@@ -63,18 +66,28 @@ class Downloads(PostcodeDownload,BoundaryDownload,DarDownload):
         return {'ok':True}
     def check_cancel(self):
         if self.cancel_event.is_set():raise Paused()
+        if self.background_work:
+            if self.deadline is not None and time.monotonic()>=self.deadline:raise WorkBudget()
+            if self.pressure():raise WorkPressure()
     def run(self,ident,kind,data):
         try:
+            seconds=data.get('max_seconds') if kind=='boundary' and data.get('check_run') else None
+            if seconds is not None:
+                if type(seconds) not in (int,float) or not __import__('math').isfinite(seconds) or not 0<seconds<=10800:raise ValueError('Ugyldig tidsgrænse for baggrundskontrol.')
+                self.deadline=time.monotonic()+seconds;self.background_work=True
             if kind=='road':result=self.road(data,lambda **kw:self.update(ident,**kw))
             elif kind=='postcode':result=self.postcode(data,lambda **kw:self.update(ident,**kw))
             elif kind=='boundary':result=self.boundary(data,lambda **kw:self.update(ident,**kw))
             else:result=self.area(data,kind=='area',lambda **kw:self.update(ident,**kw))
             self.update(ident,status='done',result=result,message='Offentlige data er gemt lokalt. Dine kort er ikke ændret.')
+        except WorkBudget:self.update(ident,status='paused',reason='budget',retry_after=900,message='Arbejdsrundens tidsgrænse er nået. Færdige udsnit er bevaret; kontrollen fortsætter efter en kort pause.')
+        except WorkPressure:self.update(ident,status='paused',reason='pressure',retry_after=60,message='Systemet er under vedvarende ressourcepres. Færdige udsnit er bevaret; kontrollen prøver igen efter en kort pause.')
         except Paused:self.update(ident,status='paused',message='Hentningen er sat på pause. Færdige veje eller udsnit er gemt; fortsæt under Kortdata eller Samlet distriktsgrænse.')
-        except ValueError as e:self.update(ident,status='error',message=str(e))
+        except SourceUnavailable as e:self.update(ident,status='error',reason='source',retryable=isinstance(e,SourceTransient) or getattr(e,'retry_after',0)>0,retry_after=getattr(e,'retry_after',0),message=str(e))
+        except ValueError as e:self.update(ident,status='error',reason='validation',retryable=False,message=str(e))
         except Exception:self.update(ident,status='error',message='Hentning mislykkedes. Eksisterende lokale data er bevaret; prøv igen senere.')
         finally:
-            with self.lock:self.active=None;self._received_addresses.clear()
+            with self.lock:self.active=None;self._received_addresses.clear();self.deadline=None;self.background_work=False
     def request(self,host,path,params=None,query=None):
         if host not in ('adressevaelger.dk','overpass-api.de','services.datafordeler.dk'):raise ValueError('Ukendt datakilde.')
         url='https://'+host+path
