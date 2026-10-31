@@ -8,6 +8,14 @@ Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne beta
 
 Den almindelige apps lokale Chromium-forløb med Playwright 1.56.1 består: aktivering, login, egne roller/brugere, to sessionsforløb, automatisk gemning, konfliktgennemgang og en mistet gemmekvittering uden dobbelt gemning. Mobilvisningen ved 390 px er visuelt kontrolleret. De samlede lokale Python-/JavaScript- og pakkeprøver er gennemført; præcise afsluttende resultater føres i profilnotatet. **Dette er lokal udviklingskontrol, ikke en frigivet profilversion eller en ejerprøve.** Profil- og PDF-commit c9b73d788382f67e7f670cdc18fac91b998a6c38 har bestået Checks 41205044483, Platformskontrol 41205044352 og HA beta release 41205044448, inkl. Chromium/WebKit, Python 3.9/3.12/3.13, Mac, Windows, HA, pakning og den almindelige afhængigheds-/Bandit-kontrol. Udgivelsesjobbet bevarer beta.75, da det versionsnummer allerede tilhører en anden commit. Den officielle pypdf 6.21.4 retter de syv advisories, som stoppede første kandidat; ingen undtagelse er indført. En afsluttende browserprøve har derudover verificeret ændrede rettigheder og afvisning af et forsinket svar med gammel adgang. Disse sidste afgrænsede rettelser sendes gennem samme gate. Codex Security er ikke kørt. Den gamle generelle revisionsafvisning er ikke genindført.
 
+### W109 · ny aktuel regel for svartabellen · prioritet −1
+
+Fuld kildetekst:
+
+> I “dine svar og prøver” skal de færdigsvarede felter fjernes og opbevares et andet sted… når man har svaret på feltet, medmindre der ikke er svaret fuldt ud, skal tidligere svar fjernes/flyttes væk, og et omformuleret eller mere beskrivende sprøgsmål skal stilles
+
+Ejerprioritet, fuld tekst: **-1 be om nuuuu**. Flyt færdige svar ud af den aktive tabel til historik, og flyt tidligere ufuldstændige svar samme sted hen, før et tydeligere resterende spørgsmål stilles. Denne nyere besked går foran tidligere tekst om at bevare svarene i selve tabellen. De første seks afklarede rækker fjernes; svaret på den uklare HA-forespørgsel arkiveres, og kun en konkret forklaring om en eventuel senere ændring står tilbage uden handling nu. 26 resterende punkter. Fuld tekst findes i [svarhistorikken](EJER-SVAR-HISTORIK.md), og Google-planens Historik.
+
 ### W109 · samlet tabel over ejersvar og prøver · prioritet −1 · 31.10.2026
 
 Fuld kildetekst:
@@ -115,7 +123,17 @@ Ejersvar fra den nye tabel, fuld tekst:
 
 W101: Åben adgang er besluttet. Undersøg senere et konkret forslag til præsentationsside med Drive-link, udleveringsstatus, forklaring om IB/fysisk kort og mulig fejlmelding. Ingen ny hosting eller offentlig kontaktformular er bestilt til opsætning nu. W06: Den uklare godkendelsesforespørgsel er erstattet af en forklaring; ingen ejerhandling kræves, før et konkret fremtidigt adgangsforslag foreligger.
 
-**93/110 afsluttet eller afklaret, 17 åbne, cirka 85 %** efter W109 og ejerens afvisning af W67. W106–W108 og W110 skal med før næste stabile; W65/W83 er fortsat åbne og ikke frigivet. W85/OCR og W16 er på pause, W92 droppet, W84 privat. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
+### W111 · adressekontrol bliver ved med at vente · 31.10.2026
+
+Fuld kildetekst:
+
+> det ser ikke ud til at virke særlig godt, den udskyder hver gang, måske at fejlene ikke skal stoppe den fuldstændig men bare genstarte, med det samme, med mindre den er fejlet mange gange, eller systemet bliver overbelastet…. det må godt tage lang tid at kører gennemgangen, da det jo oftest sættes til alt mellem 14-30 dages mellemrum….. det kan og må tage op til 2-3 timer hvis det er
+
+Ejerprioritet, fuld tekst: **Du bestemmer** (rettet af ejeren fra “Du bestemmer?” under registreringen).
+
+**LTM vælger prioritet 1, efter den igangværende profilbeta og før næste stabile.** Fejlmelding til W73: det lokale referencebillede viser “Venter og prøver igen · hver 30. dag kl. 02:00 (serverens lokale tid)” og bevarede færdige udsnit. Billedet holdes i Google-dokumentets Bilag/lokalt; ingen privat fil offentliggøres. Koden udskyder i øjeblikket efter hver afbrudt delkørsel med mindst 15 minutter og stigende ventetid. Undersøg årsagen og indfør hurtige, begrænsede genforsøg med bevaret fremdrift; gentagne fejl, nøglefejl og reelt pres skal stadig give passende pause og forståelig status. En samlet kontrol må godt bruge op til 2–3 timer; ingen ufuldstændig hentning må tolkes som fjernede adresser, og ændringer kræver fortsat konkret godkendelse. Ingen rigtig API-nøgle eller overbelastning bruges i offentlige prøver. Registreret og undersøgt, ikke rettet eller frigivet. Den specifikke senere funktionsprøve knyttes til nr. 19 i svartabellen; ingen gentagelse af den generelle HA-/API-prøve.
+
+**93/111 afsluttet eller afklaret, 18 åbne, cirka 84 %** efter W109, ejerens afvisning af W67 og den nye fejlmelding W111. W106–W108, W110 og W111 skal med før næste stabile; W65/W83 er fortsat åbne. Beta.76 med profiler er sendt til samlet udgivelseskontrol fra `65ee595170b413e03186e0427447ac4c15fc99c8`, endnu ikke verificeret udgivet. W85/OCR og W16 er på pause, W92 droppet, W84 privat. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
 
 ## Historik · beta.75 udgivet · 30.10.2026
 
