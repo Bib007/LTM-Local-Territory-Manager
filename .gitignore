@@ -23,3 +23,7 @@ dist/
 node_modules/
 playwright-report/
 test-results/
+
+profiles.json
+profiles.tmp
+accounts-before-restore-*.json

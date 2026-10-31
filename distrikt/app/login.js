@@ -11,7 +11,7 @@ const LoginUI={busy:false,
  localize(){document.documentElement.lang=LoginText.language();const language=document.getElementById('loginLanguage');if(language)language.value=LoginText.language();document.title=(document.title.includes('Beta')?'LTM Beta':'LTM')+' · '+LoginText.text('Log ind');LoginText.applyShell();},
  async submit(form){
   if(this.busy||!form.reportValidity())return;
-  const password=document.getElementById('loginPassword'),button=form.querySelector('button[type=submit]'),body=JSON.stringify({password:password.value}),controller=typeof AbortController==='function'?new AbortController():null;
+  const password=document.getElementById('loginPassword'),button=form.querySelector('button[type=submit]'),body=JSON.stringify({password:password.value,...(document.getElementById('loginName')?{name:document.getElementById('loginName').value}:{})}),controller=typeof AbortController==='function'?new AbortController():null;
   this.busy=true;button.disabled=true;password.disabled=true;password.removeAttribute('aria-invalid');form.setAttribute('aria-busy','true');document.getElementById('loginError').textContent='';LoginText.content(button,'Logger ind…');let success=false;
   const timer=controller?setTimeout(()=>controller.abort(),30000):null;
   try{

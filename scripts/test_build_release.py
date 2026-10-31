@@ -138,7 +138,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'missing Excel import template'):self.build('output')
 
     def test_accidental_credential_json_in_program_tree_blocks_release(self):
-        for name in ('drive-auth.json','datafordeler-auth.json','access.json','run.json'):
+        for name in ('drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json','profiles.json','profiles.tmp'):
             with self.subTest(name=name):
                 path=self.source/'app'/name
                 path.write_text('{"credential":"FICTIONAL_TEST_ONLY"}')
@@ -150,6 +150,10 @@ class ReleaseArchiveTests(unittest.TestCase):
     def test_accidental_database_in_program_tree_blocks_release(self):
         self.add('distrikt/app/accidental.sqlite3','fake private test record')
         with self.assertRaisesRegex(ValueError,'Private/runtime file'):self.build('output')
+
+    def test_renamed_account_backup_cannot_be_published(self):
+        self.add('distrikt/app/ordinary-looking.txt','{"format":"ltm-account-backup","schema":1,"accounts":{"users":{},"roles":{}}}')
+        with self.assertRaisesRegex(ValueError,'Private account backup'):self.build('output')
 
     def test_missing_linked_document_blocks_release(self):
         (self.root/'docs/README.en.md').unlink()

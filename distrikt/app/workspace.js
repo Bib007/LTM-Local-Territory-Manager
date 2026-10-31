@@ -266,7 +266,7 @@ const Workspace={memory:{},taskFilter:'open',taskQuery:'',activityData:[],histor
  applyView(id){const item=(state.settings.saved_views||[]).find(v=>v.id===id);if(!item)return;this.remember();const v=item.view;page=['Distrikter','Kortoversigt','Adresser'].includes(v.page)?v.page:'Distrikter';query=v.query||'';area=v.area||'';status=v.status||'Alle';addressTab=v.addressTab||'Mangler på kort';addressPostcode=v.addressPostcode||'';if(page==='Kortoversigt'&&v.filters)OverviewMap.filters={...OverviewMap.filters,...v.filters};render();toast('Visning: '+item.name);},
  boot(){if(typeof window.addEventListener!=='function')return;window.addEventListener('offline',()=>this.connectionChanged('offline'));window.addEventListener('online',()=>{this.connectionIssue=true;this.checkConnection(true);});if(typeof window.setInterval==='function')window.setInterval(()=>this.checkConnection(),30000);
   // Populate follow-ups on first opening, without redrawing a page/form the user opened meanwhile.
-  if(typeof GeoUI!=='undefined'&&!GeoUI.loaded)GeoUI.load().then(()=>{if(page==='Forside'){const summary=document.querySelector('.dashboardAttention');if(summary)summary.outerHTML=this.followupsSummary();}}).catch(error=>toast(error));
+  if(typeof GeoUI!=='undefined'&&!GeoUI.loaded&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view','cards.view')))GeoUI.load().then(()=>{if(page==='Forside'){const summary=document.querySelector('.dashboardAttention');if(summary)summary.outerHTML=this.followupsSummary();}}).catch(error=>toast(error));
  }
 
 };

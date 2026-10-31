@@ -216,18 +216,20 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self.put('cards', card)
         return item
 
-    def mutate(self, action, data):
-        with self.lock:return self.guarded_mutate(action,data)
+    def mutate(self, action, data, *, review=None):
+        with self.lock:return self.guarded_mutate(action,data,review=review)
 
-    def guarded_mutate(self, action, data):
+    def guarded_mutate(self, action, data, *, review=None):
         self.purge_expired()
         with self.transaction():
             # Cross-tab revision rejection is paused until user profiles are designed.
             self._tracking={}
             try:
+                if review:data=review.prepare(self,action,data)
                 result = self._mutate(action, data)
                 self.onboarding_after_write(action,data)
                 touched=self._tracking
+                if review:review.finish(self,dict(touched))
                 changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.alias(m)+'.records WHERE id=?',(i,)).fetchone()])
                 if changed and not action.startswith(('geo.import','geo.postcode','geo.main.download')):
                     self._tracking=None
@@ -241,9 +243,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         elif current.get('card_id'):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
-                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields)})
+                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),**({'actor_id':review.actor} if review else {})})
                 reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve')
-                candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120} if changed and reversible else None
+                candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
             candidate['revision']=self.revision;self._undo=candidate
@@ -408,7 +410,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             old = self.get('settings', data.get('id')) if data.get('id') else None
             if data.get('id') and not old:
                 raise ValueError('Posten er ændret eller slettet. Opdater siden.')
-            if old and old['id'] == 'config':
+            if old and (old['id'] == 'config' or old.get('entity')):
                 raise ValueError('Ugyldigt område.')
             name = clean_text(data.get('name'), 80, True)
             if any(a['id'] != 'config' and a.get('name', '').casefold() == name.casefold() and a['id'] != data.get('id') for a in self.all('settings') + self.all('settings', deleted=True)):
@@ -426,7 +428,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             ident = data.get('id')
             if ident == 'config':
                 raise ValueError('Ugyldigt område.')
-            self.require('settings', ident)
+            if self.require('settings', ident).get('entity'):raise ValueError('Ugyldigt område.')
             restore_cards = []
             for c in self.all('cards'):
                 if c.get('area_id') == ident:

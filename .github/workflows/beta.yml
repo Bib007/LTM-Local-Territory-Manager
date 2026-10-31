@@ -57,6 +57,10 @@ jobs:
         run: |
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_photo_browser.cjs
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_photo_browser.cjs
+      - name: Real application profiles and concurrent saves
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_profiles_app_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_profiles_app_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks

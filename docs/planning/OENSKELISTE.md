@@ -1,6 +1,28 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.75 udgivet · 30.10.2026
+## Aktuel oversigt · profiler integreret til lokal kontrol · 31.10.2026
+
+Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Stabil 1.12.1 og beta.75 er uændrede.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+
+**W65/W83:** Profiler er nu koblet til den almindelige app i udviklingskoden. Den eksisterende adgang godkender første administrator; aktivering er et udtrykkeligt valg og flytter ingen distriktsdata. Egne roller/rettigheder, individuel introduktion, nylig aktivitet (90 sekunder), afgrænset `/api/state`, standardafvisning af ukendte serverhandlinger, kontogendannelse og særskilt lokal kontobackup er med. Uafhængige rettelser sammenføjes gennem normal domænevalidering; konkrete konflikter gemmes atomisk og vises på forsiden. Adgangsændringer ved samtidige administratorrettelser bevares til gennemgang uden at vinde konflikten automatisk. Adgangskodehashes udleveres ikke i gennemgangen.
+
+Den almindelige apps lokale Chromium-forløb med Playwright 1.56.1 består: aktivering, login, egne roller/brugere, to sessionsforløb, automatisk gemning, konfliktgennemgang og en mistet gemmekvittering uden dobbelt gemning. Mobilvisningen ved 390 px er visuelt kontrolleret. De samlede lokale Python-/JavaScript- og pakkeprøver er gennemført; præcise afsluttende resultater føres i profilnotatet. **Dette er lokal udviklingskontrol, ikke en frigivet profilversion eller en ejerprøve.** Samlet Chromium/WebKit-, Mac-, Windows- og HA-kontrol af den endelige kandidat mangler før frigivelse. Den gamle generelle revisionsafvisning er ikke genindført.
+
+### W106 · datoer på det digitale kort · nyt ønske 31.10.2026
+
+Fuld tekst fra Google-ønskelisten:
+
+> Kunne være fint med en “sidste gennemgangsdato” (som jo er hvornår det sidst blev indleveret eller reigstreret gennemgået) stod på den online version af distriktkortet… og en “udleveret d.” dato, som viser hvornår en person har fået det kort, så de er klar over hvor længe de har haft det$
+
+Ejerprioritet, fuld tekst:
+
+> du bestemmer, men med i næste stable version ihvertfald
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Begge datoer skal bygge på de faktisk registrerede hændelser. Undgå navne og IB på det offentlige kort. Den eksisterende onlineversion er et godkendt PNG-billede, så datoændringer kræver et gennemtænkt opdateringsforløb; gamle udleveringsdatoer må ikke fejlagtigt præsenteres som aktuelle. Ønsket er registreret og undersøgt, ikke implementeret eller frigivet. Kildeteksten og prioriteten bevares i Google-dokumentet.
+
+Alle seks faner er genkontrolleret. W106 er det eneste nye ubehandlede ønske. W85/OCR og W16 forbliver på pause; W92 er droppet og W84 er en privat huskenote. Fremdrift efter det nye ønske: **91/106 afsluttet eller afklaret, 15 åbne, cirka 86 %**. W65/W83 tæller fortsat som åbne. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
+
+## Historik · beta.75 udgivet · 30.10.2026
 
 Beta.74 er udgivet fra `54821ef4e98f4dac62d5234ec043eaa47790eeee`. HA beta release 40401076156, Checks 40401076193 og Platformskontrol 40401076016 er completed/success. De hentede HA- og desktop-ZIP-filer matcher byte for byte lokale pakker fra denne commit; alle 127 filer på betakanalen matcher den samme kilde. Den nye startguide er et deltrin af W74: lokal eller privat server på Mac/Windows/Linux, separate beta-/serverdata, eget login og Python installeret separat. W74 er stadig åben; appvindue, selvstændige installationer og automatisk serverstart mangler.
 

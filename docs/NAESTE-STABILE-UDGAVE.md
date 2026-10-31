@@ -1,4 +1,12 @@
-# LTM 1.12.0 · stabil udgivelse
+# Næste stabile LTM · under udvikling
+
+Målet er de allerede udgivne betafunktioner plus brugerprofiler, administratorstyrede roller/rettigheder, samtidig redigering og konfliktgennemgang. W106 tilføjer seneste gennemgangsdato og udleveringsdato til det digitale kort; det er registreret til samme stabile udgave og endnu ikke leveret.
+
+Profilintegration er prøvet lokalt i den almindelige app, men kandidatens samlede platform-/udgivelseskontrol og de resterende afslutninger mangler. **Stabil 1.12.1 og beta.75 er fortsat de udgivne udgaver.** Ny stabil publicering kræver særskilt ejerbesked; denne plan er ikke en udgivelsesgodkendelse.
+
+Aktuel status står i [udviklingsplanen](planning/OENSKELISTE.md) og [profilnotatet](planning/BRUGERE-SAMTIDIG.md). W85/OCR og automatisk kortinddeling genoptages ikke. Drive, gendannelse og den generelle HA-prøve er allerede ejerbekræftet og bestilles ikke igen. Codex Security er ikke kørt.
+
+## Historik · stabil 1.12.0
 
 Ejeren har godkendt udgivelse 23.10.2026. De færdige, brugerrettede nyheder og opdateringsråd står i [udgivelsesnoterne](RELEASE-NOTES.md). Dette dokument bevarer beslutningsgrundlaget for udgivelsen.
 
