@@ -132,6 +132,21 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual((saved['number'],saved['name']),('F102','Fiktiv samtidig rettelse'))
         self.assertEqual(result['state']['profile']['conflicts'],0)
 
+    def test_geographic_save_preserves_an_independent_color_and_boundary(self):
+        addresses=[{'id':'fictional-'+str(i),'road':'Fiktivvej','number':str(i),'postcode':'9999','lng':10+i*.001,'lat':55,'count':1} for i in (1,2)]
+        self.store.mutate('geo.import',{'records':addresses,'source':'Fictional test'})
+        polygon=[[10,54.99],[10.02,54.99],[10.02,55.02],[10,55.02]]
+        self.store.mutate('geo.assign',{'card_id':self.card,'address_ids':['fictional-1'],'polygon':polygon,'map_color':'#123456'})
+        second=self.login('Fiktiv admin','Fiktiv-password-123');a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'card.color',{'card_id':self.card,'map_color':'#abcdef'})
+        a=self.state(self.admin);new_polygon=[[9.99,54.99],[10.02,54.99],[10.02,55.03],[9.99,55.03]]
+        self.change(self.admin,a,'geo.boundary',{'card_id':self.card,'polygon':new_polygon})
+        result=self.change(second,b,'geo.assign',{'card_id':self.card,'address_ids':['fictional-1','fictional-2'],'polygon':polygon,'map_color':'#123456'})
+        actual=self.store.require('cards',self.card)
+        self.assertEqual(actual['map_color'],'#abcdef');self.assertEqual(actual['geo_polygon'],new_polygon)
+        self.assertEqual(set(actual['address_ids']),{'fictional-1','fictional-2'})
+        self.assertEqual(result['state']['profile']['conflicts'],0)
+
     def test_snapshot_capacity_failure_cannot_commit_an_unacknowledgeable_write(self):
         state=self.state(self.admin);before=self.store.require('cards',self.card)
         self.server.profiles.bases.capacity=len(self.server.profiles.bases._items)

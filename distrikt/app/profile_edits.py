@@ -14,6 +14,7 @@ SAVE={
  'visit.save':('visits',{'date','note'}),
  'card.color':('cards',{'map_color'}),
  'geo.boundary':('cards',{'geo_polygon'}),
+ 'geo.assign':('cards',{'map_color','address_ids','geo_polygon'}),
  'map.outline':('cards',{'polygon'}),
 }
 REVIEW_FIELDS={
@@ -41,15 +42,16 @@ class ReviewedMutation:
         current-state validation and their concrete approval tokens.
         """
         spec=SAVE.get(action)
-        ident='config' if action=='settings.save' else data.get('card_id') if action in ('card.color','geo.boundary','map.outline') else data.get('id')
+        ident='config' if action=='settings.save' else data.get('card_id') if action in ('card.color','geo.boundary','geo.assign','map.outline') else data.get('id')
         if not spec or not ident:return data
-        aliases={'geo.boundary':{'polygon':'geo_polygon'},'map.outline':{'points':'polygon'}}.get(action,{})
+        aliases={'geo.boundary':{'polygon':'geo_polygon'},'geo.assign':{'polygon':'geo_polygon'},'map.outline':{'points':'polygon'}}.get(action,{})
         draft={aliases.get(k,k):deepcopy(v) for k,v in data.items()}
         module,fields=spec;current=store.require(module,ident)
         original=self.base['records'].get(module,{}).get(ident)
         if original is None:raise ValueError('Åbn redigeringen igen for at hente dens udgangspunkt.')
         def canonical(field,value):
             if field=='recurrence' and isinstance(value,dict):return {k:value.get(k) for k in ('frequency','weekday')}
+            if field=='address_ids' and isinstance(value,list) and all(isinstance(v,str) for v in value):return sorted(value)
             if field=='map_color' and isinstance(value,str):return value.lower()
             if field in ('name','number','text','road') and isinstance(value,str):return value.strip()
             if field in ('area_id','address_id','card_id'):return value or None
