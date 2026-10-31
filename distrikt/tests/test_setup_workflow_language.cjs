@@ -47,5 +47,14 @@ const contract=html=>(html.match(/(?:data-setup|data-setup-option|data-setup-are
  await run('SetupUI.previewIB()');assert.ok(run('SetupUI.ib'));
  c.pending=new Promise(r=>release=r);run("SetupUI.ib=null;api=()=>pending");pending=run('SetupUI.previewIB()');run("state.revision='newer-state'");release({json:async()=>({result:ib,revision:'older-response'})});await pending;
  assert.equal(run('SetupUI.ib'),null);assert.match(get('setupError').textContent,/changed during the check/);
+ // Finishing an older request cannot rebuild the file input while a newer
+ // file is being read. Rebuilding it would invalidate the new File's owner.
+ let oldReply,newBytes;c.oldRequest=new Promise(r=>oldReply=r);c.newPick={size:20,name:'fiktiv-ny.csv',text:()=>new Promise(r=>newBytes=r)};
+ c.destroyRender=()=>nodes.delete('setupIBFile');c.currentFileNode=get('setupIBFile');
+ run("page='Opstart';SetupUI.ibContent='OLDER FILE';api=()=>oldRequest;render=destroyRender");
+ const oldPreview=run('SetupUI.previewIB()'),newReader=run('SetupUI.readIB(newPick,currentFileNode)');
+ oldReply({json:async()=>({result:ib})});await oldPreview;
+ run("api=async()=>({json:async()=>({result:ib})})");newBytes('NEW CSV');await newReader;
+ assert.equal(run('SetupUI.ibContent'),'NEW CSV');assert.ok(run('SetupUI.ib'));
  console.log('Advanced setup/IB: bilingual forms, canonical types/numbering/confirmation payloads, escaped private samples, stale proposals, current preview basis, out-of-order files, date/navigation invalidation and failed-file approval guards passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

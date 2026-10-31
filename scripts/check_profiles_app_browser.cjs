@@ -91,8 +91,21 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('[data-setup=ib-open]').click();
   const templateReady=admin.waitForEvent('download');await admin.locator('[data-setup=ib-template][data-format=xlsx]').click();
   assert.equal((await templateReady).suggestedFilename(),'IB-import-skabelon.xlsx');
-  await admin.locator('#setupIBFile').setInputFiles(fixture.ib_file);
+  // Complete an older HTTP preview while the next XLSX File is still read.
+  // The old callback must leave the new input node and its File alive.
+  let releaseIB,startedIB;const ibStarted=new Promise(r=>startedIB=r),ibReleased=new Promise(r=>releaseIB=r);let delayIB=true;
+  const ibRoute=async route=>{if(delayIB&&route.request().postDataJSON()?.action==='setup.ib.preview'){delayIB=false;const response=await route.fetch();startedIB();await ibReleased;await route.fulfill({response});}else await route.continue();};
+  await admin.route('**/api/mutate',ibRoute);
+  await admin.evaluate(()=>{window.ibPreviewOriginal=SetupUI.previewIB;window.ibFinished=0;SetupUI.previewIB=async function(){try{return await window.ibPreviewOriginal.call(this);}finally{window.ibFinished++;}};});
+  await admin.locator('#setupIBFile').setInputFiles(fixture.ib_file);await ibStarted;
+  await admin.evaluate(()=>{window.ibArrayBufferOriginal=File.prototype.arrayBuffer;window.ibFileNode=document.querySelector('#setupIBFile');File.prototype.arrayBuffer=function(){const result=window.ibArrayBufferOriginal.call(this);return new Promise(resolve=>{window.ibNextFile=async()=>resolve(await result);});};});
+  await admin.locator('#setupIBFile').setInputFiles({name:'fiktiv-ny.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:require('node:fs').readFileSync(fixture.ib_file)});
+  await admin.waitForFunction(()=>typeof window.ibNextFile==='function');releaseIB();await admin.waitForFunction(()=>window.ibFinished===1);
+  assert.equal(await admin.evaluate(()=>window.ibFileNode.isConnected),true,'Old completion cannot replace the newly selected File owner');
+  await admin.evaluate(()=>{File.prototype.arrayBuffer=window.ibArrayBufferOriginal;window.ibNextFile();});
   await admin.locator('.setupIBRows').waitFor();
+  assert.equal(await admin.evaluate(()=>SetupUI.ibName),'fiktiv-ny.xlsx');
+  await admin.evaluate(()=>{SetupUI.previewIB=window.ibPreviewOriginal;});await admin.unroute('**/api/mutate',ibRoute);
   assert.ok((await admin.locator('.setupIBRows').innerText()).includes('Postnummer mangler'));
   assert.ok((await admin.locator('.setupIBRows').innerText()).includes('Manuel IB-linje'));
   await admin.setViewportSize({width:390,height:900});

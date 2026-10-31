@@ -65,7 +65,7 @@ async previewIB(){
  this.ibDate=el('setupIBDate')?.value||this.ibDate;const content=this.ibContent,date=this.ibDate,sequence=++this.previewSequence,session=this.session,stamp=this.ibStamp(),revision=state.revision;let failure='';this.ib=null;this.busy=true;const apply=document.querySelector?.('[data-setup="ib-apply"]');if(apply)apply.disabled=true;
  try{const r=await(await api('/api/mutate',{action:'setup.ib.preview',data:{content,date,name:this.ibName,card_id:this.ibCard}})).json();if(sequence!==this.previewSequence||stamp!==this.ibStamp())return;if(state.revision!==revision&&state.revision!==r.revision)throw Error('Kortdata er ændret under kontrollen. Kontrollér filen igen før import.');this.ib=r.result;}
  catch(error){if(sequence===this.previewSequence&&stamp===this.ibStamp())failure=error;}
- finally{if(sequence===this.previewSequence)this.busy=false;if(session===this.session&&page==='Opstart'){render();if(failure){const node=el('setupError');if(node)I18n.errorContent(node,failure);}}}
+ finally{if(sequence===this.previewSequence)this.busy=false;if(sequence===this.previewSequence&&session===this.session&&page==='Opstart'){render();if(failure){const node=el('setupError');if(node)I18n.errorContent(node,failure);}}}
 }
 
 };

@@ -6,6 +6,8 @@ Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne beta
 
 ### W117 · beta.79-kandidat med IB fra Excel
 
+Første kandidat `133095991bfbaad30e518d5adfe7e3c4c8720bab` blev stoppet før publicering (kørsel **41232252899**), så en bevist fejl ved hurtigt filskift kunne rettes. Den rettede udgave består målrettet JavaScript og det rigtige browserforløb med en forsinket ældre forespørgsel og nyere XLSX-indlæsning. Alle udgivelseskontroller køres igen på den rettede kilde. Ingen beta.79 er publiceret eller overskrevet.
+
 Excel-skabelon, lokal XLSX/CSV-upload, synlige mangler, udtrykkeligt godkendte manuelle linjer på et valgt kort, dubletter, vedvarende postnummerpåmindelse og normal efterfølgende rettelse er integreret og prøvet lokalt. 594 Python-prøver, JavaScript, målrettet rigtig HTTP/browser og mobilvisning består. To sessioners uafhængige dato-/postnummerrettelser bevares; modstridende postnumre gemmes til gennemgang. [Vejledning og afgrænsning](../IB-EXCEL.md). Ingen OCR genoptaget. Kandidaten er 1.12.2-beta.79; udgivelseskontroller og offentlig pakkekontrol mangler. Senest verificerede beta er stadig .78; fremdriften er fortsat 100/119 og 19 åbne.
 
 ### Beta.78 · verificeret udgivet · gældende status
