@@ -11,6 +11,25 @@ from profile_edits import ReviewedMutation,capture
 from edit_snapshots import EditSnapshots
 from profile_workspace import ProfileWorkspace
 
+ERRORS={
+ 'A name is required':'Udfyld et navn på højst 100 tegn.',
+ 'Password must contain 12–1024 characters':'Adgangskoden skal være mellem 12 og 1.024 tegn.',
+ 'At least one active account must manage users':'Den sidste aktive brugeradministrator kan ikke fjernes.',
+ 'Select existing roles':'Vælg mindst én eksisterende rolle.',
+ 'Unknown permission':'Vælg gyldige rettigheder fra listen.',
+ 'Role not found':'Rollen findes ikke længere. Åbn brugeradministrationen igen.',
+ 'Account not found':'Brugeren findes ikke længere. Åbn brugeradministrationen igen.',
+ 'Role name already exists':'Der findes allerede en rolle med det navn.',
+ 'Account name already exists':'Der findes allerede en bruger med det navn.',
+ 'Choose an initial password':'Vælg en adgangskode til den nye bruger.',
+ 'Accounts already exist':'Profiler er allerede aktiveret. Log ind med din individuelle konto.',
+ 'Edit snapshot is unavailable':'Redigeringens udgangspunkt er udløbet eller ikke længere tilgængeligt. Kopiér eventuelt din tekst, og åbn redigeringen igen.',
+ 'Too many active edit snapshots':'Der er ikke plads til flere aktive redigeringer. Afslut nogle åbne faner, eller prøv igen senere.',
+}
+
+def profile_error(error):
+    return ValueError(ERRORS[str(error)]) if str(error) in ERRORS else error
+
 class ProfileRuntime:
     def __init__(self,server,accounts):
         self.server=server;self.accounts=accounts

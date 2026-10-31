@@ -135,5 +135,5 @@ def state_for(raw,user):
     if 'settings.manage' in p:
         result['address_task']=deepcopy(raw['address_task']);result['backup_last_day']=raw['backup_last_day']
     if READ_ALL|WRITE_ALL|{'backup.restore'}<=p:result['recovery']=deepcopy(raw['recovery'])
-    result['profile']={'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p)}
+    result['profile']={'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision']}
     return result

@@ -45,7 +45,7 @@ def _credential(password):
 class ProfileAccounts:
     def __init__(self,root,clock=time.monotonic,*,load=True):
         self.root=Path(root);self.path=self.root/'profiles.json';self.clock=clock
-        self.lock=threading.RLock();self.sessions={};self.attempts={};self.account_attempts={}
+        self.lock=threading.RLock();self.sessions={};self.attempts={};self.account_attempts={};self.generation=0
         self.data=json.loads(self.path.read_text(encoding='utf-8')) if load and self.path.exists() else {'users':{},'roles':{}}
 
     def _write(self,data):
@@ -53,6 +53,7 @@ class ProfileAccounts:
         os.chmod(self.root,0o700)
         write_private(self.path,data)
         self.data=data
+        self.generation+=1
 
     def _copy(self):return json.loads(json.dumps(self.data))
 
@@ -95,7 +96,7 @@ class ProfileAccounts:
         with self.lock:
             session,user=self._session(token)
             session['seen']=self.clock()
-            yield {'id':user['id'],'name':user['name'],'onboarded':bool(user.get('onboarded')),
+            yield {'id':user['id'],'name':user['name'],'onboarded':bool(user.get('onboarded')),'revision':self.generation,
                    'permissions':frozenset(self._permissions(self.data,user))}
 
     def bootstrap(self,name,password):

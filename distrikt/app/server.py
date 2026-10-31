@@ -29,7 +29,7 @@ from setup_jobs import SetupJobs
 from photo_ocr import PhotoOCR
 from ui_errors import UIError,error_payload
 from profile_accounts import ProfileAccounts
-from profile_routes import ProfileRoutes,ProfileRuntime
+from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 
 APP=Path(__file__).resolve().parent
 VERSION='1.12.2-beta.75'
@@ -103,6 +103,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         self.send_header('Content-Type',kind+('; charset=utf-8' if kind in ('text/html','text/css','text/javascript','application/json') else ''))
         self.send_header('Content-Length',str(len(data)))
         self.send_header('Cache-Control','no-store')
+        if getattr(self,'profile_user',None):self.send_header('X-LTM-Authorization',str(self.server.accounts.generation))
         for key,value in (headers or {}).items():self.send_header(key,value)
         self.send_header('X-Content-Type-Options','nosniff')
         self.send_header('Referrer-Policy','strict-origin-when-cross-origin')
@@ -143,7 +144,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 valid=self.server.profiles.valid(self.headers.get('Cookie')) if profile else not self.server.access or self.server.access.valid(self.headers.get('Cookie'))
                 if not valid:
                     login=LOGIN
-                    if profile:login=login.replace('<label for="loginPassword"', '<label for="loginName">Brugernavn</label><input id="loginName" name="name" autocomplete="username" maxlength="100" required><label for="loginPassword"')
+                    if profile:login=login.replace('<label for="loginPassword"', '<label for="loginName" data-ui="Brugernavn">Brugernavn</label><input id="loginName" name="name" autocomplete="username" maxlength="100" required><label for="loginPassword"')
                     return self.send(login.encode(),'text/html')
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.profiles.csrf(self.profile_token()) if profile else self.server.token)
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
@@ -193,7 +194,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path=='/api/data-info':return self.send({'path':str(self.server.store.root),'cutoff':self.server.store.history_cutoff(),'server_mode':bool(self.server.access),'address':self.server.public_url})
             return self.send({'error':'Siden findes ikke.'},status=404)
         except PermissionError:self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
-        except (ValueError,KeyError,TypeError) as e:self.send(error_payload(e),status=400)
+        except (ValueError,KeyError,TypeError) as e:self.send(error_payload(profile_error(e)),status=400)
         except Exception:self.send({'error':'Lokal læsefejl. Data er ikke sendt nogen steder.'},status=500)
     def do_POST(self):
         with self.profile_scope(post=True) as permitted:
@@ -318,7 +319,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 self.send({'ok':True});threading.Thread(target=self.server.shutdown,daemon=True).start();return
             return self.send({'error':'Ukendt handling.'},status=404)
         except PermissionError:self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
-        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send(error_payload(e),status=400)
+        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send(error_payload(profile_error(e)),status=400)
         except Exception:self.send({'error':'Ændringen blev ikke gemt. Prøv igen; eksisterende data er bevaret.'},status=500)
 
 def running(data):

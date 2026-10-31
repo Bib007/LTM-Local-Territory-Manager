@@ -6,7 +6,7 @@ Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne beta
 
 **W65/W83:** Profiler er nu koblet til den almindelige app i udviklingskoden. Den eksisterende adgang godkender første administrator; aktivering er et udtrykkeligt valg og flytter ingen distriktsdata. Egne roller/rettigheder, individuel introduktion, nylig aktivitet (90 sekunder), afgrænset `/api/state`, standardafvisning af ukendte serverhandlinger, kontogendannelse og særskilt lokal kontobackup er med. Uafhængige rettelser sammenføjes gennem normal domænevalidering; konkrete konflikter gemmes atomisk og vises på forsiden. Adgangsændringer ved samtidige administratorrettelser bevares til gennemgang uden at vinde konflikten automatisk. Adgangskodehashes udleveres ikke i gennemgangen.
 
-Den almindelige apps lokale Chromium-forløb med Playwright 1.56.1 består: aktivering, login, egne roller/brugere, to sessionsforløb, automatisk gemning, konfliktgennemgang og en mistet gemmekvittering uden dobbelt gemning. Mobilvisningen ved 390 px er visuelt kontrolleret. De samlede lokale Python-/JavaScript- og pakkeprøver er gennemført; præcise afsluttende resultater føres i profilnotatet. **Dette er lokal udviklingskontrol, ikke en frigivet profilversion eller en ejerprøve.** På profilcommit c2a6afe966d64e59a32cb1a01b9d95efc412b6e9 er Platformskontrol 41204416121 (Mac/Windows/HA), Python 3.9/3.12/3.13 og pakning bestået. Browserforløbene kører fortsat. Afhængighedskontrollen stoppede med syv nye advisories for pypdf 6.21.2; udviklingskoden opdateres til officiel 6.21.4, og dens 23 PDF-importprøver samt 16 pakkeprøver består lokalt. Ny samlet kontrol af rettelsen mangler. Codex Security er ikke kørt. Den gamle generelle revisionsafvisning er ikke genindført.
+Den almindelige apps lokale Chromium-forløb med Playwright 1.56.1 består: aktivering, login, egne roller/brugere, to sessionsforløb, automatisk gemning, konfliktgennemgang og en mistet gemmekvittering uden dobbelt gemning. Mobilvisningen ved 390 px er visuelt kontrolleret. De samlede lokale Python-/JavaScript- og pakkeprøver er gennemført; præcise afsluttende resultater føres i profilnotatet. **Dette er lokal udviklingskontrol, ikke en frigivet profilversion eller en ejerprøve.** Profil- og PDF-commit c9b73d788382f67e7f670cdc18fac91b998a6c38 har bestået Checks 41205044483, Platformskontrol 41205044352 og HA beta release 41205044448, inkl. Chromium/WebKit, Python 3.9/3.12/3.13, Mac, Windows, HA, pakning og den almindelige afhængigheds-/Bandit-kontrol. Udgivelsesjobbet bevarer beta.75, da det versionsnummer allerede tilhører en anden commit. Den officielle pypdf 6.21.4 retter de syv advisories, som stoppede første kandidat; ingen undtagelse er indført. En afsluttende browserprøve har derudover verificeret ændrede rettigheder og afvisning af et forsinket svar med gammel adgang. Disse sidste afgrænsede rettelser sendes gennem samme gate. Codex Security er ikke kørt. Den gamle generelle revisionsafvisning er ikke genindført.
 
 ### W106 · datoer på det digitale kort · nyt ønske 31.10.2026
 
@@ -18,7 +18,7 @@ Ejerprioritet, fuld tekst:
 
 > du bestemmer, men med i næste stable version ihvertfald
 
-**LTM vælger prioritet 1; skal med før næste stabile udgave.** Begge datoer skal bygge på de faktisk registrerede hændelser. Undgå navne og IB på det offentlige kort. Den eksisterende onlineversion er et godkendt PNG-billede, så datoændringer kræver et gennemtænkt opdateringsforløb; gamle udleveringsdatoer må ikke fejlagtigt præsenteres som aktuelle. Ønsket er registreret og undersøgt, ikke implementeret eller frigivet. Kildeteksten og prioriteten bevares i Google-dokumentet.
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Begge datoer skal bygge på de faktisk registrerede hændelser. Undgå navne og IB på det offentlige kort. Den eksisterende onlineversion er et godkendt PNG-billede, så datoændringer kræver et gennemtænkt opdateringsforløb; gamle udleveringsdatoer må ikke fejlagtigt præsenteres som aktuelle. Ønsket er registreret og undersøgt, ikke implementeret eller frigivet. Fuld kildetekst og prioritet er bevaret i Google-historikken og på GitHub.
 
 ### W107 · importerede vejintervaller og gradvis kortlægning · 31.10.2026
 
@@ -30,7 +30,7 @@ Ejerprioritet, fuld tekst:
 
 > du bestemmer, men med i næste stable version ihvertfald
 
-**LTM vælger prioritet 1; skal med før næste stabile udgave.** Kortregister og manuelle/importerede vejlinjer skal kunne bruges uden først at matche alle geografiske adresser. Intervaller som 1–19 skal bevares på printforsiden. Den geografiske kontrol skal være et senere, selvvalgt forløb, og et interval må ikke ubemærket blive til et gættet antal adresser eller besøg. Undersøg de eksisterende import-/nummerfunktioner, og genbrug dem, hvor de allerede opfylder ønsket. Registreret, ikke implementeret eller frigivet. Kildetekst og prioritet bevares.
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Kortregister og manuelle/importerede vejlinjer skal kunne bruges uden først at matche alle geografiske adresser. Intervaller som 1–19 skal bevares på printforsiden. Den geografiske kontrol skal være et senere, selvvalgt forløb, og et interval må ikke ubemærket blive til et gættet antal adresser eller besøg. Undersøg de eksisterende import-/nummerfunktioner, og genbrug dem, hvor de allerede opfylder ønsket. Registreret, ikke implementeret eller frigivet. Fuld kildetekst og prioritet er bevaret i Google-historikken og på GitHub.
 
 ### W108 · tjenestegrupper og import af gruppeliste · 31.10.2026
 
@@ -52,6 +52,8 @@ Fuld kildetekst:
 > Husk lige at fjerne disse ønsker fra listen når de er rykket ind i plan/aftaler / overblik
 
 Kildeprioritet: **VIGTIG INFO**. Dette er en arbejdsaftale, ikke et ekstra appønske: Fjern kun de præcise overførte tekster/prioriteter, når fuld tekst og prioritet er gemt og læst tilbage i planen og på GitHub. Bevar ønsketabellens overskrifter og tomme rækker samt Bilag. Registrering er fortsat ikke implementering eller frigivelse.
+
+W106–W108 og procesbeskeden er nu læst tilbage fra GitHub og Google-planen/Historik. Derefter er kun deres præcise kildetekster og prioriteter ryddet fra Ønskeliste med revisionskontrol. Tabellens overskrifter, tomme rækker og Bilag er bevaret.
 
 Alle seks faner er genkontrolleret. W106–W108 er nye ønsker til næste stabile udgave. W85/OCR og W16 forbliver på pause; W92 er droppet og W84 er en privat huskenote. Fremdrift efter det nye ønske: **91/108 afsluttet eller afklaret, 17 åbne, cirka 84 %**. W65/W83 tæller fortsat som åbne. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
 
