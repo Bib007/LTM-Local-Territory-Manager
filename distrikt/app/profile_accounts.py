@@ -14,11 +14,13 @@ import time
 import unicodedata
 import uuid
 from pathlib import Path
+from contextlib import contextmanager
 
 from access import write_private
 
 PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.manage',
-    'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view'))
+    'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view',
+    'notes.view','notes.edit','publishers.view','loans.view'))
 SESSION_LIFETIME=12*60*60
 ONLINE_WINDOW=90
 KDF_ITERATIONS=600000
@@ -83,6 +85,19 @@ class ProfileAccounts:
             if permission not in self._permissions(self.data,user):raise PermissionError('Permission denied')
             session['seen']=self.clock()
             return user['id']
+
+    @contextmanager
+    def authorized_session(self,token):
+        """Hold current session/rights stable through a local data operation.
+
+        Lock order is accounts, then Store. Never acquire this while holding a
+        Store lock. Returned values are copies and cannot grant permissions.
+        """
+        with self.lock:
+            session,user=self._session(token)
+            session['seen']=self.clock()
+            yield {'id':user['id'],'name':user['name'],
+                   'permissions':frozenset(self._permissions(self.data,user))}
 
     def bootstrap(self,name,password):
         """Caller must first prove control of the existing installation."""

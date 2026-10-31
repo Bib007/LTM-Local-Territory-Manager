@@ -12,7 +12,15 @@ En separat snapshot-prototype gemmer redigeringens oprindelige værdier i server
 
 En separat, ikke tilsluttet kontoprototype understøtter individuelle brugere, administratorstyrede roller/rettigheder, serverkontrol af de aktuelle rettigheder ved hvert kald, udløb og tilbagekaldelse af sessioner, begrænset loginforsøg pr. klient og konto samt en tidsafgrænset liste over nyligt aktive konti. Samme konto med flere sessioner vises kun én gang. Sidste aktive administrator kan ikke fjernes. Adgangskoder gemmes kun som saltede hashes i en privat separat fil, der ikke medfølger almindelig backup eller programpakken; den eksisterende login-/gendannelsesfunktion er endnu ikke migreret. Prototypen bruger PBKDF2-HMAC-SHA256 med 600.000 iterationer og registrerer arbejdsfaktoren pr. konto. OWASP foretrækker generelt Argon2id eller scrypt til nye systemer; valg, ydeevne og hele adgangsflowet skal vurderes før frigivelse. Kilder: [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) og [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html).
 
-**Ikke aktivt:** Funktionen er ikke koblet på API, brugergrænseflade, databaser eller automatisk gemning. Der er endnu ingen brugerprofiler, aktivitetsvisning eller konfliktpåmindelser. Fiktive enhedsprøver bekræfter sammenligning, men beviser ikke samtidig brug på en rigtig installation.
+## Dataadgang og rettigheder · 31.10.2026
+
+`ProfileWorkspace` forbinder konti, den rigtige lokale database, redigeringsudgangspunkter og konfliktgennemgang i et internt serverlag. Klienten må ikke levere rettigheder, brugeridentitet eller et påstået udgangspunkt. Kontoens aktuelle rettigheder afgør, hvilke moduler og udtrykkeligt tilladte felter der returneres. IB, noter, forkyndere og udlån har særskilte læserettigheder. Nye databasefelter og ukendte konflikttyper udleveres ikke automatisk. Aktivitetsrækker følger ikke med adgang til noter. Brugerstyring giver ikke implicit læseadgang til alle private data.
+
+Konflikter læses kun med den relevante læserettighed; en udtrykkelig kvittering kræver også redigeringsrettigheden og gemmer den autentificerede kontos identitet. At åbne listen løser ingen konflikter. Kontolåsen holdes før databaselåsen, så en rolleændring ikke kan komme ind mellem tilladelseskontrol og handling. Deaktivering og rolleændringer er prøvet på eksisterende sessioner. Redigeringsudgangspunktet hentes fra databasen og bindes til sessionen. Dette lag udstiller endnu ingen almindelige gemmehandlinger.
+
+Den nye oversigt er **ikke** en erstatning for den eksisterende `/api/state`: kortgeometri, forbindelser, eksport, gendannelse og øvrige HTTP-veje skal stadig gennemgås før tilslutning. Loginmigration, brugerflade og fulde HTTP-/browserprøver udestår. Otte nye prøver bruger rigtige lokale konti og SQLite med opdigtede data, inklusive samtidig rettighedsændring. Ingen eksisterende installation er migreret.
+
+**Ikke aktivt i appen:** Funktionerne er ikke koblet på HTTP-API, brugergrænseflade eller appens almindelige gemning. Prøverne bruger isolerede lokale databaser. Der er endnu ingen frigivne brugerprofiler, aktivitetsvisning eller konfliktpåmindelser. Disse prøver beviser ikke samtidig brug på en rigtig ejerinstallation.
 
 ## Før dette må tilsluttes
 
