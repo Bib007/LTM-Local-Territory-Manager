@@ -105,8 +105,8 @@ def preview(store,data):
     rows=read_rows(data)
     if not rows:raise ValueError('Filen er tom. Udfyld skabelonen først.')
     fields=[ALIASES.get(norm(x)) for x in rows[0][1]]
-    if any(not x for x in fields) or len(set(fields))!=len(fields) or not {'card','road','number','postcode'}.issubset(fields):
-        raise ValueError('Brug skabelonens kolonneoverskrifter. Kortnummer, vejnavn, husnummer og postnummer er påkrævet.')
+    if any(not x for x in fields) or len(set(fields))!=len(fields) or 'card' not in fields:
+        raise ValueError('Brug skabelonens kolonneoverskrifter. Kortnummer er påkrævet; vejliste kan tilføjes senere.')
     cards={};errors=[];addresses={};duplicates=0
     reserved={norm(c['number']) for c in store.all('cards')+store.all('cards',deleted=True)}
     old_areas={norm(a['name']):a for a in store.all('settings') if a.get('id')!='config' and not a.get('entity')}
@@ -133,30 +133,44 @@ def preview(store,data):
                 if c[field] and norm(c[field])!=norm(val):raise ValueError('Samme kort har forskellige oplysninger i kolonnen '+{'area':'område','name':'kortnavn','kind':'distriktstype'}[field]+'.')
                 c[field]=val
             if norm(c['area']) in removed_areas and norm(c['area']) not in old_areas:raise ValueError('Området findes i Gendan ved fejl. Gendan eller omdøb det først.')
-            road=clean_text(v.get('road'),120,True);house=clean_text(v.get('number'),30,True)
-            if not re.fullmatch(r'\d+[A-Za-zÆØÅæøå]?',house):raise ValueError('Angiv ét husnummer, fx 12A. Brug én række pr. adresse, uden intervaller.')
+            road=clean_text(v.get('road'),120);house=clean_text(v.get('number'),100)
+            if not road and not house:
+                if any(v.get(k) for k in ('postcode','floor','door','type','count')):raise ValueError('Angiv både vej og nummer, eller lad alle adressefelter stå tomme til et registerkort.')
+                c['lines'].append(line);continue
+            if not road or not house:raise ValueError('Angiv både vejnavn og husnummer eller interval.')
             postcode=v.get('postcode','')
-            if not re.fullmatch(r'\d{4}',postcode):raise ValueError('Postnummeret skal have fire cifre.')
+            if postcode and not re.fullmatch(r'\d{4}',postcode):raise ValueError('Postnummeret skal have fire cifre eller stå tomt for en manuel vejlinje.')
+            line_only=not(postcode and re.fullmatch(r'\d+[A-Za-zÆØÅæøå]?',house))
+            if not line_only and len(house)>30:raise ValueError('Et præcist husnummer må højst være 30 tegn.')
             floor=clean_text(v.get('floor'),20);door=clean_text(v.get('door'),30)
             typ=v.get('type') or 'Hus'
             if typ not in ADDRESS_TYPES:raise ValueError('Vælg en adressetype fra skabelonen.')
-            count=v.get('count') or '1'
-            if not re.fullmatch(r'\d+',count) or not 1<=int(count)<=10000:raise ValueError('Besøg skal være et helt tal fra 1 til 10.000.')
+            unknown=line_only and not v.get('count')
+            count='0' if unknown else v.get('count') or '1'
+            if not unknown and (not re.fullmatch(r'\d+',count) or not 1<=int(count)<=10000):raise ValueError('Besøg skal være et helt tal fra 1 til 10.000 eller stå tomt for en manuel vejlinje.')
             address_key=tuple(norm(x) for x in (postcode,road,house,floor,door))
-            if address_key in occupied:raise ValueError('Adressen findes allerede på et eksisterende kort eller i gendannelse.')
+            if not line_only and address_key in occupied:raise ValueError('Adressen findes allerede på et eksisterende kort eller i gendannelse.')
             if address_key in addresses:
                 duplicates+=1
                 raise ValueError('Adressen er gentaget i filen (først på linje '+str(addresses[address_key])+').')
             if len(c['addresses'])>=300:raise ValueError('Kortet har over 300 adresser. Fordel dem på flere kort.')
             unit=house+(', '+' '.join(x for x in (floor,door) if x) if floor or door else '')
+            unit=clean_text(unit,100,True)
             a={'id':'import-'+uuid.uuid4().hex,'road':road,'number':house,'postcode':postcode,'floor':floor,'door':door,'count':int(count),'type':typ,'label':road+' '+unit,'numbers':unit}
+            if line_only:a['line_only']=True
+            if unknown:a['count_unknown']=True
             c['addresses'].append(a);c['lines'].append(line);addresses[address_key]=line
         except (ValueError,TypeError) as error:errors.append({'line':line,'error':str(error)})
-    if not rows[1:]:raise ValueError('Skabelonen indeholder ingen adresser endnu.')
+    if not rows[1:]:raise ValueError('Skabelonen indeholder ingen kort endnu.')
     proposed=list(cards.values())
-    for c in proposed:c['kind']=c['kind'] or 'Ukendt';c['visits']=sum(a['count'] for a in c['addresses'])
+    for c in proposed:
+        c['kind']=c['kind'] or 'Ukendt';c['visits']=sum(a['count'] for a in c['addresses'])
+        c['visits_unknown']=not c['addresses'] or any(a.get('count_unknown') for a in c['addresses'])
     areas=sorted({norm(c['area']):c['area'] for c in proposed if c['area']}.values(),key=str.casefold)
-    payload={'cards':proposed,'errors':errors,'duplicates':duplicates,'addresses':sum(len(c['addresses']) for c in proposed),'visits':sum(c['visits'] for c in proposed),'areas':[{'name':name,'existing':norm(name) in old_areas} for name in areas]}
+    payload={'cards':proposed,'errors':errors,'duplicates':duplicates,'addresses':sum(not a.get('line_only') for c in proposed for a in c['addresses']),
+        'manual_lines':sum(bool(a.get('line_only')) for c in proposed for a in c['addresses']),
+        'register_cards':sum(not c['addresses'] for c in proposed),'unknown_cards':sum(c['visits_unknown'] for c in proposed),
+        'visits':sum(c['visits'] for c in proposed),'areas':[{'name':name,'existing':norm(name) in old_areas} for name in areas]}
     return dict(payload,token=store.setup_remember('card-import',payload))
 
 def apply(store,data):
@@ -167,8 +181,8 @@ def apply(store,data):
     for c in plan['cards']:
         area=norm(c['area'])
         if area and area not in areas:areas[area]=store._mutate('area.save',{'name':c['area']})['id']
-        rows=[{k:a[k] for k in ('road','numbers','count','type')} for a in c['addresses']]
-        ident=store._mutate('card.save',{'number':c['number'],'name':c['name'],'area_id':areas.get(area,''),'kind':c['kind'],'temporary':False,'addresses':rows})['id']
-        item=dict(store.require('cards',ident),imported_addresses=c['addresses'],front_revision=True,back_revision=True)
+        rows=[dict({k:a[k] for k in ('road','numbers','count','type')},**({'count_unknown':True} if a.get('count_unknown') else {})) for a in c['addresses']]
+        ident=store._mutate('card.save',{'number':c['number'],'name':c['name'],'area_id':areas.get(area,''),'kind':c['kind'],'temporary':not rows,'addresses':rows})['id']
+        item=dict(store.require('cards',ident),imported_addresses=[a for a in c['addresses'] if not a.get('line_only')],front_revision=bool(rows),back_revision=bool(rows))
         store.put('cards',item);ids.append(ident)
     return {'ids':ids,'count':len(ids),'addresses':plan['addresses'],'visits':plan['visits']}

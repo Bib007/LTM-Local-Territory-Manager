@@ -1,11 +1,10 @@
-# LTM 1.12.2-beta.79 · IB fra Excel
+# LTM 1.12.2-beta.80 · Vejintervaller og kortregister
 
-- Hent en tom Excel-skabelon, og upload XLSX eller CSV direkte i appen. Filen behandles lokalt.
-- Importér også uden postnummer. Manglende oplysninger og ekstra kolonner vises tydeligt før import.
-- Angiv kortnummer i filen, eller vælg et standardkort. En adresse uden sikkert match kan bevares som en manuel IB-linje på det valgte kort. Der gættes ingen geografisk adresse.
-- Gennemgå advarslerne og bekræft importen. Dubletter springes over, og eksisterende IB overskrives ikke. Kun bagsiden markeres til genprint; besøgstal, grænser og udleveringer bevares.
-- En mangelpåmindelse bliver på IB-listen, indtil postnummeret tilføjes. Samtidige uafhængige rettelser bevares; forskellige postnummerrettelser går til gennemgang.
+- Importér kortnumre, vejlinjer eller præcise adresser fra Excel eller CSV.
+- Bevar intervaller som 1–19 på kortets printforside. Appen gætter ikke antal besøg ud fra intervallet.
+- Start uden geografiske kort, og vælg adresser ét kort ad gangen senere. Kortnummer, udleveringer, IB og historik bevares.
+- Se manglende besøgstal som ukendt. Udfyld et kendt antal i den almindelige redigering; tidligere gennemgange beholder deres oprindelige grundlag.
 
-Prøv et lille opdigtet regneark, også med manglende postnummer og en adresse uden match. Kontrollér den manuelle linje på det valgte kort og tilføj postnummeret bagefter. Brug ikke rigtige IB i offentlig feedback. [Vejledning](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/v1.12.2-beta.79/docs/IB-EXCEL.md).
+Prøv et lille opdigtet regneark med et kortnummer alene og et kort med en intervaltekst. Kontrollér printforsiden og det ukendte besøgstal. Tilføj senere et kendt antal eller vælg geografiske adresser på samme kort. [Vejledning](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/v1.12.2-beta.80/docs/KORTIMPORT.md).
 
-Denne beta indeholder også profilrettelser, kontobackup, adressekontrol og HA-driftsbeskeder fra de tidligere betaer. Datoer på onlinekort, vejintervaller og tjenestegrupper mangler stadig før næste stabile. OCR og automatisk kortinddeling er på pause. Stabil er fortsat 1.12.1.
+Denne beta indeholder også brugerprofiler, kontobackup, IB fra Excel, adressekontrol og HA-driftsbeskeder fra de tidligere betaer. Datoer på onlinekort og tjenestegrupper mangler stadig før næste stabile. OCR og automatisk kortinddeling er på pause. Stabil er fortsat 1.12.1.

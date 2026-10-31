@@ -125,7 +125,7 @@ FIELDS={
  'loans':set('id card_id publisher_id assigned cycle_start returned initial'.split()),
  'ib':set('id card_id address_id road number date postcode missing_fields'.split()),
  'notes':set('id card_id loan_id completion_id text date created resolved resolved_at task recurrence task_history'.split()),
- 'completions':set('id card_id loan_id date assigned previous_completed visits'.split()),
+ 'completions':set('id card_id loan_id date assigned previous_completed visits visits_unknown'.split()),
  'visits':{'id','date','note'},
 }
 MODULE_RIGHT={'cards':'cards.view','archived_cards':'cards.view','publishers':'publishers.view',

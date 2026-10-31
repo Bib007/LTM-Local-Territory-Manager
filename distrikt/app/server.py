@@ -33,7 +33,7 @@ from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.79'
+VERSION='1.12.2-beta.80'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
