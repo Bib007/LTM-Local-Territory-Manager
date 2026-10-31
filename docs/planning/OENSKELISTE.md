@@ -1,14 +1,20 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.77 med profilrettelser verificeret udgivet · 31.10.2026
+## Aktuel oversigt · beta.78 verificeret udgivet · 31.10.2026
 
 Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.77 med profilrettelser er verificeret udgivet; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+
+### Beta.78 · verificeret udgivet · gældende status
+
+**Beta.78 er verificeret udgivet** fra `e591b684854e58698df6dcd7e9ac83ba38356d5b`. W110 og W111 er frigivet. Checks **41230111622**, Platformskontrol **41230111642** og HA beta release **41230111692** er completed/success på samme præcise kilde. Begge offentlige ZIP-pakker og alle **146 filer** på betakanalen matcher lokale bygninger byte for byte. [Præcis verificering](BETA-78-VERIFICERING.md). HA-driftsstatusens nye lokale Core-API-rettighed og afgrænsning er beskrevet i vejledningen; ejerens telefonlevering er ikke afprøvet.
+
+**Aktuel fremdrift: 100/119 afsluttet eller afklaret, 19 åbne, cirka 84 %.** W65 er fortsat åben til stabilslutkontrol. W106–W108 og W117 mangler før næste stabile; W117 er nu under udvikling med målrettede prøver, men endnu ikke frigivet. De 28 resterende spørgsmål/prøver er ajourført; W110/W111's specifikke nye prøver er klar i beta.78. Ingen ny generel HA-, Drive- eller gendannelsesprøve er bestilt. Stabil er uændret 1.12.1. Afsnit om tidligere kandidater nedenfor er historik.
 
 **W65/W83:** Den første integrerede profilbeta er frigivet i **1.12.2-beta.76** fra `65ee595170b413e03186e0427447ac4c15fc99c8`. Personligt login aktiveres fra eksisterende adgang; administratoren opretter konti og egne roller/rettigheder. Samtidige uafhængige rettelser sammenføjes, og modsatrettede rettelser bevares med udgangspunkt til gennemgang og påmindelse på forsiden. Nylig aktivitet (90 sek.), individuel introduktion, ændrede rettigheder under sessionen, lokal kontobackup/gendannelse og beskyttelse ved ukendt gemmeresultat er med. Lokal stop/opdatering og begrænset udlånsret er kontrolleret. Den generelle revisionsafvisning er ikke genindført.
 
 Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41208420483** er completed/success på denne commit, inklusive Chromium/WebKit, Python 3.9/3.12/3.13, Mac, Windows, HA og pakker. Begge offentlige ZIP-filer matcher lokale pakker byte for byte; alle **142 filer** på betakanalen `21040c5829bbf7d3f7309f0068757b5484d99f11` matcher samme kilde. [Præcis verificering og kontrolsummer](BETA-76-VERIFICERING.md). Ingen ejerinstallation eller private data er brugt. Codex Security er ikke kørt.
 
-**W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Fremdrift ved registrering af de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**; beta.77-status nedenfor er nyere. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
+**W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108 og W117 mangler fortsat før næste stabile. W110/W111 er nu frigivet i beta.78. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Fremdrift ved registrering af de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**; beta.77-status nedenfor er nyere. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
 
 
 ### Beta.78-kandidat · adressekontrol og HA-driftsbeskeder
@@ -25,7 +31,7 @@ Adressekontrollen har nu hurtige, begrænsede genforsøg, bevaret kildeventetid,
 
 **Beta.77 er verificeret udgivet** fra `ffb7638abae22925c54792b02109393dd5643ce1`. W112 (prioritet −1) og W113–W115 er frigivet sammen med ejerens konkrete profilrettelser: rollevalg for backup-påmindelse, egne faner og samlede forbindelser, tydeligere opfølgninger, velkomst, valg af konfliktrettelse med straks-opdateret påmindelse og kontobackup/gendannelse i appen. Checks **41226343976** og HA beta release **41226343968** er grønne på selve udgivelseskilden, inklusive Mac/Windows/HA og Chromium/WebKit. Begge offentlige pakker og alle **144 filer** på betakanalen matcher samme kilde. [Præcis verificering](BETA-77-VERIFICERING.md), herunder afgrænsningen af den selvstændige platformskontrol på samme programkode.
 
-**Aktuel fremdrift: 98/119 afsluttet eller afklaret, 21 åbne, cirka 82 %.** W65 er fortsat åben til stabilslutkontrol. W111's genforsøg og ressourcepause er nu under lokal udvikling, ikke frigivet i beta.77. W106–W108, W110 og W117 mangler også før næste stabile. Stabil 1.12.1, OCR-pausen og det parkerede W16 er uændrede.
+**Fremdrift ved beta.77: 98/119 afsluttet eller afklaret, 21 åbne, cirka 82 %.** W65 er fortsat åben til stabilslutkontrol. W111's genforsøg og ressourcepause er nu under lokal udvikling, ikke frigivet i beta.77. W106–W108, W110 og W117 mangler også før næste stabile. Stabil 1.12.1, OCR-pausen og det parkerede W16 er uændrede.
 
 ### Nye input efter profilbetaen · 31.10.2026
 

@@ -1,6 +1,6 @@
 # Drift og beskeder i Home Assistant
 
-W110 · kandidat til beta.78 · afventer udgivelseskontroller.
+W110 · frigivet i verificeret beta.78 · [udgivelsesbevis](planning/BETA-78-VERIFICERING.md).
 
 LTM afleverer et lille lokalt livstegn cirka hvert 30. sekund. Beta og stabil har hver sin oplysning: `sensor.ltm_beta_drift` og `sensor.ltm_stable_drift`. Der indgår ingen kort, IB, forkyndernavne, kontonavne, adgangskoder, nøgler, filstier eller fritekst fra adressekilden.
 
