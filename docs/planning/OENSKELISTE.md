@@ -1,8 +1,14 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.78 verificeret udgivet · 31.10.2026
+## Aktuel oversigt · beta.79 verificeret udgivet · 31.10.2026
 
 Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.77 med profilrettelser er verificeret udgivet; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+
+### Beta.79 · verificeret udgivet · gældende status
+
+**Beta.79 er verificeret udgivet** fra `9c15398b90a582eadd85c0318a599343fa93cec2` med W117: Excel-/CSV-import af IB, tydelige mangler, gennemgåede manuelle linjer på valgte kort, postnummerpåmindelse og normal efterfølgende rettelse. Checks **41247984241**, Platformskontrol **41247984256** og HA beta release **41247984304** er completed/success på samme præcise kilde. Begge offentlige pakker og alle **147 filer** på betakanalen matcher lokale bygninger byte for byte. [Præcis verificering](BETA-79-VERIFICERING.md). Første kandidat blev stoppet før publicering, så en bevist fejl ved hurtigt filskift kunne rettes og alle kontroller køres igen.
+
+**Aktuel fremdrift: 101/119 afsluttet eller afklaret, 18 åbne, cirka 85 %.** W65 er fortsat åben til stabilslutkontrol. W106–W108 mangler før næste stabile; W107's registerkort/intervaller og ukendte besøgstal er nu under lokal udvikling, ikke med i beta.79. Skabelon, print og browser skal fortsat færdiggøres. Ingen OCR genoptaget. Stabil er fortsat 1.12.1. De specifikke nye W117-prøver er klar i den opdaterede tabel; allerede godkendte generelle HA-/Drive-/datagendannelsesprøver gentages ikke. Tidligere kandidatstatus nedenfor er historik.
 
 ### W117 · beta.79-kandidat med IB fra Excel
 
@@ -14,7 +20,7 @@ Excel-skabelon, lokal XLSX/CSV-upload, synlige mangler, udtrykkeligt godkendte m
 
 **Beta.78 er verificeret udgivet** fra `e591b684854e58698df6dcd7e9ac83ba38356d5b`. W110 og W111 er frigivet. Checks **41230111622**, Platformskontrol **41230111642** og HA beta release **41230111692** er completed/success på samme præcise kilde. Begge offentlige ZIP-pakker og alle **146 filer** på betakanalen matcher lokale bygninger byte for byte. [Præcis verificering](BETA-78-VERIFICERING.md). HA-driftsstatusens nye lokale Core-API-rettighed og afgrænsning er beskrevet i vejledningen; ejerens telefonlevering er ikke afprøvet.
 
-**Aktuel fremdrift: 100/119 afsluttet eller afklaret, 19 åbne, cirka 84 %.** W65 er fortsat åben til stabilslutkontrol. W106–W108 og W117 mangler før næste stabile; W117 er nu under udvikling med målrettede prøver, men endnu ikke frigivet. De 28 resterende spørgsmål/prøver er ajourført; W110/W111's specifikke nye prøver er klar i beta.78. Ingen ny generel HA-, Drive- eller gendannelsesprøve er bestilt. Stabil er uændret 1.12.1. Afsnit om tidligere kandidater nedenfor er historik.
+**Fremdrift ved beta.78: 100/119 afsluttet eller afklaret, 19 åbne, cirka 84 %.** W65 er fortsat åben til stabilslutkontrol. W106–W108 og W117 mangler før næste stabile; W117 er nu under udvikling med målrettede prøver, men endnu ikke frigivet. De 28 resterende spørgsmål/prøver er ajourført; W110/W111's specifikke nye prøver er klar i beta.78. Ingen ny generel HA-, Drive- eller gendannelsesprøve er bestilt. Stabil er uændret 1.12.1. Afsnit om tidligere kandidater nedenfor er historik.
 
 **W65/W83:** Den første integrerede profilbeta er frigivet i **1.12.2-beta.76** fra `65ee595170b413e03186e0427447ac4c15fc99c8`. Personligt login aktiveres fra eksisterende adgang; administratoren opretter konti og egne roller/rettigheder. Samtidige uafhængige rettelser sammenføjes, og modsatrettede rettelser bevares med udgangspunkt til gennemgang og påmindelse på forsiden. Nylig aktivitet (90 sek.), individuel introduktion, ændrede rettigheder under sessionen, lokal kontobackup/gendannelse og beskyttelse ved ukendt gemmeresultat er med. Lokal stop/opdatering og begrænset udlånsret er kontrolleret. Den generelle revisionsafvisning er ikke genindført.
 

@@ -35,7 +35,7 @@ Der spørges ikke igen, hvem der på forhånd skal have hvilke rettigheder. Admi
 | 24 | ADS · offentligt opslag · Kun efter et konkret udkast og sted | Godkend et konkret udkast og delingssted, før noget sendes eller offentliggøres på dine vegne. Ingen personlige invitationer, intet annoncebudget og ingen app-sporing er allerede faste aftaler. |  | Afventer eventuelt udkast |
 | 25 | ADS · erfaring og trafik · Efter frivillig afprøvning | Du kan senere notere anonym feedback eller tilgængelige GitHub-trafiktal. Kloninger er ikke installationer. Del ikke persondata eller noget, der kræver ny app-sporing. |  | Valgfrit senere |
 
-| 26 | W117 · IB fra Excel · Når funktionen er klar | Prøv kun opdigtede IB-linjer fra XLSX, også manglende postnummer og en adresse uden kortmatch. Kontrollér tydelige mangler og at den manuelle linje bevares på det valgte kort. Ingen OCR eller ægte IB deles. |  | Afventer funktion |
+| 26 | W117 · IB fra Excel · Når beta.79 er installeret | Prøv kun opdigtede IB-linjer fra XLSX, også manglende postnummer og en adresse uden kortmatch. Kontrollér tydelige mangler og at den manuelle linje bevares på det valgte kort. Ingen OCR eller ægte IB deles. |  | Klar i beta.79 |
 | 27 | W119 · ansvarshavende · Når et konkret forslag foreligger | Tag senere stilling til den konkrete visning og tildeling blandt appens konti. En ansvarshavende får ikke automatisk nye læse- eller skriverettigheder. Der kræves intet svar nu. |  | Afventer forslag |
 | 28 | W101 · enkel hosting · Efter næste stabile | Når muligheder og en konkret opsætningsvej er undersøgt, vælges eventuelt hosting til den offentlige præsentationsside. Der oprettes ingen konto, udgift eller ny offentlig side uden et konkret afklaret valg. |  | Afventer forslag |
 

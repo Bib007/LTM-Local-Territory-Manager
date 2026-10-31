@@ -1,6 +1,6 @@
 # IB fra Excel eller CSV
 
-W117 · kandidat til beta.79 · afventer udgivelseskontroller.
+W117 · frigivet i verificeret beta.79 · [udgivelsesbevis](planning/BETA-79-VERIFICERING.md).
 
 Åbn **Indstillinger → Import → Åbn lokal IB-import**. Hent Excel-skabelonen, og udfyld fanen **IB**. CSV virker også. Regnearket behandles af din lokale LTM-installation; det sendes ikke til en ekstern tjeneste.
 
