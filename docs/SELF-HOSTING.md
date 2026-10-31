@@ -4,7 +4,7 @@ Startguiden er første del af W74. Den bruger den samme programpakke på Mac, Wi
 
 ## Hent og start
 
-Hent **LTM-v1.12.2-beta.75.zip** fra [beta.75](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.75), og pak hele filen ud. HA-installation bruger fortsat sin egen betakanal; desktop-ZIP'en skal ikke kopieres ind i HA.
+Hent **LTM-v1.12.2-beta.76.zip** fra [beta.76](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.76), og pak hele filen ud. HA-installation bruger fortsat sin egen betakanal; desktop-ZIP'en skal ikke kopieres ind i HA.
 
 Åbn filen i **Distrikt-lokal**:
 

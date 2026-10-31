@@ -2,6 +2,7 @@
 import concurrent.futures
 import io
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -13,7 +14,7 @@ import urllib.request
 import zipfile
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
-from server import Server
+from server import Server,stop_running
 from store import Store
 from profile_policy import GET,POST,PERMISSIONS
 from profile_recovery import export_accounts,restore_accounts
@@ -85,6 +86,36 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(self.value('/api/profiles/admin',session=manager)['users'])
         with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/export/backup',session=manager)
         self.assertEqual(error.exception.code,403)
+
+    def test_desktop_updater_stops_profiles_without_a_browser_session(self):
+        # run.json is an OS-owner-only local file, not a profile/data credential.
+        for path,headers in [('/api/shutdown',{'X-Distrikt-Token':'fictional-wrong-token'}),
+                             ('/api/state',{'X-Distrikt-Token':self.server.token}),
+                             ('/api/shutdown',{'X-Distrikt-Token':self.server.token,'Origin':'https://example.invalid'})]:
+            with self.subTest(path=path,headers=tuple(headers)),self.assertRaises(urllib.error.HTTPError) as error:
+                self.request(path,{} if path.endswith('shutdown') else None,extra=headers)
+            self.assertIn(error.exception.code,(401,403))
+        (self.store.root/'run.json').write_text(json.dumps({'url':self.server.origin,'token':self.server.token}))
+        with patch.dict(os.environ,{'http_proxy':'http://127.0.0.1:1','HTTP_PROXY':'http://127.0.0.1:1','no_proxy':'','NO_PROXY':''}):
+            self.assertTrue(stop_running(self.store.root))
+        self.thread.join(timeout=5)
+        self.assertFalse(self.thread.is_alive())
+
+    def test_loan_manager_can_select_existing_name_but_cannot_create_publishers(self):
+        publisher=self.store.mutate('publisher.save',{'name':'Fiktiv Forkynder'})['id']
+        second_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
+        reader,_,_=self.reader(['cards.view','loans.view','loans.manage','publishers.view'])
+        base=self.state(reader)
+        data={'card_id':self.card,'publisher_name':'  FIKTIV FORKYNDER  ','date':base['today'],'initial':True}
+        self.change(reader,base,'loan.issue',data)
+        self.assertEqual(self.store.active_loan(self.card)['publisher_id'],publisher)
+        base=self.state(reader)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,base,'loan.issue',{**data,'card_id':second_card,'publisher_name':'Fiktiv ny person'})
+        self.assertEqual(error.exception.code,403)
+        self.assertEqual(len(self.store.all('publishers')),1)
+        self.change(reader,base,'loan.issue',{'card_id':second_card,'publisher_id':publisher,'date':base['today'],'initial':True})
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,self.state(reader),'loan.issue',data)
+        self.assertEqual(error.exception.code,400)
 
     def test_two_real_http_sessions_merge_independent_card_changes_and_keep_conflicts(self):
         second=self.login('Fiktiv admin','Fiktiv-password-123')
@@ -230,6 +261,9 @@ class ProfileActivationTests(unittest.TestCase):
                 with request('/api/profiles/activate',data,cookie) as response:self.assertTrue(json.load(response)['ok'])
                 self.assertEqual(store.all('cards')[0]['number'],'F201')
                 with self.assertRaises(urllib.error.HTTPError):request('/api/login',{'password':'Fiktiv-old-password'})
+                # A run.json stop secret must not bypass profile login on LAN/HA.
+                with self.assertRaises(urllib.error.HTTPError) as error:request('/api/shutdown',{})
+                self.assertEqual(error.exception.code,401)
                 with request('/api/login',{'name':'Fiktiv ejer','password':'Fiktiv-new-password'}) as response:self.assertTrue(json.load(response)['ok'])
             finally:server.shutdown();server.server_close();thread.join();store.close()
 

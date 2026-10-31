@@ -1,6 +1,6 @@
 # Run LTM on your own computer or server · beta
 
-This is the first W74 step, not a self-contained installer. Install Python 3.9+ with sqlite3, extract **LTM-v1.12.2-beta.75.zip** from [beta.75](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.75), then open `Start-LTM.cmd` (Windows), `Start-LTM.command` (Mac) or run `sh Start-LTM.sh` (Linux) in the **Distrikt-lokal** folder. The startup menu is currently Danish. No pip packages are downloaded.
+This is the first W74 step, not a self-contained installer. Install Python 3.9+ with sqlite3, extract **LTM-v1.12.2-beta.76.zip** from [beta.76](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.76), then open `Start-LTM.cmd` (Windows), `Start-LTM.command` (Mac) or run `sh Start-LTM.sh` (Linux) in the **Distrikt-lokal** folder. The startup menu is currently Danish. No pip packages are downloaded.
 
 Choose **1** for local use in your default browser, listening only on loopback. Stop it using the app's close action. Choose **2** for a private LAN/VPN server, enter a fixed private IPv4 address and port (beta defaults to 8788), and set a 12–1024 character password. Password entry is hidden and only a salted hash is saved. Existing credentials are reused. The server binds only the chosen interface, opens no browser and runs while its terminal stays open. Stop it with **Ctrl+C**. Use `--configure` to select a mode again; stop a running server before changing its address or port.
 

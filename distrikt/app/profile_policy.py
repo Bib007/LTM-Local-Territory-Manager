@@ -100,8 +100,13 @@ def mutation(user,action,data,store):
             for module,_ in entry.get('rows',{}):needed.update(extra.get(module,READ_ALL|WRITE_ALL))
     require(user['permissions'],needed)
     # A write that creates a publisher or note also needs that module's right.
-    if action=='loan.issue' and not data.get('publisher_id'):require(user['permissions'],('publishers.view','publishers.manage'))
-    if action=='loan.issue':require(user['permissions'],('publishers.view',))
+    if action=='loan.issue':
+        require(user['permissions'],('publishers.view',))
+        if not data.get('publisher_id'):
+            from store import clean_text
+            name=clean_text(data.get('publisher_name'),100,True)
+            if not any(p['name'].casefold()==name.casefold() for p in store.all('publishers')):
+                require(user['permissions'],('publishers.manage',))
     if action=='loan.finish' and data.get('complete'):require(user['permissions'],('history.view','history.edit'))
     if action=='revision.approve' and data.get('side')=='back':require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))

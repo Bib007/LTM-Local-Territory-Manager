@@ -4,6 +4,7 @@ from http.cookies import SimpleCookie
 import hashlib
 import hmac
 import json
+import threading
 from urllib.parse import urlsplit
 from profile_accounts import PERMISSIONS
 from profile_policy import route,mutation,state_for
@@ -98,6 +99,15 @@ class ProfileRoutes:
             with runtime.accounts.lock:
                 if not runtime.enabled:handed=True;yield True;return
                 path=urlsplit(self.path).path
+                # The desktop updater owns the private run.json secret, but has
+                # no browser session. Keep its stop channel local and distinct
+                # from profile CSRF tokens; never allow it on the LAN/HA server.
+                if (post and path=='/api/shutdown' and not self.server.access
+                        and self.client_address[0]=='127.0.0.1'
+                        and hmac.compare_digest(self.headers.get('X-Distrikt-Token',''),self.server.token)):
+                    self.send({'ok':True})
+                    threading.Thread(target=self.server.shutdown,daemon=True).start()
+                    yield False;return
                 if post and path=='/api/login':
                     self.profile_login();yield False;return
                 protected=path.startswith('/api/') and path!='/api/ping' or path=='/card-qr.svg'

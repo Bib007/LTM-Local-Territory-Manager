@@ -32,7 +32,7 @@ from profile_accounts import ProfileAccounts
 from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.75'
+VERSION='1.12.2-beta.76'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -339,7 +339,7 @@ def stop_running(data):
     info=running(data)
     if info:
         req=urllib.request.Request(info['url']+'/api/shutdown',data=b'{}',method='POST',headers={'Content-Type':'application/json','X-Distrikt-Token':info['token']})
-        with urllib.request.urlopen(req,timeout=3) as r:r.read()
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req,timeout=3) as r:r.read()
     return bool(info)
 
 def acquire_lock(path):

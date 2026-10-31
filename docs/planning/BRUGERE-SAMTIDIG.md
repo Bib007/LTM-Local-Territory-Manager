@@ -2,6 +2,10 @@
 
 ## Aktuel integration · 31.10.2026
 
+**Beta.76 klargøres til første profiludgivelse.** Seneste offentlige beta er endnu beta.75; kandidatens publicering og pakker skal verificeres særskilt. Grundlaget på `71f335f9c5f60af6c9893b9118d8cbfd89bf5246` bestod Checks **41206219887**, Platformskontrol **41206219882** og HA beta release **41206219966**. Det omfatter også geografisk gemning med samtidig ændring af farve/grænse og afvisning af forsinkede svar fra en gammel adgangsgeneration.
+
+Afsluttende fund før kandidaten: desktop-startguidens stop/opdatering bruger installationens private lokale stopbevis, ikke en browsersession. Det virker nu også efter profilaktivering, kun på loopback uden LAN/HA-adgang; beviset åbner ingen data. Status og stop omgår lokale proxyindstillinger. En begrænset udlånsrolle kan vælge en eksisterende forkynder ved navn, som den normale formular sender, uden ret til at oprette nye forkyndere. Nye navne kræver fortsat forkynderadministration. Rigtig HTTP-kontrol bevarer afvisning af forkert origin, stopbevis uden profillogin på LAN og dobbelt udlevering. **564 Python-prøver består, én forventet overspringning.** Udgivelseskontrollen skal også bestå på den præcise beta.76-commit. Efter aktivering må gamle udgaver uden profilkontrol kun bruges separat med data fra før aktivering; opdateringsvej og de to backuptyper står i brugervejledningen.
+
 Profiler er nu koblet til den almindelige LTM-server og brugerflade på develop. De tidligere afsnit nedenfor beskriver historiske, isolerede prototyper og er ikke længere den aktuelle integrationsstatus. Funktionen er fortsat **ikke frigivet**.
 
 - Eksisterende lokal/LAN-adgang bevares, indtil ejeren vælger **Indstillinger → Aktivér brugerprofiler** og opretter første administrator. Herefter kræves individuel konto, også på loopback. Den gamle LAN-adgangskode åbner ikke profildata. Konti og distriktsdata har separate filer.
@@ -16,7 +20,7 @@ Lokal kontrol: 561 Python-prøver bestod med én forventet overspringning. På c
 
 En særskilt adgangsgeneration følger konti/roller, ikke almindelige distriktsgemninger. Klienten ignorerer svar fra en ældre adgangsgeneration efter at have modtaget den nye, også hvis kroppen læses forsinket. Rettighedsskift rydder kortkladder/cacher og ugyldiggør allerede startede kortindlæsninger uden at efterlade en ugyldig tom kortmodel. Serveren kontrollerer fortsat de faktiske rettigheder ved hvert kald. Dette genindfører ikke generel afvisning på grund af andre brugeres distriktsændringer. Profilfejl og det individuelle login har danske brugerbeskrivelser; loginfeltet har også engelsk tekst.
 
-**Før en stabil udgave:** fuld kandidatkontrol på GitHub (inkl. WebKit og platforme), afsluttende kontrol af specialhandlinger og adgangsændringer, forståelig opdateringsvej, kontobackup/gendannelse samt W106–W108's nye ønsker. Ingen udgivelse, sikkerhedsscanning eller afslutning af W65/W83 udledes af de lokale prøver alene.
+**Før en stabil udgave:** fuld kandidatkontrol på GitHub (inkl. WebKit og platforme), afsluttende kontrol af specialhandlinger og adgangsændringer, forståelig opdateringsvej, kontobackup/gendannelse samt W106–W108 og W110's nye ønsker. Ingen udgivelse, sikkerhedsscanning eller afslutning af W65/W83 udledes af de lokale prøver alene.
 
 Se [Brugere og gendannelse](../BRUGERE.md) for betjening og lokal kontogendannelse.
 

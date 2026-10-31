@@ -1,12 +1,14 @@
 # Brugere, rettigheder og gendannelse
 
-Denne vejledning beskriver den integrerede udviklingsudgave. Profiler er endnu ikke frigivet i stabil eller beta.
+Vejledning til brugerprofiler i beta.76. Profiler er endnu ikke med i den stabile udgave.
 
 ## Aktivér individuelle konti
 
 Åbn den eksisterende installation som hidtil. På en privat server logger du først ind med den eksisterende adgangskode. Vælg **Indstillinger → Aktivér brugerprofiler**. Opret administratorens brugernavn og en ny adgangskode med mindst 12 tegn, gentag koden og skriv **AKTIVÉR PROFILER**.
 
 Distriktsdata flyttes eller slettes ikke. Herefter logger alle ind med individuel konto, også fra den lokale computer. Det gamle fælles login giver ikke adgang til profildata. Gem administratorens nye login privat, før du logger ud. Første aktivering kan ikke udføres uden installationens eksisterende adgang.
+
+Tag almindelig databackup før aktivering og separat kontobackup bagefter. Efter aktivering skal installationen bruge en version med profiler. En ældre version som beta.75 kender ikke kontienes adgangsregler; den må kun bruges til en særskilt prøve med backup fra før aktiveringen. Den lokale startguides stop/opdatering virker også, når profiler er aktiveret.
 
 ## Brugere og egne roller
 
