@@ -1,4 +1,4 @@
-"""Local console recovery and account backups. Never served over HTTP."""
+"""Account backup validation and local-console administrator recovery."""
 import argparse
 import getpass
 import json
@@ -11,7 +11,8 @@ from access import write_private
 MAX_ACCOUNT_BACKUP=16*1024*1024
 
 def validated(data):
-    if not isinstance(data,dict) or set(data)-{'reviews'}!={'users','roles'}:raise ValueError('Ugyldig kontobackup.')
+    if not isinstance(data,dict) or set(data)-{'reviews','permission_schema'}!={'users','roles'}:raise ValueError('Ugyldig kontobackup.')
+    if 'permission_schema' in data and (type(data['permission_schema']) is not int or data['permission_schema']!=2):raise ValueError('Ukendt rettighedsformat.')
     if 'reviews' in data:
         reviews=data['reviews']
         if not isinstance(reviews,list) or len(reviews)>5000:raise ValueError('Ugyldige kontorettelser.')
@@ -42,10 +43,19 @@ def validated(data):
     if not admin:raise ValueError('Kontobackup mangler en aktiv administrator.')
     return data
 
-def export_accounts(accounts,path):
+def backup_value(accounts):
     with accounts.lock:
         value={'format':'ltm-account-backup','schema':1,'accounts':validated(accounts._copy())}
         if len(json.dumps(value).encode())>MAX_ACCOUNT_BACKUP:raise ValueError('Kontobackup er for stor.')
+        return value
+
+def parsed_backup(value):
+    if not isinstance(value,dict) or value.get('format')!='ltm-account-backup' or value.get('schema')!=1:raise ValueError('Ukendt kontobackup.')
+    return validated(value.get('accounts'))
+
+def export_accounts(accounts,path):
+    with accounts.lock:
+        value=backup_value(accounts)
         destination=Path(path).expanduser().resolve()
         if destination.exists():raise ValueError('Vælg et nyt filnavn; en eksisterende fil overskrives ikke.')
         # Open exclusively and privately, including the first write.
@@ -57,8 +67,10 @@ def restore_accounts(accounts,path):
     path=Path(path).expanduser().resolve()
     if path.stat().st_size>MAX_ACCOUNT_BACKUP:raise ValueError('Kontobackup er for stor.')
     value=json.loads(path.read_text(encoding='utf-8'))
-    if not isinstance(value,dict) or value.get('format')!='ltm-account-backup' or value.get('schema')!=1:raise ValueError('Ukendt kontobackup.')
-    data=validated(value.get('accounts'))
+    return restore_value(accounts,parsed_backup(value))
+
+def restore_value(accounts,data):
+    data=validated(data)
     with accounts.lock:
         if accounts.data['users']:
             import secrets

@@ -19,7 +19,7 @@ from access import write_private
 PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.manage',
     'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view',
     'notes.view','notes.edit','publishers.view','loans.view','history.edit',
-    'geo.view','geo.edit','backup.export','backup.restore','connections.manage','sharing.manage'))
+    'geo.view','geo.edit','backup.export','backup.restore','backup.notify','connections.manage','sharing.manage'))
 SESSION_LIFETIME=12*60*60
 ONLINE_WINDOW=90
 KDF_ITERATIONS=600000
@@ -47,8 +47,16 @@ class ProfileAccounts:
         self.root=Path(root);self.path=self.root/'profiles.json';self.clock=clock
         self.lock=threading.RLock();self.sessions={};self.attempts={};self.account_attempts={};self.generation=0
         self.data=json.loads(self.path.read_text(encoding='utf-8')) if load and self.path.exists() else {'users':{},'roles':{}}
+        if self.data['users'] and 'permission_schema' not in self.data:self._write(self._copy())
 
     def _write(self,data):
+        if 'permission_schema' not in data:
+            # Upgrade once: only prior full administrators keep all rights.
+            # The marker preserves an administrator's later opt-out on restart.
+            previous=PERMISSIONS-{'backup.notify'}
+            for role in data['roles'].values():
+                if previous<=set(role['permissions']):role['permissions']=sorted(set(role['permissions'])|{'backup.notify'})
+            data['permission_schema']=2
         self.root.mkdir(mode=0o700,parents=True,exist_ok=True)
         os.chmod(self.root,0o700)
         write_private(self.path,data)
@@ -109,7 +117,7 @@ class ProfileAccounts:
             data['users'][ident]={'id':ident,'name':name,'roles':[role],'disabled':False,**cred}
             self._write(data);return ident
 
-    def login(self,name,password,client):
+    def login(self,name,password,client,*,_verify_only=False):
         with self.lock:
             if not isinstance(client,str) or not client or len(client)>100:raise ValueError('Invalid client')
             now=self.clock()
@@ -135,7 +143,9 @@ class ProfileAccounts:
             actual=_secret(password if isinstance(password,str) and len(password)<=1024 else '',salt,iterations)
             valid=hmac.compare_digest(actual,user['hash'] if user else '00'*32)
             if not user or user.get('disabled') or not valid:raise PermissionError('Incorrect login')
-            self.attempts.pop(client,None);self.account_attempts.pop(account,None);token=secrets.token_urlsafe(40)
+            self.attempts.pop(client,None);self.account_attempts.pop(account,None)
+            if _verify_only:return user['id']
+            token=secrets.token_urlsafe(40)
             self.sessions={k:v for k,v in self.sessions.items() if v['expires']>now}
             if len(self.sessions)>=100:self.sessions.pop(next(iter(self.sessions)))
             self.sessions[token]={'user':user['id'],'expires':now+SESSION_LIFETIME,'seen':now}
@@ -145,6 +155,11 @@ class ProfileAccounts:
         with self.lock:self.sessions.pop(token,None)
 
     def _admin(self,token):self.authorize(token,'users.manage')
+
+    def confirm_password(self,token,password,client):
+        with self.lock:
+            self._admin(token);_,user=self._session(token)
+            return self.login(user['name'],password,client,_verify_only=True)
 
     def _review_account(self,data,module,old,proposed,base,actor):
         if base is None or old is None:return proposed

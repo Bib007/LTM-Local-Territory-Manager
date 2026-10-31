@@ -14,6 +14,8 @@ WRITE_ALL=frozenset(('cards.edit','publishers.manage','loans.manage','ib.edit','
 GET={
  '/api/state':(), '/api/profiles/session':(), '/api/profiles/conflicts':(),
  '/api/profiles/admin':('users.manage',), '/api/profiles/online':('presence.view',),
+ '/api/profiles/backup':('users.manage',),
+ '/api/connections/drive':('connections.manage',),
  '/api/geo':('cards.view','geo.view'), '/api/geo/job':('geo.view',),
  '/api/geo/suggest':('geo.view',), '/api/map':('cards.view','geo.view'),
  '/api/storage':('settings.manage',), '/api/data-info':('settings.manage',),
@@ -31,6 +33,8 @@ POST={
  '/api/profiles/intro/complete':(),
  '/api/profiles/users/save':('users.manage',), '/api/profiles/roles/save':('users.manage',),
  '/api/profiles/conflicts/acknowledge':(),
+ '/api/profiles/conflicts/resolve':(),
+ '/api/profiles/backup/preview':('users.manage',), '/api/profiles/backup/apply':('users.manage',),
  '/api/mutate':(),
  '/api/restore/preview':READ_ALL|WRITE_ALL|{'backup.restore'},
  '/api/restore/apply':READ_ALL|WRITE_ALL|{'backup.restore'},
@@ -38,8 +42,8 @@ POST={
  '/api/export/readable/prepare':READ_ALL|{'backup.export'},
  '/api/export/readable/image':READ_ALL|{'backup.export'},
  '/api/export/readable/finish':READ_ALL|{'backup.export'},
- '/api/share/connect':('connections.manage','sharing.manage'),
- '/api/share/disconnect':('connections.manage','sharing.manage'),
+ '/api/share/connect':('connections.manage',),
+ '/api/share/disconnect':('connections.manage',),
  '/api/share/prepare':('sharing.manage','cards.view','geo.view'),
  '/api/share/publish':('sharing.manage','cards.view','geo.view'),
  '/api/share/withdraw':('sharing.manage','cards.view'), '/api/share/retry':('sharing.manage','cards.view'),
@@ -130,6 +134,9 @@ def state_for(raw,user):
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]} for row in raw[module]] if right in p else []
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}
+    if 'backup.notify' not in p:
+        for key in ('last_backup','backup_snoozed_until','backup_history'):result['settings'].pop(key,None)
+    result['backup_status']=({'last_day':raw['backup_last_day'],'snoozed_until':raw['settings'].get('backup_snoozed_until')} if 'backup.notify' in p else None)
     result['areas']=[{k:deepcopy(v) for k,v in r.items() if k in ('id','name')} for r in raw['areas']] if 'cards.view' in p else []
     result.update(ignored=[],maps=[],recovery=[],public_maps=[],geo_info={},address_task={},backup_last_day=None,undo_available=False)
     if 'geo.view' in p:
@@ -138,7 +145,8 @@ def state_for(raw,user):
     if {'cards.view','geo.view'}<=p:result['maps']=deepcopy(raw['maps'])
     if 'sharing.manage' in p:result['public_maps']=deepcopy(raw['public_maps'])
     if 'settings.manage' in p:
-        result['address_task']=deepcopy(raw['address_task']);result['backup_last_day']=raw['backup_last_day']
+        result['address_task']=deepcopy(raw['address_task'])
+    if 'backup.notify' in p:result['backup_last_day']=raw['backup_last_day']
     if READ_ALL|WRITE_ALL|{'backup.restore'}<=p:result['recovery']=deepcopy(raw['recovery'])
     result['profile']={'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision']}
     return result
