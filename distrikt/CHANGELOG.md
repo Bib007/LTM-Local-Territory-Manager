@@ -1,5 +1,15 @@
 # Ændringsliste
 
+## 1.12.2-beta.76 · Brugere og samtidige rettelser
+
+- Aktivér personligt login fra den eksisterende installation. Distriktsdata bevares.
+- Opret brugere og egne roller, og vælg læse- og skriverettigheder i appen.
+- Gem uafhængige rettelser samtidig. Ved uenighed bevares udgangspunktet og begge rettelser til gennemgang med påmindelse på forsiden.
+- Se nylig aktivitet, og giv hver ny profil sin egen introduktion.
+- Rolleændringer gælder også åbne sessioner. En mistet gemmekvittering kræver stadig kontrol før næste ændring.
+- Separat lokal kontobackup og administratorgendannelse er beskrevet i brugervejledningen. Almindelig databackup indeholder ikke konti.
+- Lokal stop/opdatering fungerer også med profiler. Udlevering til en eksisterende forkynder kræver ikke ret til at oprette nye forkyndere.
+
 ## 1.12.2-beta.75 · Privat server på valgt adresse
 
 - Startguiden genfinder nu serveren på den private adresse, den faktisk lytter på.

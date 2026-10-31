@@ -19,7 +19,16 @@ def private_client(address):
     except ValueError:return False
 
 def write_private(path,value):
-    path=Path(path);tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(value));os.chmod(tmp,0o600);os.replace(tmp,path)
+    path=Path(path)
+    tmp=path.with_name(path.name+'.'+secrets.token_hex(8)+'.tmp')
+    try:
+        fd=os.open(str(tmp),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+        with os.fdopen(fd,'w',encoding='utf-8') as stream:
+            json.dump(value,stream);stream.flush();os.fsync(stream.fileno())
+        os.replace(tmp,path)
+    finally:
+        try:tmp.unlink()
+        except FileNotFoundError:pass
 
 class Access:
     def __init__(self,root,password=None):

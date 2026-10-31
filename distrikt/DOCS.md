@@ -17,7 +17,7 @@ Betakanalen har eget HA-appnavn, egen datamappe og eget login. Den stabile app f
 
 ## Hver ny beta
 
-Når en ny funktion eller en lille sammenhængende ændring er klar, udgives en ny nummereret beta med en kort ændrings- og testliste på GitHub. Beta hentes fra en fast, kontrolleret version; almindelige mellemliggende ændringer på `develop` flytter ikke HA-betakanalen.
+Betaer samler flere sammenhængende brugerændringer i et overskueligt prøvesæt, frem for enten en stor bunke eller konsekvent kun 2–3 småting. Hver runde får et nyt nummer og en kort ændrings- og testliste på GitHub. Beta hentes fra en fast, kontrolleret version; almindelige mellemliggende ændringer på `develop` flytter ikke HA-betakanalen.
 
 Vælg **Kontrollér for opdateringer** i HA's appbutik, og opdater **Distrikt Beta**. Hent en privat backup i betaens egne indstillinger, før du opdaterer. Også betaens data er udeladt af HA-backup. Hvis en beta giver problemer, kan den stoppes, mens den stabile app fortsætter.
 
