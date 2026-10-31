@@ -1,5 +1,12 @@
 # Ændringsliste
 
+## 1.12.2-beta.80 · Vejintervaller og kortregister
+
+- Importér kortnumre, manuelle vejlinjer og intervaller som 1–19 fra Excel eller CSV.
+- Brug kortene uden geografiske adresser. Vælg adresser kort for kort senere med samme kortnummer, IB og historik.
+- Manglende besøgstal vises som ukendt på kort, print og i totaler. Intervaller tælles ikke automatisk.
+- Udfyld et kendt besøgstal senere. Tidligere gennemgange med ukendt antal bevares uændret.
+
 ## 1.12.2-beta.79 · IB fra Excel
 
 - Hent Excel-skabelon, og upload XLSX eller CSV direkte i den lokale app.

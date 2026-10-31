@@ -21,6 +21,7 @@ def command(row,current):
     if module=='settings':action='settings.save' if current.get('id')=='config' else 'area.save'
     if module=='cards' and field in ('map_color','geo_polygon','address_ids','polygon'):
         action={'map_color':'card.color','geo_polygon':'geo.boundary','address_ids':'geo.assign','polygon':'map.outline'}[field]
+    if module=='cards' and field=='addresses' and (current.get('address_ids') or current.get('geo_addresses')):return None
     if not action or field not in SAVE[action][1]:return None
     data=deepcopy(current)
     if action.startswith(('card.color','geo.','map.')):data['card_id']=current['id']

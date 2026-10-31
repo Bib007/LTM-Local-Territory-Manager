@@ -210,6 +210,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         item = {'id': new_id(), 'card_id': card['id'], 'date': day, 'loan_id': loan_id,
                 'assigned': loan.get('cycle_start') if loan else None, 'previous_completed': card.get('last_completed'),
                 'visits':sum(a.get('count',0) for a in card.get('addresses',[]))}
+        if not card.get('addresses') or any(a.get('count_unknown') for a in card['addresses']):
+            item.update(visits=0,visits_unknown=True)
         self.put('completions', item)
         if not card.get('last_completed') or day > card['last_completed']:
             card['last_completed'] = day
@@ -295,20 +297,29 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             for a in addresses:
                 if not isinstance(a, dict):
                     raise ValueError('Ugyldig adresse.')
-                count = int(a.get('count', 1))
-                if not 1 <= count <= 10000:
+                unknown=a.get('count_unknown') is True
+                count = 0 if unknown else int(a.get('count', 1))
+                if not unknown and not 1 <= count <= 10000:
                     raise ValueError('Antal besøg skal være mellem 1 og 10.000.')
                 typ = a.get('type', 'Hus')
                 if typ not in ADDRESS_TYPES:
                     raise ValueError('Ugyldig adressetype.')
                 normalized.append({'road': clean_text(a.get('road'), 120, True), 'numbers': clean_text(a.get('numbers'), 100, True), 'count': count, 'type': typ})
+                if unknown:normalized[-1]['count_unknown']=True
             if not card['temporary'] and not normalized:
                 raise ValueError('Tilføj en vejliste eller behold kortet som midlertidigt.')
             if old and (old.get('address_ids') or old.get('geo_addresses')) and normalized != old.get('addresses', []) and not geographic:
                 raise ValueError('Vejlisten følger de valgte huse. Brug Tegn og vælg adresser for at ændre den.')
             if old and old.get('imported_addresses') and normalized!=old.get('addresses',[]):
                 by_unit={(a['road'],a['numbers']):a for a in normalized}
-                card['imported_addresses']=[dict(a,count=by_unit[(a['road'],a['numbers'])]['count'],type=by_unit[(a['road'],a['numbers'])]['type']) for a in old['imported_addresses'] if (a['road'],a['numbers']) in by_unit]
+                card['imported_addresses']=[]
+                for a in old['imported_addresses']:
+                    edited=by_unit.get((a['road'],a['numbers']))
+                    if edited is None:continue
+                    updated=dict(a,count=edited['count'],type=edited['type'])
+                    updated.pop('count_unknown',None)
+                    if edited.get('count_unknown'):updated['count_unknown']=True
+                    card['imported_addresses'].append(updated)
             card['addresses'] = normalized
             if old and (old.get('addresses', []) != normalized or old['number'] != number or old.get('name') != card['name'] or (old.get('area_id') != card['area_id'] and not card['name'])):
                 card['front_revision'] = True
