@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import threading
+import time
 from urllib.parse import urlsplit
 from profile_accounts import PERMISSIONS
 from profile_policy import route,mutation,state_for
@@ -37,6 +38,8 @@ class ProfileRuntime:
         self.cookie='ltm_profiles_beta' if server.beta else 'ltm_profiles'
         self.bases=EditSnapshots(capacity=512)
         self.workspace=ProfileWorkspace(accounts,server.store,self.bases)
+        from profile_resolutions import ProfileResolutions
+        self.reviews=ProfileResolutions(self)
 
     @property
     def enabled(self):return bool(self.accounts.data['users'])
@@ -139,6 +142,9 @@ class ProfileRoutes:
     def profile_get(self,path):
         if not self.server.profiles.enabled:return False
         runtime=self.server.profiles;token=self.profile_token()
+        if path=='/api/profiles/backup':
+            from profile_recovery import backup_value
+            self.send(backup_value(self.server.accounts),headers={'Content-Disposition':'attachment; filename="LTM-kontobackup.json"'});return True
         if path=='/api/profiles/session':
             self.send({'user':{k:v for k,v in self.profile_user.items() if k!='permissions'},'permissions':sorted(self.profile_user['permissions']),'enabled':True});return True
         if path=='/api/profiles/admin':
@@ -148,9 +154,7 @@ class ProfileRoutes:
             self.send({**self.server.accounts.overview(token),'permissions':sorted(PERMISSIONS),'edit_snapshot':edit});return True
         if path=='/api/profiles/online':self.send(self.server.accounts.online(token));return True
         if path=='/api/profiles/conflicts':
-            rows=runtime.workspace.conflicts(token)
-            if 'users.manage' in self.profile_user['permissions']:rows+=self.server.accounts.reviews(token)
-            self.send(rows);return True
+            self.send(runtime.reviews.list(token));return True
         return False
 
     def profile_post(self,path,data):
@@ -161,6 +165,26 @@ class ProfileRoutes:
             self.server.accounts.bootstrap(data.get('name'),data.get('password'))
             self.send({'ok':True,'login_required':True});return True
         if not runtime.enabled:return False
+        if path=='/api/profiles/backup/preview':
+            from profile_recovery import parsed_backup
+            try:self.server.accounts.confirm_password(token,data.get('password'),self.client_address[0])
+            except PermissionError:raise ValueError('Adgangskoden kunne ikke bekræftes. Kontrollér den, eller vent fem minutter efter gentagne forsøg.') from None
+            if len(json.dumps(data.get('backup')).encode())>8*1024*1024:raise ValueError('Vælg en kontobackup på højst 8 MB i appen. Større filer gendannes med det lokale værktøj.')
+            backup=parsed_backup(data.get('backup'))
+            runtime.bases.limit_session(token)
+            snapshot=runtime.bases.create(token,'account-restore','accounts',{'id':'accounts','data':backup,'generation':self.server.accounts.generation,'until':time.monotonic()+300})
+            self.send({'snapshot':snapshot,'users':len(backup['users']),'roles':len(backup['roles'])});return True
+        if path=='/api/profiles/backup/apply':
+            if data.get('confirmation')!='GENDAN KONTI':raise ValueError('Skriv GENDAN KONTI for at bekræfte.')
+            from profile_recovery import restore_value
+            with runtime.bases.claim(data.get('snapshot'),token,'account-restore','accounts') as snapshot:
+                if snapshot['until']<time.monotonic() or snapshot['generation']!=self.server.accounts.generation:raise ValueError('Konti eller roller er ændret, eller forhåndsvisningen er udløbet. Kontrollér filen igen.')
+                restore_value(self.server.accounts,snapshot['data'])
+                runtime.bases.clear()
+                self.send({'ok':True,'login_required':True});return True
+        if path=='/api/profiles/conflicts/resolve':
+            runtime.reviews.resolve(token,data)
+            self.send({'ok':True,'login_required':token not in self.server.accounts.sessions});return True
         if path in ('/api/profiles/roles/save','/api/profiles/users/save'):
             module='roles' if '/roles/' in path else 'users'
             with runtime.bases.claim(data.get('edit_snapshot'),token,'accounts','accounts') as snapshot:

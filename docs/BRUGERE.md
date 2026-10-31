@@ -1,6 +1,6 @@
 # Brugere, rettigheder og gendannelse
 
-Vejledning til brugerprofiler i beta.76. Profiler er endnu ikke med i den stabile udgave.
+Vejledning til brugerprofiler i beta.77. Profiler er endnu ikke med i den stabile udgave.
 
 ## Aktivér individuelle konti
 
@@ -12,17 +12,23 @@ Tag almindelig databackup før aktivering og separat kontobackup bagefter. Efter
 
 ## Brugere og egne roller
 
-Vælg **Brugere og roller**. Opret først en rolle, giv den et navn og vælg rettigheder. Opret derefter brugeren, vælg en eller flere roller og angiv en første adgangskode. Der er ingen fast liste over, hvem der skal have hvilke rettigheder; administratoren bestemmer.
+Vælg **Indstillinger → Brugere og roller**, eller brug genvejen i menuen. Brugerpanelet har sin egen fane. Opret først en rolle, giv den et navn og vælg rettigheder. Opret derefter brugeren, vælg en eller flere roller og angiv en første adgangskode. Der er ingen fast liste over, hvem der skal have hvilke rettigheder; administratoren bestemmer.
 
 Vælg en eksisterende bruger for at ændre navn eller roller, deaktivere kontoen eller nulstille adgangskoden. Et tomt kodefelt bevarer koden. Deaktivering og nulstilling afslutter brugerens sessioner. Rolleændringer gælder også åbne sessioner. Den sidste aktive brugeradministrator kan ikke fjernes.
 
 Læsning og redigering er adskilt. At administrere brugere giver ikke automatisk adgang til IB, noter, forkyndere eller distriktsdata. En samlet databackup kræver adgang til alle de oplysninger, den indeholder; gendannelse kræver også de nødvendige skriverettigheder. Handlinger, som ændrer flere datatyper, kræver de tilhørende rettigheder. Serveren kontrollerer adgangen ved hver handling.
 
+**Se påmindelse om databackup** styrer, om rollen får påmindelsen på forsiden. Den giver ingen adgang til at hente eller gendanne data. En modtager uden backupadgang ser en besked om at få en administrator til at tage kopien. Eksisterende fulde administratorroller beholder påmindelsen ved opdatering; et senere fravalg huskes også efter genstart.
+
+Datafordeler og Google Drive er samlet under **Indstillinger → Forbindelser**. Fanen vises kun med **Administrere forbindelser**. **Deling og QR** indeholder de digitale kort. Brugere uden brugeradministration ser ikke kataloget over roller og rettigheder. Serveren kontrollerer både forbindelses- og delingsadgang.
+
 ## Samtidig arbejde og gennemgang
 
-Uafhængige rettelser kan gemmes samtidig. Ved forskellige rettelser til samme oplysning bevares udgangspunktet og begge forslag. Forsiden viser en påmindelse. Åbn **Gennemgå rettelser**, kontrollér den aktuelle værdi, ret om nødvendigt oplysningen i dens almindelige formular og vælg **Markér gennemgået**. At åbne listen ændrer intet.
+Uafhængige rettelser kan gemmes samtidig. Ved forskellige rettelser til samme oplysning bevares udgangspunktet og begge forslag. Forsiden viser en påmindelse. Åbn **Gennemgå rettelser**, sammenlign den aktuelle værdi med de to rettelser, og vælg **Brug denne rettelse** eller **Behold aktuel · markér gennemgået**. Påmindelsen opdateres straks. At åbne listen ændrer intet.
 
-Konflikter om kontoadgang vises kun til brugeradministratorer. Ved uens rettelser af rettigheder eller adgangskode bliver den gældende adgang stående, indtil administratoren har gennemgået og eventuelt gemt en ny rettelse. Adgangskoder og hashes vises ikke i gennemgangen.
+Valget bruger den normale validering og gemmes sammen med kvitteringen. Hvis samme oplysning er ændret igen, skal gennemgangen åbnes på ny; ingen nyere rettelse overskrives lydløst. Beregnede felter og særlige handlinger ændres fortsat i deres almindelige formular. Udgangspunktet og begge rettelser bevares efter gennemgang.
+
+Konflikter om kontoadgang vises kun til brugeradministratorer. Ved uens rettelser af rettigheder eller adgangskode bliver den gældende adgang stående, indtil administratoren har gennemgået og valgt en rettelse. Adgangskoder og hashes vises ikke i gennemgangen. Valg af adgangskode/deaktivering afslutter den berørte kontos sessioner. Den sidste administrator beskyttes også ved et konfliktvalg.
 
 **Nyligt aktive (90 sek.)** viser, hvilke konti der for nylig har brugt appen. Det er ikke sikker viden om, hvem der er til stede lige nu.
 
@@ -34,7 +40,15 @@ Appens almindelige ZIP-backup indeholder distriktsdata og deres konfliktgennemga
 
 Den separate **kontobackup** indeholder konti, roller, introduktionsstatus og eventuelle kontokonflikter, herunder saltede adgangskodehashes. Den indeholder ingen aktive sessioner. Den er ikke krypteret og skal opbevares privat og lokalt, adskilt fra almindelig deling. Den løser ikke W56 om krypteret backup af forbindelser. Gem begge typer, hvis hele installationen skal kunne flyttes eller gendannes.
 
-Kontoværktøjet bruges lokalt på serveren med LTM stoppet. Der findes ingen offentlig funktion til at omgå login eller oprette en ny administrator.
+## Kontobackup i appen
+
+En brugeradministrator finder **Konti og roller** under **Indstillinger → Backup og vedligeholdelse**. Vælg **Hent kontobackup**, og kontrollér den hentede JSON-fil. At hente kontobackup giver ikke adgang til distriktsdata.
+
+Åbn **Gendan konti og roller fra fil**, vælg filen, og angiv din nuværende adgangskode. Forhåndsvisningen viser antal brugere og roller. Skriv **GENDAN KONTI**, hvis de aktuelle konti skal erstattes. En privat kopi af de nuværende konti gemmes først på serveren. Distriktsdata og forbindelser bevares. Alle skal logge ind igen med et login fra sikkerhedskopien.
+
+Forhåndsvisningen gælder fem minutter og kun i den session, som åbnede den. Ændrede konti/roller kræver en ny forhåndsvisning. Appen accepterer filer på højst 8 MB; større kontofiler kan behandles med det lokale værktøj. En afbrudt gemmekvittering må ikke føre til automatisk gentagelse: log ind igen, og kontrollér kontiene.
+
+Hvis administratorens login er glemt, kan en anden brugeradministrator nulstille det. Hvis ingen kan logge ind, bruges det lokale værktøj nedenfor med LTM stoppet. Der findes ingen offentlig funktion til at omgå login eller oprette en ny administrator uden eksisterende adgang.
 
 ## Lokal kontobackup og administratorgendannelse
 

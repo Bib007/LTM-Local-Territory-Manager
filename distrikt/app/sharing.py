@@ -39,7 +39,7 @@ class Drive:
     def token(self):
         with self.lock:
             if time.monotonic()<self.expires:return self.access
-            if not self.connected():raise ValueError('Forbind Google Drive under Deling og QR først.')
+            if not self.connected():raise ValueError('Forbind Google Drive under Indstillinger → Forbindelser først.')
             config=json.loads(self.path.read_text())
             data=urllib.parse.urlencode({k:config[k] for k in ('client_id','client_secret','refresh_token')}|{'grant_type':'refresh_token'}).encode()
             result=request('https://oauth2.googleapis.com/token',data,{'Content-Type':'application/x-www-form-urlencoded'})

@@ -10,6 +10,10 @@ Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41
 
 **W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Aktuel fremdrift efter de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
 
+### Profilopfølgning · beta.77-kandidat under kontrol
+
+W112 (prioritet −1), W113–W115 og de konkrete profilrettelser er implementeret og prøvet lokalt: rollevalg for backup-påmindelse, egne faner og samlede forbindelser, tydeligere opfølgninger, velkomst, valg af konfliktrettelse med straks-opdateret påmindelse samt kontobackup/gendannelse i appen. 572 Python-prøver og den udvidede browserprøve består med opdigtede data. [Detaljer](BRUGERE-SAMTIDIG.md). Ikke frigivet endnu; senest verificerede udgave er fortsat beta.76. Planens afslutningstal ændres først efter verificeret frigivelse.
+
 ### Nye input efter profilbetaen · 31.10.2026
 
 Alle syv Google-faner er genlæst. Fuld tekst, kildeprioriteter og ejersvar er bevaret i [nye profilinput](INPUT-2026-10-31-PROFILBETA.md). **W112 har prioritet −1 og kommer først:** administratoren skal kunne styre backup-påmindelsen pr. rolle. Derefter følger fejlrettelserne fra ejerens profilprøve, overskuelig konfliktgennemgang med valg af rettelse, synlig kontobackup og egne indstillingsfaner (W113/W114), tydeligere opfølgninger (W115) og en personlig hilsen. W117 om lokal IB-import fra XLSX og manuelle adresser skal med før næste stabile. W116's manuelle opdelingsforslag, W118's synlighedsplan og W119's valgfrie ansvarshavende er registreret; W101's enkle hosting tages efter næste stabile. W85/OCR og W16 genoptages ikke.

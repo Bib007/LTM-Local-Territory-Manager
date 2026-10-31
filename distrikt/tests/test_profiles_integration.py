@@ -71,7 +71,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
             with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,session=reader)
             self.assertEqual(error.exception.code,403)
         for path in POST:
-            if path in ('/api/logout','/api/profiles/heartbeat','/api/profiles/intro/complete','/api/profiles/conflicts/acknowledge','/api/mutate'):continue
+            if path in ('/api/logout','/api/profiles/heartbeat','/api/profiles/intro/complete','/api/profiles/conflicts/acknowledge','/api/profiles/conflicts/resolve','/api/mutate'):continue
             with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,{},reader)
             self.assertEqual(error.exception.code,403)
         for action,data in [('card.save',{'id':self.card,'number':'bad'}),('delete',{'module':'cards','id':self.card}),('geo.token',{'token':'Fictional'}),('unknown.future.action',{})]:
@@ -86,6 +86,30 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(self.value('/api/profiles/admin',session=manager)['users'])
         with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/export/backup',session=manager)
         self.assertEqual(error.exception.code,403)
+
+    def test_backup_notice_is_separate_from_settings_and_export_and_changes_in_session(self):
+        reader,role,_=self.reader(['settings.manage'])
+        state=self.state(reader)
+        self.assertIsNone(state['backup_status']);self.assertIsNone(state['backup_last_day'])
+        for key in ('last_backup','backup_snoozed_until','backup_history'):self.assertNotIn(key,state['settings'])
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['backup.notify']},self.admin)
+        state=self.state(reader)
+        self.assertIsInstance(state['backup_status'],dict)
+        self.assertEqual(state['cards'],[])
+        with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/export/backup',session=reader)
+        self.assertEqual(error.exception.code,403)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':[]},self.admin)
+        self.assertIsNone(self.state(reader)['backup_status'])
+
+    def test_connection_and_sharing_permissions_expose_only_their_own_status(self):
+        reader,role,_=self.reader(['connections.manage'])
+        with patch.object(self.server.sharing,'status',return_value={'connected':True,'account':'Fiktiv konto','cards':[{'card_id':self.card,'number':'F101'}]}):
+            self.assertEqual(self.value('/api/connections/drive',session=reader),{'connected':True,'account':'Fiktiv konto'})
+            with self.assertRaises(urllib.error.HTTPError):self.request('/api/share/status',session=reader)
+            self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['sharing.manage','cards.view']},self.admin)
+            status=self.value('/api/share/status',session=reader)
+            self.assertNotIn('account',status);self.assertEqual(len(status['cards']),1)
+            with self.assertRaises(urllib.error.HTTPError):self.request('/api/connections/drive',session=reader)
 
     def test_desktop_updater_stops_profiles_without_a_browser_session(self):
         # run.json is an OS-owner-only local file, not a profile/data credential.
@@ -139,6 +163,73 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(self.value('/api/profiles/conflicts/acknowledge',{'id':rows[0]['id']},second)['changed'])
         self.assertEqual(self.value('/api/profiles/conflicts',session=second),[])
         self.assertEqual(self.store.require('cards',self.card)['name'],'Forslag B')
+
+    def make_card_conflict(self):
+        second=self.login('Fiktiv admin','Fiktiv-password-123');a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'card.save',{**a['cards'][0],'name':'Fiktiv A'})
+        self.change(second,b,'card.save',{**b['cards'][0],'name':'Fiktiv B'})
+        return self.value('/api/profiles/conflicts',session=self.admin)[0]
+
+    def test_choose_earlier_conflict_runs_normal_validation_and_keeps_all_evidence(self):
+        row=self.make_card_conflict()
+        data={'id':row['id'],'choice':'saved','review_snapshot':row['review_snapshot']}
+        self.assertTrue(self.value('/api/profiles/conflicts/resolve',data,self.admin)['ok'])
+        self.assertEqual(self.store.require('cards',self.card)['name'],'Fiktiv A')
+        self.assertTrue(self.store.require('cards',self.card)['front_revision'])
+        evidence=self.store.require('settings',row['id'])
+        self.assertTrue(evidence['resolved']);self.assertEqual(evidence['selected'],'saved')
+        self.assertEqual((evidence['base']['value'],evidence['saved']['value'],evidence['incoming']['value']),('Opdigtet kort','Fiktiv A','Fiktiv B'))
+        self.assertEqual(self.value('/api/profiles/conflicts',session=self.admin),[])
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',data,self.admin)
+
+    def test_conflict_choice_does_not_overwrite_a_later_change_or_other_session(self):
+        row=self.make_card_conflict();data={'id':row['id'],'choice':'saved','review_snapshot':row['review_snapshot']}
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',data,second)
+        base=self.state(self.admin);self.change(self.admin,base,'card.save',{**base['cards'][0],'name':'Fiktiv nyere'})
+        with self.assertRaises(urllib.error.HTTPError) as error:self.value('/api/profiles/conflicts/resolve',data,self.admin)
+        self.assertEqual(error.exception.code,400)
+        self.assertEqual(self.store.require('cards',self.card)['name'],'Fiktiv nyere')
+        self.assertFalse(self.store.require('settings',row['id'])['resolved'])
+
+    def test_conflict_choice_rechecks_rights_and_ack_failure_rolls_back_the_choice(self):
+        row=self.make_card_conflict();editor,role,_=self.reader(['cards.view','cards.edit'])
+        edit=self.value('/api/profiles/conflicts',session=editor)[0]
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view']},self.admin)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.value('/api/profiles/conflicts/resolve',{'id':edit['id'],'choice':'saved','review_snapshot':edit['review_snapshot']},editor)
+        self.assertEqual(error.exception.code,403)
+        before=list(self.store.activity());put=self.store.put
+        def fail(module,value):
+            if value.get('id')==row['id'] and value.get('resolved'):raise OSError('Fictional disk failure')
+            return put(module,value)
+        data={'id':row['id'],'choice':'saved','review_snapshot':row['review_snapshot']}
+        with patch.object(self.store,'put',side_effect=fail),self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',data,self.admin)
+        self.assertEqual(self.store.require('cards',self.card)['name'],'Fiktiv B')
+        self.assertEqual(self.store.activity(),before);self.assertFalse(self.store.require('settings',row['id'])['resolved'])
+        self.value('/api/profiles/conflicts/resolve',data,self.admin)
+
+    def test_account_backup_restore_has_password_preview_lease_and_keeps_territory_data(self):
+        with self.request('/api/profiles/backup',session=self.admin) as response:
+            backup=json.load(response);self.assertIn('attachment',response.headers['Content-Disposition'])
+        self.assertEqual(backup['format'],'ltm-account-backup');self.assertNotIn('Fiktiv-password-123',json.dumps(backup))
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/preview',{'backup':backup,'password':'Fiktiv-forkert-password'},self.admin)
+        preview=self.value('/api/profiles/backup/preview',{'backup':backup,'password':'Fiktiv-password-123'},self.admin)
+        self.assertEqual((preview['users'],preview['roles']),(1,1))
+        data={'snapshot':preview['snapshot'],'confirmation':'GENDAN KONTI'}
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/apply',data,second)
+        self.value('/api/profiles/roles/save',{'name':'Fiktiv ekstra rolle','permissions':['cards.view']},self.admin)
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/apply',data,self.admin)
+        preview=self.value('/api/profiles/backup/preview',{'backup':backup,'password':'Fiktiv-password-123'},self.admin)
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/apply',{'snapshot':preview['snapshot'],'confirmation':'Forkert'},self.admin)
+        result=self.value('/api/profiles/backup/apply',{'snapshot':preview['snapshot'],'confirmation':'GENDAN KONTI'},self.admin)
+        self.assertTrue(result['login_required'])
+        for session in (self.admin,second):
+            with self.assertRaises(urllib.error.HTTPError):self.state(session)
+        self.admin=self.login('Fiktiv admin','Fiktiv-password-123')
+        self.assertEqual(len(self.server.accounts.data['roles']),1)
+        self.assertEqual(self.state(self.admin)['cards'][0]['number'],'F101')
+        self.assertEqual(len(list(self.store.root.glob('accounts-before-restore-*.json'))),1)
 
     def test_conflict_failure_rolls_back_normal_write_and_its_activity(self):
         second=self.login('Fiktiv admin','Fiktiv-password-123');a=self.state(self.admin);b=self.state(second)
@@ -214,6 +305,21 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertNotIn(private['hash'],public);self.assertNotIn(private['salt'],public)
         self.login('Fiktiv bruger','Fiktiv-password-AAA')
         with self.assertRaises(urllib.error.HTTPError):self.login('Fiktiv bruger','Fiktiv-password-BBB')
+        self.value('/api/profiles/conflicts/resolve',{'id':rows[0]['id'],'choice':'incoming','review_snapshot':rows[0]['review_snapshot']},self.admin)
+        self.login('Fiktiv bruger','Fiktiv-password-BBB')
+        with self.assertRaises(urllib.error.HTTPError):self.login('Fiktiv bruger','Fiktiv-password-AAA')
+
+    def test_conflict_choice_cannot_remove_the_last_administrator(self):
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        a=self.value('/api/profiles/admin',session=self.admin);b=self.value('/api/profiles/admin',session=second)
+        role=a['roles'][0]['id']
+        for session,base,rights in [(self.admin,a,['users.manage','cards.view']),(second,b,['cards.view'])]:
+            self.value('/api/profiles/roles/save',{'id':role,'name':'Administrator','permissions':rights,'edit_snapshot':base['edit_snapshot']},session)
+        row=self.value('/api/profiles/conflicts',session=self.admin)[0]
+        before=self.server.accounts.path.read_bytes()
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',{'id':row['id'],'choice':'incoming','review_snapshot':row['review_snapshot']},self.admin)
+        self.assertEqual(self.server.accounts.path.read_bytes(),before)
+        self.assertTrue(self.value('/api/profiles/admin',session=self.admin)['users'])
 
     def test_session_bound_bases_and_csrf_and_current_rights(self):
         reader,role,user=self.reader(['cards.view','cards.edit'])
@@ -258,6 +364,8 @@ class ProfileActivationTests(unittest.TestCase):
                 data={'name':'Fiktiv ejer','password':'Fiktiv-new-password','confirmation':'AKTIVÉR PROFILER'}
                 with self.assertRaises(urllib.error.HTTPError):request('/api/profiles/activate',data)
                 with request('/api/login',{'password':'Fiktiv-old-password'}) as response:cookie=response.headers['Set-Cookie'].split(';')[0]
+                with urllib.request.urlopen(urllib.request.Request(server.origin+'/api/connections/drive',headers={'Origin':server.origin,'Cookie':cookie,'X-Distrikt-Token':server.token}),timeout=10) as response:
+                    self.assertEqual(set(json.load(response)),{'connected','account'})
                 with request('/api/profiles/activate',data,cookie) as response:self.assertTrue(json.load(response)['ok'])
                 self.assertEqual(store.all('cards')[0]['number'],'F201')
                 with self.assertRaises(urllib.error.HTTPError):request('/api/login',{'password':'Fiktiv-old-password'})

@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.2-beta.77 · Profilrettelser og backup i appen
+
+- Vælg den tidligere eller senere rettelse i en tydeligere konfliktvisning. Påmindelsen opdateres straks efter gennemgang.
+- Hent og gendan en separat kontobackup under Backup og vedligeholdelse. Gendannelse kræver adgangskode, forhåndsvisning og bekræftelse.
+- Vælg pr. rolle, om brugeren skal se påmindelsen om databackup. Det giver ikke adgang til selve sikkerhedskopien.
+- Brugere og roller har egen indstillingsfane. Datafordeler og Google Drive er samlet under Forbindelser, som kan skjules efter rolle.
+- Forsiden byder den indloggede bruger velkommen. Opfølgninger forklarer tydeligere næste handling.
+
 ## 1.12.2-beta.76 · Brugere og samtidige rettelser
 
 - Aktivér personligt login fra den eksisterende installation. Distriktsdata bevares.

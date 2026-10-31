@@ -1,5 +1,13 @@
 # Brugere og samtidige ændringer · W65/W83
 
+## Opfølgning på ejerens beta.76-prøve · beta.77-kandidat
+
+Ejeren bekræfter, at profilgrundforløbet virker, introduktionen kun kommer første gang, og tilladelserne passer. De konkrete tilbagemeldinger er bevaret i [nye input](INPUT-2026-10-31-PROFILBETA.md) og Google-historikken.
+
+W112 (prioritet −1), W113–W115 og profilrettelserne er implementeret og prøvet lokalt, **ikke frigivet endnu**: separat rollevalg for backup-påmindelse med serverafgrænsning og engangsopgradering af fulde administratorroller; egne indstillingsfaner; adskilte forbindelses-/delingsrettigheder; velkomst; tydeligere opfølgninger; konfliktvalg med normal domænevalidering og atomisk kvittering; straks-opdateret forsidepåmindelse; kontobackup og gendannelse i appen med nuværende adgangskode, sessionsbundet femminutters forhåndsvisning, generationskontrol og udtrykkelig bekræftelse. Alle sessioner afsluttes efter kontogendannelse; distriktsdata og forbindelser bevares. Ingen offentlig administratorgendannelse er tilføjet.
+
+572 Python-prøver består med én forventet overspringning; JavaScript-suiten består. Udvidet Chromium-forløb med Playwright 1.56.1 består på rigtig lokal HTTP/SQLite med opdigtede konti, inklusive skjulte forbindelser, backup-påmindelse uden eksportret, valg af tidligere rettelse, kvittering uden genindlæsning, hentning af kontobackup, bekræftet gendannelse og efterfølgende login. Mobilvisningen er visuelt kontrolleret, og kontrasten er rettet. Den efterfølgende afgrænsede rettelse bevarer også forbindelsesstatus for installationer, der endnu ikke har aktiveret profiler. GitHubs samlede kandidatkontrol og offentlig pakke-/kanalkontrol mangler før beta.77 meldes frigivet. W65 er fortsat åben til stabilslutkontrol.
+
 ## Aktuel integration · 31.10.2026
 
 **Beta.76 er verificeret udgivet** fra `65ee595170b413e03186e0427447ac4c15fc99c8`. Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41208420483** er completed/success. Begge offentlige ZIP-pakker og alle 142 filer på betakanalen matcher de lokale pakker fra samme kilde. [Præcis kontrol og kontrolsummer](BETA-76-VERIFICERING.md). W83 er frigivet; W65 holdes åben til stabilslutkontrol og opfølgning på den første profilbeta. Ingen ny stabil version er publiceret.

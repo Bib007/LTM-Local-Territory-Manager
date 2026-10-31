@@ -1,5 +1,6 @@
 """Only invented names/passwords in temporary isolated data directories."""
 import io
+import json
 import os
 import sys
 import tempfile
@@ -8,7 +9,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
-from profile_accounts import ProfileAccounts,SESSION_LIFETIME,ONLINE_WINDOW
+from profile_accounts import ProfileAccounts,SESSION_LIFETIME,ONLINE_WINDOW,PERMISSIONS
 from portable import snapshot
 from store import Store
 
@@ -45,6 +46,19 @@ class ProfileAccountsTests(unittest.TestCase):
         self.assertEqual(self.a.authorize(token,'cards.view'),user)
         with self.assertRaises(PermissionError):self.a.authorize(token,'cards.edit')
         with self.assertRaises(PermissionError):self.a.online(token)
+
+    def test_backup_notice_upgrade_is_once_and_respects_later_role_choice(self):
+        role,_,_=self.user();legacy=self.a._copy();legacy.pop('permission_schema')
+        legacy['roles'][self.admin_role]['permissions']=sorted(PERMISSIONS-{'backup.notify'})
+        self.a.path.write_text(json.dumps(legacy))
+        upgraded=ProfileAccounts(self.root)
+        token=upgraded.login('Fiktiv Admin','Fiktiv-Password-123','fictional-client')
+        self.assertEqual(upgraded.authorize(token,'backup.notify'),self.admin)
+        self.assertNotIn('backup.notify',upgraded.data['roles'][role]['permissions'])
+        upgraded.save_role(token,'Administrator',sorted(PERMISSIONS-{'backup.notify'}),self.admin_role)
+        restarted=ProfileAccounts(self.root)
+        token=restarted.login('Fiktiv Admin','Fiktiv-Password-123','fictional-client')
+        with self.assertRaises(PermissionError):restarted.authorize(token,'backup.notify')
 
     def test_disabling_or_resetting_an_account_invalidates_all_sessions(self):
         role,user,token=self.user();second=self.a.login('Fiktiv bruger','Fiktiv-Password-456','fictional-client-c')
