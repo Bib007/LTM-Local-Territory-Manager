@@ -8,7 +8,13 @@ Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne beta
 
 Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41208420483** er completed/success på denne commit, inklusive Chromium/WebKit, Python 3.9/3.12/3.13, Mac, Windows, HA og pakker. Begge offentlige ZIP-filer matcher lokale pakker byte for byte; alle **142 filer** på betakanalen `21040c5829bbf7d3f7309f0068757b5484d99f11` matcher samme kilde. [Præcis verificering og kontrolsummer](BETA-76-VERIFICERING.md). Ingen ejerinstallation eller private data er brugt. Codex Security er ikke kørt.
 
-**W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Aktuel fremdrift: **94/111 afsluttet eller afklaret, 17 åbne, cirka 85 %**. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
+**W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108, W110 og W111 skal stadig udvikles før næste stabile. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Aktuel fremdrift efter de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
+
+### Nye input efter profilbetaen · 31.10.2026
+
+Alle syv Google-faner er genlæst. Fuld tekst, kildeprioriteter og ejersvar er bevaret i [nye profilinput](INPUT-2026-10-31-PROFILBETA.md). **W112 har prioritet −1 og kommer først:** administratoren skal kunne styre backup-påmindelsen pr. rolle. Derefter følger fejlrettelserne fra ejerens profilprøve, overskuelig konfliktgennemgang med valg af rettelse, synlig kontobackup og egne indstillingsfaner (W113/W114), tydeligere opfølgninger (W115) og en personlig hilsen. W117 om lokal IB-import fra XLSX og manuelle adresser skal med før næste stabile. W116's manuelle opdelingsforslag, W118's synlighedsplan og W119's valgfrie ansvarshavende er registreret; W101's enkle hosting tages efter næste stabile. W85/OCR og W16 genoptages ikke.
+
+**Aktuel registrering: 94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %.** Faldet i procent skyldes otte nye planpunkter, ikke bortfald af frigivne funktioner. W83 er også ejerbekræftet; W65 er fortsat åben. De nye punkter er registreret, ikke frigivet. Denne status går foran den tidligere registrering nedenfor.
 
 ### W109 · ny aktuel regel for svartabellen · prioritet −1
 
