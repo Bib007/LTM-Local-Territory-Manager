@@ -1,6 +1,6 @@
 # Næste stabile LTM · under udvikling
 
-Målet er de allerede udgivne betafunktioner plus brugerprofiler, administratorstyrede roller/rettigheder, samtidig redigering og konfliktgennemgang. W106 tilføjer seneste gennemgangsdato og udleveringsdato til det digitale kort; det er registreret til samme stabile udgave og endnu ikke leveret. W107 om importerede vejintervaller og gradvis overgang til geografisk kortlægning skal også med. W108 tilføjer tjenestegrupper, gruppetilsynsmand/assistent/pioner og lokal import af gruppeliste.
+Målet er de allerede udgivne betafunktioner plus brugerprofiler, administratorstyrede roller/rettigheder, samtidig redigering og konfliktgennemgang. W106 tilføjer seneste gennemgangsdato og udleveringsdato til det digitale kort; det er registreret til samme stabile udgave og endnu ikke leveret. W107 om importerede vejintervaller og gradvis overgang til geografisk kortlægning skal også med. W108 tilføjer tjenestegrupper, gruppetilsynsmand/assistent/pioner og lokal import af gruppeliste. W110 tilføjer lokal driftstatus og foreslåede notifikationer i Home Assistant.
 
 Profilintegration er prøvet lokalt i den almindelige app, men kandidatens samlede platform-/udgivelseskontrol og de resterende afslutninger mangler. **Stabil 1.12.1 og beta.75 er fortsat de udgivne udgaver.** Ny stabil publicering kræver særskilt ejerbesked; denne plan er ikke en udgivelsesgodkendelse.
 

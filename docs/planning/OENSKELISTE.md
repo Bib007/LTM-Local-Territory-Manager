@@ -8,6 +8,37 @@ Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne beta
 
 Den almindelige apps lokale Chromium-forløb med Playwright 1.56.1 består: aktivering, login, egne roller/brugere, to sessionsforløb, automatisk gemning, konfliktgennemgang og en mistet gemmekvittering uden dobbelt gemning. Mobilvisningen ved 390 px er visuelt kontrolleret. De samlede lokale Python-/JavaScript- og pakkeprøver er gennemført; præcise afsluttende resultater føres i profilnotatet. **Dette er lokal udviklingskontrol, ikke en frigivet profilversion eller en ejerprøve.** Profil- og PDF-commit c9b73d788382f67e7f670cdc18fac91b998a6c38 har bestået Checks 41205044483, Platformskontrol 41205044352 og HA beta release 41205044448, inkl. Chromium/WebKit, Python 3.9/3.12/3.13, Mac, Windows, HA, pakning og den almindelige afhængigheds-/Bandit-kontrol. Udgivelsesjobbet bevarer beta.75, da det versionsnummer allerede tilhører en anden commit. Den officielle pypdf 6.21.4 retter de syv advisories, som stoppede første kandidat; ingen undtagelse er indført. En afsluttende browserprøve har derudover verificeret ændrede rettigheder og afvisning af et forsinket svar med gammel adgang. Disse sidste afgrænsede rettelser sendes gennem samme gate. Codex Security er ikke kørt. Den gamle generelle revisionsafvisning er ikke genindført.
 
+### W109 · samlet tabel over ejersvar og prøver · prioritet −1 · 31.10.2026
+
+Fuld kildetekst:
+
+> lav i dokumentet et skema / en tabel, med alle punkter der kræver input fra mig, ikke bare lige nu, men i hele planen……så kan jeg svarer dem lidt efter lidt, skriv dem i rækkefølge fra nr 1-hvor mange der nu lige er, for hvilken du skal have svar på først, for at kunne udvikle….
+> alle punkter der kræver input!!!! også manuel test af ting osv…
+
+Ejerprioritet, fuld tekst: **-1!!!!!!!!!!**
+
+**Udført i Google-planens nye fane [Dine svar og prøver](https://docs.google.com/document/d/1KqAGxoVS1LHSObMjUnvxIXk-Guk3fIvb81iCSBhX7l8/edit?tab=t.uqiyqxnmhcsi).** Den native tabel har 32 fortløbende numre, spørgsmål/prøve, tidspunkt, status og en gul svar-/datokolonne. Fremtidige valg, senere funktionsprøver, frivillige kontroller og pausepunkter er adskilt fra aktuelle svar. Indhold og blanke svarceller er læst tilbage. Allerede godkendt generel HA, Drive, gendannelse og adressehentning gentages ikke; administratorstyring af roller er besluttet. Tabelkopien og dækningsgrundlaget står i [EJER-SVAR-OG-PROEVER.md](EJER-SVAR-OG-PROEVER.md). Dette afslutter selve oversigtsopgaven, ikke de fremtidige appfunktioner eller ejerprøver.
+
+### Ny aftale · passende betastørrelse · 31.10.2026
+
+Fuld kildetekst:
+
+> husk at udgive betaer, med et antal funktioner der er til at håndtere at teste på en gang, så man ikke bare får en beta med 40 nye funktioner, men heller ikke kun 2-3 stykker ;)
+
+Kildeprioritet, fuld tekst: **Bare info til dig!**
+
+Aftalen gælder fra nu: saml flere sammenhængende brugerændringer i et overskueligt prøvesæt, frem for enten meget store bunker eller konsekvent kun 2–3 småting. Der indføres ikke et opdigtet fast antal. Dette er en præcisering af beta-arbejdsgangen (W19/W45/W60), ikke et ekstra appønske; ældre faste lofter går ikke foran denne besked. Hver beta kræver fortsat eget nyt versionsnummer og fuld verificering af kilde, pakker og kanal.
+
+### W110 · lokal driftstatus og notifikationer i Home Assistant · 31.10.2026
+
+Fuld kildetekst:
+
+> Mulighed for udlæsning af driftstatus direkte i homeassistant, og dermed også mulighed for en automation der giver en notifikation ved fejl, eller hårdt press af systemet… lav fx en foreslået automation, funktion når man tilføjer appen, som automatisk ligger sig klar, man skal bare vælge enheden som skal ha en notifikation, og eventuelt tilføje en egen lille note som hver slags status vil skrive
+
+Ejerprioritet, fuld tekst: **skal med inden næste stable!**
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Undersøg lokal status til Home Assistant og en færdig foreslået automation/opsætning, hvor ejeren vælger notifikationsenhed og valgfrie noter pr. statustype. Skeln mellem konkrete fejl, vedvarende pres og normal venten/pause; undgå gentagen støj om uændret sund drift. Send ingen IB, forkyndernavne, adgangskoder eller nøgler i status/notifikationer. En prøve skal kunne udføres uden rigtig overbelastning eller dataskade. Registreret, ikke implementeret eller frigivet. Enhedsvalget og den specifikke senere notifikationsprøve findes i ejersvarstabellen; der er ikke oprettet en Codex-automation eller ændret ejerens HA.
+
 ### W106 · datoer på det digitale kort · nyt ønske 31.10.2026
 
 Fuld tekst fra Google-ønskelisten:
@@ -55,7 +86,7 @@ Kildeprioritet: **VIGTIG INFO**. Dette er en arbejdsaftale, ikke et ekstra appø
 
 W106–W108 og procesbeskeden er nu læst tilbage fra GitHub og Google-planen/Historik. Derefter er kun deres præcise kildetekster og prioriteter ryddet fra Ønskeliste med revisionskontrol. Tabellens overskrifter, tomme rækker og Bilag er bevaret.
 
-Alle seks faner er genkontrolleret. W106–W108 er nye ønsker til næste stabile udgave. W85/OCR og W16 forbliver på pause; W92 er droppet og W84 er en privat huskenote. Fremdrift efter det nye ønske: **91/108 afsluttet eller afklaret, 17 åbne, cirka 84 %**. W65/W83 tæller fortsat som åbne. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
+Alle seks faner er genkontrolleret. W106–W108 og W110 er nye ønsker til næste stabile udgave. W109 er udført som dokumentoversigt. W85/OCR og W16 forbliver på pause; W92 er droppet og W84 er en privat huskenote. Fremdrift efter det nye ønske: **92/110 afsluttet eller afklaret, 18 åbne, cirka 84 %**. W65/W83 tæller fortsat som åbne. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
 
 ## Historik · beta.75 udgivet · 30.10.2026
 
