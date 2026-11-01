@@ -13,7 +13,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    page.on('pageerror',e=>errors.push(e.message));
    await context.addInitScript(()=>document.addEventListener('securitypolicyviolation',e=>{window.cspViolations??=[];window.cspViolations.push(e.violatedDirective+': '+e.blockedURI);}));
    await context.route('**/*',async route=>{const u=new URL(route.request().url());assert.ok(u.origin===fixture.origin||u.protocol==='blob:','No external image/OCR service: '+u.href);if(u.pathname==='/api/geo'&&geoRequests++===0)await firstGeo;if(u.pathname==='/api/mutate')writes.push(route.request().postDataJSON());return route.continue();});
-   await context.addInitScript(()=>localStorage.setItem('ltm-language','da'));await page.goto(fixture.origin);await page.locator('#loginPassword').fill('Fictional-pass-123');await page.locator('#loginForm button').click();
+   await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto(fixture.origin);await page.locator('#loginPassword').fill('Fictional-pass-123');await page.locator('#loginForm button').click();
    await page.waitForFunction(()=>typeof state!=='undefined'&&state&&SaveStatus.kind==='saved');
    await page.evaluate(()=>{openDialog('<label>Fiktiv kladde<input id=fictionalDraft></label>');window.draftNode=document.getElementById('fictionalDraft');});await page.locator('#fictionalDraft').fill('Bevar min kladde');releaseGeo();
    await page.waitForFunction(()=>document.querySelector('.navFollowupCount'));
