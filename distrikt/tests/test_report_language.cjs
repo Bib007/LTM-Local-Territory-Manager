@@ -24,34 +24,47 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
 (async()=>{
  const submitted={};
  for(const language of ['da','en']){
-  run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'})");
+  run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({calendar:'<div>FIXED_CALENDAR_MAP</div>',service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'})");
   assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],/s13-background.jpg/);assert.match(print[language],/Hus til hus/);
   const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage[^"]*">([\s\S]*?)<\/section>/g),m=>m[1]);
-  assert.equal(mapPages.length,2);assert.match(mapPages[0],/Tjenesteår 2026\/2027/);assert.match(mapPages[0],/FIXED_SERVICE_MAP/);assert.doesNotMatch(mapPages[0],/FIXED_ROLLING_MAP|reportchart/);assert.match(mapPages[1],/Seneste 12 måneder/);assert.match(mapPages[1],/FIXED_ROLLING_MAP/);assert.doesNotMatch(mapPages[1],/FIXED_SERVICE_MAP|reportchart/);assert.doesNotMatch(print[language],/data-ui|Kort til opfølgning|AKTUEL OPFØLGNING/);
-  const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.match(summary,/<strong>20<\/strong>/);assert.match(summary,/<strong>50%<\/strong>/);
+  assert.equal(mapPages.length,3);assert.match(mapPages[0],/Kalenderår 2026/);assert.match(mapPages[0],/FIXED_CALENDAR_MAP/);assert.match(mapPages[1],/Tjenesteår 2026\/2027/);assert.match(mapPages[1],/FIXED_SERVICE_MAP/);assert.match(mapPages[2],/Seneste 12 måneder/);assert.match(mapPages[2],/FIXED_ROLLING_MAP/);assert.doesNotMatch(print[language],/data-ui|Kort til opfølgning|AKTUEL OPFØLGNING/);
+  const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.doesNotMatch(summary,/Anslåede besøg|Estimated visits|50%/);
   const beforeOverview=run('Workspace.reportPeriod'),overview=run('Workspace.reportOverview(true)');
   assert.equal(run('Workspace.reportPeriod'),beforeOverview,'Comparing periods must not change map selection');
   assert.match(overview,language==='en'?/Combined report overview/:/Samlet rapportoversigt/);
   const figures=Array.from(overview.matchAll(/<article class="reportPeriod" data-report-period="([^"]+)">([\s\S]*?)<\/article>/g));
-  assert.equal(figures.length,2);assert.equal(figures[0][1],'service');assert.equal(figures[1][1],'rolling');
-  assert.deepEqual(Array.from(figures[0][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['3','20','50%']);
-  assert.deepEqual(Array.from(figures[1][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['4','24','100%']);
+  assert.deepEqual(figures.map(f=>f[1]),['calendar','service','rolling']);
+  assert.deepEqual(Array.from(figures[0][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['3','2','1','1','0','1']);
+  assert.deepEqual(Array.from(figures[1][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['3','2','1','1','0','1']);
+  assert.deepEqual(Array.from(figures[2][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['4','2','2','0','0','0']);
   assert.doesNotMatch(overview,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|reportDistrictMap|<invented>/);
   assert.equal((print[language].match(/class="report reportOverview"/g)||[]).length,1);
-  assert.equal((print[language].match(/data-report-period=/g)||[]).length,2);
+  assert.equal((print[language].match(/data-report-period=/g)||[]).length,3);
   assert(print[language].indexOf('reportOverview')<print[language].indexOf('<section class="report reportMapPage'));
-  assert.match(summary,language==='en'?/>Coverage of current cards<\//:/>Dækning af aktuelle kort<\//);
+  assert.match(summary,language==='en'?/>Current territories completed<\//:/>Gennemgåede aktuelle distrikter<\//);
   const service=counts(run("Workspace.reportChart('2026-09-01','2027-08-31')"));assert.equal(service.length,12);assert.equal(service.reduce((a,b)=>a+b,0),3);assert.equal(service[0],2);assert.equal(service[1],1);
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
   const rolling=run("Workspace.periodBounds('rolling')");assert.equal(rolling[0],'2025-10-16');assert.equal(rolling[1],'2026-10-16');const monthly=counts(run('Workspace.reportChart(...Workspace.periodBounds("rolling"))'));assert.equal(monthly.length,13);assert.equal(monthly.reduce((a,b)=>a+b,0),4);
-  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg|Kort til opfølgning|AKTUEL OPFØLGNING/);assert.match(screen,/<strong>24<\/strong>/);assert.match(screen,/<strong>100%<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
+  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg|Kort til opfølgning|AKTUEL OPFØLGNING/);assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg|IB-registreringer/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);contracts[language]=[formContract(visits)];
   run("editVisit('v')");assert.equal(get('dialog').lang,language);assert.match(get('dialog').innerHTML,/value="KTM-besøg &lt;invented&gt; &amp; Kort"/);contracts[language].push(formContract(get('dialog').innerHTML));
   const fields=[['date','2026-09-11'],['note','KTM-besøg <invented> & Kort']];await submit({target:{id:'visitForm',dataset:{id:'v'},fields,reportValidity(){return true;},querySelector(){return {disabled:false};}},preventDefault(){}});submitted[language]=JSON.parse(JSON.stringify(writes.at(-1)));
-  const details=run('reportDetails(true)');assert.doesNotMatch(details,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|Midlertidige kort|Temporary cards/);assert.match(details,/Kort &lt;invented&gt;/);assert.match(details,/class="tablewrap"/);
+  const details=run('reportDetails(true)');assert.doesNotMatch(details,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|Midlertidige kort|Temporary cards/);assert.doesNotMatch(details,/Forkynder|publisher|Anslåede|Estimated|IB-registreringer/);assert.match(details,/class="tablewrap"/);
   assert.equal(run('JSON.stringify(state)'),original);
  }
  assert.equal(print.en.split('<div class="printReports">')[1],print.da.split('<div class="printReports">')[1],'Language switching must leave all printed reports and original forms unchanged');assert.match(print.en,/>Print \/ save PDF<\//);assert.match(print.da,/>Udskriv \/ gem PDF<\//);assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
+ assert.deepEqual(Array.from(run("Workspace.periodBounds('calendar')")),['2026-01-01','2026-10-16']);
+ run('Workspace.calendarYear=2025');assert.deepEqual(Array.from(run("Workspace.periodBounds('calendar')")),['2025-01-01','2025-12-31']);
+ assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).events'),2);
+ run('Workspace.calendarYear=null');
+ const savedForDates=run('JSON.stringify(state)');
+ run("state.cards[1].last_completed='2026-01-01';state.completions.push({id:'boundary',card_id:'c1',date:'2026-01-01'},{id:'excluded',card_id:'c1',date:'2025-12-31'},{id:'future',card_id:'c2',date:'2026-10-17'})");
+ assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).events'),4,'Calendar boundaries exclude yesterday-year and tomorrow');
+ assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).covered'),2,'Known completion date counts even without a matching retained event');
+ assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).missing'),0);
+ run("state.cards[1].last_completed=null;state.completions=state.completions.filter(e=>e.card_id!=='c1')");
+ assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).missingAssigned'),1,'An assigned district with no recorded completion remains visible in aggregate');
+ c.restoreState=JSON.parse(savedForDates);run('state=restoreState');
  run('year=2026');const historical=run('Workspace.reportOverview(true)');assert.match(historical,/2025\/2026/);assert.match(historical,/2025-10-16|16\.10\.2025/);run('year=2027');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
  // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
@@ -101,5 +114,5 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  run('state.cards=JSON.parse(savedCardsFixture);ReportMap.map=null;ReportMap.layer=null');
  const notices=[],tileErrors=[];c.notices=notices;c.L={map(){return {remove(){},attributionControl:{setPrefix(){}},on(){}};},tileLayer(){return {addTo(){return this;},on(name,fn){tileErrors.push(fn);}};},layerGroup(){return {addTo(){return this;}};}};
  run('toast=message=>notices.push(message);ReportMap.points=()=>[[10,55]];ReportMap.fit=()=>{};ReportMap.draw=()=>{};ReportMap.mount()');tileErrors[0]();tileErrors[0]();assert.equal(notices.length,1,'Repeated tile failures show one notice for the current map');run('ReportMap.mount()');tileErrors[0]();assert.equal(notices.length,1,'A removed map must not show a stale failure');tileErrors[1]();assert.equal(notices.length,2);
- console.log('Report language: service/rolling boundary counts, repeats, archived coverage, chart/table equality, private DNC omission, visit save payloads and unchanged original Danish print document passed.');
+ console.log('Report language: calendar/service/rolling boundaries, repeated and archived events, known dates, current assignment aggregates, chart/table equality, private-data omission and unchanged original Danish form passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

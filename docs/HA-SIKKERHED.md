@@ -9,7 +9,7 @@ Gennemgangen omfatter appens HA-konfiguration, startscript, container og eksiste
 | Område | Aktuel implementering | Betydning |
 | --- | --- | --- |
 | Vært og rettigheder | `host_network: false`; ingen privilegerede capabilities, Docker-socket, hardware eller ekstra hostmapper | Appen beder ikke om udvidet værtsadgang. |
-| HA-API'er | `hassio_api: false`, `homeassistant_api: false`; ingen ekstra API-rolle | LTM bruger ikke administrative HA-API'er. |
+| HA-API'er · W110 under udvikling | `hassio_api: false`, `homeassistant_api: true`; ingen Supervisor-rolle | Core-proxyen har administrativ HA-adgang. Den nye kode kalder kun faste status-/prøvehændelsesveje, uden brugerbestemt mål. `drift_status: false` stopper kald, men tilbagekalder ikke den tildelte API-rettighed. Se [afgrænsning](HA-DRIFTSSTATUS.md). |
 | Browseradgang | Eksponeret privat port 8787; beta 8788; `ingress: false` | Eget LAN/VPN-login, ikke HA's ingress-login. HTTP-forbindelsen har ikke selv transportkryptering. |
 | Beskyttelse | Ingen frakobling af AppArmor eller protection mode; ingen egen `apparmor.txt` | Standardbeskyttelsen anvendes; der er ingen app-specifik profil. Faktisk indlæsning er ikke aflæst i ejerens HA. |
 | Login og lokale filer | Mindst 12 tegn ved ny HA-kode; PBKDF2/SHA-256 med salt; private filer med 0600; tidsbegrænsede sessioner | HA-optionen er et maskeret passwordfelt. Maskering betyder ikke, at optionsfilen er krypteret; HA-administratorer har fortsat adgang til konfigurationen. |
@@ -18,7 +18,7 @@ Gennemgangen omfatter appens HA-konfiguration, startscript, container og eksiste
 
 ## Hvorfor vurderingen ikke automatisk er maksimal
 
-Home Assistants aktuelle reference beskriver et grundtal på 5, med bonus for blandt andet ingress eller indlæst egen AppArmor-profil. LTM har eksponeret port, eget login og ingen egen profil. **Den beregnede vurdering for den gennemgåede konfiguration er derfor 5 efter den aktuelle formel.** Ejerens viste tal er ikke aflæst, og ældre Supervisor-versioner kan præsentere skalaen anderledes. Talberegningen er ikke en vurdering af samtlige mulige programfejl.
+Home Assistants aktuelle reference beskriver et grundtal på 5, med bonus for blandt andet ingress eller indlæst egen AppArmor-profil. LTM har eksponeret port, eget login og ingen egen profil. **Den tidligere beregnede vurdering var 5 for konfigurationen uden Core-API.** Tallet er historisk og er ikke aflæst eller genberegnet for W110-kandidaten. Ejerens viste tal er ikke aflæst, og ældre Supervisor-versioner kan præsentere skalaen anderledes. Talberegningen er ikke en vurdering af samtlige mulige programfejl.
 
 ## Næste ændringer, der kan vurderes konkret
 
@@ -27,7 +27,7 @@ Home Assistants aktuelle reference beskriver et grundtal på 5, med bonus for bl
 3. **Ingress eller HA-auth:** Dette ændrer adgang, login, URL'er og blandt andet Origin/CSP- og OAuth-forløb. Det er en større arkitekturændring og skal aftales med ejeren, før den implementeres. Mac/Windows og det aftalte LAN/VPN-forløb skal stadig fungere.
 4. **Transportkryptering:** Direkte HTTP forbliver den eksisterende LAN/VPN-løsning. En eventuel lokal HTTPS-/ingress-løsning vurderes sammen med adgangsarkitekturen; ingen interneteksponering er tilføjet.
 
-Der er ikke givet nye privilegier, ændret loginarkitektur eller ændret datarettigheder i denne gennemgang. W06 er gennemgået indledende, men er ikke afsluttet med en afprøvet AppArmor-/adgangsændring. W15's forkynderforslag kan fortsætte uafhængigt af disse beslutninger.
+Den oprindelige gennemgang gav ingen nye privilegier. W110 ændrer nu Core-API-rettigheden som beskrevet ovenfor; loginarkitektur og distriktsdatarettigheder er uændrede. W06 er gennemgået indledende, men er ikke afsluttet med en afprøvet AppArmor-/adgangsændring. W15's forkynderforslag kan fortsætte uafhængigt af disse beslutninger.
 
 ## Primære kilder
 

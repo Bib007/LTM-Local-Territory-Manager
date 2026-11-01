@@ -1,23 +1,24 @@
-# LTM 1.12.1 · Udlever kort uden unødige afbrydelser
+# LTM 1.12.2 · Profiles, dependable saving and flexible imports
 
-Du kan igen arbejde videre med kort og udleveringer uden beskeden om ændringer fra en anden fane eller enhed.
+This stable release brings together the tested territory-workflow improvements from the beta series, including individual profiles and roles, preserved concurrent edits, flexible spreadsheet imports and clearer reports.
 
-## Det er rettet
+## What changes
 
-- Kort kan udleveres, afleveres og redigeres, selv om Google-forbindelsen ændrer status i baggrunden.
-- Den generelle kontrol, der krævede genindlæsning efter ændringer andre steder, er fjernet indtil videre.
-- Samtidig redigering bliver taget op igen sammen med brugerprofiler. Hvis flere redigerer samme oplysninger nu, bliver den senest gemte ændring stående.
+- Manage accounts and your own roles in the application. Grant home/report summaries independently of detailed records; summaries do not reveal private names, IB, addresses or notes.
+- Give each account a permission-filtered introduction and release news. Administrators can schedule a guide for the next login.
+- Select the sheet, header row and columns for supported card/IB Excel or CSV imports, then review the normal preview before confirming. Leading zeros and safe numeric formats are preserved deliberately.
+- Unchanged forms do not send redundant writes. Editors keep their own bases; independent changes can be combined, and conflicting saved proposals remain available for review.
+- A confirmed write is not called rejected because the following overview failed. Unknown results still require checking before repetition.
+- Finish the setup tour reliably. Review calendar-year, service-year and rolling-12-month reports with honest completion/assignment counts.
+- Show safe manual street rows on approved online card fronts. Keep the same QR/file where supported; new content still requires approval. Only explicitly approved date updates run automatically.
+- Explore administrator and territory-desk assistant examples in the fictional demo. English is the default for new users, with saved language choices preserved.
 
-Kontrollen af kort, datoer og allerede udleverede kort er bevaret. Problemer med Google vises stadig under deling; billeddeling og almindelig kortadministration er fortsat adskilte arbejdsgange.
+The main README and installation/account documentation are now English first. Translation remains partial: some interface/error text and the original S-12/S-13 forms remain Danish. English forms, OCR, automatic card division and native EXE/DMG installers are not included in this release.
 
-GitHub-forsiden har også færre løse filer. Planer og hjælpedokumenter er samlet i mapper, så introduktionen er lettere at finde.
+## Update safely
 
-## Sådan opdaterer du
+Take a private territory-data backup and, if profiles are enabled, a separate account backup. Update the same installation while preserving its data directory. Review the visible role migration and current permissions after updating. Home Assistant stable keeps port 8787; the separate beta channel keeps its own port/data.
 
-**Home Assistant:** Hent en privat sikkerhedskopi i LTM, og opdatér **Distrikt** til **1.12.1**. Åbn appen på ny bagefter. Hvis opdateringen ikke vises med det samme, vælg **Kontrollér for opdateringer** i appbutikken.
+[Website](https://localterritorymanager.netlify.app) · [Demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Installation](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.en.md) · [Accounts and roles](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/USERS.en.md)
 
-**Mac og Windows:** Hent **LTM-v1.12.1.zip**, og følg [opdateringsvejledningen](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md).
-
-Dine gemte kort og din historik bevares ved en almindelig opdatering af samme installation.
-
-[Prøv demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](https://github.com/Bib007/LTM-Local-Territory-Manager) · [Idéer og feedback](https://tally.so/r/KpY0ZV)
+The demo and website use fictional records and are separate from your installed system. Send only invented examples in feedback. Existing general HA, Drive and ordinary restore confirmations do not need to be repeated simply because this version was released.

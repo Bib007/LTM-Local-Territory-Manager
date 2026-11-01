@@ -47,6 +47,7 @@ def clean_text(value, maxlen=100, required=False):
 
 class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def __init__(self, root):
+        self.geo_generation=0
         self.workflow_init()
         self.root = Path(root).expanduser().resolve()
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -101,7 +102,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 self.db.commit()
                 if self.db.total_changes!=before:
                     self.revision=uuid.uuid4().hex
-                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored'}):self._geo_cache=None
+                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored'}):
+                        self._geo_cache=None
+                        self.geo_generation=getattr(self,'geo_generation',0)+1
                     if not self._dirty_modules or 'geo' in self._dirty_modules:self._info_cache=None
             except Exception:
                 self.db.rollback()
@@ -177,7 +180,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
         with self.transaction():
             for m in MODULES:
-                self.db.execute('DELETE FROM ' + self.alias(m) + '.records WHERE deleted_at IS NOT NULL AND deleted_at<=?', (cutoff,))
+                cursor=self.db.execute('DELETE FROM ' + self.alias(m) + '.records WHERE deleted_at IS NOT NULL AND deleted_at<=?', (cutoff,))
+                if cursor.rowcount:self._dirty_modules.add(m)
 
     def recovery(self):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
@@ -206,25 +210,28 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         item = {'id': new_id(), 'card_id': card['id'], 'date': day, 'loan_id': loan_id,
                 'assigned': loan.get('cycle_start') if loan else None, 'previous_completed': card.get('last_completed'),
                 'visits':sum(a.get('count',0) for a in card.get('addresses',[]))}
+        if not card.get('addresses') or any(a.get('count_unknown') for a in card['addresses']):
+            item.update(visits=0,visits_unknown=True)
         self.put('completions', item)
         if not card.get('last_completed') or day > card['last_completed']:
             card['last_completed'] = day
             self.put('cards', card)
         return item
 
-    def mutate(self, action, data):
-        with self.lock:return self.guarded_mutate(action,data)
+    def mutate(self, action, data, *, review=None):
+        with self.lock:return self.guarded_mutate(action,data,review=review)
 
-    def guarded_mutate(self, action, data):
+    def guarded_mutate(self, action, data, *, review=None):
         self.purge_expired()
         with self.transaction():
             # Cross-tab revision rejection is paused until user profiles are designed.
             self._tracking={}
             try:
+                if review:data=review.prepare(self,action,data)
                 result = self._mutate(action, data)
                 self.onboarding_after_write(action,data)
-                if action in ('restore','delete','recovery.purge','history.cleanup'):self._dirty_modules.update(MODULES)
                 touched=self._tracking
+                if review:review.finish(self,dict(touched))
                 changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.alias(m)+'.records WHERE id=?',(i,)).fetchone()])
                 if changed and not action.startswith(('geo.import','geo.postcode','geo.main.download')):
                     self._tracking=None
@@ -238,9 +245,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         elif current.get('card_id'):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
-                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields)})
+                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),**({'actor_id':review.actor} if review else {})})
                 reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve')
-                candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120} if changed and reversible else None
+                candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
             candidate['revision']=self.revision;self._undo=candidate
@@ -290,20 +297,29 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             for a in addresses:
                 if not isinstance(a, dict):
                     raise ValueError('Ugyldig adresse.')
-                count = int(a.get('count', 1))
-                if not 1 <= count <= 10000:
+                unknown=a.get('count_unknown') is True
+                count = 0 if unknown else int(a.get('count', 1))
+                if not unknown and not 1 <= count <= 10000:
                     raise ValueError('Antal besøg skal være mellem 1 og 10.000.')
                 typ = a.get('type', 'Hus')
                 if typ not in ADDRESS_TYPES:
                     raise ValueError('Ugyldig adressetype.')
                 normalized.append({'road': clean_text(a.get('road'), 120, True), 'numbers': clean_text(a.get('numbers'), 100, True), 'count': count, 'type': typ})
+                if unknown:normalized[-1]['count_unknown']=True
             if not card['temporary'] and not normalized:
                 raise ValueError('Tilføj en vejliste eller behold kortet som midlertidigt.')
             if old and (old.get('address_ids') or old.get('geo_addresses')) and normalized != old.get('addresses', []) and not geographic:
                 raise ValueError('Vejlisten følger de valgte huse. Brug Tegn og vælg adresser for at ændre den.')
             if old and old.get('imported_addresses') and normalized!=old.get('addresses',[]):
                 by_unit={(a['road'],a['numbers']):a for a in normalized}
-                card['imported_addresses']=[dict(a,count=by_unit[(a['road'],a['numbers'])]['count'],type=by_unit[(a['road'],a['numbers'])]['type']) for a in old['imported_addresses'] if (a['road'],a['numbers']) in by_unit]
+                card['imported_addresses']=[]
+                for a in old['imported_addresses']:
+                    edited=by_unit.get((a['road'],a['numbers']))
+                    if edited is None:continue
+                    updated=dict(a,count=edited['count'],type=edited['type'])
+                    updated.pop('count_unknown',None)
+                    if edited.get('count_unknown'):updated['count_unknown']=True
+                    card['imported_addresses'].append(updated)
             card['addresses'] = normalized
             if old and (old.get('addresses', []) != normalized or old['number'] != number or old.get('name') != card['name'] or (old.get('area_id') != card['area_id'] and not card['name'])):
                 card['front_revision'] = True
@@ -314,15 +330,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 self.create_completion(card, valid_day(data['initial_completed']))
             return {'id': card['id']}
         if action == 'publisher.save':
-            old = self.get('publishers', data.get('id')) if data.get('id') else None
-            if data.get('id') and not old:
-                raise ValueError('Posten er ændret eller slettet. Opdater siden.')
-            item = dict(old or {'id': new_id()})
-            item['name'] = clean_text(data.get('name'), 100, True)
-            if any(p['name'].casefold() == item['name'].casefold() and p['id'] != item['id'] for p in self.all('publishers')):
-                raise ValueError('Navnet findes allerede. Vælg den eksisterende forkynder.')
-            self.put('publishers', item)
-            return {'id': item['id']}
+            from publisher_data import save
+            return save(self,data)
         if action == 'loan.issue':
             c = self.require('cards', data['card_id'])
             if c.get('archived'):raise ValueError('Kortet er arkiveret efter sammenlægning.')
@@ -405,7 +414,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             old = self.get('settings', data.get('id')) if data.get('id') else None
             if data.get('id') and not old:
                 raise ValueError('Posten er ændret eller slettet. Opdater siden.')
-            if old and old['id'] == 'config':
+            if old and (old['id'] == 'config' or old.get('entity')):
                 raise ValueError('Ugyldigt område.')
             name = clean_text(data.get('name'), 80, True)
             if any(a['id'] != 'config' and a.get('name', '').casefold() == name.casefold() and a['id'] != data.get('id') for a in self.all('settings') + self.all('settings', deleted=True)):
@@ -423,7 +432,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             ident = data.get('id')
             if ident == 'config':
                 raise ValueError('Ugyldigt område.')
-            self.require('settings', ident)
+            if self.require('settings', ident).get('entity'):raise ValueError('Ugyldigt område.')
             restore_cards = []
             for c in self.all('cards'):
                 if c.get('area_id') == ident:
@@ -514,12 +523,18 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                     raise ValueError('Adressen er ikke på dette distriktskort. Vælg en adresse fra kortets liste.')
                 payload['road'] = address['road']
                 payload['number'] = address['number'] + (', ' + ' '.join(str(address[k]) for k in ('floor', 'door') if address.get(k)) if address.get('floor') or address.get('door') else '')
+                payload['postcode'] = str(address.get('postcode') or '')
                 if any(i['id'] != item['id'] and i['card_id'] == c['id'] and (i.get('address_id') == address_id or i['road'].casefold() == payload['road'].casefold() and i['number'].casefold() == payload['number'].casefold()) for i in self.all('ib')):
                     raise ValueError('Denne adresse er allerede registreret som IB.')
                 item['address_id'] = address_id
             elif 'address_id' in payload:
                 item.pop('address_id', None)
             item.update(road=clean_text(payload.get('road'), 120, True), number=clean_text(payload.get('number'), 80, True), date=valid_day(payload.get('date')))
+            if 'postcode' in payload:
+                postcode=clean_text(payload.get('postcode'),4)
+                if postcode and not re.fullmatch(r'\d{4}',postcode):raise ValueError('Postnummer skal være fire cifre eller stå tomt.')
+                item['postcode']=postcode
+                item['missing_fields']=[] if postcode else ['postcode']
             self.put('ib', item)
             c['back_revision'] = True
             self.put('cards', c)
@@ -604,6 +619,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             for module in MODULES:
                 if module=='maps':continue
                 cursor=self.db.execute('DELETE FROM '+self.alias(module)+'.records WHERE deleted_at IS NOT NULL AND batch=?',(batch,))
+                if cursor.rowcount:self._dirty_modules.add(module)
                 count+=cursor.rowcount
             if not count:raise ValueError('Posten findes ikke længere i Gendan ved fejl.')
             return {'count':count}
@@ -631,6 +647,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                     raise ValueError('Gendan kortet først.')
                 if module == 'loans' and not item.get('returned') and self.active_loan(item['card_id']):
                     raise ValueError('Kortet har allerede et nyt aktivt udlån.')
+                self._dirty_modules.add(module)
                 self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=NULL,batch=NULL WHERE id=?', (item['id'],))
                 if module == 'settings' and item.get('restore_cards'):
                     for ident in item['restore_cards']:

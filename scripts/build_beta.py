@@ -37,7 +37,7 @@ def entries():
     files['distrikt/app/index.html']=(index,mode)
     guide=(release.ROOT/'docs/BETA.md').read_bytes()
     files['distrikt/DOCS.md']=(guide,0o644)
-    files['distrikt/README.md']=('# Distrikt Beta\n\nAfprøv nye LTM-funktioner i små betaudgivelser ved siden af din stabile installation. Betaen bruger port 8788, egne data og eget login.\n\nLæs fanen **Dokumentation** for installation, opdatering og den aktuelle testliste. Start med opdigtede prøveoplysninger og en særskilt Google-konto til Drive-prøver.\n'.encode(),0o644)
+    files['distrikt/README.md']=('# Distrikt Beta\n\nAfprøv flere nye LTM-forbedringer i samlede betaudgivelser ved siden af din stabile installation. Betaen bruger port 8788, egne data og eget login.\n\nLæs fanen **Dokumentation** for installation, opdatering og den aktuelle testliste. Start med opdigtede prøveoplysninger og en særskilt Google-konto til Drive-prøver.\n'.encode(),0o644)
     files['README.md']=(guide,0o644)
     files['repository.yaml']=(('name: Local Territory Manager - Beta\nurl: '+REPOSITORY+'#beta\nmaintainer: Bib007\n').encode(),0o644)
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name+'\n' for name,(raw,_) in sorted(files.items()))

@@ -36,7 +36,7 @@ The helper receives the callback at a temporary **127.0.0.1** address on your ow
 
 ## 3. Import the connection privately
 
-Open your installed LTM app, including over your own router-VPN if using HA away from home. Go to **Indstillinger → Deling og QR** and select `Distrikt-Google-forbindelse.json`. Check that the intended account is displayed.
+Open your installed LTM app, including over your own router-VPN if using HA away from home. Go to **Indstillinger → Forbindelser** and select `Distrikt-Google-forbindelse.json`. Check that the intended account is displayed.
 
 Delete the connection file from Downloads afterwards. Treat it like a password: it contains continuing access. Never upload it to GitHub or send it to AI. The app keeps it separate from its record databases; it is excluded from the app's data export and HA backups. Reconnection is therefore needed when moving installations.
 

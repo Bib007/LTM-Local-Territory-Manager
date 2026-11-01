@@ -1,5 +1,9 @@
 # Installation og opdatering
 
+## Egen computer/server · ny beta-startguide
+
+Den fælles startguide til Mac/Windows/Linux findes i [Egen hosting](SELF-HOSTING.md). Den tilbyder lokal brug eller en privat server med separat login og data. Den kræver stadig Python og er første del af W74.
+
 [English](INSTALL.en.md) · [Kom i gang](FIRST-STEPS.md)
 
 **Stabil udgave: 1.12.1.** Brug den almindelige repositoryadresse til HA; `develop` er til næste version og er ikke en almindelig opdateringskilde.
@@ -85,3 +89,7 @@ Behold tidligere programpakke og tilhørende backup lokalt. Gå ikke tilbage ove
 - [Lokale HA-apps](https://developers.home-assistant.io/docs/apps/tutorial/)
 - [Google Drive og QR](GOOGLE-DRIVE.md)
 - [Privatliv og datastrømme](PRIVACY.md)
+
+### Lokal IB-import fra billeder · beta
+
+HA-betaen med billedimport medtager lokal Tesseract med dansk og engelsk. På Mac/Windows skal motor og sprogdata installeres på maskinen, hvor LTM kører. En telefon med adgang til LTM på HA behøver ingen motor. Se [trin, godkendelse, begrænsninger og desktopinstallation](../distrikt/DOCS.md#ib-fra-billeder--beta).

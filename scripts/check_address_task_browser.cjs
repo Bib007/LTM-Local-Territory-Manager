@@ -11,7 +11,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  if(u.pathname==='/api/geo')return json({addresses:[],buildings:[],roads:[],info:{},status:{},changes:[{id:'fictional-change',kind:'new',at:'2026-10-21',after:{label:'Fiktiv vej 1',count:1}}]});
  if(u.pathname==='/api/geo/job')return json({status:'idle'});
  if(u.pathname==='/api/ping')return json({ok:true});
- if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
+ if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
  if(u.pathname==='/api/mutate'){
   const data=route.request().postDataJSON();assert.equal(data.action,'address.task.configure');assert.equal(Object.hasOwn(data.data,'_revision'),false);writes.push(data.data);
   Object.assign(state.address_task,data.data,{status:data.data.enabled?'scheduled':'idle',next_due:'2026-10-22T02:15:00Z'});state.revision='fictional-'+(writes.length+1);return json({ok:true,result:{ok:true},revision:state.revision});
@@ -19,16 +19,22 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  const file=path.join(root,u.pathname==='/'?'index.html':u.pathname.slice(1));assert.ok(file.startsWith(root+path.sep));
  return u.pathname==='/'?route.fulfill({contentType:'text/html',body:fs.readFileSync(file,'utf8').replace('__TOKEN__','FICTIONAL_TOKEN')}):route.fulfill({path:file});
  });
- await page.goto('http://ltm.address-task.test/');await page.waitForFunction(()=>state!==null);
+ await page.goto('http://ltm.address-task.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
  await page.evaluate(()=>{page='Forside';render();});
  assert.match(await page.locator('#addressTask').innerText(),/2 nye · 1 ændrede · 1 foreslået fjernet/);
  await page.locator('#addressTask [data-work=tasks]').click();await page.locator('#addressTask [data-work=address-task]').click();
  const form=page.locator('[data-work-form=address-task]');await form.locator('[name=enabled]').check();await form.locator('[name=days]').fill('3');await form.locator('[name=time]').fill('02:15');await form.locator('button.primary').click();
  await page.waitForFunction(()=>!el('dialog').open);assert.deepEqual({enabled:writes[0].enabled,days:writes[0].days,time:writes[0].time},{enabled:true,days:3,time:'02:15'});
  assert.ok(await page.locator('#addressTask').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'Task panel fits narrow displays');
- await page.locator('#addressTask [data-work=address-changes]').click();await page.locator('#dialog [data-work=accept-address]').waitFor();assert.match(await page.locator('#dialog').innerText(),/Fiktiv vej 1/);await page.evaluate(()=>closeDialog());
- await page.evaluate(()=>{state.address_task={...state.address_task,status:'waiting',run:{id:'fictional'},retry_at:'2026-10-22T03:00:00Z',message:'Venter efter fiktiv netfejl'};render();});
+ await page.locator('#addressTask [data-work=address-changes]').click();await page.locator('.followupRow [data-work=accept-address]').waitFor();assert.match(await page.locator('.followupRow').innerText(),/Fiktiv vej 1/);assert.equal(await page.evaluate(()=>page),'Opfølgninger');
+ await page.evaluate(()=>{page='Opgaver';state.address_task={...state.address_task,status:'waiting',run:{id:'fictional'},retry_at:'2026-10-22T03:00:00Z',message:'Venter efter fiktiv netfejl',last_problem:'Fiktiv kildebesked <kontrol>',retry_streak:4,progress:{completed:2,total:5}};render();});
  assert.match(await page.locator('#addressTask').innerText(),/Venter og prøver igen/);
+ assert.match(await page.locator('#addressTask').innerText(),/Fiktiv kildebesked <kontrol>/);
+ assert.match(await page.locator('#addressTask').innerText(),/Udsnit kontrolleret: 2 af 5/);
+ assert.match(await page.locator('#addressTask').innerText(),/Afbrydelser siden ny fremdrift: 4/);
+ assert.equal(await page.locator('#addressTask kontrol').count(),0,'Provider status is escaped');
  if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`address-task-${width}.png`),fullPage:true});}
+ await page.evaluate(()=>{page='Forside';state.address_task={available:true,enabled:true,status:'waiting',days:30,time:'02:00',retry_at:'2026-10-22T03:00:00Z',message:'Systemet holder en kort pause på grund af ressourcepres.'};render();});
+ assert.match(await page.locator('#addressTask').innerText(),/Næste forsøg:/,'A first check waiting on pressure stays visible');
  await page.evaluate(()=>{state.address_task.available=false;render();});assert.equal(await page.locator('#addressTask').count(),0);assert.deepEqual(errors,[]);await context.close();
 }console.log('HA address task: dashboard counts, task configuration, writes without cross-tab rejection, review navigation, retry status, desktop exclusion and four screen widths passed.');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

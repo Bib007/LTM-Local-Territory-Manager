@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import io
 import json
 import struct
@@ -10,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
-from sharing import Publications,Drive,SCOPE,fingerprint,public_members,png_bytes
+from sharing import Publications,Drive,SCOPE,fingerprint,public_members,public_name,png_bytes
 
 def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
 def png(extra=False):
@@ -43,7 +44,10 @@ class SharingTests(unittest.TestCase):
         self.publisher=self.s.mutate('publisher.save',{'name':'Fiktiv kortholder'})['id']
         self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-01','initial':True})['id']
     def tearDown(self):self.s.close();self.temp.cleanup()
-    def enqueue(self):return self.p.enqueue({'render_revision':5,'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
+    def enqueue(self):return self.p.enqueue({'render_revision':6,'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
+    def enqueue_dates(self):
+        recipe=self.p.prepare(self.c)
+        return self.p.enqueue({'render_revision':recipe['render_revision'],'card_id':self.c,'fingerprint':recipe['fingerprint'],'date_fingerprint':recipe['date_fingerprint'],'date_updates':True,'png':self.url})
     def row(self):return self.s.get('maps',self.p.key(self.c))
     def finish(self,retain=False):
         return self.s.mutate('loan.finish',{'id':self.loan,'date':'2026-01-02','complete':retain,'retain':retain})
@@ -115,6 +119,61 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(self.row()['status'],'access_retry');self.assertTrue(self.row()['possibly_public'])
         self.finish();self.p.process_one() # A new target bypasses the old retry delay.
         self.assertEqual(self.row()['status'],'ready');self.assertFalse(self.row()['possibly_public'])
+    def test_manual_only_front_is_publicly_prepared_without_inventing_geography(self):
+        c=self.s.mutate('card.save',{'number':'F125','name':'Fiktivt manuelt kort','temporary':False,'addresses':[
+            {'road':'Sikker Prøvevej','numbers':'2–8','count':0,'count_unknown':True},
+            {'road':'Sikker Sti','numbers':'hele vejen','count':4}]})['id']
+        recipe=self.p.prepare(c)
+        self.assertTrue(recipe['geography_missing']);self.assertEqual(recipe['members'],[])
+        self.assertEqual(recipe['manual_front_rows'],[
+            {'road':'Sikker Prøvevej','numbers':'2–8','count':None,'count_unknown':True},
+            {'road':'Sikker Sti','numbers':'hele vejen','count':4,'count_unknown':False}])
+        self.assertNotIn('geo_polygon',recipe['card']);self.assertNotIn('addresses',recipe['card'])
+        self.assertNotIn('publisher',json.dumps(recipe));self.assertNotIn('private',json.dumps(recipe).lower())
+
+    def test_polygon_card_fingerprint_keeps_pre_manual_front_shape(self):
+        c_id=self.s.mutate('card.save',{'number':'F128','name':'Fiktivt polygonkort','temporary':False,'addresses':[
+            {'road':'Kun manuel linje','numbers':'1–5','count':0,'count_unknown':True}]})['id']
+        with self.s.transaction():
+            c=self.s.get('cards',c_id);c['geo_polygon']=[[10,55],[10.01,55],[10.01,55.01]];self.s.put('cards',c)
+        c=self.s.get('cards',c_id)
+        previous={'number':c['number'],'color':c.get('map_color','#477596'),'polygon':c.get('geo_polygon',[]),
+                  'members':sorted(public_members(self.s,c),key=lambda a:a['id']),'name':public_name(self.s,c)}
+        expected=hashlib.sha256(json.dumps(previous,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+        self.assertEqual(fingerprint(self.s,c),expected)
+        self.assertEqual(self.p.prepare(c_id)['manual_front_rows'],[])
+
+    def test_manual_rows_are_conservatively_filtered_against_ib_and_fingerprinted(self):
+        c=self.s.mutate('card.save',{'number':'F126','name':'Fiktiv filtrering','temporary':False,'addresses':[
+            {'road':'Prøvevej','numbers':'7','count':2},
+            {'road':'Prøvevej','numbers':'8','count':1},
+            {'road':'Prøvevej','numbers':'7–9','count':0,'count_unknown':True},
+            {'road':'Sikker Sti','numbers':'hele vejen','count':0,'count_unknown':True}]})['id']
+        with self.s.transaction():self.s.put('ib',{'id':'fictional-ib','card_id':c,'road':'Prøvevej','number':'7 1 tv','date':'2026-01-01'})
+        recipe=self.p.prepare(c)
+        self.assertTrue(recipe['manual_ib_withheld'])
+        self.assertEqual([(r['road'],r['numbers']) for r in recipe['manual_front_rows']],
+            [('Prøvevej','8'),('Sikker Sti','hele vejen')])
+        before=recipe['fingerprint']
+        self.s.mutate('card.save',{'id':c,'number':'F126','name':'Fiktiv filtrering','temporary':False,'addresses':[
+            {'road':'Prøvevej','numbers':'7','count':2},
+            {'road':'Prøvevej','numbers':'8','count':1},
+            {'road':'Prøvevej','numbers':'7–9','count':2},
+            {'road':'Sikker Sti','numbers':'hele vejen','count':0,'count_unknown':True}]})
+        self.assertNotEqual(before,self.p.prepare(c)['fingerprint'],'Even withheld row count certainty is fingerprinted')
+        before=self.p.prepare(c)['fingerprint']
+        self.s.mutate('card.save',{'id':c,'number':'F126','name':'Fiktiv filtrering','temporary':False,'addresses':[
+            {'road':'Prøvevej','numbers':'9','count':1},
+            {'road':'Sikker Sti','numbers':'hele vejen','count':0,'count_unknown':True}]})
+        self.assertNotEqual(before,self.p.prepare(c)['fingerprint'])
+
+    def test_manual_only_preview_fingerprint_change_rejects_stale_approval(self):
+        c=self.s.mutate('card.save',{'number':'F127','temporary':False,'addresses':[{'road':'Fiktiv vej','numbers':'1','count':1}]})['id']
+        old=self.p.prepare(c)['fingerprint']
+        self.s.mutate('card.save',{'id':c,'number':'F127','temporary':False,'addresses':[{'road':'Fiktiv vej','numbers':'2','count':1}]})
+        with self.assertRaisesRegex(ValueError,'Kortet er ændret'):
+            self.p.enqueue({'render_revision':7,'card_id':c,'fingerprint':old,'date_updates':True,'date_fingerprint':self.p.prepare(c)['date_fingerprint'],'png':self.url})
+
     def test_private_manual_withdrawal_does_not_auto_reopen(self):
         self.enqueue();self.p.process_one();self.p.withdraw(self.c)
         count=len(self.p.drive.shares);self.finish();self.issue_again();self.p.process_one()
@@ -247,7 +306,7 @@ class SharingTests(unittest.TestCase):
         upgraded=Publications(self.s)
         self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':link}])
         self.assertTrue(self.row()['render_refresh']);self.assertFalse(upgraded.status()['cards'][0]['outdated'])
-        self.enqueue();self.assertFalse(self.row()['render_refresh'])
+        self.enqueue_dates();self.assertFalse(self.row()['render_refresh'])
     def test_old_layout_keeps_qr_and_access_until_owner_approves_new_image(self):
         self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
         self.p.process_one();before=self.row();link=before['front_url']
@@ -256,18 +315,18 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':link}])
         self.assertEqual(self.row()['file_id'],before['file_id'])
         self.assertEqual(self.row()['status'],'published')
-        self.assertEqual(self.p.prepare(self.c)['render_revision'],5)
-        self.enqueue();self.p.process_one()
+        self.assertEqual(self.p.prepare(self.c)['render_revision'],7)
+        self.enqueue_dates();self.p.process_one()
         self.assertEqual(self.row()['front_url'],link)
-        self.assertEqual(self.row()['render_revision'],5)
+        self.assertEqual(self.row()['render_revision'],7)
         self.assertFalse(Publications(self.s).status()['cards'][0]['render_refresh'])
     def test_previous_layout_keeps_link_without_automatic_upload(self):
-        self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':3})
+        self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':5})
         self.p.process_one();before=self.row();uploads=len(self.p.drive.uploads)
         upgraded=Publications(self.s)
         self.assertTrue(upgraded.status()['cards'][0]['render_refresh'])
         self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':before['front_url']}])
-        self.assertEqual(self.row()['render_revision'],3)
+        self.assertEqual(self.row()['render_revision'],5)
         self.assertEqual(len(self.p.drive.uploads),uploads)
         self.assertEqual(self.row()['status'],'published')
     def test_unknown_stored_layout_metadata_is_preserved_and_requests_review(self):
@@ -280,7 +339,7 @@ class SharingTests(unittest.TestCase):
         self.assertTrue(upgraded.front_links())
 
     def test_unknown_layout_revision_is_rejected_without_writes(self):
-        for revision in ('5',True,0,6):
+        for revision in ('6',True,0,7):
             with self.subTest(revision=revision),self.assertRaises(ValueError):
                 self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':revision})
         self.assertIsNone(self.row())

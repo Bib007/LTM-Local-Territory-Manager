@@ -44,6 +44,7 @@ class AddressSourceTests(unittest.TestCase):
                 make.return_value.open.side_effect=urllib.error.HTTPError('secret',503,KEY,{'Retry-After':value},None)
                 with self.assertRaises(SourceUnavailable) as error:self.client._request(KEY,query='query { __typename }')
                 self.assertNotIsInstance(error.exception,SourceTransient)
+                if value=='120':self.assertEqual(error.exception.retry_after,120)
 
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)

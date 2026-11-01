@@ -6,6 +6,7 @@ const el=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',value:'',disabled:f
 const c={console,Date,el,window:{confirm:()=>true},document:{querySelectorAll:()=>[],addEventListener:(type,fn)=>(listeners[type]??=[]).push(fn)},api:async(url,payload)=>{calls.push({url,payload});return {json:async()=>({configured:true,checked_at:'2026-10-16T10:00:00Z',import_ready:true})};}};
 vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8')+';const ui=(v,p)=>I18n.label(v,p);',c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),c);const run=code=>vm.runInContext(code,c);
 (async()=>{
+ run("I18n.set('da')");
  assert.match(run('AddressSourceUI.html()'),/portal.datafordeler.dk/);assert.match(run('AddressSourceUI.html()'),/API-Keys/);
  const form={reportValidity:()=>false};await run('AddressSourceUI.act').call(run('AddressSourceUI'),'connect',form);assert.equal(calls.length,0);
  const key='FICTIONAL_ADDRESS_KEY_12345';el('addressSourceKey').value=key;form.reportValidity=()=>true;

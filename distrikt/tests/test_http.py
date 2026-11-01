@@ -45,6 +45,54 @@ class HTTPTests(unittest.TestCase):
         self.assertIsNone(self.store.active_loan(card))
         self.assertEqual(self.store.get('cards',card)['name'],'Opdigtet rettelse')
 
+    def test_write_acknowledgement_requests_geodata_only_for_affected_records(self):
+        def change(action,data):
+            with self.request('/api/mutate',{'action':action,'data':data}) as response:return json.load(response)
+        note=change('note.save',{'text':'Fiktiv opgave'})
+        self.assertFalse(note['geo_changed'])
+        deleted=change('delete',{'module':'notes','id':note['result']['id']})
+        self.assertFalse(deleted['geo_changed'])
+        self.assertFalse(change('restore',{'batch':deleted['result']['batch']})['geo_changed'])
+        deleted=change('delete',{'module':'notes','id':note['result']['id']})
+        self.assertFalse(change('recovery.purge',{'batch':deleted['result']['batch']})['geo_changed'])
+        card=change('card.save',{'number':'F101','temporary':True})
+        self.assertTrue(card['geo_changed'])
+        deleted=change('delete',{'module':'cards','id':card['result']['id']})
+        self.assertTrue(deleted['geo_changed'])
+        self.assertTrue(change('restore',{'batch':deleted['result']['batch']})['geo_changed'])
+
+    def test_http_prepare_returns_safe_manual_front_without_geography(self):
+        card=self.store.mutate('card.save',{'number':'F125','name':'Fiktivt HTTP-kort','temporary':False,'addresses':[
+            {'road':'Sikker prøvevej','numbers':'2–8','count':0,'count_unknown':True},
+            {'road':'Anden sikker vej','numbers':'hele vejen','count':3}]})['id']
+        with self.request('/api/share/prepare',{'card_id':card}) as response:recipe=json.load(response)
+        self.assertTrue(recipe['geography_missing']);self.assertEqual(recipe['members'],[])
+        self.assertEqual([r['road'] for r in recipe['manual_front_rows']],['Sikker prøvevej','Anden sikker vej'])
+        self.assertNotIn('addresses',recipe['card']);self.assertNotIn('publisher',json.dumps(recipe))
+
+    def test_confirmed_write_can_return_the_complete_current_overview(self):
+        note=self.store.mutate('note.save',{'text':'Fiktiv opgave'})
+        batch=self.store.mutate('delete',{'module':'notes','id':note['id']})['batch']
+        with self.request('/api/mutate',{'action':'recovery.purge','data':{'batch':batch},'include_state':True}) as response:
+            reply=json.load(response)
+        self.assertEqual(reply['state']['revision'],reply['revision'])
+        self.assertEqual(reply['state'],self.server.app_state())
+        self.assertEqual(reply['state']['recovery'],[])
+        self.assertFalse(reply['geo_changed'])
+        self.assertNotIn('geo',reply['state'])
+        for module in ('cards','areas','publishers','loans','completions','ib','ignored','notes','visits','recovery','maps'):
+            self.assertIsInstance(reply['state'][module],list)
+        # Old callers need no extra payload; previews never return all local records.
+        with self.request('/api/mutate',{'action':'note.save','data':{'text':'Anden fiktiv opgave'}}) as response:
+            self.assertNotIn('state',json.load(response))
+        self.store.mutate('card.save',{'number':'001'})
+        with self.request('/api/mutate',{'action':'setup.history-import.preview','data':{'name':'fictional.csv','content':'kortnummer;dato\n001;2026-10-01'},'include_state':True}) as response:
+            self.assertNotIn('state',json.load(response))
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request('/api/mutate',{'action':'note.save','data':{'text':'Must not be written'},'include_state':True},token=False)
+        self.assertEqual(caught.exception.code,403)
+
+
     def test_history_import_local_ui_and_authenticated_atomic_write(self):
         from datetime import date,timedelta
         with self.request('/history-import-ui.js') as response:self.assertIn(b'HistoryImportUI',response.read())
@@ -156,7 +204,7 @@ class HTTPTests(unittest.TestCase):
         with self.request('/api/geo',headers={'Accept-Encoding':'gzip'}) as response:
             self.assertEqual(response.headers['Content-Encoding'],'gzip');self.assertEqual(response.headers['Cache-Control'],'no-store')
             self.assertEqual(len(json.loads(gzip.decompress(response.read()))['addresses']),500)
-        for asset in ('/workspace.js','/workspace.css'):
+        for asset in ('/workspace.js','/workspace.css','/theme.js','/theme.css','/brand-logo-light.svg'):
             with self.request(asset) as response:self.assertEqual(response.status,200)
     def test_bootstrap_and_headers(self):
         with self.request('/',token=False) as r:

@@ -2,7 +2,7 @@ name: HA beta release
 on:
   push:
     branches: [develop]
-    paths: ['distrikt/**', 'scripts/**', 'docs/BETA*.md', '.github/workflows/beta.yml']
+    paths: ['distrikt/**', 'scripts/**', 'homeassistant/**', '.github/workflows/ha-status.yml', 'docs/BETA*.md', '.github/workflows/beta.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,6 +12,8 @@ concurrency:
 jobs:
   security:
     uses: ./.github/workflows/security.yml
+  ha-status-blueprint:
+    uses: ./.github/workflows/ha-status.yml
   checks:
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
@@ -25,11 +27,24 @@ jobs:
           node-version: '24'
       - run: python -m unittest discover -s distrikt/tests -v
       - run: for testfile in distrikt/tests/test_*.cjs; do TZ=Europe/Copenhagen node "$testfile" || exit 1; done
+      - name: Fictional demo and shared product design
+        run: |
+          python scripts/sync_demo_design.py --check
+          python scripts/test_build_demo.py
+          node demo/test_model.cjs
+          node demo/test_ui.cjs
+          python scripts/build_demo.py
       - name: Install isolated browser test tool
         run: |
           npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
+      - name: Light appearance and preserved local drafts
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_THEME=light node scripts/check_desk_browser.cjs
+      - name: Light touch appearance in WebKit
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_THEME=light LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit node scripts/check_desk_browser.cjs
+      - name: Fictional product-layout demo browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_demo_browser.cjs
       - name: Offline geographic editor browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
       - name: Unified setup and required tour browser workflows
@@ -40,6 +55,14 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 node scripts/check_desk_browser.cjs
       - name: Touch phone and tablet daily workflows in WebKit
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit node scripts/check_desk_browser.cjs
+      - name: Real server image import and security policy
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_photo_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_photo_browser.cjs
+      - name: Real application profiles and concurrent saves
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_profiles_app_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_profiles_app_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks
@@ -80,6 +103,7 @@ jobs:
           python-version: '3.12'
       - run: python -m unittest discover -s distrikt/tests -p test_portable.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+      - run: python -m unittest discover -s distrikt/tests -p test_start_guide.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_lan.py -v
   home-assistant:
     if: github.ref == 'refs/heads/develop'
@@ -92,10 +116,14 @@ jobs:
       - run: python scripts/build_beta.py --output /tmp/ha-beta
       - run: docker build --build-arg BUILD_VERSION=beta-ci --build-arg BUILD_ARCH=amd64 --tag ltm-ha-beta /tmp/ha-beta/distrikt
       - run: docker run --rm --entrypoint python3 ltm-ha-beta /opt/distrikt/app/server.py --help
+      - name: Kontrollér lokal OCR og danske sprogdata
+        run: docker run --rm --entrypoint python3 ltm-ha-beta -c "import sys; sys.path.insert(0, '/opt/distrikt/app'); from photo_ocr import PhotoOCR; status=PhotoOCR().available(); assert status['available'] and set(status['languages'])=={'dan','eng'}, status"
+      - name: Læs et opdigtet billede med den faktiske OCR-motor
+        run: docker run --rm --env PYTHONPATH=/opt/distrikt/app --volume "$PWD/scripts:/probe:ro" --entrypoint python3 ltm-ha-beta /probe/check_photo_ocr.py --require-danish
       - run: docker run --rm --env LTM_CHANNEL=beta --entrypoint python3 ltm-ha-beta -c "import sys,tempfile; sys.path.insert(0, '/opt/distrikt/app'); from access import Access,LOGIN; assert 'Beta' in LOGIN; d=tempfile.TemporaryDirectory(); assert Access(d.name,'Fictional-pass-123').cookie_name=='distrikt_beta_session'"
   publish:
     if: github.ref == 'refs/heads/develop'
-    needs: [security, checks, python-compatibility, desktop, home-assistant]
+    needs: [security, checks, python-compatibility, desktop, home-assistant, ha-status-blueprint]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -121,6 +149,7 @@ jobs:
               exit 0
             fi
           fi
+          python scripts/build_release.py
           python scripts/build_beta.py --output "$RUNNER_TEMP/ha-beta"
           gh auth setup-git
           git -C "$RUNNER_TEMP/ha-beta" init
@@ -134,5 +163,5 @@ jobs:
           git -C "$RUNNER_TEMP/ha-beta" diff --cached --quiet || git -C "$RUNNER_TEMP/ha-beta" commit -m "HA beta $BETA_VERSION from $GITHUB_SHA"
           git -C "$RUNNER_TEMP/ha-beta" push origin HEAD:beta
           if ! gh release view "v$BETA_VERSION" >/dev/null 2>&1; then
-            gh release create "v$BETA_VERSION" "dist/LTM-HA-v$BETA_VERSION.zip" "dist/LTM-HA-v$BETA_VERSION.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "LTM $BETA_VERSION · HA-beta" --notes-file docs/BETA-NOTES.md
+            gh release create "v$BETA_VERSION" "dist/LTM-HA-v$BETA_VERSION.zip" "dist/LTM-HA-v$BETA_VERSION.zip.sha256" "dist/LTM-v$BETA_VERSION.zip" "dist/LTM-v$BETA_VERSION.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "LTM $BETA_VERSION · HA-beta" --notes-file docs/BETA-NOTES.md
           fi

@@ -1,4 +1,161 @@
-# Ændringsliste
+# Changelog
+
+## 1.12.2 · Profiles, dependable saving and flexible imports
+
+- Individual profiles and administrator-controlled roles; independent home/report summary permissions and permission-filtered personal guides.
+- Sheet/header/column selection for supported card and IB spreadsheet imports with explicit preview/confirmation.
+- Honest save acknowledgements, editor-owned bases, preserved conflict proposals and reliable tour completion.
+- Clearer reports and safe approved manual street rows on online card fronts.
+- English-first README, new-browser interface and documentation, plus a fictional demo with two role views. Original printed forms remain unchanged; translation is still partial.
+
+## 1.12.2-beta.83 · Gemning, rundtur og manuelle onlinekort
+
+- Uændrede formularer gemmes ikke igen; samtidige kladder beholder deres eget udgangspunkt og konfliktforslag.
+- En gemt ændring kaldes ikke afvist ved efterfølgende læsefejl. Reelt udløb forklares med bevarede felter.
+- Rundturens sidste trin fungerer også efter opsætningsdialogen.
+- Onlineforsiden kan vise sikre manuelle vejlinjer uden gættet geografi eller besøgstal. Godkendelse og samme QR bevares.
+- Rapporten viser tre perioder og aktuelle gennemgangs-/udleveringstal; original S-13 er bevaret.
+- Flere profil-, backup- og konflikttekster er oversat. Engelsk er fortsat delvis.
+- Rettigheder ved sammensatte handlinger, databackuppens afgrænsning og håndtering af ufuldstændige forespørgsler er strammet.
+
+## 1.12.2-beta.82 · Læsbare rettelser og datoer på onlinekort
+
+- Gennemgå samtidige rettelser som almindelige felter med vejnavn, numre, besøg og adressetype. Kortgrænser vises grafisk.
+- Se seneste registrerede gennemgang og den aktuelle udleveringsdato på onlinekortet.
+- Godkend kortbilledet og datoopdateringen én gang. Datoerne kan derefter ajourføres på samme Google-fil og QR-link.
+- Adresse-, grænse- og IB-ændringer kræver stadig et nyt godkendt billede. Gendannelse genoptager ikke tidligere uploads.
+- Fjern offentlig adgang stopper også datoopdateringen, mens en eventuel lukning hos Google afventer bekræftelse.
+
+## 1.12.2-beta.81 · Tjenestegrupper og gruppeimport
+
+- Angiv tjenestegruppe, tilsynsmand eller assistent og en særskilt pionermarkering på forkynderen.
+- Filtrér forkyndere efter gruppe, og se gruppen sammen med deres kort og historik.
+- Importér en gruppeliste fra Excel eller CSV. Se nye navne og før/efter-oplysninger før samlet godkendelse.
+- Bevar eksisterende udlån, historik og identitet. Gruppefunktioner opretter ingen brugerkonti eller rettigheder.
+- Samtidige uafhængige rettelser bevares; forskellige gruppevalg gemmes til gennemgang.
+
+## 1.12.2-beta.80 · Vejintervaller og kortregister
+
+- Importér kortnumre, manuelle vejlinjer og intervaller som 1–19 fra Excel eller CSV.
+- Brug kortene uden geografiske adresser. Vælg adresser kort for kort senere med samme kortnummer, IB og historik.
+- Manglende besøgstal vises som ukendt på kort, print og i totaler. Intervaller tælles ikke automatisk.
+- Udfyld et kendt besøgstal senere. Tidligere gennemgange med ukendt antal bevares uændret.
+
+## 1.12.2-beta.79 · IB fra Excel
+
+- Hent Excel-skabelon, og upload XLSX eller CSV direkte i den lokale app.
+- Gennemgå manglende oplysninger og manuelle linjer. Adresser uden sikkert match kan skrives på et valgt kort efter din bekræftelse.
+- Se og ret et manglende postnummer bagefter. Dubletter og eksisterende IB bevares; kun bagsiden markeres til genprint.
+- Samtidige dato- og postnummerrettelser bevares. Forskellige rettelser til samme postnummer gemmes til gennemgang.
+
+## 1.12.2-beta.78 · Adressekontrol og driftsbeskeder
+
+- Adressekontrollen prøver hurtigt igen efter korte afbrydelser og bevarer færdige udsnit. Gentagne fejl, kildeventetid og ressourcepres giver en passende pause.
+- Se den seneste afbrydelse, fremdriften og tidspunktet for næste forsøg. Længere arbejdsrunder kan genoptages.
+- Vis LTM-driftsstatus i Home Assistant. Importér en klar beskedopskrift, vælg din telefon og tilføj egne noter. En særskilt prøve sender én besked uden overbelastning eller dataændringer.
+- HA-appen får adgang til Home Assistants lokale API for at aflevere status. Afleveringen kan slås fra i appens HA-indstillinger. Se vejledningen om adgangens omfang.
+
+## 1.12.2-beta.77 · Profilrettelser og backup i appen
+
+- Vælg den tidligere eller senere rettelse i en tydeligere konfliktvisning. Påmindelsen opdateres straks efter gennemgang.
+- Hent og gendan en separat kontobackup under Backup og vedligeholdelse. Gendannelse kræver adgangskode, forhåndsvisning og bekræftelse.
+- Vælg pr. rolle, om brugeren skal se påmindelsen om databackup. Det giver ikke adgang til selve sikkerhedskopien.
+- Brugere og roller har egen indstillingsfane. Datafordeler og Google Drive er samlet under Forbindelser, som kan skjules efter rolle.
+- Forsiden byder den indloggede bruger velkommen. Opfølgninger forklarer tydeligere næste handling.
+
+## 1.12.2-beta.76 · Brugere og samtidige rettelser
+
+- Aktivér personligt login fra den eksisterende installation. Distriktsdata bevares.
+- Opret brugere og egne roller, og vælg læse- og skriverettigheder i appen.
+- Gem uafhængige rettelser samtidig. Ved uenighed bevares udgangspunktet og begge rettelser til gennemgang med påmindelse på forsiden.
+- Se nylig aktivitet, og giv hver ny profil sin egen introduktion.
+- Rolleændringer gælder også åbne sessioner. En mistet gemmekvittering kræver stadig kontrol før næste ændring.
+- Separat lokal kontobackup og administratorgendannelse er beskrevet i brugervejledningen. Almindelig databackup indeholder ikke konti.
+- Lokal stop/opdatering fungerer også med profiler. Udlevering til en eksisterende forkynder kræver ikke ret til at oprette nye forkyndere.
+
+## 1.12.2-beta.75 · Privat server på valgt adresse
+
+- Startguiden genfinder nu serveren på den private adresse, den faktisk lytter på.
+- Serverens statuskontrol bruger den lokale forbindelse direkte.
+- Beta.74s startguide og adskilte data er bevaret. W74 er fortsat åbent.
+
+## 1.12.2-beta.74 · Startguide til egen computer og server
+
+- Ny fælles startguide til Mac, Windows og Linux med valg af lokal brug eller privat server.
+- Serveren får eget login og data, lytter på den valgte private adresse og åbner ingen browser.
+- Udgivelsen har nu også en samlet programpakke til egen computer. Python skal fortsat installeres separat.
+- W74 er delvist leveret; et separat appvindue og selvstændige installationer mangler. OCR-arbejdet er fortsat på pause.
+
+## 1.12.2-beta.73 · Billedimport og opfølgninger
+
+- IB-billeder i PNG, JPG og JPEG kan åbnes og læses lokalt. En fejl i appens billedregler er rettet.
+- Tallet ved Opfølgninger indlæses fra start, uden at du skal åbne fanen først.
+- Billedimport kræver stadig gennemgang af adresser og datoer samt din godkendelse.
+
+## 1.12.2-beta.72 · IB-billeder og sikker afslutning
+
+IB fra billeder omfatter nu også kontrolleret afslutning, når selve LTM lukkes under en billedlæsning. Den lokale OCR-proces stoppes og dens midlertidige filer ryddes op, før serveren lukker. Kø, kortvalg, redigerbar tekst, præcise adresser/datoer og godkendelse er som i beta.71. Ingen ekstern AI eller cloud-OCR. S-12-forsider er fortsat ikke med.
+
+## 1.12.2-beta.71 · Lokal IB-import fra billeder
+
+Indstillinger → Import har nu IB fra billeder. Vælg op til 20 PNG-/JPEG-billeder i kø. Hvert billede læses på det lokale LTM-system, får sit eget kortvalg og redigerbar tekst samt forslag. Hver linje skal have en adresse fra det valgte kort og en kontrolleret dato eller springes over ved dit valg. Forhåndsvisningen og IMPORTÉR IB kræves før gemning. Næste billede startes manuelt; tidligere godkendte filer bevares ved lukning eller fejl.
+
+HA-pakken medtager lokal Tesseract med dansk og engelsk. På Mac og Windows kræves en separat lokal Tesseract-installation; appen viser, hvis den mangler. Ingen ekstern AI, cloud-OCR eller automatisk adresseoprettelse bruges. S-12-forsider, automatisk fortolkning af flere spalter og fuld W85 er fortsat åbne. Håndskrift og uklare billeder kan kræve manuel rettelse.
+
+## 1.12.2-beta.70 · Overlappende kortgrænser
+
+Opfølgninger advarer, når to gemte distriktskortgrænser dækker et fælles areal. Hver berørt kombination vises én gang med links til begge kort. Du kan søge på begge kortnumre og navne. Fælles kanter og hjørner udløser ingen advarsel; adresser valgt på flere kort vises fortsat som egne punkter.
+
+Kontrollen bruger de lokalt gemte grænser og ændrer ingen kort eller adresser. Grænser skal rettes manuelt, hvis overlappet er utilsigtet. Dansk/engelsk og telefon/tablet understøttes. Foto- og IB-genkendelse er fortsat under udvikling.
+
+## 1.12.2-beta.69 · Færdig, når ændringen er gemt
+
+- Permanent sletning og almindelige ændringer får den opdaterede oversigt med, når gemningen bekræftes. Du skal derfor ikke vente på en ekstra hentning eller skifte menu for at se resultatet.
+- Hvis forbindelsen afbrydes eller svaret ikke kan læses, bliver du stadig bedt om at kontrollere resultatet, før du prøver igen.
+- Datafordelerens nøgle og forbindelseskontrol findes nu under Indstillinger → Forbindelser. Hent adresser har en genvej dertil. Din gemte nøgle bevares.
+- Udseende, samlet Import og Opfølgninger samt filkøen fra de seneste betaer er med.
+
+## 1.12.2-beta.68 · Vælg dit udseende og prøv det nye overblik
+
+- Vælg Mørkt, Lyst eller Følg enheden nederst i menuen. Valget huskes i din browser og kan skiftes uden at miste åbne formularer.
+- Demoen bruger appens fælles designfiler og viser den samme opbygning på forside, genveje og nøgletal. Den har eksempelvisninger for Opfølgninger og Kort og adresser; alle oplysninger er stadig opdigtede.
+- Adressevejledningen er gennemgået på dansk og engelsk med aktuelle menuer, hentestatus, genoptagelse og gennemgang af adresseændringer. Gamle beskeder om en manglende afprøvning er fjernet.
+- Filkøen fra beta.67 er med. Automatisk genkendelse af billeder er fortsat under planlægning.
+
+## 1.12.2-beta.67 · Flere kortfiler i kø
+
+- Vælg op til 20 Excel-/CSV-filer til kortimport. Hver fil får sin egen forhåndsvisning og godkendelse; næste fil importeres ikke automatisk.
+- Se den aktuelle fil, importerede filer og filer, du har sprunget over. Allerede godkendte filer bevares ved lukning eller fejl.
+- Grænsen er 2 MB pr. fil og 20 MB samlet. Filerne behandles fortsat på dit eget system.
+- Dette er første trin mod lettere masseimport. Fotos og automatisk tekstgenkendelse er endnu ikke med.
+
+## 1.12.2-beta.66 · Import og opfølgninger samlet
+
+- Import af historik, distriktskort og IB findes nu under Indstillinger → Import. Du gennemgår og godkender stadig oplysningerne, før de gemmes.
+- Den nye menu Opfølgninger samler kortkontrol, genprint, langvarige udleveringer og adresseændringer. Hvert forhold får sin egen linje og tæller; forside og bagside tæller hver for sig.
+- Forsiden åbner det fælles overblik. Genprint og kortkontrol er flyttet fra Kort og adresser, så du har ét sted at følge op.
+- Søgning, filtre og dansk/engelsk er med i det nye overblik. Åbning af import eller opfølgninger ændrer ingen registreringer.
+- Forbedringerne fra beta.65 med tydelig adressehentning og mindre unødig dataoverførsel er med.
+
+## 1.12.2-beta.65 · Mindre ventetid og tydelig adressehentning
+
+Samler forbedringerne nedenfor og sikrer samtidig, at almindelig kortgemning ikke starter en ekstra hentning af kortdata.
+
+## 1.12.2-beta.64 · Bedre overblik under adressehentning
+
+- Adressehentning viser, hvad den arbejder med, og hvor mange adresser der er modtaget. Antallet tælles uden dubletter ved nye forsøg. Der vises ingen gættet resttid.
+- Større adresseområder deles også i mindre udsnit, når ét opslag kræver for mange forespørgsler. Færdige udsnit bevares, hvis hentningen må fortsættes senere.
+- Gemning viser tydeligt, når ændringen er gemt, mens oversigten opdateres. Sletning og gendannelse af oplysninger uden kortændringer henter ikke længere alle kortdata igen.
+- Rettelsen fra stabil 1.12.1 er bevaret: almindelig gemning og udlevering kræver ikke unødig genindlæsning.
+
+## 1.12.2-beta.63 · Flere små forbedringer i daglig brug
+
+- Ugentlige opgaver tæller først fra den dag, de skal udføres. Når de markeres udført, fortsætter de til næste dato med bevaret historik.
+- Digitale kort har en lysere baggrund, så røde besøgsprikker og husnumre er tydeligere. Tidligere delte billeder opdateres først, når et nyt billede godkendes.
+- Tekster om lokal lagring og adressehentning passer nu også til Home Assistant, Windows og andre enheder.
+- Gemte visninger vises ved den geografiske kortoversigt.
+- GitHub-forsiden har fire løse filer. Engelsk introduktion, bidragsvejledning og Mac-hjælp ligger i mapper; den gamle danske dublet er fjernet.
+- Rettelsen fra 1.12.1 er med: almindelig gemning og udlevering kræver ikke genindlæsning efter ændringer i baggrunden.
 
 ## 1.12.1 · Arbejd videre uden unødig genindlæsning
 

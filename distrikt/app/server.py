@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local desktop or authenticated private LAN server. Only approved PNGs leave it."""
 import argparse
+import io
 import json
 import os
 import secrets
@@ -26,14 +27,22 @@ from sharing import Publications
 from address_source import Datafordeler
 from address_schedule import AddressSchedule
 from setup_jobs import SetupJobs
+from photo_ocr import PhotoOCR
 from ui_errors import UIError,error_payload
+from profile_accounts import ProfileAccounts
+from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
+from runtime_status import RuntimeStatus
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.1'
+VERSION='1.12.2'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
+    def server_close(self):
+        if hasattr(self,'runtime_status'):self.runtime_status.close()
+        if hasattr(self,'photo_ocr'):self.photo_ocr.close()
+        super().server_close()
     def server_bind(self):
         # All listeners bind an explicit IP. Reverse DNS is unnecessary and can
         # delay local startup on macOS/offline networks. Keep the bound address.
@@ -44,11 +53,15 @@ class Server(ThreadingHTTPServer):
         self.store=store
         self.readable=ReadableExport(store)
         self.setup_jobs=SetupJobs(store)
+        self.photo_ocr=PhotoOCR()
         self.beta=os.environ.get('LTM_CHANNEL')=='beta'
         self.address_source=Datafordeler(store.root)
         self.downloads=Downloads(store,self.address_source)
         self.token=secrets.token_urlsafe(32)
-        self.origin='http://127.0.0.1:%s'%self.server_port
+        self.accounts=ProfileAccounts(store.root)
+        self.profiles=ProfileRuntime(self,self.accounts)
+        # A listener bound to one LAN interface cannot be reached through loopback.
+        self.origin='http://%s:%s'%('127.0.0.1' if self.server_name=='0.0.0.0' else self.server_name,self.server_port)
         self.access=Access(store.root,password) if access_host else None
         self.hosts={'127.0.0.1:%s'%self.server_port}
         self.public_url=self.origin
@@ -68,8 +81,23 @@ class Server(ThreadingHTTPServer):
         self.restores=Restores(store,VERSION)
         self.sharing=Publications(store)
         self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
+        self.runtime_status=RuntimeStatus(self.address_schedule,VERSION,self.beta)
 
-class Handler(BaseHTTPRequestHandler):
+    def app_state(self,profile_token=None):
+        """The same local overview for page reads and confirmed write responses."""
+        with self.accounts.lock,self.store.lock:
+            result=self.store.state()
+            result.update(version=VERSION,beta=self.beta,public_maps=self.sharing.front_links(),address_task=self.address_schedule.status())
+            result['runtime_status']=self.runtime_status.status()
+            if self.profiles.enabled:
+                if profile_token is None:raise PermissionError('Profile session required')
+                return self.profiles.state(profile_token,result)
+            from profile_features import summaries
+            result['dashboard_summary']=summaries(result);result['report_summary']=result['dashboard_summary']
+            result['profiles_available']=True
+            return result
+
+class Handler(ProfileRoutes,BaseHTTPRequestHandler):
     def log_message(self,*args):
         # Names, addresses and history must not appear in logs.
         pass
@@ -82,10 +110,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type',kind+('; charset=utf-8' if kind in ('text/html','text/css','text/javascript','application/json') else ''))
         self.send_header('Content-Length',str(len(data)))
         self.send_header('Cache-Control','no-store')
+        if getattr(self,'profile_user',None):self.send_header('X-LTM-Authorization',str(self.server.accounts.generation))
         for key,value in (headers or {}).items():self.send_header(key,value)
         self.send_header('X-Content-Type-Options','nosniff')
         self.send_header('Referrer-Policy','strict-origin-when-cross-origin')
-        self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         self.end_headers();self.wfile.write(data)
     def allowed(self,token=False,public=False):
         host=self.headers.get('Host','').lower()
@@ -97,27 +126,41 @@ class Handler(BaseHTTPRequestHandler):
         if self.server.access:
             if not private_client(self.client_address[0]):
                 self.send({'error':'Kun hjemmenetværk og VPN har adgang.'},status=403);return False
-            if not public and not self.server.access.valid(self.headers.get('Cookie')):
+            if not public and not (self.server.profiles.valid(self.headers.get('Cookie')) if self.server.profiles.enabled else self.server.access.valid(self.headers.get('Cookie'))):
                 self.send({'error':'Log ind igen på den lokale adresse.'},status=401);return False
-        if token and self.headers.get('X-Distrikt-Token')!=self.server.token:
+        if self.server.profiles.enabled and not public and not self.server.profiles.valid(self.headers.get('Cookie')):
+            self.send({'error':'Log ind igen på den lokale adresse.'},status=401);return False
+        expected=self.server.profiles.csrf(self.profile_token()) if self.server.profiles.enabled else self.server.token
+        if token and self.headers.get('X-Distrikt-Token')!=expected:
             self.send({'error':'Genindlæs appen, og prøv igen.'},status=403);return False
         return True
     def do_GET(self):
+        with self.profile_scope() as permitted:
+            if permitted:self._get()
+    def _get(self):
         parsed=urlsplit(self.path);path=parsed.path;q=parse_qs(parsed.query)
-        public=path in ('/','/login.js','/style.css','/brand-mark.svg','/api/ping')
+        public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/api/ping')
         if not self.allowed(public=public):return
         try:
+            if self.profile_get(path):return
+            if path=='/api/photo/status':return self.send(self.server.photo_ocr.available())
+            if path=='/api/photo/job':return self.send(self.server.photo_ocr.status(q.get('id',[''])[0]))
             if path=='/api/ping':return self.send({'app':'Distrikt','version':VERSION})
             if path=='/':
-                if self.server.access and not self.server.access.valid(self.headers.get('Cookie')):return self.send(LOGIN.encode(),'text/html')
-                html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.token)
-                if self.server.access:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
+                profile=self.server.profiles.enabled
+                valid=self.server.profiles.valid(self.headers.get('Cookie')) if profile else not self.server.access or self.server.access.valid(self.headers.get('Cookie'))
+                if not valid:
+                    login=LOGIN
+                    if profile:login=login.replace('<label for="loginPassword"', '<label for="loginName" data-ui="Brugernavn">Brugernavn</label><input id="loginName" name="name" autocomplete="username" maxlength="100" required><label for="loginPassword"')
+                    return self.send(login.encode(),'text/html')
+                html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.profiles.csrf(self.profile_token()) if profile else self.server.token)
+                if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/app.js','/i18n.js','/welcome.js','/onboarding.js','/card-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
-            if path in ('/brand-mark.svg','/brand-logo.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
             if path=='/s12-template.png':return self.send((APP.parent/'templates'/'S-12-source.png').read_bytes(),'image/png')
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
@@ -127,19 +170,25 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/setup/card-template.csv':
                 from card_import import template_csv
                 return self.send(template_csv(),'text/csv',headers={'Content-Disposition':'attachment; filename=LTM-kort-import-skabelon.csv'})
+            if path in ('/api/setup/publisher-template.csv','/api/setup/publisher-template.xlsx'):
+                from publisher_import import template_csv,template_xlsx
+                xlsx=path.endswith('.xlsx')
+                return self.send(template_xlsx() if xlsx else template_csv(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if xlsx else 'text/csv',headers={'Content-Disposition':'attachment; filename=Forkynder-import-skabelon.'+('xlsx' if xlsx else 'csv')})
             if path=='/api/setup/ib-template.csv':
                 from setup_store import ib_template
                 return self.send(ib_template(),'text/csv',headers={'Content-Disposition':'attachment; filename=IB-import-skabelon.csv'})
+            if path=='/api/setup/ib-template.xlsx':
+                from ib_import import template_xlsx
+                return self.send(template_xlsx(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=IB-import-skabelon.xlsx'})
             if path=='/api/geo':return self.send(self.server.store.geo_state())
             if path=='/api/setup/job':raise UIError('Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.')
             if path=='/api/geo/job':return self.send(self.server.downloads.status(q.get('id',[''])[0]))
             if path=='/api/geo/suggest':return self.send(self.server.downloads.suggest(q.get('road',[''])[0],q.get('postcode',[''])[0]))
             if path=='/api/state':
                 self.server.store.purge_expired()
-                with self.server.store.lock:
-                    result=self.server.store.state();result['version']=VERSION;result['beta']=self.server.beta;result['public_maps']=self.server.sharing.front_links();result['address_task']=self.server.address_schedule.status()
-                return self.send(result)
+                return self.send(self.server.app_state(self.profile_token()))
             if path=='/api/storage':return self.send(self.server.store.storage_info())
+            if path=='/api/runtime/status':return self.send(self.server.runtime_status.status())
             if path=='/api/activity':return self.send({'items':self.server.store.activity()})
             if path=='/api/map':
                 with self.server.store.lock:
@@ -151,7 +200,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(s13_pdf(self.server.store.state(),year),'application/pdf')
             if path=='/api/export/backup':return self.send(snapshot(self.server.store,VERSION),'application/zip',headers={'Content-Disposition':'attachment; filename="Distrikt-sikkerhedskopi.zip"'})
             if path=='/api/address-source/status':return self.send(self.server.address_source.status())
-            if path=='/api/share/status':return self.send(self.server.sharing.status())
+            if path=='/api/connections/drive':
+                status=self.server.sharing.status()
+                return self.send({key:status.get(key) for key in ('connected','account')})
+            if path=='/api/share/status':
+                status=self.server.sharing.status()
+                if self.server.profiles.enabled and 'connections.manage' not in self.profile_user['permissions']:status.pop('account',None)
+                return self.send(status)
             if path=='/api/share/qr':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0]),'image/svg+xml')
             if path=='/api/restore/safety':
                 name=q.get('name',[''])[0]
@@ -159,9 +214,25 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send((self.server.store.root/'backups'/name).read_bytes(),'application/zip')
             if path=='/api/data-info':return self.send({'path':str(self.server.store.root),'cutoff':self.server.store.history_cutoff(),'server_mode':bool(self.server.access),'address':self.server.public_url})
             return self.send({'error':'Siden findes ikke.'},status=404)
-        except (ValueError,KeyError,TypeError) as e:self.send(error_payload(e),status=400)
+        except PermissionError:self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
+        except (ValueError,KeyError,TypeError) as e:self.send(error_payload(profile_error(e)),status=400)
         except Exception:self.send({'error':'Lokal læsefejl. Data er ikke sendt nogen steder.'},status=500)
     def do_POST(self):
+        # Never hold global account authority while waiting on a caller's body.
+        if not self.allowed(public=True):return
+        try:
+            length=int(self.headers.get('Content-Length',0))
+            limit=4095 if self.path=='/api/login' else MAX_ARCHIVE if self.path=='/api/restore/preview' else 16000000
+            if not 0<length<=limit:raise ValueError()
+            self.connection.settimeout(15)
+            payload=self.rfile.read(length)
+            if len(payload)!=length:raise ValueError()
+            self.rfile=io.BytesIO(payload)
+        except (ValueError,OSError):
+            self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
+        with self.profile_scope(post=True) as permitted:
+            if permitted:self._post()
+    def _post(self):
         if self.path=='/api/login':
             if not self.allowed(public=True):return
             try:
@@ -186,10 +257,17 @@ class Handler(BaseHTTPRequestHandler):
             if not 0<length<=16000000:raise ValueError('Forespørgslen er for stor eller tom.')
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
+            if self.profile_post(self.path,data):return
+            if self.path=='/api/runtime/test':return self.send(self.server.runtime_status.test_notification())
+            if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))
+            if self.path=='/api/photo/cancel':return self.send(self.server.photo_ocr.cancel(data.get('id')))
             if self.path=='/api/export/readable/prepare':return self.send(self.server.readable.prepare())
             if self.path=='/api/export/readable/image':return self.send(self.server.readable.image(data))
             if self.path=='/api/export/readable/finish':return self.send(self.server.readable.finish(data.get('token')),'application/zip',headers={'Content-Disposition':'attachment; filename="LTM-laesearkiv.zip"'})
             if self.path=='/api/logout':
+                if self.server.profiles.enabled:
+                    token=self.profile_token();self.server.profiles.bases.revoke_session(token);self.server.accounts.logout(token)
+                    return self.send({'ok':True},headers={'Set-Cookie':self.server.profiles.cookie_header('')})
                 if self.server.access:self.server.access.logout(self.headers.get('Cookie'))
                 cookie_name=self.server.access.cookie_name if self.server.access else 'distrikt_session'
                 return self.send({'ok':True},headers={'Set-Cookie':cookie_name+'=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'})
@@ -201,13 +279,15 @@ class Handler(BaseHTTPRequestHandler):
                     if self.server.downloads.active:raise ValueError('Vent på adressehentningen, eller sæt den på pause før nulstilling.')
                     with self.server.sharing.lock:
                         result=self.server.restores.reset_beta(data.get('confirmation'),data.get('revision'))
-                    self.server.downloads.jobs.clear();self.server.downloads.suggestion_cache.clear()
+                    self.server.downloads.jobs.clear();self.server.downloads.suggestion_cache.clear();self.server.profiles.bases.clear()
                 return self.send(result)
             if self.path=='/api/restore/apply':
                 with self.server.address_schedule.lock, self.server.downloads.lock:
                     if self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før nulstilling eller gendannelse.')
                     if self.server.downloads.active:raise ValueError('Sæt adressehentningen på pause før import.')
-                    with self.server.sharing.lock:return self.send(self.server.restores.apply(data.get('token')))
+                    with self.server.sharing.lock:
+                        result=self.server.restores.apply(data.get('token'));self.server.profiles.bases.clear()
+                        return self.send(result)
             if self.path=='/api/address-source/connect':return self.send(self.server.address_source.connect(data.get('api_key')))
             if self.path=='/api/address-source/check':return self.send(self.server.address_source.check())
             if self.path=='/api/address-source/diagnose':
@@ -232,6 +312,7 @@ class Handler(BaseHTTPRequestHandler):
                 with self.server.sharing.lock:self.server.sharing.drive.disconnect()
                 return self.send({'ok':True})
             if self.path=='/api/share/prepare':return self.send(self.server.sharing.prepare(data.get('card_id')))
+            if self.path=='/api/share/date-preview':return self.send(self.server.sharing.date_preview(data))
             if self.path=='/api/share/publish':return self.send(self.server.sharing.enqueue(data))
             if self.path=='/api/share/withdraw':return self.send(self.server.sharing.withdraw(data.get('card_id')))
             if self.path=='/api/share/retry':return self.send(self.server.sharing.retry(data.get('card_id')))
@@ -248,8 +329,24 @@ class Handler(BaseHTTPRequestHandler):
                 with self.server.address_schedule.lock:
                     if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.')
                     if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
-                    result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
-                    return self.send({'ok':True,'result':result,'revision':self.server.store.revision})
+                    with self.server.store.lock:
+                        generation=getattr(self.server.store,'geo_generation',0)
+                        editor_snapshot=None
+                        if self.server.profiles.enabled:
+                            from profile_policy import mutation
+                            mutation(self.profile_user,data.get('action'),data.get('data',{}),self.server.store)
+                            if data.get('action')=='address.task.configure':result=self.server.address_schedule.configure(data.get('data',{}))
+                            else:result,editor_snapshot=self.server.profiles.mutate(self.profile_token(),self.profile_user,data.get('action'),data.get('data',{}),data.get('profile_snapshot'))
+                        else:result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
+                        response={'ok':True,'result':result,'revision':self.server.store.revision,
+                            'geo_changed':getattr(self.server.store,'geo_generation',0)!=generation}
+                        if editor_snapshot:response['profile_snapshot']=editor_snapshot
+                        if data.get('include_state') is True and not str(data.get('action','')).endswith('.preview'):
+                            # The write is already committed. An optional read must never
+                            # turn its acknowledgement into a pre-commit rejection.
+                            try:response['state']=self.server.app_state(self.profile_token())
+                            except Exception:response['state_unavailable']=True
+                    return self.send(response)
             if self.path=='/api/open-data':
                 if not self.server.access:
                     if sys.platform=='darwin':subprocess.Popen(['/usr/bin/open',str(self.server.store.root)])
@@ -259,7 +356,11 @@ class Handler(BaseHTTPRequestHandler):
                 if self.server.access:raise ValueError('Stop serverversionen fra Home Assistant.')
                 self.send({'ok':True});threading.Thread(target=self.server.shutdown,daemon=True).start();return
             return self.send({'error':'Ukendt handling.'},status=404)
-        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send(error_payload(e),status=400)
+        except PermissionError:self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
+        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:
+            payload=error_payload(profile_error(e))
+            if str(e)=='Edit snapshot is unavailable':payload['code']='edit_base_unavailable'
+            self.send(payload,status=400)
         except Exception:self.send({'error':'Ændringen blev ikke gemt. Prøv igen; eksisterende data er bevaret.'},status=500)
 
 def running(data):
@@ -267,9 +368,9 @@ def running(data):
         info=json.loads((data/'run.json').read_text())
         url=info['url']
         parsed=urlsplit(url)
-        if parsed.scheme!='http' or parsed.hostname!='127.0.0.1':return None
+        if parsed.scheme!='http' or not private_client(parsed.hostname) or parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment:return None
         req=urllib.request.Request(url+'/api/ping')
-        with urllib.request.urlopen(req,timeout=1) as r:
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req,timeout=1) as r:
             ping=json.load(r)
         if ping.get('app')=='Distrikt':return dict(info,version=ping['version'])
     except Exception:pass
@@ -279,7 +380,7 @@ def stop_running(data):
     info=running(data)
     if info:
         req=urllib.request.Request(info['url']+'/api/shutdown',data=b'{}',method='POST',headers={'Content-Type':'application/json','X-Distrikt-Token':info['token']})
-        with urllib.request.urlopen(req,timeout=3) as r:r.read()
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req,timeout=3) as r:r.read()
     return bool(info)
 
 def acquire_lock(path):
@@ -294,8 +395,12 @@ def acquire_lock(path):
         return stream
     except OSError:stream.close();return None
 
-def main():
-    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--port',type=int,default=8787);args=p.parse_args()
+def main(argv=None):
+    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
+    if args.bind:
+        try:address=ipaddress.IPv4Address(args.bind)
+        except ValueError:raise ValueError('Vælg en privat IPv4-adresse til serveren.') from None
+        if not args.lan or not private_client(str(address)) or address.is_unspecified:raise ValueError('En bestemt netværksadresse kræver privat servertilstand.')
     data=Path(args.data_dir).expanduser().resolve();data.mkdir(parents=True,exist_ok=True,mode=0o700)
     if args.lan and (not args.serve or not args.access_host):raise ValueError('Servertilstand kræver --serve --lan --access-host med en lokal IP-adresse.')
     if args.stop:stop_running(data);return
@@ -320,10 +425,11 @@ def main():
     if info:return
     lock=acquire_lock(data/'app.lock')
     if lock is None:return
-    store=Store(data);server=Server(('0.0.0.0',args.port) if args.lan else ('127.0.0.1',0),store,access_host=args.access_host if args.lan else None,password=os.environ.pop('DISTRIKT_PASSWORD',None) if args.lan else None)
+    store=Store(data);server=Server((args.bind or '0.0.0.0',args.port) if args.lan else ('127.0.0.1',0),store,access_host=args.access_host if args.lan else None,password=os.environ.pop('DISTRIKT_PASSWORD',None) if args.lan else None)
     server.sharing.start()
     server.address_schedule.start()
-    run={'url':server.origin,'token':server.token,'pid':os.getpid(),'version':VERSION}
+    server.runtime_status.start()
+    run={'url':server.origin,'public_url':server.public_url,'token':server.token,'pid':os.getpid(),'version':VERSION}
     runpath=data/'run.json';runpath.write_text(json.dumps(run));os.chmod(runpath,0o600)
     def cleanup_loop():
         while not stop_event.wait(60):
@@ -332,6 +438,7 @@ def main():
     stop_event=threading.Event();threading.Thread(target=cleanup_loop,daemon=True).start()
     def shutdown(signum,frame):threading.Thread(target=server.shutdown,daemon=True).start()
     signal.signal(signal.SIGTERM,shutdown);signal.signal(signal.SIGINT,shutdown)
+    if hasattr(signal,'SIGBREAK'):signal.signal(signal.SIGBREAK,shutdown)
     try:server.serve_forever(poll_interval=.2)
     finally:
         stop_event.set();server.address_schedule.close();server.sharing.close();server.server_close();store.close()

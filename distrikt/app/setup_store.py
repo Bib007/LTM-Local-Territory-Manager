@@ -11,8 +11,7 @@ from admin_store import signature
 from geography import valid_polygon,point_in_polygon
 from territory_partition import partition,contained,overlaps
 from ui_errors import UIError,error_payload
-
-IB_HEADERS=['kortnummer','vejnavn','husnummer','postnummer','etage','dør','dato']
+from ib_import import HEADERS as IB_HEADERS
 
 def ib_template():return ('\ufeff'+';'.join(IB_HEADERS)+'\r\n').encode('utf-8')
 def clean(value):return re.sub(r'\s+',' ',str(value or '').strip()).casefold()
@@ -42,7 +41,7 @@ class SetupStore:
         events={
             'settings.save':('congregation','folder'),
             'print.profile.save':('printing',),
-            'publisher.save':('publisher',),
+            'publisher.save':('publisher',),'setup.publisher-import.apply':('publisher',),
             'card.save':('cards',),'card.bulk.create':('cards',),
             'setup.card-import.apply':('cards',),'setup.apply':('cards',),
             'geo.main.save':('boundary',),'setup.ib.apply':('ib',),
@@ -82,12 +81,14 @@ class SetupStore:
     def setup_remember(self,kind,payload):
         now=time.monotonic();self._setup_previews={k:v for k,v in self._setup_previews.items() if v['until']>now}
         if len(self._setup_previews)>=6:self._setup_previews.pop(next(iter(self._setup_previews)))
-        token=uuid.uuid4().hex;self._setup_previews[token]={'kind':kind,'until':now+1800,'expected':self.setup_signature(ib=kind=='ib'),'payload':payload}
+        token=uuid.uuid4().hex;self._setup_previews[token]={'kind':kind,'until':now+1800,'expected':signature(self.all('publishers')) if kind=='publishers' else self.setup_signature(ib=kind=='ib'),'payload':payload}
         return token
     def setup_require_preview(self,data,kind):
         p=self._setup_previews.get(data.get('token'))
         if not p or p['kind']!=kind or p['until']<=time.monotonic():raise ValueError('Forhåndsvisningen er udløbet. Lav et nyt forslag.')
-        if self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, veje, områder eller IB er ændret. Lav en ny forhåndsvisning.')
+        if kind=='publishers':
+            if signature(self.all('publishers'))!=p['expected']:raise ValueError('Forkynderlisten er ændret. Lav en ny forhåndsvisning før gruppeimport.')
+        elif self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, veje, områder eller IB er ændret. Lav en ny forhåndsvisning.')
         return p['payload']
     def setup_plan(self,data):
         options=defaults(data);main=self.main_boundary()
@@ -163,12 +164,21 @@ class SetupStore:
         payload={'areas':areas,'cards':proposed,'options':options,'uncovered':uncovered,'excluded':dict(excluded),'visits':sum(c['visits'] for c in proposed)}
         return dict(payload,token=self.setup_remember('cards',payload))
     def setup_mutate(self,action,data):
+        if action=='setup.publisher-import.preview':
+            from publisher_import import preview
+            return preview(self,data)
+        if action=='setup.publisher-import.apply':
+            from publisher_import import apply
+            return apply(self,data)
         if action=='setup.history-import.preview':
             from history_import import preview
             return preview(self,data)
         if action=='setup.history-import.apply':
             from history_import import apply
             return apply(self,data)
+        if action in ('setup.card-import.inspect','setup.ib.inspect'):
+            from column_import import describe
+            return describe({**data,'kind':'card' if action=='setup.card-import.inspect' else 'ib'})
         if action=='setup.card-import.preview':
             from card_import import preview
             return preview(self,data)
@@ -273,51 +283,16 @@ class SetupStore:
             if data.get('confirm')!='IMPORTÉR IB':raise ValueError('Skriv IMPORTÉR IB for at bekræfte importen.')
             payload=self.setup_require_preview(data,'ib')
             if payload['errors']:raise ValueError('Ret fejlene i importfilen, og lav en ny forhåndsvisning.')
+            if payload.get('warnings') and data.get('acknowledge') is not True:raise ValueError('Gennemgå og bekræft de manuelle linjer og manglende oplysninger før import.')
             affected=set()
             for row in payload['rows']:
                 if row['status']!='new':continue
-                self.put('ib',dict(row['record'],id=uuid.uuid4().hex));affected.add(row['record']['card_id'])
+                self._mutate('ib.save',row['record']);affected.add(row['record']['card_id'])
             for ident in affected:
                 c=dict(self.require('cards',ident));c['back_revision']=True;self.put('cards',c)
             return {'count':payload['new'],'skipped':payload['existing'],'cards':len(affected)}
         raise ValueError('Ukendt opsætningshandling.')
     def setup_ib_preview(self,data):
-        raw=data.get('content','')
-        if not isinstance(raw,str) or len(raw.encode('utf-8'))>2000000:raise ValueError('IB-filen må højst fylde 2 MB.')
-        sample=raw.lstrip('\ufeff');delimiter=';' if sample.split('\n',1)[0].count(';')>=sample.split('\n',1)[0].count(',') else ','
-        aliases={'kortnummer':'card','card':'card','vejnavn':'road','road':'road','husnummer':'number','husnr':'number','number':'number','postnummer':'postcode','postnr':'postcode','postcode':'postcode','etage':'floor','floor':'floor','dør':'door','doer':'door','door':'door','dato':'date','date':'date'}
-        reader=csv.DictReader(io.StringIO(sample),delimiter=delimiter)
-        if not reader.fieldnames:raise ValueError('Importfilen mangler kolonneoverskrifter.')
-        fields=[aliases.get(clean(n)) for n in reader.fieldnames]
-        if any(not x for x in fields) or len(set(fields))!=len(fields) or not {'road','number','postcode'}.issubset(fields):raise ValueError('Brug skabelonens kolonner: kortnummer, vejnavn, husnummer, postnummer, etage, dør, dato.')
-        from store import valid_day
-        default_day=valid_day(data.get('date') or date.today().isoformat())
-        cards=[c for c in self.all('cards') if not c.get('archived')];by_number={clean(c['number']):c for c in cards};lookup=defaultdict(list)
-        for c in cards:
-            for a in c.get('geo_addresses') or c.get('imported_addresses') or [self.get('geo',i) for i in c.get('address_ids',[])]:
-                if a:lookup[(clean(a['road']),clean(a['number']),str(a['postcode']))].append((c,a))
-        ibs=self.all('ib');seen=set();rows=[]
-        for line,values in enumerate(reader,2):
-            if line>5001:raise ValueError('Importfilen må højst indeholde 5.000 linjer.')
-            if not any(str(v or '').strip() for v in values.values()):continue
-            row={'line':line,'status':'error'}
-            try:
-                if None in values or any(v is None for v in values.values()):raise ValueError('Linjen har et forkert antal kolonner.')
-                v={aliases[clean(k)]:str(value).strip() for k,value in values.items()}
-                if any(len(value)>250 for value in v.values()):raise ValueError('Et felt er for langt.')
-                if not v.get('road') or not v.get('number') or not re.fullmatch(r'\d{4}',v.get('postcode','')):raise ValueError('Udfyld vejnavn, husnummer og firecifret postnummer.')
-                card_number=clean(v.get('card'))
-                if card_number and card_number not in by_number:raise ValueError('Kortnummeret findes ikke.')
-                candidates=lookup.get((clean(v['road']),clean(v['number']),v['postcode']),[])
-                if card_number:candidates=[(c,a) for c,a in candidates if c['id']==by_number[card_number]['id']]
-                candidates=[(c,a) for c,a in candidates if clean(a.get('floor'))==clean(v.get('floor')) and clean(a.get('door'))==clean(v.get('door'))]
-                if not candidates:raise ValueError('Adressen findes ikke entydigt på kortene. Kontrollér husnummer, etage/dør og kortets adressevalg.')
-                if len(candidates)!=1:raise ValueError('Flere adresser matcher. Angiv korrekt kortnummer, etage og dør.')
-                c,a=candidates[0];key=(c['id'],a['id']);day=valid_day(v.get('date') or default_day)
-                duplicate=key in seen or any(i['card_id']==c['id'] and (i.get('address_id')==a['id'] or clean(i.get('road'))==clean(a['road']) and clean(i.get('number')) in (clean(ib_number(a)),clean(a['number']))) for i in ibs)
-                row.update(status='existing' if duplicate else 'new',card_number=c['number'],label=a.get('label') or a['road']+' '+ib_number(a),date=day,record={'card_id':c['id'],'address_id':a['id'],'road':a['road'],'number':ib_number(a),'date':day});seen.add(key)
-            except (ValueError,TypeError) as error:row.update(error_payload(error))
-            rows.append(row)
-        if not rows:raise ValueError('Importfilen indeholder ingen IB-linjer. Udfyld skabelonen først.')
-        payload={'rows':rows,'new':sum(r['status']=='new' for r in rows),'existing':sum(r['status']=='existing' for r in rows),'errors':sum(r['status']=='error' for r in rows)}
+        from ib_import import preview
+        payload=preview(self,data)
         return dict(payload,token=self.setup_remember('ib',payload))

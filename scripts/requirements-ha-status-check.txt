@@ -1,0 +1,13 @@
+# Isolated schema/template checker only; not LTM runtime dependencies.
+homeassistant==2026.10.4
+numpy==2.5.4
+av==19.0.2
+PyTurboJPEG==1.8.3
+hassil==3.12.1
+home-assistant-intents==2026.10.27
+gazetteer-matcher==1.1.0
+pymicro-vad==2.1.0
+pyspeex-noise==2.0.1
+openai==3.42.0
+mutagen==1.48.1
+ha-ffmpeg==3.2.2

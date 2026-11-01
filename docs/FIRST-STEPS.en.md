@@ -8,6 +8,8 @@ Answers are saved first; **Finish tour** marks setup complete. The guide closes 
 
 With maps selected, the plan includes **Connect the address source · your own API key**. Follow the [Datafordeler guide](DATAFORDELER.en.md) and enter your key only in your local app.
 
+Import previous history, existing territory cards and your local do-not-call list under **Settings → Import**. **Follow-ups** brings together card checks, each changed print side, long-running assignments and pending address changes. Each independent item has its own row and count.
+
 You do not need to digitise every paper card before using LTM. Begin with the card numbers and existing assignments. Add geography and printing later, on those same records.
 
 These instructions describe the installed app. The browser demo uses invented records and does not import your data. The app defaults to Danish and offers English controls. Original forms and report content remain Danish.

@@ -19,7 +19,16 @@ def private_client(address):
     except ValueError:return False
 
 def write_private(path,value):
-    path=Path(path);tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(value));os.chmod(tmp,0o600);os.replace(tmp,path)
+    path=Path(path)
+    tmp=path.with_name(path.name+'.'+secrets.token_hex(8)+'.tmp')
+    try:
+        fd=os.open(str(tmp),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+        with os.fdopen(fd,'w',encoding='utf-8') as stream:
+            json.dump(value,stream);stream.flush();os.fsync(stream.fileno())
+        os.replace(tmp,path)
+    finally:
+        try:tmp.unlink()
+        except FileNotFoundError:pass
 
 class Access:
     def __init__(self,root,password=None):
@@ -56,7 +65,7 @@ class Access:
             cookies=SimpleCookie();cookies.load(value or '');return cookies[self.cookie_name].value if self.cookie_name in cookies else ''
         except Exception:return ''
 
-LOGIN='''<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LTM · Log ind</title><link rel="stylesheet" href="/style.css"><script src="/login.js" defer></script></head><body class="loginPage"><main><section class="panel"><h1>Local Territory Manager</h1><p data-ui="Privat adgang · hjemmenetværk og VPN">Privat adgang · hjemmenetværk og VPN</p><label for="loginLanguage" data-ui="Sprog">Sprog</label><select id="loginLanguage"><option value="da">Dansk</option><option value="en">English</option></select><h2 id="loginHeading" data-ui="Log ind">Log ind</h2><form id="loginForm" aria-labelledby="loginHeading"><label for="loginPassword" data-ui="Adgangskode">Adgangskode</label><input id="loginPassword" aria-describedby="loginError" name="password" type="password" autocomplete="current-password" maxlength="1024" required autofocus><p id="loginError" class="formError" role="alert"></p><button class="primary" type="submit" data-ui="Log ind">Log ind</button></form></section></main></body></html>'''
+LOGIN='''<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/theme.js"></script><title>LTM · Log ind</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/theme.css"><script src="/login.js" defer></script></head><body class="loginPage"><main><section class="panel"><h1>Local Territory Manager</h1><p data-ui="Privat adgang · hjemmenetværk og VPN">Privat adgang · hjemmenetværk og VPN</p><label for="loginLanguage" data-ui="Sprog">Sprog</label><select id="loginLanguage"><option value="da">Dansk</option><option value="en">English</option></select><h2 id="loginHeading" data-ui="Log ind">Log ind</h2><form id="loginForm" aria-labelledby="loginHeading"><label for="loginPassword" data-ui="Adgangskode">Adgangskode</label><input id="loginPassword" aria-describedby="loginError" name="password" type="password" autocomplete="current-password" maxlength="1024" required autofocus><p id="loginError" class="formError" role="alert"></p><button class="primary" type="submit" data-ui="Log ind">Log ind</button></form></section></main></body></html>'''
 
 if os.environ.get('LTM_CHANNEL')=='beta':
-    LOGIN=LOGIN.replace('<title>LTM · Log ind</title>','<title>LTM Beta · Log ind</title>').replace('<h1>Local Territory Manager</h1>','<h1>Local Territory Manager · Beta</h1>')
+    LOGIN=LOGIN.replace('<script src="/theme.js"></script><title>LTM · Log ind</title>','<title>LTM Beta · Log ind</title>').replace('<h1>Local Territory Manager</h1>','<h1>Local Territory Manager · Beta</h1>')

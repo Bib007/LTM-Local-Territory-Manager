@@ -67,6 +67,6 @@ class TransferHTTPTests(unittest.TestCase):
             with self.req(path) as r:self.assertEqual(r.status,200)
     def test_ha_package_is_private_and_has_no_api_privileges(self):
         root=Path(__file__).resolve().parents[1];cfg=(root/'config.yaml').read_text()
-        for text in ('ingress: false','host_network: false','hassio_api: false','homeassistant_api: false','backup_exclude:\n  - "*"'):self.assertIn(text,cfg)
+        for text in ('ingress: false','host_network: false','hassio_api: false','homeassistant_api: true','backup_exclude:\n  - "*"'):self.assertIn(text,cfg)
         self.assertNotIn('privileged:',cfg);self.assertNotIn('full_access:',cfg)
         self.assertIn('--lan', (root/'run.sh').read_text())

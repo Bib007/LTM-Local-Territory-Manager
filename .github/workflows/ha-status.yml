@@ -1,0 +1,18 @@
+name: HA status blueprint
+on:
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - name: Install isolated official HA schema checker
+        run: python -m pip install -r scripts/requirements-ha-status-check.txt
+      - name: Fictional blueprint schemas and message templates
+        run: python scripts/check_ha_status_blueprint.py

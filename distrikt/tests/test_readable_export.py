@@ -69,6 +69,20 @@ class ReadableExportTests(unittest.TestCase):
             self.export.prepare()
         self.assertLessEqual(sum(call.args==('geo',) and not call.kwargs.get('deleted',False) for call in reads.call_args_list),2)
 
+    def test_unknown_manual_counts_remain_unknown_in_print_and_csv(self):
+        from readable_export import fronts_pdf, tables
+        state=self.store.state()
+        state['cards']=[{'id':'manual','number':'F107','addresses':[{'road':'Fiktiv intervalvej','numbers':'1–19','count':0,'count_unknown':True}]}]
+        front=fronts_pdf(state)
+        self.assertIn(b'bes',front);self.assertIn(b'ikke angivet',front)
+        self.assertNotIn(b'(0 bes',front)
+        files=tables(state,[])
+        text=files['CSV/adresser.csv'].decode('utf-8-sig')
+        self.assertIn('besøg ukendt',text);self.assertIn('1–19',text)
+        import csv
+        rows=list(csv.reader(io.StringIO(text),delimiter=';'))
+        self.assertEqual(rows[1][9],'')
+
     def test_csv_formulas_and_multiline_values(self):
         import csv
         rows=list(csv.reader(io.StringIO(csv_file(['tekst'],[['=1+1'],['+Fiktiv'],['@SUM(1)'],['Linje\n"to";æøå']]).decode('utf-8-sig')),delimiter=';'))

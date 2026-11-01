@@ -48,7 +48,26 @@ def check():
             try:process.wait(timeout=5)
             except subprocess.TimeoutExpired:process.kill();process.wait(timeout=5)
             if process.stderr:process.stderr.close()
-    print('Real package: identical ZIPs, every HA checksum, extracted desktop startup, empty local data and matching version passed.')
+        launcher=root/'unpacked/Distrikt-lokal/app/launcher.py';guide_root=root/'fictional start guide'
+        for name in ('Start-LTM.cmd','Start-LTM.command','Start-LTM.sh'):
+            if not (launcher.parent.parent/name).is_file():raise ValueError('Missing shared start file: '+name)
+        local_data=guide_root/('Distrikt-beta' if '-beta.' in build_release.version() else 'Distrikt')
+        try:
+            result=subprocess.run([sys.executable,str(launcher),'--root',str(guide_root),'--no-browser'],input='1\n',text=True,capture_output=True,timeout=20)
+            if result.returncode:raise RuntimeError('Extracted shared start guide failed: '+result.stderr)
+            info=json.loads((local_data/'run.json').read_text())
+            with urllib.request.urlopen(info['url']+'/api/ping',timeout=3) as response:
+                if json.load(response)['version']!=build_release.version():raise ValueError('Start guide launched the wrong version.')
+        finally:
+            subprocess.run([sys.executable,str(launcher.parent/'server.py'),'--data-dir',str(local_data),'--stop'],check=True,capture_output=True,timeout=10)
+            for _ in range(100):
+                if not (local_data/'run.json').exists():
+                    try:(local_data/'start.log').unlink(missing_ok=True)
+                    except PermissionError:pass
+                    else:break
+                time.sleep(.05)
+            else:raise RuntimeError('Shared start guide did not stop and release its data.')
+    print('Real package: identical ZIPs, HA checksums, extracted legacy/shared starts, empty isolated data and matching versions passed.')
 
 
 if __name__=='__main__':check()

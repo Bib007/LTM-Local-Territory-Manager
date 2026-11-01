@@ -8,7 +8,7 @@ const c={console,Date,Intl,Math,Number,String,Map,Set,Array,Object,JSON,Promise,
  setTimeout(){},clearTimeout(){},frontResizeObserver:null,DistrictMap:{dispose(){}},
  window:{addEventListener(){},confirm(){return true;}},document:{getElementById:get,querySelector(){return {content:'INVENTED_TOKEN'};},addEventListener(k,fn){(listeners[k]??=[]).push(fn);}},
  fetch:async(url,options)=>{requests.push({url,options});return {ok:true,json:async()=>({warning:'Servertekst <invented>',token:'INVENTED_RESTORE',counts:{cards:3,ib:2}})};}};
-vm.createContext(c);for(const name of ['i18n.js','workspace.js','navigation.js','transfer-ui.js'])vm.runInContext(read(name),c);
+vm.createContext(c);for(const name of ['i18n.js','workspace.js','navigation.js','transfer-ui.js','address-source-ui.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);
 const run=s=>vm.runInContext(s,c);
 run(`ShareUI={html:()=>''};GeoUI={load:async()=>{}};state={today:'2026-10-16',version:'1.12.0-beta.7',

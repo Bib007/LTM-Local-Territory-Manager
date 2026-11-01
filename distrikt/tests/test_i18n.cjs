@@ -15,7 +15,8 @@ function environment(storedLanguage,blocked=false){
  for(const file of ['i18n.js','navigation.js','workspace.js','onboarding.js','welcome.js'])vm.runInContext(source(file),context);
  return {context,nodes,listeners,stored,writes,opened,run:s=>vm.runInContext(s,context)};
 }
-const e=environment();assert.equal(e.run('I18n.language()'),'da');
+assert.equal(environment().run('I18n.language()'),'en');
+const e=environment('da');assert.equal(e.run('I18n.language()'),'da');
 assert.match(e.run('Navigation.html()'),/Distriktskort/);
 assert.match(e.run('Navigation.html()'),/value="da" selected/);
 const before=JSON.stringify(e.context.state),draft=e.nodes.form;
@@ -37,8 +38,8 @@ e.run('Onboarding.open(2)');e.listeners.change.forEach(fn=>fn({target:{id:'onboa
 assert.equal(e.run('Onboarding.step'),2);assert.match(e.opened.at(-1),/How would you like to create cards/);assert.match(e.opened.at(-1),/lang="en"/);
 assert.match(e.nodes.nav.innerHTML,/Territory cards/);assert.equal(JSON.stringify(e.context.state),before);
 assert.equal(environment('en').run('Welcome.language()'),'en');
-assert.equal(environment('unsupported').run('I18n.language()'),'da');
-const denied=environment('en',true);assert.equal(denied.run('I18n.language()'),'da');
+assert.equal(environment('unsupported').run('I18n.language()'),'en');
+const denied=environment('en',true);assert.equal(denied.run('I18n.language()'),'en');
 denied.run("I18n.set('en');Navigation.localize()");assert.equal(denied.run('Welcome.language()'),'en');
 const html=source('index.html');assert(html.indexOf('/i18n.js')<html.indexOf('/navigation.js'));
 assert(html.includes('lang="da"'));assert(!html.includes('Lokalt på din Mac'));

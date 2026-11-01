@@ -23,6 +23,8 @@ jobs:
         run: python scripts/check_release_smoke.py
       - name: Isolated HA beta package contracts
         run: python -m unittest discover -s scripts -p test_build_beta.py -v
+  ha-status-blueprint:
+    uses: ./.github/workflows/ha-status.yml
   python:
     runs-on: ubuntu-latest
     strategy:
@@ -49,11 +51,24 @@ jobs:
           node-version: '24'
       - name: All synthetic JavaScript contracts
         run: for testfile in distrikt/tests/test_*.cjs; do node "$testfile" || exit 1; done
+      - name: Fictional demo and shared product design
+        run: |
+          python scripts/sync_demo_design.py --check
+          python scripts/test_build_demo.py
+          node demo/test_model.cjs
+          node demo/test_ui.cjs
+          python scripts/build_demo.py
       - name: Install isolated browser test tool
         run: |
           npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
+      - name: Light appearance and preserved local drafts
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_THEME=light node scripts/check_desk_browser.cjs
+      - name: Light touch appearance in WebKit
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_THEME=light LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit node scripts/check_desk_browser.cjs
+      - name: Fictional product-layout demo browser workflows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_demo_browser.cjs
       - name: Offline geographic editor browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
       - name: Unified setup and required tour browser workflows
@@ -64,6 +79,14 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_desk_browser.cjs
       - name: Touch phone and tablet daily workflows in WebKit
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_TOUCH=1 LTM_BROWSER_ENGINE=webkit LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_desk_browser.cjs
+      - name: Real server image import and security policy
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_photo_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_photo_browser.cjs
+      - name: Real application profiles and concurrent saves
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_profiles_app_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_profiles_app_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks

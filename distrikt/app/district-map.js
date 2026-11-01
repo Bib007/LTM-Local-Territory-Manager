@@ -33,7 +33,7 @@ const DistrictMap={map:null,layer:null,id:'',road:'',gesture:null,
  },
  mount(id){this.dispose();MapBackground.mode='road';this.id=id;this.road='';const node=el('districtMap');if(!node||typeof L==='undefined')return;node.innerHTML='';this.map=L.map(node,{preferCanvas:true,minZoom:8,maxZoom:21,attributionControl:true});this.layer=L.layerGroup().addTo(this.map);MapBackground.attach('districtMap',this.map,()=>this.draw(false),()=>{this.road='';if(el('districtMapRoad'))el('districtMapRoad').value='';this.draw(true);});this.draw();this.gesture=DistrictMapGesture.attach(this.map,node,el('districtMapActivate'),el('districtMapGestureHint'));},
  draw(fit=true){if(!this.map)return;this.layer.clearLayers();const c=card(this.id),all=MapExport.members(this.id),members=all.filter(a=>!this.road||a.road===this.road),points=MapExport.boundsPoints(this.id);
-  for(const r of MapBackground.roads()?GeoUI.data.roads:[])L.polyline(r.points.map(p=>[p[1],p[0]]),{color:'#adb8bf',weight:4}).addTo(this.layer).bindTooltip(String(r.name||r.road||''));
+  for(const r of MapBackground.roads()?GeoUI.data.roads:[])L.polyline(r.points.map(p=>[p[1],p[0]]),{color:'#adb8bf',weight:4}).addTo(this.layer).bindTooltip(esc(String(r.name||r.road||'')));
   if(MapBackground.roads())GeoUI.drawDividers?.(this.layer);
   for(const b of MapBackground.buildings()?GeoUI.data.buildings:[])L.polygon(b.points.map(p=>[p[1],p[0]]),{color:'#9daba4',weight:1,fillColor:'#d1d8d1',fillOpacity:.8}).addTo(this.layer);
   if(c.geo_polygon?.length)L.polygon(c.geo_polygon.map(p=>[p[1],p[0]]),{color:cardColor(c),weight:2,fillOpacity:.05,dashArray:'6 4'}).addTo(this.layer);

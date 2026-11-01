@@ -16,7 +16,7 @@ module.exports=async(browser,out)=>{
    if(u.pathname==='/api/ping')return json({ok:true});
    if(u.pathname==='/api/geo/job')return json({status:'idle'});
    if(u.pathname==='/api/setup/job')return json({status:'done',response:{result:fixture.plan,revision:fixture.state.revision}});
-   if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
+   if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
    if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();assert.equal(body.action,'setup.preview','Never create or modify cards in browser fixture');assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(Number(body.data.target),40);assert.equal(body.data.areas[0].name,'Fiktivt prøveområde');assert.equal(body.data._async,true);requests.push(body);return json({result:{job_id:'fictional-preview'},revision:fixture.state.revision});}
    const file=path.resolve(root,'.'+(u.pathname==='/'?'/index.html':u.pathname));assert.ok(file.startsWith(root+path.sep));assert.ok(fs.existsSync(file),'Unexpected asset '+u.pathname);return route.fulfill({path:file});
   });

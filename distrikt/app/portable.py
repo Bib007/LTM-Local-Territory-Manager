@@ -32,7 +32,15 @@ def snapshot(store,version):
             for module,name in MODULES.items():
                 target=Path(temp)/(name+'.sqlite3')
                 db=sqlite3.connect(str(target))
-                try:store.db.backup(db,name=store.alias(module))
+                try:
+                    store.db.backup(db,name=store.alias(module))
+                    if module=='geo':
+                        # Legacy custom connection values are not record-backup data.
+                        db.execute('PRAGMA secure_delete=ON')
+                        for ident,payload in db.execute('SELECT id,payload FROM records WHERE id=?',('config',)).fetchall():
+                            item=json.loads(payload);item.pop('token',None)
+                            db.execute('UPDATE records SET payload=? WHERE id=?',(json.dumps(item,ensure_ascii=False),ident))
+                        db.commit();db.execute('VACUUM')
                 finally:db.close()
                 z.write(target,target.name)
             z.writestr('manifest.json',json.dumps({'format':'distrikt-backup','schema':1,'version':version,'created':datetime.now(timezone.utc).isoformat(),'databases':list(MODULES.values())}))
@@ -100,6 +108,7 @@ class Restores:
             data=self.pending.get(token)
             if not data or data['expires']<time.monotonic():raise ValueError('Forhåndsvisningen er udløbet. Vælg sikkerhedskopien igen.')
             if digest(self.store)!=data['digest']:raise ValueError('Data er ændret siden forhåndsvisningen. Vælg sikkerhedskopien igen.')
+            local_geo_token=(self.store.get('geo','config') or {}).get('token')
             folder=self.store.root/'backups';folder.mkdir(mode=0o700,exist_ok=True)
             filename='foer-import-'+datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+secrets.token_hex(3)+'.zip'
             target=folder/filename;target.write_bytes(snapshot(self.store,self.version));os.chmod(target,0o600)
@@ -110,11 +119,20 @@ class Restores:
                     self.store.db.execute('DELETE FROM '+alias+'.records')
                     self.store.db.executemany('INSERT INTO '+alias+'.records(id,payload,deleted_at,batch) VALUES(?,?,?,?)',rows)
                 self.store.migrate_tasks()
+                # Record restore cannot replace the destination's connection value.
+                config=self.store.get('geo','config')
+                if config is not None or local_geo_token:
+                    config=config or {'id':'config'}
+                    config.pop('token',None)
+                    if local_geo_token:config['token']=local_geo_token
+                    self.store.put('geo',config)
                 # Never resume public uploads from a different installation or an older backup.
                 for item in self.store.all('maps'):
                     if item.get('entity')=='publication':
+                        # Imported identities are never authority for live Drive operations.
+                        item={key:item[key] for key in ('id','entity','card_id') if key in item}
                         item.update(status='review',error='Kontrollér kortbilledet og publicér igen efter import.')
-                        item.pop('queued_png',None);self.store.put('maps',item)
+                        self.store.put('maps',item)
             self.pending.clear()
             return {'ok':True,'safety_backup':filename}
 

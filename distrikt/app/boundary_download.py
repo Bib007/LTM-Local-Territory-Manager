@@ -5,8 +5,9 @@ from datetime import datetime, timezone
 from admin_store import signature
 from address_checkpoint import GRAPHQL_SOURCE, checkpoint_source, require_source
 from dar_download import road_lines
+from dar_paging import IncompleteLimit
 from geography import wgs84_to_utm32, point_in_polygon
-from postcode import HOST, BASE, Paused, SourceUnavailable, SourceTimeout, SourceLimit, rest_addresses, rest_road_lines
+from postcode import HOST, BASE, Paused, SourceUnavailable, SourceTimeout, SourceLimit, SourceTransient, rest_addresses, rest_road_lines
 
 def boundary_tiles(points):
     projected=[]
@@ -48,14 +49,15 @@ class BoundaryDownload:
         require_source(manifest,self.source_id(),self.source_schema())
         manifest['status']='running';self.store.mutate('geo.main.download.save',{'manifest':manifest})
         tiles=manifest['tiles'];total=len(tiles);done=sum(t['status']=='done' for t in tiles)
-        stop_reason=''
+        self.received_addresses(ident for tile in tiles if tile['status']=='done' for ident in tile.get('address_ids',[]))
+        stop_reason='';retry={'retryable':True,'reason':'partial','retry_after':0}
         temporal={'Status':3,'VirkningFra':manifest['snapshot'],'RegistreringFra':manifest['snapshot']}
         try:
             index=0
             while index<len(tiles):
                 tile=tiles[index]
                 if tile['status']=='done':index+=1;continue
-                self.check_cancel();progress(completed=done,total=total,message=f'Henter udsnit {index+1} af {total} indenfor grænsen…')
+                self.check_cancel();progress(completed=done,total=total,message=f'Henter udsnit {index+1} af {total} indenfor grænsen…',activity='Henter adresser fra området…')
                 w,s,e,n=tile['bbox'];params=dict(temporal,Vest=w,Syd=s,Oest=e,Nord=n)
                 try:
                     if checkpoint_source(manifest)==GRAPHQL_SOURCE:
@@ -77,26 +79,31 @@ class BoundaryDownload:
                             road=(item.get('husnummer') or {}).get('navngivenVej') or {}
                             if road.get('id_lokalId'):roads[road['id_lokalId']]=road
                         lines=rest_road_lines(roads.values())
-                    self.check_cancel();tile.update(status='done',count=len(addresses),address_ids=[a['id'] for a in addresses]);tile.pop('error',None)
+                    self.check_cancel();progress(activity='Kontrollerer og gemmer adresser lokalt…')
+                    self.received_addresses(a['id'] for a in addresses)
+                    tile.update(status='done',count=len(addresses),address_ids=[a['id'] for a in addresses]);tile.pop('error',None)
                     self.store.mutate('geo.main.download.tile',{'manifest':manifest,'records':addresses,'lines':lines})
                     done+=1
-                except (SourceTimeout,SourceLimit) as err:
+                except (SourceTimeout,SourceLimit,IncompleteLimit) as err:
                     self.check_cancel();children=smaller_tiles(tile)
                     if children and len(tiles)+3<=500:
                         tiles[index:index+1]=children;total=len(tiles)
                         self.store.mutate('geo.main.download.save',{'manifest':manifest})
-                        progress(completed=done,total=total,message=f'Udsnit {index+1} nåede tids- eller størrelsesgrænsen. Området er delt i fire mindre udsnit; fortsætter…')
+                        progress(completed=done,total=total,message=f'Udsnit {index+1} nåede tids-, størrelses- eller opslagsgrænsen. Området er delt i fire mindre udsnit; fortsætter…',activity='Deler området i mindre udsnit og fortsætter…')
                         continue
                     tile.update(status='error',error=str(err));stop_reason=f'Hentningen er stoppet ved udsnit {index+1}. '+str(err)
+                    retry={'retryable':isinstance(err,SourceTimeout),'reason':'timeout' if isinstance(err,SourceTimeout) else 'limit','retry_after':0}
                     self.store.mutate('geo.main.download.save',{'manifest':manifest})
                     progress(completed=done,total=total,message=stop_reason)
                     break
                 except SourceUnavailable as err:
+                    retry={'retryable':isinstance(err,SourceTransient) or getattr(err,'retry_after',0)>0,'reason':'transient' if isinstance(err,SourceTransient) else 'source','retry_after':getattr(err,'retry_after',0)}
                     tile.update(status='error',error=str(err));stop_reason=f'Hentningen er stoppet ved udsnit {index+1}. '+str(err)
                     self.store.mutate('geo.main.download.save',{'manifest':manifest})
                     progress(completed=done,total=total,message=stop_reason)
                     break
                 except ValueError as err:
+                    retry={'retryable':False,'reason':'validation','retry_after':0}
                     tile.update(status='error',error=str(err));self.store.mutate('geo.main.download.save',{'manifest':manifest})
                 progress(completed=done,total=total);index+=1
             manifest['status']='complete' if done==total else 'partial'
@@ -109,7 +116,7 @@ class BoundaryDownload:
             count=sum(a.get('entity')=='address' and not a.get('retired') and point_in_polygon([a['lng'],a['lat']],points) for a in self.store.all('geo'))
         if manifest.get('empty_result'):
             warnings.append('DAR returnerede ingen adresser indenfor den gemte grænse. Kontrollér grænsen, og prøv en enkelt vej. En kontrolleret forbindelse bekræfter ikke, at adresser er hentet.')
-        return {'count':count,'complete':done==total,'warnings':warnings,'empty':bool(manifest.get('empty_result')),
+        return {'count':count,'complete':done==total,'warnings':warnings,'empty':bool(manifest.get('empty_result')),'retry':retry,
             'fetched_count':len({ident for tile in tiles for ident in tile.get('address_ids',[])}),
             'bbox':[min(p[0] for p in points),min(p[1] for p in points),max(p[0] for p in points),max(p[1] for p in points)],
             'note':f'{count} lokale adresser indenfor grænsen · {done}/{total} udsnit. '+('Ingen adresser fundet. Kontrollér grænsen, og prøv en enkelt vej.' if manifest.get('empty_result') else 'Alle udsnit er hentet og kontrolleret.' if done==total else (stop_reason+' Færdige udsnit er bevaret. Fortsæt senere under Samlet distriktsgrænse.' if stop_reason else 'Hentningen er ufuldstændig. Fortsæt for at genprøve de manglende udsnit.'))}

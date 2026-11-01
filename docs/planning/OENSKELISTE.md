@@ -1,5 +1,445 @@
 # Ønskeliste og nye opgaver
 
+## Current candidate — 1.12.2
+
+Beta.83 is verified publicly released; see [exact verification](BETA-83-VERIFICERING.md). W121/W123 roles/guides, W127 column import, fictional two-role demo and English-first entry documentation are now integrated in the local stable candidate. Original printed forms remain unchanged. The separate bilingual website is live at https://localterritorymanager.netlify.app. Final release checks/publication are in progress; stable1.12.2 is not yet reported released. Historical status below is retained.
+
+## Aktuel oversigt · beta.83-kandidat · 1.11.2026
+
+Beta.83 samler W124-gemning, W126-rundtur, W125-manuelle onlinekort, lokal rapport/sprog og afgrænsede sikkerhedsrettelser. Samlet kontrol og offentlig verifikation mangler endnu. W121/W123 og W127 er sikret som patches til næste runde; de tælles ikke som frigivet. Ingen nye brede undersøgelser.
+
+Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.82 er verificeret udgivet med profiler, læsbare rettelser, onlinekortets datoer, tjenestegrupper og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Ejerens nye besked 1.11.2026 beder om det nødvendige arbejde til næste stabile udgivelse og om relevante senere punkter. Udgivelse afventer færdige funktioner og kontroller. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+
+### Beta.82 · verificeret udgivet · gældende status
+
+W106 og den grafiske konfliktvisning er frigivet fra `c59a343b62d3eb26afa05585ba80eabfb742b959`. Alle tre udgivelseskontroller er completed/success på samme kilde. Begge offentlige ZIP-pakker og alle **155 filer** i betakanalen matcher lokale bygninger byte for byte. [Præcis kontrol](BETA-82-VERIFICERING.md). Stabil er fortsat 1.12.1.
+
+**Aktuel fremdrift: 104/127 afsluttet eller afklaret, 23 åbne, cirka 82 %.** W106 tæller som frigivet. W65 er åben til stabilslutkontrol; den konkrete grafikrettelse er klar i beta.82. W13 er nu rettet lokalt til kalenderår, tjenesteår, rullende 12 måneder og aktuelle antal/udlevering, uden IB-tal, besøgsskøn eller personliste. Periodegrænser, gentagelser, arkiverede hændelser og kendte gennemgangsdatoer er afprøvet. Den rigtige PDF har én oversigtsside, tre kortsider, bestand og uændret original S-13. Chromium består 320/390/768/1440 px, og PDF'en er visuelt gennemset. Rapportændringen er ikke frigivet i beta.82.
+
+Profiladministration, kontobackup, påmindelse og grafisk konfliktgennemgang er nu også lokalt oversat med bevarede brugerdata, kladder, fokus og samme handlinger. Rigtig browser afprøver sprogskift midt i rolle- og brugeroprettelse samt inde i en åben konflikt. W58 er fortsat åben til samlet sprogslutkontrol; den ærlige mærkning om delvis oversættelse bevares. Ingen OCR eller automatisk kortinddeling er genoptaget.
+
+### W106 og grafisk profilopfølgning · tidligere beta.82-kandidat · 1.11.2026
+
+Onlinekortets faktiske datoer vises i et præcist serverdannet preview. Efter konkret godkendelse gemmes det offentlige billedgrundlag i en privat cache, så kun de to datofelter kan ajourføres på samme Google-fil/QR. Konkrete datostempler og aktuelle rettigheder genkontrolleres ved godkendelse. Den gamle adgang lukkes før erstatning, og nye hændelser under upload forhindrer åbning af et forældet billede. Grænse-/adresse-/IB-ændringer kræver fortsat nyt preview. Datagendannelse fjerner automatisk opdateringsgodkendelse; et manuelt stop bevares også ved mistet Google-bekræftelse. Tretten målrettede datoprøver, 37 eksisterende delingsprøver, rigtig HTTP og offline browser/PNG-pipeline er afprøvet med opdigtede data. Ingen ejerinstallation eller privat Google-konto er brugt.
+
+Ejerens kodeprægede konfliktvisning er erstattet af læsbare felter og en lokal grænsegrafik. Den rå evidens og de samme valg/godkendelser bevares uændret. Rigtig lokal browser med to brugere og modstridende vejnavne består ved 390 px; billedet er visuelt gennemset. Den nye visning er endnu ikke frigivet. Beta.82 er kandidat, og offentlig udgivelse/kanalverifikation mangler; W106/W65 tælles fortsat åbne. [Datovejledning](../ONLINEKORT-DATOER.md).
+
+### Beta.81 · tidligere verificeret udgivelse
+
+W108 er frigivet fra `48d69183969eaaafcd3830bb29ae78335b59c827`: tjenestegrupper, gruppefunktion/pioner og godkendt lokal Excel-/CSV-gruppeimport med bevaret identitet, udlån og historik. Checks **41290427578**, Platformskontrol **41290427568** og HA beta release **41290427605** er completed/success på samme kilde. Begge offentlige ZIP-pakker og alle **150 filer** i betakanalen matcher lokale bygninger byte for byte. [Præcis kontrol](BETA-81-VERIFICERING.md).
+
+**Fremdrift ved beta.81: 103/119 afsluttet eller afklaret, 16 åbne, cirka 87 %.** W106 er under lokal udvikling og er ikke med i beta.81. W65 mangler bl.a. ejerens konkrete nye ønske om en grafisk konfliktvisning uden kode/JSON; valg af rettelser er bekræftet. Kontobackup og vejintervaller er nu også ejerbekræftet. [Fuld kildetekst](EJERSVAR-2026-11-01-PROFILER.md). W13 og sprogslutkontrol er åbne. OCR/automatisk kortinddeling er stadig på pause.
+
+### W108 · lokal kontrol før verificeret beta.81 · 1.11.2026
+
+Tjenestegruppe, gruppefunktion og pioner er integreret i normal forkynderredigering, gruppefilter, læseeksport og privat databackup. Lokal XLSX-/CSV-import viser nye/ændrede/uændrede personer og før/efter-data, kræver udtrykkelig samlet godkendelse og bruger samme validering som almindelig redigering. Entydigt navnematch bevarer id, udlån og historik. Dubletter, tvetydige navne og flere samme gruppefunktion i én gruppe afvises konkret. Funktioner kan byttes atomisk. En fuld import med 5.000 opdigtede navne er lokalt prøvet uden gentagne databasescanninger. Gruppebetegnelser giver ingen brugerrettigheder.
+
+Ni målrettede dataprøver, rigtig HTTP med to sessioner, ændrede rettigheder, konkrete konflikter, privat backup/gendannelse og almindeligt Chromium-forløb med Excel-download/upload og mobilbredde består. JavaScript prøver også mistet kvittering, efterfølgende læsefejl, nyere kladder og forsinket filvalg. Efterfølgende er beta.81 verificeret udgivet med offentlig pakke-/kanalverifikation. W108 tæller nu som frigivet. [Vejledning](../TJENESTEGRUPPER.md).
+
+Ejerens to konkrete HA-beskedprøver er bekræftet med “virker!” og “Virker!”, bevaret fuldt i [ejersvar](EJERSVAR-2026-11-01.md) på GitHub og i Google-historikken og fjernet fra den aktive tabel. Der er 26 resterende spørgsmål/prøver; ingen generel HA-/Drive-/gendannelsesprøve bestilles igen.
+
+### Beta.80 · tidligere verificeret udgivelse
+
+W107 er frigivet fra `cf92787808b820edf72121400f0a901512ef47b3`: registerkort, importerede vejintervaller, ukendte besøgstal og senere geografisk adressevalg på samme kort. Checks **41250233958**, Platformskontrol **41250234017** og HA beta release **41250234027** er completed/success på samme præcise kilde; 601 Python-prøver og de normale browser-/platforms-/pakkekontroller består. Begge offentlige ZIP-pakker og alle **147 filer** på betakanalen er sammenlignet byte for byte med lokale bygninger. [Præcis verificering](BETA-80-VERIFICERING.md).
+
+**Fremdrift ved beta.80: 102/119 afsluttet eller afklaret, 17 åbne, cirka 86 %.** W65 er fortsat åben til stabilslutkontrol. W106 og W108 samt den afgrænsede W13-kontrol og sprogslutkontrollen mangler før næste stabile. De konkrete W107-prøver er klar i Google-tabellen. Allerede godkendte generelle HA-/Drive-/datagendannelsesprøver gentages ikke. Ingen OCR genoptaget. Historiske kandidatstatusser nedenfor går ikke foran denne oversigt.
+
+### Beta.79 · tidligere verificeret udgivelse
+
+**Beta.79 er verificeret udgivet** fra `9c15398b90a582eadd85c0318a599343fa93cec2` med W117: Excel-/CSV-import af IB, tydelige mangler, gennemgåede manuelle linjer på valgte kort, postnummerpåmindelse og normal efterfølgende rettelse. Checks **41247984241**, Platformskontrol **41247984256** og HA beta release **41247984304** er completed/success på samme præcise kilde. Begge offentlige pakker og alle **147 filer** på betakanalen matcher lokale bygninger byte for byte. [Præcis verificering](BETA-79-VERIFICERING.md). Første kandidat blev stoppet før publicering, så en bevist fejl ved hurtigt filskift kunne rettes og alle kontroller køres igen.
+
+### W107 · lokal kontrol før verificeret beta.80
+
+Excel-/CSV-import accepterer rene kortnumre og bogstavelige intervaller. Ukendt besøgstal bevares i redigering, print, CSV, profilers datavisning og nye gennemgange. Senere geografisk adressevalg bevarer samme kortnummer, IB og tidligere hændelser. Ingen automatisk fortolkning af interval eller bagudrettet ændring af ukendte besøgstal. Den opdaterede Excel-skabelon er gennemset visuelt og kontrolleret for bevarede faner, tekstformater, frysning og valideringsregler. 599 samlede Python-prøver (én forventet udeladelse), seks målrettede interval-/registerprøver, hele JavaScript-sættet, almindeligt Chromium-forløb med rigtig lokal server, 16 pakkeprøver, fem betaprøver og rigtig arkiv-/opstartskontrol består. Efterfølgende er samtlige udgivelseskontroller og offentlig pakke-/kanalverifikation bestået på ovenstående kilde. W107 tæller nu som frigivet.
+
+### W117 · historisk kandidatstatus før beta.79
+
+Første kandidat `133095991bfbaad30e518d5adfe7e3c4c8720bab` blev stoppet før publicering (kørsel **41232252899**), så en bevist fejl ved hurtigt filskift kunne rettes. Den rettede udgave består målrettet JavaScript og det rigtige browserforløb med en forsinket ældre forespørgsel og nyere XLSX-indlæsning. Alle udgivelseskontroller køres igen på den rettede kilde. Ingen beta.79 er publiceret eller overskrevet.
+
+Excel-skabelon, lokal XLSX/CSV-upload, synlige mangler, udtrykkeligt godkendte manuelle linjer på et valgt kort, dubletter, vedvarende postnummerpåmindelse og normal efterfølgende rettelse er integreret og prøvet lokalt. 594 Python-prøver, JavaScript, målrettet rigtig HTTP/browser og mobilvisning består. To sessioners uafhængige dato-/postnummerrettelser bevares; modstridende postnumre gemmes til gennemgang. [Vejledning og afgrænsning](../IB-EXCEL.md). Ingen OCR genoptaget. Kandidaten er 1.12.2-beta.79; udgivelseskontroller og offentlig pakkekontrol mangler. Senest verificerede beta er stadig .78; fremdriften er fortsat 100/119 og 19 åbne.
+
+### Beta.78 · verificeret udgivet · gældende status
+
+**Beta.78 er verificeret udgivet** fra `e591b684854e58698df6dcd7e9ac83ba38356d5b`. W110 og W111 er frigivet. Checks **41230111622**, Platformskontrol **41230111642** og HA beta release **41230111692** er completed/success på samme præcise kilde. Begge offentlige ZIP-pakker og alle **146 filer** på betakanalen matcher lokale bygninger byte for byte. [Præcis verificering](BETA-78-VERIFICERING.md). HA-driftsstatusens nye lokale Core-API-rettighed og afgrænsning er beskrevet i vejledningen; ejerens telefonlevering er ikke afprøvet.
+
+**Fremdrift ved beta.78: 100/119 afsluttet eller afklaret, 19 åbne, cirka 84 %.** W65 er fortsat åben til stabilslutkontrol. W106–W108 og W117 mangler før næste stabile; W117 er nu under udvikling med målrettede prøver, men endnu ikke frigivet. De 28 resterende spørgsmål/prøver er ajourført; W110/W111's specifikke nye prøver er klar i beta.78. Ingen ny generel HA-, Drive- eller gendannelsesprøve er bestilt. Stabil er uændret 1.12.1. Afsnit om tidligere kandidater nedenfor er historik.
+
+**W65/W83:** Den første integrerede profilbeta er frigivet i **1.12.2-beta.76** fra `65ee595170b413e03186e0427447ac4c15fc99c8`. Personligt login aktiveres fra eksisterende adgang; administratoren opretter konti og egne roller/rettigheder. Samtidige uafhængige rettelser sammenføjes, og modsatrettede rettelser bevares med udgangspunkt til gennemgang og påmindelse på forsiden. Nylig aktivitet (90 sek.), individuel introduktion, ændrede rettigheder under sessionen, lokal kontobackup/gendannelse og beskyttelse ved ukendt gemmeresultat er med. Lokal stop/opdatering og begrænset udlånsret er kontrolleret. Den generelle revisionsafvisning er ikke genindført.
+
+Checks **41208420559**, Platformskontrol **41208420426** og HA beta release **41208420483** er completed/success på denne commit, inklusive Chromium/WebKit, Python 3.9/3.12/3.13, Mac, Windows, HA og pakker. Begge offentlige ZIP-filer matcher lokale pakker byte for byte; alle **142 filer** på betakanalen `21040c5829bbf7d3f7309f0068757b5484d99f11` matcher samme kilde. [Præcis verificering og kontrolsummer](BETA-76-VERIFICERING.md). Ingen ejerinstallation eller private data er brugt. Codex Security er ikke kørt.
+
+**W83 er frigivet. W65 forbliver åben til stabilslutkontrol og opfølgning på den første profilbeta.** W106–W108 og W117 mangler fortsat før næste stabile. W110/W111 er nu frigivet i beta.78. W67 er droppet efter ejerens svar. W109 er ajourført med flytning af afsluttede svar til historik; 26 punkter står tilbage i den aktive tabel. Fremdrift ved registrering af de nye input: **94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %**; beta.77-status nedenfor er nyere. Ingen ny stabil version er publiceret, og de allerede godkendte generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen.
+
+
+### Beta.78-kandidat · adressekontrol og HA-driftsbeskeder
+
+W111 er gemt på develop som `137a87fa589cdf08a7de99bb6aee3706f71f0ea5`; Checks **41228675773**, Platformskontrol **41228675787** og HA beta release-kontroller **41228675791** er grønne. Ingen eksisterende beta blev overskrevet. W110 er nu integreret lokalt med separat stabil/beta-livstegn, begrænset driftsindhold, vedvarende pres, gentagne afbrydelser, importklar beskedopskrift, telefonvalg/egne noter og en udtrykkelig prøvevej. Den aktuelle suite har **586 Python-prøver**, JavaScript, pakker og browserforløbet på rigtig lokal server. Home Assistant **2026.10.4**'s egne blueprint-/handlings-/hændelsesskemaer og besked-/livstegnskabeloner er også prøvet med opdigtede data.
+
+Kandidaten har versionsnummer **1.12.2-beta.78** og skal gennem de samlede udgivelseskontroller før publicering. **Senest verificerede beta er stadig .77; W110/W111 er endnu ikke afsluttet.** [HA-status, opsætning og adgangens omfang](../HA-DRIFTSSTATUS.md). Core-API-rettigheden er ny; den almindelige loginarkitektur og de private data er bevaret. Ejerens HA er ikke åbnet, og ingen besked er sendt til ejerens enhed. Den konkrete nye prøve er en opsætning/prøvebesked, ikke en gentaget generel HA-prøve.
+
+### W111 · genforsøg og synlig venten · prøvet lokalt, ikke frigivet
+
+Adressekontrollen har nu hurtige, begrænsede genforsøg, bevaret kildeventetid, længere arbejdsrunder med genoptageligt checkpoint, ressourcepause og en tydelig årsag til venten. 579 Python-prøver, JavaScript-suiten, pakkeprøver og fire browserbredder består med opdigtede data. [Afgrænsning og kontrol](ADRESSEKONTROL-GENFORSOEG.md). Ændringen sendes til samlet kontrol på develop; den er ikke med i beta.77 og tæller endnu ikke som afsluttet. W110's HA-status og notifikationer er fortsat en særskilt åben opgave. Ingen målinger eller private oplysninger sendes ud af systemet af det lokale ressourcegrundlag.
+
+### Profilopfølgning · beta.77 verificeret udgivet
+
+**Beta.77 er verificeret udgivet** fra `ffb7638abae22925c54792b02109393dd5643ce1`. W112 (prioritet −1) og W113–W115 er frigivet sammen med ejerens konkrete profilrettelser: rollevalg for backup-påmindelse, egne faner og samlede forbindelser, tydeligere opfølgninger, velkomst, valg af konfliktrettelse med straks-opdateret påmindelse og kontobackup/gendannelse i appen. Checks **41226343976** og HA beta release **41226343968** er grønne på selve udgivelseskilden, inklusive Mac/Windows/HA og Chromium/WebKit. Begge offentlige pakker og alle **144 filer** på betakanalen matcher samme kilde. [Præcis verificering](BETA-77-VERIFICERING.md), herunder afgrænsningen af den selvstændige platformskontrol på samme programkode.
+
+**Fremdrift ved beta.77: 98/119 afsluttet eller afklaret, 21 åbne, cirka 82 %.** W65 er fortsat åben til stabilslutkontrol. W111's genforsøg og ressourcepause er nu under lokal udvikling, ikke frigivet i beta.77. W106–W108, W110 og W117 mangler også før næste stabile. Stabil 1.12.1, OCR-pausen og det parkerede W16 er uændrede.
+
+### Nye input efter profilbetaen · 31.10.2026
+
+Alle syv Google-faner er genlæst. Fuld tekst, kildeprioriteter og ejersvar er bevaret i [nye profilinput](INPUT-2026-10-31-PROFILBETA.md). **W112 har prioritet −1 og kommer først:** administratoren skal kunne styre backup-påmindelsen pr. rolle. Derefter følger fejlrettelserne fra ejerens profilprøve, overskuelig konfliktgennemgang med valg af rettelse, synlig kontobackup og egne indstillingsfaner (W113/W114), tydeligere opfølgninger (W115) og en personlig hilsen. W117 om lokal IB-import fra XLSX og manuelle adresser skal med før næste stabile. W116's manuelle opdelingsforslag, W118's synlighedsplan og W119's valgfrie ansvarshavende er registreret; W101's enkle hosting tages efter næste stabile. W85/OCR og W16 genoptages ikke.
+
+**Registrering før beta.77: 94/119 afsluttet eller afklaret, 25 åbne, cirka 79 %.** Faldet i procent skyldes otte nye planpunkter, ikke bortfald af frigivne funktioner. W83 er også ejerbekræftet; W65 er fortsat åben. De nye punkter er registreret, ikke frigivet. Denne status går foran den tidligere registrering nedenfor.
+
+### W109 · ny aktuel regel for svartabellen · prioritet −1
+
+Fuld kildetekst:
+
+> I “dine svar og prøver” skal de færdigsvarede felter fjernes og opbevares et andet sted… når man har svaret på feltet, medmindre der ikke er svaret fuldt ud, skal tidligere svar fjernes/flyttes væk, og et omformuleret eller mere beskrivende sprøgsmål skal stilles
+
+Ejerprioritet, fuld tekst: **-1 be om nuuuu**. Flyt færdige svar ud af den aktive tabel til historik, og flyt tidligere ufuldstændige svar samme sted hen, før et tydeligere resterende spørgsmål stilles. Denne nyere besked går foran tidligere tekst om at bevare svarene i selve tabellen. De første seks afklarede rækker fjernes; svaret på den uklare HA-forespørgsel arkiveres, og kun en konkret forklaring om en eventuel senere ændring står tilbage uden handling nu. 26 resterende punkter. Fuld tekst findes i [svarhistorikken](EJER-SVAR-HISTORIK.md), og Google-planens Historik.
+
+### W109 · samlet tabel over ejersvar og prøver · prioritet −1 · 31.10.2026
+
+Fuld kildetekst:
+
+> lav i dokumentet et skema / en tabel, med alle punkter der kræver input fra mig, ikke bare lige nu, men i hele planen……så kan jeg svarer dem lidt efter lidt, skriv dem i rækkefølge fra nr 1-hvor mange der nu lige er, for hvilken du skal have svar på først, for at kunne udvikle….
+> alle punkter der kræver input!!!! også manuel test af ting osv…
+
+Ejerprioritet, fuld tekst: **-1!!!!!!!!!!**
+
+**Udført i Google-planens nye fane [Dine svar og prøver](https://docs.google.com/document/d/1KqAGxoVS1LHSObMjUnvxIXk-Guk3fIvb81iCSBhX7l8/edit?tab=t.uqiyqxnmhcsi).** Den native tabel har 32 fortløbende numre, spørgsmål/prøve, tidspunkt, status og en gul svar-/datokolonne. Fremtidige valg, senere funktionsprøver, frivillige kontroller og pausepunkter er adskilt fra aktuelle svar. Indhold og blanke svarceller er læst tilbage. Allerede godkendt generel HA, Drive, gendannelse og adressehentning gentages ikke; administratorstyring af roller er besluttet. Tabelkopien og dækningsgrundlaget står i [EJER-SVAR-OG-PROEVER.md](EJER-SVAR-OG-PROEVER.md). Dette afslutter selve oversigtsopgaven, ikke de fremtidige appfunktioner eller ejerprøver.
+
+### Ny aftale · passende betastørrelse · 31.10.2026
+
+Fuld kildetekst:
+
+> husk at udgive betaer, med et antal funktioner der er til at håndtere at teste på en gang, så man ikke bare får en beta med 40 nye funktioner, men heller ikke kun 2-3 stykker ;)
+
+Kildeprioritet, fuld tekst: **Bare info til dig!**
+
+Aftalen gælder fra nu: saml flere sammenhængende brugerændringer i et overskueligt prøvesæt, frem for enten meget store bunker eller konsekvent kun 2–3 småting. Der indføres ikke et opdigtet fast antal. Dette er en præcisering af beta-arbejdsgangen (W19/W45/W60), ikke et ekstra appønske; ældre faste lofter går ikke foran denne besked. Hver beta kræver fortsat eget nyt versionsnummer og fuld verificering af kilde, pakker og kanal.
+
+### W110 · lokal driftstatus og notifikationer i Home Assistant · 31.10.2026
+
+Fuld kildetekst:
+
+> Mulighed for udlæsning af driftstatus direkte i homeassistant, og dermed også mulighed for en automation der giver en notifikation ved fejl, eller hårdt press af systemet… lav fx en foreslået automation, funktion når man tilføjer appen, som automatisk ligger sig klar, man skal bare vælge enheden som skal ha en notifikation, og eventuelt tilføje en egen lille note som hver slags status vil skrive
+
+Ejerprioritet, fuld tekst: **skal med inden næste stable!**
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Undersøg lokal status til Home Assistant og en færdig foreslået automation/opsætning, hvor ejeren vælger notifikationsenhed og valgfrie noter pr. statustype. Skeln mellem konkrete fejl, vedvarende pres og normal venten/pause; undgå gentagen støj om uændret sund drift. Send ingen IB, forkyndernavne, adgangskoder eller nøgler i status/notifikationer. En prøve skal kunne udføres uden rigtig overbelastning eller dataskade. Registreret, ikke implementeret eller frigivet. Enhedsvalget og den specifikke senere notifikationsprøve findes i ejersvarstabellen; der er ikke oprettet en Codex-automation eller ændret ejerens HA.
+
+### W106 · datoer på det digitale kort · nyt ønske 31.10.2026
+
+Fuld tekst fra Google-ønskelisten:
+
+> Kunne være fint med en “sidste gennemgangsdato” (som jo er hvornår det sidst blev indleveret eller reigstreret gennemgået) stod på den online version af distriktkortet… og en “udleveret d.” dato, som viser hvornår en person har fået det kort, så de er klar over hvor længe de har haft det$
+
+Ejerprioritet, fuld tekst:
+
+> du bestemmer, men med i næste stable version ihvertfald
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Begge datoer skal bygge på de faktisk registrerede hændelser. Undgå navne og IB på det offentlige kort. Den eksisterende onlineversion er et godkendt PNG-billede, så datoændringer kræver et gennemtænkt opdateringsforløb; gamle udleveringsdatoer må ikke fejlagtigt præsenteres som aktuelle. Ønsket er registreret og undersøgt, ikke implementeret eller frigivet. Fuld kildetekst og prioritet er bevaret i Google-historikken og på GitHub.
+
+### W107 · importerede vejintervaller og gradvis kortlægning · 31.10.2026
+
+Fuld tekst fra Google-ønskelisten:
+
+> Lav import for distriktkort muligt, at have intervaller, fx 1-19, som så vil blive skrevet på kortet, herefter kan man så vælge alle adresserne på et kort, og sikre sig om det passer…. dette gøres dog efter hele importen og i eget tempo, ikke i selve importprocessen, så man egetnlig også i startguiden kan vælge, “hold styr på kort” uden at bruge vejkort funktionen, her kan du altså ha alle distriktskortnumrene, men også lave manuelle linjer på kortet, eller få dem impoteret, så man senre lidt efter lidt kan begynde at bruge vejkortet…..
+
+Ejerprioritet, fuld tekst:
+
+> du bestemmer, men med i næste stable version ihvertfald
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Kortregister og manuelle/importerede vejlinjer skal kunne bruges uden først at matche alle geografiske adresser. Intervaller som 1–19 skal bevares på printforsiden. Den geografiske kontrol skal være et senere, selvvalgt forløb, og et interval må ikke ubemærket blive til et gættet antal adresser eller besøg. Frigivet i verificeret beta.80; den eksisterende import, normale kortredigering og geografiske udvælgelse er udvidet og genbrugt. [Kilde, prøver og offentlige pakker](BETA-80-VERIFICERING.md). Fuld kildetekst og prioritet er bevaret i Google-historikken og på GitHub.
+
+### W108 · tjenestegrupper og import af gruppeliste · 31.10.2026
+
+Fuld tekst fra Google-ønskelisten:
+
+> Mulighed for tjenestegruppe inddeling af forkyndere, og valg af Gruppe tilsynsmand, og Assistent, samt Pionerere….
+> da der oftest er mulighed for at de 3 typer, har flere kort da de bruger mere tid i forkyndelsen. gør det også muligt at uploade gruppeliste som import, så alle forkyndere bliver oprettet i systemet
+
+Ejerprioritet, fuld tekst:
+
+> du bestemmer, men med i næste stable version ihvertfald
+
+**LTM vælger prioritet 1; skal med før næste stabile udgave.** Tjenestegruppetilknytning og markering af gruppetilsynsmand, assistent og pioner er distriktsoplysninger, ikke automatisk tildeling af brugerrettigheder. Administratoren styrer fortsat appens rettigheder. Gruppeimport skal foregå lokalt med forhåndsvisning, kontrol af dubletter og udtrykkelig godkendelse; ingen rigtige navne eller gruppelister bruges i offentlige prøver. Ingen OCR genoptages. Kodekontrol 1.11.2026: den almindelige udlevering tillader allerede flere forskellige kort til samme forkynder; kun dobbelt udlevering af det enkelte kort afvises. Der er derfor ikke grundlag for at indføre en ny personbegrænsning eller give konto-adgang ud fra tjenestefunktion. Gruppefelter og import er endnu ikke implementeret eller frigivet.
+
+### Ejerens procesbesked · VIGTIG INFO · 31.10.2026
+
+Fuld kildetekst:
+
+> Husk lige at fjerne disse ønsker fra listen når de er rykket ind i plan/aftaler / overblik
+
+Kildeprioritet: **VIGTIG INFO**. Dette er en arbejdsaftale, ikke et ekstra appønske: Fjern kun de præcise overførte tekster/prioriteter, når fuld tekst og prioritet er gemt og læst tilbage i planen og på GitHub. Bevar ønsketabellens overskrifter og tomme rækker samt Bilag. Registrering er fortsat ikke implementering eller frigivelse.
+
+W106–W108 og procesbeskeden er nu læst tilbage fra GitHub og Google-planen/Historik. Derefter er kun deres præcise kildetekster og prioriteter ryddet fra Ønskeliste med revisionskontrol. Tabellens overskrifter, tomme rækker og Bilag er bevaret.
+
+### Nye præciseringer og ejersvar · 31.10.2026
+
+Alle syv Google-faner er genkontrolleret, inklusive den nye svartabel. Nye kildetekster og prioriteter:
+
+> Github support svarer ikke rigtig, måske vi skal finde en anden måde at kontakte dem på?
+
+Prioritet: **bare når vi ikke har travlt, så nok efter næste stable**. Uddybning af W61: undersøg senere officielle kontaktmuligheder; ingen besked sendes på ejerens vegne, ingen loginoprydning eller udgivelsesblokering.
+
+> Skriv også gerne andre ting du gerne vil have svar på, sprøgsmål eller ideer du vil ha godkendt, i den nye tabel ;)
+
+Prioritet: **-1!!!!!!!!!**. W109 udvides som løbende arbejdsaftale: alle reelle nye spørgsmål, idéforslag til ejerbeslutning og konkrete senere prøver føjes til samme tabel med tidspunkt og status, uden at overskrive svar. Rutinemæssige udviklingsvalg kræver ikke et nyt ejersvar.
+
+> mulighed for en EXE app til pc, og DMG til mac, både en til servertool, men også en til styringen af systemet…. så alt ikke skal afhænge af browseren, hvis vi løber i problemer med kompatibilitet med browser osv??
+
+Prioritet: **du bestemmer, om det er en god ide, og evt hvornår den skal udføres**. Uddybning af W74, ikke et nyt nummer: selvstændige Windows-/Mac-pakker til server og appvindue undersøges efter kernefunktionerne til næste stabile. En pakket webvisning bruger stadig en browsermotor og garanterer ikke frihed for kompatibilitetsfejl. W74 er registreret, ikke færdig eller frigivet; eksisterende ZIP/startguide er ikke EXE/DMG.
+
+Ejersvar fra den nye tabel, fuld tekst:
+
+- **Nr. 1 / W108:** “PDF, så tænker bare det skal være en excel importfil ligesom de andre imports”. Brug en lokal Excel-skabelon/import; intet PDF-OCR genoptages.
+- **Nr. 2 / W67:** “Det var en fejl, dette ønske skal slettes”. W67 er droppet efter ejerens besked og fjernes fra den aktive kø; historikken bevares, ingen eksisterende adressedata slettes.
+- **Nr. 3 / W13:** “Vi skal kun have info om, gennemgang det sidste stykke tid (år og tjenesteår) og info om antal distrikter der findes, og hvor mange der ikke er gennemgået inden for et år (kalendar år, 12 måneder bagud) samt om det er udleveret eller ej”. Afgræns rapporten til disse oplysninger. Skeln tydeligt mellem kalenderår, tjenesteår og rullende 12 måneder; opfølgningslisten genindføres ikke. Funktionstilstanden kontrolleres mod koden før afslutning.
+- **Nr. 4 / W101:** “jeg kan ikke huske hvad min tanke var med dette…..”. Der vælges ikke automatisk et udløb; senere forslag skal forklares konkret.
+- **Nr. 5 / W101:** “Den skal kunne genbruges så vi bliber fri for at printe nyt distriktkort hvergang”. Genbrug af den trykte kode er nu besluttet. Den trykte kode genbruges; intet tidsudløb indføres på baggrund af den nye besked.
+
+- **Nr. 6 / W101: “den skal bare være åben…. men måske vi kunne lave en landingpage hvorpå de lå? som rediricter til google drive, men kan vise en lidt flottere og mere personlig, side hvor der forklares dette kort ikke er udleveret, og hvis der er noget skal man melde fejl til den og den mail… eller endda udfylde en formular osv…. men også med mulighed når man scanner qr kode, t den måske kunne sige ca “dette er et digitalt kort som viser hvordan du kan finde rundt i distriktet, der vises ingen IB og dermed erstatter den IKKE det fysiske kort… osv””.
+- **Nr. 7 / W06: “jeg fatter ikke hvad du mener med dette…. ;)”.
+
+W101: Åben adgang er besluttet. Undersøg senere et konkret forslag til præsentationsside med Drive-link, udleveringsstatus, forklaring om IB/fysisk kort og mulig fejlmelding. Ingen ny hosting eller offentlig kontaktformular er bestilt til opsætning nu. W06: Den uklare godkendelsesforespørgsel er erstattet af en forklaring; ingen ejerhandling kræves, før et konkret fremtidigt adgangsforslag foreligger.
+
+### W111 · adressekontrol bliver ved med at vente · 31.10.2026
+
+Fuld kildetekst:
+
+> det ser ikke ud til at virke særlig godt, den udskyder hver gang, måske at fejlene ikke skal stoppe den fuldstændig men bare genstarte, med det samme, med mindre den er fejlet mange gange, eller systemet bliver overbelastet…. det må godt tage lang tid at kører gennemgangen, da det jo oftest sættes til alt mellem 14-30 dages mellemrum….. det kan og må tage op til 2-3 timer hvis det er
+
+Ejerprioritet, fuld tekst: **Du bestemmer** (rettet af ejeren fra “Du bestemmer?” under registreringen).
+
+**LTM vælger prioritet 1, efter den igangværende profilbeta og før næste stabile.** Fejlmelding til W73: det lokale referencebillede viser “Venter og prøver igen · hver 30. dag kl. 02:00 (serverens lokale tid)” og bevarede færdige udsnit. Billedet holdes i Google-dokumentets Bilag/lokalt; ingen privat fil offentliggøres. Koden udskyder i øjeblikket efter hver afbrudt delkørsel med mindst 15 minutter og stigende ventetid. Undersøg årsagen og indfør hurtige, begrænsede genforsøg med bevaret fremdrift; gentagne fejl, nøglefejl og reelt pres skal stadig give passende pause og forståelig status. En samlet kontrol må godt bruge op til 2–3 timer; ingen ufuldstændig hentning må tolkes som fjernede adresser, og ændringer kræver fortsat konkret godkendelse. Ingen rigtig API-nøgle eller overbelastning bruges i offentlige prøver. Registreret og undersøgt, ikke rettet eller frigivet. Den specifikke senere funktionsprøve knyttes til nr. 19 i svartabellen; ingen gentagelse af den generelle HA-/API-prøve.
+
+**94/111 afsluttet eller afklaret, 17 åbne, cirka 85 %** efter W109, ejerens afvisning af W67, den nye fejlmelding W111 og frigivelsen af W83 i verificeret beta.76. W106–W108, W110 og W111 skal med før næste stabile; W65 er fortsat åben til stabilslutkontrol. Beta.76 med profiler er verificeret udgivet fra `65ee595170b413e03186e0427447ac4c15fc99c8`. W85/OCR og W16 er på pause, W92 droppet, W84 privat. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
+
+## Historik · beta.75 udgivet · 30.10.2026
+
+Beta.74 er udgivet fra `54821ef4e98f4dac62d5234ec043eaa47790eeee`. HA beta release 40401076156, Checks 40401076193 og Platformskontrol 40401076016 er completed/success. De hentede HA- og desktop-ZIP-filer matcher byte for byte lokale pakker fra denne commit; alle 127 filer på betakanalen matcher den samme kilde. Den nye startguide er et deltrin af W74: lokal eller privat server på Mac/Windows/Linux, separate beta-/serverdata, eget login og Python installeret separat. W74 er stadig åben; appvindue, selvstændige installationer og automatisk serverstart mangler.
+
+En efterfølgende gennemgang fandt, at serveren i beta.74 kunne lytte på den valgte private IPv4-adresse, men den interne statuskontrol forsøgte at kontakte 127.0.0.1. En kørende server kunne derfor ikke genfindes korrekt. Beta.75 bruger lytteadressens private URL og direkte lokal statuskontrol uden proxy. En rigtig lokal HTTP-prøve viser, at serveren genfindes med en ugyldig proxykonfiguration. Godkendte private værter valideres; offentlige adresser og URL'er med ekstra felter afvises. Ingen generel tvungen genindlæsning indføres.
+
+**Beta.75 er verificeret udgivet** fra `19ada08e8ab95473d72fa068dc88d8158a20df1e`. HA beta release **41138249061**, Checks **41138249075** og Platformskontrol **41138248969** er bestået. De to offentlige ZIP-filer er hentet og sammenlignet byte for byte med lokale pakker fra samme kilde: HA 1.208.776 bytes, SHA256 `0f84d7ab68b28a5726b031d4f6c485a439ecb61c12a8bbc22cdc9709ae41c59b`; desktop 3.494.429 bytes, SHA256 `b327998ff53504be9ef5f4554adc6923dcbfd08814c736a4f7ed56f53de44ab1`. Alle 127 filer på betakanalen matcher den lokalt byggede kanal; beta bruger 8788, stabil 1.12.1 bruger 8787. Ingen ejerinstallation er fjernmålt. [Beta.75](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.75).
+
+### Ejerens nye retning · W65/W83
+
+Ejeren ønsker nu, at der arbejdes på profiler og databaseflow, når de aktuelle opgaver er håndteret. Fuld besked:
+
+> Kan du fortsætte
+> Hvis du løber tør for ting du kan lave lige nu og her, skal du bare begynde på versionen hvor man har forskellige brugere… det der er beskrevet i dokumentet, og gør database flowet, klar til at flere kan ved en fejl komme til at redigere ting samtidig, eller bare samtidig på forskellige ting
+> Måske en online country i toppen, af hvem der er på
+> Og en, revisionspåmindelse på forsiden hvis 2 har gemt samme ting, men med forskellige rettelser/udgangspunkter
+
+Dette er en uddybning af W65/W83, ikke en ny afsluttet funktion. Adminpanelet skal styre brugere, egne roller og rettigheder, som allerede aftalt. Tillad samtidige uafhængige ændringer; ved modsatrettede ændringer på samme oplysninger skal begge grundlag/rettelser bevares til konkret gennemgang, og en påmindelse på forsiden vises. Et muligt overblik over aktive brugere er et ønske, ikke et bevis på præcis tilstedeværelse. Beskyt private data, sessionsoplysninger og rettigheder server-side. Planlæg sammen med profiler; genindfør ikke den gamle generelle afvisning for almindelige gemninger. Ingen brugerprofiler eller ny konflikthåndtering er endnu frigivet.
+
+**Arbejdet er påbegyndt på den separate gren `work/w65-brugere-20261030`.** Isolerede prototyper til konti/administratorstyrede roller, nyligt aktive brugere, sessionsbundne redigeringsudgangspunkter og konfliktbevarende databasetransaktion er prøvet med opdigtede data. Ingen af dem er tilsluttet appen. Rettighedskontrol af alle serverens læse- og skriveveje, beskyttelse af følsomme data i samlet status, sikker loginmigration og gendannelse, brugerflade og lokal fuldforløbsprøve mangler før frigivelse. Prototypebeskrivelse: `docs/planning/BRUGERE-SAMTIDIG.md` på arbejdsgrenen.
+
+W85/OCR og W16 er fortsat på pause. Stabil er 1.12.1. Fremdrift bevares på **91/105 afsluttet/afklaret, 14 åbne, cirka 87 %**; nye detaljer til et eksisterende punkt øger ikke totalen. Ingen ny generel ejerprøve er bestilt.
+
+## Historik · W74-deltrin / beta.74 under kontrol · 26.10.2026
+
+**W74 · første del af egen hosting er implementeret og under kontrol.** En fælles startguide i programpakken tilbyder lokal brug eller privat server på Mac/Windows/Linux. Serveren bindes til brugerens valgte private IPv4-adresse, åbner ingen browser og stoppes med Ctrl+C. Adgangskoden indtastes skjult med gentagelse; kun den eksisterende saltede hash gemmes lokalt. Startvalg indeholder ingen adgangskode. Lokal/server og beta/stabil har adskilte mapper; eksisterende data flyttes ikke automatisk. En kørende server skifter ikke stiltiende adresse/port. De gamle lokale startfiler bevares.
+
+Beta.74 får også en samlet desktop-ZIP på den samme prerelease ved siden af HA-pakken. Dansk/engelsk vejledning beskriver valg, opdatering, flytning via godkendt backup og konkret macOS-godkendelse af startfilen. Linux-startfil er med; Windows/Mac-startfiler får faktiske automatiske start/genbrugsprøver. En ekstra arkivprøve starter den nye guide fra den udpakkede programpakke. Ingen afhængigheder hentes automatisk ved start.
+
+**W74 er stadig åben.** Python skal installeres separat. App-lignende separat vindue, selvstændige platformspakker med Python og automatisk systemtjeneste mangler. Ingen fysisk installation hos ejeren er prøvet. Den nye menu er på dansk; engelsk vejledning følger med, W58 er ikke afsluttet. [Vejledning](../SELF-HOSTING.md).
+
+**OCR/W85 og W16 er fortsat på pause.** Alle seks Google-faner er læst ved start; der er ingen nye ubehandlede ønsker ud over den allerede registrerede OCR-pause. Stabil forbliver 1.12.1, senest verificerede beta er beta.73. Fremdrift er uændret **91/105, 14 åbne (to på pause), cirka 87 %**. Beta.74 er ikke markeret verificeret udgivet før præcis commit, CI, begge offentlige pakker og betakanal er kontrolleret. Ingen grene slettes.
+
+## Historik · beta.73 og OCR-pause · 25.10.2026
+
+### Ejerbeslutning · prioritet −1 · alt OCR-arbejde på pause
+
+Ny besked i Google-ønskelisten, fuld kildetekst:
+
+> IB fra billeder virker nu, men giver ingen mening i den tekst der kommer, vi venter med alt ocr lignende funktioner, og sætter dem på pause!
+
+**Ejerprioritet: −1. W85 sættes på pause med det samme.** Ingen videre udvikling af OCR, IB-billedfortolkning, S-12-forsider eller foto-kortoprettelse, før ejeren udtrykkeligt genoptager arbejdet. Det er en statusændring på W85, ikke et ekstra ønske eller en afslutning. W104's tekniske rettelse af billedåbning er nu ejerbekræftet, men OCR-tekstens anvendelighed er ikke godkendt. Syntetiske OCR-prøver er ikke en godkendelse af resultatet på ejerens billeder.
+
+**Næste aktive opgave er W74 · egen hosting.** W85 og W16 er på pause. Fremdrift er fortsat 91/105 afsluttet/afklaret og 14 åbne (heraf to på pause), cirka 87 %. Denne beslutning går foran tidligere noter om, at W85/fotoimport er næste opgave. Google-kildeteksten og prioriteten bevares; den nye beslutning registreres i begge planer. Ingen appkode, eksisterende data, udgivet beta eller stabil version ændres ved denne planopdatering.
+
+**W104/W105 er afsluttet i verificeret beta.73.** IB-billeder i PNG/JPG/JPEG kan åbnes og læses lokalt efter rettelse af appens billedregel. Opfølgningstælleren indlæses ved opstart og opdateres efter geodatahentning uden at genopbygge åbne felter. Sene opstartsdata kan ikke erstatte en nyere indlæsning. Redigerbare forslag, kontrollerede adresser/datoer og udtrykkelig importgodkendelse bevares. Ingen ekstern AI eller cloud-OCR er indført.
+
+Udgivelsescommit: `1dac3f9331f64cefe7d57627325326916db4052f`, træ `a605386892c0ca3ea56e1704a4112db1532b1590`. HA beta release **40230496198**, Checks **40230496204** og Platformskontrol **40230496245** er alle completed/success på den præcise commit. Den nye browserprøve mod rigtig adgangsbeskyttet HTTP-server og faktiske sikkerhedsregler består i Chromium og WebKit ved 390/1440 px med alle tre filendelser, forslag, fravalg af uvedkommende linjer og godkendt import. Den bekræfter også, at tælleren vises før første besøg på fanen, opdateres efter IB-import og bevarer en åben kladdes felt, tekst og fokus. HA-containeren læser et opdigtet billede med dansk/engelsk Tesseract; lokale browserforløb bruger også den faktiske engelske motor. Ingen ny generel ejerprøve er bestilt.
+
+Offentlig HA-pakke: **126 filer, 1.205.458 komprimerede bytes**, SHA256 `410f730be12acf23f89b94fca2d71c2538dcb0434e79e412ad8c3a5af200b4e1`. Den udgivne ZIP er hentet og matcher den lokale pakke byte for byte; ZIP-integritet og tag er kontrolleret. Alle 126 filer i den publicerede betakanal matcher lokal pakning fra udgivelseskilden. Beta viser **1.12.2-beta.73 på 8788**, main er fortsat **stabil 1.12.1 på 8787**. [Beta.73](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.73).
+
+Fremdrift: **91/105 afsluttet/afklaret, 14 åbne, cirka 87 %**. W85 er åben, men sat på pause efter ejerens nye beslutning ovenfor. Næste aktive arbejde er W74/egen hosting og derefter de øvrige åbne punkter i planen. Profiler, QR-valg, privat VPN-huskenote og den pauserede generelle synkroniseringsafvisning ændres ikke.
+
+Google-planens seks faner er gennemgået. Overblik og Plan & aftaler er opdateret med faktisk udgivelsesstatus. De to originale fejltekster og ejerprioriteten “du bestemmer” er bevaret i Ønskeliste og markeret med W104/W105 som rettet i beta.73; en efterfølgende besked med prioritet −1 pauser nu W85 som beskrevet øverst. Fuld registrering/prioritet er læst tilbage på GitHub før statusmarkeringen. Automatisk godkendelseskontrol afviste rydning af originalteksterne; den sikre løsning bevarer dem som kvittering. Ingen grene er slettet og ingen stabil udgivelse er udført.
+
+## Historik · beta.73 under kontrol · 25.10.2026
+
+**To nye ejerfejl er registreret med fuld tekst og prioritet nedenfor.** Senest verificerede udgave er fortsat beta.72; stabil er 1.12.1. W104/W105 er rettet lokalt, men er ikke afsluttet før den præcise udgivelsescommit, kontrollerne, den offentlige pakke og betakanalen er verificeret.
+
+- **W104 · IB-billeder:** Den rigtige servers Content Security Policy blokerede egne lokale blob-billeder. Derfor fejlede PNG/JPG/JPEG allerede før OCR, og der kom ingen tekst til forslag. Billedreglen tillader nu lokale blob-billeder; script- og forbindelsesreglerne er uændrede. Ingen cloud-upload indføres. En ny browserprøve mod den faktiske, adgangsbeskyttede HTTP-server fejler på beta.72 med `img-src: blob` og består efter rettelsen. Den dækker alle tre filendelser, lokal læsning, redigerbare forslag, aktivt fravalg af ukendte linjer, forhåndsvisning og udtrykkelig godkendelse før import.
+- **W105 · Tæller ved Opfølgninger:** Geodata blev først indlæst ved åbning af kort/Opfølgninger, så tælleren manglede ved første åbning. De lokale data hentes nu ved opstart i baggrunden. Tælleren opdateres også efter geodatahentning, uden at åbne felter genopbygges. Den rigtige browserprøve kontrollerer tallet før første besøg på fanen, efter IB-import og mens en kladde med fokus forbliver uændret.
+
+W85 er fortsat åben: S-12-forsider, foto-kortoprettelse og yderligere layoutfortolkning mangler. Den nye IB-fejl må ikke skjules af den tidligere leveringsstatus. Google-planen er gennemgået i alle seks faner; den har nu kort Overblik, Ønskeliste, Plan & aftaler, Bilag, Historik og Synlighed · ADS. Originale ønsker, tabeller, historik og referencebilledet er bevaret. Ingen offentlig kampagne er startet.
+
+Lokalt består 499 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver, faktisk arkivstart, demoens manifestkontrol og desktop-/touchforløb i Chromium. Den nye prøve mod rigtig HTTP/login/CSP består på 390 og 1440 px både med deterministisk OCR-svar og den faktiske lokale Tesseract-motor (engelsk). Den oprindelige fejl er først reproduceret på den uændrede billedregel. WebKit og HA-containerens danske/engelske motor afventer den præcise CI-kandidat.
+
+Ved registrering er **89/105 afsluttet/afklaret, 16 åbne, cirka 85 %**. De to nye fejl har ejerprioritet “du bestemmer”; LTM vælger henholdsvis 1 og 2. Ingen nye generelle ejerprøver eller stabile udgivelser bestilles.
+
+### Nye fejl fra Google-ønskelisten · 25.10.2026
+
+| Nr. | Fuld kildetekst | Prioritet og behandling |
+| --- | --- | --- |
+| W104 | IB fra billede virker overhovedet ikke<br>hverken med jpg, jpeg, eller png… den melder bare fejl, også hvis man siger den skal lave redigerbare foresalg… | Ejer: “du bestemmer”. LTM: 1, først. Lokal rettelse under kontrol; W85 forbliver åben. |
+| W105 | Tallet ved opfølgninger opdater først når mna trykker på fanen…. mærkeligt hva | Ejer: “du bestemmer”. LTM: 2, samme fejlrettelsesbeta. Lokal rettelse under kontrol. |
+
+Kildeteksterne står fortsat i Google-ønskelisten, indtil registreringen er gemt og læst tilbage på GitHub. “Registreret” er ikke “afsluttet”.
+
+## Historik · beta.72 udgivet · 24.10.2026
+
+**W85-deltrin leveret: IB fra billeder.** Indstillinger → Import har lokal kø til op til 20 PNG/JPEG-billeder. Hvert billede kræver særskilt kortvalg, redigerbar tekst, en adresse/lejlighed på det valgte kort og en gennemgået dato pr. linje. Ukendte linjer skal rettes eller springes over ved et aktivt valg. Eksisterende IB-forhåndsvisning og IMPORTÉR IB kræves før gemning. Næste billede startes manuelt; allerede godkendte filer bevares ved fejl/lukning. Grænser, besøgstal og forsider ændres ikke automatisk. Berørte IB-bagsider markeres til ajourføring.
+
+Beta.72 er verificeret udgivet fra `bd57367eb065644ebfc479f2b29521c2c03dc602`, træ `6098540f880217ee8f8f29d17a8b65d1ad142616`. HA beta release **40092378431**, Checks **40092378506** og Platformskontrol **40092378399** er alle completed/success på den præcise commit. HA-imageprøven læser et opdigtet billede med den faktiske motor og danske/engelske sprogdata. Chromium/WebKit, mørkt/lyst, telefon/tablet, Python 3.9/3.13, Windows/Mac-opstart, sikkerheds- og pakkeprøver indgår. Lokalt består 499 Python-prøver (én forventet overspringning), JavaScript, 20 pakkeprøver og rigtig arkivstart. En ekstra virkelig lokal HTTP-prøve gennemfører native OCR → forhåndsvisning → afvist forkert bekræftelse → godkendt IB-import med opdigtede data og kun ændret bagside.
+
+Offentlig HA-pakke: **126 filer, 1.205.077 komprimerede bytes**, SHA256 `4d7862c46f6412c0df8ca95b7e0fdd66179ff798f5190b6f4bf4e0a660e6e513`. Pakken er hentet fra udgivelsen og sammenlignet byte for byte med lokal pakke fra den samme kilde; ZIP-integritet, tag og udgivelsescommit er kontrolleret. Betakanalen er læst tilbage som beta.72 på **8788**, main som stabil **1.12.1 på 8787**. [Beta.72](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.72).
+
+Beta.71 blev også udgivet fra `603a76f4d2190917a8b553fa7341ddd19375c392` efter HA 40091881963 og Checks 40091881960 bestod. Dens hentede pakke på 1.204.916 bytes matcher byte for byte en ny pakning af den præcise kilde i et separat, bagefter fjernet checkout; SHA256 `8cf714be5ba2ccc76a99a0dabfeda9e6e1cbe97ed9437668828976db590c4590`. Den er ikke overskrevet. Beta.72 tilføjer afventet OCR-proces-/filoprydning ved serverlukning. Den første beta.71-kandidat blev korrekt stoppet, fordi WebKit-prøvens netværkskontrol afviste en egen blob-URL. Kun egne lokale billed-URLer er nu tilladt i prøven; eksterne kald er fortsat afvist. Ingen fejlet gate er omgået.
+
+HA-image medtager native Tesseract samt dansk/engelsk. Originaler bliver i browseren; kun en klargjort, begrænset PNG sendes til eget lokale LTM-system. Midlertidige filer slettes, RAM-resultater udløber efter fem minutter, og aktiv læsning kan stoppes. Ingen ekstern AI/cloud-OCR. Mac/Windows kræver separat lokal Tesseract-installation; manglende motor/dansk vises tydeligt, og vejledning følger med. Rigtig native OCR på ejerens Mac/Windows er **ikke** afprøvet; platformjobbet verificerer generel opstart og pakning. Den faktiske motor er afprøvet på udviklings-Linux (engelsk) og i HA-container (dansk/engelsk). Ingen ny generel HA-ejerprøve er bestilt. Vejledning og begrænsninger står i `distrikt/DOCS.md`, `docs/INSTALL.md`, engelsk installationsguide og [fotoimportens status](FOTOIMPORT.md).
+
+**W85 er fortsat åben.** S-12-forsider/foto-kortoprettelse, yderligere layoutfortolkning og opfølgning på manglende adresser mangler. Der loves ikke fejlfri håndskrift eller automatisk korrekt fortolkning af flere spalter. W103 forbliver afsluttet i beta.70; øvrige aftaler om profiler, privat huskenote, QR-valg og den fjernede generelle synkroniseringsafvisning fastholdes. Fremdrift er uændret: **89/103 afsluttet/afklaret, 14 åbne, cirka 86 %**. Google-ønskelisten er genkontrolleret efter arbejdet og er tom. Ingen stabil udgivelse eller ny grenoprydning er udført.
+
+## Historik · beta.72 under kontrol · 24.10.2026
+
+Beta.71-kandidaterne er under udgivelseskontrol. Første kandidat 5a34bc6 fik grøn faktisk dansk/engelsk HA-OCR og platforme, men WebKit-prøvens netværkskontrol afviste en egen lokal blob-URL. Prøven er rettet til kun at tillade blobs fra LTM-adressen; eksterne kald er fortsat afvist. En efterfølgende rettelse sikrer proces-/filoprydning ved serverlukning og er prøvet særskilt. Den samles i beta.72, så en beta.71, der allerede er i køen, ikke overskrives. Ingen af disse nyere kandidater er endnu markeret verificeret udgivet i denne oversigt.
+
+W85-deltrin: IB-bagsider fra PNG/JPEG i lokal billedkø er implementeret til beta.72-kontrol. Hvert billede kræver valgt kort, redigerbar tekst, gennemgåede lokale adresse-/lejlighedsmatches og datoer samt eksisterende forhåndsvisning/IMPORTÉR IB. Ukendte linjer skal rettes eller springes over aktivt. Næste billede startes manuelt; sene svar og ændrede forslag kan ikke godkende en ny kladde. Godkendte filer bevares ved lukning/fejl. Grænser, besøgstal og forsider ændres ikke automatisk.
+
+Asynkron lokal Tesseract med faste argumenter, valideret/begrænset PNG, tidsgrænse, én aktiv læsning og oprydning. Originalbilleder bliver i browseren; kun en klargjort PNG sendes til eget lokale LTM-system. Ingen cloud-OCR eller ekstern AI. HA-pakken får danske/engelske sprogdata og en motorprøve i CI; Mac/Windows kræver en separat lokal installation med tydelig status/vejledning. W85 er ikke afsluttet: S-12-forsider og resten af foto-kortoprettelsen mangler. Fremdrift bevares på 89/103, 14 åbne, cirka 86 %. Stabil er fortsat 1.12.1; senest verificerede beta er beta.70.
+
+Lokalt består 498 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver og faktisk arkivstart. Browserforløb ved fire desktopbredder og fire telefon-/tabletvisninger i lyst tema består. En ny fiktiv PNG og `scripts/check_photo_ocr.py` bruges til rigtig native OCR i HA-gaten; samme prøve består lokalt med engelsk. Målrettede prøver dækker filgrænser, login/CSRF, manglende motor, afbrydelse, timeout, private midlertidige filer, præcise lejligheder, konkret godkendelse, dubletter og bagsidens ajourføring. Faktisk installeret OCR læser en opdigtet prøve korrekt med engelsk; dansk er ikke installeret på udviklingsmaskinen og skal prøves i HA-image. Browserforløb med fiktive OCR-svar dækker redigering, ukendt linje, spring over, forhåndsvisningsnulstilling, kø, begge sprog og skærmstørrelser. Den fulde gate og udgivelsespakken er endnu ikke verificeret. Alle fire Google-faner er tidligere læst i denne runde; ønskelisten er genkontrolleret og er tom.
+
+## Historik · beta.70 udgivet · 24.10.2026
+
+W103 er afsluttet i verificeret beta.70 fra `dff75020941651dbd69f6f0458c2ab9aa26c1e9d`, træ `5ffb543a3e54de6ed4684e57399350bad90c5568`. HA beta release 40088657518 og Checks 40088657595 er completed/success. Den præcise HA-gate omfatter sikkerhed, Python 3.9/3.13, fuld browserkontrol i Chromium/WebKit, Mac, Windows og HA. Platformskontrol 40088251235 bestod på første kandidat; der er ikke startet en særskilt Platformskontrol på slutcommiten, men dens samme platformprøver bestod i slutcommitens HA-gate. Den første kandidats demo-race stoppede korrekt udgivelsen; ingen fejlet gate er omgået.
+
+Den offentlige HA-pakke har 124 filer, 1.193.828 komprimerede bytes og SHA256 `9e82725257f5e8f9370d27754b23dfba281751f86e8a0f716056ac9f63f4a782`. Den er hentet fra udgivelsen og matcher lokal pakke byte for byte; ZIP-integritet, tag og udgivelsescommit er kontrolleret. Betakanalen er læst tilbage som beta.70 på 8788; main er fortsat stabil 1.12.1 på 8787. [Beta.70](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.70).
+
+Opfølgninger viser ét punkt pr. overlappende kortpar med links til begge kort og søgning på begge kortnumre/navne. Fælles kanter og hjørner giver ingen advarsel. Dobbeltvalgte adresser vises fortsat særskilt. Ingen kort, grænser eller adresser ændres. Lokalt bestod 488 Python-prøver (én forventet overspringning), JavaScript-suiten, 20 pakkeprøver, rigtig arkivstart og browser-/touchforløb i mørkt/lyst tema. En ekstra uafhængig beregning med separerende akser stemte med 10.000 deterministiske konvekse polygonpar. Mobilvisningen er visuelt gennemset i begge temaer. Demoens udviklingskode undgår ventende Canvas-tegninger efter hurtige sideskift; offentlig demo er ikke genudgivet i denne runde.
+
+W85 er fortsat åben. [Forundersøgelsen](FOTOIMPORT.md) beskriver eksisterende importforløb, pakningskrav og en faktisk lokal Tesseract-prøve med tre trykte, opdigtede ASCII-varianter. Ingen OCR-afhængighed eller foto-API er indført. Dansk, håndskrift, fotolayout, redigerbare forslag og IB-billedkø mangler. Ingen private billeder eller cloud-genkendelse er anvendt.
+
+Ny ekstern ejerstatus fra Google-planen: W100 er afsluttet i separat oprydningsarbejde, og kun main/develop/beta er bevaret. Dette erstatter de ældre noter om udsat grenoprydning. Denne udviklingsrunde har ikke slettet grene eller ændret oprydningen. W61/Supports restoprydning er fortsat et separat åbent punkt. Den nye status er læst i Google-planen; ikke udledt af at denne beta er udgivet.
+
+Fremdrift inklusive W100 og W103: **89/103 afsluttet/afklaret, 14 åbne, cirka 86 %**. Ønskelisten er genkontrolleret efter udgivelsen og er tom. Næste konkrete arbejde er W85/fotoimport. W65's aftalte adminpanel fastholdes, W101 afventer senere valg, og ingen stabil udgivelse er bestilt.
+
+## Historik · beta.70 under kontrol · 24.10.2026
+
+W103 er implementeret til beta.70: Opfølgninger viser ét punkt pr. par kort med egentligt arealoverlap, med links til begge kort og søgning på begge kortnumre/navne. Fælles kanter/hjørner giver ingen advarsel. Dobbeltvalgte adresser har fortsat egne punkter. Ingen gemte grænser eller adresser ændres. Beregningen bruger kun lokale polygoner, med grænseboksfiltrering og cache frem til ændrede grænser; kortnavne og kortlinks følger aktuelle data.
+
+Målrettede prøver dækker krydsende, sammenfaldende, indlejrede og konkave grænser, fælles kanter/hjørner, ugyldige/tomme grænser, cache ved ændring/sletning, særskilte adressekonflikter, begge links, dansk/engelsk og 500 deterministiske rektangelpar. Lokalt består 488 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver, faktisk arkivstart, demo-/designkontrol samt browserforløb ved 320/390/768/1440 px og touch ved 390/844/768/1024 px i lyst tema. Begge kortlinks og fravær af skrivninger er prøvet. WebKit mangler lokalt og afventer CI. Udgivelseskontrol på den præcise commit pågår. W103 er ikke markeret afsluttet før verificeret udgivelse. Fremdrift bevares indtil da på 87/103, 16 åbne, cirka 84 %.
+
+Udgivelseskandidaten ec6146b03b70945d498bf1f78a129263f8c8c704 blev stoppet af HA-gaten ved en eksisterende demo-race: hurtige sideskift kunne efterlade en Canvas-tegning efter kortets lukning (`clearRect` på fjernet kontekst). W103-prøverne, Checks 40088251247 og Platformskontrol 40088251235 bestod. Demoens små opdigtede kort bruger nu SVG-rendering, og en regressionstest skifter 20 gange direkte mellem rapport og forside uden at undertrykke fejl. Ny fuld kontrol kræves før udgivelse. Beta.70 er endnu ikke publiceret; beta.69 er uændret.
+
+Alle fire Google-faner er læst ved start; ønskelisten er tom. Ingen ny prioritet −1 er modtaget. Develop var rent på 0332af2988a7e5df92c45caf50692583d6252764; beta.69 var senest udgivet. Ingen AGENTS.md blev fundet i checkoutet eller overordnede mapper. W85/foto-OCR og IB-billeder er fortsat næste selvstændige opgave. Ingen OCR-motor eller cloud-upload er indført. Stabil forbliver 1.12.1; grenoprydning er fortsat udsat.
+
+## Historik · beta.69 udgivet · 24.10.2026
+
+Beta.69 er verificeret udgivet fra `bc4c2d4e9aef3ad550b209c6d322b9cdba9f688c`, træ `eaed1fa7deede5a622ed2d1757a7bd455602790d`. HA beta release 40086726887, Checks 40086726881 og Platformskontrol 40086726900 er completed/success. Den offentlige HA-pakke har 124 filer, 1.192.323 bytes og SHA256 `2be0ab83e37b8526e8395826177a428e26e68a7b68072683709ffbfe0f23aaa7`, identisk med den lokale pakke. Tag og betakanal er læst tilbage som beta.69 på 8788. Stabil release, tag, pakke og main-konfiguration er fortsat 1.12.1. [Beta.69](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.69).
+
+W93 er afsluttet for ventetiden efter bekræftet gemning/permanent sletning. Serveren sender den fulde lokale oversigt med den ønskede skrivekvittering, samlet under samme lås. Klienten viser resultatet på den aktuelle side uden et ekstra oversigtskald. En ældre server understøttes fortsat; bekræftet gemning vises som gemt, mens den gamle genhentning færdiggøres. Geodata opdateres stadig, når de faktisk er berørt. Ingen bevidst minimumsventetid er fundet eller indført. Manglende/modstridende svar kræver fortsat kontrol uden automatisk gentagelse. Ejerens HA er ikke fjernmålt, og der bestilles ingen ny generel HA-prøve.
+
+W102 er afsluttet: Datafordeleren administreres under Indstillinger → Forbindelser. Hent adresser og opstartsguiden åbner den samme side. Gemte nøgler bevares, indtastningen tømmes efter indsendelse, og ingen nøgle vises i status. Den fælles formularhåndtering behandler kun sine egne formularer, så en allerede tømt nøgle ikke udløser en ekstra valideringsbesked efter tilslutning. Vejledningen på dansk/engelsk følger den nye placering. Andre forbindelser kan tilføjes senere; Google Drive administreres fortsat under Deling og QR.
+
+Validering: 488 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver og faktisk arkivstart består. Lokale browserprøver dækker sletning på samme side uden ekstra oversigts-/geodatakald, nøgleformular/genvej og tomt nøglefelt uden ekstra validering, sprog, mobil/desktop, korteditor, opstartsguide, login i begge temaer, natlig adressekontrol og demo. En ekstra virkelig HTTP-/browserprøve mod en midlertidig opdigtet installation gennemfører både permanent sletning og noteoprettelse fra svarenes oversigter uden menuskift, genindlæsning eller eksterne kald. CI på den præcise udgivelsescommit dækker også WebKit, Windows, Mac, HA og sikkerhed. Kandidatkontrollen fangede henvisninger til den gamle formularplacering: kortprøven blev opdateret, og opstartsguidens rigtige genvej blev flyttet og prøvet før udgivelse. De tidligere kandidater blev ikke udgivet.
+
+Ejerafklaring: W92 om versionsnummer i Tally er udgået. W84 er en privat iPhone/VPN-huskenote, ikke en appfunktion. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt og skal ikke afklares igen. Samtidighed og eventuelle konfliktvalg behandles samlet med profiler. Den generelle synkroniseringsafvisning forbliver pauset; grenoprydning er fortsat udsat.
+
+Fremdrift efter levering og tre nye ønsker: 87/103 afsluttet/afklaret, 16 åbne, cirka 84 %. W93/W102 er afsluttet. W101 er undersøgt og forbliver åben til valg af adfærd. W103 om overlappende kortgrænser er modtaget under udgivelseskontrollen og planlagt til næste runde; W85/foto-OCR og IB-billeder er fortsat åbne. Den aktuelle oversigt går foran historiske kandidatstatusser nedenfor.
+
+### Nye ønsker modtaget fra Google-planen · W101–W103
+
+| Nr. | Ønske | Status og prioritet |
+| --- | --- | --- |
+| W101 | Undersøg en anden løsning til digitale kort: adgang ved den præcise QR-kode, begrænset videresendelse og eventuelt udløb efter fx tre timer | Undersøgelse, LTM vælger tidspunkt. Afklar forskellen på QR-kode, link med hemmelig adgang og tidsbegrænset session. Ingen ny deling, udbyder eller sikkerhedsgaranti indføres uden vurdering. Ingen IB må flyttes til cloud. |
+| W102 | Datafordelerens API-nøgle under Indstillinger → Forbindelser, med plads til senere forbindelser | Afsluttet i verificeret beta.69. Eksisterende nøgleformular og kontrol er flyttet; gemt nøgle og genveje fra adressehentning og opstartsguide bevares. Ingen ny forbindelse eller godkendelse af andre tjenester. |
+| W103 | Advarsel i Opfølgninger, når distriktskortgrænser overlapper | Modtaget under beta.69-kontrollen. LTM vælger prioritet; næste runde. Vis konkrete berørte kort uden automatisk at ændre grænser. Skeln mellem overlap, fælles kant og dobbeltvalgte adresser. Afsluttet i verificeret beta.70; se aktuel oversigt. |
+
+Ønskerne og deres prioritet er gemt og læst tilbage på GitHub i `d539fcd04b5ccc132f743f82a5ef43dbb24a5b25`. De to kildetekster og prioriteringer er derefter ryddet fra ønsketabellen; overskrifter, tomme rækker og Bilag er bevaret. W101 forbliver åben; W102 er afsluttet efter verificeret udgivelse. W103 er registreret her før rydning af dens kildetekst.
+
+W101: [Undersøgelsen af QR-adgang](QR-ADGANG.md) forklarer tidsbegrænsede links og browsersessioner med primære kilder. Et almindeligt link kan få udløb, men en kopieret gyldig QR-kode eller adgangsværdi er ikke dermed udelelig. Google Drives offentlige linkrettighed understøtter ikke den dokumenterede udløbsindstilling. Der skal vælges, hvornår udløb begynder, og om samme trykte kode skal kunne bruges igen. Ingen ny tjeneste eller deling er sat i drift.
+
+## Historik · beta.68 og ny demo udgivet · 24.10.2026
+
+Beta.68 er verificeret udgivet fra `36b6cc7e7eff675e0a21b5f5dc2d97b3e104b43e`, træ `76c040f805a1d4beb2c726aadd9c5191261f2373`. HA beta release 40072344919 og Checks 40072344998 er completed/success. Den offentlige HA-pakke har 124 filer, 1.191.529 bytes og SHA256 `9270b27c45ee8ee81252b8e4505aa5a825c89b86cba4121c864480a74a5650d6`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.68; stabil er fortsat 1.12.1. W98/W37/W97/W27 er afsluttet. [Beta.68](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.68).
+
+Den offentlige demo er opdateret via PR 7, sammenlagt som `bd47cc824638e653522f2d2badef2da91b14f613`, præcist træ `f2d56241d37cd7a5c1c4625fa0a3c48c1ec71488`. PR-kontroller 40072235633 og 40072235791 er grønne; offentlig Pages-udgivelse 40072535004 er completed/success. Side, demokode, model, CSS, manifest, to logoer og fire fælles designfiler er hentet fra den offentlige side og matcher byte for byte. Den udtrykkelige offentlige filliste udelukker serverkode, private data og nøglefiler. Main-appens config er fortsat 1.12.1 og ingen filer under distrikt blev ændret af demo-PR'en. Demobranchen slettes ikke som del af arbejdet, da grenoprydningen er udsat. [Offentlig demo](https://bib007.github.io/LTM-Local-Territory-Manager/).
+
+Validering omfatter 487 Python-prøver (én forventet overspringning), hele JavaScript-suiten, særskilte tema-/demoprøver, offentlig filliste/kontrolsummer, 20 programpakkeprøver og rigtig arkivopstart. Faktiske browserforløb dækker lyse/mørke appvisninger og demo ved fire bredder, telefon/tablet-touch i Chromium og WebKit, bevaret kladde/temavalg, enhedens temaskift samt login i begge temaer. En ekstra lokal gennemgang af korteditor, deling og eksport i lyst tema bestod ved fire bredder. Den oprindelige kandidats loginprøve afviste de nye offentlige temaaktiver; testens filliste og dækning blev opdateret før den endelige grønne udgivelsesgate. Ingen ændring af loginbeskyttelse var nødvendig.
+
+Beta.68 samler W98 (lyst/mørkt/følg enhed, lokal browserpræference uden serverændringer), W37/W97 (kontrolleret produktdesign i den opdigtede demo) og afsluttende guidegennemgang W27. Ønskerne er nu afsluttet efter kontrol og udgivelse. Temaet skifter uden at bygge formularer om; kortsymboler, eksport og print har egne farver. Logo, tekst, statusmærker og formularfelter er tilpasset lys baggrund. Demoens offentlige designfiler er et eksplicit, kontrolsumssikret snapshot af produktfilerne; betaens gate kontrollerer, at de matcher. Ingen Python-server, private filer eller import offentliggøres. Demoen er udgivet separat gennem en demo-begrænset PR til main, så stabil 1.12.1 bevares.
+
+W27: officielle DAR-/overgangssider er genkontrolleret 24.10.2026; fristen er fortsat 15.01.2027. Ejeren har allerede bekræftet fungerende HA-adressehentning. De aktive vejledninger på dansk/engelsk fjerner historiske afsnit, der stadig krævede den generelle afprøvning, og beskriver aktuelle menuer, aktivitet/antal, genoptagelse og Opfølgninger. Det er dokumentationsgennemgang, ikke et nyt opslag med ejerens nøgle eller ny bekræftelse af et bestemt geografisk område.
+
+W85/foto-OCR kræver fortsat særskilt arbejde; ingen cloud-OCR er indført. W92 er udgået efter ejerens valg; W84 er flyttet til privat huskenote. W100/grenoprydning forbliver udsat. Aktuelt 85/102 afsluttet/afklaret, 17 åbne efter to nye ønsker.
+
+Beta.67 er verificeret udgivet fra `6840b6aa16ce160a3fcc9b69d01f6e8aad005b27`, træ `d89cd8a237058f6fd081cb45fa46941dfa040a61`. HA beta release 40070456961, Checks 40070456935 og Platformskontrol 40070456898 er alle completed/success. Den offentlige HA-pakke matcher den lokale SHA256 `a4838037231b09391ee91fbce168ae241077821cb92ed4458c8cd7e45d8af24d` og har 1.187.624 bytes. Betakanalen viser 1.12.2-beta.67. Stabil er fortsat 1.12.1. Filkøen er leveret; W85 forbliver åben for fotos/OCR og IB-billedkø. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.67).
+
+Beta.67 leverer et afgrænset deltrin af W85: højst 20 Excel/CSV-kortfiler i en lokal kø (2 MB pr. fil, 20 MB samlet). Hver fil får en frisk forhåndsvisning efter tidligere importer og skal godkendes særskilt. Næste fil starter kun ved aktivt valg. Spring over ugyldiggør ventende svar og frigiver filreferencen; lukning fjerner resterende filer fra browserens kø. Tidligere godkendte filer rulles ikke tilbage. Ukendt gemmeresultat beskyttes fortsat af den eksisterende skrivebeskyttelse. Fotos/OCR og IB-billedkø er ikke implementeret; W85 forbliver åben, og fremdriften er stadig 79/100.
+
+OCR-afklaringen: HA-pakken indeholder aktuelt kun Python, ingen OCR-motor. Næste trin skal vælge og pakke lokal genkendelse til HA/Mac/Windows, validere billedformater/størrelse/orientering og vise redigerbare forslag før kort-/IB-match og eksplicit godkendelse. Prøvegrundlaget skal bruge fiktive for-/bagsider, usikre tegn, flere layouts og dubletter. Ingen ekstern AI eller billedoverførsel til cloud indføres som genvej.
+
+W92 undersøgt: Tally dokumenterer forudfyldning via et faktisk konfigureret hidden field og koblet standardværdi (https://tally.so/help/pre-populate-form-fields). Den konkrete formular https://tally.so/r/KpY0ZV kunne ikke læses (HTTP 403/ikke tilgængelig). Feltnavn og kobling er derfor ikke verificeret. Intet gættet versionsparameter er tilføjet; W92 er fortsat åben. Ingen private data eller formularindsendelser er brugt i undersøgelsen.
+
+Beta.66 er verificeret udgivet fra `80f3258af1acf2febacd2016d5c2ae86603d6551`, træ `b08bb38ccebd5bc2f93f801b30cd7e868a054936`. HA beta release 40012949488, Checks 40012949416 og Platformskontrol 40012949441 er alle completed/success. Den offentlige HA-beta ZIP har 121 filer, 1.186.440 bytes og SHA256 `5df1b2a5f22a804d4f2ec356fb39d4a5338ac86586140582422404c86f0e4639`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.66 på port 8788. W94/W95 er afsluttet. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.66).
+
+Tidligere betarunde: beta.65 blev verificeret udgivet fra `66450705d9f159ecb5cc81a7b6a4ff94c5f9e282`. HA beta release 40010353744 og Platformskontrol 40010353967 er completed/success. Den offentlige pakke er 1.184.271 bytes med SHA256 `ba1f79573fc3f8c2e04e2a23adf1c04c01efc73d277b87ea851cfaa98eef55a2`, identisk med den lokale pakke. Ved beta.65-udgivelsen viste betakanalen den version på port 8788. Stabil er fortsat 1.12.1. W82/W86 er afsluttet: reel aktivitet og dubletfrit antal modtagne adresser; bounded opdeling i mindre udsnit ved opslagets grænse; bevarede checkpoints og samme kildesnapshot ved genoptagelse. Den fulde beta.65-udgivelsesgate er bestået inklusive WebKit.
+
+W93 er delvist leveret, fortsat åben: sletning/gendannelse uden kortændringer genhenter ikke alle geodata, almindelig kortgemning får ingen ekstra geodatahentning, og en bekræftet gemning vises, mens oversigten opdateres. Ejerens konkrete HA-/telefonforsinkelse er ikke målt. Der er ikke genindført generel revisions-/synkroniseringsafvisning. Konkrete import-/delingsgodkendelser, atomisk lagring og beskyttelse ved usikkert gemmeresultat bevares.
+
+Beta.66 samler W94 og W95. Indstillinger → Import har én indgang til S-13/historik, kortimport og lokal IB-import; de eksisterende forhåndsvisninger, valideringer og godkendelser bevares. Opfølgninger samler kortkontrol, genprint, udleveringer over fire måneder og adresseændringer. En ændret forside og bagside er hver sit punkt. En udleveret ændret IB-bagside tælles kun én gang. Gentagne adresse-ID'er skaber ikke dubletpunkter; samme adresse valgt på to kort vises på begge berørte kort. Samling og åbning er læsning; intet oprettes automatisk i Opgaver eller deles. Den nye menu har søgning, filtre og samme tæller som rækkerne. Forsidens kortoversigt åbner dette fælles overblik; de gamle indgange under Kort og adresser er flyttet. Privatopgaver og ugentlige gentagelser bevares under Opgaver. W94/W95 er afsluttet efter grøn udgivelseskontrol og læsekontrol af den offentliggjorte pakke.
+
+Lokalt for beta.66: 487 Python-prøver (én forventet overspringning), hele JavaScript-suiten inklusive den nye opfølgningsprøve, 20 pakkeprøver og reel arkivopstart består. Faktisk browserbrug dækker 320/390/768/1440 px, fire telefon-/tabletstørrelser med berøring, alle tre importindgange, 11 selvstændige forhold i en fiktiv liste, 3 printpunkter, særskilt godkendelse af forsiden og bevaret bagside, filter/søgning/sprogskift samt uændrede skrivepayloads. Adressekontrollens indgang åbner den fælles liste. Layout er visuelt gennemgået ved mobil/desktop. Den lokale HA-beta ZIP har SHA256 `5df1b2a5f22a804d4f2ec356fb39d4a5338ac86586140582422404c86f0e4639`. GitHubs fulde kontrol og den offentlige pakke er nu også verificeret som beskrevet øverst.
+
+W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver. W100/grenoprydning er udsat efter ejerens udtrykkelige valg; ingen loginforsøg eller grensletninger udføres i denne runde. W87 er afsluttet på main og develop: fire rodfiler; vejledninger og hjælpere ligger i relevante mapper. Ejeren ønsker flere sammenhængende forbedringer pr. beta; tidligere maksimum på tre punkter er afløst.
+
+| Næste arbejde | Status |
+| --- | --- |
+| W103 · Overlappende distriktskortgrænser | Næste runde: konkret advarsel i Opfølgninger uden automatiske grænseændringer |
+| W85 · Kort/IB fra billeder og mange filer | Deltrin udgivet i beta.67: kø til Excel/CSV; foto/OCR/IB-billedkø fortsat åbent |
+| W101 · QR-adgang og udløb | Undersøgt i QR-ADGANG.md; valg af adfærd udestår, ingen ny deling indført |
+| W74 · Egen hosting | Planlagt undersøgelse efter stabil; W84 er privat huskenote uden for appkøen |
+| W65/W83 · Adminpanel, rettigheder og første profilguide | Adminpanel til brugere og egne roller er aftalt; samtidighed behandles samlet med profiler. Generel synkroniseringsafvisning forbliver pauset |
+| W06/W08/W13/W28/W56/W58/W61/W67 | Separate sikkerheds-, rapport-, sprog- og ejerafklaringer; ingen automatisk lukning |
+| W16 · Vejnet/autokort | På pause |
+| W100 · Ryd gamle grene | Udsat efter ejerens valg |
+
+Fremdrift efter beta.68: 83/100 afsluttet/afklaret, 17 åbne, cirka 83 %. W94/W95/W98/W37/W97/W27 er afsluttet. W93 er fortsat delvist åben; W100 er udsat efter ejerens valg. Den aktuelle oversigt går foran de historiske kandidatstatusser nedenfor.
+
+## Beta.63 klargjort · 23.10.2026
+
+Stabil 1.12.1 er udgivet med rettelsen af W89 og seks dokumenter flyttet fra roden. W87 genåbnes efter det skærpede ønske om højst 3–4 løse rodfiler og færre dubletvejledninger. Udgivet 1.12.1 ændres ikke. Betaen skal bevare rettelsen, der pauser generel synkroniseringsafvisning indtil profiler.
+
+| Nr. | Ønske | Afgrænsning og rækkefølge |
+| --- | --- | --- |
+| W90 | Mere hvid/udfadet baggrund på digitale kort | Første samlede beta. Bevar tydelige prikker, numre, grænse og aktiv godkendelse før ændring af allerede delte billeder. |
+| W91 | Gentagende opgaver og korrekt opgavetæller | Første samlede beta. Udført fører allerede ugentlige opgaver videre med historik. Tæl fremtidige opgaver først fra forfaldsdagen, og forklar gentagelsen. Almindelige åbne opgaver tæller fortsat. |
+| W92 | Automatisk LTM-version i Tally | Udgået efter ejerens valg 24.10.2026. Feedbackformularen og det almindelige link bevares. |
+| W93 | Langsom gemning/permanent sletning | Undersøg med fiktiv reproduktion, også om menuskift blot viser en allerede gemt handling. Bevar slettebekræftelse, atomisk lagring og usikker-resultatbeskyttelse. |
+| W94 | Én Import-fane under Indstillinger | Flyt indgange til S-13/historik, kort og IB. Bevar importforhåndsvisninger og validering. Samles med relevant importarbejde. |
+| W95 | Samlet Opfølgninger | Flyt Kortkontrol, Kort med ændrede sider og relevante genprintpunkter. Hvert forhold har egen linje og tæller, også flere på samme kort. Undgå dublering. |
+| W96 | Gemte visninger kun på faktisk geografisk kortoversigt | Første samlede beta. Fjern kontrollen fra almindelige kort-/adresselister, og bevar brugerens gemte præferencer. |
+| W97 | Webdemo med samme design som appen | Afsluttet i beta.68. Faktisk produktlayout med fiktive data; alle funktioner behøver ikke virke. Bevar tydelig demoafgrænsning. |
+| W98 | Lyst udseende | Afsluttet i beta.68. Alternativ til mørkt, med vedvarende valg og kontrol af kontrast, formularer, kort og telefon/tablet. |
+
+Alle ni nye ønsker har prioriteten “LTM vælger”. Første samlede beta omfatter stable-rettelsen, W88/W90/W91/W96 og den skærpede W87-oprydning; W93 undersøges samtidig. Adressehentning W82/W86 følger derefter, og import/opfølgninger W85/W94/W95 samles efter afhængigheder. Vejnet/autokort er fortsat parkeret. W87-oprydningen efterlader fire rodfiler inklusive projektets filtreringsfil: README, licens, HA-repositoryfil og filtrering. Ændringsliste, engelsk introduktion, bidragsvejledning, Mac-hjælp og platformsregler ligger i relevante mapper. Relative vejledningslinks og billeder samt pakkeindhold er tilpasset. W87/W88/W90/W91/W96 er klargjort til 1.12.2-beta.63; de er ikke markeret afsluttet før udgivelseskontrollerne er bestået. W93 er fortsat åben: efter en skrivekvittering genhenter klienten både geodata (ved sletning) og almindeligt overblik, før den viser færdigstatus. Ingen konkret flaskehals er endnu reproduceret med en realistisk fiktiv datamængde; ingen slette-/lagringsbeskyttelse er fjernet.
+
+Aktuel fremdrift ved registrering: 69/98 afsluttet/afklaret, 29 åbne, cirka 70 %. W89 er afsluttet, W87 er delvist leveret og genåbnet. Google-kildetekster ryddes efter læsekontrol af registreringen på GitHub og i hovedplanen.
+
+Lokalt består 481 Python-prøver (én forventet overspringning), alle JavaScript-prøver, 15 programpakkeprøver, fem beta-pakkeprøver og rigtig arkivopstart. Faktisk browserbrug ved 320/390/768/1440 px dækker opgaver og fjernede visninger. Produktionsrendererens SVG→PNG-prøve måler 30 % baggrund over hvidt og uændrede røde prikker/numre; tæt/spredt kort og mobil/desktop er visuelt gennemgået. Endelig CI og HA-betapublicering udestår. Ingen privat data eller faktiske tjenesteopslag indgår.
+
 ## Akut rettelse til 1.12.1 · klargøring 23.10.2026
 
 W89: Ejeren oplever, at stabil 1.12.0 afviser udlevering og kortændringer med beskeden om ændringer fra anden fane/enhed, også ved menuskift. Google-genforbindelse fik udlevering til at virke igen. En fiktiv prøve reproducerer, at Google-adgangsfejl ændrer baggrundsstatus og dermed gør en åben formular forældet. Ejeren har efterfølgende udtrykkeligt bestilt den generelle synkroniserings-/revisionsafvisning fjernet indtil brugerprofiler (W65) udvikles samlet.
@@ -25,7 +465,7 @@ Ejeren har bestilt udgivelse og bedt om, at ADS-planens relevante punkter gennem
 | Nr. | Ønske | Afgrænsning |
 | --- | --- | --- |
 | W83 | Startguide ved første login med en ny profil | Hører sammen med fremtidige profiler/flerbrugerønsker i W65. Vis en relevant introduktion, når en ny profil bruges første gang. Registreret, ikke implementeret. |
-| W84 | iPhone-genvej til VPN ved åbning af LTM | Undersøg en Apple-genvej, der forbinder VPN ved åbning og afbryder igen bagefter. Afhænger af telefonens og VPN-appens muligheder; ingen automatisk adgang eller færdig løsning loves. Registreret, ikke implementeret. |
+| W84 | Privat iPhone/VPN-huskenote | Afklaret 24.10.2026: ikke en appfunktion eller åben udviklingsopgave. Huskenoten bliver i ejerens private plan. |
 | W85 | Opret distriktskort fra foto af S-12 og IB-bagside | Undersøg lokal tekstgenkendelse uden ekstern AI som førstevalg, flere bagsidelayouts, kortoprettelse og match mod eksisterende adresser. Manglende adresser markeres til gennemgang under adresseændringer. Undersøg afsluttende grænsetegning og masseupload af en mappe/flere billeder med front og bagside i kø, så mange kort kan indlæses samlet. Ejeren ønsker dette tidligt efter stabil udgivelse. Registreret, ikke implementeret. |
 | W86 | Adressehentning opdelt i mindre bidder ved anmodningsgrænsen | Ejeren ser “Udsnit 2: DAR-opslaget kræver for mange anmodninger. Vælg et mindre område.” Undersøg automatisk opdeling med bevaret fremdrift, pause/genforsøg og tydelig ufuldstændighed. Må ikke fjerne grænser eller fejlagtigt godkende ufuldstændige data. Registreret til efter stabil udgivelse, ikke rettet nu. |
 
@@ -208,7 +648,7 @@ Beta.31 er udgivet og verificeret med kun W49 og W59. W49 bevarer det eksisteren
 | W35 | Forklar januarfristen korrekt: kan API-nøgler oprettes bagefter? | 1 | Forklaring rettet til beta.25; officielle kilder kontrolleret | Officielle kilder efterprøves. App og vejledning skelner mellem lukning af gammel REST-adgang og fortsat oprettelse af GraphQL-nøgler. |
 | W36 | Forklar Adressevælger og dens særskilte token forståeligt | 5 | Afsluttet i verificeret beta.49 | Formål, valgfrihed og forskel fra Datafordeler-nøglen beskrives konkret; uklare tekniske menutekster forbedres. |
 | W69 | Medtag udleveringer og forkyndernavne ved S-13-import | LTM prioriterer | Afsluttet i verificeret beta.50 | Lokal S-13-/CSV-import med navne og aktive/afsluttede udlån; match, dubletter og konflikter gennemgås før godkendelse. Eksisterende data overskrives ikke. |
-| W37 | Bring webdemo i overensstemmelse med den udgivne app | 9 | Planlagt til sidst i funktionsforløbet | Demo følger kontrolleret produktudgave med udelukkende fiktive data og tydelige begrænsninger. |
+| W37 | Bring webdemo i overensstemmelse med den udgivne app | 9 | Afsluttet i beta.68 og offentlig demo | Demo følger kontrolleret produktudgave med udelukkende fiktive data og tydelige begrænsninger. |
 | W38 | Farver efter kortstatus og direkte indlever/udlever i daglig brug | 3 | Implementeret og browserprøvet til beta.27 | Status og primære handlinger får læsbare farver og direkte adgang; eksisterende sidemenu med flere handlinger bevares. |
 | W39 | Aflever pr. forkynder med navnesøgning og sortering efter antal kort | 5 | Implementeret og browserprøvet til beta.27 | Alle udleverede kort grupperes tydeligt efter forkynder; flest tildelte først. Søgning og normal aflevering fungerer fra oversigten. |
 | W33 | Statusfanen skal kun vise det, der mangler; færdige punkter fjernes | -1 · kritisk | Færdig: statusfanen viser kun udestående punkter | Afsluttede lister og historiske statusreferater fjernes fra ejerens statusfane. Kun udestående udvikling, blokeringer og ejer-/udgivelsestrin vises. Nye ønsker ryddes først efter planlagring. |
@@ -219,7 +659,7 @@ Beta.31 er udgivet og verificeret med kun W49 og W59. W49 bevarer det eksisteren
 | W28 | Gennemgå hele programmet med Codex Security og skriv eventuelle vurderede risici i statusdokumentet | 9 | Blokeret i denne session: Codex Security-pakkens nødvendige referencer og preflight-/scannerværktøjer er ikke tilgængelige | En repositorygennemgang med den angivne Codex Security-færdighed er udført, og eventuelle validerede fund får et særskilt felt under Hvor langt er vi? Private data holdes ude af scanning og GitHub. Fund rettes og verificeres efter vurdering. |
 | W25 | Én samlet opsætningsguide med information om fordelene ved lokal drift | 2 | Udgivet i beta.23 med grønne program-, platform- og HA-gates | Den normale spørgsmålsguide er den eneste guideindgang. Information om lokal computer/HA, valgfri kort/Drive og privat backup er integreret. Geografi- og importværktøjer bevares som handlinger i den personlige plan; ingen parallel avanceret velkomstguide. |
 | W26 | Rundturen er en obligatorisk del af opsætningen, og opsætningen lukkes efter fuldført rundtur | 2 | Udgivet i beta.23 med grønne program-, platform- og HA-gates | Førstegangsforløbet kan ikke markeres fuldført ved kun at gemme svar. Rundturens sidste trin afslutter forløbet og viser appen/den personlige opgaveliste uden at genåbne guiden. Afbrydelse kan genoptages; eksisterende registreringer og tidligere fuldført opsætning bevares. |
-| W27 | Følg op på adresseimport, januarfristen og egen API-nøgle | 3 | Officielle kilder genkontrolleret 17.10.2026; direkte nøgletrin og januarfrist til beta.23; egen konto udestår | Genkontrollér aktuelle officielle kilder og den eksisterende GraphQL-import/nøglevejledning. Forklar konkret hvad der er klar, hvad ejeren skal oprette, og hvilke kontoprøver der udestår. Ingen adgangsnøgler indsamles i chat/GitHub. |
+| W27 | Følg op på adresseimport, januarfristen og egen API-nøgle | 3 | Afsluttet i beta.68: officielle kilder og dansk/engelsk guide genkontrolleret 24.10.2026; ejerens fungerende hentning er tidligere bekræftet | Genkontrollér aktuelle officielle kilder og den eksisterende GraphQL-import/nøglevejledning. Forklar konkret hvad der er klar, hvad ejeren skal oprette, og hvilke kontoprøver der udestår. Ingen adgangsnøgler indsamles i chat/GitHub. |
 | W24 | Redesign af det digitale QR-kort med moderne udseende og lille miniature af kortets printforside | 3 | Udgivet i beta.12; fiktiv visuel SVG/PNG-kontrol og program-/platform-/HA-gates består; egen HA/Drive-prøve udestår | QR-kortet får en tydelig moderne præsentation og en lille visning af det tilsvarende printkort i hjørnet. Vejnavne/layout genbruges fra printforsiden. Ingen IB eller andre private registreringer må indgå. |
 | W23 | Idéer og feedback uden konto eller e-mail | 10 | Afsluttet i verificeret beta.59; formular og ejerprøve bekræftet | Tally med valgfrie billedbilag og indholdsbekræftelse. Ingen automatisk overførsel af lokale data eller offentlig kopiering til GitHub. |
 | W20 | Ret opsætningsguidens valgfelter, hvor teksten står ved siden af boksen med knapper | 5 | Udgivet i beta.5 med grønne program/platform/HA-gates; offline layout og guideprøver består | Valg og forklaring holder sig i samme boks ved mobil- og skrivebordsbredder. |

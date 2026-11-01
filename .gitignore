@@ -5,7 +5,7 @@ __pycache__/
 *.db-*
 *.log
 *.zip
-!distrikt/app/vendor_py/pypdf-6.21.2.zip
+!distrikt/app/vendor_py/pypdf-6.21.4.zip
 run.json
 drive-auth.json
 datafordeler-auth.json
@@ -23,3 +23,7 @@ dist/
 node_modules/
 playwright-report/
 test-results/
+
+profiles.json
+profiles.tmp
+accounts-before-restore-*.json

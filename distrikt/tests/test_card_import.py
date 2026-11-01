@@ -147,7 +147,11 @@ class CardImportTests(unittest.TestCase):
         with self.assertRaises(ValueError):read_rows({'name':'test.xlsx','content':base64.b64encode(b'not a zip').decode()})
         with self.assertRaises(ValueError):read_rows({'name':'test.xls','content':'anything'})
     def test_manual_house_intervals_and_invalid_types_or_counts_are_not_silently_expanded(self):
-        for column,value in [(5,'1-19'),(9,'invented type'),(10,'1.5'),(10,'0')]:
+        row=ROWS[0][:];row[5]='1-19';row[6]='';row[7]='';row[10]='';p=self.preview([row])
+        self.assertEqual(p['errors'],[]);self.assertEqual(p['manual_lines'],1)
+        self.assertEqual(p['addresses'],0);self.assertTrue(p['cards'][0]['addresses'][0]['count_unknown'])
+        self.assertEqual(p['cards'][0]['addresses'][0]['numbers'],'1-19')
+        for column,value in [(9,'invented type'),(10,'1.5'),(10,'0')]:
             row=ROWS[0][:];row[column]=value;p=self.preview([row]);self.assertEqual(len(p['errors']),1)
     def test_onboarding_preferences_are_validated_and_create_no_records(self):
         answers={'mode':'desk','boundary':'later','cards':'excel','ib':'yes'}

@@ -14,7 +14,7 @@ const click=listeners.click.find(fn=>String(fn).includes("case 'confirm-approve'
 (async()=>{
  for(const language of ['da','en']){
   run(`I18n.set('${language}');query='';addressPostcode='';addressPage=0`);contracts[language]=[];
-  for(const tab of ['Mangler på kort','Inden for kortgrænse','På kort','Se bort fra','IB','Genprint']){run('addressTab='+JSON.stringify(tab));const html=run('addressesPage()');contracts[language].push(contract(html));assert.doesNotMatch(html,/<fictional>/);if(tab==='IB')assert.match(html,/IB &lt;fictional&gt;/);}
+  for(const tab of ['Mangler på kort','Inden for kortgrænse','På kort','Se bort fra','IB','Genprint']){run('addressTab='+JSON.stringify(tab));const html=run('addressesPage()');contracts[language].push(contract(html));assert.doesNotMatch(html,/<fictional>|data-tab="Genprint"/);if(tab==='IB')assert.match(html,/IB &lt;fictional&gt;/);}
   run("addressTab='På kort'");assert.match(run('addressesPage()'),language==='en'?/Reserved for card 101/:/Reserveret til kort 101/);
   assert.match(run('Workspace.checks()'),/Adresse &lt;duplicate&gt;/);assert.match(run('Workspace.addressChanges()'),/Adresse &lt;after&gt;/);assert.match(run('Workspace.checks()'),language==='en'?/>Missing area<\//:/>Mangler område<\//);
   const start=writes.length;await run("Workspace.handle('accept-address',{id:'change'})");await run("Workspace.handle('reject-address',{id:'change'})");

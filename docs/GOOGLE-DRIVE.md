@@ -43,7 +43,7 @@ Guiden bruger en midlertidig lokal adresse på **127.0.0.1**, PKCE og en tilfæl
 
 ## 3. Importér forbindelsen privat
 
-Åbn **Indstillinger → Deling og QR** i den installerede app, og vælg forbindelsesfilen. Kontrollér den viste konto, og slet filen fra Downloads bagefter.
+Åbn **Indstillinger → Forbindelser** i den installerede app, og vælg forbindelsesfilen. Kontrollér den viste konto, og slet filen fra Downloads bagefter.
 
 Filen giver fortsat adgang og skal behandles som en adgangskode. Den må ikke sendes til AI eller uploades i GitHub. Forbindelsen ligger adskilt fra databaserne og følger ikke med appens eksport eller HA-backup. Ved flytning skal kontoen derfor forbindes igen.
 

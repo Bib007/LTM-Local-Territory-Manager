@@ -106,7 +106,7 @@ def fronts_pdf(state):
         for a in c.get('addresses',[]):
             label=str(a.get('road',''))+' '+str(a.get('numbers',a.get('from','')))
             rows.extend(textwrap.wrap(safe(label),57) or [''])
-            rows[-1]+='   (%s besøg)'%a.get('count',0)
+            rows[-1]+='   (besøg ikke angivet)' if a.get('count_unknown') else '   (%s besøg)'%a.get('count',0)
         for offset in range(0,max(1,len(rows)),8):
             # The original blank form is reproduced at its standard 146 x 94 mm.
             x,y,w,h=90,430,414,266.55
@@ -120,7 +120,9 @@ def fronts_pdf(state):
                 commands.extend('%.3f %.3f %.3f %.3f re f'%(qx+j*unit,qy+(len(matrix)-i-1)*unit,unit,unit) for i,row in enumerate(matrix) for j,dot in enumerate(row) if dot)
                 commands.append(line(qx,qy+56,'Se digitalt kort',5))
             commands.extend(line(x+w*.07,y+h*.66-i*12,value,8) for i,value in enumerate(rows[offset:offset+8]))
-            if not c.get('temporary'):commands.append(line(x+w*.07,y+h*.24,'I alt: %s besøg'%sum(a.get('count',0) for a in c.get('addresses',[])),8))
+            if not c.get('temporary'):
+                total='I alt: ikke angivet' if any(a.get('count_unknown') for a in c.get('addresses',[])) else 'I alt: %s besøg'%sum(a.get('count',0) for a in c.get('addresses',[]))
+                commands.append(line(x+w*.07,y+h*.24,total,8))
             commands+=[line(40,800,'Forsider · kort '+str(c['number'])+(' · arkiveret' if c.get('archived') else '')+(' · fortsat' if offset else ''),14),line(40,390,'Lokalt læsearkiv · ikke en godkendelse af genprint. Præcise adresser findes i CSV.',8)]
             pages.append(commands)
     return pdf_document(pages or [[line(40,800,'Ingen distriktskort.')]],image=(*image,'png'))
@@ -136,7 +138,7 @@ def tables(state,geo):
         members=c.get('geo_addresses') or [addresses[i] for i in c.get('address_ids',[]) if i in addresses]
         for a in members:address_rows.append((c['id'],c['number'],'præcis',a.get('id',''),*[a.get(k,'') for k in ('road','number','floor','door','postcode','count','lng','lat')]))
         if not members:
-            for a in c.get('addresses',[]):address_rows.append((c['id'],c['number'],'gemt vejlinje','',a.get('road',''),a.get('numbers',a.get('from','')),'','','',a.get('count',''),'',''))
+            for a in c.get('addresses',[]):address_rows.append((c['id'],c['number'],'gemt vejlinje · besøg ukendt' if a.get('count_unknown') else 'gemt vejlinje','',a.get('road',''),a.get('numbers',a.get('from','')),'','','','' if a.get('count_unknown') else a.get('count',''),'',''))
     assigned={a.get('id') for c in cards for a in c.get('geo_addresses',[])}|{i for c in cards for i in c.get('address_ids',[])}
     for a in addresses.values():
         if a['id'] not in assigned:address_rows.append(('','','præcis · uden kort',a['id'],*[a.get(k,'') for k in ('road','number','floor','door','postcode','count','lng','lat')]))
@@ -146,7 +148,7 @@ def tables(state,geo):
     add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date','')) for r in state['ib']])
     add('udleveringer',['udlaans_id','kort_id','kortnummer','forkynder_id','forkynder','udleveret','aktuel_gennemgang_fra','afleveret'],[(r['id'],r['card_id'],ref(r['card_id']),r['publisher_id'],people.get(r['publisher_id'],''),r['assigned'],r.get('cycle_start',''),r.get('returned','')) for r in state['loans']])
     add('gennemgange',['id','kort_id','kortnummer','dato','forrige_gennemgang','udlaans_id','besoeg','besoeg_ukendt','kilde'],[(r['id'],r['card_id'],ref(r['card_id']),r['date'],r.get('previous_completed',''),r.get('loan_id',''),'' if r.get('visits_unknown') else r.get('visits',''),bool(r.get('visits_unknown')),r.get('source','')) for r in state['completions']])
-    add('forkyndere',['id','navn'],[(r['id'],r['name']) for r in state['publishers']])
+    add('forkyndere',['id','navn','tjenestegruppe','gruppefunktion','pioner'],[(r['id'],r['name'],r.get('group',''),r.get('group_role',''),bool(r.get('pioneer'))) for r in state['publishers']])
     add('omraader',['id','navn'],[(r['id'],r['name']) for r in state['areas']])
     add('opgaver',['id','kort_id','kortnummer','tekst','oprettet','udfoert','gentagelse','naeste_gang','afslutningshistorik'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('text',''),r.get('created',''),bool(r.get('resolved')),json.dumps(r.get('recurrence'),ensure_ascii=False),r.get('recurrence',{}).get('next_due','') if r.get('recurrence') else '',json.dumps(r.get('task_history',[]),ensure_ascii=False)) for r in state['notes']])
     add('ktm_besoeg',['id','dato','bemaerkning'],[(r['id'],r['date'],r.get('note','')) for r in state['visits']])

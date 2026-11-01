@@ -17,6 +17,15 @@ def page(ids=(), more=False, cursor=None):
 
 
 class PagingTests(unittest.TestCase):
+    def test_progress_counts_only_validated_pages_even_when_later_page_fails(self):
+        for bad in (page(['a'], False, 'repeated-id'), page(['b'], False, 'one'),
+                    {'data': {}, 'errors': [{'message': 'FICTIONAL_SECRET'}]}):
+            receipts=[]
+            fetch=Mock(side_effect=[page(['a'], True, 'one'), bad])
+            with self.subTest(bad=bad), self.assertRaises(IncompleteResult):
+                collect_pages(fetch, ENTITY, on_page=lambda rows:receipts.extend(r['id_lokalId'] for r in rows))
+            self.assertEqual(receipts,['a'])
+
     def test_complete_pages_keep_order_and_forward_opaque_cursor(self):
         fetch = Mock(side_effect=[page(['a', 'b'], True, 'opaque+/='),
                                   page(['c'], False, 'last')])

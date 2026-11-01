@@ -7,7 +7,7 @@ test area are verified separately in the owner’s local installation.
 import json
 import math
 from datetime import datetime, timezone
-from dar_paging import collect_pages, IncompleteResult
+from dar_paging import collect_pages, IncompleteResult, IncompleteLimit
 from dar_join import point_coordinates
 from postcode import SourceLimit
 
@@ -42,13 +42,14 @@ def snapshot_time(value=None):
 
 
 class DarQuery:
-    def __init__(self, request, *, snapshot=None, page_size=100, check_cancel=lambda: None):
+    def __init__(self, request, *, snapshot=None, page_size=100, check_cancel=lambda: None, on_page=lambda entity, nodes: None):
         if type(page_size) is not int or not 1 <= page_size <= 1000:
             raise ValueError('DAR-sidestørrelsen skal være mellem 1 og 1000.')
         self.request = request
         self.snapshot = snapshot_time(snapshot)
         self.page_size = page_size
         self.check_cancel = check_cancel
+        self.on_page = on_page
 
     def _arguments(self, entity, filters):
         """Fetch a bounded scope. Only documented scalar equality filters allowed.
@@ -83,6 +84,7 @@ class DarQuery:
         if not separator:raise ValueError('Ugyldig DAR-sideafgrænsning.')
         while True:
             self.check_cancel()
+            self.on_page(entity, [])
             try:return self.request('query { '+self._selection(entity,prefix+'first: '+str(size),after)+' }'),size
             except SourceLimit:
                 if size==1:raise
@@ -109,7 +111,7 @@ class DarQuery:
 
         filters_copy = dict(filters)
         return collect_pages(fetch, entity, check_cancel=self.check_cancel,
-                             max_pages=max_pages, max_nodes=max_nodes)
+                             max_pages=max_pages, max_nodes=max_nodes, on_page=lambda nodes: self.on_page(entity, nodes))
 
     def collect_bbox(self, bounds, *, max_pages=2000, max_nodes=200000):
         """Complete points within a <=9 km² UTM32 tile; no local polygon upload.
@@ -148,7 +150,7 @@ class DarQuery:
             return result
 
         points = collect_pages(fetch, 'DAR_Adressepunkt', check_cancel=self.check_cancel,
-                               max_pages=max_pages, max_nodes=max_nodes)
+                               max_pages=max_pages, max_nodes=max_nodes, on_page=lambda nodes: self.on_page('DAR_Adressepunkt', nodes))
         return [row for row in points if w <= point_coordinates(row)[0] <= e and s <= point_coordinates(row)[1] <= n]
 
     def collect_many(self, entity, field, values, *, require_all=False,
@@ -182,21 +184,21 @@ class DarQuery:
             nonlocal requests_left
             self.check_cancel()
             if requests_left <= 0:
-                raise IncompleteResult('DAR-opslaget kræver for mange anmodninger. Vælg et mindre område.')
+                raise IncompleteLimit('DAR-opslaget kræver for mange anmodninger. Vælg et mindre område.')
             requests_left -= 1
             result = self.request(query)
             self.check_cancel()
             return result
 
         worker = DarQuery(request, snapshot=self.snapshot, page_size=self.page_size,
-                          check_cancel=self.check_cancel)
+                          check_cancel=self.check_cancel, on_page=self.on_page)
         for value, _ in scopes:
             found = worker.collect(entity, {field: value}, max_nodes=max_nodes,
                                    max_pages=max_requests + 1)
             if require_all and len(found) != 1:
                 raise IncompleteResult('Et nødvendigt DAR-ID manglede. Ingen adresser er klar til import.')
             if len(rows) + len(found) > max_nodes:
-                raise IncompleteResult('DAR-opslaget indeholdt for mange resultater.')
+                raise IncompleteLimit('DAR-opslaget indeholdt for mange resultater.')
             for node in found:
                 if node['id_lokalId'] in identities:
                     raise IncompleteResult('Datafordeleren gentog et ID på tværs af opslag.')

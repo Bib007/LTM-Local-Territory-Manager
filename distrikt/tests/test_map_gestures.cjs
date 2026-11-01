@@ -7,6 +7,7 @@ node.contains=value=>value===node;node.focus=()=>document.activeElement=node;
 const c={console,window:win,document};vm.createContext(c);
 for(const file of ['i18n.js','district-map.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../app',file),'utf8'),c);
 const run=s=>vm.runInContext(s,c),map={};for(const key of ['dragging','scrollWheelZoom','doubleClickZoom','touchZoom','boxZoom','keyboard','tapHold'])map[key]={on:true,enable(){this.on=true;},disable(){this.on=false;}};
+run("I18n.set('da')");
 c.map=map;c.node=node;c.button=button;c.hint=hint;
 const gate=run('DistrictMapGesture.attach(map,node,button,hint)');
 const check=value=>{assert.equal(gate.enabled(),value);assert.ok(Object.values(map).every(handler=>handler.on===value));};

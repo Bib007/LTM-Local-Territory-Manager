@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Betaer udgives i små trin, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
+Betaer samler flere sammenhængende forbedringer, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
 
 ## Installer betakanalen én gang
 
@@ -17,7 +17,7 @@ Betakanalen har eget HA-appnavn, egen datamappe og eget login. Den stabile app f
 
 ## Hver ny beta
 
-Når en ny funktion eller en lille sammenhængende ændring er klar, udgives en ny nummereret beta med en kort ændrings- og testliste på GitHub. Beta hentes fra en fast, kontrolleret version; almindelige mellemliggende ændringer på `develop` flytter ikke HA-betakanalen.
+Betaer samler flere sammenhængende brugerændringer i et overskueligt prøvesæt, frem for enten en stor bunke eller konsekvent kun 2–3 småting. Hver runde får et nyt nummer og en kort ændrings- og testliste på GitHub. Beta hentes fra en fast, kontrolleret version; almindelige mellemliggende ændringer på `develop` flytter ikke HA-betakanalen.
 
 Vælg **Kontrollér for opdateringer** i HA's appbutik, og opdater **Distrikt Beta**. Hent en privat backup i betaens egne indstillinger, før du opdaterer. Også betaens data er udeladt af HA-backup. Hvis en beta giver problemer, kan den stoppes, mens den stabile app fortsætter.
 
@@ -32,3 +32,7 @@ Se [betaudgivelserne](https://github.com/Bib007/LTM-Local-Territory-Manager/rele
 Før hver ny beta opdateres versionsnummeret i serveren, HA-konfigurationen og tilhørende tilstands-/versionsprøver samt den korte betanote. Nummeret genbruges ikke til ændret kode. Workflowet kræver grøn programkontrol, Mac, Windows og bygning af HA-betapakken før offentliggørelse. En beta er en GitHub-prerelease og ændrer ikke den seneste stabile udgivelse.
 
 HA understøtter en grengiven repositoryadresse: [officiel vejledning](https://contributors.home-assistant.io/apps/guides/repository/).
+
+## Beta på Mac, Windows eller Linux
+
+Fra beta.74 har udgivelsen også en samlet **LTM-v…zip** med en ny lokal/server-startguide. Hent den komplette ZIP frem for HA-pakken, og følg [Egen hosting](SELF-HOSTING.md). Betaens desktopdata holdes adskilt fra stabil og HA. Python er stadig nødvendig.

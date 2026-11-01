@@ -11,12 +11,20 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
 REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fields.json','S-13-fillable.pdf')
-PDF_DEPENDENCIES=('pypdf-6.21.2.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
-BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log')
-BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json'}
-ROOT_DOCS=('repository.yaml','README.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
+PDF_DEPENDENCIES=('pypdf-6.21.4.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
+BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log','.tmp')
+BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json','profiles.json','profiles.tmp'}
+ROOT_DOCS=('homeassistant/ltm-status.yaml','repository.yaml','README.md','README.da.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
-SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png')
+SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png','dashboard-en.jpg','cards-en.jpg','report-en.jpg')
+
+def account_backup(raw):
+    if not raw.lstrip().startswith(b'{'):return False
+    try:value=json.loads(raw)
+    except (ValueError,UnicodeError):return False
+    return isinstance(value,dict) and (value.get('format')=='ltm-account-backup' or
+        isinstance(value.get('users'),dict) and isinstance(value.get('roles'),dict)
+        and any(isinstance(u,dict) and 'hash' in u for u in value['users'].values()))
 
 def version():
     value=re.search(r"^VERSION='([^']+)'",(SRC/'app/server.py').read_text(),re.M).group(1)
@@ -35,14 +43,15 @@ def files():
         for p in sorted((SRC/section).rglob('*')):
             if not p.is_file() or '__pycache__' in p.parts:continue
             if p.is_symlink():raise ValueError('Symlink not allowed in release: '+str(p))
-            if p.suffix in BLOCKED_SUFFIXES or p.name in BLOCKED_NAMES:raise ValueError('Private/runtime file in source tree: '+str(p))
+            if p.suffix in BLOCKED_SUFFIXES or p.name in BLOCKED_NAMES or p.name.startswith('accounts-before-restore-'):raise ValueError('Private/runtime file in source tree: '+str(p))
+            if account_backup(p.read_bytes()):raise ValueError('Private account backup in source tree: '+str(p))
             relative=p.relative_to(SRC).as_posix()
             if any(part.startswith('.') for part in p.relative_to(SRC).parts):continue
             result['Distrikt-lokal/'+relative]=(p.read_bytes(),0o644)
             if section in ('app','templates','translations'):result['Home-Assistant/distrikt/'+relative]=(p.read_bytes(),0o644)
     for p in sorted(SRC.iterdir()):
-        if p.is_file() and p.suffix in ('.cmd','.command','.md'):
-            result['Distrikt-lokal/'+p.name]=(p.read_bytes(),0o755 if p.suffix=='.command' else 0o644)
+        if p.is_file() and p.suffix in ('.cmd','.command','.sh','.md') and p.name!='run.sh':
+            result['Distrikt-lokal/'+p.name]=(p.read_bytes(),0o755 if p.suffix in ('.command','.sh') else 0o644)
     for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md','icon.png','logo.png'):
         p=SRC/n;result['Home-Assistant/distrikt/'+n]=(p.read_bytes(),0o755 if n=='run.sh' else 0o644)
     for n in ROOT_DOCS:
@@ -89,7 +98,7 @@ def files():
     prefix='Home-Assistant/distrikt/'
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))
     result['Home-Assistant/SHA256SUMS.txt']=(manifest.encode(),0o644)
-    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: docs/README.en.md.\nMac/Windows: startfil i Distrikt-lokal.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
+    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nRead README.md or docs/INSTALL.en.md. Danish: README.da.md.\nWindows/macOS/Linux: see docs/SELF-HOSTING.en.md for the Start-LTM launcher in Distrikt-lokal. Install Python separately. Legacy Start-Distrikt launchers remain for existing installations.\nHome Assistant: add the repository from README and install through the add-on store. Back up privately before moving an existing installation.\nUser databases and login credentials are not included.\n').encode(),0o644)
     validate_links(result)
     return result
 

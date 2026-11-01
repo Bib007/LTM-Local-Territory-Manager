@@ -18,7 +18,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
    if(u.pathname==='/api/geo/suggest')return json({suggestions:[]});
    if(u.pathname==='/s13-background.jpg')return route.fulfill({path:path.resolve(root,'../templates/S-13-background.jpg')});
    if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
-   if(u.pathname==='/api/share/status')return json({connected:true,account:'Account <fictional>',cards:[{card_id:'c1',number:'101',status:'ready',file_id:'FICTIONAL_FILE',front_url:'https://example.invalid/FICTIONAL',url:'https://example.invalid/FICTIONAL'}]});
+   if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:true,account:'Account <fictional>',cards:[{card_id:'c1',number:'101',status:'ready',file_id:'FICTIONAL_FILE',front_url:'https://example.invalid/FICTIONAL',url:'https://example.invalid/FICTIONAL'}]});
    if(u.pathname==='/api/share/prepare')return json({card:state.cards[0],members:geo.addresses,fingerprint:'FICTIONAL_HASH',render_revision:2});
    if(u.pathname==='/api/share/publish'){const data=route.request().postDataJSON();assert.deepEqual(Object.keys(data).sort(),['card_id','fingerprint','png','render_revision']);assert.match(data.png,/^data:image\/png;base64,/);writes.push({action:'FAKE_SHARE_PUBLISH',data});return json({});}
    if(u.pathname==='/api/share/qr')return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="white"/><text x="5" y="50">Fictional</text></svg>'});
@@ -42,7 +42,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     throw Error('Unexpected write '+body.action);}
    const file=path.resolve(root,'.'+(u.pathname==='/'?'/index.html':u.pathname));assert.ok(file.startsWith(root+path.sep));assert.ok(fs.existsSync(file),'Unexpected request '+u.pathname);return route.fulfill({path:file});
   });
-  await page.goto('http://ltm.test/');await page.waitForFunction(()=>state!==null&&GeoUI.busy===false);
+  await context.addInitScript(()=>localStorage.setItem('ltm-language','da'));await page.goto('http://ltm.test/');await page.waitForFunction(()=>state!==null&&GeoUI.busy===false);
   // Read-only diagnostic remains usable at mobile/desktop widths on both languages.
   await page.evaluate(()=>GeoUI.dataDialog());
   await page.locator('#geoAreaForm [name=addresses]').waitFor({state:'attached'});
@@ -62,10 +62,11 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   await page.evaluate(()=>GeoUI.areaSource(false));assert.equal(await areaAddresses.isDisabled(),false);
   if(out)await page.screenshot({path:path.join(out,`map-data-source-${width}.png`),fullPage:true});
   await page.getByText('Hent veje, bygninger, vandløb og jernbaner i det viste udsnit',{exact:true}).click();
-  await page.getByText('Datafordeleren · egen API-nøgle',{exact:true}).click();
+  await page.locator('#dialog [data-work=connections]').click();
+  assert.equal(await page.locator('#settings-connections').isVisible(),true);
   await page.locator('[data-address-source=diagnose]').click();await page.waitForFunction(()=>el('addressSourceDiagnostic').textContent.includes('COMPLETE'));
   assert.match(await page.locator('#addressSourceDiagnostic').innerText(),/DAR_Husnummer.*batch.*GQL-REJECTED/);
-  assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'DAR diagnostic fits narrow dialogs');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'DAR diagnostic fits narrow connection settings');
   const diagnosticBefore=await page.locator('#addressSourceDiagnostic').innerText();await page.evaluate(()=>{I18n.set('en');Navigation.localize();});
   assert.equal(await page.locator('[data-address-source=diagnose]').innerText(),'Check DAR lookups');
   assert.equal(await page.locator('#addressSourceDiagnostic').innerText(),diagnosticBefore);
@@ -173,12 +174,15 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   const pdf=await printPopup.pdf({preferCSSPageSize:true});assert.match(pdf.subarray(0,8).toString(),/%PDF-/);if(out){fs.writeFileSync(path.join(out,`card-${width}.pdf`),pdf);await printPopup.screenshot({path:path.join(out,`print-preview-${width}.png`),fullPage:true});}await printPopup.close();
   await page.evaluate(()=>{printOptions('c1','back');});await page.locator('#printForm [name=remember]').uncheck();const backPopupPromise=page.waitForEvent('popup');await page.locator('#printForm button.primary').click();const backPopup=await backPopupPromise;await backPopup.waitForFunction(()=>document.getElementById('print')&&!document.getElementById('print').disabled);assert.equal(await backPopup.locator('.ibPreview').count(),1);const backPdf=await backPopup.pdf({preferCSSPageSize:true});if(out)fs.writeFileSync(path.join(out,`back-${width}.pdf`),backPdf);await backPopup.close();
   await page.evaluate(()=>{page='Rapporter';reportTab='Rapport';Workspace.reportPeriod='service';render();});
-  assert.equal(await page.locator('.reportOverview').count(),1);assert.equal(await page.locator('.reportOverview .reportPeriod').count(),2);
+  assert.equal(await page.locator('.reportOverview').count(),1);assert.equal(await page.locator('.reportOverview .reportPeriod').count(),3);
   assert.equal(await page.locator('.reportScreenMap').count(),1);
+  await page.locator('[data-work=report-tab][data-value=Kalender]').click();assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'calendar');assert.match(await page.locator('.reportScreenMap h2').innerText(),/Calendar year/);await page.locator('#calendarYear').selectOption('2026');
+  await page.locator('[data-work=report-tab][data-value=Rapport]').click();
+
   assert.equal(await page.locator('.reportOverview').evaluate(node=>node.scrollWidth<=node.clientWidth),true);
   assert.equal(await page.locator('.reportOverview .metrics>div').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth)),true);
   if(out)await page.screenshot({path:path.join(out,`report-screen-${width}.png`),fullPage:true});
-  const reportPopupPromise=page.waitForEvent('popup');await page.locator('[data-action=print-report]').click();const reportPopup=await reportPopupPromise;await reportPopup.waitForFunction(()=>document.getElementById('printReport')&&!document.getElementById('printReport').disabled);assert.equal(await reportPopup.locator('.reportMapPage').count(),2);assert.equal(await reportPopup.locator('.s13Original').count(),1);assert.ok(await reportPopup.locator('.s13Original image').evaluate(n=>n.getAttribute('href').startsWith('data:')));assert.equal(await reportPopup.locator('#printReport').innerText(),'Print / save PDF');const reportPdf=await reportPopup.pdf({preferCSSPageSize:true});assert.equal((reportPdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length,5,'Combined overview must fit one page, followed by two map pages, details and original S-13');if(out)fs.writeFileSync(path.join(out,`report-${width}.pdf`),reportPdf);await reportPopup.close();assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'service');
+  const reportPopupPromise=page.waitForEvent('popup');await page.locator('[data-action=print-report]').click();const reportPopup=await reportPopupPromise;await reportPopup.waitForFunction(()=>document.getElementById('printReport')&&!document.getElementById('printReport').disabled);assert.equal(await reportPopup.locator('.reportMapPage').count(),3);assert.equal(await reportPopup.locator('.s13Original').count(),1);assert.ok(await reportPopup.locator('.s13Original image').evaluate(n=>n.getAttribute('href').startsWith('data:')));assert.equal(await reportPopup.locator('#printReport').innerText(),'Print / save PDF');const reportPdf=await reportPopup.pdf({preferCSSPageSize:true});if(out)fs.writeFileSync(path.join(out,`report-${width}.pdf`),reportPdf);assert.equal((reportPdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length,6,'Combined overview must fit one page, followed by three map pages, details and original S-13');if(out)fs.writeFileSync(path.join(out,`report-${width}.pdf`),reportPdf);await reportPopup.close();assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'service');
   await page.evaluate(()=>{MapExport.blob=window.originalMapExportBlob;delete window.originalMapExportBlob;page='Indstillinger';Navigation.settingsSection='data';render();});
   await page.locator('[data-action="readable-export"]').click();await page.locator('#readableExportStart').click();
   await page.waitForFunction(()=>document.getElementById('readableExportInclude')&&!document.getElementById('readableExportInclude').disabled);
@@ -194,6 +198,10 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   await page.evaluate(()=>{state.publishers=[{id:'contrast-one',name:'Fiktiv Navneprøve'},{id:'contrast-two',name:'Fiktiv Navneprøve To'}];issue('c1',true);});await page.locator('#issuePublisherName').fill('Fiktiv');await page.locator('#issuePublisherNames button').first().waitFor();
   const contrast=await page.locator('#issuePublisherNames button').first().evaluate(node=>{const style=getComputedStyle(node),luminance=color=>{const parts=color.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>{n/=255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4;});return parts[0]*.2126+parts[1]*.7152+parts[2]*.0722;};const a=luminance(style.color),b=luminance(style.backgroundColor);return {ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),background:b};});assert.ok(contrast.ratio>=7&&contrast.background<.1,'Normal suggestions use high-contrast text on dark background');
   await page.locator('#issuePublisherName').press('ArrowDown');assert.equal(await page.locator('#issuePublisherNames [aria-selected=true]').count(),1);const selectedColors=await page.locator('#issuePublisherNames [aria-selected=true]').evaluate(node=>({background:getComputedStyle(node).backgroundColor,color:getComputedStyle(node).color}));assert.equal(selectedColors.color,'rgb(255, 255, 255)');assert.notEqual(selectedColors.background,'rgb(255, 255, 255)');if(out)await page.screenshot({path:path.join(out,`publisher-contrast-${width}.png`),fullPage:true});await page.locator('#issuePublisherName').press('Enter');assert.equal(await page.locator('#issuePublisherName').inputValue(),'Fiktiv Navneprøve');await page.locator('#dialog .dialogClose').click();
+  // Live progress uses actual stages and received addresses without an ETA or invented total.
+  await page.evaluate(()=>{I18n.set('da');GeoUI.showJob({status:'running',kind:'boundary',activity:'Henter adresser…',message:'Legacy stage 999 / 1000, 60 sek.',received_count:42,completed:999,total:1000,waiting:true});});
+  assert.match(await page.locator('#geoDownloadStatus').innerText(),/Henter adresser.*42 adresser modtaget/s);assert.doesNotMatch(await page.locator('#geoDownloadStatus').innerText(),/999|1000|60 sek|%/);assert.equal(await page.locator('[data-geo=pause]').count(),1);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Live progress fits the viewport');
+  await page.evaluate(()=>{I18n.set('en');GeoUI.showJob({status:'running',kind:'boundary',activity:'Henter adresser…',received_count:43,waiting:true});});assert.match(await page.locator('#geoDownloadStatus').innerText(),/43 addresses received/);
   assert.deepEqual(errors,[]);await context.close();console.log(`Chromium ${width}px: drafts, domain errors, safe writes and native dialog label/focus/keyboard workflows passed.`);
  }
  }finally{await browser.close();}
