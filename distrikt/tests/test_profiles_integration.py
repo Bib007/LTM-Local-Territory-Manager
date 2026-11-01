@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import socket
 import sys
 import tempfile
 import threading
@@ -32,6 +33,24 @@ class ProfilesIntegrationTests(unittest.TestCase):
 
     def tearDown(self):
         self.server.shutdown();self.server.server_close();self.thread.join();self.store.close();self.temp.cleanup()
+
+    def test_incomplete_login_body_does_not_hold_global_account_lock(self):
+        entered=threading.Event();handler_class=self.server.RequestHandlerClass
+        original_setup=handler_class.setup
+        def setup(handler):
+            original_setup(handler);stream=handler.rfile
+            class ObservedReader:
+                def read(self,length=-1):entered.set();return stream.read(length)
+                def __getattr__(self,name):return getattr(stream,name)
+            handler.rfile=ObservedReader()
+        with patch.object(handler_class,'setup',setup):
+            connection=socket.create_connection(self.server.server_address,timeout=2)
+            try:
+                request=('POST /api/login HTTP/1.0\r\nHost: '+self.server.origin.split('://')[1]+'\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{').encode()
+                connection.sendall(request);self.assertTrue(entered.wait(2))
+                self.assertEqual(self.state(self.admin)['cards'][0]['id'],self.card)
+                connection.sendall(b'}');connection.recv(4096)
+            finally:connection.close()
 
     def request(self,path,data=None,session=None,extra=None):
         headers={'Origin':self.server.origin}
@@ -120,7 +139,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
             with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,session=reader)
             self.assertEqual(error.exception.code,403)
         for path in POST:
-            if path in ('/api/logout','/api/profiles/heartbeat','/api/profiles/intro/complete','/api/profiles/conflicts/acknowledge','/api/profiles/conflicts/resolve','/api/mutate'):continue
+            if path in ('/api/logout','/api/profiles/heartbeat','/api/profiles/intro/complete','/api/profiles/conflicts/acknowledge','/api/profiles/conflicts/resolve','/api/profiles/edit-base','/api/profiles/edit-base/release','/api/mutate'):continue
             with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,{},reader)
             self.assertEqual(error.exception.code,403)
         for action,data in [('card.save',{'id':self.card,'number':'bad'}),('delete',{'module':'cards','id':self.card}),('geo.token',{'token':'Fictional'}),('unknown.future.action',{})]:

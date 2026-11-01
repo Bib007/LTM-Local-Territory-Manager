@@ -17,7 +17,7 @@ const ProfileReview={
   }
   if(typeof value==='object')return this.record(value,depth+1);
   if(typeof value==='boolean')return `<span>${ui(value?'Ja':'Nej')}</span>`;
-  if(typeof value==='number')return `<span>${esc(value.toLocaleString(I18n.language()==='en'?'en-GB':'da-DK'))}</span>`;
+  if(typeof value==='number')return `<span data-profile-number="${esc(value)}">${esc(value.toLocaleString(I18n.language()==='en'?'en-GB':'da-DK'))}</span>`;
   if(field==='image')return /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(value)?`<img class="profileReviewImage" src="${esc(value)}" ${I18n.attribute('alt','Gemt kortbillede')}>`:`<span>${ui('Gemt kortbillede')}</span>`;
   let label=value;
   if(field==='group_role')label=publisherRoleLabels[value]||value;
@@ -27,14 +27,13 @@ const ProfileReview={
   if(field==='card_id')label=card(value)?.number||value;
   if(field==='frequency')label=({daily:'Dagligt',weekly:'Ugentligt',monthly:'Månedligt'})[value]||value;
   if(['date','assigned','returned','last_completed'].includes(field)&&/^\d{4}-\d{2}-\d{2}$/.test(value))label=fmt(value);
-  const translated=['group_role','permissions','frequency','type','kind'].includes(field)?I18n.text(String(label)):String(label);
-  return `<span class="profileReviewText">${esc(translated)}</span>`;
+  return `<span class="profileReviewText">${['group_role','permissions','frequency','type','kind'].includes(field)?ui(String(label)):esc(String(label))}</span>`;
  },
  record(row,depth,address=false){
   if(!row||typeof row!=='object'||Array.isArray(row))return this.value(row,'',depth);
   if(!Object.keys(row).length)return `<span>${ui('Ingen oplysninger')}</span>`;
-  const entries=address?['road','numbers','count','type'].filter(k=>k in row).map(k=>[k,k==='count'&&row.count_unknown?I18n.text('Ukendt'):row[k]]):Object.entries(row);
-  return `<dl class="profileReviewFields">${entries.map(([key,value])=>`<div><dt>${ui(this.label(key))}</dt><dd>${this.value(value,key,depth)}</dd></div>`).join('')}</dl>`;
+  const entries=address?['road','numbers','count','type'].filter(k=>k in row).map(k=>[k,row[k]]):Object.entries(row);
+  return `<dl class="profileReviewFields">${entries.map(([key,value])=>`<div><dt>${ui(this.label(key))}</dt><dd>${address&&key==='count'&&row.count_unknown?ui('Ukendt'):this.value(value,key,depth)}</dd></div>`).join('')}</dl>`;
  },
  boundary(points){
   const good=points.slice(0,2000).filter(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite));

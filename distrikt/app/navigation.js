@@ -17,6 +17,7 @@ const Navigation={
   const restoreFocus=document.activeElement?.id==='navigationLanguage';
   if(typeof GeoUI!=='undefined'&&typeof GeoUI.localize==='function')GeoUI.localize();
   I18n.applyShell();
+  if(typeof ProfilesUI!=='undefined')ProfilesUI.localize();
   
   if(typeof GuidedTour!=='undefined')GuidedTour.localize();
   if(typeof Onboarding!=='undefined')Onboarding.localizePanel();

@@ -1,20 +1,30 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.81 verificeret udgivet · 1.11.2026
+## Aktuel oversigt · beta.83-kandidat · 1.11.2026
 
-Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.81 er verificeret udgivet med profiler, tjenestegrupper og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Ejerens nye besked 1.11.2026 beder om det nødvendige arbejde til næste stabile udgivelse og om relevante senere punkter. Udgivelse afventer færdige funktioner og kontroller. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+Beta.83 samler W124-gemning, W126-rundtur, W125-manuelle onlinekort, lokal rapport/sprog og afgrænsede sikkerhedsrettelser. Samlet kontrol og offentlig verifikation mangler endnu. W121/W123 og W127 er sikret som patches til næste runde; de tælles ikke som frigivet. Ingen nye brede undersøgelser.
 
-### W106 og grafisk profilopfølgning · beta.82-kandidat · 1.11.2026
+Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.82 er verificeret udgivet med profiler, læsbare rettelser, onlinekortets datoer, tjenestegrupper og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Ejerens nye besked 1.11.2026 beder om det nødvendige arbejde til næste stabile udgivelse og om relevante senere punkter. Udgivelse afventer færdige funktioner og kontroller. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+
+### Beta.82 · verificeret udgivet · gældende status
+
+W106 og den grafiske konfliktvisning er frigivet fra `c59a343b62d3eb26afa05585ba80eabfb742b959`. Alle tre udgivelseskontroller er completed/success på samme kilde. Begge offentlige ZIP-pakker og alle **155 filer** i betakanalen matcher lokale bygninger byte for byte. [Præcis kontrol](BETA-82-VERIFICERING.md). Stabil er fortsat 1.12.1.
+
+**Aktuel fremdrift: 104/127 afsluttet eller afklaret, 23 åbne, cirka 82 %.** W106 tæller som frigivet. W65 er åben til stabilslutkontrol; den konkrete grafikrettelse er klar i beta.82. W13 er nu rettet lokalt til kalenderår, tjenesteår, rullende 12 måneder og aktuelle antal/udlevering, uden IB-tal, besøgsskøn eller personliste. Periodegrænser, gentagelser, arkiverede hændelser og kendte gennemgangsdatoer er afprøvet. Den rigtige PDF har én oversigtsside, tre kortsider, bestand og uændret original S-13. Chromium består 320/390/768/1440 px, og PDF'en er visuelt gennemset. Rapportændringen er ikke frigivet i beta.82.
+
+Profiladministration, kontobackup, påmindelse og grafisk konfliktgennemgang er nu også lokalt oversat med bevarede brugerdata, kladder, fokus og samme handlinger. Rigtig browser afprøver sprogskift midt i rolle- og brugeroprettelse samt inde i en åben konflikt. W58 er fortsat åben til samlet sprogslutkontrol; den ærlige mærkning om delvis oversættelse bevares. Ingen OCR eller automatisk kortinddeling er genoptaget.
+
+### W106 og grafisk profilopfølgning · tidligere beta.82-kandidat · 1.11.2026
 
 Onlinekortets faktiske datoer vises i et præcist serverdannet preview. Efter konkret godkendelse gemmes det offentlige billedgrundlag i en privat cache, så kun de to datofelter kan ajourføres på samme Google-fil/QR. Konkrete datostempler og aktuelle rettigheder genkontrolleres ved godkendelse. Den gamle adgang lukkes før erstatning, og nye hændelser under upload forhindrer åbning af et forældet billede. Grænse-/adresse-/IB-ændringer kræver fortsat nyt preview. Datagendannelse fjerner automatisk opdateringsgodkendelse; et manuelt stop bevares også ved mistet Google-bekræftelse. Tretten målrettede datoprøver, 37 eksisterende delingsprøver, rigtig HTTP og offline browser/PNG-pipeline er afprøvet med opdigtede data. Ingen ejerinstallation eller privat Google-konto er brugt.
 
 Ejerens kodeprægede konfliktvisning er erstattet af læsbare felter og en lokal grænsegrafik. Den rå evidens og de samme valg/godkendelser bevares uændret. Rigtig lokal browser med to brugere og modstridende vejnavne består ved 390 px; billedet er visuelt gennemset. Den nye visning er endnu ikke frigivet. Beta.82 er kandidat, og offentlig udgivelse/kanalverifikation mangler; W106/W65 tælles fortsat åbne. [Datovejledning](../ONLINEKORT-DATOER.md).
 
-### Beta.81 · verificeret udgivet · gældende status
+### Beta.81 · tidligere verificeret udgivelse
 
 W108 er frigivet fra `48d69183969eaaafcd3830bb29ae78335b59c827`: tjenestegrupper, gruppefunktion/pioner og godkendt lokal Excel-/CSV-gruppeimport med bevaret identitet, udlån og historik. Checks **41290427578**, Platformskontrol **41290427568** og HA beta release **41290427605** er completed/success på samme kilde. Begge offentlige ZIP-pakker og alle **150 filer** i betakanalen matcher lokale bygninger byte for byte. [Præcis kontrol](BETA-81-VERIFICERING.md).
 
-**Aktuel fremdrift: 103/119 afsluttet eller afklaret, 16 åbne, cirka 87 %.** W106 er under lokal udvikling og er ikke med i beta.81. W65 mangler bl.a. ejerens konkrete nye ønske om en grafisk konfliktvisning uden kode/JSON; valg af rettelser er bekræftet. Kontobackup og vejintervaller er nu også ejerbekræftet. [Fuld kildetekst](EJERSVAR-2026-11-01-PROFILER.md). W13 og sprogslutkontrol er åbne. OCR/automatisk kortinddeling er stadig på pause.
+**Fremdrift ved beta.81: 103/119 afsluttet eller afklaret, 16 åbne, cirka 87 %.** W106 er under lokal udvikling og er ikke med i beta.81. W65 mangler bl.a. ejerens konkrete nye ønske om en grafisk konfliktvisning uden kode/JSON; valg af rettelser er bekræftet. Kontobackup og vejintervaller er nu også ejerbekræftet. [Fuld kildetekst](EJERSVAR-2026-11-01-PROFILER.md). W13 og sprogslutkontrol er åbne. OCR/automatisk kortinddeling er stadig på pause.
 
 ### W108 · lokal kontrol før verificeret beta.81 · 1.11.2026
 

@@ -5,7 +5,8 @@ module.exports=async(browser,out)=>{
  const root=path.resolve(__dirname,'../distrikt/app'),points=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];
  const card={id:'c1',number:'F01',name:'Fiktivt kontrastkort',area_id:'a',kind:'By',address_ids:['a1'],geo_polygon:points,map_color:'#477596',addresses:[],public_dates:{completed:'2026-10-01',assigned:'2026-10-10'}};
  const members=[{id:'a1',road:'Fiktiv vej',number:'17',lng:10.004,lat:55.005,count:1,type:'Hus'}];
- const state={revision:'FICTIONAL_R1',today:'2026-10-21',version:'fictional',cards:[card],areas:[{id:'a',name:'Fiktivt område'}],publishers:[],loans:[],completions:[],ib:[],ignored:[],notes:[],tasks:[],visits:[],recovery:[],maps:[],settings:{congregation:'Fiktiv menighed',folder_minimum:30,rural_mode:'manual',rural_minimum:5,onboarding:{completed:true}}};
+ const manualCard={id:'manual1',number:'F125',name:'Fiktivt manuelt kort',temporary:false,addresses:[{road:'Prøvevej',numbers:'2–8',count:0,count_unknown:true},{road:'Sikker sti',numbers:'hele vejen',count:3}]};
+ const state={revision:'FICTIONAL_R1',today:'2026-10-21',version:'fictional',cards:[card,manualCard],areas:[{id:'a',name:'Fiktivt område'}],publishers:[],loans:[],completions:[],ib:[],ignored:[],notes:[],tasks:[],visits:[],recovery:[],maps:[],settings:{congregation:'Fiktiv menighed',folder_minimum:30,rural_mode:'manual',rural_minimum:5,onboarding:{completed:true}}};
  const geo={addresses:members,buildings:[],roads:[],dividers:[],info:{addresses:1,buildings:0,roads:0},status:{a1:{card_id:'c1',card_number:'F01'}},main_boundary:{points}};
  let serverPreview='';
  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],calls=[];
@@ -24,9 +25,13 @@ module.exports=async(browser,out)=>{
     if(u.pathname==='/api/geo/job')return json({status:'idle'});
     if(u.pathname==='/api/ping')return json({ok:true});
     if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:true,account:'Fictional',cards:[]});
-    if(u.pathname==='/api/share/prepare')return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:7,date_updates:true,date_fingerprint:'FICTIONAL_DATES'});
+    if(u.pathname==='/api/share/prepare'){
+     const request=route.request().postDataJSON();
+     if(request.card_id==='manual1')return json({card:{id:'manual1',number:'F125',name:'Fiktivt manuelt kort',map_color:'#477596',public_dates:{completed:'2026-10-01',assigned:'2026-10-10'}},members:[],manual_front_rows:[{road:'Prøvevej',numbers:'2–8',count:null,count_unknown:true},{road:'Sikker sti',numbers:'hele vejen',count:3,count_unknown:false}],manual_ib_withheld:true,geography_missing:true,fingerprint:'MANUAL_HASH',render_revision:7,date_updates:true,date_fingerprint:'MANUAL_DATES'});
+     return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:7,date_updates:true,date_fingerprint:'FICTIONAL_DATES'});
+    }
     if(u.pathname==='/api/share/date-preview'){
-     const input=route.request().postDataJSON();assert.equal(input.date_fingerprint,'FICTIONAL_DATES');
+     const input=route.request().postDataJSON();assert.ok(['FICTIONAL_DATES','MANUAL_DATES'].includes(input.date_fingerprint));
      const value=execFileSync(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/render_public_dates.py')],{input:JSON.stringify(input),maxBuffer:16*1024*1024}).toString();
      const result=JSON.parse(value);serverPreview=result.png;return json(result);
     }
@@ -61,6 +66,16 @@ module.exports=async(browser,out)=>{
   assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains 30%-opacity OSM tiles over white');assert.ok(result.labelPixels>20,'House number remains full-strength dark red');
   assert.match(result.svg,/<g data-map-background="muted" opacity=".3"><image /);assert.ok(!calls.includes('/api/share/publish'),'Preview never uploads');assert.deepEqual(errors,[]);
   if(out)fs.writeFileSync(path.join(out,'drive-actual-preview.png'),Buffer.from(result.png,'base64'));
+  const manual=await page.evaluate(async()=>{
+   closeDialog();page='Indstillinger';DistrictMap.map=null;DistrictMap.id='manual1';
+   const original=MapExport.svg;MapExport.svg=function(...args){window.manualPreviewSvg=original.apply(this,args);return window.manualPreviewSvg;};
+   await ShareUI.prepare('manual1');
+   const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.manualPreviewSvg,'image/svg+xml'),image=new Image();
+   await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
+   return {width:image.naturalWidth,height:image.naturalHeight,png:pending.png,svg:window.manualPreviewSvg,dialog:document.querySelector('#dialog')?.innerHTML||document.body.innerHTML,approvedDisabled:document.querySelector('#sharePublish').disabled};
+  });
+  assert.deepEqual([manual.width,manual.height],[2200,1560]);assert.match(manual.svg,/Geografisk kortvisning mangler/);assert.match(manual.svg,/Prøvevej 2–8/);assert.match(manual.svg,/ukendt/);assert.match(manual.svg,/Sikker sti hele vejen/);assert.doesNotMatch(manual.svg,/<circle\b/);assert.doesNotMatch(manual.svg,/0 besøg/);assert.match(manual.dialog,/Nogle manuelle vejlinjer er udeladt/);assert.equal(manual.approvedDisabled,true);assert.ok(!calls.includes('/api/share/publish'));
+  if(out)fs.writeFileSync(path.join(out,'manual-only-preview.png'),Buffer.from(manual.png.split(',')[1],'base64'));
   console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 30% white-backed tiles, opaque red visits/labels and server date values and explicit image/date-update approval passed.');
  }finally{await context.close();}
 };

@@ -9,7 +9,7 @@ run(`for(let i=0;i<40;i++)state.cards.push({id:'c'+i,number:String(i),temporary:
 assert.equal(run('folderPlan().picked.length'),30);assert.equal(run("folderPlan().picked.filter(c=>c.kind==='Land').length"),5);assert.equal(run('folderPlan().need'),30);
 run("state.settings.rural_mode='auto'");assert.equal(run('folderPlan().rural'),6);
 run("state.loans.push({id:'l',card_id:'c0',publisher_id:'p',assigned:'2026-01-01',cycle_start:'2026-01-01',returned:null})");assert(!run("folderPlan().picked.some(c=>c.id==='c0')"));
-run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Sidste besøg')"));assert(run("reports().includes('2026/2027')"));
+run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Aktuelle distrikter og udlevering')"));assert(run("reports().includes('2026/2027')"));
 run("mapImage='data:image/png;base64,AA==';state.cards[1].polygon=[[1,1],[40,1],[40,30]]");assert(run("mapSvg(new Set(['c1'])).includes('#52aa82')"));
 assert.equal(run("fourMonths('2026-10-31')"),'2027-02-28');assert.equal(run("serviceYear('2026-08-31')"),2026);assert.equal(run("serviceYear('2026-09-01')"),2027);
 assert(run("esc('<img onerror=alert(1)>').includes('&lt;')"));assert(!run("table(state.cards).includes('onclick=')"));
@@ -129,7 +129,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  finally{run("GeoUI.download=GeoUI.originalDownload");}
  console.log('Postcode refresh handler test passed.');
  run("state.recovery=[{batch:'test-batch',label:'Testkort',count:1,at:'2026-10-06T12:00:00Z'}]");assert(run("settingsPage().includes('Slet permanent')"));
- const report=run('reportPrintDocument()');assert(report.includes('s13-background.jpg'));assert(report.includes('margin:15mm'));assert(report.includes('color-scheme:light'));assert(report.includes('<small>Besøg</small>'));assert(!report.includes('Planlagte besøg'));assert(!report.includes('s13Print'));assert.equal(run('reportTab'),'Rapport');
+ const report=run('reportPrintDocument()');assert(report.includes('s13-background.jpg'));assert(report.includes('margin:15mm'));assert(report.includes('color-scheme:light'));assert(report.includes('<small>Aktuelle distrikter</small>'));assert(!report.includes('<small>Besøg</small>'));assert(!report.includes('Planlagte besøg'));assert(!report.includes('s13Print'));assert.equal(run('reportTab'),'Rapport');
  run("page='Kortopsætning';GeoUI.whole=true;GeoUI.dirty=false;GeoUI.map=null;api=async()=>({json:async()=>({result:{points:[[10,55],[10.01,55],[10.01,55.01],[10,55.01]]}})});mutate=async()=>{throw Error('Preview must not save');}");
  try{await run("MainBoundaryUI.importContent('{}','Testimport')");assert.equal(run('GeoUI.dirty'),true);assert.equal(run('GeoUI.polygon.length'),4);assert(get('app').innerHTML.includes('endnu ikke ændret'));await assert.rejects(run("MainBoundaryUI.handle('download')"),/Gem grænsen/);}
  finally{run("api=originalApi;mutate=originalAdminMutate;GeoUI.dirty=false;GeoUI.whole=false");}
@@ -219,7 +219,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  assert(run("TransferUI.html().includes('backupImport')"));assert(run("ShareUI.html().includes('Deling og QR')"));assert(run("Navigation.groups[2][1].some(item=>item[1]==='Indstillinger')"));
  run("ShareUI.data={connected:true,account:'fake@example.invalid',cards:[{card_id:'c3',number:'120',error:'<script>',status:'queued'}]}");
  assert(run("ShareUI.content().includes('Venter på upload')"));assert(run("ShareUI.content().includes('&lt;script&gt;')"));assert(!run("ShareUI.content().includes('<script>')"));
- assert(!run("reportPrintDocument().includes('Områder og resterende kort')"));assert(!run("reportPrintDocument().includes('Endnu ikke registreret gennemgået · næste gennemgang først')"));assert(!run("reportPrintDocument().includes('Planlagte besøg')"));assert(run("reportDetails().includes('<small>Besøg</small>')"));
+ assert(!run("reportPrintDocument().includes('Områder og resterende kort')"));assert(!run("reportPrintDocument().includes('Endnu ikke registreret gennemgået · næste gennemgang først')"));assert(!run("reportPrintDocument().includes('Planlagte besøg')"));assert(run("reportDetails().includes('Aktuelle distrikter og udlevering')"));assert(!run("reportDetails().includes('IB-registreringer')"));
 
  run("state.public_maps=[]");assert(!run("frontHTML(card('c3')).includes('data-card-qr')"));
  run("state.public_maps=[{card_id:'c3',url:'https://drive.google.com/file/d/TEST_QR/view'}]");

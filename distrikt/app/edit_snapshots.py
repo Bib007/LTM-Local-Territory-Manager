@@ -21,7 +21,7 @@ class EditSnapshots:
             if item['until'] <= now and not item['busy']:
                 del self._items[key]
 
-    def create(self, session, module, ident, record):
+    def create(self, session, module, ident, record, *, protected=False):
         if not all(isinstance(x, str) and x for x in (session, module, ident)):
             raise ValueError('Session and record identity required')
         if not isinstance(record, dict) or record.get('id') != ident:
@@ -34,8 +34,28 @@ class EditSnapshots:
                 raise ValueError('Too many active edit snapshots')
             token = secrets.token_urlsafe(32)
             self._items[token] = {'session':session, 'module':module, 'id':ident,
-                                  'record':deepcopy(record), 'until':now+self.ttl, 'busy':False,'size':size}
+                                  'record':deepcopy(record), 'until':now+self.ttl, 'busy':False,'size':size,'protected':protected}
             return token
+
+    def fork(self, token, session):
+        """Keep an editor's observed workspace separate from disposable page reads.
+
+        Cloning never renews the source lifetime and still obeys both limits.
+        No record values are accepted from the client or returned here.
+        """
+        with self._lock:
+            self._expire(self.clock())
+            item=self._items.get(token)
+            if not item or item['busy'] or (item['session'],item['module'],item['id'])!=(session,'workspace','workspace'):
+                raise ValueError('Edit snapshot is unavailable')
+            copied=self.create(session,'workspace','workspace',item['record'],protected=True)
+            self._items[copied]['until']=item['until']
+            return copied
+
+    def is_protected(self, token, session):
+        with self._lock:
+            item=self._items.get(token)
+            return bool(item and item['session']==session and item.get('protected'))
 
     def discard(self,token,session):
         with self._lock:
@@ -47,7 +67,7 @@ class EditSnapshots:
 
     def limit_session(self,session,keep=16):
         with self._lock:
-            old=[key for key,item in self._items.items() if item['session']==session and not item['busy']]
+            old=[key for key,item in self._items.items() if item['session']==session and not item['busy'] and not item.get('protected')]
             for key in old[:-keep]:del self._items[key]
 
     @contextmanager

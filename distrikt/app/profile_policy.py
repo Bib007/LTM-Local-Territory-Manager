@@ -34,6 +34,7 @@ GET={
 }
 POST={
  '/api/logout':(), '/api/profiles/heartbeat':(),
+ '/api/profiles/edit-base':(), '/api/profiles/edit-base/release':(),
  '/api/runtime/test':('settings.manage',),
  '/api/profiles/intro/complete':(),
  '/api/profiles/users/save':('users.manage',), '/api/profiles/roles/save':('users.manage',),
@@ -109,6 +110,18 @@ def mutation(user,action,data,store):
                    'visits':{'history.view','history.edit'},'settings':{'settings.manage'}}
             for module,_ in entry.get('rows',{}):needed.update(extra.get(module,READ_ALL|WRITE_ALL))
     require(user['permissions'],needed)
+    # Authorize the secondary modules changed by composite operations too.
+    if action=='card.save' and data.get('initial_completed') and not data.get('id'):
+        require(user['permissions'],('history.view','history.edit'))
+    if action=='history.cleanup':require(user['permissions'],('loans.view','loans.manage'))
+    if action in ('loan.correct.preview','loan.correct'):
+        loan=store.get('loans',data.get('id'))
+        if loan and data.get('assigned')!=loan.get('assigned') and any(e.get('loan_id')==loan['id'] for e in store.all('completions')):
+            require(user['permissions'],('history.view','history.edit'))
+    if action=='setup.card-import.apply':
+        plan=store.setup_require_preview(data,'card-import')
+        if any(not area['existing'] for area in plan['areas']):
+            require(user['permissions'],('settings.manage',))
     # A write that creates a publisher or note also needs that module's right.
     if action=='loan.issue':
         require(user['permissions'],('publishers.view',))

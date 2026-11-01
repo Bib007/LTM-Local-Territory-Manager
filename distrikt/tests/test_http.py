@@ -61,6 +61,15 @@ class HTTPTests(unittest.TestCase):
         self.assertTrue(deleted['geo_changed'])
         self.assertTrue(change('restore',{'batch':deleted['result']['batch']})['geo_changed'])
 
+    def test_http_prepare_returns_safe_manual_front_without_geography(self):
+        card=self.store.mutate('card.save',{'number':'F125','name':'Fiktivt HTTP-kort','temporary':False,'addresses':[
+            {'road':'Sikker prøvevej','numbers':'2–8','count':0,'count_unknown':True},
+            {'road':'Anden sikker vej','numbers':'hele vejen','count':3}]})['id']
+        with self.request('/api/share/prepare',{'card_id':card}) as response:recipe=json.load(response)
+        self.assertTrue(recipe['geography_missing']);self.assertEqual(recipe['members'],[])
+        self.assertEqual([r['road'] for r in recipe['manual_front_rows']],['Sikker prøvevej','Anden sikker vej'])
+        self.assertNotIn('addresses',recipe['card']);self.assertNotIn('publisher',json.dumps(recipe))
+
     def test_confirmed_write_can_return_the_complete_current_overview(self):
         note=self.store.mutate('note.save',{'text':'Fiktiv opgave'})
         batch=self.store.mutate('delete',{'module':'notes','id':note['id']})['batch']

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local desktop or authenticated private LAN server. Only approved PNGs leave it."""
 import argparse
+import io
 import json
 import os
 import secrets
@@ -33,7 +34,7 @@ from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.2-beta.82'
+VERSION='1.12.2-beta.83'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -215,6 +216,18 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         except (ValueError,KeyError,TypeError) as e:self.send(error_payload(profile_error(e)),status=400)
         except Exception:self.send({'error':'Lokal læsefejl. Data er ikke sendt nogen steder.'},status=500)
     def do_POST(self):
+        # Never hold global account authority while waiting on a caller's body.
+        if not self.allowed(public=True):return
+        try:
+            length=int(self.headers.get('Content-Length',0))
+            limit=4095 if self.path=='/api/login' else MAX_ARCHIVE if self.path=='/api/restore/preview' else 16000000
+            if not 0<length<=limit:raise ValueError()
+            self.connection.settimeout(15)
+            payload=self.rfile.read(length)
+            if len(payload)!=length:raise ValueError()
+            self.rfile=io.BytesIO(payload)
+        except (ValueError,OSError):
+            self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
         with self.profile_scope(post=True) as permitted:
             if permitted:self._post()
     def _post(self):
@@ -327,7 +340,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                             'geo_changed':getattr(self.server.store,'geo_generation',0)!=generation}
                         if editor_snapshot:response['profile_snapshot']=editor_snapshot
                         if data.get('include_state') is True and not str(data.get('action','')).endswith('.preview'):
-                            response['state']=self.server.app_state(self.profile_token())
+                            # The write is already committed. An optional read must never
+                            # turn its acknowledgement into a pre-commit rejection.
+                            try:response['state']=self.server.app_state(self.profile_token())
+                            except Exception:response['state_unavailable']=True
                     return self.send(response)
             if self.path=='/api/open-data':
                 if not self.server.access:
@@ -339,7 +355,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 self.send({'ok':True});threading.Thread(target=self.server.shutdown,daemon=True).start();return
             return self.send({'error':'Ukendt handling.'},status=404)
         except PermissionError:self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
-        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:self.send(error_payload(profile_error(e)),status=400)
+        except (ValueError,KeyError,TypeError,json.JSONDecodeError) as e:
+            payload=error_payload(profile_error(e))
+            if str(e)=='Edit snapshot is unavailable':payload['code']='edit_base_unavailable'
+            self.send(payload,status=400)
         except Exception:self.send({'error':'Ændringen blev ikke gemt. Prøv igen; eksisterende data er bevaret.'},status=500)
 
 def running(data):

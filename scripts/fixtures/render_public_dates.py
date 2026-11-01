@@ -8,6 +8,6 @@ from sharing import png_bytes
 from publication_dates import render
 
 data=json.load(sys.stdin)
-assert data['date_fingerprint']=='FICTIONAL_DATES'
+assert data['date_fingerprint'] in ('FICTIONAL_DATES','MANUAL_DATES')
 png=render(png_bytes(data['png']),{'completed':'2026-10-01','assigned':'2026-10-10'})
-print(json.dumps({'png':'data:image/png;base64,'+base64.b64encode(png).decode(),'date_fingerprint':'FICTIONAL_DATES'}))
+print(json.dumps({'png':'data:image/png;base64,'+base64.b64encode(png).decode(),'date_fingerprint':data['date_fingerprint']}))

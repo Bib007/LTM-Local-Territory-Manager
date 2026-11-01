@@ -50,7 +50,9 @@ class ProfileWorkspace:
                 if row.get('field') not in CONFLICT_FIELDS[row['module']]:continue
                 value={key:deepcopy(row[key]) for key in NOTICE_FIELDS if key in row}
                 current=self.store.get(row['module'],row.get('record_id')) or {}
-                if row['module']=='cards':value['record_label']='Kort '+str(current.get('number',''))
+                if row['module']=='cards':
+                    value['record_label']='Kort '+str(current.get('number',''))
+                    value['record_display']={'key':'Kort {name}','name':str(current.get('number',''))}
                 value['current']={'present':row['field'] in current,'value':deepcopy(current.get(row['field']))}
                 result.append(value)
             return result

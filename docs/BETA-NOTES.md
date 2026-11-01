@@ -1,11 +1,14 @@
-# LTM 1.12.2-beta.82 · Læsbare rettelser og datoer på onlinekort
+# LTM 1.12.2-beta.83 · Gemning, rundtur og manuelle onlinekort
 
-- Konflikter viser almindelige oplysninger i stedet for kode: vejnavn, numre, besøg og adressetype. Sammenlign forslagene og vælg som før.
-- Onlinekortet viser seneste registrerede gennemgang og den aktuelle udleveringsdato. Aflevering uden gennemgang ændrer ikke gennemgangsdatoen.
-- Dan et nyt kortbillede, og godkend også de automatiske datoopdateringer. Derefter bruges samme Google-fil og QR-link ved ændrede datoer.
-- Adresser, grænser og IB ændres ikke uden en ny billedgodkendelse. Efter gendannelse skal billedet også godkendes igen.
-- Fjern offentlig adgang stopper automatiske opdateringer, også hvis svaret fra Google er forsinket.
+- Uændrede formularer sender ingen gemning. Autosave og Gem nu samler samme kladde, og en nyere åben formular kan ikke overtage en ældre kladdes udgangspunkt.
+- Åbne redigeringer bevarer deres grundlag ved almindelig opdatering i andre faner. Ved reelt udløb bevares de indtastede felter med en konkret forklaring.
+- En gennemført gemning kaldes ikke afvist, hvis den efterfølgende oversigt fejler. Appen kræver kontrol, før der gemmes igen.
+- Rundturens sidste trin gemmes med det nye redigeringsgrundlag.
+- Kort uden geografiske adresser kan vise sikre manuelle vejlinjer på onlineforsiden. Ukendte besøgstal vises ærligt; linjer, som ikke kan adskilles sikkert fra IB, udelades med privat advarsel. Nyt billede kræver godkendelse; samme QR bruges.
+- Rapporten viser kalenderår, tjenesteår og rullende 12 måneder med gennemgangs- og udleveringsstatus. Original S-13 er bevaret.
+- Flere profil-, backup- og konflikttekster findes på engelsk. Oversættelsen er fortsat delvis.
+- Rettighedskontrol ved sammensatte handlinger og afgrænsning af forbindelses-/delingsoplysninger i databackup er strammet. Ufuldstændige forespørgsler venter uden at blokere alle profiler, og vejnavne vises som tekst.
 
-Prøv med et opdigtet kort og en opdigtet kortholder. Se de to datoer i forhåndsvisningen, registrér en gennemgang og derefter aflevering/genudlevering. Datoerne ajourføres, når appen kører og har forbindelse til Google. Et mistet lokalt billedgrundlag kræver nyt preview. Brug ikke rigtige IB, navne eller nøgler i offentlig feedback.
+Prøv de konkrete ændringer, hvis du bruger dem. De allerede bekræftede generelle HA-, Drive- og gendannelsesprøver bestilles ikke igen. Ved udløb/genstart kan en ændret formular fortsat kræve genåbning; kopier ved behov din tekst først. Rollen bestemmer fortsat adgang. W121/W123-rolleintroduktion og W127-kolonnevalg er ikke med i denne beta.
 
-[Datoer og afgrænsning](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/v1.12.2-beta.82/docs/ONLINEKORT-DATOER.md). Profiler, gruppeimport, IB fra Excel og vejintervaller fra de tidligere betaer er med. Rapport- og sprogslutkontrol mangler før næste stabile. OCR og automatisk kortinddeling er fortsat på pause. Stabil er fortsat 1.12.1.
+Stabil er fortsat 1.12.1. OCR, EXE/DMG og automatisk kortinddeling er ikke del af denne runde.

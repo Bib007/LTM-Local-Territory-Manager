@@ -46,7 +46,9 @@ const GeoUI={
   modeHint(){return this.mode==='draw'?'Klik hjørnerne rundt om distriktet. Du kan zoome og flytte kortet imens. Vælg derefter Auto huse eller Gem grænse.':this.mode==='insert'?'Klik på grænselinjen for at indsætte et hjørne. Vælg Flyt hjørner bagefter, og gem grænsen.':this.mode==='move'?'Træk de orange hjørner til den ønskede placering. Gem bagefter.':'Klik et husnummer for at vælge eller fravælge alle ledige lejligheder i huset. Klik en bygning for at se de nærliggende adresser.';},
   mount(){
     const node=el('geographicEditor');if(!node||typeof L==='undefined')return;
-    this.map=L.map(node,{preferCanvas:true,zoomControl:true,minZoom:8,maxZoom:21,attributionControl:true}).setView(this.view?.center||[56,10],this.view?.zoom||8);
+    // A delayed Leaflet redraw must not touch an already destroyed canvas.
+    const renderer=L.canvas(),redraw=renderer._redraw;renderer._redraw=function(){if(this._map&&this._ctx)return redraw.call(this);};
+    this.map=L.map(node,{renderer,preferCanvas:true,zoomControl:true,minZoom:8,maxZoom:21,attributionControl:true}).setView(this.view?.center||[56,10],this.view?.zoom||8);
     this.layers=L.layerGroup().addTo(this.map);this.draftLayer=L.layerGroup().addTo(this.map);
     MapBackground.attach('geographicEditor',this.map,()=>this.drawLayers(),()=>{const points=this.polygon.length?this.polygon:this.addresses().map(a=>[a.lng,a.lat]);if(points.length)this.map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[35,35],maxZoom:18});});
     this.drawLayers();this.drawBoundary();this.updatePanel();
