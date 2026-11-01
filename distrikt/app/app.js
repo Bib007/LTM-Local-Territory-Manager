@@ -154,7 +154,7 @@ const FormDrafts={forms:new WeakMap(),
    if(form.id==='settingsForm'&&!form.closest?.('#dialog'))EditorBases.attach(form);
   }
  },
- unchanged(form){const entry=this.forms.get(form);return !!entry&&!entry.pending&&entry.confirmed===this.signature(form);},
+ unchanged(form){const entry=this.forms.get(form),confirmFolder=form.id==='settingsForm'&&form.dataset.folderTouched==='yes'&&!state.settings.folder_minimum_configured;return !!entry&&!entry.pending&&!confirmFolder&&entry.confirmed===this.signature(form);},
  idle(){if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)failed(WriteGuard.error);else{SaveStatus.set('unchanged','Ingen nye ændringer');const error=el('formError');if(error)error.textContent='';}}
 };
 function mutate(action,data,{close=true,message='Gemt',autosave=false}={}){
