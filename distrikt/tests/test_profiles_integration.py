@@ -92,6 +92,25 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(row['base']['value'],'G01');self.assertEqual(row['saved']['value'],'G02');self.assertEqual(row['incoming']['value'],'G03')
         self.assertEqual(len(self.server.accounts.data['users']),1)
 
+    def test_public_date_preview_requires_source_read_rights_and_is_read_only(self):
+        import base64
+        from test_publication_dates import plain_png
+        from test_sharing import FakeDrive
+        self.server.sharing.drive=FakeDrive()
+        with self.store.transaction():
+            card=self.store.require('cards',self.card);card['geo_polygon']=[[10,55],[10.1,55],[10.1,55.1]];self.store.put('cards',card)
+        reader,_,_=self.reader(['cards.view','geo.view','sharing.manage'])
+        with self.assertRaises(urllib.error.HTTPError) as error:self.value('/api/share/prepare',{'card_id':self.card},reader)
+        self.assertEqual(error.exception.code,403)
+        recipe=self.value('/api/share/prepare',{'card_id':self.card},self.admin);before=self.store.revision
+        data={'card_id':self.card,'fingerprint':recipe['fingerprint'],'date_fingerprint':recipe['date_fingerprint'],'png':'data:image/png;base64,'+base64.b64encode(plain_png()).decode()}
+        result=self.value('/api/share/date-preview',data,self.admin)
+        self.assertTrue(result['png'].startswith('data:image/png;base64,'))
+        self.assertEqual(self.store.revision,before);self.assertFalse(self.server.sharing.images.directory.exists())
+        self.value('/api/share/publish',{**data,'png':result['png'],'render_revision':7,'date_updates':True},self.admin)
+        self.assertTrue(self.store.require('maps','publication:'+self.card)['date_updates'])
+        self.assertNotIn('Fiktiv admin',str(recipe))
+
     def test_normal_app_login_and_every_sensitive_route_is_denied_to_card_reader(self):
         reader,_,_=self.reader(['cards.view']);state=self.state(reader)
         self.assertEqual(state['cards'][0]['name'],'Opdigtet kort')

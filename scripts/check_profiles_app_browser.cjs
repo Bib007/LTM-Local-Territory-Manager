@@ -51,6 +51,28 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await editor.evaluate(()=>ProfilesUI.conflicts());await editor.locator('[data-profile=acknowledge]').click();await editor.waitForFunction(()=>!document.querySelector('.profileConflict'));
   assert.equal(await editor.locator('#profileConflictNotice button').count(),0,'Acknowledgement also clears the reminder immediately');
   await editor.locator('.dialogClose').click();
+  // A real conflicting street-list field must be shown as ordinary labelled
+  // values, never as the JSON representation used by the old review screen.
+  await admin.locator('#cardForm [data-action=close]').click();
+  await admin.evaluate(async id=>{await mutate('card.save',{...card(id),temporary:false,addresses:[{road:'Fiktiv udgangsvej',numbers:'1-19',count:5,type:'Hus'}]},{close:false});},fixture.card);
+  for(const p of [admin,editor]){await p.evaluate(()=>refresh());await p.evaluate(id=>editCard(id),fixture.card);}
+  await admin.locator('#cardForm [data-field=road]').fill('Fiktiv tidligere vej');
+  await admin.waitForFunction(()=>state.cards[0].addresses[0].road==='Fiktiv tidligere vej'&&SaveStatus.kind==='saved');
+  await editor.locator('#cardForm [data-field=road]').fill('Fiktiv senere vej');
+  await editor.waitForFunction(()=>state.profile.conflicts===1&&SaveStatus.kind==='saved');
+  await editor.locator('#cardForm [data-action=close]').click();
+  await editor.evaluate(()=>ProfilesUI.conflicts());
+  assert.equal(await editor.locator('.profileConflict pre').count(),0);
+  assert.ok((await editor.locator('.profileReviewValues').first().innerText()).includes('Vejnavn'));
+  assert.ok((await editor.locator('.profileAlternatives').innerText()).includes('Fiktiv tidligere vej'));
+  assert.ok((await editor.locator('.profileAlternatives').innerText()).includes('Fiktiv senere vej'));
+  assert.ok(!(await editor.locator('.profileConflict').innerText()).includes('"road"'));
+  assert.ok(await editor.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await editor.screenshot({path:'/tmp/ltm-profile-fields-mobile.png',fullPage:true});
+  await editor.locator('[data-profile=resolve][data-choice=saved]').click();
+  await editor.waitForFunction(()=>state.profile.conflicts===0);
+  assert.equal(await editor.evaluate(()=>state.cards[0].addresses[0].road),'Fiktiv tidligere vej');
+  await editor.locator('.dialogClose').click();
   let releaseOld,oldStarted,delayState=true;const oldReady=new Promise(r=>oldStarted=r),oldRelease=new Promise(r=>releaseOld=r);
   await editor.route('**/api/state',async route=>{if(delayState){delayState=false;const response=await route.fetch();oldStarted();await oldRelease;await route.fulfill({response});}else await route.continue();});
   await editor.evaluate(()=>{window.oldProfileRead=refresh().then(()=>false,()=>true);});await oldReady;

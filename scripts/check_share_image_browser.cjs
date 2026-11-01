@@ -1,12 +1,13 @@
 // Exercise the actual Drive preview PNG pipeline with invented data and offline tiles.
 'use strict';
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 module.exports=async(browser,out)=>{
  const root=path.resolve(__dirname,'../distrikt/app'),points=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];
- const card={id:'c1',number:'F01',name:'Fiktivt kontrastkort',area_id:'a',kind:'By',address_ids:['a1'],geo_polygon:points,map_color:'#477596',addresses:[]};
+ const card={id:'c1',number:'F01',name:'Fiktivt kontrastkort',area_id:'a',kind:'By',address_ids:['a1'],geo_polygon:points,map_color:'#477596',addresses:[],public_dates:{completed:'2026-10-01',assigned:'2026-10-10'}};
  const members=[{id:'a1',road:'Fiktiv vej',number:'17',lng:10.004,lat:55.005,count:1,type:'Hus'}];
  const state={revision:'FICTIONAL_R1',today:'2026-10-21',version:'fictional',cards:[card],areas:[{id:'a',name:'Fiktivt område'}],publishers:[],loans:[],completions:[],ib:[],ignored:[],notes:[],tasks:[],visits:[],recovery:[],maps:[],settings:{congregation:'Fiktiv menighed',folder_minimum:30,rural_mode:'manual',rural_minimum:5,onboarding:{completed:true}}};
  const geo={addresses:members,buildings:[],roads:[],dividers:[],info:{addresses:1,buildings:0,roads:0},status:{a1:{card_id:'c1',card_number:'F01'}},main_boundary:{points}};
+ let serverPreview='';
  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],calls=[];
  try{
   page.on('pageerror',e=>errors.push(e.message));
@@ -23,7 +24,12 @@ module.exports=async(browser,out)=>{
     if(u.pathname==='/api/geo/job')return json({status:'idle'});
     if(u.pathname==='/api/ping')return json({ok:true});
     if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:true,account:'Fictional',cards:[]});
-    if(u.pathname==='/api/share/prepare')return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:6});
+    if(u.pathname==='/api/share/prepare')return json({card,members,fingerprint:'FICTIONAL_HASH',render_revision:7,date_updates:true,date_fingerprint:'FICTIONAL_DATES'});
+    if(u.pathname==='/api/share/date-preview'){
+     const input=route.request().postDataJSON();assert.equal(input.date_fingerprint,'FICTIONAL_DATES');
+     const value=execFileSync(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/render_public_dates.py')],{input:JSON.stringify(input),maxBuffer:16*1024*1024}).toString();
+     const result=JSON.parse(value);serverPreview=result.png;return json(result);
+    }
     throw Error('Unexpected API request '+u.pathname);
    }
    if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
@@ -36,7 +42,7 @@ module.exports=async(browser,out)=>{
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
   const result=await page.evaluate(async()=>{
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
-   if(!pending||pending.render_revision!==6)throw Error('Missing current preview');
+   if(!pending||pending.render_revision!==7||pending.date_updates!==true)throw Error('Missing current preview');
    if(doc.querySelectorAll('[data-ltm-brand] svg').length!==1||doc.querySelector('[data-ltm-brand] text')?.textContent!=='Local Territory Manager')throw Error('Missing public project identity');
    const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
@@ -49,10 +55,12 @@ module.exports=async(browser,out)=>{
    for(let i=0;i<data.length;i+=4)if(data[i]===140&&data[i+1]===28&&data[i+2]===28)labelPixels++;
    return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dot,backgroundSamples,labelPixels,svg:window.actualPreviewSvg};
   });
+  assert.equal('data:image/png;base64,'+result.png,serverPreview,'The browser shows the exact server-dated image');
+  assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
   assert.deepEqual([result.width,result.height],[2200,1560]);assert.deepEqual(result.dot,[198,40,40,255],'Visit dot remains full-strength red');
   assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains 30%-opacity OSM tiles over white');assert.ok(result.labelPixels>20,'House number remains full-strength dark red');
   assert.match(result.svg,/<g data-map-background="muted" opacity=".3"><image /);assert.ok(!calls.includes('/api/share/publish'),'Preview never uploads');assert.deepEqual(errors,[]);
   if(out)fs.writeFileSync(path.join(out,'drive-actual-preview.png'),Buffer.from(result.png,'base64'));
-  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 30% white-backed tiles, opaque red visits/labels and explicit upload approval passed.');
+  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 30% white-backed tiles, opaque red visits/labels and server date values and explicit image/date-update approval passed.');
  }finally{await context.close();}
 };

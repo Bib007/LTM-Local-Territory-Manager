@@ -4,6 +4,12 @@
 
 Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.81 er verificeret udgivet med profiler, tjenestegrupper og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Ejerens nye besked 1.11.2026 beder om det nødvendige arbejde til næste stabile udgivelse og om relevante senere punkter. Udgivelse afventer færdige funktioner og kontroller. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
 
+### W106 og grafisk profilopfølgning · beta.82-kandidat · 1.11.2026
+
+Onlinekortets faktiske datoer vises i et præcist serverdannet preview. Efter konkret godkendelse gemmes det offentlige billedgrundlag i en privat cache, så kun de to datofelter kan ajourføres på samme Google-fil/QR. Konkrete datostempler og aktuelle rettigheder genkontrolleres ved godkendelse. Den gamle adgang lukkes før erstatning, og nye hændelser under upload forhindrer åbning af et forældet billede. Grænse-/adresse-/IB-ændringer kræver fortsat nyt preview. Datagendannelse fjerner automatisk opdateringsgodkendelse; et manuelt stop bevares også ved mistet Google-bekræftelse. Tretten målrettede datoprøver, 37 eksisterende delingsprøver, rigtig HTTP og offline browser/PNG-pipeline er afprøvet med opdigtede data. Ingen ejerinstallation eller privat Google-konto er brugt.
+
+Ejerens kodeprægede konfliktvisning er erstattet af læsbare felter og en lokal grænsegrafik. Den rå evidens og de samme valg/godkendelser bevares uændret. Rigtig lokal browser med to brugere og modstridende vejnavne består ved 390 px; billedet er visuelt gennemset. Den nye visning er endnu ikke frigivet. Beta.82 er kandidat, og offentlig udgivelse/kanalverifikation mangler; W106/W65 tælles fortsat åbne. [Datovejledning](../ONLINEKORT-DATOER.md).
+
 ### Beta.81 · verificeret udgivet · gældende status
 
 W108 er frigivet fra `48d69183969eaaafcd3830bb29ae78335b59c827`: tjenestegrupper, gruppefunktion/pioner og godkendt lokal Excel-/CSV-gruppeimport med bevaret identitet, udlån og historik. Checks **41290427578**, Platformskontrol **41290427568** og HA beta release **41290427605** er completed/success på samme kilde. Begge offentlige ZIP-pakker og alle **150 filer** i betakanalen matcher lokale bygninger byte for byte. [Præcis kontrol](BETA-81-VERIFICERING.md).
