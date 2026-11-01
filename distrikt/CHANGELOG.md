@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.3 · Restore the familiar home dashboard
+
+- Restore the original home dashboard for profile users with the relevant record permissions, including its rings, shortcuts, metrics, monthly comparison and follow-ups.
+- Give summary-only users the familiar home layout using aggregate totals, without exposing private records or changing report permissions.
+- Keep the three-period report on the Reports page.
+
 ## 1.12.2 · Profiles, dependable saving and flexible imports
 
 - Individual profiles and administrator-controlled roles; independent home/report summary permissions and permission-filtered personal guides.
