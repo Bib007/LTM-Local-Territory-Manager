@@ -81,7 +81,8 @@ class ProfileRuntime:
             if action.endswith('.preview'):return store.mutate(action,data),None
             with self.bases.claim(snapshot,token,'workspace','workspace') as base:
                 reserved=[]
-                def reserve(observed):reserved.append(self.bases.create(token,'workspace','workspace',observed))
+                protected=self.bases.is_protected(snapshot,token)
+                def reserve(observed):reserved.append(self.bases.create(token,'workspace','workspace',observed,protected=protected))
                 reviewed=ReviewedMutation(base,user['id'],reserve)
                 try:result=store.mutate(action,data,review=reviewed)
                 except BaseException:
@@ -165,6 +166,11 @@ class ProfileRoutes:
             self.server.accounts.bootstrap(data.get('name'),data.get('password'))
             self.send({'ok':True,'login_required':True});return True
         if not runtime.enabled:return False
+        if path=='/api/profiles/edit-base':
+            self.send({'snapshot':runtime.bases.fork(data.get('snapshot'),token)});return True
+        if path=='/api/profiles/edit-base/release':
+            runtime.bases.discard(data.get('snapshot'),token)
+            self.send({'ok':True});return True
         if path=='/api/profiles/backup/preview':
             from profile_recovery import parsed_backup
             try:self.server.accounts.confirm_password(token,data.get('password'),self.client_address[0])

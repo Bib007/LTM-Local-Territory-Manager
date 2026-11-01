@@ -111,12 +111,46 @@ def public_members(store,c):
         return any(i.get('address_id')==a['id'] if i.get('address_id') else clean(i.get('road'))==clean(a.get('road')) and clean(i.get('number')) in (clean(a.get('number')),clean(' '.join(str(a.get(k) or '') for k in ('number','floor','door')))) for i in ib)
     return [{k:a.get(k) for k in ('id','road','number','floor','door','postcode','lng','lat','count')} for a in addresses if a['id'] not in ignored|retired and not a.get('retired') and not blocked(a)]
 
+def public_manual_front(store,c):
+    """Return only manual front rows that can be checked safely against IB."""
+    if c.get('geo_polygon') or c.get('geo_addresses') or c.get('address_ids'):
+        return [],False
+    ib=[i for i in store.all('ib') if i.get('card_id')==c['id']]
+    norm=lambda value:re.sub(r'[^\w]+','',str(value or '').casefold(),flags=re.UNICODE)
+    by_road={}
+    for item in ib:by_road.setdefault(norm(item.get('road')),[]).append(str(item.get('number') or ''))
+    rows=[];withheld=False
+    for item in c.get('addresses') or []:
+        road=str(item.get('road') or '').strip();numbers=str(item.get('numbers') or '').strip()
+        if not road or not numbers:continue
+        ib_numbers=by_road.get(norm(road),[])
+        # Only a single, plainly written unit can be compared exactly. Ranges,
+        # lists and descriptive labels are deliberately not interpreted.
+        exact=bool(re.fullmatch(r'\d+[a-zA-ZÆØÅæøå]?',numbers))
+        if ib_numbers:
+            units=[]
+            for ib_number in ib_numbers:
+                match=re.match(r'^\s*(\d+[a-zA-ZÆØÅæøå]?)(?:\s|,|$)',ib_number)
+                if not match:
+                    units=[];break
+                units.append(norm(match.group(1)))
+            if not exact or not units or norm(numbers) in units:
+                withheld=True;continue
+        rows.append({'road':road,'numbers':numbers,
+            'count':None if item.get('count_unknown') else item.get('count',0),
+            'count_unknown':bool(item.get('count_unknown'))})
+    return rows,withheld
+
 def public_name(store,c):
     area=store.get('settings',c.get('area_id')) if c.get('area_id') else None
     return c.get('name') or (area or {}).get('name','')
 
 def fingerprint(store,c,legacy=False):
     content={'number':c['number'],'color':c.get('map_color','#477596'),'polygon':c.get('geo_polygon',[]),'members':sorted(public_members(store,c),key=lambda a:a['id'])}
+    manual_rows,withheld=public_manual_front(store,c)
+    if not c.get('geo_polygon') and not c.get('geo_addresses') and not c.get('address_ids') and c.get('addresses'):
+        source_rows=[{'road':str(a.get('road') or ''),'numbers':str(a.get('numbers') or ''),'count':None if a.get('count_unknown') else a.get('count',0),'count_unknown':bool(a.get('count_unknown'))} for a in c['addresses']]
+        content['manual_front']={'rows':manual_rows,'source_rows':source_rows,'withheld':withheld,'layout':'manual-front-v1'}
     if not legacy:content['name']=public_name(store,c)
     if c.get('archived'):content['archived']=True
     return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
@@ -236,9 +270,14 @@ class Publications:
     def prepare(self,card_id):
         with self.store.lock:
             c=self.store.require('cards',card_id)
-            if not c.get('geo_polygon') and not c.get('geo_addresses') and not c.get('address_ids'):raise ValueError('Tilføj kortets grænse og adresser først.')
+            manual_rows,manual_ib_withheld=public_manual_front(self.store,c)
+            has_geo=bool(c.get('geo_polygon') or c.get('geo_addresses') or c.get('address_ids'))
+            if not has_geo and not manual_rows and not manual_ib_withheld:raise ValueError('Tilføj kortets grænse, adresser eller sikre manuelle vejlinjer først.')
             public_dates=dates(self.store,c)
-            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'dates':public_dates,'card':dict({k:c.get(k) for k in ('id','number','map_color','geo_polygon')},name=public_name(self.store,c),public_dates=public_dates),'members':public_members(self.store,c)}
+            public_card={k:c.get(k) for k in ('id','number','map_color')}
+            if c.get('geo_polygon'):public_card['geo_polygon']=c['geo_polygon']
+            public_card.update(name=public_name(self.store,c),public_dates=public_dates)
+            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'dates':public_dates,'card':public_card,'members':public_members(self.store,c),'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
     def date_preview(self,data):
         png=png_bytes(data.get('png'))
         with self.store.lock:

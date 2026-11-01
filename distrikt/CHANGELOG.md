@@ -1,5 +1,15 @@
 # Ændringsliste
 
+## 1.12.2-beta.83 · Gemning, rundtur og manuelle onlinekort
+
+- Uændrede formularer gemmes ikke igen; samtidige kladder beholder deres eget udgangspunkt og konfliktforslag.
+- En gemt ændring kaldes ikke afvist ved efterfølgende læsefejl. Reelt udløb forklares med bevarede felter.
+- Rundturens sidste trin fungerer også efter opsætningsdialogen.
+- Onlineforsiden kan vise sikre manuelle vejlinjer uden gættet geografi eller besøgstal. Godkendelse og samme QR bevares.
+- Rapporten viser tre perioder og aktuelle gennemgangs-/udleveringstal; original S-13 er bevaret.
+- Flere profil-, backup- og konflikttekster er oversat. Engelsk er fortsat delvis.
+- Rettigheder ved sammensatte handlinger, databackuppens afgrænsning og håndtering af ufuldstændige forespørgsler er strammet.
+
 ## 1.12.2-beta.82 · Læsbare rettelser og datoer på onlinekort
 
 - Gennemgå samtidige rettelser som almindelige felter med vejnavn, numre, besøg og adressetype. Kortgrænser vises grafisk.

@@ -233,6 +233,7 @@ class ProfileAccounts:
                 item=deepcopy(row)
                 current=self.data[item['module']].get(item['record_id'],{})
                 item['record_label']=('Bruger ' if item['module']=='users' else 'Rolle ')+current.get('name','')
+                item['record_display']={'key':'Bruger {name}' if item['module']=='users' else 'Rolle {name}','name':current.get('name','')}
                 item['current']={'present':item['field'] in current,'value':deepcopy(current.get(item['field']))}
                 if item['field']=='credential':
                     for key in ('base','saved','incoming','current'):item[key]={'present':True,'value':'Adgangskodeændring (vises ikke)'}
