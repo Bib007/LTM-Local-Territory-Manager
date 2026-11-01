@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.2-beta.82 · Læsbare rettelser og datoer på onlinekort
+
+- Gennemgå samtidige rettelser som almindelige felter med vejnavn, numre, besøg og adressetype. Kortgrænser vises grafisk.
+- Se seneste registrerede gennemgang og den aktuelle udleveringsdato på onlinekortet.
+- Godkend kortbilledet og datoopdateringen én gang. Datoerne kan derefter ajourføres på samme Google-fil og QR-link.
+- Adresse-, grænse- og IB-ændringer kræver stadig et nyt godkendt billede. Gendannelse genoptager ikke tidligere uploads.
+- Fjern offentlig adgang stopper også datoopdateringen, mens en eventuel lukning hos Google afventer bekræftelse.
+
 ## 1.12.2-beta.81 · Tjenestegrupper og gruppeimport
 
 - Angiv tjenestegruppe, tilsynsmand eller assistent og en særskilt pionermarkering på forkynderen.

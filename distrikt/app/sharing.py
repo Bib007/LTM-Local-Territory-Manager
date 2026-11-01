@@ -16,6 +16,7 @@ import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 from access import write_private
+from publication_dates import ApprovedImages,dates,date_key,render as render_dates
 sys.path.insert(0,str(Path(__file__).resolve().parent/'vendor_py'))
 import qrcode
 
@@ -75,7 +76,7 @@ class Drive:
 
     def upload(self,png,file_id=None):
         if not file_id:
-            created=self.api('/files?fields=id',{'name':'Distriktskort-'+os.urandom(6).hex()+'.png','mimeType':'image/png','description':'Offentligt kortbillede. Ingen IB, noter eller forkynderoplysninger.'},'POST')
+            created=self.api('/files?fields=id',{'name':'Distriktskort-'+os.urandom(6).hex()+'.png','mimeType':'image/png','description':'Offentligt kortbillede. Ingen IB, noter, navne eller kontooplysninger.'},'POST')
             file_id=created['id']
         if not re.fullmatch(r'[A-Za-z0-9_-]{5,200}',file_id):raise ValueError('Ugyldigt Google-filnummer.')
         self.api('/files/'+file_id+'?uploadType=media',png,'PATCH','image/png',True)
@@ -98,7 +99,7 @@ class Drive:
         for p in self.api('/files/'+file_id+'/permissions?fields=permissions(id,type)')['permissions']:
             if p['type']=='anyone':self.api('/files/'+file_id+'/permissions/'+p['id'],method='DELETE')
 
-RENDER_REVISION=6
+RENDER_REVISION=7
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -149,7 +150,7 @@ def png_bytes(value):
 
 class Publications:
     def __init__(self,store):
-        self.store=store;self.drive=Drive(store.root);self.lock=threading.RLock();self.stop=threading.Event();self.worker=None
+        self.store=store;self.images=ApprovedImages(store.root);self.drive=Drive(store.root);self.lock=threading.RLock();self.stop=threading.Event();self.worker=None
         with store.transaction():
             for row in self.rows():
                 c=store.get('cards',row['card_id'])
@@ -170,9 +171,10 @@ class Publications:
             for row in self.rows():
                 c=self.store.get('cards',row['card_id']);r={k:v for k,v in row.items() if k not in ('png','queued_png')}
                 r['number']=c['number'] if c else 'Slettet kort'
-                r['outdated']=not c or r.get('fingerprint')!=fingerprint(self.store,c)
+                r['outdated']=not self.current(row)
+                r['date_update_pending']=bool(c and row.get('date_updates') and row.get('fingerprint')==fingerprint(self.store,c) and row.get('date_fingerprint')!=date_key(dates(self.store,c)))
                 r['issued']=self.issued(row['card_id'])
-                r['close_pending']=not r['issued'] and bool(row.get('file_id') and (row.get('url') or row.get('possibly_public')))
+                r['close_pending']=(not r['issued'] or row.get('manual_withdraw')) and bool(row.get('file_id') and (row.get('url') or row.get('possibly_public')))
                 r['access_pending']=r['close_pending'] or row.get('status') in ('published','ready','access_retry','access_failed') and (row.get('status') not in ('published','ready') or r['issued']!=(row.get('status')=='published'))
                 rows.append(r)
             return dict(self.drive.status(),cards=rows)
@@ -181,7 +183,7 @@ class Publications:
             links=[]
             for row in self.rows():
                 c=self.store.get('cards',row['card_id'])
-                if row.get('status') in ('published','ready','access_retry','access_failed') and (row.get('front_url') or row.get('url')) and c and fingerprint(self.store,c)==row.get('fingerprint'):
+                if row.get('status') in ('published','ready','access_retry','access_failed') and (row.get('front_url') or row.get('url')) and c and self.current(row):
                     links.append({'card_id':c['id'],'url':row.get('front_url') or row['url']})
             return links
 
@@ -191,10 +193,10 @@ class Publications:
 
     def current(self,row):
         c=self.store.get('cards',row['card_id'])
-        return bool(c and fingerprint(self.store,c)==row.get('fingerprint'))
+        return bool(c and fingerprint(self.store,c)==row.get('fingerprint') and (not row.get('date_updates') or row.get('date_fingerprint')==date_key(dates(self.store,c))))
 
     def sync_access(self,row):
-        """Reconcile only an approved image; no loan or person data is sent to Drive."""
+        """Reconcile an approved image, including approved date updates; no identities."""
         with self.store.transaction():
             target='published' if self.current(row) and self.issued(row['card_id']) else 'ready'
             if row.get('access_target')!=target:row['access_attempts']=0
@@ -219,11 +221,12 @@ class Publications:
                     row.update(status='access_retry',access_target='ready',next_try=0)
                     self.store.put('maps',row);return
                 c=self.store.get('cards',row['card_id'])
+                row['date_retry_allowed']=bool(not current and row.get('date_updates') and c and fingerprint(self.store,c)==row.get('fingerprint'))
                 if current and c and row.get('front_url')!=link:
                     c['front_revision']=True;self.store.put('cards',c)
                 row.update(status=target if current else 'review',url=link if target=='published' else '',front_url=link,error='' if current else 'Kortet er ændret. Dan et nyt kortbillede.',possibly_public=target=='published',next_try=0,access_attempts=0,withdraw_attempts=0,close_attempts=0,next_close=0,close_error='')
                 if target=='published':row['published']=datetime.now(timezone.utc).isoformat()
-                row.pop('queued_png',None);self.store.put('maps',row)
+                row.pop('queued_png',None);row.pop('date_close_pending',None);self.store.put('maps',row)
         except Exception:
             with self.store.transaction():
                 attempts=row.get('access_attempts',0)+1
@@ -234,30 +237,72 @@ class Publications:
         with self.store.lock:
             c=self.store.require('cards',card_id)
             if not c.get('geo_polygon') and not c.get('geo_addresses') and not c.get('address_ids'):raise ValueError('Tilføj kortets grænse og adresser først.')
-            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'card':dict({k:c.get(k) for k in ('id','number','map_color','geo_polygon')},name=public_name(self.store,c)),'members':public_members(self.store,c)}
+            public_dates=dates(self.store,c)
+            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'dates':public_dates,'card':dict({k:c.get(k) for k in ('id','number','map_color','geo_polygon')},name=public_name(self.store,c),public_dates=public_dates),'members':public_members(self.store,c)}
+    def date_preview(self,data):
+        png=png_bytes(data.get('png'))
+        with self.store.lock:
+            c=self.store.require('cards',data.get('card_id'))
+            if data.get('fingerprint')!=fingerprint(self.store,c) or data.get('date_fingerprint')!=date_key(dates(self.store,c)):
+                raise ValueError('Kortet eller datoerne er ændret. Dan og kontrollér et nyt kortbillede.')
+            png=render_dates(png,dates(self.store,c))
+            return {'png':'data:image/png;base64,'+base64.b64encode(png).decode(),'date_fingerprint':data['date_fingerprint']}
+    def stage_date_update(self):
+        with self.store.transaction():
+            rows=self.rows()
+            first_due=next((r['card_id'] for r in rows if r.get('status') in ('queued','retry') and r.get('next_try',0)<=time.time()),None)
+            for row in rows:
+                if first_due and row['card_id']!=first_due:continue
+                if row.get('status')=='review' and not row.get('date_retry_allowed'):continue
+                if row.get('manual_withdraw') or row.get('render_revision')!=7 or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
+                c=self.store.get('cards',row['card_id'])
+                if not c or fingerprint(self.store,c)!=row.get('fingerprint'):continue
+                values=dates(self.store,c);key=date_key(values)
+                if key==row.get('date_fingerprint'):continue
+                try:png=render_dates(self.images.load(row.get('approved_image')),values)
+                except (OSError,ValueError):
+                    row['date_error']='Det godkendte lokale kortbillede mangler eller er beskadiget. Opdater Google Drive-upload for at godkende et nyt billede.'
+                    self.store.put('maps',row);continue
+                row.update(status='queued',date_retry_allowed=False,date_fingerprint=key,date_values=values,queued_png=base64.b64encode(png).decode(),attempts=0,next_try=0,error='',date_close_pending=bool(row.get('file_id') and (row.get('url') or row.get('possibly_public'))),generation=os.urandom(12).hex())
+                self.store.put('maps',row)
+                return True
+        return False
     def enqueue(self,data):
         revision=data.get('render_revision',1)
-        if type(revision) is not int or revision not in (1,2,3,4,5,RENDER_REVISION):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
+        if type(revision) is not int or revision not in (1,2,3,4,5,6,RENDER_REVISION):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
         png=png_bytes(data.get('png'))
         if not self.drive.connected():raise ValueError('Forbind Google Drive først.')
         with self.lock,self.store.transaction():
             c=self.store.require('cards',data['card_id']);fp=fingerprint(self.store,c)
             if data.get('fingerprint')!=fp:raise ValueError('Kortet er ændret, mens billedet blev dannet. Åbn kortet igen og publicér på ny.')
+            dated=revision>=7
+            if dated:
+                values=dates(self.store,c)
+                if data.get('date_updates') is not True or data.get('date_fingerprint')!=date_key(values):
+                    raise ValueError('Kortets datoer skal kontrolleres og godkendes med et nyt kortbillede.')
+                png=render_dates(png,values)
+                approved_image=self.images.save(png)
             old=self.store.get('maps',self.key(c['id'])) or {}
             row=dict(old,id=self.key(c['id']),entity='publication',card_id=c['id'],fingerprint=fp,status='queued',render_revision=revision,render_refresh=revision<RENDER_REVISION,error='',attempts=0,withdraw_attempts=0,access_attempts=0,access_target='',close_attempts=0,next_close=0,close_error='',next_try=0,queued_png=base64.b64encode(png).decode(),generation=os.urandom(12).hex())
+            for field in ('date_updates','date_fingerprint','date_values','approved_image','date_error','date_close_pending','manual_withdraw','date_retry_allowed'):row.pop(field,None)
+            if dated:row.update(date_updates=True,date_fingerprint=date_key(values),date_values=values,approved_image=approved_image,date_close_pending=bool(old.get('file_id') and (old.get('url') or old.get('possibly_public'))))
             self.store.put('maps',row)
+        with self.lock,self.store.lock:
+            try:self.images.prune({r.get('approved_image') for r in self.rows() if r.get('approved_image')})
+            except OSError:pass
         return {'ok':True,'status':'queued'}
     def process_one(self):
         with self.lock:
             if not self.drive.connected():return
+            if self.stage_date_update():return
             with self.store.lock:
                 rows=self.rows()
-                stale=next((r for r in rows if r.get('file_id') and (r.get('url') or r.get('queued_png') or r.get('possibly_public') or r.get('status')=='withdraw_retry') and r.get('status') not in ('private','withdraw_failed') and r.get('next_try',0)<=time.time() and not self.current(r)),None)
+                stale=next((r for r in rows if r.get('file_id') and (r.get('url') or r.get('queued_png') or r.get('possibly_public') or r.get('status')=='withdraw_retry') and r.get('status') not in ('private','withdraw_failed') and r.get('next_try',0)<=time.time() and (not self.current(r) or r.get('manual_withdraw'))),None)
             if stale:
                 try:
                     self.drive.unshare(stale['file_id'])
                     with self.store.transaction():
-                        stale.update(status='review',url='',possibly_public=False,error='Kortet er ændret eller slettet. Offentlig adgang er fjernet; dan et nyt billede.',next_try=0);stale.pop('queued_png',None);self.store.put('maps',stale)
+                        stale.update(status='private' if stale.get('manual_withdraw') else 'review',url='',possibly_public=False,error='' if stale.get('manual_withdraw') else 'Kortet er ændret eller slettet. Offentlig adgang er fjernet; dan et nyt billede.',next_try=0);stale.pop('queued_png',None);self.store.put('maps',stale)
                 except Exception:
                     with self.store.transaction():
                         attempts=stale.get('withdraw_attempts',0)+1;stale.update(status='withdraw_failed' if attempts>=5 else 'withdraw_retry',withdraw_attempts=attempts,next_try=time.time()+60,error='Kunne ikke fjerne offentlig adgang til det gamle billede. Kontrollér Google-forbindelsen.');self.store.put('maps',stale)
@@ -265,11 +310,11 @@ class Publications:
             # A delayed/failed replacement upload must not keep the OLD image open
             # until its next upload attempt. Close it without discarding the new PNG.
             with self.store.lock:
-                closing=next((r for r in rows if r.get('status') in ('queued','retry','failed') and r.get('file_id') and (r.get('url') or r.get('possibly_public')) and not self.issued(r['card_id']) and r.get('close_attempts',0)<5 and r.get('next_close',0)<=time.time()),None)
+                closing=next((r for r in rows if r.get('status') in ('queued','retry','failed') and r.get('file_id') and (r.get('url') or r.get('possibly_public')) and (not self.issued(r['card_id']) or r.get('date_close_pending')) and r.get('close_attempts',0)<5 and r.get('next_close',0)<=time.time()),None)
             if closing:
                 try:
                     self.drive.unshare(closing['file_id'])
-                    with self.store.transaction():closing.update(url='',possibly_public=False,close_attempts=0,next_close=0,close_error='');self.store.put('maps',closing)
+                    with self.store.transaction():closing.update(url='',possibly_public=False,close_attempts=0,next_close=0,close_error='',date_close_pending=False);self.store.put('maps',closing)
                 except Exception:
                     with self.store.transaction():
                         attempts=closing.get('close_attempts',0)+1
@@ -289,8 +334,8 @@ class Publications:
                 row=next((r for r in rows if r.get('status') in ('queued','retry') and r.get('next_try',0)<=time.time()),None)
                 if not row:return
                 c=self.store.get('cards',row['card_id'])
-                if not c or fingerprint(self.store,c)!=row['fingerprint']:
-                    with self.store.transaction():row.update(status='review',error='Kortet er ændret. Dan et nyt kortbillede.');row.pop('queued_png',None);self.store.put('maps',row)
+                if not self.current(row):
+                    with self.store.transaction():row.update(status='review',date_retry_allowed=bool(row.get('date_updates') and c and fingerprint(self.store,c)==row.get('fingerprint')),error='Kortet er ændret. Dan et nyt kortbillede.');row.pop('queued_png',None);self.store.put('maps',row)
                     return
             try:
                 # Replacing an existing public file must not briefly publish an unassigned card.
@@ -317,10 +362,22 @@ class Publications:
         if self.worker:self.worker.join(timeout=150)
     def withdraw(self,card_id):
         with self.lock:
-            with self.store.lock:row=self.store.require('maps',self.key(card_id))
-            if row.get('file_id'):self.drive.unshare(row['file_id'])
-            with self.store.transaction():row.update(status='private',url='',possibly_public=False,close_error='',error='');row.pop('queued_png',None);self.store.put('maps',row)
-            return {'ok':True}
+            # Persist the owner's stop before the external request. A lost
+            # withdrawal reply must not permit a later automatic date upload.
+            with self.store.transaction():
+                row=self.store.require('maps',self.key(card_id))
+                row.update(manual_withdraw=True,status='withdraw_retry',withdraw_attempts=0,next_try=0)
+                row.pop('queued_png',None);self.store.put('maps',row)
+            try:
+                if row.get('file_id'):self.drive.unshare(row['file_id'])
+            except Exception:
+                with self.store.transaction():
+                    row.update(error='Google-adgangen er ikke bekræftet lukket. Appen forsøger igen; automatisk datoopdatering er stoppet.',next_try=0)
+                    self.store.put('maps',row)
+                return {'ok':True,'status':'withdraw_retry'}
+            with self.store.transaction():
+                row.update(status='private',url='',possibly_public=False,close_error='',error='');self.store.put('maps',row)
+            return {'ok':True,'status':'private'}
     def retry(self,card_id):
         with self.lock,self.store.transaction():
             row=self.store.require('maps',self.key(card_id))
@@ -341,7 +398,7 @@ class Publications:
             row=self.store.require('maps',self.key(card_id));url=row.get('front_url') or row.get('url')
             if require_current:
                 c=self.store.get('cards',card_id)
-                if not c or fingerprint(self.store,c)!=row.get('fingerprint'):raise ValueError('Kortbilledet er ændret. Publicér igen før QR-print.')
+                if not self.current(row):raise ValueError('Kortbilledet er ændret. Publicér igen før QR-print.')
         if row.get('status') not in ('published','ready','access_retry','access_failed') or not url:raise ValueError('Upload og kontrollér kortet før QR-koden dannes.')
         code=qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M,box_size=1,border=4);code.add_data(url);code.make(fit=True);matrix=code.get_matrix();size=len(matrix)
         path=''.join('M%d %dh1v1h-1z'%(x,y) for y,line in enumerate(matrix) for x,value in enumerate(line) if value)

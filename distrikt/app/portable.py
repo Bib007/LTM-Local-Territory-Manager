@@ -114,7 +114,8 @@ class Restores:
                 for item in self.store.all('maps'):
                     if item.get('entity')=='publication':
                         item.update(status='review',error='Kontrollér kortbilledet og publicér igen efter import.')
-                        item.pop('queued_png',None);self.store.put('maps',item)
+                        for key in ('queued_png','date_updates','date_retry_allowed','date_fingerprint','date_values','approved_image','date_error','date_close_pending'):item.pop(key,None)
+                        self.store.put('maps',item)
             self.pending.clear()
             return {'ok':True,'safety_backup':filename}
 
