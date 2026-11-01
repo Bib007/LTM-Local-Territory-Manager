@@ -31,6 +31,17 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-profiles-') as root:
                 table='<row r="1"><c r="A1" t="inlineStr"><is><t>kortnummer</t></is></c><c r="B1" t="inlineStr"><is><t>vejnavn</t></is></c><c r="C1" t="inlineStr"><is><t>husnummer</t></is></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>F101</t></is></c><c r="B2" t="inlineStr"><is><t>Fiktiv Excelvej</t></is></c><c r="C2" t="inlineStr"><is><t>01A</t></is></c></row>'
                 raw=(sheet[:start]+'<sheetData>'+table+sheet[end:]).encode()
             target.writestr(name,raw)
-    print(json.dumps({'origin':server.origin,'card':card,'ib_file':str(ib_file)}),flush=True)
+    from publisher_import import template_xlsx as publisher_template
+    from xml.sax.saxutils import escape
+    publisher_file=Path(root)/'fiktiv-gruppe.xlsx'
+    with zipfile.ZipFile(io.BytesIO(publisher_template())) as source,zipfile.ZipFile(publisher_file,'w') as target:
+        for name in source.namelist():
+            raw=source.read(name)
+            if name=='xl/worksheets/sheet1.xml':
+                rows=[['Fiktiv Gruppe A','Gruppe 01','Gruppetilsynsmand','Ja'],['Fiktiv Gruppe B','Gruppe 01','Assistent','Nej']]
+                extra=''.join('<row r="'+str(i)+'">'+''.join('<c r="'+chr(65+j)+str(i)+'" t="inlineStr"><is><t>'+escape(value)+'</t></is></c>' for j,value in enumerate(row))+'</row>' for i,row in enumerate(rows,2))
+                raw=raw.decode().replace('</sheetData>',extra+'</sheetData>').encode()
+            target.writestr(name,raw)
+    print(json.dumps({'origin':server.origin,'card':card,'ib_file':str(ib_file),'publisher_file':str(publisher_file)}),flush=True)
     try:server.serve_forever()
     finally:server.server_close();store.close()

@@ -2,7 +2,15 @@
 
 ## Aktuel oversigt · beta.80 verificeret udgivet · 1.11.2026
 
-Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.80 er verificeret udgivet med profiler og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Der er ikke givet særskilt besked om at publicere en ny stabil udgave. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.80 er verificeret udgivet med profiler og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Ejerens nye besked 1.11.2026 beder om det nødvendige arbejde til næste stabile udgivelse og om relevante senere punkter. Udgivelse afventer færdige funktioner og kontroller. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+
+### W108 · beta.81-kandidat · 1.11.2026
+
+Tjenestegruppe, gruppefunktion og pioner er integreret i normal forkynderredigering, gruppefilter, læseeksport og privat databackup. Lokal XLSX-/CSV-import viser nye/ændrede/uændrede personer og før/efter-data, kræver udtrykkelig samlet godkendelse og bruger samme validering som almindelig redigering. Entydigt navnematch bevarer id, udlån og historik. Dubletter, tvetydige navne og flere samme gruppefunktion i én gruppe afvises konkret. Funktioner kan byttes atomisk. En fuld import med 5.000 opdigtede navne er lokalt prøvet uden gentagne databasescanninger. Gruppebetegnelser giver ingen brugerrettigheder.
+
+Ni målrettede dataprøver, rigtig HTTP med to sessioner, ændrede rettigheder, konkrete konflikter, privat backup/gendannelse og almindeligt Chromium-forløb med Excel-download/upload og mobilbredde består. JavaScript prøver også mistet kvittering, efterfølgende læsefejl, nyere kladder og forsinket filvalg. Kandidaten er beta.81; offentlig udgivelse og pakke-/kanalverifikation mangler. W108 tæller fortsat åben. [Vejledning](../TJENESTEGRUPPER.md).
+
+Ejerens to konkrete HA-beskedprøver er bekræftet med “virker!” og “Virker!”, bevaret fuldt i [ejersvar](EJERSVAR-2026-11-01.md) på GitHub og i Google-historikken og fjernet fra den aktive tabel. Der er 26 resterende spørgsmål/prøver; ingen generel HA-/Drive-/gendannelsesprøve bestilles igen.
 
 ### Beta.80 · verificeret udgivet · gældende status
 

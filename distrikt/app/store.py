@@ -330,15 +330,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 self.create_completion(card, valid_day(data['initial_completed']))
             return {'id': card['id']}
         if action == 'publisher.save':
-            old = self.get('publishers', data.get('id')) if data.get('id') else None
-            if data.get('id') and not old:
-                raise ValueError('Posten er ændret eller slettet. Opdater siden.')
-            item = dict(old or {'id': new_id()})
-            item['name'] = clean_text(data.get('name'), 100, True)
-            if any(p['name'].casefold() == item['name'].casefold() and p['id'] != item['id'] for p in self.all('publishers')):
-                raise ValueError('Navnet findes allerede. Vælg den eksisterende forkynder.')
-            self.put('publishers', item)
-            return {'id': item['id']}
+            from publisher_data import save
+            return save(self,data)
         if action == 'loan.issue':
             c = self.require('cards', data['card_id'])
             if c.get('archived'):raise ValueError('Kortet er arkiveret efter sammenlægning.')

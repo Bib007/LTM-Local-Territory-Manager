@@ -62,6 +62,36 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_group_fields_merge_under_profiles_and_import_requires_current_rights(self):
+        ident=self.store.mutate('publisher.save',{'name':'Fiktiv gruppeperson'})['id']
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'publisher.save',{'id':ident,'name':'Fiktiv nyt navn','group':'','group_role':'','pioneer':False})
+        result=self.change(second,b,'publisher.save',{'id':ident,'name':'Fiktiv gruppeperson','group':'G01','group_role':'assistant','pioneer':True})
+        person=self.store.require('publishers',ident)
+        self.assertEqual(person['name'],'Fiktiv nyt navn');self.assertEqual(person['group'],'G01');self.assertTrue(person['pioneer'])
+        self.assertEqual(self.value('/api/profiles/conflicts',session=self.admin),[])
+        reader,role,user=self.reader(['publishers.view','publishers.manage'])
+        state=self.state(reader);self.assertEqual(state['publishers'][0]['group_role'],'assistant')
+        with self.request('/api/setup/publisher-template.xlsx',session=reader) as response:self.assertTrue(response.read().startswith(b'PK'))
+        plan=self.change(reader,state,'setup.publisher-import.preview',{'name':'fiktiv.csv','content':'navn;tjenestegruppe\nFiktiv B;G02'})['result']
+        role_value=next(r for r in self.value('/api/profiles/admin',session=self.admin)['roles'] if r['id']==role)
+        self.value('/api/profiles/roles/save',{**role_value,'permissions':['publishers.view']},self.admin)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(reader,self.state(reader),'setup.publisher-import.apply',{'token':plan['token'],'confirm':'IMPORTÉR GRUPPER'})
+        self.assertEqual(error.exception.code,403);self.assertEqual(len(self.store.all('publishers')),1)
+
+    def test_different_group_edits_preserve_evidence_and_do_not_grant_account_access(self):
+        ident=self.store.mutate('publisher.save',{'name':'Fiktiv gruppeperson','group':'G01'})['id']
+        a=self.state(self.admin);second=self.login('Fiktiv admin','Fiktiv-password-123');b=self.state(second)
+        self.change(self.admin,a,'publisher.save',{'id':ident,'name':'Fiktiv gruppeperson','group':'G02'})
+        self.change(second,b,'publisher.save',{'id':ident,'name':'Fiktiv gruppeperson','group':'G03'})
+        reviews=self.value('/api/profiles/conflicts',session=self.admin)
+        rows=reviews['rows'] if isinstance(reviews,dict) else reviews
+        row=next(r for r in rows if r['module']=='publishers' and r['field']=='group')
+        self.assertEqual(row['base']['value'],'G01');self.assertEqual(row['saved']['value'],'G02');self.assertEqual(row['incoming']['value'],'G03')
+        self.assertEqual(len(self.server.accounts.data['users']),1)
+
     def test_normal_app_login_and_every_sensitive_route_is_denied_to_card_reader(self):
         reader,_,_=self.reader(['cards.view']);state=self.state(reader)
         self.assertEqual(state['cards'][0]['name'],'Opdigtet kort')

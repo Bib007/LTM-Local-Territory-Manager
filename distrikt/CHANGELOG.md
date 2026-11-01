@@ -1,5 +1,13 @@
 # Ændringsliste
 
+## 1.12.2-beta.81 · Tjenestegrupper og gruppeimport
+
+- Angiv tjenestegruppe, tilsynsmand eller assistent og en særskilt pionermarkering på forkynderen.
+- Filtrér forkyndere efter gruppe, og se gruppen sammen med deres kort og historik.
+- Importér en gruppeliste fra Excel eller CSV. Se nye navne og før/efter-oplysninger før samlet godkendelse.
+- Bevar eksisterende udlån, historik og identitet. Gruppefunktioner opretter ingen brugerkonti eller rettigheder.
+- Samtidige uafhængige rettelser bevares; forskellige gruppevalg gemmes til gennemgang.
+
 ## 1.12.2-beta.80 · Vejintervaller og kortregister
 
 - Importér kortnumre, manuelle vejlinjer og intervaller som 1–19 fra Excel eller CSV.

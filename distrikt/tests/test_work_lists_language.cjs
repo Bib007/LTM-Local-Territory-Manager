@@ -39,6 +39,9 @@ for(const lang of ['da','en']){
  assert.match(get('dialog').innerHTML,/option value="folder" selected/);
  assert.equal(run('JSON.stringify(state)'),original);
 }
+run("publisherGroupFilter='group:removed';query=''");
+assert.match(run('publishersPage()'),/Forkynder &lt;fictional&gt;/);
+assert.equal(run('publisherGroupFilter'),'','Removing the last member of a group must not leave a hidden active filter');
 assert.match(run("I18n.label('{count} kort',{count:'<script> & test'})"),/&lt;script&gt; &amp; test cards/);
 assert.equal(run("I18n.format('Unknown <fictional>')"),'Unknown <fictional>');
 assert.equal(run("elapsedSince('2026-09-15')"),'1 måned og 1 dag siden');
