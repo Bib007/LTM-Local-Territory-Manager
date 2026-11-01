@@ -1,22 +1,28 @@
 # Ønskeliste og nye opgaver
 
-## Aktuel oversigt · beta.80 verificeret udgivet · 1.11.2026
+## Aktuel oversigt · beta.81 verificeret udgivet · 1.11.2026
 
-Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.80 er verificeret udgivet med profiler og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Ejerens nye besked 1.11.2026 beder om det nødvendige arbejde til næste stabile udgivelse og om relevante senere punkter. Udgivelse afventer færdige funktioner og kontroller. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
+Målet er nu en stabilklar udgave med brugerprofiler og de allerede udgivne betafunktioner. **Beta.81 er verificeret udgivet med profiler, tjenestegrupper og de hidtidige betafunktioner; stabil er fortsat 1.12.1.** Ejerens nye besked 1.11.2026 beder om det nødvendige arbejde til næste stabile udgivelse og om relevante senere punkter. Udgivelse afventer færdige funktioner og kontroller. Udviklingen fortsætter på develop; arbejdsgrenens grundlag er bevaret i historikken. Ingen grene slettes.
 
-### W108 · beta.81-kandidat · 1.11.2026
+### Beta.81 · verificeret udgivet · gældende status
+
+W108 er frigivet fra `48d69183969eaaafcd3830bb29ae78335b59c827`: tjenestegrupper, gruppefunktion/pioner og godkendt lokal Excel-/CSV-gruppeimport med bevaret identitet, udlån og historik. Checks **41290427578**, Platformskontrol **41290427568** og HA beta release **41290427605** er completed/success på samme kilde. Begge offentlige ZIP-pakker og alle **150 filer** i betakanalen matcher lokale bygninger byte for byte. [Præcis kontrol](BETA-81-VERIFICERING.md).
+
+**Aktuel fremdrift: 103/119 afsluttet eller afklaret, 16 åbne, cirka 87 %.** W106 er under lokal udvikling og er ikke med i beta.81. W65 mangler bl.a. ejerens konkrete nye ønske om en grafisk konfliktvisning uden kode/JSON; valg af rettelser er bekræftet. Kontobackup og vejintervaller er nu også ejerbekræftet. [Fuld kildetekst](EJERSVAR-2026-11-01-PROFILER.md). W13 og sprogslutkontrol er åbne. OCR/automatisk kortinddeling er stadig på pause.
+
+### W108 · lokal kontrol før verificeret beta.81 · 1.11.2026
 
 Tjenestegruppe, gruppefunktion og pioner er integreret i normal forkynderredigering, gruppefilter, læseeksport og privat databackup. Lokal XLSX-/CSV-import viser nye/ændrede/uændrede personer og før/efter-data, kræver udtrykkelig samlet godkendelse og bruger samme validering som almindelig redigering. Entydigt navnematch bevarer id, udlån og historik. Dubletter, tvetydige navne og flere samme gruppefunktion i én gruppe afvises konkret. Funktioner kan byttes atomisk. En fuld import med 5.000 opdigtede navne er lokalt prøvet uden gentagne databasescanninger. Gruppebetegnelser giver ingen brugerrettigheder.
 
-Ni målrettede dataprøver, rigtig HTTP med to sessioner, ændrede rettigheder, konkrete konflikter, privat backup/gendannelse og almindeligt Chromium-forløb med Excel-download/upload og mobilbredde består. JavaScript prøver også mistet kvittering, efterfølgende læsefejl, nyere kladder og forsinket filvalg. Kandidaten er beta.81; offentlig udgivelse og pakke-/kanalverifikation mangler. W108 tæller fortsat åben. [Vejledning](../TJENESTEGRUPPER.md).
+Ni målrettede dataprøver, rigtig HTTP med to sessioner, ændrede rettigheder, konkrete konflikter, privat backup/gendannelse og almindeligt Chromium-forløb med Excel-download/upload og mobilbredde består. JavaScript prøver også mistet kvittering, efterfølgende læsefejl, nyere kladder og forsinket filvalg. Efterfølgende er beta.81 verificeret udgivet med offentlig pakke-/kanalverifikation. W108 tæller nu som frigivet. [Vejledning](../TJENESTEGRUPPER.md).
 
 Ejerens to konkrete HA-beskedprøver er bekræftet med “virker!” og “Virker!”, bevaret fuldt i [ejersvar](EJERSVAR-2026-11-01.md) på GitHub og i Google-historikken og fjernet fra den aktive tabel. Der er 26 resterende spørgsmål/prøver; ingen generel HA-/Drive-/gendannelsesprøve bestilles igen.
 
-### Beta.80 · verificeret udgivet · gældende status
+### Beta.80 · tidligere verificeret udgivelse
 
 W107 er frigivet fra `cf92787808b820edf72121400f0a901512ef47b3`: registerkort, importerede vejintervaller, ukendte besøgstal og senere geografisk adressevalg på samme kort. Checks **41250233958**, Platformskontrol **41250234017** og HA beta release **41250234027** er completed/success på samme præcise kilde; 601 Python-prøver og de normale browser-/platforms-/pakkekontroller består. Begge offentlige ZIP-pakker og alle **147 filer** på betakanalen er sammenlignet byte for byte med lokale bygninger. [Præcis verificering](BETA-80-VERIFICERING.md).
 
-**Aktuel fremdrift: 102/119 afsluttet eller afklaret, 17 åbne, cirka 86 %.** W65 er fortsat åben til stabilslutkontrol. W106 og W108 samt den afgrænsede W13-kontrol og sprogslutkontrollen mangler før næste stabile. De konkrete W107-prøver er klar i Google-tabellen. Allerede godkendte generelle HA-/Drive-/datagendannelsesprøver gentages ikke. Ingen OCR genoptaget. Historiske kandidatstatusser nedenfor går ikke foran denne oversigt.
+**Fremdrift ved beta.80: 102/119 afsluttet eller afklaret, 17 åbne, cirka 86 %.** W65 er fortsat åben til stabilslutkontrol. W106 og W108 samt den afgrænsede W13-kontrol og sprogslutkontrollen mangler før næste stabile. De konkrete W107-prøver er klar i Google-tabellen. Allerede godkendte generelle HA-/Drive-/datagendannelsesprøver gentages ikke. Ingen OCR genoptaget. Historiske kandidatstatusser nedenfor går ikke foran denne oversigt.
 
 ### Beta.79 · tidligere verificeret udgivelse
 
