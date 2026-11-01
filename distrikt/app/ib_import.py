@@ -14,17 +14,17 @@ ALIASES=dict(zip(HEADERS,FIELDS));ALIASES.update({key:key for key in FIELDS})
 ALIASES.update(husnr='number',postnr='postcode',doer='door')
 
 
-def template_xlsx():
+def template_xlsx(headers=HEADERS,sheet_name='IB'):
     """Blank text cells preserve leading zeroes; no formulas, links or data."""
     ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main'
-    rows=['<row r="1">'+''.join('<c r="'+chr(65+i)+'1" t="inlineStr"><is><t>'+escape(h)+'</t></is></c>' for i,h in enumerate(HEADERS))+'</row>']
+    rows=['<row r="1">'+''.join('<c r="'+chr(65+i)+'1" t="inlineStr"><is><t>'+escape(h)+'</t></is></c>' for i,h in enumerate(headers))+'</row>']
     parts={
       '[Content_Types].xml':'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>',
       '_rels/.rels':'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>',
-      'xl/workbook.xml':'<workbook xmlns="'+ns+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="IB" sheetId="1" r:id="rId1"/></sheets></workbook>',
+      'xl/workbook.xml':'<workbook xmlns="'+ns+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+escape(sheet_name)+'" sheetId="1" r:id="rId1"/></sheets></workbook>',
       'xl/_rels/workbook.xml.rels':'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
       'xl/styles.xml':'<styleSheet xmlns="'+ns+'"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="49" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>',
-      'xl/worksheets/sheet1.xml':'<worksheet xmlns="'+ns+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="7" width="22" customWidth="1" style="1"/></cols><sheetData>'+''.join(rows)+'</sheetData><autoFilter ref="A1:G1"/></worksheet>'}
+      'xl/worksheets/sheet1.xml':'<worksheet xmlns="'+ns+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="'+str(len(headers))+'" width="22" customWidth="1" style="1"/></cols><sheetData>'+''.join(rows)+'</sheetData><autoFilter ref="A1:'+chr(64+len(headers))+'1"/></worksheet>'}
     target=io.BytesIO()
     with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED) as archive:
         for path,text in sorted(parts.items()):

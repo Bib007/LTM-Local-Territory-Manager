@@ -26,6 +26,8 @@ GET={
  '/api/export/s13':('history.view','loans.view','publishers.view','cards.view'),
  '/api/export/backup':READ_ALL|{'backup.export'}, '/api/restore/safety':READ_ALL|{'backup.export'},
  '/api/setup/card-template.xlsx':('cards.edit',), '/api/setup/card-template.csv':('cards.edit',),
+ '/api/setup/publisher-template.csv':('publishers.view','publishers.manage'),
+ '/api/setup/publisher-template.xlsx':('publishers.view','publishers.manage'),
  '/api/setup/ib-template.csv':('ib.edit',),
  '/api/setup/ib-template.xlsx':('ib.edit',),
  '/api/photo/status':('ib.view','ib.edit'), '/api/photo/job':('ib.view','ib.edit'),
@@ -71,7 +73,7 @@ GROUPS={
  ('connections.manage',):'geo.token',
  ('cards.view','loans.view','loans.manage'):'folder.set loan.issue loan.finish',
  ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct',
- ('publishers.view','publishers.manage'):'publisher.save',
+ ('publishers.view','publishers.manage'):'publisher.save setup.publisher-import.preview setup.publisher-import.apply',
  ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete',
  ('cards.view','history.view','history.edit'):'completion.record',
  ('history.view','history.edit'):'visit.save history.cleanup',
@@ -121,7 +123,7 @@ def mutation(user,action,data,store):
 CARD_FIELDS=set('id number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
- 'publishers':{'id','name'},
+ 'publishers':{'id','name','group','group_role','pioneer'},
  'loans':set('id card_id publisher_id assigned cycle_start returned initial'.split()),
  'ib':set('id card_id address_id road number date postcode missing_fields'.split()),
  'notes':set('id card_id loan_id completion_id text date created resolved resolved_at task recurrence task_history'.split()),

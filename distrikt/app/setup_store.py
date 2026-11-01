@@ -41,7 +41,7 @@ class SetupStore:
         events={
             'settings.save':('congregation','folder'),
             'print.profile.save':('printing',),
-            'publisher.save':('publisher',),
+            'publisher.save':('publisher',),'setup.publisher-import.apply':('publisher',),
             'card.save':('cards',),'card.bulk.create':('cards',),
             'setup.card-import.apply':('cards',),'setup.apply':('cards',),
             'geo.main.save':('boundary',),'setup.ib.apply':('ib',),
@@ -81,12 +81,14 @@ class SetupStore:
     def setup_remember(self,kind,payload):
         now=time.monotonic();self._setup_previews={k:v for k,v in self._setup_previews.items() if v['until']>now}
         if len(self._setup_previews)>=6:self._setup_previews.pop(next(iter(self._setup_previews)))
-        token=uuid.uuid4().hex;self._setup_previews[token]={'kind':kind,'until':now+1800,'expected':self.setup_signature(ib=kind=='ib'),'payload':payload}
+        token=uuid.uuid4().hex;self._setup_previews[token]={'kind':kind,'until':now+1800,'expected':signature(self.all('publishers')) if kind=='publishers' else self.setup_signature(ib=kind=='ib'),'payload':payload}
         return token
     def setup_require_preview(self,data,kind):
         p=self._setup_previews.get(data.get('token'))
         if not p or p['kind']!=kind or p['until']<=time.monotonic():raise ValueError('Forhåndsvisningen er udløbet. Lav et nyt forslag.')
-        if self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, veje, områder eller IB er ændret. Lav en ny forhåndsvisning.')
+        if kind=='publishers':
+            if signature(self.all('publishers'))!=p['expected']:raise ValueError('Forkynderlisten er ændret. Lav en ny forhåndsvisning før gruppeimport.')
+        elif self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, veje, områder eller IB er ændret. Lav en ny forhåndsvisning.')
         return p['payload']
     def setup_plan(self,data):
         options=defaults(data);main=self.main_boundary()
@@ -162,6 +164,12 @@ class SetupStore:
         payload={'areas':areas,'cards':proposed,'options':options,'uncovered':uncovered,'excluded':dict(excluded),'visits':sum(c['visits'] for c in proposed)}
         return dict(payload,token=self.setup_remember('cards',payload))
     def setup_mutate(self,action,data):
+        if action=='setup.publisher-import.preview':
+            from publisher_import import preview
+            return preview(self,data)
+        if action=='setup.publisher-import.apply':
+            from publisher_import import apply
+            return apply(self,data)
         if action=='setup.history-import.preview':
             from history_import import preview
             return preview(self,data)
