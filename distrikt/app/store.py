@@ -84,6 +84,15 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         self.db.commit()
         with self.transaction():
             self.migrate_tasks()
+            # Repair old lossy labels from their exact geographic membership.
+            # Manual/imported lines have no authoritative geographic snapshot.
+            from geography import street_rows
+            for c in self.all('cards'):
+                if c.get('geo_addresses'):
+                    rows=street_rows(c['geo_addresses'])
+                    if rows!=c.get('addresses'):
+                        c['addresses']=rows;c['front_revision']=True
+                        self.put('cards',c)
             # Remove the credential belonging to the retired aerial-photo feature only.
             self.db.execute("DELETE FROM geo.records WHERE id = ?",('basemap-config',))
             if not self.get('settings', 'config'):

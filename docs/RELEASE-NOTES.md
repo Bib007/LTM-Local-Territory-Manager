@@ -9,3 +9,5 @@ This release addresses the priority −1 Drive request.
 An ordinary unqualified single number range retains its existing meaning. Unknown restrictions are rejected rather than ignored. Review the proposed address list and boundary before saving; the planner never changes a card simply by downloading or previewing.
 
 The familiar Home, roles, assignments, history, original S-12/S-13 forms and separate stable/beta data remain. Update the stable program while preserving its data directory and private backups.
+
+Geographic street labels now separate even and odd houses and preserve gaps and lettered numbers. Long lists split into bounded rows without dropping visits. Existing geographic cards are repaired from their saved exact address membership at startup and flagged for front print review; manual lines and original forms remain unchanged.
