@@ -1,8 +1,10 @@
 # Ønskeliste og nye opgaver
 
-## Development after stable 1.12.3 — W119
+## Development after stable 1.12.3 — W119 and W116 planning
 
 Optional task responsibility is implemented for the next development release. Account managers who can edit notes can select an active local account. Readers see their own responsibility without receiving the user directory. Tasks can be linked to follow-ups, filtered by responsibility, and retain their owner during text edits or weekly completion. Explicit assignment changes use a comparison against the previous owner. No notifications or extra permissions are granted. [Behavior and limits](../TASK-RESPONSIBILITY.en.md).
+
+W116 now has a read-only manual planner in Settings and the setup checklist: per-browser visit target, box-only filter, exact address suggestions, same-area/street receiving alternatives and a handoff to the existing explicit new-card split preview. No visits, dates, loans or geometry are guessed or changed by planning. Applying moves to an existing card and choosing the completion-date/interim-card policy remain open; W116 is not marked complete. [Current behavior and limits](../SPLIT-SUGGESTIONS.en.md).
 
 Stable 1.12.3 remains the released app. This feature has not been included in a public beta or stable package, and the overall completion count is unchanged. The older candidate notes below are historical.
 

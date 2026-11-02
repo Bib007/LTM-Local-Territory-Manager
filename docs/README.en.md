@@ -65,7 +65,7 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 
 ## Development preview
 
-[Optional task responsibility](TASK-RESPONSIBILITY.en.md) is being prepared for the next release; it is not part of stable 1.12.3.
+[Optional task responsibility](TASK-RESPONSIBILITY.en.md) and [manual split suggestions](SPLIT-SUGGESTIONS.en.md) are being prepared for the next release; they are not part of stable 1.12.3.
 
 ## Ideas and feedback
 
