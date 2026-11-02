@@ -35,8 +35,19 @@ class GeometryTests(unittest.TestCase):
         with self.assertRaises(ValueError):in_number_range('42','58','42')
     def test_compact_first_last_number_format(self):
         self.assertEqual(format_numbers(['5','1','3']),'1–5 (ulige)');self.assertEqual(format_numbers(['2','4','6']),'2–6 (lige)')
-        self.assertEqual(format_numbers(['1','3','7']),'1–7 (ulige)');self.assertEqual(format_numbers(['1A','1C']),'1A–1C (ulige)')
-        self.assertEqual(format_numbers(['1','2','3']),'1–3')
+        self.assertEqual(format_numbers(['1','3','7']),'1, 3, 7 (ulige)');self.assertEqual(format_numbers(['1A','1C']),'1A, 1C (ulige)')
+        self.assertEqual(format_numbers(['1','2','3']),'2 (lige) & 1, 3 (ulige)')
+    def test_mixed_sides_letters_gaps_and_long_rows(self):
+        from geography import street_rows
+        numbers=['2','4','6','5A','7','9B','40','52']
+        records=[address(str(i),n) for i,n in enumerate(numbers)]
+        rows=street_rows(records)
+        self.assertEqual([r['numbers'] for r in rows],['2–6, 40, 52 (lige)','5A, 7, 9B (ulige)'])
+        self.assertEqual(sum(r['count'] for r in rows),len(records))
+        long=street_rows([address(str(i),str(i)+'A') for i in range(1,180,2)])
+        self.assertTrue(all(len(r['numbers'])<=100 for r in long))
+        self.assertEqual(sum(r['count'] for r in long),90)
+        for i in range(1,180,2):self.assertIn(str(i)+'A',', '.join(r['numbers'] for r in long))
     def test_utm_and_outline(self):
         lng,lat=utm32_to_wgs84(500000,6094791.420874)
         self.assertAlmostEqual(lng,9,places=6);self.assertAlmostEqual(lat,55,places=6)
@@ -62,6 +73,17 @@ class GeoStorageTests(unittest.TestCase):
         self.add([address('a1','1'),address('a3','3'),address('a5','5')]);self.s.mutate('geo.assign',{'card_id':c,'address_ids':['a1','a3','a5']})
         card=self.s.get('cards',c);self.assertFalse(card['temporary']);self.assertEqual(card['addresses'][0]['numbers'],'1–5 (ulige)');self.assertEqual(card['addresses'][0]['count'],3)
         self.assertEqual(self.s.active_loan(c)['id'],l);self.assertIsNotNone(self.s.get('ib',ib));self.assertTrue(card['front_revision']);self.assertTrue(card['geo_polygon'])
+    def test_reopen_repairs_old_labels_without_losing_membership(self):
+        self.add([address('a','5A'),address('b','7'),address('c','40')])
+        ident=self.s.mutate('geo.assign',{'number':'F001','address_ids':['a','b','c']})['id']
+        c=self.s.get('cards',ident);members=c['geo_addresses'];c['addresses']=[dict(c['addresses'][0],numbers='5A–40')]
+        with self.s.transaction():self.s.put('cards',c)
+        self.s.close();self.s=Store(self.tmp.name)
+        fixed=self.s.get('cards',ident)
+        self.assertEqual([r['numbers'] for r in fixed['addresses']],['40','5A, 7 (ulige)'])
+        self.assertEqual(fixed['geo_addresses'],members);self.assertTrue(fixed['front_revision'])
+        self.s.close();self.s=Store(self.tmp.name)
+        self.assertEqual(self.s.get('cards',ident),fixed)
     def test_range_new_card_and_conflict_reservation(self):
         self.add([address('a42','42'),address('a42b','42B'),address('a43','43'),address('a58','58')])
         p=self.s.mutate('geo.preview',{'mode':'range','road':'Eksempelvej','postcode':'9999','from':'42','to':'58','parity':'even'})

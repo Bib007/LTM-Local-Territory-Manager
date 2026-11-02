@@ -2,6 +2,8 @@
 
 ## 1.12.6 · 2026-11-02
 
+- Fix lossy street labels: separate number parity, preserve gaps/lettered houses, split long rows and repair saved geographic labels with print review.
+
 - Understand whole-street wording, “kun lige/ulige” qualifiers and street-side ranges such as “23-25 & 24-26” in reviewed DAR suggestions. Preserve parity restrictions and include every apartment in the selected house numbers.
 - Default the IB import screen to explicit manual lines without DAR. Import fronts and backs from separate Excel/CSV files, preserve dates and print both sides without geographic addresses.
 - Link an imported manual IB entry to one explicit address on the same card later. Changing the import linking policy requires a new preview; existing records are not rebound silently.
