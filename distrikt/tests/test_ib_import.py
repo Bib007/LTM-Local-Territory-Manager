@@ -81,6 +81,16 @@ class IBImportTests(unittest.TestCase):
         self.s.mutate('ib.save',{**item,'date':'2025-03-01','date_text':''})
         self.assertEqual(self.s.require('ib',item['id'])['date'],'2025-03-01')
         self.assertNotIn('date_text',self.s.require('ib',item['id']))
+    def test_import_month_year_words_and_excel_year_without_invented_date(self):
+        cases=[({'content':'kortnummer;vejnavn;husnummer;dato\nF001;Fiktiv vej;1;marts 2024'},'marts 2024'),
+               ({'name':'fictional.xlsx','content':workbook(['kortnummer','vejnavn','husnummer','dato'],[['F001','Fiktiv vej','2','2024']]),'encoding':'base64'},'2024')]
+        for payload,expected in cases:
+            p=self.preview(**payload)
+            self.assertEqual((p['new'],p['errors'],p['warnings']),(1,0,1))
+            self.apply(p,acknowledge=True)
+            item=next(i for i in self.s.all('ib') if i.get('date_text')==expected)
+            self.assertEqual(item['date'],'')
+
     def test_invalid_exact_import_date_does_not_become_free_text(self):
         p=self.preview('kortnummer;vejnavn;husnummer;dato\nF001;Fiktiv vej;1;2025-99-99')
         self.assertEqual(p['errors'],1)

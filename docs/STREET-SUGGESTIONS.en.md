@@ -1,0 +1,15 @@
+# Suggest addresses from an existing street list
+
+Available from LTM 1.12.5. This uses the existing Danish DAR download connection and the same geographic editing permissions. It does not divide the congregation territory automatically.
+
+1. Open a card and choose **Draw and select addresses**.
+2. Choose **Suggest DAR addresses from street lines**. Confirm the four-digit postcode for every displayed street line. A postcode is prefilled only when the card already has one unambiguous value for that street.
+3. Choose **Download and suggest addresses**. The existing authenticated download retrieves each complete street; all apartments within the number range are included. Downloading and previewing do not modify the card.
+4. Compare the selected units and visit total with the original street list. Inspect and adjust the proposed outline; an outline around addresses does not establish geographic continuity or physical boundaries.
+5. Choose **Save addresses on card**, review the confirmation and save. The same card number, assignments, completions and do-not-call entries are retained. The front is marked for print review.
+
+Supported ranges include `1–19`, `2–20 (even)`, `1A–9B (odd)`, and comma/semicolon-separated ranges or single house numbers. Danish `(lige)` and `(ulige)` are supported. All known apartment units at a selected house number stay together. Unclear wording is rejected; correct the street line or select addresses manually.
+
+Every street line must produce active addresses from a complete road download. Reserved, ignored or retired units block the suggestion. Changed street lines or address data invalidate its approval. No address is guessed from a neighbouring street or an unspecified postcode. A source failure retains downloaded public data without silently applying a partial card.
+
+For do-not-call dates, use the optional **Date as text** field for `March 2024`, `2024` or another wording when an exact day is unknown. In import, map the date column normally and review its warning. The wording is displayed on the back; no completion date is created. Original S-12/S-13 forms retain their language.

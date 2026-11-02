@@ -64,6 +64,8 @@ class ProfileRuntime:
     def state(self,token,raw):
         with self.accounts.authorized_session(token) as user,self.server.store.lock:
             result=state_for(raw,user)
+            if {'users.manage','notes.view'}<=user['permissions']:
+                result['task_users']=[{'id':u['id'],'name':u['name']} for u in self.accounts.data['users'].values() if not u.get('disabled')]
             from profile_policy import MODULE_RIGHT
             modules={m for m,right in MODULE_RIGHT.items() if right in user['permissions']}
             if 'settings.manage' in user['permissions']:modules.add('settings')
@@ -78,6 +80,11 @@ class ProfileRuntime:
         store=self.server.store
         with store.lock:
             mutation(user,action,data,store)
+            if action=='note.save' and data.get('assignee_id'):
+                owner=self.accounts.data['users'].get(data['assignee_id']) if isinstance(data['assignee_id'],str) else None
+                current=store.get('notes',data.get('id')) or {}
+                if (not owner or owner.get('disabled')) and data['assignee_id']!=current.get('assignee_id'):
+                    raise ValueError('Vælg en aktiv bruger som ansvarshavende.')
             if action.endswith('.preview'):return store.mutate(action,data),None
             with self.bases.claim(snapshot,token,'workspace','workspace') as base:
                 reserved=[]

@@ -63,6 +63,12 @@ jobs:
         run: |
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_profiles_app_browser.cjs
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_profiles_app_browser.cjs
+      - name: Task responsibility with fictional local accounts
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_task_ownership_browser.cjs
+      - name: Read-only manual split planning
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_split_suggestions_browser.cjs
+      - name: Reviewed DAR street suggestions and imprecise IB dates
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_street_suggestions_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks

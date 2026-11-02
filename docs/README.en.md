@@ -24,7 +24,7 @@ The demo uses fictional examples and needs no installation or account. The feedb
 
 ## A look inside
 
-These pictures show the application with fictional examples. English is the default for new users, and Danish remains available. Translation is partial; some text and the original printed forms remain Danish.
+These pictures show the application with fictional examples. English is the default for new users, and Danish remains available. The interface is available in English and Danish. Original printed forms and stored user content keep their language.
 
 ![Card status and upcoming tasks in LTM](../assets/screenshots/overblik.png)
 
@@ -63,6 +63,10 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 
 **Can I bring existing records?** You can import cards from Excel and supported S-13 records. Review and approve the results before they are saved.
 
+## Tasks and manual redistribution
+
+[Optional task responsibility](TASK-RESPONSIBILITY.en.md) and [manual split/transfer workflows](SPLIT-SUGGESTIONS.en.md) are available from 1.12.4.
+
 ## Ideas and feedback
 
 [Send feedback](https://tally.so/r/KpY0ZV) without an account or email address. The form accepts pictures and currently uses Danish. Submit fictional examples only, without private records, real do-not-call details, backups or passwords. Your submitted text and pictures are stored by Tally.
@@ -72,3 +76,5 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 LTM is an unofficial project, not produced or approved by Jehovah’s Witnesses, jw.org, JW HUB or Home Assistant. It is developed with help from OpenAI Codex. [License](../LICENSE) · [Third-party notices](../distrikt/THIRD-PARTY.md).
 
 [Dansk](../README.md) · [Known limitations](LIMITATIONS.en.md) · [Contributing](CONTRIBUTING.en.md)
+
+- [Reviewed DAR suggestions from existing street lines](STREET-SUGGESTIONS.en.md) — 1.12.5.
