@@ -36,6 +36,30 @@ class IBImportTests(unittest.TestCase):
     def preview(self,content,**kw):return self.s.mutate('setup.ib.preview',{'content':content,'date':'2026-10-01',**kw})
     def apply(self,p,**kw):return self.s.mutate('setup.ib.apply',{'token':p['token'],'confirm':'IMPORTÉR IB',**kw})
 
+    def test_manual_mode_leaves_unique_local_match_unlinked_until_explicit_edit(self):
+        unit={'id':'fictional-unit','entity':'address','road':'Fiktiv vej','number':'1','postcode':'9999','lng':10,'lat':55,'count':1,'type':'Hus'}
+        self.s.mutate('geo.import',{'records':[unit],'source':'Fictional local data','label':'Invented'})
+        self.s.mutate('geo.assign',{'card_id':self.card,'address_ids':[unit['id']]})
+        content='kortnummer;vejnavn;husnummer;postnummer;dato\nF001;Fiktiv vej;1;9999;2024'
+        automatic=self.preview(content);self.assertEqual(automatic['rows'][0]['record']['address_id'],unit['id'])
+        manual=self.preview(content,address_mode='manual');self.assertNotIn('address_id',manual['rows'][0]['record'])
+        self.apply(manual,acknowledge=True);item=self.s.all('ib')[0];ident=item['id']
+        self.s.mutate('ib.save',{**item,'address_id':unit['id']})
+        linked=self.s.require('ib',ident);self.assertEqual(linked['address_id'],unit['id']);self.assertEqual((linked['date'],linked['date_text']),('','2024'))
+
+    def test_separate_excel_front_and_back_need_no_dar_or_geography(self):
+        from test_card_import import xlsx_file
+        front=xlsx_file([['M001','','','By','Fiktiv vej','hele vejen','','','','','12']])
+        p=self.s.mutate('setup.card-import.preview',front)
+        self.s.mutate('setup.card-import.apply',{'token':p['token'],'confirm':'IMPORTÉR KORT'})
+        card=next(c for c in self.s.all('cards') if c['number']=='M001')
+        self.assertEqual(card['addresses'][0]['numbers'],'hele vejen');self.assertFalse(card.get('address_ids'));self.assertEqual(self.s.all('geo'),[])
+        back=workbook(['kortnummer','vejnavn','husnummer','dato'],[['M001','Fiktiv vej','23-25 & 24-26','2024']])
+        p=self.preview(back,name='manual-back.xlsx',address_mode='manual');self.assertEqual((p['new'],p['errors']),(1,0))
+        self.apply(p,acknowledge=True);item=self.s.all('ib')[0]
+        self.assertEqual((item['card_id'],item['number'],item['date_text']),(card['id'],'23-25 & 24-26','2024'));self.assertNotIn('address_id',item)
+        self.assertEqual(self.s.all('geo'),[]);self.assertEqual(self.s.require('cards',card['id'])['addresses'][0]['count'],12)
+
     def test_template_is_blank_text_format_and_no_private_data(self):
         raw=template_xlsx();self.assertEqual(raw,template_xlsx())
         self.assertEqual(xlsx_rows(raw,sheet_name='IB'),[(1,HEADERS)])

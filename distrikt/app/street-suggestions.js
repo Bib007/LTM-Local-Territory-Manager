@@ -30,7 +30,7 @@ const StreetSuggestions={
   GeoUI.setNotice('DAR-forslaget er klar. Sammenlign adresser og besøgstal med vejlisten, ret grænsen og vælg Gem for at ændre kortet.');
   const status=el('geoDownloadStatus');if(status)status.hidden=true;
   render();
-  if(GeoUI.map&&result.addresses.length)GeoUI.map.fitBounds(result.addresses.map(a=>[a.lat,a.lng]),{padding:[40,40],maxZoom:18});
+  if(GeoUI.map&&result.addresses.length)GeoUI.map.fitBounds(result.addresses.map(a=>[a.lat,a.lng]),{padding:[40,40],maxZoom:18,animate:false});
  },
  async afterJob(job){if(job.status!=='done'||job.kind!=='road'){this.pending=null;return;}await this.next();}
 };

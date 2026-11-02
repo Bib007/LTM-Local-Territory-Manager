@@ -4,7 +4,7 @@
 
 Import card numbers, manual street lines or exact addresses. Open the first-use guide or **Settings → Import → Open card import**. Maps are optional.
 
-1. Download the Excel template. Fill in the **Distriktskort** sheet; **Vejledning** contains Danish instructions and fictional examples. Keep the Danish column headings.
+1. Choose your own Excel/CSV file, or use the optional template. Select the worksheet and header row, then explicitly map each column to its meaning. Unused columns remain ignored. The template has a **Distriktskort** sheet and Danish examples in **Vejledning**.
 2. Use one row per address or manual street line. A card number alone is also accepted; leave every address field blank in that case. Repeat the card number. Area, card name and territory type can be given on the first row for each card; repeated values must agree.
 3. Save as `.xlsx`, or use CSV with commas or semicolons. Convert old `.xls` files to `.xlsx`. Paste values instead of formulas.
 4. Choose the file and review all cards, areas, addresses and visit counts. Fix every error and duplicate, then choose the file again.
@@ -21,3 +21,14 @@ Unknown counts remain visible on cards, printouts and current totals. They may b
 ## Multiple files
 
 Choose up to 20 Excel/CSV files, up to 2 MB each and 20 MB in total. Approve each file separately, then choose **Review next file**. You can skip a file. Previously approved files remain saved after closing or an error. The queue currently supports card files, not images or do-not-call files.
+
+## Import a front and a do-not-call back without DAR
+
+From 1.12.6, the do-not-call import defaults to **Manual do-not-call lines · without DAR**. DAR is optional for both printed sides.
+
+1. Import the front as cards with a card number, street name and literal house number/range. Wording such as `whole street`, `hele vejen`, or `23-25 & 24-26` stays as entered. Supply a known visit count or leave it unknown; no count or coordinates are guessed.
+2. Open **Local do-not-call import**, choose the back's Excel/CSV file and map the columns. Keep manual linking selected. Use the same card number as the front, or choose a default card when the file has no card-number column. A card must already exist; use **Import front · Excel / CSV** first if necessary.
+3. Review the preview, acknowledge the manual-line warnings and confirm. Exact dates, month/year and year alone are supported. No DAR download or geographic address is required. Print the ordinary front and back from the card.
+4. If precise addresses are added to that card later, choose **Edit do-not-call entry**, explicitly select an address belonging to that card and save. The entry keeps its ID and date wording. Leaving it manual remains supported.
+
+Choose **Match with the card's stored addresses** only if you want unambiguous local address matching. This uses already stored addresses and does not contact DAR. Changing the linking policy invalidates an existing import preview and requires a fresh review. Existing entries are not silently rebound by importing another file.

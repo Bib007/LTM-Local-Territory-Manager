@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.6 · 2026-11-02
+
+- Understand whole-street wording, “kun lige/ulige” qualifiers and street-side ranges such as “23-25 & 24-26” in reviewed DAR suggestions. Preserve parity restrictions and include every apartment in the selected house numbers.
+- Default the IB import screen to explicit manual lines without DAR. Import fronts and backs from separate Excel/CSV files, preserve dates and print both sides without geographic addresses.
+- Link an imported manual IB entry to one explicit address on the same card later. Changing the import linking policy requires a new preview; existing records are not rebound silently.
+- Clarify own-file column mapping and the optional role of DAR in the English import guide.
+
 ## 1.12.5 · 2026-11-02
 
 - Preserve a known month/year, a year alone or literal date wording when importing or manually creating a do-not-call entry. No day or month is invented; wording survives editing, card backs, private export and backup.

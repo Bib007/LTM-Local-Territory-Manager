@@ -50,9 +50,9 @@ const GeoUI={
     const renderer=L.canvas(),redraw=renderer._redraw;renderer._redraw=function(){if(this._map&&this._ctx)return redraw.call(this);};
     this.map=L.map(node,{renderer,preferCanvas:true,zoomControl:true,minZoom:8,maxZoom:21,attributionControl:true}).setView(this.view?.center||[56,10],this.view?.zoom||8);
     this.layers=L.layerGroup().addTo(this.map);this.draftLayer=L.layerGroup().addTo(this.map);
-    MapBackground.attach('geographicEditor',this.map,()=>this.drawLayers(),()=>{const points=this.polygon.length?this.polygon:this.addresses().map(a=>[a.lng,a.lat]);if(points.length)this.map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[35,35],maxZoom:18});});
+    MapBackground.attach('geographicEditor',this.map,()=>this.drawLayers(),()=>{const points=this.polygon.length?this.polygon:this.addresses().map(a=>[a.lng,a.lat]);if(points.length)this.map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[35,35],maxZoom:18,animate:false});});
     this.drawLayers();this.drawBoundary();this.updatePanel();
-    if(!this.view){let points=this.polygon.length?this.polygon:this.chosen().map(a=>[a.lng,a.lat]);if(!points.length)points=this.addresses().map(a=>[a.lng,a.lat]);if(points.length)this.map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[35,35],maxZoom:18});}
+    if(!this.view){let points=this.polygon.length?this.polygon:this.chosen().map(a=>[a.lng,a.lat]);if(!points.length)points=this.addresses().map(a=>[a.lng,a.lat]);if(points.length)this.map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[35,35],maxZoom:18,animate:false});}
     if(this.whole)this.drawBoundary();
     this.map.on('click',e=>{this.manualPoint=e.latlng;if(this.mode==='draw'){if(this.whole&&this.polygon.length>=5000){toast(I18n.text('Højst 5.000 hjørner.'));return;}this.polygon.push([Number(e.latlng.lng.toFixed(7)),Number(e.latlng.lat.toFixed(7))]);this.dirty=true;this.drawBoundary();this.updatePanel();}});
     this.map.on('tooltipopen',()=>I18n.applyShell());

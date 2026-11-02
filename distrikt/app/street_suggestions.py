@@ -1,19 +1,39 @@
 """Reviewed DAR suggestions from existing street lines; no network or writes."""
 import re
 from admin_store import signature
-from geography import in_number_range
+from geography import in_number_range, number_key
 
 
 def ranges(value):
+    value=str(value or '').strip()
+    # Separate street sides commonly use '&': 23-29 & 24-26.
+    # Keep ordinary unqualified ranges unchanged; only infer sides in this notation.
+    sides=bool(re.search(r'&|\bog\b|\band\b',value,re.I))
     result=[]
-    for part in re.split(r'[,;]',str(value or '')):
-        match=re.fullmatch(r'\s*(\d+[A-Za-zÆØÅæøå]?)\s*(?:[-–—]\s*(\d+[A-Za-zÆØÅæøå]?))?\s*(?:\((lige|ulige|even|odd)\))?\s*',part,re.I)
+    for part in re.split(r'[,;&]|\bog\b|\band\b',value,flags=re.I):
+        part=part.strip();parity=None
+        note=re.search(r'\s*\(\s*(?:kun\s+|only\s+)?(lige|ulige|even|odd)(?:\s+(?:husnumre|numre|numbers?))?\s*\)\s*$',part,re.I)
+        if note:parity=note[1].lower();part=part[:note.start()].strip()
+        only=re.fullmatch(r'(?:kun\s+|only\s+)?(lige|ulige|even|odd)(?:\s+(?:husnumre|numre|numbers?))?',part,re.I)
+        if only:parity=only[1].lower();part='hele vejen'
+        parity={'lige':'even','ulige':'odd'}.get(parity,parity)
+        if re.fullmatch(r'hele\s+vejen|alle(?:\s+(?:husnumre|numre))?|(?:the\s+)?(?:whole|entire)\s+(?:street|road)|all(?:\s+(?:house\s+)?numbers)?',part,re.I):
+            result.append((None,None,parity or 'all'));continue
+        match=re.fullmatch(r'\s*(?:nr\.?\s*)?(\d+\s*[A-Za-zÆØÅæøå]?)\s*(?:[-–—]\s*(\d+\s*[A-Za-zÆØÅæøå]?))?\s*',part,re.I)
         if not match:raise ValueError('Vejlinjens nummerinterval er uklart. Ret det før adresseforslaget.')
-        start,end,parity=match.groups();end=end or start
-        parity={'lige':'even','ulige':'odd'}.get((parity or '').lower(),(parity or 'all').lower())
+        start,end=match.groups();start=re.sub(r'\s+','',start);end=re.sub(r'\s+','',end) if end else start
+        if parity is None and sides and number_key(start)[0]%2==number_key(end)[0]%2:
+            parity='odd' if number_key(start)[0]%2 else 'even'
+        parity=parity or 'all'
         in_number_range(start,start,end,parity)
         result.append((start,end,parity))
     return result
+
+
+def includes(number,part):
+    start,end,parity=part
+    if start is None:return parity=='all' or number_key(number)[0]%2==(parity=='odd')
+    return in_number_range(number,start,end,parity)
 
 
 def suggest(store,data):
@@ -41,7 +61,7 @@ def suggest(store,data):
             raise ValueError('Hent hver bekræftet vej fra DAR før adresseforslaget.')
         units=[a for a in records if a.get('entity')=='address' and a.get('road','').casefold()==road.casefold() and a.get('postcode')==post]
         evidence.extend(units)
-        matches=[a for a in units if not a.get('retired') and any(in_number_range(a['number'],*part) for part in plan['ranges'])]
+        matches=[a for a in units if not a.get('retired') and any(includes(a['number'],part) for part in plan['ranges'])]
         if not matches:raise ValueError('En vejlinje har ingen aktive DAR-adresser i intervallet. Kontrollér vejnavn, postnummer og numre.')
         for a in matches:selected[a['id']]=a
     if len(selected)>10000:raise ValueError('For mange adresser.')

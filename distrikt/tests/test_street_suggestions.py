@@ -6,7 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
-from street_suggestions import ranges
+from street_suggestions import ranges, includes
 
 
 class StreetSuggestionTests(unittest.TestCase):
@@ -35,9 +35,19 @@ class StreetSuggestionTests(unittest.TestCase):
     def test_postcodes_and_precise_ranges_are_required(self):
         for posts in ([],[''],['999'],['9999','9999']):
             with self.assertRaises(ValueError):self.s.mutate('geo.preview',{'mode':'street_lines','card_id':self.card,'postcodes':posts,'planning_only':True})
-        for value in ('all','1–5 og resten','5-1','1-5 (unknown)',''):
+        for value in ('1–5 og resten','5-1','1-5 (unknown)',''):
             with self.assertRaises(ValueError):ranges(value)
         self.assertEqual(ranges('1A-3B (odd); 8'),[('1A','3B','odd'),('8','8','all')])
+    def test_whole_street_and_only_odd_note_keep_every_apartment(self):
+        self.fetch();c=self.s.require('cards',self.card)
+        for wording,expected in [('hele vejen',list('012345')),('hele vejen (kun ulige)',['0','1','2','3','5']),('1-5 (kun lige numre)',['4'])]:
+            self.s.mutate('card.save',{**c,'addresses':[{**c['addresses'][0],'numbers':wording}]})
+            preview=self.preview();self.assertEqual([a['id'] for a in preview['addresses']],['a'+i for i in expected])
+    def test_ampersand_street_sides_do_not_fill_excluded_even_numbers(self):
+        parts=ranges('23-29 & 24-26')
+        self.assertEqual([n for n in range(23,31) if any(includes(str(n),part) for part in parts)],[23,24,25,26,27,29])
+        self.assertEqual([n for n in range(23,28) if any(includes(str(n),part) for part in ranges('23-25 & 24-26'))],[23,24,25,26])
+        self.assertEqual(ranges('2-8 (kun lige) og 1-9 (kun ulige)'),[('2','8','even'),('1','9','odd')])
     def test_partial_data_and_empty_matching_range_are_rejected(self):
         self.fetch(False)
         with self.assertRaisesRegex(ValueError,'Hent hver'):self.preview()
