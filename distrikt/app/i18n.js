@@ -3,6 +3,16 @@
 const I18n={
  current:'en',
  english:{
+  "Vælg to forskellige kort til flytningen.":"Choose two different cards for the transfer.",
+  "Begge kort skal være færdige, afleverede og ligge i kassen.":"Both cards must be complete, returned and in the box.",
+  "Vælg kort med samme område og type.":"Choose cards with the same area and type.",
+  "Afslut den midlertidige flytning først.":"Finalize the interim transfer first.",
+  "Det midlertidige kort eller modtageren er ændret. Kontrollér forløbet igen.":"The interim card or receiver has changed. Review the workflow again.",
+  "Kontrollér kortenes præcise adressevalg før flytning.":"Review the exact address membership of both cards before transferring.",
+  "Adressedata er ændret. Opdater kortet i korteditoren før flytning.":"Address data has changed. Update the card in the map editor before transferring.",
+  "Vælg hele adresseenheder til flytningen.":"Choose whole address units for the transfer.",
+  "Vælg nogle, men ikke alle, adresser. Et midlertidigt kort afsluttes samlet.":"Choose some, but not all, addresses. Finalize an interim card as a whole.",
+  "Adresserne findes på flere kort. Ret kortkontrollen først.":"The addresses belong to multiple cards. Resolve the card check first.",
   "Automatisk adressekontrol":"Automatic address checks",
   "Prøvehændelsen er sendt til Home Assistant. Kontrollér beskeden på den valgte enhed.":"The test event was sent to Home Assistant. Check the notification on the selected device.",
 

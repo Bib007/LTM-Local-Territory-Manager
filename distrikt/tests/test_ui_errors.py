@@ -44,7 +44,7 @@ class UIErrorTests(unittest.TestCase):
         literals=re.findall(r'''("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')\s*:''', source)
         keys={ast.literal_eval(raw) for raw in literals}
         count=0
-        for name in ('store.py','workflow_store.py','admin_store.py','geo_store.py','setup_store.py','portable.py','server.py'):
+        for name in ('store.py','workflow_store.py','redistribution.py','admin_store.py','geo_store.py','setup_store.py','portable.py','server.py'):
             for node in ast.walk(ast.parse((APP/name).read_text(encoding='utf-8'))):
                 if not isinstance(node, ast.Raise) or not isinstance(node.exc, ast.Call) or not isinstance(node.exc.func, ast.Name) or node.exc.func.id not in ('ValueError','UIError') or not node.exc.args:
                     continue
