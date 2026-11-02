@@ -1,4 +1,18 @@
-# Ændringsliste
+# Changelog
+
+## 1.12.3 · Restore the familiar home dashboard
+
+- Restore the original home dashboard for profile users with the relevant record permissions, including its rings, shortcuts, metrics, monthly comparison and follow-ups.
+- Give summary-only users the familiar home layout using aggregate totals, without exposing private records or changing report permissions.
+- Keep the three-period report on the Reports page.
+
+## 1.12.2 · Profiles, dependable saving and flexible imports
+
+- Individual profiles and administrator-controlled roles; independent home/report summary permissions and permission-filtered personal guides.
+- Sheet/header/column selection for supported card and IB spreadsheet imports with explicit preview/confirmation.
+- Honest save acknowledgements, editor-owned bases, preserved conflict proposals and reliable tour completion.
+- Clearer reports and safe approved manual street rows on online card fronts.
+- English-first README, new-browser interface and documentation, plus a fictional demo with two role views. Original printed forms remain unchanged; translation is still partial.
 
 ## 1.12.2-beta.83 · Gemning, rundtur og manuelle onlinekort
 

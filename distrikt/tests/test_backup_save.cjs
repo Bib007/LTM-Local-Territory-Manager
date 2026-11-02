@@ -6,7 +6,7 @@ const app=read('app.js'),start=app.indexOf('function canChooseBackupLocation()')
 const events=[],blob={fictional:true},c={console,isSecureContext:true,api:async()=>{events.push('fetch');return {blob:async()=>blob};},URL:{createObjectURL(){events.push('url');return 'blob:invented';},revokeObjectURL(){events.push('revoke');}},document:{createElement(){return {click(){events.push('click');}};},addEventListener(){}},setTimeout:fn=>fn(),ui:s=>s};
 vm.createContext(c);vm.runInContext(read('i18n.js')+'\n'+app.slice(start,end)+'\n'+read('transfer-ui.js'),c);
 const run=s=>vm.runInContext(s,c),save=()=>run("download('/api/export/backup','invented.zip',{chooseLocation:true})");
-run('ui=(key,params)=>I18n.label(key,params)');
+run("I18n.set('da');ui=(key,params)=>I18n.label(key,params)");
 (async()=>{
  assert.equal(run('canChooseBackupLocation()'),false);assert.doesNotMatch(run('TransferUI.saveHTML()'),/data-action="backup-save"/);
  await assert.rejects(save,/Filvælgeren/);assert.deepEqual(events,[]);

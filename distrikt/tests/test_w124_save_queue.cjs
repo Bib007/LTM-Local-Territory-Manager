@@ -6,7 +6,7 @@ function fixture(){
  const nodes=new Map(),requests=[];const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',dataset:{},style:{},open:false,querySelector(){return null;},querySelectorAll(){return [];},showModal(){this.open=true;},close(){this.open=false;},addEventListener(){}});return nodes.get(id);};
  const complete={revision:'r0',today:'2026-11-01',cards:[],areas:[],notes:[],publishers:[],loans:[],completions:[],ib:[],ignored:[],visits:[],recovery:[],maps:[],settings:{},profile:{snapshot:'page-base'}};
  let answer;
- const c={console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,WeakMap,frontResizeObserver:null,DistrictMap:{dispose(){}},ProfilesUI:{dialogBase:'',dialog(){},afterRender(){}},
+ const c={console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,WeakMap,frontResizeObserver:null,DistrictMap:{dispose(){}},ProfilesUI:{dialogBase:'',dialog(){},afterRender(){},canAction:()=>true},
   setTimeout:()=>0,clearTimeout(){},window:{addEventListener(){},confirm:()=>true},document:{getElementById:get,querySelector:()=>({content:'FICTIONAL'}),querySelectorAll:()=>[],addEventListener(){}},
   fetch:async(url,options={})=>{const request={url,body:options.body?JSON.parse(options.body):null};requests.push(request);return answer(request);}};
  vm.createContext(c);for(const file of ['i18n.js','geo.js','workspace.js'])vm.runInContext(read(file),c);

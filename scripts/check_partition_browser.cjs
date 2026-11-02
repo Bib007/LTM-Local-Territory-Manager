@@ -20,7 +20,7 @@ module.exports=async(browser,out)=>{
    if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();assert.equal(body.action,'setup.preview','Never create or modify cards in browser fixture');assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(Number(body.data.target),40);assert.equal(body.data.areas[0].name,'Fiktivt prøveområde');assert.equal(body.data._async,true);requests.push(body);return json({result:{job_id:'fictional-preview'},revision:fixture.state.revision});}
    const file=path.resolve(root,'.'+(u.pathname==='/'?'/index.html':u.pathname));assert.ok(file.startsWith(root+path.sep));assert.ok(fs.existsSync(file),'Unexpected asset '+u.pathname);return route.fulfill({path:file});
   });
-  await page.goto('http://ltm.partition.test/');await page.waitForFunction(()=>state!==null&&!GeoUI.busy);
+  await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.partition.test/');await page.waitForFunction(()=>state!==null&&!GeoUI.busy);
   await page.evaluate(()=>{SetupUI.autoDivisionEnabled=true;return SetupUI.open(2);}); // Archived generator fixture only.
   await page.locator('[data-setup-option=target]').fill('40');await page.locator('[data-setup-area-field=name]').fill('Fiktivt prøveområde');
   assert.match(await page.locator('.setupBody').innerText(),/enkle forgreninger/);

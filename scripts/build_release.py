@@ -14,9 +14,9 @@ REQUIRED=('S-12-original.pdf','S-12-source.png','S-13-background.jpg','S-13-fiel
 PDF_DEPENDENCIES=('pypdf-6.21.4.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log','.tmp')
 BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json','profiles.json','profiles.tmp'}
-ROOT_DOCS=('homeassistant/ltm-status.yaml','repository.yaml','README.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
+ROOT_DOCS=('homeassistant/ltm-status.yaml','repository.yaml','README.md','README.da.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
-SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png')
+SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png','dashboard-en.jpg','cards-en.jpg','report-en.jpg')
 
 def account_backup(raw):
     if not raw.lstrip().startswith(b'{'):return False
@@ -98,7 +98,7 @@ def files():
     prefix='Home-Assistant/distrikt/'
     manifest=''.join(hashlib.sha256(raw).hexdigest()+'  '+name[len(prefix):]+'\n' for name,(raw,_) in sorted(result.items()) if name.startswith(prefix))
     result['Home-Assistant/SHA256SUMS.txt']=(manifest.encode(),0o644)
-    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nLæs README.md eller docs/INSTALL.md. Engelsk: docs/README.en.md.\nMac/Windows/Linux: se docs/SELF-HOSTING.md for den nye Start-LTM-guide i Distrikt-lokal. Python installeres separat. De gamle Start-Distrikt-filer er bevaret til eksisterende lokal brug.\nHA: tilføj repositoryet fra README, og installer gennem HA. Ved flytning af en eksisterende lokal app: følg installationsguiden, og tag privat backup først.\nDatabaser og login medfølger ikke.\n').encode(),0o644)
+    result['START-HER.txt']=(('Local Territory Manager '+version()+'\n\nRead README.md or docs/INSTALL.en.md. Danish: README.da.md.\nWindows/macOS/Linux: see docs/SELF-HOSTING.en.md for the Start-LTM launcher in Distrikt-lokal. Install Python separately. Legacy Start-Distrikt launchers remain for existing installations.\nHome Assistant: add the repository from README and install through the add-on store. Back up privately before moving an existing installation.\nUser databases and login credentials are not included.\n').encode(),0o644)
     validate_links(result)
     return result
 

@@ -5,6 +5,7 @@ All checks run under the accounts lock, before the Store lock is acquired.
 """
 from copy import deepcopy
 from profile_accounts import PERMISSIONS
+from profile_features import summaries
 
 READ_ALL=frozenset(('cards.view','publishers.view','loans.view','ib.view','notes.view',
                     'history.view','geo.view','activity.view','settings.manage'))
@@ -12,7 +13,7 @@ WRITE_ALL=frozenset(('cards.edit','publishers.manage','loans.manage','ib.edit','
                      'history.edit','geo.edit','settings.manage'))
 
 GET={
- '/api/state':(), '/api/profiles/session':(), '/api/profiles/conflicts':(),
+ '/api/state':(), '/api/profiles/guide':(), '/api/profiles/session':(), '/api/profiles/conflicts':(),
  '/api/profiles/admin':('users.manage',), '/api/profiles/online':('presence.view',),
  '/api/profiles/backup':('users.manage',),
  '/api/connections/drive':('connections.manage',),
@@ -36,7 +37,8 @@ POST={
  '/api/logout':(), '/api/profiles/heartbeat':(),
  '/api/profiles/edit-base':(), '/api/profiles/edit-base/release':(),
  '/api/runtime/test':('settings.manage',),
- '/api/profiles/intro/complete':(),
+ '/api/profiles/intro/complete':(), '/api/profiles/guide/progress':(), '/api/profiles/guide/replay':(),
+ '/api/profiles/guide/assign':('users.manage',), '/api/profiles/guide/preview':('users.manage',),
  '/api/profiles/users/save':('users.manage',), '/api/profiles/roles/save':('users.manage',),
  '/api/profiles/conflicts/acknowledge':(),
  '/api/profiles/conflicts/resolve':(),
@@ -79,11 +81,11 @@ GROUPS={
  ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete',
  ('cards.view','history.view','history.edit'):'completion.record',
  ('history.view','history.edit'):'visit.save history.cleanup',
- ('cards.view','ib.view','ib.edit'):'ib.save setup.ib.preview setup.ib.apply',
+ ('cards.view','ib.view','ib.edit'):'ib.save setup.ib.inspect setup.ib.preview setup.ib.apply',
  ('settings.manage',):'settings.save print.profile.save area.save area.delete filter.save filter.delete setup.onboarding.save setup.onboarding.task setup.defaults',
  ('settings.manage','geo.view','geo.edit','connections.manage'):'address.task.configure',
  ('backup.export',):'backup.record backup.snooze',
- ('cards.view','cards.edit','geo.view'):'setup.card-import.preview setup.card-import.apply',
+ ('cards.view','cards.edit','geo.view'):'setup.card-import.inspect setup.card-import.preview setup.card-import.apply',
  ('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','publishers.view','publishers.manage'):'setup.history-import.preview setup.history-import.apply',
 }
 ACTIONS={action:frozenset(rights) for rights,actions in GROUPS.items() for action in actions.split()}
@@ -168,5 +170,16 @@ def state_for(raw,user):
         result['runtime_status']=deepcopy(raw.get('runtime_status',{}))
     if 'backup.notify' in p:result['backup_last_day']=raw['backup_last_day']
     if READ_ALL|WRITE_ALL|{'backup.restore'}<=p:result['recovery']=deepcopy(raw['recovery'])
-    result['profile']={'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision']}
+    summary=summaries(raw) if {'dashboard.view','reports.view'}&p else None
+    result['dashboard_summary']=deepcopy(summary) if 'dashboard.view' in p else None
+    result['report_summary']=deepcopy(summary) if 'reports.view' in p else None
+    result['profile']={'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision'],'capabilities':capability_catalog()}
     return result
+
+
+def capability_catalog():
+    """UI and guide controls consume the same all-of policy as the server."""
+    return {'actions':{key:sorted(value) for key,value in ACTIONS.items()},
+            'delete':{key:sorted(value) for key,value in DELETE.items()},
+            'get':{key:sorted(value) for key,value in GET.items()},
+            'post':{key:sorted(value) for key,value in POST.items()}}

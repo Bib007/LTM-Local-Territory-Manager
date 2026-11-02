@@ -1,96 +1,152 @@
+<div align="center">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
-  <img alt="LTM · Local Territory Manager" src="assets/brand/logo-light.svg" width="580">
+  <img src="assets/brand/logo-light.svg" alt="LTM · Local Territory Manager" width="580">
 </picture>
 
-# Dine distriktskort. Ét samlet overblik.
+# Your territory cards. One clear overview.
 
-**Hold styr på kort, udleveringer og gennemgange — med dine registreringer på dit eget system.**
+**Less time keeping track. More clarity in the daily work.**
 
-LTM er et gratis, uofficielt værktøj til distriktsarbejdet i Jehovas Vidners menigheder. Se, hvilke kort der er ude, find et ledigt kort, og registrer en aflevering samme sted. Du kan begynde med de papirkort, du allerede har, og tilføje adresser og korttegning senere.
+A free, self-hosted territory manager for congregations of Jehovah’s Witnesses.<br>
+Cards, assignments, returns and history — together on your own system.
 
-**[Prøv demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](docs/INSTALL.md) · [Idéer og feedback](https://tally.so/r/KpY0ZV)**
+**[▶ Try the live demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](docs/INSTALL.en.md) · [Visit the website](https://localterritorymanager.netlify.app/)**
 
-Demoen åbner uden installation eller konto og viser opdigtede eksempler.
+[Latest stable release](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest) · [What’s new](docs/RELEASE-NOTES.md) · [Dansk vejledning](docs/INSTALL.md)
 
-## Mere overblik i det daglige
+**Free & open source · Mac, Windows & Linux · Home Assistant · No subscription**
 
-- **Find det rigtige kort.** Se kort i mappen, kort i kassen og kort, som er udleveret.
-- **Registrer udlevering og aflevering.** Find en forkynder, vælg et kort, og behold historikken samlet.
-- **Kom i gang med dine eksisterende kort.** Start med kortnumrene, eller indlæs en liste fra Excel. Guiden hjælper dig videre.
-- **Arbejd med adresser og kort.** Tegn grænser, vælg adresser, og få overblik på et samlet kort.
-- **Print, når du har brug for det.** Lav kortforsider, IB-bagsider, S-13 og oversigter.
-- **Husk næste opgave.** Gem noter og opfølgning ved kortene, og følg med i gennemgangene.
+</div>
 
-## Se LTM i brug
+![LTM home dashboard: territory status, service-year coverage and daily shortcuts, shown with fictional records](assets/screenshots/overblik.png)
 
-Skærmbillederne viser programmet med opdigtede eksempler.
+*The familiar home dashboard, shown in Danish with fictional records. English and Danish are available; the app also supports light and dark appearance.*
 
-**Overblik over kortene og de næste opgaver**
+## Start with the cards you already have
 
-![LTM-forsiden med kortstatus, gennemgange og opgaver](assets/screenshots/overblik.png)
+You do not need to draw every boundary or enter every address before LTM becomes useful. Start with your existing card numbers and assignments. Add street lists, addresses and map drawing at your own pace.
 
-**En enkel arbejdsgang til udlevering og aflevering**
+| Keep the daily work simple | Bring your own information | Work together |
+| --- | --- | --- |
+| Find an available card, record an assignment and return it to the storage box. Keep the history in one place. | Import supported Excel or CSV files, choose the columns, review the result and confirm. | Create individual accounts, choose your own roles and give each user a guided introduction suited to their access. |
 
-![Daglig brug i LTM med valg af kort og forkynder](assets/screenshots/udlevering.png)
+## See LTM in use
 
-**Kortets oplysninger samlet ét sted**
+These screenshots show the actual application with **fictional example records**. The home dashboard and reports have their own views; the gallery includes English and Danish examples.
 
-![Et opdigtet distriktskort med oplysninger og adresser](assets/screenshots/distriktskort.png)
+### Find the right card
 
-## Vælg, hvordan du vil bruge LTM
+See which cards are in the carry folder, in storage or currently assigned. Search and filter the list, open a card and keep its status close at hand.
 
-**Seneste stabile udgave: 1.12.1**
+![Territory list in English with fictional cards and assignment states](assets/screenshots/cards-en.jpg)
 
-| Brug LTM på | Sådan kommer du i gang |
+### Assign and return, without losing the history
+
+A dedicated territory desk brings everyday assignments and returns together. Select a card and publisher, record a return and add a note when needed.
+
+![Daily assignment and return workflow in Danish using fictional cards and publishers](assets/screenshots/udlevering.png)
+
+### Keep card details together
+
+Add addresses and boundaries when you are ready. Manual street and number ranges can stay on a card without inventing geography or guessing how many visits they represent.
+
+![Fictional territory card with its address list, shown in Danish](assets/screenshots/distriktskort.png)
+
+### See the bigger picture
+
+Compare calendar-year, service-year and rolling-12-month summaries. See current assignments and territories without a recorded completion in the period, then print the report when needed.
+
+![English report overview showing recorded completions and territory totals from fictional data](assets/screenshots/report-en.jpg)
+
+## More than a card list
+
+- **Your own Excel files.** Card and do-not-call imports support sheet, header-row and column selection. Review the normal validation preview before approving. Supported publisher and history imports have their own reviewed workflows.
+- **Your own roles.** Grant home and report-summary access separately from detailed cards, personal records and administration. Each user’s personal guide follows their current permissions; administrators can schedule it for the next login.
+- **Clearer shared editing.** Independent field edits can be combined, while conflicting saved proposals stay available for review. Unknown save results are checked before repeating a write.
+- **Useful printing.** Produce card fronts, do-not-call backs, the original S-13 and report summaries. Original printed forms remain unchanged.
+- **Notes and follow-ups.** Keep the next task close to the relevant card, with a separate place for follow-ups and checks.
+- **Optional QR images.** Approve a public card-front image for Google Drive. Where supported, retain the same file and QR link; automatic date updates need their own approval. This supports the physical card workflow.
+- **Private backups.** Keep territory-data backups and separate account backups, with explicit validation and a safety copy during restore.
+
+English is the default for new users; Danish and saved language preferences are preserved. Translation is partial: some interface text, errors and the original S-12/S-13 forms remain Danish.
+
+## Try both sides of the desk
+
+**[Open the interactive demo →](https://bib007.github.io/LTM-Local-Territory-Manager/)**
+
+| Administrator example | Territory-desk assistant example |
 | --- | --- |
-| **Home Assistant** | Tilføj LTM, og installer appen **Distrikt**. Du kan derefter åbne den samme installation fra din computer, telefon eller iPad derhjemme. |
-| **Mac eller Windows** | Hent programpakken, pak den ud, og følg startvejledningen. Du skal installere Python én gang, hvis det ikke allerede er på computeren. |
+| Explore the wider application: cards, publishers, tasks, reports and settings. | Explore the allowed overview, assign and return cards, add a return note and view the permitted report summary. |
 
-[![Tilføj LTM til Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
+No installation or account is needed. The demo uses fictional records and browser-local state. It is a simulation, separate from your installed server; its role switch is not authentication. Use invented examples only.
 
-**[Hent til Mac og Windows](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest) · [Trin for trin](docs/INSTALL.md) · [Første gang med LTM](docs/FIRST-STEPS.md)**
+## Choose an installation
 
-Har du allerede LTM? Hent en privat sikkerhedskopi i appen, før du opdaterer, og følg [opdateringsvejledningen](docs/INSTALL.md). Bruger du prøveudgaven, har den sine egne data; de flyttes ikke automatisk til den stabile app.
+| Option | Start here | Requirements |
+| --- | --- | --- |
+| Home Assistant | [Install the stable add-on](docs/INSTALL.en.md#home-assistant-os) | Your own Home Assistant system; ordinary stable port 8787 |
+| Windows, macOS or Linux | [Computer setup](docs/SELF-HOSTING.en.md) | Python 3.9+ with SQLite; extract the complete release ZIP |
+| Separate beta | [Beta installation](docs/BETA.md) and [prereleases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases) | Separate test data/login; HA beta port 8788 |
 
-## Dine registreringer bliver hos dig
+[![Add LTM to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FBib007%2FLTM-Local-Territory-Manager)
 
-Kort, forkyndere, IB, udleveringer og noter gemmes på den computer eller Home Assistant, hvor du kører LTM. Der kræves ingen LTM-konto eller abonnement, og appen sender ikke brugsstatistik til udvikleren.
+Use [the latest stable release](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest) for ordinary work. GitHub's latest link excludes prereleases; use the release list for betas. Native EXE/DMG installers are not currently supplied.
 
-Kortbaggrunde og adresseopslag bruger internettet. Du kan desuden vælge at dele et gennemgået kortbillede via Google Drive, så det kan åbnes med en QR-kode. Det er et tilvalg: databaser, forkyndere, IB-lister og udleveringshistorik sendes ikke med kortbilledet. Alle med et åbent billedlink kan se og videresende billedet.
+For a new computer installation, run the platform's **Start-LTM** launcher from the extracted `Distrikt-lokal` directory. Existing installations should follow the update guide and keep using the same data directory. Keep the previous program folder until the new version has been checked. Do not point a separate beta at production data.
 
-**Tag sikkerhedskopier i selve LTM. Home Assistants almindelige backup indeholder ikke LTM's registreringer.**
+## Accounts, access and private records
 
-[Privatliv og deling](docs/PRIVACY.md) · [Sikkerhedskopiering og flytning](docs/INSTALL.md#backup-flytning-og-tilbageførsel)
+The installed server enforces each account's current permissions; hiding a button is not its security boundary. The administrator chooses users and roles in the application. See [accounts, roles and introductions](docs/USERS.en.md).
 
-## Spørgsmål, før du går i gang
+LTM stores its databases in the selected installation's data directory. Restrict server access to your private network and use your own VPN for remote access. Do not expose the application directly to the public internet. [Home Assistant security](docs/HA-SECURITY.en.md) explains its deployment limits.
 
-**Skal alle mine papirkort være lagt ind først?**
+Map tiles, address services and optional Drive publication contact external providers. Automatic address integrations currently focus on Danish source data; manual cards and core administration do not require Danish automatic address lookup. Read [privacy](docs/PRIVACY.en.md), [current limitations](docs/LIMITATIONS.en.md) and [Google Drive sharing](docs/GOOGLE-DRIVE.en.md) before relying on those features.
 
-Nej. Start med kortnumrene og de kort, der allerede er udleveret. Adresser og korttegning kan komme senere.
+## Back up before updating
 
-**Skal jeg have Home Assistant?**
+1. Download a private territory-data backup from the app.
+2. If profiles are enabled, also keep a separate account backup. An ordinary data ZIP does not replace account recovery material or connection configuration.
+3. Update the program while preserving the installation's data directory.
+4. Open the updated app and check the records. Keep backups away from public repositories, the website, feedback forms and public Drive images.
 
-Nej. Du kan også bruge LTM på en Mac eller Windows-computer.
+Original printing templates and existing records are preserved by ordinary updates. Imported public-image metadata does not resume external publication automatically; approve a new image after restore.
 
-**Kan jeg bruge min telefon eller iPad?**
+## A few questions before you start
 
-Ja, de kan åbne den samme installation på hjemmenetværket. Vil du bruge den udefra, kræver det en forbindelse til dit hjemmenetværk via din egen VPN. Se [vejledningen](docs/INSTALL.md#brug-mobilen-udefra).
+<details>
+<summary><strong>Do all my paper cards need to be entered first?</strong></summary>
 
-**Kan jeg tage eksisterende oplysninger med?**
+No. Start with the card numbers and assignments you already have. Addresses, street lists and boundaries can follow later.
 
-Du kan indlæse kort fra en Excel-liste og hente gennemgange og udleveringer fra de understøttede S-13-filer. Du ser og godkender oplysningerne, før de gemmes. [Kortimport](docs/KORTIMPORT.md) · [S-13-import](docs/DAILY-WORKSPACE.md).
+</details>
 
-**Findes LTM på engelsk?**
+<details>
+<summary><strong>Do I need Home Assistant?</strong></summary>
 
-Dansk er hovedsproget. Du kan vælge engelsk i appen, men enkelte tekster og de originale formularer er fortsat danske.
+No. You can also run LTM on a Windows, Mac or Linux computer with Python. The installation guides cover both options.
 
-## Har du en idé eller fundet en fejl?
+</details>
 
-Brug [Idéer og feedback](https://tally.so/r/KpY0ZV). Du behøver ingen konto eller e-mailadresse, og du kan vedhæfte billeder. Send kun opdigtede eksempler, uden rigtige personoplysninger, IB, sikkerhedskopier eller adgangskoder. Det, du selv indsender, gemmes hos Tally.
+<details>
+<summary><strong>Can I use a phone or iPad?</strong></summary>
 
-## Om projektet
+Yes. Open the same installation over your private network. Use your own VPN when connecting remotely. Your phone is a client of that installation; LTM is not a hosted cloud service.
 
-LTM er et uofficielt projekt og er ikke udgivet eller godkendt af Jehovas Vidner, jw.org, JW HUB eller Home Assistant. Det udvikles med hjælp fra OpenAI Codex. Koden er frit tilgængelig; [licens](LICENSE) og [oplysninger om de medfølgende materialer](distrikt/THIRD-PARTY.md) kan læses her.
+</details>
 
-[English](docs/README.en.md) · [Vejledninger og begrænsninger](docs/LIMITATIONS.md) · [Nyheder i 1.12.1](docs/RELEASE-NOTES.md) · [Billede til deling](assets/screenshots/deling.png) · [Bidrag til projektet](.github/CONTRIBUTING.md)
+<details>
+<summary><strong>Can I use my own Excel layout?</strong></summary>
+
+Yes, for supported card and do-not-call imports: upload an XLSX or CSV file, select the sheet and header row, map your columns, then review and confirm. LTM does not guess missing geography or visit totals.
+
+</details>
+
+## Documentation and feedback
+
+[Documentation overview](docs/README.en.md) · [First steps](docs/FIRST-STEPS.en.md) · [Accounts and roles](docs/USERS.en.md) · [Printing](docs/PRINT.en.md) · [Privacy](docs/PRIVACY.en.md) · [Contributing](docs/CONTRIBUTING.en.md)
+
+[Report a bug or suggest an improvement](https://tally.so/r/KpY0ZV). Describe the steps and include invented examples. Never submit real names, do-not-call records, private databases, passwords or connection files. The feedback form is operated separately by Tally.
+
+LTM is an independent, unofficial open-source project. It is not developed, published or endorsed by Jehovah’s Witnesses or their organisation. No official affiliation is implied.

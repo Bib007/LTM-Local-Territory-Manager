@@ -15,11 +15,12 @@ from pathlib import Path
 from contextlib import contextmanager
 
 from access import write_private
+from profile_features import GuideAccounts,DASHBOARD_LEGACY,REPORT_LEGACY
 
 PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.manage',
     'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view',
     'notes.view','notes.edit','publishers.view','loans.view','history.edit',
-    'geo.view','geo.edit','backup.export','backup.restore','backup.notify','connections.manage','sharing.manage'))
+    'geo.view','geo.edit','backup.export','backup.restore','backup.notify','connections.manage','sharing.manage','dashboard.view','reports.view'))
 SESSION_LIFETIME=12*60*60
 ONLINE_WINDOW=90
 KDF_ITERATIONS=600000
@@ -42,21 +43,41 @@ def _credential(password):
     return {'salt':salt,'hash':_secret(password,salt,KDF_ITERATIONS),'iterations':KDF_ITERATIONS}
 
 
-class ProfileAccounts:
+class ProfileAccounts(GuideAccounts):
     def __init__(self,root,clock=time.monotonic,*,load=True):
         self.root=Path(root);self.path=self.root/'profiles.json';self.clock=clock
         self.lock=threading.RLock();self.sessions={};self.attempts={};self.account_attempts={};self.generation=0
         self.data=json.loads(self.path.read_text(encoding='utf-8')) if load and self.path.exists() else {'users':{},'roles':{}}
-        if self.data['users'] and 'permission_schema' not in self.data:self._write(self._copy())
+        if self.data['users'] and self.data.get('permission_schema')!=3:self._write(self._copy())
 
     def _write(self,data):
         if 'permission_schema' not in data:
             # Upgrade once: only prior full administrators keep all rights.
             # The marker preserves an administrator's later opt-out on restart.
-            previous=PERMISSIONS-{'backup.notify'}
+            previous=PERMISSIONS-{'backup.notify','dashboard.view','reports.view'}
             for role in data['roles'].values():
                 if previous<=set(role['permissions']):role['permissions']=sorted(set(role['permissions'])|{'backup.notify'})
             data['permission_schema']=2
+        if data.get('permission_schema')==2:
+            for role in data['roles'].values():
+                rights=set(role['permissions'])
+                if DASHBOARD_LEGACY<=rights:rights.add('dashboard.view')
+                if REPORT_LEGACY<=rights:rights.add('reports.view')
+                role['permissions']=sorted(rights)
+            # Preserve actual unions, including disabled accounts for reactivation.
+            # Compatibility access lives only in ordinary, visible editable roles.
+            compatibility={}
+            for user in data['users'].values():
+                rights={p for role in user['roles'] for p in data['roles'][role]['permissions']}
+                extra=frozenset(p for p,needed in [('dashboard.view',DASHBOARD_LEGACY),('reports.view',REPORT_LEGACY)] if needed<=rights and p not in rights)
+                if not extra:continue
+                if extra not in compatibility:
+                    ident='role-'+uuid.uuid4().hex
+                    name='Bevaret oversigtsadgang '+ident[-8:]
+                    data['roles'][ident]={'id':ident,'name':name,'permissions':sorted(extra)}
+                    compatibility[extra]=ident
+                user['roles'].append(compatibility[extra])
+            data['permission_schema']=3
         self.root.mkdir(mode=0o700,parents=True,exist_ok=True)
         os.chmod(self.root,0o700)
         write_private(self.path,data)
@@ -148,7 +169,7 @@ class ProfileAccounts:
             token=secrets.token_urlsafe(40)
             self.sessions={k:v for k,v in self.sessions.items() if v['expires']>now}
             if len(self.sessions)>=100:self.sessions.pop(next(iter(self.sessions)))
-            self.sessions[token]={'user':user['id'],'expires':now+SESSION_LIFETIME,'seen':now}
+            self.sessions[token]={'user':user['id'],'expires':now+SESSION_LIFETIME,'seen':now,'guide_assignment':deepcopy(user.get('intro',{}).get('assigned'))}
             return token
 
     def logout(self,token):
@@ -208,7 +229,7 @@ class ProfileAccounts:
             if not old and password is None:raise ValueError('Choose an initial password')
             credential=_credential(password) if password is not None else {k:old[k] for k in ('salt','hash','iterations')}
             proposed={'id':ident,'name':name,'roles':roles,'disabled':disabled,**credential,
-                                  **({'onboarded':old['onboarded']} if old and 'onboarded' in old else {})}
+                                  **({k:deepcopy(old[k]) for k in ('onboarded','intro') if k in old} if old else {})}
             if old and base is not None and password is None:
                 # No password field in the form means the editor did not change
                 # the observed credential, even if another admin just reset it.
@@ -222,7 +243,7 @@ class ProfileAccounts:
     def overview(self,token):
         with self.lock:
             self._admin(token);data=self._copy()
-            users=[{k:u[k] for k in ('id','name','roles','disabled')} for u in data['users'].values()]
+            users=[{**{k:u[k] for k in ('id','name','roles','disabled')},'guide':{'onboarded':bool(u.get('onboarded')),'assigned':deepcopy(u.get('intro',{}).get('assigned')),'completed_assignment':u.get('intro',{}).get('completed_assignment','')}} for u in data['users'].values()]
             return {'users':users,'roles':list(data['roles'].values())}
 
     def reviews(self,token):

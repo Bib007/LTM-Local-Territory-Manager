@@ -1,23 +1,9 @@
-# LTM 1.12.1 · Udlever kort uden unødige afbrydelser
+# LTM 1.12.3 · The familiar home dashboard is back
 
-Du kan igen arbejde videre med kort og udleveringer uden beskeden om ændringer fra en anden fane eller enhed.
+This patch corrects a regression in 1.12.2: profile users were shown a report-style summary instead of their familiar home dashboard.
 
-## Det er rettet
+- Users with the existing detailed overview permissions again see the original home dashboard: card-location and service-year coverage rings, shortcuts, metrics, monthly comparison and follow-ups.
+- Summary-only accounts get the familiar home presentation using permitted aggregate totals. Private cards, names, notes and histories remain protected.
+- The three-period report stays on the Reports page. Existing roles, guides, imports and saved language choices are preserved.
 
-- Kort kan udleveres, afleveres og redigeres, selv om Google-forbindelsen ændrer status i baggrunden.
-- Den generelle kontrol, der krævede genindlæsning efter ændringer andre steder, er fjernet indtil videre.
-- Samtidig redigering bliver taget op igen sammen med brugerprofiler. Hvis flere redigerer samme oplysninger nu, bliver den senest gemte ændring stående.
-
-Kontrollen af kort, datoer og allerede udleverede kort er bevaret. Problemer med Google vises stadig under deling; billeddeling og almindelig kortadministration er fortsat adskilte arbejdsgange.
-
-GitHub-forsiden har også færre løse filer. Planer og hjælpedokumenter er samlet i mapper, så introduktionen er lettere at finde.
-
-## Sådan opdaterer du
-
-**Home Assistant:** Hent en privat sikkerhedskopi i LTM, og opdatér **Distrikt** til **1.12.1**. Åbn appen på ny bagefter. Hvis opdateringen ikke vises med det samme, vælg **Kontrollér for opdateringer** i appbutikken.
-
-**Mac og Windows:** Hent **LTM-v1.12.1.zip**, og følg [opdateringsvejledningen](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md).
-
-Dine gemte kort og din historik bevares ved en almindelig opdatering af samme installation.
-
-[Prøv demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](https://github.com/Bib007/LTM-Local-Territory-Manager) · [Idéer og feedback](https://tally.so/r/KpY0ZV)
+Update the existing installation while preserving its data directory. Keep a private data backup and, when profiles are enabled, a separate account backup. Original printed forms are unchanged.

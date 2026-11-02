@@ -19,7 +19,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  const file=path.join(root,u.pathname==='/'?'index.html':u.pathname.slice(1));assert.ok(file.startsWith(root+path.sep));
  return u.pathname==='/'?route.fulfill({contentType:'text/html',body:fs.readFileSync(file,'utf8').replace('__TOKEN__','FICTIONAL_TOKEN')}):route.fulfill({path:file});
  });
- await page.goto('http://ltm.address-task.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
+ await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.address-task.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
  await page.evaluate(()=>{page='Forside';render();});
  assert.match(await page.locator('#addressTask').innerText(),/2 nye · 1 ændrede · 1 foreslået fjernet/);
  await page.locator('#addressTask [data-work=tasks]').click();await page.locator('#addressTask [data-work=address-task]').click();

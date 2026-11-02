@@ -19,7 +19,7 @@ const Navigation={
   I18n.applyShell();
   if(typeof ProfilesUI!=='undefined')ProfilesUI.localize();
   
-  if(typeof GuidedTour!=='undefined')GuidedTour.localize();
+  if(typeof GuidedTour!=='undefined')GuidedTour.localize();if(typeof PersonalGuide!=='undefined')PersonalGuide.localize();
   if(typeof Onboarding!=='undefined')Onboarding.localizePanel();
   if(typeof BoundaryImportUI!=='undefined')BoundaryImportUI.localize();
   if(typeof PublisherSearch!=='undefined')PublisherSearch.localize();
@@ -36,7 +36,7 @@ const Navigation={
   Workspace.remember();Workspace.menu(false,document.body?.classList.contains('menuOpen'));
   if(item[1]==='Opfølgninger'){await Workspace.openFollowups();return;}
   if(item[1]==='Kortoversigt'){if(!GeoUI.loaded)await GeoUI.load();MapBackground.mode='road';page='Kortoversigt';render();return;}
-  if(['Adresser','Rapporter'].includes(item[1])&&!GeoUI.loaded)await GeoUI.load();
+  if((item[1]==='Adresser'||item[1]==='Rapporter'&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('cards.view','geo.view')))&&!GeoUI.loaded)await GeoUI.load();
   GeoUI.dirty=false;page=item[1];Workspace.restore(page);render();
  },
  selectRow(target,event){if(target.closest('button,input,select,textarea,a,label,[data-action]'))return false;const row=target.closest('[data-card-row]');if(!row)return false;if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return false;if(event.type==='click'&&window.getSelection?.().toString())return false;event.preventDefault();selected=row.dataset.cardRow;render();if(event.type==='keydown')document.querySelector(`[data-card-row="${CSS.escape(selected)}"]`)?.focus();return true;}

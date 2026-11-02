@@ -176,6 +176,9 @@ class SetupStore:
         if action=='setup.history-import.apply':
             from history_import import apply
             return apply(self,data)
+        if action in ('setup.card-import.inspect','setup.ib.inspect'):
+            from column_import import describe
+            return describe({**data,'kind':'card' if action=='setup.card-import.inspect' else 'ib'})
         if action=='setup.card-import.preview':
             from card_import import preview
             return preview(self,data)

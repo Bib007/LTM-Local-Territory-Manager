@@ -1,8 +1,10 @@
-# Installation and updates / installation og opdatering
+# Installation and updates
 
-## New beta startup guide for local/server use
+[Project website](https://localterritorymanager.netlify.app) · [Fictional browser demo](https://bib007.github.io/LTM-Local-Territory-Manager/)
 
-See [Self-hosting](SELF-HOSTING.en.md) for the shared Windows/Mac/Linux launcher, separate local/server data and private server login. Python is still required; this is the first W74 step.
+## Local computer or private server
+
+See [Self-hosting](SELF-HOSTING.en.md) for the shared Windows/Mac/Linux launcher, separate local/server data and private server login. Python is still required; native EXE/DMG installers are not currently included.
 
 [Dansk](INSTALL.md)
 

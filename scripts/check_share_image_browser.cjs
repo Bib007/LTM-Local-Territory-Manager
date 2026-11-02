@@ -41,7 +41,7 @@ module.exports=async(browser,out)=>{
    const file=path.resolve(root,u.pathname==='/'?'index.html':'.'+u.pathname);
    assert.ok(file.startsWith(root+path.sep)&&fs.existsSync(file),'Unexpected asset '+u.pathname);return route.fulfill({path:file});
   });
-  await page.goto('http://ltm.image.test/');await page.waitForFunction(()=>state!==null);
+  await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.image.test/');await page.waitForFunction(()=>state!==null);
   await page.evaluate(geo=>{GeoUI.loaded=true;GeoUI.data=geo;closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');const svg=MapExport.svg;MapExport.svg=function(...args){return window.actualPreviewSvg=svg.apply(this,args);};},geo);
   await page.evaluate(()=>ShareUI.prepare('c1'));
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');

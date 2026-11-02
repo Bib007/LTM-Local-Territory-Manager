@@ -1,30 +1,21 @@
-# Distrikt · Local Territory Manager
+# LTM — Local Territory Manager
 
-Hold styr på distriktskort, udleveringer og gennemgange fra din egen Home Assistant. Start enkelt med kortnumre og udlevering, og tilføj adresser, kort, IB og print, når du har brug for det.
+Free, unofficial territory administration on your own computer or Home Assistant system. Keep track of physical territory cards, assignments, returns and recorded completions. Add addresses, maps, do-not-call records and printing when you need them.
 
-## Det kan du bruge appen til
+[Website](https://localterritorymanager.netlify.app) · [Fictional demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [English installation guide](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.en.md) · [Dansk](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md)
 
-- Se hvilke kort der er i mappen, udleveret eller klar til næste gennemgang.
-- Udlevere og modtage kort samt følge historikken.
-- Arbejde med OpenStreetMap, adresser og lokale IB-registreringer.
-- Udskrive distriktskort og rapporter med de originale S-12- og S-13-formularer.
-- Importere allerede fordelte kort fra Excel/CSV og komme i gang med opsætningsguiden.
+## First start
 
-## Første start
+For Home Assistant, open **Documentation**, configure the private host address and an app password of at least 12 characters, then start the app on port 8787. For a computer installation, follow the Start-LTM setup instructions in the full release ZIP.
 
-1. Åbn fanen **Dokumentation**, og følg installationsvejledningen.
-2. Angiv HA-maskinens **private adresse** og en **adgangskode på mindst 12 tegn** i konfigurationen.
-3. Start appen, vælg **Åbn webbrugerflade**, og log ind med appens egen adgangskode.
-4. Følg opstartsguiden. Du kan vælge enkel udlevering eller arbejde med kort og adresser og åbne rundturen igen senere.
+The browser app defaults to English for new users and preserves explicit language choices. Danish is available. Translation is partial, and original S-12/S-13 forms remain unchanged.
 
-## Dine data og din adgang
+## Data and access
 
-Registreringer opbevares lokalt på din HA-maskine. Appen åbnes på hjemmenetværket eller via VPN på din egen router. Den bruger sin egen webside på port 8787 og sit eget login.
+Keep the app on your private network or your own VPN. Records stay in the selected installation's data directory. Optional map/address services and approved Google Drive images contact external services.
 
-**Tag backup i selve appen.** Appdata er udeladt af Home Assistants backup. Hent en privat backup før opdatering, flytning eller afinstallation.
+Take private backups in the app before updating, moving or uninstalling it. **Application records are excluded from ordinary Home Assistant backups.** If profiles are enabled, also retain the separate account backup and recovery material. Connection configuration is not part of an ordinary data ZIP.
 
-Google Drive er et frivilligt tilvalg til godkendte kortbilleder og QR-koder. IB, forkyndere og historik indgår ikke i kortdelingen.
+Administrators choose accounts and role permissions inside the installed app. Home/report summaries can be granted separately from underlying personal records. Imports, restore and public-image approval remain deliberate operations.
 
-Flytter du fra en eksisterende installation, skal du følge flyttevejledningen i **Dokumentation** og beholde din private backup.
-
-[English installation guide](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.en.md)
+LTM is an independent, unofficial project. It is not developed, published or endorsed by Jehovah’s Witnesses or their organisation. Use only invented examples in public feedback.

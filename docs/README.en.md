@@ -9,7 +9,7 @@
 
 LTM is a free, unofficial tool for territory administration in congregations of Jehovah’s Witnesses. Find an available card, record an assignment or return, and keep its history together. Start with your existing paper cards and add addresses and maps when you are ready.
 
-**[Try the demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](INSTALL.en.md) · [Ideas and feedback](https://tally.so/r/KpY0ZV)**
+**[Website](https://localterritorymanager.netlify.app) · [Try the demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](INSTALL.en.md) · [Ideas and feedback](https://tally.so/r/KpY0ZV)**
 
 The demo uses fictional examples and needs no installation or account. The feedback form is currently in Danish.
 
@@ -24,7 +24,7 @@ The demo uses fictional examples and needs no installation or account. The feedb
 
 ## A look inside
 
-These pictures show the application with fictional examples. Danish is the main language; English can be selected, although some text and the original forms remain Danish.
+These pictures show the application with fictional examples. English is the default for new users, and Danish remains available. Translation is partial; some text and the original printed forms remain Danish.
 
 ![Card status and upcoming tasks in LTM](../assets/screenshots/overblik.png)
 
@@ -34,7 +34,7 @@ These pictures show the application with fictional examples. Danish is the main 
 
 ## Choose where to use LTM
 
-**Latest stable version: 1.12.1**
+**Latest stable: [GitHub Releases](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest)**
 
 - **Home Assistant:** add LTM and install **Distrikt**. Open the same installation from your computer, phone or iPad on your home network.
 - **Mac or Windows:** [download the program](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), extract it and follow the [installation guide](INSTALL.en.md). Install Python once if it is not already available.

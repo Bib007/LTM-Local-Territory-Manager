@@ -15,6 +15,7 @@ const context={console,Intl,WeakMap,Map,String,Number,JSON,Object,Array,
 vm.createContext(context);vm.runInContext(read('i18n.js'),context);vm.runInContext(read('publisher-search.js'),context);
 context.input=input;
 const run=s=>vm.runInContext(s,context);
+run("I18n.set('da')");
 function fire(kind,properties={}){const e={target:input,preventDefault(){this.prevented=true;},stopPropagation(){this.stopped=true;},...properties};for(const fn of listeners[kind]||[])fn(e);return e;}
 function type(value){input.value=value;fire('input');}
 const records=[{name:'Anna Test Jensen'},{name:'Test Jensen'},{name:'Jens Eksempel'},{name:'Jensen Fiktiv'},{name:'André Øster'},{name:'<img src=x onerror="fake()">'}];

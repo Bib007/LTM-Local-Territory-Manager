@@ -1,5 +1,9 @@
 # Ønskeliste og nye opgaver
 
+## Current candidate — 1.12.2
+
+Beta.83 is verified publicly released; see [exact verification](BETA-83-VERIFICERING.md). W121/W123 roles/guides, W127 column import, fictional two-role demo and English-first entry documentation are now integrated in the local stable candidate. Original printed forms remain unchanged. The separate bilingual website is live at https://localterritorymanager.netlify.app. Final release checks/publication are in progress; stable1.12.2 is not yet reported released. Historical status below is retained.
+
 ## Aktuel oversigt · beta.83-kandidat · 1.11.2026
 
 Beta.83 samler W124-gemning, W126-rundtur, W125-manuelle onlinekort, lokal rapport/sprog og afgrænsede sikkerhedsrettelser. Samlet kontrol og offentlig verifikation mangler endnu. W121/W123 og W127 er sikret som patches til næste runde; de tælles ikke som frigivet. Ingen nye brede undersøgelser.

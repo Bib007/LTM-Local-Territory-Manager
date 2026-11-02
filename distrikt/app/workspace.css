@@ -140,3 +140,5 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 #photoImport textarea{width:100%;box-sizing:border-box}
 /* Incomplete IB rows remain readable when warnings wrap on a phone. */
 .setupIBRows .line>span{min-width:0;width:100%}.setupIBRows .line small{display:block;white-space:normal;line-height:1.6}.setupIBRows .line small.notice{margin:10px 0 0;padding:10px;border-radius:5px}
+
+.columnImport{margin:1rem 0;padding:1rem;border:1px solid var(--border,#d9dfe5);border-radius:10px}.columnImportFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin:1rem 0}.columnImportFields label{min-width:0;overflow-wrap:anywhere}.columnImport select,.columnImport input[type=number]{max-width:100%}.columnImport td{white-space:pre-wrap;overflow-wrap:anywhere;min-width:85px;max-width:240px}.columnImport .tablewrap{max-width:100%;overflow:auto}

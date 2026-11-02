@@ -143,6 +143,8 @@ class ProfileRoutes:
     def profile_get(self,path):
         if not self.server.profiles.enabled:return False
         runtime=self.server.profiles;token=self.profile_token()
+        if path=='/api/profiles/guide':
+            self.send(self.server.accounts.guide_current(token));return True
         if path=='/api/profiles/backup':
             from profile_recovery import backup_value
             self.send(backup_value(self.server.accounts),headers={'Content-Disposition':'attachment; filename="LTM-kontobackup.json"'});return True
@@ -199,9 +201,23 @@ class ProfileRoutes:
                 if module=='roles':ident=self.server.accounts.save_role(token,data.get('name'),data.get('permissions'),data.get('id'),base=base)
                 else:ident=self.server.accounts.save_user(token,data.get('name'),data.get('roles'),data.get('id'),data.get('disabled',False),data.get('password'),base=base)
                 self.send({'id':ident});return True
+        if path=='/api/profiles/guide/preview':
+            from profile_features import STEPS
+            from copy import deepcopy
+            user=self.server.accounts.data['users'].get(data.get('user_id'))
+            if not user:raise ValueError('Account not found')
+            rights=self.server.accounts._permissions(self.server.accounts.data,user)
+            self.send({'preview':True,'steps':[deepcopy(s) for s in STEPS if set(s['requires'])<=rights]});return True
+        if path=='/api/profiles/guide/assign':
+            assigned=self.server.accounts.guide_assign(token,data.get('user_id'),data.get('kind'),data.get('expected_assignment'))
+            self.send({'ok':True,'assigned':assigned});return True
+        if path=='/api/profiles/guide/replay':
+            self.send(self.server.accounts.guide_replay(token));return True
+        if path=='/api/profiles/guide/progress':
+            self.send(self.server.accounts.guide_progress(token,data.get('run_id'),data.get('request_id'),data.get('step_id')));return True
         if path=='/api/profiles/heartbeat':
             self.server.accounts.heartbeat(token)
-            self.send({'ok':True,'permissions':sorted(self.profile_user['permissions']),
+            self.send({'ok':True,'permissions':sorted(self.profile_user['permissions']),'auth_revision':self.server.accounts.generation,
                        'conflicts':len(runtime.workspace.conflicts(token))+(len(self.server.accounts.reviews(token)) if 'users.manage' in self.profile_user['permissions'] else 0)});return True
         if path=='/api/profiles/intro/complete':
             self.server.accounts.complete_intro(token);self.send({'ok':True});return True

@@ -135,11 +135,11 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(state['cards'][0]['name'],'Opdigtet kort')
         self.assertEqual(state['notes'],[]);self.assertEqual(state['ib'],[])
         for path in GET:
-            if path in ('/api/state','/api/profiles/session','/api/profiles/conflicts'):continue
+            if not GET[path]:continue
             with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,session=reader)
             self.assertEqual(error.exception.code,403)
         for path in POST:
-            if path in ('/api/logout','/api/profiles/heartbeat','/api/profiles/intro/complete','/api/profiles/conflicts/acknowledge','/api/profiles/conflicts/resolve','/api/profiles/edit-base','/api/profiles/edit-base/release','/api/mutate'):continue
+            if not POST[path]:continue
             with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,{},reader)
             self.assertEqual(error.exception.code,403)
         for action,data in [('card.save',{'id':self.card,'number':'bad'}),('delete',{'module':'cards','id':self.card}),('geo.token',{'token':'Fictional'}),('unknown.future.action',{})]:

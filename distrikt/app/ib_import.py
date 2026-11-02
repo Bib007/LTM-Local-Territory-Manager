@@ -38,7 +38,10 @@ def unit(row):return row['number']+(', '+' '.join(row.get(k,'') for k in ('floor
 
 def preview(store,data):
     from store import valid_day,clean_text
-    source=read_rows({**data,'name':data.get('name') or 'ib.csv'},sheet_name='IB')
+    if 'column_map' in data:
+        from column_import import normalized_rows
+        source=normalized_rows(data,'ib')
+    else:source=read_rows({**data,'name':data.get('name') or 'ib.csv'},sheet_name='IB')
     if not source:raise ValueError('Importfilen mangler kolonneoverskrifter.')
     fields=[ALIASES.get(norm(header)) for header in source[0][1]]
     known=[key for key in fields if key]

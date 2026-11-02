@@ -63,7 +63,7 @@ class ReleaseArchiveTests(unittest.TestCase):
             names=set(archive.namelist())
             self.assertIn('README.md',names)
             self.assertIn('repository.yaml',names)
-            self.assertNotIn('README.da.md',names)
+            self.assertIn('README.da.md',names)
             self.assertIn('docs/README.en.md',names)
             self.assertIn('docs/planning/ROADMAP.md',names)
             self.assertIn('.github/CONTRIBUTING.md',names)
