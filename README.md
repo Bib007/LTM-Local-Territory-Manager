@@ -62,7 +62,7 @@ Compare calendar-year, service-year and rolling-12-month summaries. See current 
 
 ## More than a card list
 
-- **Your own Excel files.** Card and do-not-call imports support sheet, header-row and column selection. Review the normal validation preview before approving. Supported publisher and history imports have their own reviewed workflows.
+- **Your own Excel files.** Card and do-not-call imports support sheet, header-row and column selection. Review the normal validation preview before approving. Both fronts and do-not-call backs work without DAR; manual entries can be linked to an address later. Supported publisher and history imports have their own reviewed workflows.
 - **Dates you actually know.** Import or enter a do-not-call entry with `March 2024` or just `2024`; the missing day or month is never invented.
 - **Street lines into map suggestions.** Confirm postcodes, download Danish DAR addresses for existing street names/ranges, inspect the proposed boundary and save explicitly. [How it works](docs/STREET-SUGGESTIONS.en.md).
 - **Your own roles.** Grant home and report-summary access separately from detailed cards, personal records and administration. Each user’s personal guide follows their current permissions; administrators can schedule it for the next login.

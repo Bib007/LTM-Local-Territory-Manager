@@ -78,3 +78,5 @@ LTM is an unofficial project, not produced or approved by Jehovah’s Witnesses,
 [Dansk](../README.md) · [Known limitations](LIMITATIONS.en.md) · [Contributing](CONTRIBUTING.en.md)
 
 - [Reviewed DAR suggestions from existing street lines](STREET-SUGGESTIONS.en.md) — 1.12.5.
+
+- [Excel fronts and do-not-call backs without DAR](KORTIMPORT.en.md#import-a-front-and-a-do-not-call-back-without-dar) — manual lines, print and optional later linking.

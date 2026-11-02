@@ -38,6 +38,8 @@ def unit(row):return row['number']+(', '+' '.join(row.get(k,'') for k in ('floor
 
 def preview(store,data):
     from store import valid_day,clean_text
+    address_mode=data.get('address_mode','local')
+    if address_mode not in ('local','manual'):raise ValueError('Vælg manuelle IB-linjer eller match med kortets gemte adresser.')
     if 'column_map' in data:
         from column_import import normalized_rows
         source=normalized_rows(data,'ib')
@@ -74,7 +76,7 @@ def preview(store,data):
             requested=norm(v.get('card'))
             if requested and requested not in by_number:raise ValueError('Kortnummeret findes ikke.')
             chosen=by_number[requested] if requested else by_id.get(fallback)
-            candidates=lookup.get((norm(road),norm(v['number']),postcode,norm(v.get('floor')),norm(v.get('door'))),[]) if postcode else []
+            candidates=lookup.get((norm(road),norm(v['number']),postcode,norm(v.get('floor')),norm(v.get('door'))),[]) if postcode and address_mode=='local' else []
             if chosen:candidates=[(c,a) for c,a in candidates if c['id']==chosen['id']]
             if len(candidates)==1:
                 c,a=candidates[0];record={'card_id':c['id'],'address_id':a['id'],'road':a['road'],'number':unit(a),'postcode':postcode}

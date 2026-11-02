@@ -3,6 +3,15 @@
 const I18n={
  current:'en',
  english:{
+  "Vælg manuelle IB-linjer eller match med kortets gemte adresser.":"Choose manual do-not-call lines or matching with the card’s stored addresses.",
+  "Importér IB-bagsiden som manuelle vejlinjer uden DAR. Præcise datoer, måned/år og år alene kan bruges. Filen behandles lokalt.":"Import the do-not-call back as manual street lines without DAR. Exact dates, month/year and year alone are supported. The file is processed locally.",
+  "Importér først forsiden som kort med vejlinjer og derefter bagsiden som IB med samme kortnummer. Begge sider kan printes uden DAR. En manuel IB kan senere knyttes til en adresse via Rediger IB.":"First import the front as cards with street lines, then the do-not-call back using the same card number. Both sides can be printed without DAR. Link a manual entry to an address later through Edit do-not-call entry.",
+  "Importér forside · Excel / CSV":"Import front · Excel / CSV",
+  "Tilknytning af IB-adresser":"Do-not-call address linking",
+  "Manuelle IB-linjer · uden DAR":"Manual do-not-call lines · without DAR",
+  "Match med kortets gemte adresser":"Match with the card’s stored addresses",
+  "Brug kortnummer fra filen":"Use card number from file",
+  "Denne IB er en manuel vejlinje og kan printes uden DAR. Vælg senere en konkret adresse fra dette kort, hvis linjen skal tilknyttes.":"This is a manual do-not-call line and can be printed without DAR. Select a specific address on this card later if you want to link it.",
   "Vejlinjens nummerinterval er uklart. Ret det før adresseforslaget.":"The street-line number range is unclear. Correct it before requesting addresses.",
   "Vælg et aktivt kort med 1–50 vejlinjer og bekræft postnummeret for hver linje.":"Choose an active card with 1–50 street lines and confirm each postcode.",
   "Kortets vejlinjer er ændret. Åbn adresseforslaget igen.":"The card street lines have changed. Reopen the address suggestion.",
