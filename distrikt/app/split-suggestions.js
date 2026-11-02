@@ -1,6 +1,51 @@
 'use strict';
 // Local planning only. Existing explicit preview/confirmation owns any later split.
 Object.assign(I18n.english,{
+ "Flyt adresser til kortet":"Move addresses to this card",
+ "Afslut midlertidig flytning":"Finalize interim transfer",
+ "Midlertidige flytninger":"Interim transfers",
+ "Flytning fra kort {source} til kort {target}":"Move from card {source} to card {target}",
+ "Vælg dato- og kortforløb":"Choose date and card workflow",
+ "Vælg et forløb":"Choose a workflow",
+ "Brug nyeste kendte dato til planlægning":"Use the latest known date for scheduling",
+ "Opret et midlertidigt kort først":"Create an interim card first",
+ "Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.":"The date controls card age in scheduling. Completion events and S-13 history stay unchanged.",
+ "Midlertidigt kortnummer":"Interim card number",
+ "Navn på det midlertidige kort (valgfrit)":"Interim card name (optional)",
+ "Kortet får sit eget nummer og kan udleveres. Modtagerkortet ændres først efter aflevering og særskilt afslutning.":"The card gets its own number and can be issued. The receiving card changes only after return and explicit finalization.",
+ "Kontrollér flytningen":"Preview the move",
+ "Bekræft flytning":"Confirm address move",
+ "Bekræft midlertidigt kort":"Confirm interim card",
+ "Planlægningsdato: {date}":"Scheduling reference: {date}",
+ "Ukendt planlægningsdato":"Unknown scheduling reference",
+ "Besøg efter ændringen: {source} på kilden og {target} på modtageren.":"Visit estimates after the change: {source} on the source and {target} on the receiver.",
+ "Gennemgangshistorikken bevares. Kontrollér grænserne og genprint begge ændrede sider.":"Completion history is retained. Review the boundaries and reprint both changed sides.",
+ "Midlertidigt kort til kort {number}":"Interim card for card {number}",
+ "Aflevér kortet og læg begge kort i kassen før afslutning. Genprint derefter modtagerkortet med dets eget nummer.":"Return the card and put both cards in the box before finalizing. Then reprint the receiver with its own number.",
+ "Brug opdelingsforslag til at afslutte det midlertidige forløb.":"Use Split suggestions to finalize the interim workflow.",
+ "Flytningen er gemt. Kontrollér grænserne og genprint de ændrede sider.":"The move is saved. Review the boundaries and reprint the changed sides.",
+ "Vælg to forskellige kort til flytningen.":"Choose two different cards for the move.",
+ "Begge kort skal være færdige, afleverede og ligge i kassen.":"Both cards must be complete, returned and in the box.",
+ "Vælg kort med samme område og type.":"Choose cards with the same area and type.",
+ "Afslut den midlertidige flytning først.":"Finalize the interim transfer first.",
+ "Det midlertidige kort eller modtageren er ændret. Kontrollér forløbet igen.":"The interim card or receiver has changed. Review the workflow again.",
+ "Kontrollér kortenes præcise adressevalg før flytning.":"Review exact address membership before moving.",
+ "Adressedata er ændret. Opdater kortet i korteditoren før flytning.":"Address data has changed. Update the card in the map editor before moving.",
+ "Vælg hele adresseenheder til flytningen.":"Select whole address units to move.",
+ "Vælg nogle, men ikke alle, adresser. Et midlertidigt kort afsluttes samlet.":"Select some, but not all, addresses. An interim card is finalized as a whole.",
+ "Adresserne findes på flere kort. Ret kortkontrollen først.":"The addresses belong to multiple cards. Resolve card checks first.",
+ "Opdel distriktskort":"Split territory card",
+ "Sammenlæg distriktskort":"Merge territory cards",
+ "Ingen ændring foretages, før du har set en forhåndsvisning og skrevet en ekstra bekræftelse. Udleverede kort skal afleveres først.":"No change is made until you review a preview and type the confirmation. Issued cards must be returned first.",
+ "Vælg 2–20 færdige kort":"Choose 2–20 complete cards",
+ "Kort {number} · vælg adresser til det nye kort":"Card {number}: choose addresses for the new card",
+ "Find vej eller husnummer":"Find street or house number",
+ "Find adresse til opdeling":"Find an address to split off",
+ "Nyt kortnummer":"New card number",
+ "Navn på det nye kort":"New card name",
+ "Vis ændringen først":"Preview the change",
+ "Historik bevares på de oprindelige kort. Nye kort får ingen opdigtet gennemgang. Grænser er forslag og skal kontrolleres. Forsider og IB-bagsider skal genprintes.":"History stays with the original cards. New cards get no invented completion. Boundaries are suggestions and must be checked. Reprint fronts and do-not-call backs.",
+
  'Opdelingsforslag':'Split suggestions',
  'Se manuelle opdelingsforslag':'Review manual split suggestions',
  'Ca. besøg pr. kort':'Approximate visits per card',
@@ -53,7 +98,7 @@ const SplitSuggestions={
     Array.isArray(c.address_ids)&&c.address_ids.length===ids.size&&c.address_ids.every(id=>ids.has(id))&&units.reduce((sum,a)=>sum+a.count,0)===count;
    return [c.id,{c,count,units,duplicate,exact,roads:new Set(units.filter(a=>typeof a.road==='string'&&a.road.trim()&&typeof a.postcode==='string'&&a.postcode.trim()).map(a=>JSON.stringify([a.road,a.postcode])))}];
   }));
-  const pool=[...metadata.values()].filter(m=>!boxOnly||inBox(m.c));
+  const pool=[...metadata.values()].filter(m=>!m.c.interim_transfer&&(!boxOnly||inBox(m.c)));
   const oversized=pool.filter(m=>m.count!==null&&m.count>target).sort((a,b)=>b.count-a.count||cmp(a.c.number,b.c.number));
   const choose=(units,limit)=>{
    const chosen=[];let count=0;
@@ -62,9 +107,9 @@ const SplitSuggestions={
   };
   const suggestions=oversized.slice(0,100).map(m=>{
    const parts=Math.max(1,Math.round(m.count/target)),issued=active.has(m.c.id),result={...m,parts,issued,moves:[],split:null};
-   if(issued||!m.exact||m.duplicate||m.c.temporary)return result;
+   if(issued||m.c.in_folder||!m.exact||m.duplicate||m.c.temporary)return result;
    if(parts>1){const selected=choose(m.units,Math.round(m.count/parts));if(selected.count&&selected.units.length<m.units.length)result.split=selected;}
-   const targets=pool.filter(t=>t.c.id!==m.c.id&&!active.has(t.c.id)&&!t.c.temporary&&t.count!==null&&t.count<target&&t.exact&&!t.duplicate&&
+   const targets=pool.filter(t=>t.c.id!==m.c.id&&!active.has(t.c.id)&&!t.c.in_folder&&!t.c.temporary&&t.count!==null&&t.count<target&&t.exact&&!t.duplicate&&
     m.c.area_id&&t.c.area_id===m.c.area_id&&t.c.kind===m.c.kind&&[...m.roads].some(r=>t.roads.has(r)))
     .sort((a,b)=>b.count-a.count||cmp(a.c.number,b.c.number)).slice(0,10);
    for(const t of targets){
@@ -80,7 +125,7 @@ const SplitSuggestions={
  async open(){
   if(!this.available())return;await closeRequested();if(el('dialog').open)return;
   try{const options=JSON.parse(localStorage.getItem('ltm-split-suggestions'));if(Number.isInteger(options?.target)&&options.target>=1&&options.target<=1000)this.target=options.target;if(typeof options?.boxOnly==='boolean')this.boxOnly=options.boxOnly;}catch{}
-  openDialog(`<h2>${ui('Opdelingsforslag')}</h2><p>${ui('Forslag ud fra indlæste besøgstal. Ingen kort, adresser, datoer eller udleveringer ændres.')}</p><label for="splitTarget">${ui('Ca. besøg pr. kort')}</label><input id="splitTarget" type="number" min="1" max="1000" step="1" value="${this.target}"><label class="check"><input id="splitBoxOnly" type="checkbox" ${this.boxOnly?'checked':''}>${ui('Kun kort i kassen')}</label><p class="hint">${ui('Målet og filteret huskes i denne browser.')}</p><p class="hint">${ui('Kort i mappen og udleverede kort er skjult, når kassefilteret er valgt. Modtagerkort skal altid være hjemme.')}</p><div id="splitSuggestionResults" aria-live="polite"></div><p class="hint">${ui('Alternativerne skal vurderes hver for sig. Kontrollér geografien og genberegn efter en ændring.')}</p><p class="notice">${ui('Flytning til eksisterende kort samt valg af gennemgangsdato eller midlertidigt kort følger senere. Forslagene flytter intet.')}</p><p class="hint">${ui('Historik bevares på de oprindelige kort. Et nyt kort får ingen opdigtet gennemgang og skal kontrolleres og genprintes.')}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
+  openDialog(`<h2>${ui('Opdelingsforslag')}</h2><p>${ui('Forslag ud fra indlæste besøgstal. Ingen kort, adresser, datoer eller udleveringer ændres.')}</p><label for="splitTarget">${ui('Ca. besøg pr. kort')}</label><input id="splitTarget" type="number" min="1" max="1000" step="1" value="${this.target}"><label class="check"><input id="splitBoxOnly" type="checkbox" ${this.boxOnly?'checked':''}>${ui('Kun kort i kassen')}</label><p class="hint">${ui('Målet og filteret huskes i denne browser.')}</p><p class="hint">${ui('Kort i mappen og udleverede kort er skjult, når kassefilteret er valgt. Modtagerkort skal altid være hjemme.')}</p><div id="splitSuggestionResults" aria-live="polite"></div><p class="hint">${ui('Alternativerne skal vurderes hver for sig. Kontrollér geografien og genberegn efter en ændring.')}</p><p class="notice">${ui('Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.')}</p><p class="hint">${ui('Historik bevares på de oprindelige kort. Et nyt kort får ingen opdigtet gennemgang og skal kontrolleres og genprintes.')}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
   this.paint();
  },
  addresses(units){return `<details><summary>${ui('Se foreslåede adresser')}</summary><ul>${units.map(a=>`<li style="overflow-wrap:anywhere">${esc(a.label||[a.road,a.number,a.floor,a.door].filter(Boolean).join(' '))} · ${esc(a.count)}</li>`).join('')}</ul></details>`;},
@@ -91,20 +136,44 @@ const SplitSuggestions={
   try{localStorage.setItem('ltm-split-suggestions',JSON.stringify({target:this.target,boxOnly:this.boxOnly}));}catch{}
   this.revision=state.revision;
   const list=this.current.suggestions;
-  node.innerHTML=`<p>${ui('Viser {shown} af {total} kort over målet.',{shown:list.length,total:this.current.total})}</p><p class="hint">${ui('{count} kort har ukendt eller ugyldigt besøgstal og bruges ikke i beregningen.',{count:this.current.unknown})} ${ui('Besøgstal er skøn, ikke registrerede husbesøg.')}</p>${list.map(m=>`<section class="panel" data-split-card="${esc(m.c.id)}"><h3>${ui('Kort')} ${esc(m.c.number)} · ${esc(m.count)}</h3><p style="overflow-wrap:anywhere">${esc(m.c.name||'')}</p><p>${m.parts>1?ui('Forslag: cirka {parts} kort med {count} besøg pr. kort.',{parts:m.parts,count:Math.round(m.count/m.parts)}):ui('Et ekstra kort alene vil give for små kort. Undersøg manuel omfordeling.')}</p>${m.issued?`<p class="notice">${ui('Udleveret kort · planlæg først ændringen, når kortet er afleveret.')}</p>`:m.duplicate?`<p class="notice">${ui('Dublerede adressevalg skal afklares før opdeling.')}</p>`:!m.exact||m.c.temporary?`<p class="hint">${ui('Præcist adressevalg mangler eller stemmer ikke med besøgstallet. Intet adressevalg gættes.')}</p>`:''}${m.split?`<p>${ui('Muligt nyt kort: {count} besøg · tilbage på kortet: {remaining}.',{count:m.split.count,remaining:m.count-m.split.count})}</p>${this.addresses(m.split.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="split" data-id="${esc(m.c.id)}">${ui('Gennemgå opdeling til nyt kort')}</button>`:''}`:''}${m.moves.map(move=>`<div class="notice"><p>${ui('Mulig omfordeling til kort {number}: {count} besøg · forventede skøn {source} / {target}.',{number:move.target.number,count:move.count,source:move.sourceCount,target:move.targetCount})}</p><p class="hint">${ui('Samme område, type og vejnavn. Det er ikke en kontrol af geografisk sammenhæng.')}</p>${this.addresses(move.units)}<button data-split-suggestions="card" data-id="${esc(move.target.id)}">${ui('Åbn modtagerkort')}</button></div>`).join('')}<button data-split-suggestions="card" data-id="${esc(m.c.id)}">${ui('Åbn kort')}</button></section>`).join('')||`<p>${ui('Ingen kort over målet i denne visning.')}</p>`}`;
+  node.innerHTML=`${this.pendingHTML()}<p>${ui('Viser {shown} af {total} kort over målet.',{shown:list.length,total:this.current.total})}</p><p class="hint">${ui('{count} kort har ukendt eller ugyldigt besøgstal og bruges ikke i beregningen.',{count:this.current.unknown})} ${ui('Besøgstal er skøn, ikke registrerede husbesøg.')}</p>${list.map(m=>`<section class="panel" data-split-card="${esc(m.c.id)}"><h3>${ui('Kort')} ${esc(m.c.number)} · ${esc(m.count)}</h3><p style="overflow-wrap:anywhere">${esc(m.c.name||'')}</p><p>${m.parts>1?ui('Forslag: cirka {parts} kort med {count} besøg pr. kort.',{parts:m.parts,count:Math.round(m.count/m.parts)}):ui('Et ekstra kort alene vil give for små kort. Undersøg manuel omfordeling.')}</p>${m.issued||m.c.in_folder?`<p class="notice">${ui(m.issued?'Udleveret kort · planlæg først ændringen, når kortet er afleveret.':'Begge kort skal være færdige, afleverede og ligge i kassen.')}</p>`:m.duplicate?`<p class="notice">${ui('Dublerede adressevalg skal afklares før opdeling.')}</p>`:!m.exact||m.c.temporary?`<p class="hint">${ui('Præcist adressevalg mangler eller stemmer ikke med besøgstallet. Intet adressevalg gættes.')}</p>`:''}${m.split?`<p>${ui('Muligt nyt kort: {count} besøg · tilbage på kortet: {remaining}.',{count:m.split.count,remaining:m.count-m.split.count})}</p>${this.addresses(m.split.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="split" data-id="${esc(m.c.id)}">${ui('Gennemgå opdeling til nyt kort')}</button>`:''}`:''}${m.moves.map(move=>`<div class="notice"><p>${ui('Mulig omfordeling til kort {number}: {count} besøg · forventede skøn {source} / {target}.',{number:move.target.number,count:move.count,source:move.sourceCount,target:move.targetCount})}</p><p class="hint">${ui('Samme område, type og vejnavn. Det er ikke en kontrol af geografisk sammenhæng.')}</p>${this.addresses(move.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="transfer" data-id="${esc(m.c.id)}" data-target="${esc(move.target.id)}">${ui('Flyt adresser til kortet')}</button>`:''}<button data-split-suggestions="card" data-id="${esc(move.target.id)}">${ui('Åbn modtagerkort')}</button></div>`).join('')}<button data-split-suggestions="card" data-id="${esc(m.c.id)}">${ui('Åbn kort')}</button></section>`).join('')||`<p>${ui('Ingen kort over målet i denne visning.')}</p>`}`;
  },
- async handle(action,id){
+ effectiveDate(c){
+  if(typeof c.planning_date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.planning_date))return c.planning_date;
+  const ref=c.planning_reference,ids=[...(c.address_ids||[])].sort();
+  const inherited=ref&&Array.isArray(ref.membership)&&JSON.stringify(ref.membership)===JSON.stringify(ids)?ref.date:null;
+  return [c.last_completed,inherited].filter(d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort().at(-1)||null;
+ },
+ cardNotice(c){
+  if(c.interim_transfer?.status==='pending')return `<section class="notice"><strong>${ui('Midlertidigt kort til kort {number}',{number:card(c.interim_transfer.target_id)?.number||c.interim_transfer.target_number})}</strong><p>${ui('Aflevér kortet og læg begge kort i kassen før afslutning. Genprint derefter modtagerkortet med dets eget nummer.')}</p><p>${ui('Brug opdelingsforslag til at afslutte det midlertidige forløb.')}</p></section>`;
+  if(!c.planning_reference?.date||this.effectiveDate(c)!==c.planning_reference.date)return '';
+  return `<section class="notice">${ui('Planlægningsdato: {date}',{date:fmt(this.effectiveDate(c))})}<p>${ui('Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.')}</p></section>`;
+ },
+ pendingHTML(){
+  const pending=(state.cards||[]).filter(c=>c.interim_transfer?.status==='pending');if(!pending.length)return '';
+  return `<section class="panel"><h3>${ui('Midlertidige flytninger')}</h3>${pending.map(c=>{const target=card(c.interim_transfer.target_id),ready=target&&!loanFor(c.id)&&!loanFor(target.id)&&!c.in_folder&&!target.in_folder;return `<article class="line"><div><strong>${ui('Kort')} ${esc(c.number)} → ${esc(target?.number||c.interim_transfer.target_number)}</strong><p>${ui('Aflevér kortet og læg begge kort i kassen før afslutning. Genprint derefter modtagerkortet med dets eget nummer.')}</p></div>${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="finalize" data-id="${esc(c.id)}" ${ready?'':'disabled'}>${ui('Afslut midlertidig flytning')}</button>`:''}</article>`;}).join('')}</section>`;
+ },
+ transferForm(source,target,units,finalize=false){
+  if(!source||!target||loanFor(source.id)||loanFor(target.id)||source.in_folder||target.in_folder)throw Error('Begge kort skal være færdige, afleverede og ligge i kassen.');
+  const hidden=(name,value)=>`<input type="hidden" name="${name}" value="${esc(value)}">`;
+  openDialog(`<h2>${ui(finalize?'Afslut midlertidig flytning':'Flytning fra kort {source} til kort {target}',{source:source.number,target:target.number})}</h2><form data-work-form="redistribute">${hidden('ids',source.id)}${hidden('ids',target.id)}${hidden('target_number',target.number)}${units.map(a=>hidden('address_ids',a.id)).join('')}${this.addresses(units)}${finalize?hidden('policy','finalize'):`<label for="transferPolicy">${ui('Vælg dato- og kortforløb')}</label><select name="policy" id="transferPolicy" required><option value="" data-ui="Vælg et forløb">${esc(I18n.text('Vælg et forløb'))}</option><option value="latest" data-ui="Brug nyeste kendte dato til planlægning">${esc(I18n.text('Brug nyeste kendte dato til planlægning'))}</option><option value="interim" data-ui="Opret et midlertidigt kort først">${esc(I18n.text('Opret et midlertidigt kort først'))}</option></select><p class="hint">${ui('Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.')}</p><div id="interimTransferFields" hidden><label for="interimNumber">${ui('Midlertidigt kortnummer')}</label><input name="interim_number" id="interimNumber" maxlength="30"><label for="interimName">${ui('Navn på det midlertidige kort (valgfrit)')}</label><input name="interim_name" id="interimName" maxlength="50"><p class="hint">${ui('Kortet får sit eget nummer og kan udleveres. Modtagerkortet ændres først efter aflevering og særskilt afslutning.')}</p></div>`}<p class="notice">${ui('Gennemgangshistorikken bevares. Kontrollér grænserne og genprint begge ændrede sider.')}</p>${formEnd('Kontrollér flytningen')}</form>`,I18n.language());
+ },
+ async handle(action,id,targetId){
   if(action==='open')return this.open();if(!this.available()||!el('splitSuggestionResults'))return;
   if(this.revision!==state.revision){this.paint();toast('Oversigten er ændret. Gennemgå de opdaterede forslag igen.');return;}
   if(action==='card'){if(card(id))detail(id);return;}
+  if(action==='finalize'){const source=card(id),target=card(source?.interim_transfer?.target_id);if(!state.profile||ProfilesUI.canAction('card.restructure.preview'))this.transferForm(source,target,source?.geo_addresses||[],true);return;}
   const proposal=this.current?.suggestions.find(m=>m.c.id===id);
-  if(action!=='split'||!proposal?.split||loanFor(id)||state.profile&&!ProfilesUI.canAction('card.restructure.preview'))return;
+  if(action==='transfer'){const move=proposal?.moves.find(m=>m.target.id===targetId);if(move&&(!state.profile||ProfilesUI.canAction('card.restructure.preview')))this.transferForm(proposal.c,move.target,move.units);return;}
+  if(action!=='split'||!proposal?.split||loanFor(id)||card(id)?.in_folder||state.profile&&!ProfilesUI.canAction('card.restructure.preview'))return;
   Workspace.restructureForm('split',id);
   const chosen=new Set(proposal.split.units.map(a=>a.id)),form=el('dialog').querySelector('[data-work-form=restructure]');
   for(const input of form.querySelectorAll('input[name=address_ids]'))input.checked=chosen.has(input.value);
   if(typeof FormDrafts!=='undefined')FormDrafts.capture(form);
  }
 };
-document.addEventListener('click',event=>{const b=event.target.closest('[data-split-suggestions]');if(!b)return;event.preventDefault();SplitSuggestions.handle(b.dataset.splitSuggestions,b.dataset.id).catch(error=>toast(error));});
+document.addEventListener('click',event=>{const b=event.target.closest('[data-split-suggestions]');if(!b)return;event.preventDefault();SplitSuggestions.handle(b.dataset.splitSuggestions,b.dataset.id,b.dataset.target).catch(error=>toast(error));});
 document.addEventListener('input',event=>{if(event.target.id==='splitTarget')SplitSuggestions.paint();});
 document.addEventListener('change',event=>{if(event.target.id==='splitBoxOnly')SplitSuggestions.paint();});
+
+document.addEventListener('change',event=>{const f=event.target.form;if(event.target.id!=='transferPolicy'||f?.dataset.workForm!=='redistribute')return;const interim=event.target.value==='interim';f.querySelector('#interimTransferFields').hidden=!interim;f.elements.interim_number.required=interim;});

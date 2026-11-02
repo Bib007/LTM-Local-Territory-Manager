@@ -24,7 +24,7 @@ The demo uses fictional examples and needs no installation or account. The feedb
 
 ## A look inside
 
-These pictures show the application with fictional examples. English is the default for new users, and Danish remains available. Translation is partial; some text and the original printed forms remain Danish.
+These pictures show the application with fictional examples. English is the default for new users, and Danish remains available. The interface is available in English and Danish. Original printed forms and stored user content keep their language.
 
 ![Card status and upcoming tasks in LTM](../assets/screenshots/overblik.png)
 
@@ -63,9 +63,9 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 
 **Can I bring existing records?** You can import cards from Excel and supported S-13 records. Review and approve the results before they are saved.
 
-## Development preview
+## Tasks and manual redistribution
 
-[Optional task responsibility](TASK-RESPONSIBILITY.en.md) and [manual split suggestions](SPLIT-SUGGESTIONS.en.md) are being prepared for the next release; they are not part of stable 1.12.3.
+[Optional task responsibility](TASK-RESPONSIBILITY.en.md) and [manual split/transfer workflows](SPLIT-SUGGESTIONS.en.md) are available from 1.12.4.
 
 ## Ideas and feedback
 

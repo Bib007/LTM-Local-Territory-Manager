@@ -1,6 +1,6 @@
 # Task responsibility
 
-Development feature for the next release. It is not included in stable 1.12.3.
+Available from LTM 1.12.4.
 
 Users who can manage accounts and edit notes can choose an optional responsible person when creating or editing a task. The choice uses active local LTM accounts. An assignment grants no additional permissions and sends no notification.
 

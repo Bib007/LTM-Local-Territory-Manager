@@ -1,9 +1,13 @@
-# LTM 1.12.3 · The familiar home dashboard is back
+# LTM 1.12.4 · Task responsibility and safe manual redistribution
 
-This patch corrects a regression in 1.12.2: profile users were shown a report-style summary instead of their familiar home dashboard.
+This release completes optional task responsibility and the manual split/transfer workflow, while retaining the familiar home dashboard from 1.12.3.
 
-- Users with the existing detailed overview permissions again see the original home dashboard: card-location and service-year coverage rings, shortcuts, metrics, monthly comparison and follow-ups.
-- Summary-only accounts get the familiar home presentation using permitted aggregate totals. Private cards, names, notes and histories remain protected.
-- The three-period report stays on the Reports page. Existing roles, guides, imports and saved language choices are preserved.
+- Assign a responsible local account to a task or linked follow-up. Readers recognize their own tasks without receiving the account directory. Assignment grants no permissions and sends no notification.
+- Review split suggestions using a visit target and a box-only filter. Unknown totals, ambiguous membership and issued cards are excluded from actionable suggestions.
+- Move selected address units to an existing card after a server preview and typed approval. Coupled do-not-call records move atomically; original notes, loans and completion events stay with their original cards.
+- Choose the latest known date as a scheduling reference, or issue an interim card first. Return the interim card, explicitly finalize its transfer and reprint the receiving card with its own number. Interim history is retained on the archived card.
+- English and Danish interface labels, task instructions, maintenance controls and readable conflict fields are covered by the interface catalog check. Original S-12/S-13 forms, stored user content and source diagnostics retain their language.
 
-Update the existing installation while preserving its data directory. Keep a private data backup and, when profiles are enabled, a separate account backup. Original printed forms are unchanged.
+The scheduling reference affects card-age planning only. It never creates a completion event or rewrites S-13 history. Planning alternatives are independent; review geographic continuity and both print sides before use. Automatic territory division remains paused.
+
+Update the existing stable installation while preserving its data directory. Keep a private data backup and, when profiles are enabled, a separate account backup. The beta installation uses separate data and remains separate from stable.

@@ -165,6 +165,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
             result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
+            from redistribution import planning_date
+            for c in result['cards']:
+                if c.get('planning_reference'):c['planning_date']=planning_date(c)
             result['archived_cards']=[c for c in result['cards'] if c.get('archived')]
             result['cards']=[c for c in result['cards'] if not c.get('archived')]
             result['revision']=self.revision

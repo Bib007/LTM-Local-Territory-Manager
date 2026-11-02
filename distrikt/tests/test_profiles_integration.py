@@ -566,6 +566,28 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(note['text'],'Fictional text A');self.assertEqual(note['assignee_id'],user)
 
 
+    def test_redistribution_profiles_preserve_history_and_hide_new_membership_metadata(self):
+        from test_geography import address
+        area=self.store.mutate('area.save',{'name':'Fictional area'})['id']
+        rows=[address('move'+str(i),str(i+1),lng=10+i*.001) for i in range(6)]
+        self.store.mutate('geo.import',{'records':rows,'source':'Fictional','label':'Fictional local test'})
+        self.store.mutate('geo.assign',{'card_id':self.card,'address_ids':[r['id'] for r in rows[:4]]})
+        target=self.store.mutate('geo.assign',{'number':'F102','address_ids':[r['id'] for r in rows[4:]]})['id']
+        for ident,day in [(self.card,'2026-03-02'),(target,'2026-01-02')]:
+            self.store.mutate('card.save',{**self.store.require('cards',ident),'area_id':area})
+            self.store.mutate('completion.record',{'card_id':ident,'date':day})
+        data={'mode':'transfer','ids':[self.card,target],'address_ids':[rows[0]['id']],'number':'F102'}
+        p=self.change(self.admin,self.state(self.admin),'card.restructure.preview',data)['result']
+        self.change(self.admin,self.state(self.admin),'card.restructure.apply',{**data,'expected':p['expected'],'confirm':'ÆNDR KORT'})
+        reader,role,user=self.reader(['cards.view'])
+        state=self.state(reader);card=next(c for c in state['cards'] if c['id']==target)
+        self.assertEqual(card['planning_date'],'2026-03-02');self.assertEqual(card['last_completed'],'2026-01-02')
+        self.assertNotIn('membership',card['planning_reference']);self.assertEqual(state['completions'],[])
+        before=self.store.revision
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,state,'card.restructure.preview',data)
+        self.assertEqual(error.exception.code,403);self.assertEqual(self.store.revision,before)
+
+
 class ProfileActivationTests(unittest.TestCase):
     def test_existing_lan_login_must_authorize_activation_and_data_is_unchanged(self):
         with tempfile.TemporaryDirectory() as root:

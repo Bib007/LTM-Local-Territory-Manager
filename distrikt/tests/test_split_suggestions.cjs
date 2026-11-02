@@ -21,6 +21,11 @@ for(const change of ["addresses:[{count:8,count_unknown:true}]","addresses:[{cou
 assert.equal(run("SplitSuggestions.plan([{...source,geo_addresses:source.geo_addresses.slice(1)}],[],4).suggestions[0].split"),null);
 assert.equal(run("SplitSuggestions.plan([{...source,geo_addresses:source.geo_addresses.map((a,i)=>i? a:{...a,retired:true})}],[],4).suggestions[0].split"),null);
 for(const target of ['0','1001','1.5','NaN'])assert.throws(()=>run(`SplitSuggestions.plan([source],[],${target})`));
+run("const scheduled={...source,last_completed:'2026-01-02',planning_reference:{date:'2026-03-02',membership:[...source.address_ids].sort()}};state.today='2026-11-02';");
+assert.equal(run('SplitSuggestions.effectiveDate(scheduled)'),'2026-03-02');assert.ok(run("age(scheduled)<dayDiff(state.today,scheduled.last_completed)"));assert.equal(run('scheduled.last_completed'),'2026-01-02');
+run('scheduled.address_ids=scheduled.address_ids.slice(1)');assert.equal(run('SplitSuggestions.effectiveDate(scheduled)'),'2026-01-02');assert.equal(run('SplitSuggestions.cardNotice(scheduled)'),'');
+assert.equal(run("SplitSuggestions.effectiveDate({last_completed:'2026-01-02',planning_date:'2026-03-02'})"),'2026-03-02');
+assert.equal(run("SplitSuggestions.plan([{...source,interim_transfer:{status:'pending'}},target],[],4).total"),0);
 run("state.profile={};ProfilesUI={has:()=>false};");assert.equal(run('SplitSuggestions.available()'),false);assert.equal(run('SplitSuggestions.entry()'),'');
 run("state.profile=null;const called=[];let painted=0;document.getElementById=()=>({});SplitSuggestions.revision='old';SplitSuggestions.paint=()=>painted++;toast=s=>called.push(s);Workspace={restructureForm(){throw Error('Stale split opened');}};");
 (async()=>{await run("SplitSuggestions.handle('split','101')");assert.equal(run('painted'),1);assert.match(run('called[0]'),/Oversigten/);console.log('Split suggestions: read-only counts, box/loan exclusions, exact membership, duplicates, unknowns, same-area/street targets, indivisible units, limits, permission gate and stale review passed.');})().catch(e=>{console.error(e);process.exitCode=1});

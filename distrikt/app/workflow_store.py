@@ -116,9 +116,14 @@ class WorkflowStore:
     def restructure(self,action,data):
         from store import clean_text,now
         mode=data.get('mode');ids=data.get('ids',[])
+        if mode in ('transfer','interim','finalize'):
+            from redistribution import redistribute
+            return redistribute(self,action,data)
         if mode not in ('split','merge') or not isinstance(ids,list) or len(set(ids))!=len(ids):raise ValueError('Vælg opdel eller sammenlæg.')
         if (mode=='split' and len(ids)!=1) or (mode=='merge' and not 2<=len(ids)<=20):raise ValueError('Vælg ét kort til opdeling eller 2–20 til sammenlægning.')
         cards=[self.require('cards',i) for i in ids]
+        if any(c.get('interim_transfer') for c in cards) or any((c.get('interim_transfer') or {}).get('status')=='pending' and c['interim_transfer'].get('target_id') in ids for c in self.all('cards')):
+            raise ValueError('Afslut den midlertidige flytning først.')
         if any(self.active_loan(c['id']) for c in cards):raise ValueError('Aflever kortene før opdeling eller sammenlægning.')
         if any(c.get('archived') or c.get('temporary') for c in cards):raise ValueError('Vælg færdige aktive kort med adresser.')
         number=clean_text(data.get('number'),30,True)
@@ -136,7 +141,7 @@ class WorkflowStore:
         ib=self.all('ib');notes=[n for n in self.all('notes') if n.get('card_id') in ids]
         # Text-only IB may refer to several units. Never guess which new card owns it.
         if mode=='split' and any(i['card_id'] in ids and not i.get('address_id') for i in ib):raise ValueError('IB uden adressekobling skal knyttes til kortets adresseliste før opdeling.')
-        expected=signature([cards,ib,notes])
+        expected=signature([cards,ib,notes,{'mode':mode,'ids':ids,'address_ids':sorted(moving),'number':number,'name':clean_text(data.get('name'),100)}])
         result={'expected':expected,'mode':mode,'numbers':[c['number'] for c in cards],'number':number,'moving':len(chosen),'remaining':len(members)-len(chosen),'warning':'Historik bevares på de oprindelige kort. Nye kort får ingen opdigtet gennemgang. Grænser er forslag og skal kontrolleres. Forsider og IB-bagsider skal genprintes.'}
         if action.endswith('preview'):return result
         if data.get('expected')!=expected or data.get('confirm')!='ÆNDR KORT':raise ValueError('Kontrollér forhåndsvisningen og skriv ÆNDR KORT for at bekræfte.')

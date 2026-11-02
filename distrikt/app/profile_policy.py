@@ -142,7 +142,7 @@ def mutation(user,action,data,store):
     if action=='revision.approve' and data.get('side')=='back':require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))
 
-CARD_FIELDS=set('id number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon'.split())
+CARD_FIELDS=set('id number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
  'publishers':{'id','name','group','group_role','pioneer'},
@@ -160,6 +160,10 @@ def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]} for row in raw[module]] if right in p else []
+    if 'geo.view' not in p:
+        for card in result['cards']+result['archived_cards']:
+            for field,key in (('planning_reference','membership'),('interim_transfer','address_ids')):
+                if isinstance(card.get(field),dict):card[field].pop(key,None)
     for note in result['notes']:
         note['assigned']=bool(note.get('assignee_id'))
         note['assignee_self']=note.get('assignee_id')==user['id']

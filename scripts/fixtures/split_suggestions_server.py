@@ -19,6 +19,8 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-split-') as root:
         ident=store.mutate('geo.assign',{'number':number,'name':'Fictional <card>','address_ids':[prefix+str(i) for i in range(size)]})['id']
         store.mutate('card.save',{**store.require('cards',ident),'area_id':area})
         cards[prefix]=ident
+    store.mutate('completion.record',{'card_id':cards['source'],'date':'2026-03-02'})
+    store.mutate('completion.record',{'card_id':cards['target'],'date':'2026-01-02'})
     store.mutate('loan.issue',{'card_id':cards['issued'],'publisher_name':'Fictional person','initial':True,'date':'2026-01-01'})
     store.mutate('setup.onboarding.save',{'answers':{'mode':'desk','boundary':'later','cards':'numbers','ib':'later'},'tour_completed':True})
     server=Server(('127.0.0.1',0),store);accounts=server.accounts
