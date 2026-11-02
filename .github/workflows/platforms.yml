@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        # ARM hosted capacity prevented job acquisition; retain the same macOS smoke checks on Intel.
+        os: [macos-15-intel, windows-latest]
     env:
       PYTHONUTF8: '1'
     steps:
