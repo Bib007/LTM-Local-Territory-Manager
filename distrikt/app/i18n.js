@@ -3,6 +3,13 @@
 const I18n={
  current:'en',
  english:{
+  "Dato eller datotekst":"Date or date wording",
+  "Dato som tekst · valgfrit":"Date as text · optional",
+  "Brug tekst til et kendt år, en måned eller en formulering, når den præcise dag er ukendt. Teksten vises på IB-bagsiden; der gættes ingen dato.":"Use text for a known year, month or wording when the exact day is unknown. The wording appears on the do-not-call card; no day is guessed.",
+  "Datoteksten må højst være 60 tegn.":"Date wording may be up to 60 characters.",
+  "Kontrollér den præcise dato i ÅÅÅÅ-MM-DD-format.":"Check the exact date in YYYY-MM-DD format.",
+  "Datoen er fri tekst. Kontrollér teksten på IB-bagsiden før import.":"The date is free text. Check the wording on the do-not-call card before importing.",
+  "Brug datofeltet til en præcis dato.":"Use the date field for an exact date.",
   "Afprøv guidens adgang":"Preview guide access",
   "Forhåndsvisning uden ændring af brugerens guide eller rettigheder.":"Preview without changing the user’s guide or permissions.",
   "Print rapportoversigt / PDF":"Print report summary / PDF",
