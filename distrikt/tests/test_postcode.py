@@ -69,7 +69,9 @@ class PostcodeTests(unittest.TestCase):
         self.d.request=combined;result=self.d.road({'road':'Eksempelvej','postcode':'9999'},lambda **kw:None)
         self.assertEqual(result['count'],205)
         card=self.s.mutate('geo.assign',{'number':'004','address_ids':[a['id'] for a in self.s.geo_state()['addresses']]})['id']
-        self.assertEqual(self.s.get('cards',card)['addresses'][0]['numbers'],'1–205');self.assertEqual(self.s.get('cards',card)['addresses'][0]['count'],205)
+        rows=self.s.get('cards',card)['addresses']
+        self.assertEqual([r['numbers'] for r in rows],['2–204 (lige)','1–205 (ulige)'])
+        self.assertEqual(sum(r['count'] for r in rows),205)
     def test_suggestions_use_official_names_and_reject_ambiguous_download(self):
         calls=[]
         def request(host,path,params=None,query=None):
@@ -81,8 +83,11 @@ class PostcodeTests(unittest.TestCase):
     def test_compact_label_fixes_36_lettered_house_numbers_without_inflating_count(self):
         values=[address('a'+str(i),str(2*i+2)+'B') for i in range(36)]
         self.s.mutate('geo.import',{'records':values,'label':'Fiktive husnumre','source':'Test'})
-        c=self.s.mutate('geo.assign',{'number':'004','address_ids':[a['id'] for a in values]})['id'];row=self.s.get('cards',c)['addresses'][0]
-        self.assertEqual(row['numbers'],'2B–72B (lige)');self.assertEqual(row['count'],36)
+        c=self.s.mutate('geo.assign',{'number':'004','address_ids':[a['id'] for a in values]})['id'];rows=self.s.get('cards',c)['addresses']
+        self.assertEqual(sum(r['count'] for r in rows),36)
+        self.assertTrue(all(len(r['numbers'])<=100 for r in rows))
+        labels=[n.strip() for r in rows for n in r['numbers'].replace(' (lige)','').split(',')]
+        self.assertEqual(labels,[a['number'] for a in values])
     def test_missing_inside_boundary_ignore_assignment_and_recovery(self):
         self.s.mutate('geo.import',{'records':[address('on'),address('missing','3'),address('outside','5',lng=10.5)],'label':'Test','source':'Test'})
         c=self.s.mutate('geo.assign',{'number':'120','address_ids':['on'],'polygon':POLYGON})['id']
