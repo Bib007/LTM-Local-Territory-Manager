@@ -337,7 +337,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                             mutation(self.profile_user,data.get('action'),data.get('data',{}),self.server.store)
                             if data.get('action')=='address.task.configure':result=self.server.address_schedule.configure(data.get('data',{}))
                             else:result,editor_snapshot=self.server.profiles.mutate(self.profile_token(),self.profile_user,data.get('action'),data.get('data',{}),data.get('profile_snapshot'))
-                        else:result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
+                        else:
+                            if data.get('action')=='note.save' and 'assignee_id' in data.get('data',{}):
+                                raise ValueError('Aktivér brugerprofiler for at vælge en ansvarshavende.')
+                            result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
                         response={'ok':True,'result':result,'revision':self.server.store.revision,
                             'geo_changed':getattr(self.server.store,'geo_generation',0)!=generation}
                         if editor_snapshot:response['profile_snapshot']=editor_snapshot

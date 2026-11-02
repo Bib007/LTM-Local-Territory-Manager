@@ -1,6 +1,12 @@
 # Ønskeliste og nye opgaver
 
-## Current candidate — 1.12.2
+## Development after stable 1.12.3 — W119
+
+Optional task responsibility is implemented for the next development release. Account managers who can edit notes can select an active local account. Readers see their own responsibility without receiving the user directory. Tasks can be linked to follow-ups, filtered by responsibility, and retain their owner during text edits or weekly completion. Explicit assignment changes use a comparison against the previous owner. No notifications or extra permissions are granted. [Behavior and limits](../TASK-RESPONSIBILITY.en.md).
+
+Stable 1.12.3 remains the released app. This feature has not been included in a public beta or stable package, and the overall completion count is unchanged. The older candidate notes below are historical.
+
+## Historical candidate — 1.12.2
 
 Beta.83 is verified publicly released; see [exact verification](BETA-83-VERIFICERING.md). W121/W123 roles/guides, W127 column import, fictional two-role demo and English-first entry documentation are now integrated in the local stable candidate. Original printed forms remain unchanged. The separate bilingual website is live at https://localterritorymanager.netlify.app. Final release checks/publication are in progress; stable1.12.2 is not yet reported released. Historical status below is retained.
 

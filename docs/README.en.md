@@ -63,6 +63,10 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 
 **Can I bring existing records?** You can import cards from Excel and supported S-13 records. Review and approve the results before they are saved.
 
+## Development preview
+
+[Optional task responsibility](TASK-RESPONSIBILITY.en.md) is being prepared for the next release; it is not part of stable 1.12.3.
+
 ## Ideas and feedback
 
 [Send feedback](https://tally.so/r/KpY0ZV) without an account or email address. The form accepts pictures and currently uses Danish. Submit fictional examples only, without private records, real do-not-call details, backups or passwords. Your submitted text and pictures are stored by Tally.
