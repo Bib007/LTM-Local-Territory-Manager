@@ -34,7 +34,7 @@ from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.3'
+VERSION='1.12.4'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -156,7 +156,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.profiles.csrf(self.profile_token()) if profile else self.server.token)
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/workspace.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -337,7 +337,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                             mutation(self.profile_user,data.get('action'),data.get('data',{}),self.server.store)
                             if data.get('action')=='address.task.configure':result=self.server.address_schedule.configure(data.get('data',{}))
                             else:result,editor_snapshot=self.server.profiles.mutate(self.profile_token(),self.profile_user,data.get('action'),data.get('data',{}),data.get('profile_snapshot'))
-                        else:result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
+                        else:
+                            if data.get('action')=='note.save' and 'assignee_id' in data.get('data',{}):
+                                raise ValueError('Aktivér brugerprofiler for at vælge en ansvarshavende.')
+                            result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
                         response={'ok':True,'result':result,'revision':self.server.store.revision,
                             'geo_changed':getattr(self.server.store,'geo_generation',0)!=generation}
                         if editor_snapshot:response['profile_snapshot']=editor_snapshot

@@ -24,6 +24,10 @@ def command(row,current):
     if module=='cards' and field=='addresses' and (current.get('address_ids') or current.get('geo_addresses')):return None
     if not action or field not in SAVE[action][1]:return None
     data=deepcopy(current)
+    if module=='notes':
+        # Assignment has its own explicit comparison; text review must retain it.
+        data.pop('assignee_id',None)
+        data.pop('followup_key',None)
     if action.startswith(('card.color','geo.','map.')):data['card_id']=current['id']
     return action,data
 

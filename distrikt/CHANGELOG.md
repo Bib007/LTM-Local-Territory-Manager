@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.12.4 · Task responsibility and manual redistribution
+
+- Optional responsible accounts, private self labels, task filters and linked follow-up tasks.
+- Manual split/transfer suggestions, exact address-unit previews and atomic movement with coupled do-not-call records.
+- Explicit latest-date scheduling reference or an interim-card issue/return/finalize workflow, retained history and reprint tasks.
+- Complete declared English interface-label coverage, localized task/maintenance controls and readable conflict fields; original forms and stored user content retain their language.
+- Preserve the restored home dashboard, existing roles, guides, imports and separate beta data.
+
+
 ## 1.12.3 · Restore the familiar home dashboard
 
 - Restore the original home dashboard for profile users with the relevant record permissions, including its rings, shortcuts, metrics, monthly comparison and follow-ups.

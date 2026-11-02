@@ -165,6 +165,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
             result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
+            from redistribution import planning_date
+            for c in result['cards']:
+                if c.get('planning_reference'):c['planning_date']=planning_date(c)
             result['archived_cards']=[c for c in result['cards'] if c.get('archived')]
             result['cards']=[c for c in result['cards'] if not c.get('archived')]
             result['revision']=self.revision
@@ -362,6 +365,23 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             c=self.require('cards',data['card_id']) if data.get('card_id') else None
             item=dict(self.require('notes',data['id']) if data.get('id') else {'id':new_id(),'date':today(),'created':now(),'resolved':False})
             if item.get('entity')=='activity':raise ValueError('Vælg en opgave.')
+            if 'assignee_id' in data:
+                owner=data['assignee_id']
+                if owner is not None and (not isinstance(owner,str) or not re.fullmatch(r'user-[a-f0-9]{32}',owner)):
+                    raise ValueError('Vælg en aktiv bruger som ansvarshavende.')
+                if 'assignee_before' not in data or data['assignee_before']!=item.get('assignee_id'):
+                    raise ValueError('Den ansvarshavende er ændret. Opdater oversigten, og vælg igen.')
+                item['assignee_id']=owner
+            if 'followup_key' in data:
+                key=data['followup_key']
+                try:parts=json.loads(key) if isinstance(key,str) and len(key)<=1000 else None
+                except (ValueError,TypeError):parts=None
+                if not isinstance(parts,list) or len(parts)<2 or parts[0] not in ('checks','reprint','loans','addresses') or not all(isinstance(p,str) for p in parts):
+                    raise ValueError('Vælg en gyldig opfølgning.')
+                if item.get('followup_key') not in (None,key):raise ValueError('Opgavens opfølgning kan ikke ændres.')
+                if any(n.get('followup_key')==key and n['id']!=item['id'] for n in self.all('notes')):
+                    raise ValueError('Opfølgningen har allerede en opgave. Opdater oversigten.')
+                item['followup_key']=key
             item['card_id']=c['id'] if c else None
             item['task']=True
             item['text']=clean_text(data.get('text'),1000,True)

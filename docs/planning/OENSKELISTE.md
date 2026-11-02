@@ -1,6 +1,14 @@
 # Ønskeliste og nye opgaver
 
-## Current candidate — 1.12.2
+## Stable candidate 1.12.4 — completed implementation
+
+W119 task responsibility and W116 manual redistribution are implemented with explicit previews, whole-unit validation, atomic do-not-call movement, latest-date scheduling references and an interim-card issue/return/finalize workflow. Completion events and S-13 history remain intact. Role changes do not follow an assignment. [Responsibility](../TASK-RESPONSIBILITY.en.md) · [Redistribution](../SPLIT-SUGGESTIONS.en.md).
+
+The W58 interface-label review covers declared labels, instructions, placeholders, accessibility labels and maintenance controls. English remains the default for new users; Danish and saved choices remain. Original forms, user content and external diagnostics retain their language. The readable W65 conflict presentation is included; the owner's remaining visual feedback is optional.
+
+This is the prepared 1.12.4 candidate. Publication is reported only after the required release checks and public package verification. The earlier candidate notes below are historical; no new security audit or automatic territory division has been started.
+
+## Historical candidate — 1.12.2
 
 Beta.83 is verified publicly released; see [exact verification](BETA-83-VERIFICERING.md). W121/W123 roles/guides, W127 column import, fictional two-role demo and English-first entry documentation are now integrated in the local stable candidate. Original printed forms remain unchanged. The separate bilingual website is live at https://localterritorymanager.netlify.app. Final release checks/publication are in progress; stable1.12.2 is not yet reported released. Historical status below is retained.
 

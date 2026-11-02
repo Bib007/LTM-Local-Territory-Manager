@@ -70,7 +70,7 @@ Compare calendar-year, service-year and rolling-12-month summaries. See current 
 - **Optional QR images.** Approve a public card-front image for Google Drive. Where supported, retain the same file and QR link; automatic date updates need their own approval. This supports the physical card workflow.
 - **Private backups.** Keep territory-data backups and separate account backups, with explicit validation and a safety copy during restore.
 
-English is the default for new users; Danish and saved language preferences are preserved. Translation is partial: some interface text, errors and the original S-12/S-13 forms remain Danish.
+English is the default for new users; Danish and saved language preferences are preserved. The interface is available in English and Danish. Original S-12/S-13 forms and stored user content keep their language; external technical diagnostics may retain the source language.
 
 ## Try both sides of the desk
 

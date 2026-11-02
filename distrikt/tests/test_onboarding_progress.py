@@ -21,6 +21,13 @@ class OnboardingProgressTests(unittest.TestCase):
         data={k:v for k,v in self.store.get('settings','config').items() if k in ('congregation','folder_minimum','rural_minimum','rural_mode','require_revision')}
         data.update(changes);return self.store.mutate('settings.save',data)
 
+    def test_optional_split_review_status_changes_no_cards_or_history(self):
+        self.start()
+        before={m:copy.deepcopy([r for r in self.store.all(m) if r.get('entity')!='activity']) for m in ('cards','loans','completions','notes','geo')}
+        self.store.mutate('setup.onboarding.task',{'task':'split-suggestions','status':'done'})
+        self.assertEqual(self.tasks()['split-suggestions'],'done')
+        self.assertEqual({m:[r for r in self.store.all(m) if r.get('entity')!='activity'] for m in before},before)
+
     def test_new_zero_default_does_not_migrate_existing_values_or_progress(self):
         self.assertEqual(self.store.get('settings','config')['folder_minimum'],0)
         self.assertEqual(self.store.get('settings','config')['rural_minimum'],0)
