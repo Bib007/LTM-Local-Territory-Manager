@@ -1,13 +1,9 @@
-# LTM 1.12.4 · Task responsibility and safe manual redistribution
+# LTM 1.12.5 · Honest IB dates and reviewed street-line suggestions
 
-This release completes optional task responsibility and the manual split/transfer workflow, while retaining the familiar home dashboard from 1.12.3.
+Do-not-call entries now support a known month and year, a year alone, or literal date wording in both import and manual entry. For example, keep `March 2024` or `2024` without inventing the missing month or day. The wording appears on the card back and in private readable exports and backups. Exact dates retain their existing validation. Review import warnings before confirming.
 
-- Assign a responsible local account to a task or linked follow-up. Readers recognize their own tasks without receiving the account directory. Assignment grants no permissions and sends no notification.
-- Review split suggestions using a visit target and a box-only filter. Unknown totals, ambiguous membership and issued cards are excluded from actionable suggestions.
-- Move selected address units to an existing card after a server preview and typed approval. Coupled do-not-call records move atomically; original notes, loans and completion events stay with their original cards.
-- Choose the latest known date as a scheduling reference, or issue an interim card first. Return the interim card, explicitly finalize its transfer and reprint the receiving card with its own number. Interim history is retained on the archived card.
-- English and Danish interface labels, task instructions, maintenance controls and readable conflict fields are covered by the interface catalog check. Original S-12/S-13 forms, stored user content and source diagnostics retain their language.
+Use **Suggest DAR addresses from street lines** in the card editor to turn existing street names and number ranges into a reviewed proposal. Confirm each postcode, download the complete roads and inspect every address unit, visit total and suggested boundary. The card changes only after the normal save confirmation. Unclear ranges, incomplete downloads, competing ownership and stale approval data are rejected. The changed front needs print review; actual assignments, completion history and IB remain on the card.
 
-The scheduling reference affects card-age planning only. It never creates a completion event or rewrites S-13 history. Planning alternatives are independent; review geographic continuity and both print sides before use. Automatic territory division remains paused.
+This is a manual workflow for the existing Danish address sources. International address providers and English original forms are separate planned work. The familiar Home, profiles, mapped column imports, personal guided introduction and 1.12.4 task/interim-transfer workflows are retained.
 
-Update the existing stable installation while preserving its data directory. Keep a private data backup and, when profiles are enabled, a separate account backup. The beta installation uses separate data and remains separate from stable.
+Update the stable installation while preserving its data directory and keeping private territory/account backups. Stable and beta installations remain separate.

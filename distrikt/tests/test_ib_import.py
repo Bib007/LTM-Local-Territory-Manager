@@ -69,6 +69,31 @@ class IBImportTests(unittest.TestCase):
         p=self.preview('kortnummer;vejnavn;husnummer;postnummer;etage;dør\nF001;Fiktiv ukendt;4;9999;1;tv')
         self.assertEqual(p['warnings'],1);self.apply(p,acknowledge=True)
         ib=self.s.all('ib')[0];self.assertEqual(ib['number'],'4, 1 tv');self.assertEqual(ib['postcode'],'9999');self.assertFalse(ib.get('address_id'))
+    def test_month_year_and_text_dates_preserve_uncertainty(self):
+        content='kortnummer;vejnavn;husnummer;dato\nF001;Fiktiv vej;1;2025\nF001;Fiktiv vej;2;2025-03\nF001;Fiktiv vej;3;forår 2024'
+        p=self.preview(content)
+        self.assertEqual((p['new'],p['errors'],p['warnings']),(3,0,3))
+        with self.assertRaisesRegex(ValueError,'bekræft'):self.apply(p)
+        self.apply(p,acknowledge=True)
+        self.assertEqual([(r['date'],r['date_text']) for r in sorted(self.s.all('ib'),key=lambda r:r['number'])],
+                         [('', '2025'),('', '2025-03'),('', 'forår 2024')])
+        item=next(r for r in self.s.all('ib') if r['number']=='2')
+        self.s.mutate('ib.save',{**item,'date':'2025-03-01','date_text':''})
+        self.assertEqual(self.s.require('ib',item['id'])['date'],'2025-03-01')
+        self.assertNotIn('date_text',self.s.require('ib',item['id']))
+    def test_import_month_year_words_and_excel_year_without_invented_date(self):
+        cases=[({'content':'kortnummer;vejnavn;husnummer;dato\nF001;Fiktiv vej;1;marts 2024'},'marts 2024'),
+               ({'name':'fictional.xlsx','content':workbook(['kortnummer','vejnavn','husnummer','dato'],[['F001','Fiktiv vej','2','2024']]),'encoding':'base64'},'2024')]
+        for payload,expected in cases:
+            p=self.preview(**payload)
+            self.assertEqual((p['new'],p['errors'],p['warnings']),(1,0,1))
+            self.apply(p,acknowledge=True)
+            item=next(i for i in self.s.all('ib') if i.get('date_text')==expected)
+            self.assertEqual(item['date'],'')
+
+    def test_invalid_exact_import_date_does_not_become_free_text(self):
+        p=self.preview('kortnummer;vejnavn;husnummer;dato\nF001;Fiktiv vej;1;2025-99-99')
+        self.assertEqual(p['errors'],1)
     def test_unknown_card_and_invalid_values_block_whole_file(self):
         for line in ('Ukendt;Fiktiv vej;2;9999','F001;Fiktiv vej;2;99','F001;Fiktiv vej;;9999','F001;'+('x'*121)+';2;9999'):
             p=self.preview('kortnummer;vejnavn;husnummer;postnummer\n'+line,card_id=self.card)

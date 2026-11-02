@@ -76,3 +76,5 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 LTM is an unofficial project, not produced or approved by Jehovah’s Witnesses, jw.org, JW HUB or Home Assistant. It is developed with help from OpenAI Codex. [License](../LICENSE) · [Third-party notices](../distrikt/THIRD-PARTY.md).
 
 [Dansk](../README.md) · [Known limitations](LIMITATIONS.en.md) · [Contributing](CONTRIBUTING.en.md)
+
+- [Reviewed DAR suggestions from existing street lines](STREET-SUGGESTIONS.en.md) — 1.12.5.

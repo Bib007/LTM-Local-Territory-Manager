@@ -8,7 +8,7 @@ SAVE={
  'card.save':('cards',set('number name area_id kind temporary map_color addresses'.split())),
  'publisher.save':('publishers',{'name','group','group_role','pioneer'}),
  'note.save':('notes',{'text','card_id','recurrence'}),
- 'ib.save':('ib',{'address_id','road','number','date','postcode'}),
+ 'ib.save':('ib',{'address_id','road','number','date','date_text','postcode'}),
  'area.save':('settings',{'name'}),
  'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision'}),
  'visit.save':('visits',{'date','note'}),
@@ -20,7 +20,7 @@ SAVE={
 REVIEW_FIELDS={
  'cards':set('number name area_id kind temporary map_color addresses geo_polygon address_ids geo_addresses imported_addresses polygon in_folder last_completed front_revision back_revision'.split()),
  'publishers':{'name','group','group_role','pioneer'},'notes':{'text','card_id','recurrence','resolved','task_history'},
- 'ib':{'address_id','road','number','date','postcode'},
+ 'ib':{'address_id','road','number','date','date_text','postcode'},
  'visits':{'date','note'},'loans':{'assigned','cycle_start','returned','publisher_id'},
  'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision name print_profiles saved_views'.split()),
  'maps':{'image','name'},

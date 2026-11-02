@@ -1,12 +1,20 @@
 # Ønskeliste og nye opgaver
 
-## Stable candidate 1.12.4 — completed implementation
+## Current 1.12.5 candidate — critical Drive requests
+
+The actual Drive Wishlist was reread after the owner's reminder. Full public request wording and priorities are in [the carried input](DRIVE-INPUT-2026-11-02.en.md); private guide material remains only in Drive. Six new tracked wishes bring the ledger to 133. After verified 1.12.4, 116/133 are completed/clarified (87%), 17 open. New wishes are not counted as delivered.
+
+W130 preserves year-only, month/year and literal IB wording in imports and manual creation. W131 adds reviewed DAR address and outline suggestions from existing street lines. Both are implemented for 1.12.5 with fictional tests; publication is not yet claimed. W129 adds relevant repository topics. W132 clears transferred inbox text only after the full source and priority are preserved and checked. The existing illustrated README is retained.
+
+W128 international sources and English original forms, W74 native installers/updating, and the private post-release guide remain separately scheduled. No new broad security scan, OCR or automatic territory division is started.
+
+## Historical 1.12.4 candidate — now released
 
 W119 task responsibility and W116 manual redistribution are implemented with explicit previews, whole-unit validation, atomic do-not-call movement, latest-date scheduling references and an interim-card issue/return/finalize workflow. Completion events and S-13 history remain intact. Role changes do not follow an assignment. [Responsibility](../TASK-RESPONSIBILITY.en.md) · [Redistribution](../SPLIT-SUGGESTIONS.en.md).
 
 The W58 interface-label review covers declared labels, instructions, placeholders, accessibility labels and maintenance controls. English remains the default for new users; Danish and saved choices remain. Original forms, user content and external diagnostics retain their language. The readable W65 conflict presentation is included; the owner's remaining visual feedback is optional.
 
-This is the prepared 1.12.4 candidate. Publication is reported only after the required release checks and public package verification. The earlier candidate notes below are historical; no new security audit or automatic territory division has been started.
+Stable 1.12.4 was released from `9c0c76df056f5d6e8e1546944b6dd882b209ae8b`; all release gates succeeded and the public ZIP/SHA match the exact tested package. The earlier candidate notes below are historical; no new security audit or automatic territory division has been started.
 
 ## Historical candidate — 1.12.2
 

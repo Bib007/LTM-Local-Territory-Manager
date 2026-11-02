@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.5 · 2026-11-02
+
+- Preserve a known month/year, a year alone or literal date wording when importing or manually creating a do-not-call entry. No day or month is invented; wording survives editing, card backs, private export and backup.
+- Suggest DAR addresses from a card's existing street names and number ranges after confirming each postcode. Download complete roads, review all units and the suggested boundary, then explicitly save. Stale street/address data, reserved units and unclear ranges block unsafe application.
+- Mark the changed front for printing and preserve existing loans, completion history and do-not-call records.
+- Carry the current Drive requests into the plan with original priorities; international address sources and English original forms remain subsequent work.
+
 ## 1.12.4 · Task responsibility and manual redistribution
 
 - Optional responsible accounts, private self labels, task filters and linked follow-up tasks.

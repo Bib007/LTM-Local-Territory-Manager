@@ -549,7 +549,13 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 item['address_id'] = address_id
             elif 'address_id' in payload:
                 item.pop('address_id', None)
-            item.update(road=clean_text(payload.get('road'), 120, True), number=clean_text(payload.get('number'), 80, True), date=valid_day(payload.get('date')))
+            date_text=clean_text(payload.get('date_text'),60)
+            if date_text and re.fullmatch(r'\d{4}-\d{2}-\d{2}',date_text):
+                raise ValueError('Brug datofeltet til en præcis dato.')
+            item.update(road=clean_text(payload.get('road'), 120, True), number=clean_text(payload.get('number'), 80, True),
+                        date='' if date_text else valid_day(payload.get('date')))
+            if date_text:item['date_text']=date_text
+            else:item.pop('date_text',None)
             if 'postcode' in payload:
                 postcode=clean_text(payload.get('postcode'),4)
                 if postcode and not re.fullmatch(r'\d{4}',postcode):raise ValueError('Postnummer skal være fire cifre eller stå tomt.')
