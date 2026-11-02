@@ -97,13 +97,15 @@ def format_numbers(values):
         labels=[];i=0
         while i<len(side):
             j=i
-            # Only consecutive bare numbers can safely form a compact range.
-            while j+1<len(side) and not number_key(side[j])[1] and not number_key(side[j+1])[1] and number_key(side[j+1])[0]==number_key(side[j])[0]+2:
-                j+=1
-            if j-i>=2:labels.append(side[i]+'–'+side[j])
+            # Compress adjacent houses only; a gap starts another interval.
+            def adjacent(a,b):
+                n,sa=number_key(a);m,sb=number_key(b)
+                return (not sa and not sb and m==n+2) or (n==m and len(sb)==1 and ((not sa and sb=='A') or (len(sa)==1 and ord(sb)==ord(sa)+1)))
+            while j+1<len(side) and adjacent(side[j],side[j+1]):j+=1
+            if j>i:labels.append(side[i]+'–'+side[j])
             else:labels.extend(side[i:j+1])
             i=j+1
-        label=', '.join(labels)
+        label=' & '.join(labels)
         parts.append(label+(f" ({'lige' if parity==0 else 'ulige'})" if len(values)>1 else ''))
     return ' & '.join(parts)
 

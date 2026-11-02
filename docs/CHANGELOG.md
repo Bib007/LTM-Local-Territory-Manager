@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.7 · 2026-11-02
+
+- Restore compact, exact street intervals with `&` at gaps and separate even/odd lines per road. Consecutive lettered houses also form intervals. Physical fronts combine address types without changing visits or stored address membership.
+- Prevent street text from overlapping the original form footer. Dense fronts are fitted in the bounded content area; an impossible layout is visibly flagged and print remains blocked.
+- Add a real-browser regression for dense fronts at desktop/mobile widths and original-size print. Original S-12/S-13 assets remain unchanged.
+- Use a new version so installations that already installed 1.12.6 receive a normal Home Assistant update.
+
 ## 1.12.6 · 2026-11-02
 
 - Fix lossy street labels: separate number parity, preserve gaps/lettered houses, split long rows and repair saved geographic labels with print review.

@@ -22,16 +22,23 @@ function fitFrontCard(front){
  const scale=front.clientWidth/(146*96/25.4),qr=front.querySelector('.cardQR');
  list.style.width=qr?'74%':'86%';
  if(qr){const caption=qr.querySelector('span');caption.style.fontSize=(7.333*scale)+'px';caption.style.marginBottom=(3.78*scale)+'px';}
- const rows=Array.from(list.children),available=front.clientHeight*.79-list.offsetTop;
+ const rows=Array.from(list.children),available=front.clientHeight*.76-list.offsetTop;
+ list.style.maxHeight=Math.max(0,available)+'px';list.style.overflow='hidden';
  let fits=false;
  for(let size=12;size>=9.3;size-=.2){
   list.style.fontSize=(size*scale)+'px';list.style.lineHeight='1.2';
-  rows.forEach(row=>{row.style.padding=(Math.max(2,(size-9.3)*1.35+2)*scale)+'px 0';
+  rows.forEach(row=>{row.style.padding=(Math.max(.5,(size-9.3)*1.35+.5)*scale)+'px 0';
    if(row.lastElementChild)row.lastElementChild.style.whiteSpace='nowrap';});
   fits=list.scrollHeight<=available+1&&rows.every(row=>row.scrollWidth<=list.clientWidth+1);
   if(fits)break;
  }
- front.dataset.textFits=String(fits);return fits;
+ front.dataset.textFits=String(fits);
+ // Never paint over the original form footer, including in an unprintable preview.
+ let warning=front.nextElementSibling;
+ if(!warning?.classList.contains('frontOverflow'))warning=null;
+ if(!fits&&!warning){warning=front.ownerDocument.createElement('div');warning.className='frontOverflow notice';warning.setAttribute('role','alert');front.after(warning);}
+ if(warning){warning.hidden=fits;if(!fits){warning.textContent=I18n.text('Vejlisten eller QR-koden har ikke plads på kort:')+' '+I18n.text('Tilpas kortet før print.')+' '+rows.map(row=>row.textContent).join(' · ');}}
+ return fits;
 }
 function cardQRCss(){return '.cardQR{position:absolute;right:2%;bottom:19%;width:14%;text-align:center;color:black;font-family:Arial,sans-serif}.cardQR span{display:block;font-size:5.5pt;line-height:1.15;margin:0 0 1mm;overflow-wrap:normal}.cardQR img{display:block;width:100%;height:auto;aspect-ratio:1;background:white}';}
 function printDocument(cards,side,cfg){

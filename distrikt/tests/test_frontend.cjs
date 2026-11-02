@@ -53,8 +53,8 @@ const svg=run("MapExport.svg('c3')");assert(svg.includes('width="2200"'));assert
 run("savedLabelAddresses=state.cards[3].geo_addresses;state.cards[3].geo_addresses=[{id:'label-test',road:'Testvej',number:'42B',postcode:'9999',lng:10,lat:55,count:1}]");
 const labelSvg=run("MapExport.svg('c3')");assert(labelSvg.includes('>42B</text>'));assert(!labelSvg.includes('1 · 42B'));assert(!labelSvg.includes('pkt.'));assert.equal((labelSvg.match(/<circle /g)||[]).length,1);
 run("state.cards[3].geo_addresses=savedLabelAddresses");
-assert.equal(run("compactAddressNumbers('1k,3f,5h,7j')"),'1k-7j');assert.equal(run("compactAddressNumbers('12B,2A,4')"),'2A-12B');assert.equal(run("compactAddressNumbers('1–5 (ulige)')"),'1-5 (ulige)');
-assert(run("frontHTML({...state.cards[3],addresses:[{road:'Testvej',numbers:'1k,3f,5h,7j',count:4}]}).includes('1k-7j')"));
+assert.equal(run("compactAddressNumbers('1k,3f,5h,7j')"),'1k & 3f & 5h & 7j');assert.equal(run("compactAddressNumbers('12B,2A,4')"),'2A & 4 & 12B');assert.equal(run("compactAddressNumbers('1–5 (ulige)')"),'1-5 (ulige)');
+assert(run("frontHTML({...state.cards[3],geo_addresses:[],addresses:[{road:'Testvej',numbers:'1k,3f,5h,7j',count:4}]}).includes('1k &amp; 3f &amp; 5h &amp; 7j')"));
 run("detail('c3')");assert(get('dialog').innerHTML.includes('districtMapRoad'));assert(get('dialog').innerHTML.includes('Geografisk kort'));assert(!get('dialog').innerHTML.includes('PRIVATE_IB_SENTINEL'));
 run("state.ignored=[{address_id:'a1'}]");assert.equal(run("MapExport.members('c3').length"),1);const filteredSvg=run("MapExport.svg('c3')");assert.equal((filteredSvg.match(/<circle /g)||[]).length,1);assert(filteredSvg.includes('1 besøg'));assert(run("DistrictMap.html('c3').includes('1 besøg')"));
 run("state.ignored=[];state.cards[3].savedPolygon=state.cards[3].geo_polygon;state.cards[3].geo_polygon=[]");assert(run("MapExport.svg('c3').includes('2 besøg')"));run("state.cards[3].geo_polygon=state.cards[3].savedPolygon");
@@ -278,3 +278,8 @@ setImmediate(()=>{
  context.shareStateSnapshot=snapshot;run('state=JSON.parse(shareStateSnapshot);ShareUI.data=null');
  console.log('Loan-driven sharing: closed/pending/failed access labels, stable QR and escaped errors passed.');
 }
+
+assert.equal(run("compactAddressNumbers('36A, 36B, 36C, 36D (lige)')"),'36A-36D (lige)');
+assert.equal(run("compactAddressNumbers('36A & 36C-36D (lige)')"),'36A & 36C-36D (lige)');
+
+assert.equal(run("compactAddressNumbers('20, 22, 24, 28, 30 (lige)')"),'20-24 & 28-30 (lige)');

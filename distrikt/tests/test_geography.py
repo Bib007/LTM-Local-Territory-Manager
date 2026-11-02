@@ -35,19 +35,22 @@ class GeometryTests(unittest.TestCase):
         with self.assertRaises(ValueError):in_number_range('42','58','42')
     def test_compact_first_last_number_format(self):
         self.assertEqual(format_numbers(['5','1','3']),'1–5 (ulige)');self.assertEqual(format_numbers(['2','4','6']),'2–6 (lige)')
-        self.assertEqual(format_numbers(['1','3','7']),'1, 3, 7 (ulige)');self.assertEqual(format_numbers(['1A','1C']),'1A, 1C (ulige)')
-        self.assertEqual(format_numbers(['1','2','3']),'2 (lige) & 1, 3 (ulige)')
+        self.assertEqual(format_numbers(['1','3','7']),'1–3 & 7 (ulige)');self.assertEqual(format_numbers(['1A','1C']),'1A & 1C (ulige)')
+        self.assertEqual(format_numbers(['1','2','3']),'2 (lige) & 1–3 (ulige)')
     def test_mixed_sides_letters_gaps_and_long_rows(self):
         from geography import street_rows
         numbers=['2','4','6','5A','7','9B','40','52']
         records=[address(str(i),n) for i,n in enumerate(numbers)]
         rows=street_rows(records)
-        self.assertEqual([r['numbers'] for r in rows],['2–6, 40, 52 (lige)','5A, 7, 9B (ulige)'])
+        self.assertEqual([r['numbers'] for r in rows],['2–6 & 40 & 52 (lige)','5A & 7 & 9B (ulige)'])
         self.assertEqual(sum(r['count'] for r in rows),len(records))
         long=street_rows([address(str(i),str(i)+'A') for i in range(1,180,2)])
         self.assertTrue(all(len(r['numbers'])<=100 for r in long))
         self.assertEqual(sum(r['count'] for r in long),90)
         for i in range(1,180,2):self.assertIn(str(i)+'A',', '.join(r['numbers'] for r in long))
+    def test_owner_disjoint_intervals(self):
+        self.assertEqual(format_numbers(['20','22','24','28','30']),'20–24 & 28–30 (lige)')
+        self.assertEqual(format_numbers(['36A','36B','36C','36E']),'36A–36C & 36E (lige)')
     def test_utm_and_outline(self):
         lng,lat=utm32_to_wgs84(500000,6094791.420874)
         self.assertAlmostEqual(lng,9,places=6);self.assertAlmostEqual(lat,55,places=6)
@@ -80,7 +83,7 @@ class GeoStorageTests(unittest.TestCase):
         with self.s.transaction():self.s.put('cards',c)
         self.s.close();self.s=Store(self.tmp.name)
         fixed=self.s.get('cards',ident)
-        self.assertEqual([r['numbers'] for r in fixed['addresses']],['40','5A, 7 (ulige)'])
+        self.assertEqual([r['numbers'] for r in fixed['addresses']],['40','5A & 7 (ulige)'])
         self.assertEqual(fixed['geo_addresses'],members);self.assertTrue(fixed['front_revision'])
         self.s.close();self.s=Store(self.tmp.name)
         self.assertEqual(self.s.get('cards',ident),fixed)
