@@ -165,32 +165,26 @@ def decode_dar(items):
     return output
 
 
-def front_summaries(cards, known_addresses):
-    """Display envelopes, split by known houses outside the card, never selection data."""
-    universe=defaultdict(set)
-    def group(a):return (a['road'],a.get('postcode',''),number_key(a['number'])[0]%2)
-    for a in known_addresses:
-        if a.get('entity')=='address' and not a.get('retired'):
-            universe[group(a)].add(number_key(a['number'])[0])
+def front_summaries(cards):
+    """Numeric display intervals; missing base numbers split, internal letters do not."""
     for card in cards:
         members=card.get('geo_addresses') or []
         if not members:continue
-        groups=defaultdict(list)
-        for a in members:groups[group(a)].append(a)
+        # Incomplete legacy snapshots retain their existing street text.
+        try:
+            groups=defaultdict(list)
+            for a in members:groups[(a['road'],a.get('postcode',''),number_key(a['number'])[0]%2)].append(a)
+        except (KeyError,ValueError,TypeError):continue
         rows=[]
-        for key,units in sorted(groups.items(),key=lambda item:(item[0][0].casefold(),item[0][1],item[0][2])):
-            road,post,parity=key
+        for (road,post,parity),units in sorted(groups.items(),key=lambda item:(item[0][0].casefold(),item[0][1],item[0][2])):
             houses=defaultdict(list)
             for a in units:houses[number_key(a['number'])[0]].append(a['number'])
-            selected=sorted(houses);outside=sorted(universe[key]-set(selected))
-            intervals=[];start=selected[0];end=start
+            selected=sorted(houses);intervals=[];start=end=selected[0]
             def label(first,last):
-                # Letters inside a numeric envelope do not fragment the label.
-                # Retain the final suffix at the outer boundary (e.g. 3-9B).
                 tail=max(houses[last],key=number_key)
                 return str(first) if first==last else str(first)+'–'+tail
             for n in selected[1:]:
-                if any(end<x<n for x in outside):
+                if n!=end+2:
                     intervals.append(label(start,end));start=n
                 end=n
             intervals.append(label(start,end))
