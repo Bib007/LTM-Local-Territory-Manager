@@ -51,6 +51,19 @@ class GeometryTests(unittest.TestCase):
     def test_owner_disjoint_intervals(self):
         self.assertEqual(format_numbers(['20','22','24','28','30']),'20–24 & 28–30 (lige)')
         self.assertEqual(format_numbers(['36A','36B','36C','36E']),'36A–36C & 36E (lige)')
+    def test_front_summary_ignores_nonexistent_numbers_and_internal_suffixes(self):
+        from geography import front_summaries
+        units=[address(str(i),n) for i,n in enumerate(['2','4A','4C','20','24','26A','26D','46','50','52'])]
+        units += [dict(address('odd'+str(i),n),road='Fictional Lane') for i,n in enumerate(['3','7','9A','9B'])]
+        c={'geo_addresses':units};known=[dict(a,entity='address') for a in units]+[dict(address('outside','48'),entity='address')]
+        front_summaries([c],known)
+        self.assertEqual([r['numbers'] for r in c['front_addresses']],['2–46 & 50–52 (lige)','3–9B (ulige)'])
+        self.assertEqual(sum(r['count'] for r in c['front_addresses']),len(units))
+        self.assertEqual(c['geo_addresses'],units)
+        # An actual excluded house creates a gap; absent house numbers do not.
+        known.append(dict(address('outside22','22'),entity='address'))
+        front_summaries([c],known)
+        self.assertEqual(c['front_addresses'][0]['numbers'],'2–20 & 24–46 & 50–52 (lige)')
     def test_utm_and_outline(self):
         lng,lat=utm32_to_wgs84(500000,6094791.420874)
         self.assertAlmostEqual(lng,9,places=6);self.assertAlmostEqual(lat,55,places=6)

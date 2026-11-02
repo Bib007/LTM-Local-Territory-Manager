@@ -114,7 +114,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                     if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored'}):
                         self._geo_cache=None
                         self.geo_generation=getattr(self,'geo_generation',0)+1
-                    if not self._dirty_modules or 'geo' in self._dirty_modules:self._info_cache=None
+                    if not self._dirty_modules or 'geo' in self._dirty_modules:
+                        self._info_cache=None
+                        self._front_source_cache=None
             except Exception:
                 self.db.rollback()
                 raise
@@ -168,6 +170,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def state(self):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
+            from geography import front_summaries
+            if getattr(self,'_front_source_cache',None) is None:self._front_source_cache=self.all('geo')
+            front_summaries(result['cards'], self._front_source_cache)
             result['settings'] = self.get('settings', 'config')
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()

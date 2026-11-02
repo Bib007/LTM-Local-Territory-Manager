@@ -12,5 +12,17 @@ await p.waitForFunction(()=>document.querySelector('.cardPreview')?.dataset.text
 const print=await context.newPage();const image=await context.request.get(fixture.origin+'/s12-template.png');assert.equal(image.ok(),true);data.print=data.print.replace(/src="[^"]+s12-template.png"/, 'src="data:image/png;base64,'+(await image.body()).toString('base64')+'"');await print.setContent(data.print);await print.evaluate(()=>Promise.all(Array.from(document.images,i=>i.decode())));await print.evaluate(f=>{window.I18n={text:x=>x};window.fit=eval('('+f+')');fit(document.querySelector('.cardPreview'));},data.fit);assert.equal(await print.locator('.cardPreview').getAttribute('data-text-fits'),'true');await print.locator('.sheet').screenshot({path:out+'/print-'+width+'.png'});
 // Too much content must remain outside the original footer and be explicitly flagged.
 await print.evaluate(()=>{const list=document.querySelector('.streets');for(let i=0;i<200;i++)list.append(list.firstElementChild.cloneNode(true));fit(document.querySelector('.cardPreview'));});assert.equal(await print.locator('.cardPreview').getAttribute('data-text-fits'),'false');assert.equal(await print.locator('.frontOverflow').isVisible(),true);
+const summary=await p.evaluate(async()=>{
+ const existing=state.cards.find(c=>c.number==='SUMMARY');if(existing){detail(existing.id);return {rows:frontRows(existing),count:existing.geo_addresses.length};}
+ const selected=[];let i=0;
+ for(const [road,numbers] of [['Example Summary',['2','4A','4C','20','24','26A','26D','46','50','52','3','5A','39']],['Fictional Summary',['8A','8C','10','3','7','9A','9B']]])for(const number of numbers)selected.push({entity:'address',id:'summary'+i++,road,postcode:'9999',number,count:1,lng:10+i*.00001,lat:55});
+ await mutate('geo.import',{records:[...selected,{entity:'address',id:'outside48',road:'Example Summary',postcode:'9999',number:'48',count:1,lng:10.01,lat:55}],source:'Fictional summary test',label:'Known street houses'});
+ const result=await mutate('geo.assign',{number:'SUMMARY',address_ids:selected.map(a=>a.id)});
+ const c=state.cards.find(c=>c.number==='SUMMARY');detail(c.id);return {rows:frontRows(c),count:selected.length};
+});
+assert.deepEqual(summary.rows.map(r=>r.label),['Example Summary 2-46 & 50-52 (lige)','Example Summary 3-39 (ulige)','Fictional Summary 8-10 (lige)','Fictional Summary 3-9B (ulige)']);assert.equal(summary.rows.reduce((n,r)=>n+r.count,0),summary.count);
+await p.locator('.cardDisplay').screenshot({path:out+'/summary-'+width+'.png'});
+await p.reload();await p.waitForFunction(()=>typeof state!=='undefined'&&state?.cards?.some(c=>c.number==='SUMMARY'));assert.deepEqual(await p.evaluate(()=>frontRows(state.cards.find(c=>c.number==='SUMMARY')).map(r=>r.label)),summary.rows.map(r=>r.label));
+
 await context.close();console.log('Dense front, exact visits, disjoint ranges, original footer and overflow guard passed at '+width);}
 }finally{await browser?.close();child.kill();}})().catch(e=>{console.error(e);process.exitCode=1;});

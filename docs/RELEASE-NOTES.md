@@ -1,7 +1,7 @@
-# LTM 1.12.7 · Compact street intervals and bounded card fronts
+# LTM 1.12.8 · Clear numeric street summaries
 
-Fixes the 1.12.6 front-layout regression. Exact houses appear as compact intervals, separated by `&` at gaps: for example `20–24 & 28–30 (lige)`. Each road has separate even and odd lines; address types are combined on the physical front while exact units and visit counts remain intact. Consecutive lettered houses are compacted without hiding gaps.
+Physical card fronts now show numeric street envelopes, with separate even and odd sides. Internal A/B/C/D variants and house numbers that do not exist locally do not fragment the interval. A known existing numeric house outside the card creates a break: for example 2–46 & 50–52 when 48 is excluded. Keep the final suffix at a boundary such as 3–9B; 8A, 8C and 10 display as 8–10.
 
-Dense lists fit within the original form body. They cannot paint over its footer. A list that cannot fit is explicitly flagged and cannot be printed through the normal print control. The original forms are unchanged.
+These labels summarize a card. They never expand its actual membership or visit count. Exact address units, IB, manual lines and original forms are preserved. The bounded front layout from 1.12.7 remains.
 
-Home Assistant users, including anyone who installed an earlier 1.12.6 build, can install 1.12.7 as a normal update. Download a private LTM data backup and, where profiles are enabled, an account backup first. Preserve the existing installation and its data directory. Do not uninstall or delete data.
+Update normally to 1.12.8 in Home Assistant, preserving the existing installation and data. Download private LTM and account backups first. Do not uninstall or delete data.

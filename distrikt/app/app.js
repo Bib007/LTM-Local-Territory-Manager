@@ -355,6 +355,7 @@ function compactAddressNumbers(value){
  return out.join(' & ')+(note?note[0]:'');
 }
 function frontRows(c){
+ if(c.front_addresses)return c.front_addresses.map(a=>({label:a.road+' '+compactAddressNumbers(a.numbers),count:a.count}));
  if(c.geo_addresses?.length){
   const groups=new Map();
   for(const a of c.geo_addresses){const n=parseInt(a.number,10),k=JSON.stringify([a.road,a.postcode||'',n%2]);if(!groups.has(k))groups.set(k,{road:a.road,numbers:[],count:0,parity:n%2});const row=groups.get(k);row.numbers.push(a.number);row.count+=a.count??1;}
