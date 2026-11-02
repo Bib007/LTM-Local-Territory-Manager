@@ -86,7 +86,7 @@ class PostcodeTests(unittest.TestCase):
         c=self.s.mutate('geo.assign',{'number':'004','address_ids':[a['id'] for a in values]})['id'];rows=self.s.get('cards',c)['addresses']
         self.assertEqual(sum(r['count'] for r in rows),36)
         self.assertTrue(all(len(r['numbers'])<=100 for r in rows))
-        labels=[n.strip() for r in rows for n in r['numbers'].replace(' (lige)','').split(',')]
+        labels=[n.strip() for r in rows for n in r['numbers'].replace(' (lige)','').split('&')]
         self.assertEqual(labels,[a['number'] for a in values])
     def test_missing_inside_boundary_ignore_assignment_and_recovery(self):
         self.s.mutate('geo.import',{'records':[address('on'),address('missing','3'),address('outside','5',lng=10.5)],'label':'Test','source':'Test'})

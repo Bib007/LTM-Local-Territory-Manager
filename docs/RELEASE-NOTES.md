@@ -1,13 +1,7 @@
-# LTM 1.12.6 · Manual Excel fronts and backs, clearer street ranges
+# LTM 1.12.7 · Compact street intervals and bounded card fronts
 
-This release addresses the priority −1 Drive request.
+Fixes the 1.12.6 front-layout regression. Exact houses appear as compact intervals, separated by `&` at gaps: for example `20–24 & 28–30 (lige)`. Each road has separate even and odd lines; address types are combined on the physical front while exact units and visit counts remain intact. Consecutive lettered houses are compacted without hiding gaps.
 
-- Import a card front and a do-not-call back from your own Excel/CSV files without using DAR. Choose columns, use the same card number and review each preview before confirming. Manual IB linking is now the default in the import screen. Both ordinary printed sides work with manual street lines.
-- Leave a manual IB entry unlinked, or explicitly link it to an address belonging to that card later. Its record ID and date wording are retained. Changing the linking policy invalidates an existing preview.
-- DAR suggestions understand `hele vejen` / `whole street`, including all apartment units. `(kun ulige)` and `(kun lige)` retain their odd/even restriction. Street-side combinations such as `23-25 & 24-26` and `23-29 & 24-26` are interpreted separately, without filling excluded even numbers.
+Dense lists fit within the original form body. They cannot paint over its footer. A list that cannot fit is explicitly flagged and cannot be printed through the normal print control. The original forms are unchanged.
 
-An ordinary unqualified single number range retains its existing meaning. Unknown restrictions are rejected rather than ignored. Review the proposed address list and boundary before saving; the planner never changes a card simply by downloading or previewing.
-
-The familiar Home, roles, assignments, history, original S-12/S-13 forms and separate stable/beta data remain. Update the stable program while preserving its data directory and private backups.
-
-Geographic street labels now separate even and odd houses and preserve gaps and lettered numbers. Long lists split into bounded rows without dropping visits. Existing geographic cards are repaired from their saved exact address membership at startup and flagged for front print review; manual lines and original forms remain unchanged.
+Home Assistant users, including anyone who installed an earlier 1.12.6 build, can install 1.12.7 as a normal update. Download a private LTM data backup and, where profiles are enabled, an account backup first. Preserve the existing installation and its data directory. Do not uninstall or delete data.

@@ -340,8 +340,28 @@ function editArea(id){const a=state.areas.find(a=>a.id===id);openDialog(`<h2>${u
 function editVisit(id){const v=state.visits.find(v=>v.id===id);openDialog(`<h2>${ui("KTM-besøg")}</h2><form id="visitForm" data-id="${id||''}"><label>${ui("Besøgsdato")}</label><input name="date" type="date" value="${v?.date||state.today}" max="${state.today}" required><label>${ui("Bemærkning · valgfri")}</label><input name="note" value="${esc(v?.note||'')}" maxlength="200">${formEnd()}</form>`,I18n.language());}
 function editIB(id,cardId){IBUI.open(id,cardId,'',!!cardId);}
 function confirmDelete(module,id){const item=state[module]?.find(i=>i.id===id);if(!item)return;openDialog(`<h2>${ui('Slet')} ${module==='cards'?ui('kort')+' '+esc(item.number):ui(module==='ib'?'IB-adressen':module==='visits'?'KTM-besøget':'registreringen')}?</h2><p>${ui(module==='cards'?'Kortet og dets udlån, gennemgange og IB fjernes fra visningen.':'Registreringen fjernes fra visningen.')}</p><p class="hint"><span data-ui="Du kan gendanne ved fejl under Indstillinger i 48 timer. Derefter fjernes data fra databasefilerne. Egne sikkerhedskopier kan stadig indeholde posten.">Du kan gendanne ved fejl under Indstillinger i 48 timer. Derefter fjernes data fra databasefilerne. Egne sikkerhedskopier kan stadig indeholde posten.</span></p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="${module}" data-id="${id}"><span data-ui="Slet">Slet</span></button><button data-action="close"><span data-ui="Annuller">Annuller</span></button></div>`);}
-function compactAddressNumbers(value){const raw=String(value??'').trim(),parts=raw.split(/[,;]+/).map(s=>s.trim());if(parts.length>1&&parts.every(s=>/^\d+\s*[A-Za-zÆØÅæøå]*$/.test(s))){parts.sort((a,b)=>cmp(a,b));return parts[0]+'-'+parts[parts.length-1];}return raw.replace(/[–—]/g,'-');}
-function frontRows(c){return c.addresses.map(a=>({label:a.road+' '+compactAddressNumbers(a.numbers),count:a.count,...(a.count_unknown?{count_unknown:true}:{})}));}
+function compactAddressNumbers(value){
+ const raw=String(value??'').trim(),note=raw.match(/\s*\((?:lige|ulige|even|odd)\)\s*$/i),body=note?raw.slice(0,note.index):raw;
+ const parts=body.split(/[,;]+/).map(s=>s.trim()),key=s=>{const m=s.match(/^(\d+)\s*([A-Za-zÆØÅæøå]*)$/);return m?[Number(m[1]),m[2].toUpperCase()]:null;};
+ if(!parts.every(s=>key(s)))return raw.replace(/[–—]/g,'-');
+ const values=[...new Set(parts)].sort((a,b)=>key(a)[0]-key(b)[0]||key(a)[1].localeCompare(key(b)[1])),out=[];
+ for(const parity of [0,1]){
+  const side=values.filter(v=>key(v)[0]%2===parity);
+  for(let i=0;i<side.length;i++){let j=i;
+   while(j+1<side.length){const [n,a]=key(side[j]),[m,b]=key(side[j+1]);if(!((!a&&!b&&m===n+2)||(n===m&&b.length===1&&((!a&&b==='A')||(a.length===1&&b.charCodeAt(0)===a.charCodeAt(0)+1)))))break;j++;}
+   out.push(side[i]+(j>i?'-'+side[j]:''));i=j;
+  }
+ }
+ return out.join(' & ')+(note?note[0]:'');
+}
+function frontRows(c){
+ if(c.geo_addresses?.length){
+  const groups=new Map();
+  for(const a of c.geo_addresses){const n=parseInt(a.number,10),k=JSON.stringify([a.road,a.postcode||'',n%2]);if(!groups.has(k))groups.set(k,{road:a.road,numbers:[],count:0,parity:n%2});const row=groups.get(k);row.numbers.push(a.number);row.count+=a.count??1;}
+  return [...groups.values()].sort((a,b)=>cmp(a.road,b.road)||a.parity-b.parity).map(a=>({label:a.road+' '+compactAddressNumbers(a.numbers.join(', '))+' ('+(a.parity?'ulige':'lige')+')',count:a.count}));
+ }
+ return c.addresses.map(a=>({label:a.road+' '+compactAddressNumbers(a.numbers),count:a.count,...(a.count_unknown?{count_unknown:true}:{})}));
+}
 function frontHTML(c){const shared=(state.public_maps||[]).some(p=>p.card_id===c.id);return `<div class="cardPreview"><img src="${location.origin}/s12-template.png" alt="S-12-skabelon"><div class="title">${esc(c.name||(c.area_id?areaName(c.area_id):''))}</div><div class="number">${esc(c.number)}</div><div class="streets">${frontRows(c).map(a=>`<div><span>${esc(a.label)}</span><span>${a.count_unknown?'ukendt':a.count+' besøg'}</span></div>`).join('')}${c.temporary?'':`<div><b>I alt</b><b>${visitsKnown(c)?visitsCount(c)+' besøg':'ikke angivet'}</b></div>`}</div>${shared?`<div class="cardQR"><span>Scan for at se et kort over distriktet</span><img data-card-qr src="${location.origin}/card-qr.svg?card_id=${encodeURIComponent(c.id)}" alt="QR-kode til kort over distriktet"></div>`:''}</div>`;}
 function backHTML(c){const items=state.ib.filter(i=>i.card_id===c.id).sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)),roads=[...new Set(items.map(i=>i.road))];return `<div class="ibPreview"><div class="ibHead"><b>Kort nr. ${esc(c.number)}</b><b>ØNSKER IKKE BESØG</b></div><div class="ibCols"><b>Vejnavn, nr.</b><b>Dato</b></div>${roads.map(r=>`<section><h4>${esc(r)}</h4>${items.filter(i=>i.road===r).map(i=>`<div class="ibRow"><span>${esc(i.number)}</span><span>${(i.date_text?esc(i.date_text):fmt(i.date))}</span></div>`).join('')}</section>`).join('')}</div>`;}
 function canChooseBackupLocation(){return globalThis.isSecureContext===true&&typeof globalThis.showSaveFilePicker==='function';}
