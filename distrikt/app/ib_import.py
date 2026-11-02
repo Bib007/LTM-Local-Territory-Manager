@@ -83,10 +83,23 @@ def preview(store,data):
                 c=chosen;record={'card_id':c['id'],'road':road,'number':number,'postcode':postcode}
                 row['warnings'].append('Manuel IB-linje på det valgte kort. Adressen er ikke knyttet til en geografisk adresse; kontrollér vej, husnummer og lejlighed.')
             if not postcode:row['warnings'].append('Postnummer mangler. Der gættes ikke et postnummer.');record['missing_fields']=['postcode']
-            record['date']=valid_day(v.get('date') or default_day)
+            entered_date=v.get('date') or default_day
+            if len(entered_date)>60:raise ValueError('Datoteksten må højst være 60 tegn.')
+            # A month, year or handwritten note is not an exact calendar day.
+            # Preserve it literally instead of inventing a day for the card.
+            if re.fullmatch(r'\d{4}-\d{2}-\d{2}',entered_date):
+                record['date']=valid_day(entered_date)
+            else:
+                if (re.fullmatch(r'\d{4}-\d{2}-\d{2}.*',entered_date) or
+                    re.fullmatch(r'\d{1,2}[./-]\d{1,2}[./-]\d{4}',entered_date) or
+                    re.fullmatch(r'\d{4}[./]\d{1,2}[./]\d{1,2}',entered_date)):
+                    raise ValueError('Kontrollér den præcise dato i ÅÅÅÅ-MM-DD-format.')
+                record['date']=''
+                record['date_text']=entered_date
+                row['warnings'].append('Datoen er fri tekst. Kontrollér teksten på IB-bagsiden før import.')
             key=(c['id'],norm(record['road']),norm(record['number']))
             duplicate=key in seen or any(i['card_id']==c['id'] and (record.get('address_id') and i.get('address_id')==record['address_id'] or norm(i['road'])==key[1] and norm(i['number'])==key[2]) for i in existing)
-            row.update(status='existing' if duplicate else 'new',card_number=c['number'],label=record['road']+' '+record['number'],date=record['date'],record=record)
+            row.update(status='existing' if duplicate else 'new',card_number=c['number'],label=record['road']+' '+record['number'],date=record.get('date_text') or record['date'],record=record)
             seen.add(key)
         except (ValueError,TypeError,KeyError) as error:row.update(error_payload(error))
         rows.append(row)

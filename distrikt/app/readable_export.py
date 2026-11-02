@@ -145,7 +145,7 @@ def tables(state,geo):
     statuses={a['id']:a for a in addresses.values()};ignored={i.get('address_id') for i in state.get('ignored',[])}
     address_rows=[(*row,statuses.get(row[3],{}).get('type',''),bool(statuses.get(row[3],{}).get('retired')),row[3] in ignored) for row in address_rows]
     add('adresser',['kort_id','kortnummer','grundlag','adresse_id','vej','husnummer_eller_gemt_vejlinje','etage','doer','postnummer','besoegstal','laengdegrad','breddegrad','type','nedlagt','se_bort_fra'],address_rows)
-    add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date','')) for r in state['ib']])
+    add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date_text') or r.get('date','')) for r in state['ib']])
     add('udleveringer',['udlaans_id','kort_id','kortnummer','forkynder_id','forkynder','udleveret','aktuel_gennemgang_fra','afleveret'],[(r['id'],r['card_id'],ref(r['card_id']),r['publisher_id'],people.get(r['publisher_id'],''),r['assigned'],r.get('cycle_start',''),r.get('returned','')) for r in state['loans']])
     add('gennemgange',['id','kort_id','kortnummer','dato','forrige_gennemgang','udlaans_id','besoeg','besoeg_ukendt','kilde'],[(r['id'],r['card_id'],ref(r['card_id']),r['date'],r.get('previous_completed',''),r.get('loan_id',''),'' if r.get('visits_unknown') else r.get('visits',''),bool(r.get('visits_unknown')),r.get('source','')) for r in state['completions']])
     add('forkyndere',['id','navn','tjenestegruppe','gruppefunktion','pioner'],[(r['id'],r['name'],r.get('group',''),r.get('group_role',''),bool(r.get('pioneer'))) for r in state['publishers']])
@@ -194,7 +194,7 @@ class ReadableExport:
             if len(job['images'])!=len(job['cards']):raise ValueError('Ikke alle digitale kort er dannet. Ingen eksportpakke er hentet.')
             state=job['state'];files=tables(state,job['geo']);cards=state['cards']+state.get('archived_cards',[]);refs={c['id']:c['number'] for c in cards}
             files['PDF/01-alle-forsider.pdf']=fronts_pdf(state)
-            files['PDF/02-alle-IB-bagsider.pdf']=text_pdf('IB-bagsider',[(str(c['number']),[str(r.get('road',''))+' '+str(r.get('number',''))+' · '+str(r.get('date','')) for r in state['ib'] if r['card_id']==c['id']]) for c in cards])
+            files['PDF/02-alle-IB-bagsider.pdf']=text_pdf('IB-bagsider',[(str(c['number']),[str(r.get('road',''))+' '+str(r.get('number',''))+' · '+str(r.get('date_text') or r.get('date','')) for r in state['ib'] if r['card_id']==c['id']]) for c in cards])
             files['PDF/03-alle-digitale-kort.pdf']=image_pdf([job['images'][c['card']['id']] for c in job['cards']]) if job['cards'] else text_pdf('Digitale kort',[])
             files['PDF/04-alle-opgaver.pdf']=text_pdf('Alle opgaver',[(('Kort '+refs.get(r.get('card_id'),'')+' · ' if r.get('card_id') else '')+('Udført' if r.get('resolved') else 'Åben'),[r.get('text',''),'Oprettet: '+str(r.get('created','')),'Gentagelse: '+json.dumps(r.get('recurrence'),ensure_ascii=False),'Historik: '+json.dumps(r.get('task_history',[]),ensure_ascii=False)]) for r in state['notes']])
             days=[state['today']]

@@ -7,7 +7,7 @@ W117 · frigivet i verificeret beta.79 · [udgivelsesbevis](planning/BETA-79-VER
 ## Udfyld filen
 
 - Brug én linje pr. adresse eller lejlighed og kolonnerne `kortnummer`, `vejnavn`, `husnummer`, `postnummer`, `etage`, `dør`, `dato`.
-- Vejnavn og husnummer skal kunne læses. De øvrige kolonner kan mangle; det vises i gennemgangen. Brug separate felter til etage og dør. Dato skrives som ÅÅÅÅ-MM-DD. Hvis den mangler, bruges dit datovalg i appen.
+- Vejnavn og husnummer skal kunne læses. De øvrige kolonner kan mangle; det vises i gennemgangen. Brug separate felter til etage og dør. Skriv en præcis dato som ÅÅÅÅ-MM-DD. Hvis kun måned, år eller en anden formulering kendes, skriv teksten i datokolonnen; LTM viser den uændret på IB-bagsiden uden at gætte en dag. Hvis feltet mangler, bruges dit datovalg i appen.
 - Skabelonens kolonner er tekstfelter, så indtastede foranstillede nuller bevares. Hvis et andet regneark allerede har ændret et nummer eller en dato, kan LTM ikke genskabe det oprindelige indhold.
 - Et postnummer skal være fire cifre eller tomt. Et manglende postnummer bliver ikke gættet. Manglen vises før og efter import.
 - Angiv kortnummer, hvis linjen skal skrives manuelt eller ikke matcher entydigt. Du kan også vælge et standardkort i appen; det gælder kun filens linjer uden eget kortnummer. Et ukendt kortnummer opretter ikke et nyt kort og erstattes ikke med standardkortet.
@@ -16,7 +16,7 @@ LTM knytter kun linjen til en geografisk adresse ved et entydigt lokalt match p�
 
 ## Gennemgå før import
 
-Vælg filen, og læs hver linje. Gennemgangen viser nye poster, dubletter, fejl og advarsler. Ekstra, ukendte kolonner vises som **importeres ikke**; originalfilen ændres ikke. Filer med fejl skal rettes. Ved nye manuelle eller ufuldstændige linjer skal du bekræfte, at du har gennemgået advarslerne, og derefter skrive **IMPORTÉR IB**.
+Vælg filen, og læs hver linje. Gennemgangen viser nye poster, dubletter, fejl og advarsler. Fri datotekst markeres til særskilt kontrol før import. Ekstra, ukendte kolonner vises som **importeres ikke**; originalfilen ændres ikke. Filer med fejl skal rettes. Ved nye manuelle eller ufuldstændige linjer skal du bekræfte, at du har gennemgået advarslerne, og derefter skrive **IMPORTÉR IB**.
 
 Dubletter i filen og eksisterende IB springes over. Eksisterende datoer og oplysninger overskrives ikke. Godkendelsen er knyttet til den gennemgåede fil og det aktuelle kort-/adresse-/IB-grundlag. Hvis dette ændres, skal importen gennemgås igen. Det er en konkret importgodkendelse; almindelige uafhængige rettelser fra flere brugere kan fortsat gemmes samtidig.
 
