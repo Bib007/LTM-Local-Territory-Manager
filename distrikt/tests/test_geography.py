@@ -51,6 +51,20 @@ class GeometryTests(unittest.TestCase):
     def test_owner_disjoint_intervals(self):
         self.assertEqual(format_numbers(['20','22','24','28','30']),'20–24 & 28–30 (lige)')
         self.assertEqual(format_numbers(['36A','36B','36C','36E']),'36A–36C & 36E (lige)')
+    def test_front_summary_ignores_internal_letters_but_splits_missing_bases(self):
+        from geography import front_summaries
+        numbers=['4A','4C','26A','26D']+[str(n) for n in range(2,53,2) if n not in (4,22,26,48)]
+        units=[address(str(i),n) for i,n in enumerate(numbers)]
+        units += [dict(address('odd'+str(i),n),road='Fictional Lane') for i,n in enumerate(['3','7','9A','9B'])]
+        c={'geo_addresses':units};front_summaries([c])
+        self.assertEqual([r['numbers'] for r in c['front_addresses']],['2–20 & 24–46 & 50–52 (lige)','3 & 7–9B (ulige)'])
+        self.assertEqual(sum(r['count'] for r in c['front_addresses']),len(units))
+        self.assertEqual(c['geo_addresses'],units)
+        # Explicitly selected 22 joins the runs; letter variants never create a gap.
+        c['geo_addresses']=units+[address('extra22','22')];front_summaries([c])
+        self.assertEqual(c['front_addresses'][0]['numbers'],'2–46 & 50–52 (lige)')
+        old={'geo_addresses':[{'id':'legacy'}],'addresses':[{'road':'Old road','numbers':'1-9'}]}
+        front_summaries([old]);self.assertNotIn('front_addresses',old)
     def test_utm_and_outline(self):
         lng,lat=utm32_to_wgs84(500000,6094791.420874)
         self.assertAlmostEqual(lng,9,places=6);self.assertAlmostEqual(lat,55,places=6)

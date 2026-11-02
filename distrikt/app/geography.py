@@ -163,3 +163,30 @@ def decode_dar(items):
             'postcode':(h.get('postnummer') or {}).get('postnr',''),'floor':floor,'door':door,'label':a.get('adressebetegnelse',''),
             'lng':point[0],'lat':point[1],'count':1,'type':'Lejlighed' if floor or door else 'Hus','verified':True})
     return output
+
+
+def front_summaries(cards):
+    """Numeric display intervals; missing base numbers split, internal letters do not."""
+    for card in cards:
+        members=card.get('geo_addresses') or []
+        if not members:continue
+        # Incomplete legacy snapshots retain their existing street text.
+        try:
+            groups=defaultdict(list)
+            for a in members:groups[(a['road'],a.get('postcode',''),number_key(a['number'])[0]%2)].append(a)
+        except (KeyError,ValueError,TypeError):continue
+        rows=[]
+        for (road,post,parity),units in sorted(groups.items(),key=lambda item:(item[0][0].casefold(),item[0][1],item[0][2])):
+            houses=defaultdict(list)
+            for a in units:houses[number_key(a['number'])[0]].append(a['number'])
+            selected=sorted(houses);intervals=[];start=end=selected[0]
+            def label(first,last):
+                tail=max(houses[last],key=number_key)
+                return str(first) if first==last else str(first)+'–'+tail
+            for n in selected[1:]:
+                if n!=end+2:
+                    intervals.append(label(start,end));start=n
+                end=n
+            intervals.append(label(start,end))
+            rows.append({'road':road,'numbers':' & '.join(intervals)+f" ({'ulige' if parity else 'lige'})",'count':sum(a.get('count',1) for a in units),'type':'Hus'})
+        card['front_addresses']=rows

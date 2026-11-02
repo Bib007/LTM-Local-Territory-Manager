@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.8 · 2026-11-02
+
+- Show numeric street envelopes on physical fronts: internal letter variants no longer split a range. A missing numeric base creates a break, whether absent from the source or outside the card. Keep the final boundary suffix, e.g. 3–9B, and retain separate even/odd lines.
+- Compute display summaries from saved membership, including after a cold reload. Exact selected units, visits, manual street text, public-map privacy and original forms are unchanged.
+
 ## 1.12.7 · 2026-11-02
 
 - Restore compact, exact street intervals with `&` at gaps and separate even/odd lines per road. Consecutive lettered houses also form intervals. Physical fronts combine address types without changing visits or stored address membership.

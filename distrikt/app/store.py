@@ -168,6 +168,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def state(self):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
+            from geography import front_summaries
+            front_summaries(result['cards'])
             result['settings'] = self.get('settings', 'config')
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
