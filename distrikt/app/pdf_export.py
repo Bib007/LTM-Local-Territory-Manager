@@ -42,7 +42,7 @@ def text(x,y,value,size=8,maxchars=None):
 def fmt(day):
     return date.fromisoformat(day).strftime('%d.%m.%y') if day else ''
 
-def allocation_rows(state, year):
+def allocation_rows(state, year, language='da'):
     start='%s-09-01' % (year-1); end='%s-08-31' % year
     names={p['id']:p['name'] for p in state['publishers']}
     rows=[]
@@ -70,15 +70,16 @@ def allocation_rows(state, year):
         if card.get('last_completed') and card['last_completed']<start: dates.append(card['last_completed'])
         prev=max(dates,default=None)
         for i in range(max(1,math.ceil(len(assignments)/4))):
-            rows.append({'number':card['number']+(' forts.' if i else ''),'previous':prev,'allocations':assignments[i*4:i*4+4]})
+            rows.append({'number':card['number']+((' cont.' if language=='en' else ' forts.') if i else ''),'previous':prev,'allocations':assignments[i*4:i*4+4]})
     return rows
 
-def s13_pdf(state,year):
+def s13_pdf(state,year,language='da'):
+    if language not in ('da','en'):raise ValueError('Vælg dansk eller engelsk formular.')
     """Flatten values over the supplied original S-13 image, with safe A4 margins."""
     folder=Path(__file__).resolve().parents[1]/'templates'
-    template=json.loads((folder/'S-13-fields.json').read_text())
+    template=json.loads((folder/('S-13-E-fields.json' if language=='en' else 'S-13-fields.json')).read_text())
     width=template['width'];height=template['height'];fields=template['fields']
-    rows=allocation_rows(state,year);chunks=[rows[i:i+20] for i in range(0,len(rows),20)] or [[]]
+    rows=allocation_rows(state,year,language);chunks=[rows[i:i+20] for i in range(0,len(rows),20)] or [[]]
     pages=[]
     for chunk in chunks:
         values={'service_year':f'{year-1}/{year}','territory_type':'Hus til hus'}
@@ -88,9 +89,10 @@ def s13_pdf(state,year):
             for j,item in enumerate(row['allocations'],1):
                 for key in ('person','assigned','completed'):
                     values[prefix+f'assignment_{j}.'+key]=item[key] if key=='person' else fmt(item[key])
-        commands=['q .88 0 0 .88 %.3f %.3f cm'%(width*.06,height*.06),'q %.3f 0 0 800.986 0 20.452 cm /Im1 Do Q'%width,'0 g']
+        commands=['q .88 0 0 .88 %.3f %.3f cm'%(width*.06,height*.06),'q %.3f 0 0 %.3f 0 %.3f cm /Im1 Do Q'%(width,template.get('background_height',800.986),template.get('background_y',20.452)),'0 g']
         for name,value in values.items():
+            if name not in fields:continue
             x,y,right,bottom=fields[name];size=9 if name in ('service_year','territory_type') else 7
             commands.append(text(x+1,height-y-min(bottom-y-2,10),value,size,maxchars=max(1,int((right-x-2)/(size*.8)))))
         commands.append('Q');pages.append(commands)
-    return pdf_document(pages,width,height,image=((folder/'S-13-background.jpg').read_bytes(),926,1246))
+    return pdf_document(pages,width,height,image=((folder/('S-13-E-background.jpg' if language=='en' else 'S-13-background.jpg')).read_bytes(),template.get('image_width',926),template.get('image_height',1246)))

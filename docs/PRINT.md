@@ -28,3 +28,7 @@ Rapporten bruger A4 med 15 mm margener; brede kortudsnit kan bruge liggende side
 Dobbeltklik starter ikke en ekstra forberedelse. Ændres side, kortgrundlag eller tjenesteår under forberedelsen, stoppes den gamle opgave. Nyere dialoger bevares. Ved fejl i profilgemning kontrolleres gemmestatus og eventuelt **Opdater** før et nyt forsøg.
 
 Fysisk printerkalibrering er et ejertrin; automatiske prøver bruger opdigtede data. Se [slutkontrollen](SLUTKONTROL.md).
+
+## Formularsprog
+
+Vælg engelsk eller dansk originalformular i kortets printvalg. Valget kan gemmes pr. side; ellers bruges brugerfladens sprog. S-13-originalen i browser/PDF følger brugerfladens sprog. De uændrede engelske originaler kan hentes fra printvalgene. Danske originaler og gemte navne/datoformuleringer bevares.

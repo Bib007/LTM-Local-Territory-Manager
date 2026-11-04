@@ -34,7 +34,7 @@ from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.8'  # Includes lossless parity-separated geographic street labels.
+VERSION='1.12.9'  # Includes lossless parity-separated geographic street labels.
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):
@@ -161,6 +161,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path=='/s12-template-en.png':return self.send((APP.parent/'templates'/'S-12-E-source.png').read_bytes(),'image/png')
+            if path=='/s13-background-en.jpg':return self.send((APP.parent/'templates'/'S-13-E-background.jpg').read_bytes(),'image/jpeg')
+            if path in ('/forms/S-12-en.pdf','/forms/S-13-en.pdf'):return self.send((APP.parent/'templates'/('S-12-E.pdf' if 'S-12' in path else 'S-13-E.pdf')).read_bytes(),'application/pdf')
             if path=='/s12-template.png':return self.send((APP.parent/'templates'/'S-12-source.png').read_bytes(),'image/png')
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
@@ -197,7 +200,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path=='/api/export/s13':
                 year=int(q.get('year',['0'])[0])
                 if not 2000<=year<=2200:raise ValueError('Ugyldigt tjenesteår.')
-                return self.send(s13_pdf(self.server.store.state(),year),'application/pdf')
+                return self.send(s13_pdf(self.server.store.state(),year,q.get('language',['da'])[0]),'application/pdf')
             if path=='/api/export/backup':return self.send(snapshot(self.server.store,VERSION),'application/zip',headers={'Content-Disposition':'attachment; filename="Distrikt-sikkerhedskopi.zip"'})
             if path=='/api/address-source/status':return self.send(self.server.address_source.status())
             if path=='/api/connections/drive':
