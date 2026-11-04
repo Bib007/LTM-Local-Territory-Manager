@@ -646,10 +646,26 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 self.put('cards', c)
             if module == 'completions':
                 c = self.require('cards', item['card_id'])
-                if c.get('last_completed') == item['date']:
-                    remaining = [e['date'] for e in self.all('completions') if e['card_id'] == c['id']]
-                    if item.get('previous_completed'): remaining.append(item['previous_completed'])
-                    c['last_completed'] = max(remaining, default=None)
+                remaining = [e for e in self.all('completions') if e['card_id'] == c['id']]
+                day = item['date']
+                if not any(e['date'] == day for e in remaining):
+                    # Reports also read previous_completed as evidence of older history.
+                    # Remove references to the erroneous date, including in recoverable records.
+                    previous = item.get('previous_completed')
+                    if previous and previous >= day:
+                        previous = None
+                    for e in remaining + self.all('completions', deleted=True):
+                        if e['id'] != item['id'] and e['card_id'] == c['id'] and e.get('previous_completed') == day:
+                            clean = self.get('completions', e['id'], deleted=True)
+                            clean['previous_completed'] = previous
+                            self.put('completions', clean)
+                            e['previous_completed'] = previous
+                if c.get('last_completed') == day:
+                    dates = [e['date'] for e in remaining]
+                    dates.extend(e['previous_completed'] for e in remaining if e.get('previous_completed'))
+                    if item.get('previous_completed') and item['previous_completed'] < day:
+                        dates.append(item['previous_completed'])
+                    c['last_completed'] = max(dates, default=None)
                     self.put('cards', c)
             return {'batch': batch}
         if action == 'recovery.purge':

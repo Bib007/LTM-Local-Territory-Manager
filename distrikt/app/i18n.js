@@ -1964,6 +1964,8 @@ const I18n={
   "Alle registrerede gennemgange":"All recorded completions",
   "tilknyttet udlevering":"linked to an assignment",
   "kendt gennemgang":"known completion",
+  "gennemgangen":"completion",
+  "Slet gennemgang":"Delete completion",
   "Ret fejlregistrering":"Correct an erroneous record",
   "Ingen gennemgange registreret.":"No completions recorded.",
   "Vis 100 flere kort":"Show 100 more cards",
