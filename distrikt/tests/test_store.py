@@ -31,6 +31,33 @@ class StorageTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.issue(c,True)
         self.s.mutate('loan.finish',{'id':l,'date':date.today().isoformat(),'complete':True,'retain':False})
         self.assertFalse(self.s.get('cards',c)['in_folder']);self.assertEqual(len(self.s.all('completions')),1)
+    def test_deleting_completions_preserves_loan_and_cannot_revive_deleted_date(self):
+        card = self.make_card()
+        first, second, issued, finished = [
+            (date.today() - timedelta(days=offset)).isoformat()
+            for offset in (8, 6, 4, 2)
+        ]
+        for day in (first, second):
+            self.s.mutate('completion.record', {'card_id': card, 'date': day})
+        loan = self.s.mutate('loan.issue', {'card_id': card, 'publisher_id': self.publisher,
+                                           'date': issued, 'initial': True})['id']
+        self.s.mutate('loan.finish', {'id': loan, 'date': finished, 'complete': True, 'retain': True})
+        original_loan = self.s.get('loans', loan)
+        events = {e['date']: e['id'] for e in self.s.all('completions')}
+
+        self.s.mutate('delete', {'module': 'completions', 'id': events[second]})
+        self.assertEqual(self.s.get('cards', card)['last_completed'], finished)
+        self.assertEqual(self.s.get('completions', events[finished])['previous_completed'], first)
+        result = self.s.mutate('delete', {'module': 'completions', 'id': events[finished]})
+        self.assertEqual(self.s.get('cards', card)['last_completed'], first)
+        self.assertEqual([e['date'] for e in self.s.state()['completions']], [first])
+        self.assertEqual(self.s.active_loan(card), original_loan)
+
+        self.s.mutate('restore', {'batch': result['batch']})
+        self.assertEqual(self.s.get('cards', card)['last_completed'], finished)
+        self.assertEqual(self.s.get('completions', events[finished])['previous_completed'], first)
+        self.assertEqual(self.s.active_loan(card), original_loan)
+
     def test_retained_card_starts_new_cycle(self):
         c=self.make_card();l=self.issue(c,True)
         self.s.mutate('loan.finish',{'id':l,'date':date.today().isoformat(),'complete':True,'retain':True})

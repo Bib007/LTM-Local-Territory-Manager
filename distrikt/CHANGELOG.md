@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.10 · 2026-11-04
+
+- Review the exact card, date and assignment before deleting an erroneous completion. An active assignment remains in place, the card's latest completion is recalculated, and later history no longer reintroduces the deleted date.
+- Show only the selected report period on screen for calendar year, service year or the last 12 months. Each period has matching totals, chart and map; calendar-year selection appears only for its own view.
+
 ## 1.12.9 · 2026-11-04
 
 - Assign a card directly from the storage box, move selected cards between the box and folder beside the list, and see where each is kept.

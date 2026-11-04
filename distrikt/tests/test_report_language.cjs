@@ -45,6 +45,14 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   const service=counts(run("Workspace.reportChart('2026-09-01','2027-08-31')"));assert.equal(service.length,12);assert.equal(service.reduce((a,b)=>a+b,0),3);assert.equal(service[0],2);assert.equal(service[1],1);
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
   const rolling=run("Workspace.periodBounds('rolling')");assert.equal(rolling[0],'2025-10-16');assert.equal(rolling[1],'2026-10-16');const monthly=counts(run('Workspace.reportChart(...Workspace.periodBounds("rolling"))'));assert.equal(monthly.length,13);assert.equal(monthly.reduce((a,b)=>a+b,0),4);
+  for(const [tab,mode] of [['Kalender','calendar'],['Rapport','service'],['Rullende','rolling']]){
+   run(`reportTab='${tab}'`);
+   const screen=run('Workspace.reports()');
+   assert.equal(run('Workspace.reportPeriod'),mode);
+   assert.equal((screen.match(/class="metrics"/g)||[]).length,1);
+   assert.doesNotMatch(screen,/class="reportComparison"/);
+   assert.equal(screen.includes('id="calendarYear"'),mode==='calendar');
+  }
   run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg|Kort til opfølgning|AKTUEL OPFØLGNING/);assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg|IB-registreringer/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);contracts[language]=[formContract(visits)];
   run("editVisit('v')");assert.equal(get('dialog').lang,language);assert.match(get('dialog').innerHTML,/value="KTM-besøg &lt;invented&gt; &amp; Kort"/);contracts[language].push(formContract(get('dialog').innerHTML));
