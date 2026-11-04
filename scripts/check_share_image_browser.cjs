@@ -38,6 +38,7 @@ module.exports=async(browser,out)=>{
     throw Error('Unexpected API request '+u.pathname);
    }
    if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
+   if(u.pathname==='/s12-template-en.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-E-source.png')});
    const file=path.resolve(root,u.pathname==='/'?'index.html':'.'+u.pathname);
    assert.ok(file.startsWith(root+path.sep)&&fs.existsSync(file),'Unexpected asset '+u.pathname);return route.fulfill({path:file});
   });
