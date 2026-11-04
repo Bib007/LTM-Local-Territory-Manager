@@ -364,7 +364,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                     publisher = self.require('publishers', ident)
             day = valid_day(data.get('date'))
             initial = bool(data.get('initial', False))
-            if not initial and not c['in_folder']:
+            if not initial and not c['in_folder'] and data.get('from_box') is not True:
                 raise ValueError('Læg kortet i mappen først, eller vælg registrering af et eksisterende udlån.')
             item = {'id': new_id(), 'card_id': c['id'], 'publisher_id': publisher['id'],
                 'assigned': day, 'cycle_start': day, 'returned': None, 'initial': initial}
@@ -521,7 +521,10 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Kontrollér retning, papir og tryk.')
             if (profile['orientation'] == 'portrait') != (profile['height'] >= profile['width']):
                 raise ValueError('Retning og kortmål stemmer ikke overens.')
+            form_language=profile.get('form_language')
+            if form_language is not None and form_language not in ('da','en'):raise ValueError('Vælg dansk eller engelsk formular.')
             profile = {key: profile[key] for key in ('orientation', 'paper', 'mode', 'width', 'height', 'x', 'y')}
+            if form_language is not None:profile['form_language']=form_language
             config = dict(self.require('settings', 'config'))
             profiles = dict(config.get('print_profiles') or {})
             profiles[side] = profile

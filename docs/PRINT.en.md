@@ -28,3 +28,7 @@ Reports use A4 with 15 mm margins; wide map views may use landscape pages. Langu
 Duplicate clicks do not start a second preparation. Navigation, changed data or a changed service year cancel stale preparation and preserve newer dialogs. If profile saving fails, check save status and use **Refresh** when requested before retrying.
 
 Physical printer calibration remains an owner check. Automated tests use invented data. See [final verification](SLUTKONTROL.en.md).
+
+## Original form language
+
+Card print options include English or Danish original forms. The saved choice belongs to that print side; otherwise the interface language is used. S-13 browser/PDF originals follow the interface language. Download the unmodified English originals through the print options. Existing Danish forms and stored names/date wording remain available.

@@ -3,6 +3,10 @@
 const I18n={
  current:'en',
  english:{
+  "Dansk":"Danish",
+  "Originale engelske formularer":"Original English forms",
+  "Formularsprog":"Form language",
+  "Vælg dansk eller engelsk formular.":"Choose a Danish or English form.",
   "Vælg manuelle IB-linjer eller match med kortets gemte adresser.":"Choose manual do-not-call lines or matching with the card’s stored addresses.",
   "Importér IB-bagsiden som manuelle vejlinjer uden DAR. Præcise datoer, måned/år og år alene kan bruges. Filen behandles lokalt.":"Import the do-not-call back as manual street lines without DAR. Exact dates, month/year and year alone are supported. The file is processed locally.",
   "Importér først forsiden som kort med vejlinjer og derefter bagsiden som IB med samme kortnummer. Begge sider kan printes uden DAR. En manuel IB kan senere knyttes til en adresse via Rediger IB.":"First import the front as cards with street lines, then the do-not-call back using the same card number. Both sides can be printed without DAR. Link a manual entry to an address later through Edit do-not-call entry.",
@@ -2261,6 +2265,12 @@ const I18n={
   "Udleveret":"Assigned",
   "Ingen udleverede kort fundet.":"No assigned cards found.",
   "Kort i mappen":"Cards in the carry folder",
+  "Kassen er derhjemme. Mappen er med i rigssalen.":"The storage box is at home. The folder is kept at the Kingdom Hall.",
+  "Udlever fra kassen":"Assign from the storage box",
+  "Hent kortet i kassen derhjemme, før du giver det videre.":"Get the card from the storage box at home before handing it out.",
+  "Brug afkrydsningen, hvis kortet allerede var udleveret.":"Check the box if the card was already assigned.",
+  "Læg {count} i mappen":"Move {count} to the folder",
+  "Flyt {count} til kassen":"Move {count} to the storage box",
   "Kort i kassen":"Cards in the storage box",
   "Begynd med dine kortnumre":"Start with your card numbers",
   "Et kortnummer er nok. Vejlisten og korttegningen kan du tilføje senere på samme kort.":"A card number is enough. Add roads and a map to the same card later.",

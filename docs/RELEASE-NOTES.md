@@ -1,7 +1,9 @@
-# LTM 1.12.8 · Clear numeric street summaries
+# LTM 1.12.9 · Card assignment and original English forms
 
-Physical card fronts now show numeric street envelopes, with separate even and odd sides. Internal A/B/C/D variants do not fragment the interval. A missing numeric base creates a break: for example 2–46 & 50–52 when 48 is not selected. Missing 22 also splits the lower run into 2–20 & 24–46. Keep the final suffix at a boundary such as 3–9B; 8A, 8C and 10 display as 8–10.
+Assign cards directly from the storage box or move selected cards between the box and folder beside the territory list. The app explains where both are kept.
 
-These labels summarize a card. They never expand its actual membership or visit count. Exact address units, IB, manual lines and original forms are preserved. The bounded front layout from 1.12.7 remains.
+Use the supplied original English territory map card and territory assignment record, alongside the existing Danish forms. In card print options, choose the form language; the choice is saved per side when requested. Existing profiles retain their data, and a missing language setting follows the interface language. English card fronts and do-not-call backs use English generated headings; stored names and date wording are preserved.
 
-Update normally to 1.12.8 in Home Assistant, preserving the existing installation and data. Download private LTM and account backups first. Do not uninstall or delete data.
+S-13 browser and PDF output use a separately mapped English original when the interface is English. The Danish PDF output remains compatible. Original English PDFs are also available to download from the print options and the public website. Both supplied source PDFs remain byte-identical to the owner-provided files.
+
+The numeric intervals and bounded card-front layout from 1.12.8 remain. Update normally in Home Assistant, preserving the installation and data. Keep private data/account backups. Do not uninstall or remove data.

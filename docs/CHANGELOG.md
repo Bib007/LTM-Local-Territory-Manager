@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.9 · 2026-11-04
+
+- Assign a card directly from the storage box, move selected cards between the box and folder beside the list, and see where each is kept.
+- Add the supplied original English S-12 and S-13 PDFs without modifying them. English/Danish form selection is available for card printing and remembered per print side; report originals follow the interface language.
+- Use a separate English S-13 field map/background for browser and PDF output. Danish S-13 PDF output remains byte-identical to 1.12.8 for the compatibility fixture. Dates, names, exact address membership and visit counts remain intact.
+- Include original English downloads in the app and website. Preserve Danish forms and separate stable/beta data.
+
 ## 1.12.8 · 2026-11-02
 
 - Show numeric street envelopes on physical fronts: internal letter variants no longer split a range. A missing numeric base creates a break, whether absent from the source or outside the card. Keep the final boundary suffix, e.g. 3–9B, and retain separate even/odd lines.

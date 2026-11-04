@@ -17,7 +17,9 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
    if(u.pathname==='/api/state')return json(storedState);if(u.pathname==='/api/geo'){if(failNextGeo){failNextGeo=false;return route.abort('connectionreset');}return json(storedGeo);}if(u.pathname==='/api/map')return json({image:''});if(u.pathname==='/api/geo/job')return json({status:'idle'});if(u.pathname==='/api/ping')return json({ok:true});
    if(u.pathname==='/api/geo/suggest')return json({suggestions:[]});
    if(u.pathname==='/s13-background.jpg')return route.fulfill({path:path.resolve(root,'../templates/S-13-background.jpg')});
+   if(u.pathname==='/s13-background-en.jpg')return route.fulfill({path:path.resolve(root,'../templates/S-13-E-background.jpg')});
    if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
+   if(u.pathname==='/s12-template-en.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-E-source.png')});
    if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:true,account:'Account <fictional>',cards:[{card_id:'c1',number:'101',status:'ready',file_id:'FICTIONAL_FILE',front_url:'https://example.invalid/FICTIONAL',url:'https://example.invalid/FICTIONAL'}]});
    if(u.pathname==='/api/share/prepare')return json({card:state.cards[0],members:geo.addresses,fingerprint:'FICTIONAL_HASH',render_revision:2});
    if(u.pathname==='/api/share/publish'){const data=route.request().postDataJSON();assert.deepEqual(Object.keys(data).sort(),['card_id','fingerprint','png','render_revision']);assert.match(data.png,/^data:image\/png;base64,/);writes.push({action:'FAKE_SHARE_PUBLISH',data});return json({});}

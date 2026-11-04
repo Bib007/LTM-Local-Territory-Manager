@@ -65,3 +65,7 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .comparisonCurrent{background:#7cb8e4}.comparisonPrevious{background:#e1ab71}
 .monthlyComparison .trendPeriod{white-space:normal;overflow-wrap:anywhere}
 .monthlyComparison td small{display:block;font-size:.72rem;white-space:nowrap;margin-top:3px}
+
+.cardPreview[data-form-language=en] .title{left:16.5%;top:17%}.cardPreview[data-form-language=en] .number{left:76.8%;top:17%}.cardPreview[data-form-language=en] .streets{top:25%}
+
+.cardSelection{position:sticky;top:0;z-index:4;background:var(--surface);padding-block:8px}
