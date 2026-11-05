@@ -165,6 +165,11 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def active_loan(self, card_id):
         return next((l for l in self.all('loans') if l['card_id'] == card_id and not l.get('returned')), None)
 
+    def overlapping_loans(self, loan):
+        from history_loans import overlaps
+        return {l['id'] for l in self.all('loans')
+                if l['id'] != loan['id'] and l['card_id'] == loan['card_id'] and overlaps(loan, l)}
+
     def state(self):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
@@ -205,8 +210,14 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 continue
             for item in self.all(m, deleted=True):
                 if item['_deleted_at'] > cutoff:
+                    label = item.get('number') or item.get('name') or item.get('date') or item.get('road') or m
+                    if m == 'loans':
+                        card = self.get('cards', item['card_id'], deleted=True) or {}
+                        publisher = self.get('publishers', item.get('publisher_id')) or {}
+                        dates = item['assigned'] + (' → ' + item['returned'] if item.get('returned') else '')
+                        label = ' · '.join(filter(None, (card.get('number'), publisher.get('name'), dates)))
                     rows.append({'batch': item['_batch'], 'at': item['_deleted_at'],
-                        'label': 'Adresser uden for samlet grænse' if m=='geo' else item.get('number') or item.get('name') or item.get('date') or item.get('road') or m})
+                        'label': 'Adresser uden for samlet grænse' if m=='geo' else label})
         groups = {}
         for row in rows:
             if row['batch'] not in groups:
@@ -630,9 +641,22 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             module = data.get('module')
             if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes'):
                 raise ValueError('Denne post kan ikke slettes her.')
+            if module == 'loans' and data.get('history_revision') != self.revision:
+                raise ValueError('Historikken er ændret. Opdater og vælg udleveringen igen.')
             item = self.require(module, data['id'])
-            if module == 'loans' and not item.get('returned'):
-                raise ValueError('Aflever kortet før udlånshistorikken slettes.')
+            if module == 'loans':
+                if not item.get('returned'):
+                    c = self.require('cards', item['card_id'])
+                    if c.get('archived'):
+                        raise ValueError('Kortet er arkiveret efter sammenlægning.')
+                    location = data.get('location')
+                    if location not in ('folder', 'box'):
+                        raise ValueError('Vælg, hvor det fysiske kort ligger.')
+                    c['in_folder'] = location == 'folder'
+                    self.put('cards', c)
+                # Legacy histories can already overlap. Recovery only rejects new conflicts.
+                item['delete_overlaps'] = sorted(self.overlapping_loans(item))
+                self.put('loans', item)
             batch, stamp = new_id(), now()
             self.mark_deleted(module, item['id'], batch, stamp)
             if module == 'cards':
@@ -701,8 +725,21 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         raise ValueError('Adressen er nu på et distriktskort. Fjern den fra kortet før gendannelse af Se bort fra.')
                 if module in ('ib', 'loans', 'completions') and not self.get('cards', item['card_id']) and not any(m == 'cards' and i['id'] == item['card_id'] for m, i in entries):
                     raise ValueError('Gendan kortet først.')
-                if module == 'loans' and not item.get('returned') and self.active_loan(item['card_id']):
-                    raise ValueError('Kortet har allerede et nyt aktivt udlån.')
+                if module == 'loans' and not item.get('returned'):
+                    c = self.require('cards', item['card_id'])
+                    if c.get('archived'):
+                        raise ValueError('Kortet er arkiveret efter sammenlægning.')
+                    if self.active_loan(c['id']):
+                        raise ValueError('Kortet har allerede et nyt aktivt udlån.')
+                    if c.get('in_folder'):
+                        c['in_folder'] = False
+                        self.put('cards', c)
+                if module == 'loans' and 'delete_overlaps' in item:
+                    if self.overlapping_loans(item).difference(item['delete_overlaps']):
+                        raise ValueError('Udleveringen overlapper en anden udlevering og kan ikke gendannes.')
+                    clean = self.get('loans', item['id'], deleted=True)
+                    clean.pop('delete_overlaps')
+                    self.put('loans', clean)
                 self._dirty_modules.add(module)
                 self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=NULL,batch=NULL WHERE id=?', (item['id'],))
                 if module == 'settings' and item.get('restore_cards'):

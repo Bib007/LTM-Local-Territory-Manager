@@ -165,8 +165,13 @@ class S13LoanImportTests(unittest.TestCase):
         with self.s.transaction():self.s.put('cards',{**self.s.require('cards',self.card),'archived':True})
         self.assertEqual(self.preview([['001','','Fiktiv A',self.ago(80),'']])['errors'],1)
         with self.s.transaction():self.s.put('cards',{**self.s.require('cards',self.card),'archived':False})
-        self.apply(self.preview([['001','','Fiktiv A',self.ago(80),self.ago(30)]]));loan=self.s.all('loans')[0];self.s.mutate('delete',{'module':'loans','id':loan['id']})
-        self.assertEqual(self.preview([['001','','Fiktiv A',self.ago(80),self.ago(30)]])['errors'],1)
+        row=['001','','Fiktiv A',self.ago(80),self.ago(30)]
+        self.apply(self.preview([row]));loan=self.s.all('loans')[0]
+        result=self.s.mutate('delete',{'module':'loans','id':loan['id'],'history_revision':self.s.revision})
+        self.assertEqual(self.preview([row])['errors'],1)
+        self.s.mutate('recovery.purge',result)
+        self.assertEqual(self.preview([row])['errors'],1)
+        self.assertEqual(self.s.all('completions')[0]['loan_id'],loan['id'])
     def test_mid_batch_failure_rolls_back_new_names_loans_events_and_card_location(self):
         other=self.card2();p=self.preview([['001','','Fiktiv A',self.ago(80),self.ago(30)],['002','','Fiktiv B',self.ago(20),'']]);before=digest(self.s);original=self.s.put;calls=[]
         def fail(module,item):

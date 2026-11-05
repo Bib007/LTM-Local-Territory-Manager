@@ -1,5 +1,5 @@
 name: Distrikt
-version: "1.12.12"
+version: "1.12.13"
 slug: distrikt
 init: false
 description: "Lokalt overblik over distriktskort, udleveringer, gennemgange og print"
