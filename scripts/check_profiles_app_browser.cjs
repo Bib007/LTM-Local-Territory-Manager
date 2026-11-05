@@ -115,7 +115,9 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await editor.waitForFunction(()=>!WriteGuard.uncertain);
   assert.equal(await editor.evaluate(()=>state.notes.filter(n=>n.text==='Fiktiv afbrudt kvittering').length),1);
   assert.equal(await editor.evaluate(()=>state.notes.some(n=>n.text==='Må ikke sendes igen')),false);
-  if(await editor.locator('[data-personal-guide=later]').isVisible())await editor.locator('[data-personal-guide=later]').click();
+  await editor.waitForFunction(()=>PersonalGuide.data!==null);
+  const postponeGuide=editor.locator('[data-personal-guide=later]');
+  if(await postponeGuide.count()){await postponeGuide.click();await editor.waitForFunction(()=>!document.querySelector('#personalGuideTour'));}
   await editor.locator('.mobileMenu').click();await editor.locator('[data-action=logout]').click();await editor.locator('#loginName').waitFor();
   await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=connections]').click();
   await admin.locator('#driveConnection').waitFor();assert.equal(await admin.locator('[data-profile=activate]').count(),0);assert.equal(await admin.locator('#profileUser').isVisible(),false);
