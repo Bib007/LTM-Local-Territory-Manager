@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.11 · 2026-11-05
+
+- Keep visit markers at every saved map coordinate, including the focused map view, so distinct locations do not collapse into one red dot.
+- Continue very long do-not-call backs onto clearly labelled extra print pages, with a compact readable layout. Find do-not-call entries by date or address and print a combined overview without inventing an exact date from month/year or year-only wording.
+- Offer a reviewed local address suggestion for a manual do-not-call line. Nothing is linked automatically; the record ID and recorded date remain intact, and the line can stay manual.
+- Keep connections separate from data and account backups. A connections administrator can create a browser-encrypted Google Drive/Datafordeler/Adressevælger backup with a personal passphrase, then explicitly restore it and check the connections again.
+- Prepare five independently publishable tracks from one source/version: Home Assistant, macOS app, macOS server, Windows app and Windows server. The first desktop assets remain platform-labelled Python ZIPs, not DMG or EXE installers.
+
 ## 1.12.10 · 2026-11-04
 
 - Review the exact card, date and assignment before deleting an erroneous completion. An active assignment remains in place, the card's latest completion is recalculated, and later history no longer reintroduces the deleted date.
