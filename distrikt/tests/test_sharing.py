@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
-from sharing import Publications,Drive,SCOPE,fingerprint,public_members,public_name,png_bytes
+from sharing import Publications,Drive,RENDER_REVISION,SCOPE,fingerprint,public_members,public_name,png_bytes
 
 def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
 def png(extra=False):
@@ -308,17 +308,20 @@ class SharingTests(unittest.TestCase):
         self.assertTrue(self.row()['render_refresh']);self.assertFalse(upgraded.status()['cards'][0]['outdated'])
         self.enqueue_dates();self.assertFalse(self.row()['render_refresh'])
     def test_old_layout_keeps_qr_and_access_until_owner_approves_new_image(self):
-        self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
-        self.p.process_one();before=self.row();link=before['front_url']
+        recipe=self.p.prepare(self.c)
+        self.p.enqueue({'card_id':self.c,'fingerprint':recipe['fingerprint'],'png':self.url,
+            'render_revision':7,'date_updates':True,'date_fingerprint':recipe['date_fingerprint']})
+        self.p.process_one();before=self.row();link=before['front_url'];uploads=len(self.p.drive.uploads)
         upgraded=Publications(self.s)
         self.assertTrue(upgraded.status()['cards'][0]['render_refresh'])
         self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':link}])
         self.assertEqual(self.row()['file_id'],before['file_id'])
         self.assertEqual(self.row()['status'],'published')
-        self.assertEqual(self.p.prepare(self.c)['render_revision'],7)
+        self.assertEqual(len(self.p.drive.uploads),uploads)
+        self.assertEqual(self.p.prepare(self.c)['render_revision'],RENDER_REVISION)
         self.enqueue_dates();self.p.process_one()
         self.assertEqual(self.row()['front_url'],link)
-        self.assertEqual(self.row()['render_revision'],7)
+        self.assertEqual(self.row()['render_revision'],RENDER_REVISION)
         self.assertFalse(Publications(self.s).status()['cards'][0]['render_refresh'])
     def test_previous_layout_keeps_link_without_automatic_upload(self):
         self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':5})
@@ -339,7 +342,7 @@ class SharingTests(unittest.TestCase):
         self.assertTrue(upgraded.front_links())
 
     def test_unknown_layout_revision_is_rejected_without_writes(self):
-        for revision in ('6',True,0,7):
+        for revision in ('6',True,0,RENDER_REVISION+1):
             with self.subTest(revision=revision),self.assertRaises(ValueError):
                 self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':revision})
         self.assertIsNone(self.row())

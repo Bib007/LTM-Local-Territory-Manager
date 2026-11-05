@@ -99,7 +99,8 @@ class Drive:
         for p in self.api('/files/'+file_id+'/permissions?fields=permissions(id,type)')['permissions']:
             if p['type']=='anyone':self.api('/files/'+file_id+'/permissions/'+p['id'],method='DELETE')
 
-RENDER_REVISION=7
+DATE_RENDER_REVISION=7
+RENDER_REVISION=8
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -293,7 +294,7 @@ class Publications:
             for row in rows:
                 if first_due and row['card_id']!=first_due:continue
                 if row.get('status')=='review' and not row.get('date_retry_allowed'):continue
-                if row.get('manual_withdraw') or row.get('render_revision')!=7 or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
+                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
                 c=self.store.get('cards',row['card_id'])
                 if not c or fingerprint(self.store,c)!=row.get('fingerprint'):continue
                 values=dates(self.store,c);key=date_key(values)
@@ -308,13 +309,13 @@ class Publications:
         return False
     def enqueue(self,data):
         revision=data.get('render_revision',1)
-        if type(revision) is not int or revision not in (1,2,3,4,5,6,RENDER_REVISION):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
+        if type(revision) is not int or revision not in range(1,RENDER_REVISION+1):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
         png=png_bytes(data.get('png'))
         if not self.drive.connected():raise ValueError('Forbind Google Drive først.')
         with self.lock,self.store.transaction():
             c=self.store.require('cards',data['card_id']);fp=fingerprint(self.store,c)
             if data.get('fingerprint')!=fp:raise ValueError('Kortet er ændret, mens billedet blev dannet. Åbn kortet igen og publicér på ny.')
-            dated=revision>=7
+            dated=revision>=DATE_RENDER_REVISION
             if dated:
                 values=dates(self.store,c)
                 if data.get('date_updates') is not True or data.get('date_fingerprint')!=date_key(values):
