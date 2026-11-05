@@ -71,7 +71,7 @@ const MapExport={
     try{for(const t of tiles)ctx.drawImage(t.image,t.x-crop.x,t.y-crop.y,t.width,t.height);const bounds=(crop.x||crop.y||crop.width!==size.x||crop.height!==size.y)?(()=>{const sw=map.containerPointToLatLng([crop.x,crop.y+crop.height]),ne=map.containerPointToLatLng([crop.x+crop.width,crop.y]);return {getWest:()=>sw.lng,getSouth:()=>sw.lat,getEast:()=>ne.lng,getNorth:()=>ne.lat};})():map.getBounds();return {backgroundImage:canvas.toDataURL('image/png'),viewBounds:[bounds.getWest(),bounds.getSouth(),bounds.getEast(),bounds.getNorth()]};}
     catch{throw Error('Browseren kunne ikke gemme vejkortet. Genindlæs appen, vælg Vejkort, og prøv igen.');}
   },
-  publicVisitDots(groups,total){
+  publicVisitLayout(groups,total){
     // Reserve space in final PNG pixels, inside the rounded map clip.
     const left=58,top=138,width=1504,height=1274;
     const radius=[5,4,3,2].find(r=>Math.floor(width/(2*r+3))*Math.floor(height/(2*r+3))>=total);
@@ -125,6 +125,7 @@ const MapExport={
         }
       }
     }
+    const dotCenters=new Map();
     const markup=dots.map(({col,row,group})=>{
       let [x,y]=center(col,row);
       // Leave an isolated visit at its exact projection when no adjacent
@@ -135,9 +136,40 @@ const MapExport={
           x=group.x;y=group.y;
         }
       }
+      dotCenters.set(key(col,row),[x,y]);
       return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius}" fill="#c62828" stroke="white" stroke-width="1.5"/>`;
     });
-    return {dots:markup.join(''),leaders:leaders.join('')};
+    // Place house numbers outside both the dot clusters and other numbers.
+    // Screen-space reservations account for the halo and exact isolated dots.
+    const labelCells=new Set(),halo=radius+2,clearance=halo+step/2;
+    const labels=groups.map(group=>{
+      const {x,y,number}=group,labelWidth=String(number).length*14+4;
+      const preferred=[x+11,y-9];
+      const reserve=(tx,ty)=>{
+        if(tx<left||tx+labelWidth>left+width||ty-20<top||ty+4>top+height)return false;
+        const [minCol,minRow]=cell(tx-clearance,ty-20-clearance);
+        const [maxCol,maxRow]=cell(tx+labelWidth+clearance,ty+4+clearance);
+        const cells=[];
+        for(let row=minRow;row<=maxRow;row++)for(let col=minCol;col<=maxCol;col++){
+          const k=key(col,row);
+          if(labelCells.has(k))return false;
+          const dot=dotCenters.get(k);
+          if(dot&&dot[0]>=tx-halo&&dot[0]<=tx+labelWidth+halo&&dot[1]>=ty-20-halo&&dot[1]<=ty+4+halo)return false;
+          cells.push(k);
+        }
+        for(const k of cells)labelCells.add(k);
+        return true;
+      };
+      if(reserve(...preferred))return {x:preferred[0],y:preferred[1],number};
+      for(let offset=0;offset<=step*12;offset+=step){
+        const candidates=[[x+11+offset,y-9],[x-labelWidth-11-offset,y-9],
+          [x-labelWidth/2,y-11-offset],[x-labelWidth/2,y+26+offset]];
+        const position=candidates.find(candidate=>reserve(...candidate));
+        if(position)return {x:position[0],y:position[1],number};
+      }
+      return {x:preferred[0],y:preferred[1],number};
+    });
+    return {dots:markup.join(''),leaders:leaders.join(''),labels};
   },
   svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false}={}){
     const c=publicCard||card(id);if(!c)throw Error('Kortet findes ikke.');
@@ -179,18 +211,18 @@ const MapExport={
       }
       return [...byCoordinate.values()];
     });
-    const label=({x,y,number})=>`<text x="${(x+11).toFixed(1)}" y="${(y-9).toFixed(1)}" font-size="20" font-weight="bold" fill="${publicCard?'#8c1c1c':'#873f39'}" stroke="white" stroke-width="4" paint-order="stroke">${esc(number)}</text>`;
+    const label=({x,y,number})=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="20" font-weight="bold" fill="${publicCard?'#8c1c1c':'#873f39'}" stroke="white" stroke-width="4" paint-order="stroke">${esc(number)}</text>`;
     let points;
     if(publicCard){
-      const {dots,leaders}=this.publicVisitDots(pointGroups,total);
-      points=leaders+pointGroups.map(label).join('')+dots;
+      const {dots,leaders,labels}=this.publicVisitLayout(pointGroups,total);
+      points=leaders+labels.map(label).join('')+dots;
     }else{
       points=pointGroups.map(group=>{
         const {x,y,count}=group;
         return Array.from({length:count},(_,j)=>{
           const angle=j*2.39996,r=count>1?Math.sqrt(j)*5:0;
           return `<circle cx="${(x+Math.cos(angle)*r).toFixed(1)}" cy="${(y+Math.sin(angle)*r).toFixed(1)}" r="5" fill="#ca4c43" stroke="white" stroke-width="1.5"/>`;
-        }).join('')+label(group);
+        }).join('')+label({...group,x:x+11,y:y-9});
       }).join('');
     }
     const backgroundMarkup=`${backgroundImage?`<image href="${esc(backgroundImage)}" x="${xoff}" y="${yoff}" width="${(e-w)*scale}" height="${(n-s)*scale}"/>`:''}${(backgroundImage?[]:GeoUI.data.roads).filter(r=>visible(r.points)).map(r=>`<polyline points="${path(r.points)}" fill="none" stroke="#bbc5ca" stroke-width="7" stroke-linecap="round"/>`).join('')}${(backgroundImage?[]:(GeoUI.data.dividers||[])).filter(d=>visible(d.points)).map(d=>`<polyline points="${path(d.points)}" fill="none" stroke="${d.divider_type==='rail'?'#69737c':'#5598bf'}" stroke-width="${d.divider_type==='rail'?4:5}"${d.divider_type==='rail'||d.tunnel&&d.tunnel!=='no'?' stroke-dasharray="9 5"':''}/>`).join('')}${(backgroundImage?[]:GeoUI.data.buildings).filter(b=>visible(b.points)).map(b=>`<polygon points="${path(b.points)}" fill="#d1d8d1" stroke="#a7b5ae" stroke-width="1.5"/>`).join('')}`;

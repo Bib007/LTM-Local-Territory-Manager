@@ -100,18 +100,26 @@ module.exports=async(browser,out)=>{
     }
    }
    // A solid known tile at 30% over white gives RGB 191,206,218 (±1 rounding).
-   let backgroundSamples=0,labelPixels=0;
+   let backgroundSamples=0;
    for(let y=300;y<1400;y+=40)for(let x=140;x<1500;x+=40){const p=pixel(x,y);if(p.slice(0,3).every((v,i)=>Math.abs(v-[191,206,218][i])<=1))backgroundSamples++;}
-   const data=ctx.getImageData(40,200,1540,1310).data;
-   for(let i=0;i<data.length;i+=4)if(data[i]===140&&data[i+1]===28&&data[i+2]===28)labelPixels++;
-   return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dots,redRegions,redCenters:dots.filter(p=>pixel(...p).join()==='198,40,40,255').length,backgroundSamples,labelPixels,svg:window.actualPreviewSvg};
+   const labels=[...doc.querySelectorAll('text[paint-order="stroke"]')].map(label=>{
+    const x=+label.getAttribute('x'),y=+label.getAttribute('y')+80,number=label.textContent;
+    const data=ctx.getImageData(Math.floor(x),Math.floor(y)-20,number.length*14+4,24).data;
+    let darkPixels=0;
+    for(let i=0;i<data.length;i+=4)if(data[i]===140&&data[i+1]===28&&data[i+2]===28)darkPixels++;
+    return {number,x,y,darkPixels};
+   });
+   return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dots,redRegions,redCenters:dots.filter(p=>pixel(...p).join()==='198,40,40,255').length,backgroundSamples,labels,svg:window.actualPreviewSvg};
   });
   assert.equal('data:image/png;base64,'+result.png,serverPreview,'The browser shows the exact server-dated image');
   assert.doesNotMatch(result.svg,/IB_SKAL_IKKE_MED/);assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
   assert.deepEqual([result.width,result.height],[2200,1560]);assert.equal(result.dots.length,visits,'SVG includes all visits even with a road filter before export');
   assert.equal(result.redRegions,visits,'The final dated PNG has one independently visible red region per visit');
   assert.equal(result.redCenters,visits,'Each SVG circle has an unobscured full-strength red center in the PNG');
-  assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains 30%-opacity OSM tiles over white');assert.ok(result.labelPixels>20,'House number remains full-strength dark red');
+  assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains 30%-opacity OSM tiles over white');
+  assert.deepEqual(result.labels.map(label=>label.number).sort(),['17','19','2','2','2A','3']);
+  assert.equal(new Set(result.labels.map(label=>[label.x,label.y].join())).size,result.labels.length,'Nearby numbers receive separate positions');
+  assert.ok(result.labels.every(label=>label.darkPixels>15),`Expected visible ink for each house number: ${JSON.stringify(result.labels)}`);
   assert.match(result.svg,/<g data-map-background="muted" opacity=".3"><image /);assert.ok(!calls.includes('/api/share/publish'),'Preview never uploads');assert.deepEqual(errors,[]);
   if(out)fs.writeFileSync(path.join(out,'drive-actual-preview.png'),Buffer.from(result.png,'base64'));
   const manual=await page.evaluate(async()=>{
