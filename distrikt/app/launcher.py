@@ -33,8 +33,16 @@ def validate(config):
     return {'mode':'server','host':host,'port':port}
 
 
-def configure(input_fn=None):
+def configure(input_fn=None,mode=None):
     input_fn=input_fn or input
+    if mode=='local':return {'mode':'local'}
+    if mode=='server':
+        host=input_fn('Computerens faste private IPv4-adresse: ').strip()
+        default=8788 if '-beta.' in server.VERSION else 8787
+        raw=input_fn('Port ['+str(default)+']: ').strip()
+        try:port=int(raw or str(default))
+        except ValueError:raise ValueError('Porten skal være et tal.') from None
+        return validate({'mode':'server','host':host,'port':port})
     print('\n1 · Kun på denne computer\n2 · Server til hjemmenetværk og egen VPN\n0 · Afbryd')
     choice=input_fn('Vælg: ').strip()
     if choice=='0':return None
@@ -95,20 +103,24 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description='LTM · lokal app eller privat server')
     parser.add_argument('--root',type=Path,help='Separat rodmappe til startindstillinger og data')
     parser.add_argument('--configure',action='store_true',help='Vælg lokal brug eller server igen')
+    parser.add_argument('--mode',choices=('local','server'),help='Start den pakkevalgte lokale app eller server')
     parser.add_argument('--no-browser',action='store_true',help='Åbn ikke browser ved lokal start')
     args=parser.parse_args(argv);locations=paths(args.root);path=locations['config']
     print('LTM '+server.VERSION+' · startguide')
     config=None
-    if path.exists() and not args.configure:
+    if path.exists() and not args.configure and not args.mode:
         try:config=validate(json.loads(path.read_text(encoding='utf-8')))
         except (ValueError,TypeError):raise ValueError('Startindstillingerne kunne ikke læses. Start med --configure for at vælge igen. Dine data er bevaret.') from None
     if config is None:
         print('Lokal brug og server har hver sin datamappe. Flyt via appens backup, hvis det ønskes.')
-        config=configure()
+        config=configure(mode=args.mode)
         if config is None:return
         if config['mode']=='server':prepare_password(locations['server'])
-        path.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
-        write_private(path,validate(config))
+        # Purpose-specific packages must not silently replace the user's generic
+        # launcher choice. Only the generic wizard remembers a default mode.
+        if not args.mode:
+            path.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
+            write_private(path,validate(config))
     launch(config,locations,args.no_browser)
 
 

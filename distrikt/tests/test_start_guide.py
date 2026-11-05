@@ -100,6 +100,18 @@ class StartGuideTests(unittest.TestCase):
         with patch.object(launcher.server,'VERSION','1.12.2-beta.74'):
             self.assertEqual(launcher.configure(lambda _:next(answers))['port'],8788)
 
+    def test_purpose_specific_modes_do_not_replace_saved_generic_choice(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);locations=launcher.paths(root)
+            with patch.object(launcher,'launch') as run:
+                launcher.main(['--root',directory,'--mode','local'])
+            self.assertEqual(run.call_args.args[0],{'mode':'local'})
+            self.assertFalse(locations['config'].exists())
+            with patch('builtins.input',side_effect=['192.168.1.2','8788']),patch.object(launcher,'prepare_password'),patch.object(launcher,'launch') as run:
+                launcher.main(['--root',directory,'--mode','server'])
+            self.assertEqual(run.call_args.args[0],{'mode':'server','host':'192.168.1.2','port':8788})
+            self.assertFalse(locations['config'].exists())
+
     def test_password_is_confirmed_hashed_private_and_not_saved_in_settings(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);data=root/'server';password='Fictional-private-123'
