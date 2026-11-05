@@ -1,5 +1,5 @@
-# LTM 1.12.12 · Visible visit dots on digital maps
+# LTM 1.12.13 · Correct erroneous assignments from History
 
-Close visits in the digital district map are drawn as separate red dots. The preview fits the full district after an active map zoom, and the approved PNG carries the same markers to Google Drive.
+In Reports → History, find the card and select Delete assignment on the specific row. Check the card number, publisher, assignment date and return status. For an active assignment, choose whether the physical card is in the carry folder or storage box before confirming.
 
-To refresh an already shared image, select Update Google Drive upload, review the new image and approve it. The existing file and QR link are reused.
+Recorded completions and notes stay on the card. S-13 shows a preserved completion date without the removed assignment's publisher or assignment date. Authorized recovery users can restore the assignment under Settings → Data within 48 hours. A conflicting newer assignment prevents restoration.

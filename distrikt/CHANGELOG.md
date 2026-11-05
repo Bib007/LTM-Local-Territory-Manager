@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.12.13 · 2026-11-05
+
+- Delete a single erroneous assignment from History after reviewing the card, publisher, dates and status. Choose the physical location when removing an active assignment. Existing completions and notes are kept, and the assignment is recoverable for 48 hours unless a newer assignment conflicts.
+
 ## 1.12.12 · 2026-11-05
 
 - Keep close visit dots individually visible in digital district maps and their PNGs, including during export after a zoom. Previously shared images can be regenerated and approved on the same Google Drive file and QR link.

@@ -45,6 +45,7 @@ def fmt(day):
 def allocation_rows(state, year, language='da'):
     start='%s-09-01' % (year-1); end='%s-08-31' % year
     names={p['id']:p['name'] for p in state['publishers']}
+    loan_ids={l['id'] for l in state['loans']}
     rows=[]
     for card in sorted(state['cards']+state.get('archived_cards',[]),key=lambda c:[(0,int(part)) if part.isdigit() else (1,part.casefold()) for part in re.split(r'(\d+)',c['number'])]):
         assignments=[]
@@ -63,7 +64,8 @@ def allocation_rows(state, year, language='da'):
                 # A completed return must not create a phantom second allocation.
                 if not (done and loan.get('returned')==done[-1]):
                     assignments.append({'person':names.get(loan['publisher_id'],'—'),'assigned':cycle,'completed':None})
-        assignments += [{'person':'','assigned':None,'completed':e['date']} for e in state['completions'] if e['card_id']==card['id'] and not e.get('loan_id') and start<=e['date']<=end]
+        # A missing assignment does not erase a valid completion or display the removed allocation.
+        assignments += [{'person':'','assigned':None,'completed':e['date']} for e in state['completions'] if e['card_id']==card['id'] and e.get('loan_id') not in loan_ids and start<=e['date']<=end]
         assignments.sort(key=lambda a:a['assigned'] or a['completed'] or '')
         dates=[e['date'] for e in state['completions'] if e['card_id']==card['id'] and e['date']<start]
         dates += [e['previous_completed'] for e in state['completions'] if e['card_id']==card['id'] and e.get('previous_completed') and e['previous_completed']<start]

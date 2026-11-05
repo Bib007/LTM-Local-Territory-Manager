@@ -95,7 +95,7 @@ CASCADE=frozenset(('cards.view','cards.edit','loans.view','loans.manage','histor
 ACTIONS.update({'card.restructure.preview':CASCADE,'card.restructure.apply':CASCADE})
 DELETE={'cards':CASCADE,'ib':{'cards.view','ib.view','ib.edit'},
         'notes':{'notes.view','notes.edit'},'visits':{'history.view','history.edit'},
-        'loans':{'loans.view','loans.manage'},'completions':{'history.view','history.edit'},
+        'loans':{'cards.view','history.view','publishers.view','loans.view','loans.manage'},'completions':{'history.view','history.edit'},
         'ignored':{'geo.view','geo.edit'}}
 
 def mutation(user,action,data,store):

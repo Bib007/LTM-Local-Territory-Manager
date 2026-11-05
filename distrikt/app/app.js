@@ -2,6 +2,8 @@
 const token=document.querySelector('meta[name="app-token"]').content;
 let state=null,page='Forside',selected='',area='',status='Alle',query='',view='Liste',loanTab='Aktive',year=serviceYear(new Date().toISOString().slice(0,10)),reportTab='Rapport';
 let deskTab='Udlever',cardTab='Kort';
+// Mutation acknowledgements can advance state.revision before its records are refreshed.
+let historyRevision;
 let addressTab='Mangler på kort',addressPostcode='',addressPage=0,ibSort='oldest';
 let mapImage='',mapDraft=[],mapCard='',editMap=false,saveQueue=Promise.resolve(),autosaveTimer=null,toastTimer=null;
 const addressTypes=['Hus','Lejlighed','Lejlighedskompleks','Butik','Kontor','Virksomhed','Andet'];
@@ -16,7 +18,7 @@ const yearLabel=y=>`${y-1}/${y}`;
 const card=id=>state.cards.find(c=>c.id===id);
 const current=()=>card(selected);
 const areaName=id=>state.areas.find(a=>a.id===id)?.name||'Intet område';
-const publisherName=id=>state.publishers.find(p=>p.id===id)?.name||'Ukendt';
+const publisherName=(id,fallback='Ukendt')=>state.publishers.find(p=>p.id===id)?.name||fallback;
 const loanFor=id=>state.loans.find(l=>l.card_id===id&&!l.returned);
 const visitsCount=c=>(c.addresses||[]).reduce((n,a)=>n+a.count,0);
 const visitsKnown=c=>!!c.addresses?.length&&!c.addresses.some(a=>a.count_unknown);
@@ -94,7 +96,7 @@ async function confirmedWrite(path,body,after=async response=>response.json()){
  let accepted=false;try{saving();const response=await api(path,body);accepted=true;const result=await after(response);if(result===false){const error=new RequestError('En nyere redigering er åbnet. Opdater igen, når du er færdig.','response');WriteGuard.requireRefresh(error);toast(error);}else saved();return result;}
  catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);throw error;}
 }
-async function refresh({guard,beforeRender,snapshot}={}){const fresh=snapshot??await(await api('/api/state')).json();if(guard&&!guard())return false;state=fresh;if(!selected&&state.cards.length)selected=state.cards[0].id;if(beforeRender)beforeRender();render();return true;}
+async function refresh({guard,beforeRender,snapshot}={}){const fresh=snapshot??await(await api('/api/state')).json();if(guard&&!guard())return false;state=fresh;historyRevision=fresh.revision;if(!selected&&state.cards.length)selected=state.cards[0].id;if(beforeRender)beforeRender();render();return true;}
 function mutationSnapshot(result){
  if(result.state_unavailable===true)throw new RequestError('Ændringen er gemt, men oversigten kunne ikke hentes. Brug Opdater før næste ændring.','response');
  if(!Object.prototype.hasOwnProperty.call(result,'state'))return undefined; // Older servers still use a page read.
@@ -250,6 +252,7 @@ function mapSvg(done=new Set(),cards=state.cards,draft=null,forceLegacy=false){i
 function monthlyChart(){let events=eventsInYear(),visits=state.visits.filter(v=>serviceYear(v.date)===year).sort((a,b)=>cmp(a.date,b.date)),latest=state.visits.slice().sort((a,b)=>cmp(b.date,a.date))[0],counts=Array.from({length:12},(_,i)=>{let d=new Date(year-1,8+i,1),key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {key,label:d.toLocaleDateString('da-DK',{month:'short'}),n:events.filter(e=>e.date.startsWith(key)).length};}),max=Math.max(3,...counts.map(c=>c.n));return `<div class="reportchart"><h3><span data-ui="Gennemgange i tjenesteåret">Gennemgange i tjenesteåret</span></h3><svg viewBox="0 0 760 285" role="img" aria-label="Månedlige gennemgange med gule markører for KTM-besøg">${[0,1,2,3].map(i=>`<line x1="45" y1="${225-i*50}" x2="715" y2="${225-i*50}" stroke="#e1e9ee"/><text x="33" y="${229-i*50}" text-anchor="end" font-size="10" fill="#7a8c98">${Math.round(max*i/3)}</text>`).join('')}${counts.map((c,i)=>{let h=c.n/max*150;return `<rect x="${58+i*54}" y="${225-h}" width="32" height="${Math.max(1,h)}" rx="4" fill="#5b83a3"/><text x="${74+i*54}" y="${216-h}" text-anchor="middle" font-size="11" fill="#42637c">${c.key>state.today.slice(0,7)?'—':c.n}</text><text x="${74+i*54}" y="247" text-anchor="middle" font-size="11" fill="#7a8c98">${c.label}</text>`;}).join('')}${visits.map((v,i)=>{let idx=counts.findIndex(c=>c.key===v.date.slice(0,7)),d=new Date(v.date+'T12:00:00'),days=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(),x=58+idx*54+(d.getDate()-1)/days*45,labelY=25+(i%3)*13;return `<line x1="${x}" y1="65" x2="${x}" y2="226" stroke="#d1a534" stroke-width="2" stroke-dasharray="4 3"/><path d="M${x-4} 72 L${x} 64 L${x+4} 72" stroke="#d1a534" fill="none" stroke-width="2"/><text x="${Math.min(650,Math.max(110,x))}" y="${labelY}" text-anchor="middle" fill="#946e18" font-size="10">${v.id===latest?.id?'Sidste besøg · ':''}${fmt(v.date)}</text>`;}).join('')}</svg>${visits.length?`<p class="hint">Gule pile: ${visits.map(v=>fmt(v.date)).join(' · ')}</p>`:'<p class="hint"><span data-ui="Tilføj KTM-besøg for at vise gule pile på grafen.">Tilføj KTM-besøg for at vise gule pile på grafen.</span></p>'}</div>`;}
 function allocationRows(){
   const start=`${year-1}-09-01`,end=`${year}-08-31`,rows=[];
+  const loanIds=new Set(state.loans.map(l=>l.id));
   for(const c of [...state.cards,...(state.archived_cards||[])].sort((a,b)=>cmp(a.number,b.number))){
     const allocations=[];
     for(const l of state.loans.filter(l=>l.card_id===c.id).sort((a,b)=>cmp(a.assigned,b.assigned))){
@@ -259,7 +262,7 @@ function allocationRows(){
       cycle=l.cycle_start||cycle;
       if((!l.returned||l.returned>=start)&&cycle<=end&&!(finished.length&&l.returned===finished[finished.length-1].date))allocations.push({person:publisherName(l.publisher_id),assigned:cycle,completed:null});
     }
-    allocations.push(...state.completions.filter(e=>e.card_id===c.id&&!e.loan_id&&e.date>=start&&e.date<=end).map(e=>({person:'',assigned:null,completed:e.date})));allocations.sort((a,b)=>cmp(a.assigned||a.completed,b.assigned||b.completed));
+    allocations.push(...state.completions.filter(e=>e.card_id===c.id&&!loanIds.has(e.loan_id)&&e.date>=start&&e.date<=end).map(e=>({person:'',assigned:null,completed:e.date})));allocations.sort((a,b)=>cmp(a.assigned||a.completed,b.assigned||b.completed));
     const previous=state.completions.filter(e=>e.card_id===c.id).flatMap(e=>[e.date,e.previous_completed]).concat(c.last_completed).filter(d=>d&&d<start).sort().pop();
     for(let i=0;i<Math.max(1,Math.ceil(allocations.length/4));i++)rows.push({number:c.number+(i?(I18n.language()==='en'?' cont.':' forts.'):''),previous,allocations:allocations.slice(i*4,i*4+4)});
   }
@@ -341,12 +344,22 @@ function editPublisher(id){const p=state.publishers.find(p=>p.id===id);openDialo
 function editArea(id){const a=state.areas.find(a=>a.id===id);openDialog(`<h2>${ui(a?'Rediger område':'Tilføj område')}</h2><form id="areaForm" data-id="${id||''}"><label>${ui("Områdenavn")}</label><input name="name" value="${esc(a?.name||'')}" required maxlength="80" ${I18n.attribute('placeholder','Fx Eksempelby land')}>${formEnd()}</form>${a?`<div class="actions"><button class="danger" data-action="delete-area" data-id="${a.id}">${ui("Slet området")}</button></div><p class="hint">${ui("Kortene beholdes og flyttes til “Intet område”. Området kan gendannes i 48 timer.")}</p>`:''}`,I18n.language());}
 function editVisit(id){const v=state.visits.find(v=>v.id===id);openDialog(`<h2>${ui("KTM-besøg")}</h2><form id="visitForm" data-id="${id||''}"><label>${ui("Besøgsdato")}</label><input name="date" type="date" value="${v?.date||state.today}" max="${state.today}" required><label>${ui("Bemærkning · valgfri")}</label><input name="note" value="${esc(v?.note||'')}" maxlength="200">${formEnd()}</form>`,I18n.language());}
 function editIB(id,cardId){IBUI.open(id,cardId,'',!!cardId);}
+const deleteRecoveryHint='Du kan gendanne ved fejl under Indstillinger i 48 timer. Derefter fjernes data fra databasefilerne. Egne sikkerhedskopier kan stadig indeholde posten.';
+function confirmLoanDelete(loan){
+ if(state.profile&&!ProfilesUI.canAction('delete',{module:'loans'}))return;
+ const territory=taskCard(loan.card_id);
+ if(!territory||territory.archived&&!loan.returned)return;
+ const status=loan.returned?`${ui('Afleveret')} ${fmt(loan.returned)}`:ui('Stadig udleveret');
+ const location=loan.returned?'':`<label for="deleteLoanLocation">${ui('Hvor ligger det fysiske kort?')}</label><select id="deleteLoanLocation" name="location" required><option value="">${ui('Vælg placering')}</option><option value="folder">${ui('Kort i mappen')}</option><option value="box">${ui('Kort i kassen')}</option></select>`;
+ openDialog(`<h2>${ui('Slet fejlagtig udlevering?')}</h2><p><b>${ui('Kort')} ${esc(territory.number)}</b>${territory.name?' · '+esc(territory.name):''}${territory.archived?' · '+ui('arkiveret efter sammenlægning'):''}<br>${ui('Forkynder')}: ${esc(publisherName(loan.publisher_id,I18n.text('Ukendt')))}<br>${ui('Udleveret')} ${fmt(loan.assigned)} · ${status}</p><p>${ui('Udleveringen fjernes. Registrerede gennemgange og noter bevares.')}</p><form id="deleteLoanForm" data-id="${esc(loan.id)}" data-history-revision="${esc(historyRevision)}">${location}<p class="hint">${ui(deleteRecoveryHint)}</p><div id="formError" class="formError" role="alert"></div><div class="actions"><button class="danger">${ui('Slet udlevering')}</button><button type="button" data-action="close">${ui('Annuller')}</button></div></form>`,I18n.language());
+}
 function confirmDelete(module,id){const item=state[module]?.find(i=>i.id===id);if(!item)return;
+ if(module==='loans')return confirmLoanDelete(item);
  const completion=module==='completions';
  const territory=completion&&(card(item.card_id)||(state.archived_cards||[]).find(c=>c.id===item.card_id));
  const loan=completion&&state.loans.find(l=>l.id===item.loan_id);
- const details=completion?`<p><b>${ui('Kort')} ${esc(territory?.number||item.card_id)}</b>${territory?.name?' · '+esc(territory.name):''}<br>${fmt(item.date)} · ${ui(item.loan_id?'tilknyttet udlevering':'kendt gennemgang')}${loan?' · '+esc(publisherName(loan.publisher_id)):''}</p>`:'';
- openDialog(`<h2>${ui('Slet')} ${module==='cards'?ui('kort')+' '+esc(item.number):ui(module==='ib'?'IB-adressen':module==='visits'?'KTM-besøget':completion?'gennemgangen':'registreringen')}?</h2>${details}<p>${ui(module==='cards'?'Kortet og dets udlån, gennemgange og IB fjernes fra visningen.':'Registreringen fjernes fra visningen.')}</p><p class="hint"><span data-ui="Du kan gendanne ved fejl under Indstillinger i 48 timer. Derefter fjernes data fra databasefilerne. Egne sikkerhedskopier kan stadig indeholde posten.">Du kan gendanne ved fejl under Indstillinger i 48 timer. Derefter fjernes data fra databasefilerne. Egne sikkerhedskopier kan stadig indeholde posten.</span></p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="${module}" data-id="${esc(id)}"><span data-ui="Slet">Slet</span></button><button data-action="close"><span data-ui="Annuller">Annuller</span></button></div>`,I18n.language());}
+ const details=completion?`<p><b>${ui('Kort')} ${esc(territory?.number||item.card_id)}</b>${territory?.name?' · '+esc(territory.name):''}<br>${fmt(item.date)} · ${ui(loan?'tilknyttet udlevering':'kendt gennemgang')}${loan?' · '+esc(publisherName(loan.publisher_id)):''}</p>`:'';
+ openDialog(`<h2>${ui('Slet')} ${module==='cards'?ui('kort')+' '+esc(item.number):ui(module==='ib'?'IB-adressen':module==='visits'?'KTM-besøget':completion?'gennemgangen':'registreringen')}?</h2>${details}<p>${ui(module==='cards'?'Kortet og dets udlån, gennemgange og IB fjernes fra visningen.':'Registreringen fjernes fra visningen.')}</p><p class="hint">${ui(deleteRecoveryHint)}</p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="${module}" data-id="${esc(id)}"><span data-ui="Slet">Slet</span></button><button data-action="close"><span data-ui="Annuller">Annuller</span></button></div>`,I18n.language());}
 function compactAddressNumbers(value){
  const raw=String(value??'').trim(),note=raw.match(/\s*\((?:lige|ulige|even|odd)\)\s*$/i),body=note?raw.slice(0,note.index):raw;
  const parts=body.split(/[,;]+/).map(s=>s.trim()),key=s=>{const m=s.match(/^(\d+)\s*([A-Za-zÆØÅæøå]*)$/);return m?[Number(m[1]),m[2].toUpperCase()]:null;};
@@ -472,7 +485,7 @@ case 'remove-address':target.closest('[data-address-row]').remove();scheduleCard
 case 'stop':openDialog(`<h2>${ui('Luk den lokale app?')}</h2><p>${ui('Alle gemte registreringer beholdes. Startfilen åbner appen igen.')}</p><div class="actions"><button data-action="confirm-stop">${ui('Luk appen')}</button><button data-action="close">${ui('Annuller')}</button></div>`);break;
 case 'confirm-stop':await saveQueue;await api('/api/shutdown',{});el('app').innerHTML=`<section class="panel"><h1>${ui('Appen er lukket')}</h1><p>${ui('Dine gemte registreringer er bevaret. Åbn appens startfil for at starte igen.')}</p></section>`;closeDialog();saved('Appen er lukket');break;
 }}catch(e){toast(e);}});
-document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','areaForm','noteForm','visitForm','ibForm','settingsForm','profileModeForm','printForm','completionForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
+document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','areaForm','noteForm','visitForm','ibForm','settingsForm','profileModeForm','printForm','completionForm','deleteLoanForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
 case 'cardForm':clearTimeout(autosaveTimer);await saveCard(true);break;
 case 'issueForm':await mutate('loan.issue',{card_id:fields.card_id,publisher_name:fields.publisher_name,date:fields.date,initial:fd.has('initial'),from_box:form.dataset.fromBox==='true'},{message:I18n.text('Udlevering gemt')});break;
 case 'finishForm':await mutate('loan.finish',{id:form.dataset.id,date:fields.date,complete:form.dataset.retain==='yes'||fields.complete==='yes',retain:form.dataset.retain==='yes',note:fields.note},{message:I18n.text(form.dataset.retain==='yes'?'Gennemgang gemt; kortet beholdes':'Afleveret til kassen')});break;
@@ -484,6 +497,7 @@ case 'ibForm':{const returnToCard=form.dataset.returnCard==='yes';await mutate('
 case 'settingsForm':await mutate('settings.save',{...fields,folder_minimum:Number(fields.folder_minimum),rural_minimum:Number(fields.rural_minimum),require_revision:fd.has('require_revision'),...(form.dataset.folderTouched==='yes'?{folder_minimum_confirmed:true}:{})},{close:false,message:I18n.text("Indstillinger gemt")});break;
 case 'profileModeForm':{const side=form.dataset.side,profile={...defaultPrintProfile(side),...(state.settings.print_profiles?.[side]||{}),mode:fields.mode};await mutate('print.profile.save',{side,profile},{message:I18n.text('Printprofil gemt lokalt')});break;}
 case 'printForm':await printCard(form);break;
+case 'deleteLoanForm':await mutate('delete',{module:'loans',id:form.dataset.id,history_revision:form.dataset.historyRevision,location:fields.location},{message:I18n.text('Slettet · kan gendannes i 48 timer ved fejl')});break;
 case 'completionForm':await mutate('completion.record',{card_id:form.dataset.id,date:fields.date,note:fields.note},{message:I18n.text('Gennemgang gemt')});break;
 }if(form.id!=='cardForm'&&confirmedSignature!==null)FormDrafts.forms.get(form).confirmed=confirmedSignature;}catch(e){const err=el('formError');if(err&&generation===openDialog.generation&&page===origin&&form.isConnected!==false)I18n.errorContent(err,e);else toast(e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
 el('dialog').addEventListener('keydown',e=>DialogFocus.keydown(e,el('dialog')));
