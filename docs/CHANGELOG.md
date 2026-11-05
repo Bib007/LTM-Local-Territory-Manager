@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.12.12 · 2026-11-05
+
+- Keep close visit dots individually visible in digital district maps and their PNGs, including during export after a zoom. Previously shared images can be regenerated and approved on the same Google Drive file and QR link.
+
 ## 1.12.11 · 2026-11-05
 
 - Keep visit markers at every saved map coordinate, including the focused map view, so distinct locations do not collapse into one red dot.
