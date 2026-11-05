@@ -1,0 +1,2 @@
+# Match the Home Assistant copy for byte-for-byte release validation.
+/docs/CHANGELOG.md text eol=lf
