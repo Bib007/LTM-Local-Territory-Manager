@@ -15,27 +15,39 @@ const MapExport={
   },
   exportPoints(id,options={}){return options.publicCard?[...(options.publicCard.geo_polygon||[]),...options.publicMembers.map(a=>[a.lng,a.lat])]:[...this.boundsPoints(id),...this.members(id).map(a=>[a.lng,a.lat])];},
   osmEntry(id){const key=DistrictMap.map&&DistrictMap.id===id?'districtMap':GeoUI.map&&!GeoUI.whole&&GeoUI.target===id?'geographicEditor':'';return MapBackground.instances.get(key);},
-  exportPadding(id,map){const size=map.getSize(),members=this.members(id),visits=members.reduce((n,a)=>n+(a.count||0),0),label=Math.max(0,...members.map(a=>String(a.number).length*12+20)),margin=Math.max(label,18+Math.sqrt(visits)*5);return Math.ceil(Math.max(20,margin*Math.min(size.x/1540,size.y/1310)));},
+  exportPadding(id,map,options){
+    const size=map.getSize(),members=options.publicMembers||this.members(id);
+    const visits=members.reduce((n,a)=>n+(a.count||0),0),label=Math.max(0,...members.map(a=>String(a.number).length*12+20));
+    const margin=Math.max(label,18+Math.sqrt(visits)*5);
+    return Math.ceil(Math.max(20,(options.publicCard?Math.min(margin,120):margin)*Math.min(size.x/1540,size.y/1310)));
+  },
   async prepareOSM(id,options={}){
     const entry=this.osmEntry(id),map=entry?.map,points=this.exportPoints(id,options);
     if(!map||MapBackground.mode!=='road')throw Error('Åbn kortet, og vælg Vejkort · OpenStreetMap først.');
     if(!points.length)throw Error('Gem kortets grænse eller adresser først.');
     if(DistrictMap.id===id&&DistrictMap.map===map){DistrictMap.road='';if(el('districtMapRoad'))el('districtMapRoad').value='';DistrictMap.draw(false);}
-    const padding=this.exportPadding(id,map)+4;
+    const deadline=Date.now()+20000;
+    const moving=()=>map._animatingZoom||map._panAnim?._inProgress;
+    const wait=async loading=>{
+      while(moving()||loading&&entry.layer?.isLoading()){
+        if(this.osmEntry(id)!==entry)throw Error('Kortvisningen er ændret. Åbn kortet og prøv igen.');
+        if(Date.now()>=deadline)throw Error('Vejkortet er stadig ved at indlæse. Kontrollér forbindelsen og prøv igen.');
+        await new Promise(resolve=>setTimeout(resolve,100));
+      }
+      if(this.osmEntry(id)!==entry)throw Error('Kortvisningen er ændret. Åbn kortet og prøv igen.');
+    };
+    // Leaflet can queue a zoom in the next frame and ignore a new fit during it.
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    await wait(false);
+    const padding=this.exportPadding(id,map,options)+4;
     map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[padding,padding],maxZoom:19,animate:false});
     toast('Tilpasser kortet til distriktet og venter på vejkortet…');
-    const deadline=Date.now()+20000;
     await new Promise(resolve=>setTimeout(resolve,200));
-    while(entry.layer?.isLoading()||map._animatingZoom||map._panAnim?._inProgress){
-      if(this.osmEntry(id)!==entry)throw Error('Kortvisningen er ændret. Åbn kortet og prøv igen.');
-      if(Date.now()>=deadline)throw Error('Vejkortet er stadig ved at indlæse. Kontrollér forbindelsen og prøv igen.');
-      await new Promise(resolve=>setTimeout(resolve,100));
-    }
-    if(this.osmEntry(id)!==entry)throw Error('Kortvisningen er ændret. Åbn kortet og prøv igen.');
+    await wait(true);
   },
   tightCrop(id,map,size,options={}){
     const points=this.exportPoints(id,options).map(p=>map.latLngToContainerPoint([p[1],p[0]]));
-    const padding=this.exportPadding(id,map);
+    const padding=this.exportPadding(id,map,options);
     const x=Math.floor(Math.min(...points.map(p=>p.x))-padding),y=Math.floor(Math.min(...points.map(p=>p.y))-padding);
     const right=Math.ceil(Math.max(...points.map(p=>p.x))+padding),bottom=Math.ceil(Math.max(...points.map(p=>p.y))+padding);
     if(x<0||y<0||right>size.x||bottom>size.y)throw Error('Hele distriktet er ikke synligt. Prøv at eksportere igen.');
@@ -58,6 +70,106 @@ const MapExport={
     const canvas=document.createElement('canvas');canvas.width=crop.width;canvas.height=crop.height;const ctx=canvas.getContext('2d');if(!ctx)throw Error('Browseren understøtter ikke billedeksport.');
     try{for(const t of tiles)ctx.drawImage(t.image,t.x-crop.x,t.y-crop.y,t.width,t.height);const bounds=(crop.x||crop.y||crop.width!==size.x||crop.height!==size.y)?(()=>{const sw=map.containerPointToLatLng([crop.x,crop.y+crop.height]),ne=map.containerPointToLatLng([crop.x+crop.width,crop.y]);return {getWest:()=>sw.lng,getSouth:()=>sw.lat,getEast:()=>ne.lng,getNorth:()=>ne.lat};})():map.getBounds();return {backgroundImage:canvas.toDataURL('image/png'),viewBounds:[bounds.getWest(),bounds.getSouth(),bounds.getEast(),bounds.getNorth()]};}
     catch{throw Error('Browseren kunne ikke gemme vejkortet. Genindlæs appen, vælg Vejkort, og prøv igen.');}
+  },
+  publicVisitLayout(groups,total){
+    // Reserve space in final PNG pixels, inside the rounded map clip.
+    const left=58,top=138,width=1504,height=1274;
+    const radius=[5,4,3,2].find(r=>Math.floor(width/(2*r+3))*Math.floor(height/(2*r+3))>=total);
+    if(!radius)throw Error('Der er for mange besøgspunkter til at vise dem enkeltvis på kortbilledet.');
+    const step=2*radius+3,columns=Math.floor(width/step),rows=Math.floor(height/step);
+    const occupied=new Set(),searches=new Map(),dots=[],leaders=[];
+    const key=(col,row)=>row*columns+col;
+    const center=(col,row)=>[left+col*step,top+row*step];
+    const cell=(x,y)=>[
+      Math.max(0,Math.min(columns-1,Math.round((x-left)/step))),
+      Math.max(0,Math.min(rows-1,Math.round((y-top)/step)))
+    ];
+    function* nearby(col,row,limit=Math.max(columns,rows)-1){
+      for(let distance=1;distance<=limit;distance++){
+        const x1=col-distance,x2=col+distance,y1=row-distance,y2=row+distance;
+        for(let x=Math.max(0,x1);x<=Math.min(columns-1,x2);x++){
+          if(y1>=0)yield [x,y1];
+          if(y2<rows)yield [x,y2];
+        }
+        for(let y=Math.max(0,y1+1);y<=Math.min(rows-1,y2-1);y++){
+          if(x1>=0)yield [x1,y];
+          if(x2<columns)yield [x2,y];
+        }
+      }
+    }
+    const place=(col,row,group=null)=>{
+      occupied.add(key(col,row));
+      dots.push({col,row,group});
+    };
+    // Give each distinct location first claim on its own position before
+    // spreading multiple visits around it, across house-number boundaries.
+    const pending=[];
+    for(const group of groups){
+      if(!group.count)continue;
+      const [col,row]=cell(group.x,group.y),anchor=key(col,row);
+      const reserved=!occupied.has(anchor);
+      if(reserved)place(col,row,group);
+      pending.push({group,col,row,anchor,reserved});
+    }
+    for(const {group,col,row,anchor,reserved} of pending){
+      if(!searches.has(anchor))searches.set(anchor,nearby(col,row));
+      const search=searches.get(anchor);
+      for(let i=Number(reserved);i<group.count;i++){
+        let next=search.next();
+        while(!next.done&&occupied.has(key(...next.value)))next=search.next();
+        if(next.done)throw Error('Der er for mange besøgspunkter til at vise dem enkeltvis på kortbilledet.');
+        place(...next.value);
+        if(!i){
+          const [x,y]=center(...next.value);
+          if(Math.hypot(x-group.x,y-group.y)>step*2)leaders.push(`<path d="M${group.x.toFixed(1)} ${group.y.toFixed(1)}L${x} ${y}" stroke="#8c1c1c" stroke-opacity=".45" stroke-width="1.5"/>`);
+        }
+      }
+    }
+    const dotCenters=new Map();
+    const markup=dots.map(({col,row,group})=>{
+      let [x,y]=center(col,row);
+      // Leave an isolated visit at its exact projection when no adjacent
+      // cell can collide with it. The grid only separates crowded positions.
+      if(group&&group.x>=left&&group.x<=left+width&&group.y>=top&&group.y<=top+height){
+        const neighbours=[...nearby(col,row,1)];
+        if(!neighbours.some(([c,r])=>occupied.has(key(c,r)))){
+          x=group.x;y=group.y;
+        }
+      }
+      dotCenters.set(key(col,row),[x,y]);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius}" fill="#c62828" stroke="white" stroke-width="1.5"/>`;
+    });
+    // Place house numbers outside both the dot clusters and other numbers.
+    // Screen-space reservations account for the halo and exact isolated dots.
+    const labelCells=new Set(),halo=radius+2,clearance=halo+step/2;
+    const labels=groups.map(group=>{
+      const {x,y,number}=group,labelWidth=String(number).length*14+4;
+      const preferred=[x+11,y-9];
+      const reserve=(tx,ty)=>{
+        if(tx<left||tx+labelWidth>left+width||ty-20<top||ty+4>top+height)return false;
+        const [minCol,minRow]=cell(tx-clearance,ty-20-clearance);
+        const [maxCol,maxRow]=cell(tx+labelWidth+clearance,ty+4+clearance);
+        const cells=[];
+        for(let row=minRow;row<=maxRow;row++)for(let col=minCol;col<=maxCol;col++){
+          const k=key(col,row);
+          if(labelCells.has(k))return false;
+          const dot=dotCenters.get(k);
+          if(dot&&dot[0]>=tx-halo&&dot[0]<=tx+labelWidth+halo&&dot[1]>=ty-20-halo&&dot[1]<=ty+4+halo)return false;
+          cells.push(k);
+        }
+        for(const k of cells)labelCells.add(k);
+        return true;
+      };
+      if(reserve(...preferred))return {x:preferred[0],y:preferred[1],number};
+      for(let offset=0;offset<=step*12;offset+=step){
+        const candidates=[[x+11+offset,y-9],[x-labelWidth-11-offset,y-9],
+          [x-labelWidth/2,y-11-offset],[x-labelWidth/2,y+26+offset]];
+        const position=candidates.find(candidate=>reserve(...candidate));
+        if(position)return {x:position[0],y:position[1],number};
+      }
+      return {x:preferred[0],y:preferred[1],number};
+    });
+    return {dots:markup.join(''),leaders:leaders.join(''),labels};
   },
   svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false}={}){
     const c=publicCard||card(id);if(!c)throw Error('Kortet findes ikke.');
@@ -87,8 +199,32 @@ const MapExport={
     // A house number can occur at more than one saved coordinate (for example
     // after a source correction). Keep the road summary by house number, but
     // render visit dots at every stored coordinate just like the in-app maps.
-    const pointGroups=houses.flatMap(house=>{const byCoordinate=new Map();for(const a of house){const key=`${a.lng}|${a.lat}`;if(!byCoordinate.has(key))byCoordinate.set(key,[]);byCoordinate.get(key).push(a);}return [...byCoordinate.values()];});
-    const points=pointGroups.map(g=>{const[x,y]=to([g[0].lng,g[0].lat]),count=g.reduce((sum,a)=>sum+a.count,0);return Array.from({length:count},(_,j)=>{const angle=j*2.39996,r=count>1?Math.sqrt(j)*5:0;return `<circle cx="${(x+Math.cos(angle)*r).toFixed(1)}" cy="${(y+Math.sin(angle)*r).toFixed(1)}" r="5" fill="${publicCard?'#c62828':'#ca4c43'}" stroke="white" stroke-width="1.5"/>`;}).join('')+`<text x="${(x+11).toFixed(1)}" y="${(y-9).toFixed(1)}" font-size="20" font-weight="bold" fill="${publicCard?'#8c1c1c':'#873f39'}" stroke="white" stroke-width="4" paint-order="stroke">${esc(g[0].number)}</text>`;}).join('');
+    const pointGroups=houses.flatMap(house=>{
+      const byCoordinate=new Map();
+      for(const a of house){
+        const key=`${a.lng}|${a.lat}`;
+        if(!byCoordinate.has(key)){
+          const [x,y]=to([a.lng,a.lat]);
+          byCoordinate.set(key,{x,y,number:a.number,count:0});
+        }
+        byCoordinate.get(key).count+=a.count;
+      }
+      return [...byCoordinate.values()];
+    });
+    const label=({x,y,number})=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="20" font-weight="bold" fill="${publicCard?'#8c1c1c':'#873f39'}" stroke="white" stroke-width="4" paint-order="stroke">${esc(number)}</text>`;
+    let points;
+    if(publicCard){
+      const {dots,leaders,labels}=this.publicVisitLayout(pointGroups,total);
+      points=leaders+labels.map(label).join('')+dots;
+    }else{
+      points=pointGroups.map(group=>{
+        const {x,y,count}=group;
+        return Array.from({length:count},(_,j)=>{
+          const angle=j*2.39996,r=count>1?Math.sqrt(j)*5:0;
+          return `<circle cx="${(x+Math.cos(angle)*r).toFixed(1)}" cy="${(y+Math.sin(angle)*r).toFixed(1)}" r="5" fill="#ca4c43" stroke="white" stroke-width="1.5"/>`;
+        }).join('')+label({...group,x:x+11,y:y-9});
+      }).join('');
+    }
     const backgroundMarkup=`${backgroundImage?`<image href="${esc(backgroundImage)}" x="${xoff}" y="${yoff}" width="${(e-w)*scale}" height="${(n-s)*scale}"/>`:''}${(backgroundImage?[]:GeoUI.data.roads).filter(r=>visible(r.points)).map(r=>`<polyline points="${path(r.points)}" fill="none" stroke="#bbc5ca" stroke-width="7" stroke-linecap="round"/>`).join('')}${(backgroundImage?[]:(GeoUI.data.dividers||[])).filter(d=>visible(d.points)).map(d=>`<polyline points="${path(d.points)}" fill="none" stroke="${d.divider_type==='rail'?'#69737c':'#5598bf'}" stroke-width="${d.divider_type==='rail'?4:5}"${d.divider_type==='rail'||d.tunnel&&d.tunnel!=='no'?' stroke-dasharray="9 5"':''}/>`).join('')}${(backgroundImage?[]:GeoUI.data.buildings).filter(b=>visible(b.points)).map(b=>`<polygon points="${path(b.points)}" fill="#d1d8d1" stroke="#a7b5ae" stroke-width="1.5"/>`).join('')}`;
     // Only the public digital card's base layer is muted. Numbers, visit dots,
     // boundary and attribution remain full-strength; private exports are unchanged.
