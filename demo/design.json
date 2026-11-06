@@ -1,7 +1,7 @@
 {
-  "version": "1.12.15",
+  "version": "1.12.16",
   "files": {
-    "shared/style.css": "86015b5dd52092c0b503d54c4f834f6e731fe339a283a5a7035c3b171b888a53",
+    "shared/style.css": "d4c2e8e233965f331f6a5639533d02b071a46fd71751b5ebdbbc50de365701ff",
     "shared/workspace.css": "62761c0474dea7af88a45a0db44879f8f375af398f6de572c06145a397db3ded",
     "shared/theme.css": "ef265c8771ac8493296ab6651bb1598ce455b38f924a9f50632d75b98438dcff",
     "shared/theme.js": "96800ce8ad1608cf664ce737c0385c3a503865555d38214832a2bd11441bf265",

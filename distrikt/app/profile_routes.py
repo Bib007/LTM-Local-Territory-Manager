@@ -65,6 +65,8 @@ class ProfileRuntime:
         with self.accounts.authorized_session(token) as user,self.server.store.lock:
             result=state_for(raw,user)
             permissions=user['permissions']
+            if 'reports.view' in permissions:
+                result['report_congregation']=raw['settings'].get('congregation','')
             if {'reports.view','cards.view','geo.view'}<=permissions:
                 totals=self.server.store.boundary_report()
                 result['boundary_report']=None if totals is None else {

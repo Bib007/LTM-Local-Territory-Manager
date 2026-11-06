@@ -118,13 +118,10 @@ const MapExport={
         while(!next.done&&occupied.has(key(...next.value)))next=search.next();
         if(next.done)throw Error('Der er for mange besøgspunkter til at vise dem enkeltvis på kortbilledet.');
         place(...next.value,group);
-        if(!i){
-          const [x,y]=center(...next.value);
-          if(Math.hypot(x-group.x,y-group.y)>step*2)leaders.push(`<path d="M${group.x.toFixed(1)} ${group.y.toFixed(1)}L${x} ${y}" stroke="#8c1c1c" stroke-opacity=".45" stroke-width="1.5"/>`);
-        }
+
       }
     }
-    const dotCenters=new Map();
+    const dotCenters=new Map(),primaryDots=new Map();
     const markup=dots.map(({col,row,group})=>{
       let [x,y]=center(col,row);
       // Leave an isolated visit at its exact projection when no adjacent
@@ -136,14 +133,16 @@ const MapExport={
         }
       }
       dotCenters.set(key(col,row),[x,y]);
+      if(!primaryDots.has(group))primaryDots.set(group,[x,y]);
       return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius}" fill="#c62828" stroke="white" stroke-width="1.5"/>`;
     });
     // Place house numbers outside both the dot clusters and other numbers.
     // Screen-space reservations account for the halo and exact isolated dots.
     const labelCells=new Set(),halo=radius+2,clearance=halo+step/2;
     const labels=groups.map(group=>{
-      const {x,y,number}=group,labelWidth=String(number).length*14+4;
-      const preferred=[x+11,y-9];
+      const {number}=group,labelWidth=String(number).length*14+4;
+      const [x,y]=primaryDots.get(group)||[group.x,group.y];
+      const preferred=[x+halo+4,y+7];
       const reserve=(tx,ty)=>{
         if(tx<left||tx+labelWidth>left+width||ty-20<top||ty+4>top+height)return false;
         const [minCol,minRow]=cell(tx-clearance,ty-20-clearance);
@@ -159,22 +158,33 @@ const MapExport={
         for(const k of cells)labelCells.add(k);
         return true;
       };
-      if(reserve(...preferred))return {x:preferred[0],y:preferred[1],number};
-      for(let offset=0;offset<=step*12;offset+=step){
-        const candidates=[[x+11+offset,y-9],[x-labelWidth-11-offset,y-9],
-          [x-labelWidth/2,y-11-offset],[x-labelWidth/2,y+26+offset]];
+      const label=(tx,ty)=>{
+        const endX=Math.max(tx,Math.min(tx+labelWidth,x));
+        const endY=Math.max(ty-17,Math.min(ty+2,y));
+        const crowded=[...nearby(...cell(x,y),2)].some(([c,r])=>occupied.has(key(c,r)));
+        if(crowded||Math.hypot(endX-x,endY-y)>halo+9){
+          const line=`M${x.toFixed(1)} ${y.toFixed(1)}L${endX.toFixed(1)} ${endY.toFixed(1)}`;
+          leaders.push(`<path data-number-leader="true" d="${line}" stroke="white" stroke-width="3"/><path d="${line}" stroke="#8c1c1c" stroke-width="1.25"/>`);
+        }
+        return {x:tx,y:ty,number};
+      };
+      if(reserve(...preferred))return label(...preferred);
+      for(let offset=0;offset<=step*16;offset+=step){
+        const gap=halo+4+offset;
+        const candidates=[[x+gap,y+7],[x-labelWidth-gap,y+7],[x-labelWidth/2,y-gap],[x-labelWidth/2,y+gap+20],
+          [x+gap,y-gap],[x-labelWidth-gap,y-gap],[x+gap,y+gap+20],[x-labelWidth-gap,y+gap+20]];
         const position=candidates.find(candidate=>reserve(...candidate));
-        if(position)return {x:position[0],y:position[1],number};
+        if(position)return label(...position);
       }
-      return {x:preferred[0],y:preferred[1],number};
+      throw Error('Der er ikke plads til at placere alle husnumre tydeligt på kortbilledet.');
     });
     return {dots:markup.join(''),leaders:leaders.join(''),labels};
   },
-  svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false}={}){
+  svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false,sharedPdf=false}={}){
     const c=publicCard||card(id);if(!c)throw Error('Kortet findes ikke.');
     const members=publicCard?publicMembers:this.members(id);
     if(!Array.isArray(members))throw Error('Kortbilledet mangler sin adresseliste.');
-    if(publicCard&&Array.isArray(manualFrontRows)&&(manualFrontRows.length||manualIBWithheld)&&!publicCard.geo_polygon?.length&&!members.length)return this.manualDigitalSvg(c,manualFrontRows,publicTemplate);
+    if(publicCard&&Array.isArray(manualFrontRows)&&(manualFrontRows.length||manualIBWithheld)&&!publicCard.geo_polygon?.length&&!members.length)return this.manualDigitalSvg(c,manualFrontRows,publicTemplate,sharedPdf);
     const boundaryPoints=publicCard?(publicCard.geo_polygon?.length?publicCard.geo_polygon:members.map(a=>[a.lng,a.lat])):this.boundsPoints(id);if(!boundaryPoints.length)throw Error('Gem et adressevalg på kortet først.');
     const project=p=>[p[0]*Math.PI/180,Math.log(Math.tan(Math.PI/4+p[1]*Math.PI/360))];
     const coords=[...boundaryPoints,...members.map(a=>[a.lng,a.lat])].map(project),xs=coords.map(p=>p[0]),ys=coords.map(p=>p[1]);
@@ -229,23 +239,80 @@ const MapExport={
     // Only the public digital card's base layer is muted. Numbers, visit dots,
     // boundary and attribution remain full-strength; private exports are unchanged.
     const mapMarkup=`${publicCard?`<g data-map-background="muted" opacity=".3">${backgroundMarkup}</g>`:backgroundMarkup}<polygon points="${path(c.geo_polygon||[])}" fill="${cardColor(c)}" fill-opacity="${publicCard?0:.08}" stroke="${cardColor(c)}" stroke-width="4" stroke-dasharray="12 7"/>${points}`;
-    if(publicCard)return this.digitalSvg(c,members,houses,mapMarkup,publicTemplate,backgroundImage);
+    if(publicCard)return this.digitalSvg(c,members,houses,mapMarkup,publicTemplate,backgroundImage,sharedPdf);
     return `<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560"><defs><clipPath id="mapClip"><rect x="40" y="120" width="1540" height="1310" rx="18"/></clipPath></defs><rect width="2200" height="1560" fill="#fff"/><g font-family="Arial, sans-serif"><text x="42" y="69" font-size="43" font-weight="bold" fill="#263d4e">Distriktskort ${esc(c.number)}</text><text x="42" y="105" font-size="${nameSize}" fill="#263d4e">${esc(name)}</text><text x="2140" y="69" text-anchor="end" font-size="25" fill="#647786">${backgroundImage?'Kortudsnit · ':''}${total} besøg · ${houses.length} ${houses.length===1?'husnummer':'husnumre'}</text><rect x="40" y="120" width="1540" height="1310" rx="18" fill="#edf1ed"/><g clip-path="url(#mapClip)">${mapMarkup}</g><text x="1650" y="132" font-size="22" fill="#a74940">Rød prik = ét gemt besøgspunkt</text>${labels.join('')}<rect x="40" y="1445" width="2118" height="40" rx="6" fill="#fff1ef"/><text x="56" y="1474" font-size="28" font-weight="bold" fill="#b3261e">Husk at tjekke efter IB på det fysiske distriktskort</text><text x="42" y="1505" font-size="20" fill="#647786">${backgroundImage?'Kort: © OpenStreetMap-bidragsydere · openstreetmap.org/copyright · Adresser: DAR':'Adresser / vejlinjer: DAR · øvrige veje / bygninger: © OpenStreetMap-bidragsydere, ODbL'}</text><text x="2140" y="1505" text-anchor="end" font-size="20" fill="#647786">${fmt(state.today)}</text></g></svg>`;
   },
-  async frontTemplate(){
-    if(!this.templatePromise)this.templatePromise=(async()=>{
-      const response=await fetch('/s12-template.png');if(!response.ok)throw Error('Kortets blanke printforside kunne ikke hentes. Prøv igen.');
+  async frontTemplate(language='da'){
+    const english=language==='en',key=english?'englishTemplatePromise':'templatePromise';
+    if(!this[key])this[key]=(async()=>{
+      const response=await fetch(english?'/s12-template-en.png':'/s12-template.png');if(!response.ok)throw Error('Kortets blanke printforside kunne ikke hentes. Prøv igen.');
       const blob=await response.blob(),data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('Printforsiden kunne ikke læses.'));reader.readAsDataURL(blob);});
       await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>image.naturalWidth&&image.naturalHeight?resolve():reject(Error('Den blanke printforside er beskadiget.'));image.onerror=()=>reject(Error('Den blanke printforside er beskadiget.'));image.src=data;});return data;
-    })().catch(error=>{this.templatePromise=null;throw error;});
-    return this.templatePromise;
+    })().catch(error=>{this[key]=null;throw error;});
+    return this[key];
+  },
+  publicFrontRows(members){
+    const streets=new Map();
+    for(const address of members){
+      if(!streets.has(address.road))streets.set(address.road,[]);
+      streets.get(address.road).push(address);
+    }
+    return frontRows({addresses:[...streets].sort((a,b)=>cmp(a[0],b[0])).map(([road,rows])=>({
+      road,numbers:[...new Set(rows.map(a=>a.number))].sort(cmp).join(', '),
+      count:rows.reduce((sum,a)=>sum+a.count,0)
+    }))});
+  },
+  async sharedFront(recipe){
+    const language=state.settings?.print_profiles?.front?.form_language||I18n.language();
+    const english=language==='en',template=await this.frontTemplate(language),card=recipe.card;
+    const rows=recipe.geography_missing?recipe.manual_front_rows.map(row=>({
+      label:`${row.road} ${row.numbers}`,count:row.count_unknown?null:row.count
+    })):this.publicFrontRows(recipe.members);
+    const measure=document.createElement('canvas').getContext('2d');
+    if(!measure)throw Error('Browseren understøtter ikke billedeksport.');
+    const wrap=(value,width,size,bold=false)=>{
+      measure.font=`${bold?'bold ':''}${size*10}px Arial`;
+      const fits=text=>measure.measureText(text).width<=width*10;
+      const lines=[];let line='';
+      for(const word of String(value).split(/\s+/)){
+        const next=line?line+' '+word:word;
+        if(fits(next)){line=next;continue;}
+        if(line)lines.push(line);
+        line='';
+        for(const char of word){
+          if(line&&!fits(line+char)){lines.push(line);line='';}
+          line+=char;
+        }
+      }
+      if(line)lines.push(line);
+      return lines;
+    };
+    const font=[3.35,3.1,2.85,2.6,2.35].find(size=>{
+      const lines=rows.reduce((total,row)=>total+wrap(row.label,99,size).length,recipe.geography_missing?0:1);
+      return lines*size*1.28<=40;
+    });
+    if(!font)throw Error('Vejlisten har ikke plads på printforsiden. Tilpas kortet før deling.');
+    const name=String(card.name||''),number=String(card.number),lineHeight=font*1.28;
+    const fit=(value,width)=>{
+      measure.font='35.3px Arial';
+      const actual=measure.measureText(value).width;
+      return actual?Math.min(3.53,3.53*width*10/actual):3.53;
+    };
+    const countLabel=count=>count===null?(english?'unknown':'ukendt'):count+(english?' visits':' besøg');
+    let y=english?27.5:32;
+    const text=rows.map(row=>{
+      const lines=wrap(row.label,99,font),count=countLabel(row.count);
+      const output=lines.map((line,i)=>`<text x="10.22" y="${y+i*lineHeight}">${esc(line)}</text>`).join('')
+        +`<text x="135.78" y="${y}" text-anchor="end">${esc(count)}</text>`;
+      y+=lines.length*lineHeight;
+      return output;
+    }).join('');
+    const total=recipe.geography_missing?'':`<g font-weight="bold"><text x="10.22" y="${y}">${english?'Total':'I alt'}</text><text x="135.78" y="${y}" text-anchor="end">${countLabel(rows.reduce((sum,row)=>sum+row.count,0))}</text></g>`;
+    return this.raster(`<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560"><rect width="2200" height="1560" fill="white"/><svg x="44" y="100" width="2112" height="1360" viewBox="0 0 146 94"><image href="${template}" width="146" height="94"/><g font-family="Arial,sans-serif" font-size="${font}" fill="#111"><text x="${english?24.09:37.96}" y="${english?19:18.2}" font-size="${fit(name,english?76:55)}">${esc(name)}</text><text x="${english?112.13:118.26}" y="${english?19:18.2}" font-size="${fit(number,english?22:16)}">${esc(number)}</text>${text}${total}</g></svg></svg>`);
   },
   publicFront(c,members,template){
     if(!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(template))throw Error('Den blanke printforside mangler. Dan kortbilledet igen.');
-    const groups=new Map();for(const a of members){if(!groups.has(a.road))groups.set(a.road,[]);groups.get(a.road).push(a);}
-    const addresses=[...groups].sort((a,b)=>cmp(a[0],b[0])).map(([road,rows])=>({road,numbers:[...new Set(rows.map(a=>a.number))].sort(cmp).join(', '),count:rows.reduce((n,a)=>n+a.count,0)}));
-    // Share the physical front's row formatter, never its private card object.
-    const rows=frontRows({addresses}),total=members.reduce((n,a)=>n+a.count,0),step=Math.min(6.65,42/(rows.length+1)),font=Math.min(3.175,step*.58);
+    const rows=this.publicFrontRows(members),total=members.reduce((n,a)=>n+a.count,0),step=Math.min(6.65,42/(rows.length+1)),font=Math.min(3.175,step*.58);
     const texts=rows.map((r,i)=>`<text x="10.22" y="${32+i*step}" font-size="${Math.min(font,103/Math.max(1,r.label.length))}" textLength="${Math.min(103,r.label.length*font*.52)}" lengthAdjust="spacingAndGlyphs">${esc(r.label)}</text><text x="135.78" y="${32+i*step}" font-size="${font}" text-anchor="end">${r.count} besøg</text>`).join('');
     return `<svg x="1630" y="1040" width="520" height="335" viewBox="0 0 146 94" role="img" aria-label="Kortets printforside · offentlige adresser"><image href="${template}" width="146" height="94"/><g font-family="Arial, sans-serif" fill="#111"><text x="37.96" y="18.2" font-size="${Math.min(3.53,55/Math.max(1,String(c.name||'').length))}" textLength="${Math.min(55,String(c.name||'').length*1.8)}" lengthAdjust="spacingAndGlyphs">${esc(c.name||'')}</text><text x="118.26" y="18.2" font-size="${Math.min(3.53,16/Math.max(1,String(c.number).length))}" textLength="${Math.min(16,String(c.number).length*1.8)}" lengthAdjust="spacingAndGlyphs">${esc(c.number)}</text>${texts}<text x="10.22" y="${32+rows.length*step}" font-size="${font}" font-weight="bold">I alt</text><text x="135.78" y="${32+rows.length*step}" font-size="${font}" text-anchor="end" font-weight="bold">${total} besøg</text></g></svg>`;
   },
@@ -256,30 +323,34 @@ const MapExport={
     const name=String(c.name||''),number=String(c.number);
     return `<svg x="1630" y="1040" width="520" height="335" viewBox="0 0 146 94" role="img" aria-label="Kortets printforside · manuelle vejlinjer"><image href="${template}" width="146" height="94"/><g font-family="Arial, sans-serif" fill="#111"><text x="37.96" y="18.2" font-size="${Math.min(3.53,55/Math.max(1,name.length))}" textLength="${Math.min(55,name.length*1.8)}" lengthAdjust="spacingAndGlyphs">${esc(name)}</text><text x="118.26" y="18.2" font-size="${Math.min(3.53,16/Math.max(1,number.length))}" textLength="${Math.min(16,number.length*1.8)}" lengthAdjust="spacingAndGlyphs">${esc(number)}</text>${texts}</g></svg>`;
   },
-  manualDigitalSvg(c,rows,template){
+  manualDigitalSvg(c,rows,template,sharedPdf=false){
     const name=String(c.name||''),number=String(c.number),numberSize=Math.min(48,180/Math.max(1,number.length)),nameSize=Math.min(43,1510/Math.max(1,name.length));
     const noGeo=`<rect x="40" y="200" width="1540" height="1200" rx="22" fill="#f1f5f8" stroke="#c9d7e1" stroke-width="3"/><text x="810" y="735" text-anchor="middle" font-size="46" font-weight="bold" fill="#405968">Geografisk kortvisning mangler</text><text x="810" y="800" text-anchor="middle" font-size="27" fill="#647786">Kortet indeholder manuelle vejlinjer uden geodata.</text>`;
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560" role="img" aria-labelledby="digitalTitle"><title id="digitalTitle">Distriktskort ${esc(number)} · ${esc(name)}</title><rect width="2200" height="1560" fill="#eff4f8"/><g font-family="Arial, sans-serif"><path d="M0 0H2200V164H0Z" fill="#163c57"/><rect x="40" y="32" width="206" height="96" rx="24" fill="#fff" fill-opacity=".14"/><text x="143" y="88" text-anchor="middle" font-size="${numberSize}" font-weight="bold" fill="#fff">${esc(number)}</text><text x="280" y="48" font-size="18" letter-spacing="3" fill="#b8d6e8">DIGITALT DISTRIKTSKORT</text><text x="280" y="104" font-size="${nameSize}" font-weight="bold" fill="#fff">${esc(name)}</text>${this.digitalBrand()}${noGeo}<rect x="1620" y="200" width="540" height="180" rx="28" fill="#fff"/><text x="1652" y="279" font-size="39" font-weight="bold" fill="#163c57">Geografi mangler</text><text x="1652" y="330" font-size="21" fill="#5a7182">Ingen adressepunkter eller besøg vises.</text><rect x="1620" y="410" width="540" height="240" rx="28" fill="#fff"/><text x="1652" y="451" font-size="26" font-weight="bold" fill="#163c57">Senest gennemgået</text><text x="1652" y="514" font-size="40" fill="#163c57">${c.public_dates?.completed?fmt(c.public_dates.completed):'—'}</text><text x="1652" y="552" font-size="26" font-weight="bold" fill="#163c57">Udleveret d.</text><text x="1652" y="614" font-size="40" fill="#163c57">${c.public_dates?.assigned?fmt(c.public_dates.assigned):'—'}</text><text x="1652" y="641" font-size="17" fill="#5a7182">– = ikke oplyst / ikke udleveret</text><rect x="1620" y="680" width="540" height="250" rx="28" fill="#fff1ed"/><text x="1652" y="734" font-size="25" font-weight="bold" fill="#b3261e">Husk det fysiske kort</text><text x="1652" y="788" font-size="24" fill="#b3261e"><tspan x="1652">Husk at tjekke efter IB på</tspan><tspan x="1652" dy="38">det fysiske distriktskort</tspan></text><text x="1652" y="888" font-size="21" fill="#7c5b53">Særlige oplysninger findes på papirkortet.</text><text x="1628" y="1000" font-size="25" font-weight="bold" fill="#163c57">Kortets printforside</text><rect x="1620" y="1030" width="540" height="355" rx="16" fill="#dbe5ed"/>${this.manualPublicFront(c,rows,template)}<text x="42" y="1546" font-size="17" fill="#5a7182">Manuelle vejlinjer · ingen geografi eller besøgspunkter</text></g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560" role="img" aria-labelledby="digitalTitle"><title id="digitalTitle">Distriktskort ${esc(number)} · ${esc(name)}</title><rect width="2200" height="1560" fill="#eff4f8"/><g font-family="Arial, sans-serif"><path d="M0 0H2200V164H0Z" fill="#163c57"/><rect x="40" y="32" width="206" height="96" rx="24" fill="#fff" fill-opacity=".14"/><text x="143" y="88" text-anchor="middle" font-size="${numberSize}" font-weight="bold" fill="#fff">${esc(number)}</text><text x="280" y="48" font-size="18" letter-spacing="3" fill="#b8d6e8">DIGITALT DISTRIKTSKORT</text><text x="280" y="104" font-size="${nameSize}" font-weight="bold" fill="#fff">${esc(name)}</text>${this.digitalBrand()}${noGeo}<rect x="1620" y="200" width="540" height="180" rx="28" fill="#fff"/><text x="1652" y="279" font-size="39" font-weight="bold" fill="#163c57">Geografi mangler</text><text x="1652" y="330" font-size="21" fill="#5a7182">Ingen adressepunkter eller besøg vises.</text><rect x="1620" y="410" width="540" height="240" rx="28" fill="#fff"/><text x="1652" y="451" font-size="26" font-weight="bold" fill="#163c57">Senest gennemgået</text><text x="1652" y="514" font-size="40" fill="#163c57">${c.public_dates?.completed?fmt(c.public_dates.completed):'—'}</text><text x="1652" y="552" font-size="26" font-weight="bold" fill="#163c57">Udleveret d.</text><text x="1652" y="614" font-size="40" fill="#163c57">${c.public_dates?.assigned?fmt(c.public_dates.assigned):'—'}</text><text x="1652" y="641" font-size="17" fill="#5a7182">– = ikke oplyst / ikke udleveret</text><rect x="1620" y="680" width="540" height="250" rx="28" fill="#fff1ed"/><text x="1652" y="734" font-size="25" font-weight="bold" fill="#b3261e">Husk det fysiske kort</text><text x="1652" y="788" font-size="24" fill="#b3261e"><tspan x="1652">Husk at tjekke efter IB på</tspan><tspan x="1652" dy="38">det fysiske distriktskort</tspan></text><text x="1652" y="888" font-size="21" fill="#7c5b53">Særlige oplysninger findes på papirkortet.</text>${sharedPdf?'':`<text x="1628" y="1000" font-size="25" font-weight="bold" fill="#163c57">Kortets printforside</text><rect x="1620" y="1030" width="540" height="355" rx="16" fill="#dbe5ed"/>${this.manualPublicFront(c,rows,template)}`}<text x="42" y="1546" font-size="17" fill="#5a7182">Manuelle vejlinjer · ingen geografi eller besøgspunkter</text></g></svg>`;
   },
   digitalBrand(){
     // Fixed public project identity; no local settings or additional requests.
     return `<g data-ltm-brand="true"><svg x="2026" y="22" width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="digitalBrandTitle"><title id="digitalBrandTitle">LTM — blue folded map</title><defs><linearGradient id="digitalBrandBlue" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#04afff"/><stop offset="1" stop-color="#0879ee"/></linearGradient><radialGradient id="digitalBrandBlack" cx=".2" cy="0" r="1.15"><stop stop-color="#24282d"/><stop offset="1" stop-color="#08090b"/></radialGradient></defs><rect x="1" y="1" width="94" height="94" rx="24" fill="url(#digitalBrandBlack)" stroke="#30363c" stroke-width=".6"/><g fill="url(#digitalBrandBlue)" stroke="#39a7ff" stroke-width=".35" stroke-linejoin="round"><path d="M20 34Q20 30 24 28L37 21Q38 20 38 22V67L25 75Q20 78 20 73Z"/><path d="M43 21Q42 20 42 22V68L56 77Q57 78 57 76V31Z"/><path d="M62 30 73 23Q79 19 79 26V66Q79 70 75 72L62 80Q61 81 61 79V32Q61 31 62 30Z"/></g></svg><text x="2062" y="126" text-anchor="middle" font-size="16" fill="#b8d6e8">Local Territory Manager</text></g>`;
   },
-  digitalSvg(c,members,houses,mapMarkup,template,backgroundImage){
+  digitalSvg(c,members,houses,mapMarkup,template,backgroundImage,sharedPdf=false){
     const total=members.reduce((n,a)=>n+a.count,0),number=String(c.number),name=String(c.name||''),numberLines=number.match(/.{1,12}/gu)||[''],numberSize=Math.min(48,180/Math.max(1,Math.min(12,number.length))),nameSize=Math.min(43,1510/Math.max(1,name.length));
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560" role="img" aria-labelledby="digitalTitle"><title id="digitalTitle">Distriktskort ${esc(number)} · ${esc(name)}</title><defs><clipPath id="mapClip"><rect x="40" y="120" width="1540" height="1310" rx="22"/></clipPath></defs><rect width="2200" height="1560" fill="#eff4f8"/><g font-family="Arial, sans-serif"><path d="M0 0H2200V164H0Z" fill="#163c57"/><rect x="40" y="32" width="206" height="96" rx="24" fill="#fff" fill-opacity=".14"/><text x="143" text-anchor="middle" font-size="${numberSize}" font-weight="bold" fill="#fff">${numberLines.map((line,i)=>`<tspan x="143" y="${80+(i-(numberLines.length-1)/2)*numberSize*1.2+numberSize*.33}">${esc(line)}</tspan>`).join('')}</text><text x="280" y="48" font-size="18" letter-spacing="3" fill="#b8d6e8">DIGITALT DISTRIKTSKORT</text><text x="280" y="104" textLength="${Math.min(1510,name.length*nameSize*.57)}" lengthAdjust="spacingAndGlyphs" font-size="${nameSize}" font-weight="bold" fill="#fff">${esc(name)}</text>${this.digitalBrand()}<rect x="26" y="190" width="1568" height="1336" rx="30" fill="#dbe5ed"/><rect x="24" y="184" width="1568" height="1336" rx="30" fill="#fff"/><g transform="translate(0 80)"><rect x="40" y="120" width="1540" height="1310" rx="22" fill="#fff"/><g clip-path="url(#mapClip)">${mapMarkup}</g></g><rect x="1620" y="200" width="540" height="180" rx="28" fill="#fff"/><text x="1652" y="279" font-size="49" font-weight="bold" fill="#163c57">${total}</text><text x="1652" y="330" font-size="23" fill="#5a7182">gemte adressepunkter</text><text x="1652" y="361" font-size="17" fill="#a33f39">Prikkerne viser kortets gemte adressepunkter</text><rect x="1620" y="410" width="540" height="240" rx="28" fill="#fff"/><text x="1652" y="451" font-size="26" font-weight="bold" fill="#163c57">Senest gennemgået</text><text x="1652" y="514" font-size="40" fill="#163c57">${c.public_dates?.completed?fmt(c.public_dates.completed):"—"}</text><text x="1652" y="552" font-size="26" font-weight="bold" fill="#163c57">Udleveret d.</text><text x="1652" y="614" font-size="40" fill="#163c57">${c.public_dates?.assigned?fmt(c.public_dates.assigned):"—"}</text><text x="1652" y="641" font-size="17" fill="#5a7182">– = ikke oplyst / ikke udleveret</text><rect x="1620" y="680" width="540" height="250" rx="28" fill="#fff1ed"/><text x="1652" y="734" font-size="25" font-weight="bold" fill="#b3261e">Husk det fysiske kort</text><text x="1652" y="788" font-size="24" fill="#b3261e" aria-label="Husk at tjekke efter IB på det fysiske distriktskort"><tspan x="1652">Husk at tjekke efter IB på</tspan><tspan x="1652" dy="38">det fysiske distriktskort</tspan></text><text x="1652" y="888" font-size="21" fill="#7c5b53">Særlige oplysninger findes på papirkortet.</text><text x="1628" y="1000" font-size="25" font-weight="bold" fill="#163c57">Kortets printforside</text><rect x="1620" y="1030" width="540" height="355" rx="16" fill="#dbe5ed"/>${this.publicFront(c,members,template)}<text x="1628" y="1450" font-size="21" fill="#5a7182">Kortgrundlag · ${fmt(state.today)}</text><text x="42" y="1546" font-size="17" fill="#5a7182">${backgroundImage?'Kort: © OpenStreetMap-bidragsydere · openstreetmap.org/copyright · Adresser: DAR':'Adresser / vejlinjer: DAR · øvrige veje / bygninger: © OpenStreetMap-bidragsydere, ODbL'}</text></g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560" role="img" aria-labelledby="digitalTitle"><title id="digitalTitle">Distriktskort ${esc(number)} · ${esc(name)}</title><defs><clipPath id="mapClip"><rect x="40" y="120" width="1540" height="1310" rx="22"/></clipPath></defs><rect width="2200" height="1560" fill="#eff4f8"/><g font-family="Arial, sans-serif"><path d="M0 0H2200V164H0Z" fill="#163c57"/><rect x="40" y="32" width="206" height="96" rx="24" fill="#fff" fill-opacity=".14"/><text x="143" text-anchor="middle" font-size="${numberSize}" font-weight="bold" fill="#fff">${numberLines.map((line,i)=>`<tspan x="143" y="${80+(i-(numberLines.length-1)/2)*numberSize*1.2+numberSize*.33}">${esc(line)}</tspan>`).join('')}</text><text x="280" y="48" font-size="18" letter-spacing="3" fill="#b8d6e8">DIGITALT DISTRIKTSKORT</text><text x="280" y="104" textLength="${Math.min(1510,name.length*nameSize*.57)}" lengthAdjust="spacingAndGlyphs" font-size="${nameSize}" font-weight="bold" fill="#fff">${esc(name)}</text>${this.digitalBrand()}<rect x="26" y="190" width="1568" height="1336" rx="30" fill="#dbe5ed"/><rect x="24" y="184" width="1568" height="1336" rx="30" fill="#fff"/><g transform="translate(0 80)"><rect x="40" y="120" width="1540" height="1310" rx="22" fill="#fff"/><g clip-path="url(#mapClip)">${mapMarkup}</g></g><rect x="1620" y="200" width="540" height="180" rx="28" fill="#fff"/><text x="1652" y="279" font-size="49" font-weight="bold" fill="#163c57">${total}</text><text x="1652" y="330" font-size="23" fill="#5a7182">gemte adressepunkter</text><text x="1652" y="361" font-size="17" fill="#a33f39">Prikkerne viser kortets gemte adressepunkter</text><rect x="1620" y="410" width="540" height="240" rx="28" fill="#fff"/><text x="1652" y="451" font-size="26" font-weight="bold" fill="#163c57">Senest gennemgået</text><text x="1652" y="514" font-size="40" fill="#163c57">${c.public_dates?.completed?fmt(c.public_dates.completed):"—"}</text><text x="1652" y="552" font-size="26" font-weight="bold" fill="#163c57">Udleveret d.</text><text x="1652" y="614" font-size="40" fill="#163c57">${c.public_dates?.assigned?fmt(c.public_dates.assigned):"—"}</text><text x="1652" y="641" font-size="17" fill="#5a7182">– = ikke oplyst / ikke udleveret</text><rect x="1620" y="680" width="540" height="250" rx="28" fill="#fff1ed"/><text x="1652" y="734" font-size="25" font-weight="bold" fill="#b3261e">Husk det fysiske kort</text><text x="1652" y="788" font-size="24" fill="#b3261e" aria-label="Husk at tjekke efter IB på det fysiske distriktskort"><tspan x="1652">Husk at tjekke efter IB på</tspan><tspan x="1652" dy="38">det fysiske distriktskort</tspan></text><text x="1652" y="888" font-size="21" fill="#7c5b53">Særlige oplysninger findes på papirkortet.</text>${sharedPdf?'':`<text x="1628" y="1000" font-size="25" font-weight="bold" fill="#163c57">Kortets printforside</text><rect x="1620" y="1030" width="540" height="355" rx="16" fill="#dbe5ed"/>${this.publicFront(c,members,template)}`}<text x="1628" y="${sharedPdf?1000:1450}" font-size="21" fill="#5a7182">Kortgrundlag · ${fmt(state.today)}</text><text x="42" y="1546" font-size="17" fill="#5a7182">${backgroundImage?'Kort: © OpenStreetMap-bidragsydere · openstreetmap.org/copyright · Adresser: DAR':'Adresser / vejlinjer: DAR · øvrige veje / bygninger: © OpenStreetMap-bidragsydere, ODbL'}</text></g></svg>`;
   },
   async blob(id,background='local',options={}){
     if(this.exporting)throw Error('En PNG-eksport kører allerede. Vent til den er færdig.');
     this.exporting=true;try{
     if(background==='osm')await this.prepareOSM(id,options);
-    if(options.publicCard)options={...options,publicTemplate:await this.frontTemplate()};
-    const snapshot=background==='osm'?this.osmSnapshot(id,{tight:true,...options}):{},svg=this.svg(id,{...snapshot,...options}),image=new Image();
+    if(options.publicCard&&!options.sharedPdf)options={...options,publicTemplate:await this.frontTemplate()};
+    const snapshot=background==='osm'?this.osmSnapshot(id,{tight:true,...options}):{};
+    return await this.raster(this.svg(id,{...snapshot,...options}));
+    }finally{this.exporting=false;}
+  },
+  async raster(svg){
+    const image=new Image();
     await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error('Kortbilledet kunne ikke dannes i browseren.'));image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);});
     const canvas=document.createElement('canvas');canvas.width=2200;canvas.height=1560;const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('Browseren understøtter ikke billedeksport.');ctx.drawImage(image,0,0);
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG-billedet kunne ikke gemmes.');
     return blob;
-    }finally{this.exporting=false;}
   },
   async png(id,background='local'){
     const blob=await this.blob(id,background),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Distriktskort-'+String(card(id).number).replace(/[^0-9A-Za-z_-]/g,'_')+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('Kortbilledet er hentet som PNG');
