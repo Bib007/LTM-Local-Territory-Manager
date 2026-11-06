@@ -35,7 +35,7 @@ from runtime_status import RuntimeStatus
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=Path(__file__).resolve().parent
-VERSION='1.12.13'
+VERSION='1.12.14'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 class Server(ThreadingHTTPServer):

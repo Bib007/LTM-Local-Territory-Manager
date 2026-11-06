@@ -77,7 +77,10 @@ jobs:
         run: bash scripts/publish_release_track.sh macos-app
 
   macos-server:
-    if: inputs.track == 'macos-server'
+    # AFK-002: fail closed. Set this repository variable to the exact tested
+    # main commit SHA only after physical Apple Silicon, LAN/VPN and restart tests.
+    # An Intel CI runner is not a substitute for the owner's physical test.
+    if: inputs.track == 'macos-server' && vars.LTM_MAC_SERVER_PHYSICAL_TEST_SHA == github.sha
     needs: common
     runs-on: macos-15-intel
     permissions:
