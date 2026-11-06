@@ -115,6 +115,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         self._geo_cache=None
                         self.geo_generation=getattr(self,'geo_generation',0)+1
                     if not self._dirty_modules or 'geo' in self._dirty_modules:self._info_cache=None
+                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored','ib'}):
+                        self._boundary_report_cache=None
             except Exception:
                 self.db.rollback()
                 raise

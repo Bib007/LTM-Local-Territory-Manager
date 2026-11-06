@@ -81,6 +81,21 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_boundary_report_respects_report_geo_and_ib_permissions(self):
+        self.store.mutate('geo.main.save',{'points':[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]})
+        self.store.mutate('geo.manual',{'road':'Fiktiv vej','number':'1','postcode':'9999','lng':10,'lat':55})
+        address=self.store.geo_state()['addresses'][0]['id']
+        card=self.store.mutate('geo.assign',{'number':'120','address_ids':[address]})['id']
+        self.store.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':'1','address_id':address,'date':'2026-01-01'})
+        self.assertEqual(self.state(self.admin)['boundary_report'],{'visits':1,'ib':1})
+        reader,role,_=self.reader(['reports.view'])
+        self.assertNotIn('boundary_report',self.state(reader))
+        rights=['reports.view','cards.view','geo.view']
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights},self.admin)
+        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1})
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
+        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1})
+
     def test_group_fields_merge_under_profiles_and_import_requires_current_rights(self):
         ident=self.store.mutate('publisher.save',{'name':'Fiktiv gruppeperson'})['id']
         second=self.login('Fiktiv admin','Fiktiv-password-123')

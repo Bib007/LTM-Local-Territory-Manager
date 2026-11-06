@@ -9,6 +9,67 @@ from geography import valid_polygon, point_in_polygon
 
 class MainBoundaryStore:
     def main_boundary(self):return self.get('geo','main-boundary')
+    def boundary_report(self):
+        """Count mapped visits and IB records across the whole saved boundary."""
+        if self._boundary_report_cache is not None:
+            return self._boundary_report_cache
+        boundary=self.main_boundary()
+        if not boundary:
+            return None
+
+        from geo_store import address_key
+        polygon=boundary['points']
+        west,east=min(p[0] for p in polygon),max(p[0] for p in polygon)
+        south,north=min(p[1] for p in polygon),max(p[1] for p in polygon)
+        addresses=[a for a in self.all('geo') if a.get('entity')=='address']
+        ignored={row['address_id'] for row in self.all('ignored')}
+        cards={c['id']:c for c in self.all('cards')}
+        by_key={}
+        by_id={}
+        # Current source coordinates win over saved card copies of an address.
+        for address in sorted(addresses,key=lambda a:(not a.get('verified'),a['id'])):
+            key=address_key(address)
+            by_key.setdefault(key,address)
+            by_id[address['id']]=key
+            if address.get('source_id'):
+                by_id.setdefault(address['source_id'],key)
+        for card in cards.values():
+            for address in card.get('geo_addresses',[]):
+                key=by_id.setdefault(address['id'],address_key(address))
+                by_key.setdefault(key,address)
+
+        inside={}
+        ignored_keys={by_id[ident] for ident in ignored if ident in by_id}
+        for key,address in by_key.items():
+            lng,lat=address.get('lng'),address.get('lat')
+            if address.get('retired') or key in ignored_keys or lng is None or lat is None:
+                continue
+            if west<=lng<=east and south<=lat<=north and point_in_polygon((lng,lat),polygon):
+                inside[key]=address
+
+        def normalize(value):
+            return re.sub(r'[\s.,]+','',str(value or '').casefold())
+
+        ib_count=0
+        for record in self.all('ib'):
+            key=by_id.get(record.get('address_id'))
+            if not record.get('address_id'):
+                card=cards.get(record['card_id'],{})
+                members={by_id.get(ident) for ident in card.get('address_ids',[])}
+                members.update(by_id.get(a['id']) for a in card.get('geo_addresses',[]))
+                road=normalize(record.get('road'))
+                number=normalize(record.get('number'))
+                matches=[unit for unit in members if unit in by_key and normalize(unit[1])==road
+                         and number in (normalize(unit[2]),normalize(' '.join(unit[2:])))]
+                if len(matches)==1:
+                    key=matches[0]
+            if key in inside:
+                ib_count+=1
+
+        self._boundary_report_cache={'visits':sum(a.get('count',1) for a in inside.values()),
+                                     'ib':ib_count}
+        return self._boundary_report_cache
+
     def main_boundary_preview(self):
         from geo_store import address_key
         boundary=self.main_boundary()

@@ -17,6 +17,22 @@ class MainBoundaryTests(unittest.TestCase):
     def save(self,poly=POLY):return self.s.mutate('geo.main.save',{'points':poly})
     def preview(self):return self.s.mutate('geo.main.prune.preview',{})
     def prune(self,p):return self.s.mutate('geo.main.prune',{'expected':p['expected']})
+    def test_report_counts_unassigned_and_edge_points_with_mapped_ib_only(self):
+        self.assertIsNone(self.s.boundary_report())
+        assigned=self.address(1);edge=self.address(2,10.01)
+        outside=self.address(3,10.02);ignored=self.address(4);retired=self.address(5)
+        with self.s.transaction():
+            for ident,changes in ((assigned,{'count':3}),(retired,{'retired':True})):
+                self.s.put('geo',dict(self.s.get('geo',ident),**changes))
+        card=self.s.mutate('geo.assign',{'number':'120','address_ids':[assigned,edge,outside]})['id']
+        self.s.mutate('ignore.save',{'address_id':ignored,'reason':'Fiktiv undtagelse'})
+        self.address(6)
+        self.save()
+        self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':0})
+        for n,ident in ((1,assigned),(2,None),(3,outside),(9,None)):
+            self.s.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':str(n),'address_id':ident,'date':'2026-01-01'})
+        self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':2})
+
     def test_many_points_and_restart_preserve_all_details(self):
         points=[[10+.01*math.cos(i*2*math.pi/5000),55+.01*math.sin(i*2*math.pi/5000)] for i in range(5000)]
         self.assertEqual(self.save(points)['points'],5000)
