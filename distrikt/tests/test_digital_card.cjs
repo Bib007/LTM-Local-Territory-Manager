@@ -21,6 +21,8 @@ assert(svg.includes('DIGITALT DISTRIKTSKORT'));assert(svg.includes('Kortets prin
 context.neutral={...context.recipe,publicMembers:[...context.recipe.publicMembers,
  {id:'saved-point',road:'PRIVATE_NEUTRAL_ROAD',number:'35',lng:10.013,lat:55.013,count:1,saved_point:true,notes:'PRIVATE_IB_NOTE'}]};
 const neutralSvg=run("MapExport.svg('fake',neutral)");
+assert.match(neutralSvg,/Prikkerne viser kortets gemte adressepunkter/);
+assert.doesNotMatch(neutralSvg,/Rød = resterende|grå = gemt punkt/,"The public marker legend must not identify the neutral markers as a special status");
 assert.equal((neutralSvg.match(/<circle /g)||[]).length,4);
 assert.equal((neutralSvg.match(/fill="#657888"/g)||[]).length,1,'One neutral saved point has a distinct grey marker');
 assert.match(neutralSvg,/>35<\/text>/,'Approved public house number is shown');

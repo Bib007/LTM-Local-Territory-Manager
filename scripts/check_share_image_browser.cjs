@@ -145,7 +145,8 @@ module.exports=async(browser,out)=>{
   assert.equal('data:image/png;base64,'+result.png,serverPreview,'The browser shows the exact server-dated image');
   assert.doesNotMatch(result.svg,/IB_SKAL_IKKE_MED|Fiktiv ældre vej|PRIVAT_IB_NOTE/);assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
   assert.deepEqual([result.width,result.height],[2200,1560]);assert.equal(result.dots.length,visits+2,'SVG includes all regular and both neutral saved points even with a road filter before export');
-  assert.equal(result.redRegions,visits,'The final dated PNG has one independently visible red region per visit');
+  assert.doesNotMatch(result.svg,/Rød = resterende|grå = gemt punkt/,'The public image cannot disclose marker status through its legend');
+   assert.equal(result.redRegions,visits,'The final dated PNG has one independently visible red region per visit');
   assert.equal(result.redCenters,visits,'Each regular visit has an unobscured red center in the PNG');assert.equal(result.neutralCenters,2,'Both saved points have separate neutral centers in the final PNG');
   assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains 30%-opacity OSM tiles over white');
   assert.deepEqual(result.labels.map(label=>label.number).sort(),['17','19','2','2','2A','3','35','41']);
