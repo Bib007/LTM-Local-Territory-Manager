@@ -30,7 +30,7 @@ class ReadableExportTests(unittest.TestCase):
     def tearDown(self):self.store.close();self.tmp.cleanup()
     def test_complete_private_zip_allowlists_and_exact_addresses(self):
         revision=self.store.revision;job=self.export.prepare();self.assertEqual(len(job['cards']),1)
-        self.assertEqual([a['id'] for a in job['cards'][0]['members']],['one'])
+        self.assertEqual([a['id'] for a in job['cards'][0]['members']],['one','ib']);self.assertTrue(job['cards'][0]['members'][1]['saved_point']);self.assertEqual(job['cards'][0]['members'][1]['number'],'9');self.assertNotIn('floor',job['cards'][0]['members'][1])
         self.assertNotIn('ib',job['cards'][0]['card']);self.assertNotIn('notes',job)
         self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
         raw=self.export.finish(job['token']);self.assertEqual(self.store.revision,revision)

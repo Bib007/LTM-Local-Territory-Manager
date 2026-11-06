@@ -1219,7 +1219,7 @@ const I18n={
   "Kortdata er ændret. Dan og kontrollér et nyt preview.":"Card data has changed. Generate and review a new preview.",
   "Forbindelsesfilen er ikke gyldig JSON. Vælg den dannede forbindelsesfil.":"The connection file is not valid JSON. Choose the generated connection file.",
   "Deling og QR · Google Drive":"Sharing and QR · Google Drive",
-  "Del godkendte kortbilleder uden login, mens kortet er udleveret. IB, noter, forkyndere og databaser uploades ikke.":"Share approved card images without sign-in while the card is assigned. Do-not-call entries, notes, publishers and databases are never uploaded.",
+  "Del godkendte kortbilleder uden login, mens kortet er udleveret. IB-adresser vises som neutrale prikker med husnumre. IB-status, noter, forkyndere og databaser deles ikke.":"Share approved card images without sign-in while the card is assigned. Do-not-call addresses appear as neutral markers with house numbers. Their status, notes, publishers and database files are not shared.",
   "Vis forbindelse og delte kort":"Show connection and shared cards",
   "Afbryd Google-forbindelsen":"Disconnect Google",
   "Afbrydelse stopper upload. Allerede delte billeder forbliver tilgængelige, indtil du fjerner deres deling.":"Disconnecting stops uploads. Already shared images stay accessible until you remove their sharing.",

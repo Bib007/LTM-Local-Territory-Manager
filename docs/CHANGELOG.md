@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.14 · 2026-11-06
+
+- Preserve ordinary red address and IB visit markers in private district maps, combined views and local PNG exports, including dense or coincident coordinates.
+- On explicitly approved public Drive/QR map images, show saved IB locations as neutral address dots with approved house numbers, without private IB status or notes. Include these in saved-point totals but not in remaining visits.
+- Validate the actual dated 2200 × 1560 PNG and approval flow. Keep existing Drive/QR links unchanged until a fresh reviewed image is explicitly approved. Clarify Danish and English privacy guidance.
+
 ## 1.12.13 · 2026-11-05
 
 - Delete a single erroneous assignment from History after reviewing the card, publisher, dates and status. Choose the physical location when removing an active assignment. Existing completions and notes are kept, and the assignment is recoverable for 48 hours unless a newer assignment conflicts.

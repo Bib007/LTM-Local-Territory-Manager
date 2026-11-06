@@ -213,7 +213,7 @@ class SharingTests(unittest.TestCase):
         self.s.mutate('ib.save',{'card_id':self.c,'address_id':'a2','road':'Fiktiv vej','number':'3','date':'2026-01-01'})
         self.s.mutate('publisher.save',{'name':'PRIVATE_PUBLISHER'})
         with self.s.transaction():self.s.put('notes',{'id':'n1','card_id':self.c,'text':'PRIVATE_NOTE'})
-        recipe=self.p.prepare(self.c);self.assertEqual([a['number'] for a in recipe['members']],['1']);self.assertNotIn('PRIVATE',json.dumps(recipe));self.assertNotIn('ib',recipe)
+        recipe=self.p.prepare(self.c);self.assertEqual([a['number'] for a in recipe['members']],['1','3']);self.assertTrue(recipe['members'][1]['saved_point']);self.assertNotIn('floor',recipe['members'][1]);self.assertNotIn('PRIVATE',json.dumps(recipe));self.assertNotIn('ib',recipe)
     def test_publish_queue_stable_file_and_qr(self):
         self.enqueue();self.assertEqual(self.row()['status'],'queued');self.p.process_one();first=self.row();self.assertEqual(first['status'],'published')
         self.assertEqual(self.p.drive.uploads[0][0],self.png);self.assertNotIn('queued_png',first)
@@ -292,6 +292,25 @@ class SharingTests(unittest.TestCase):
         self.s.mutate('revision.approve',{'card_id':self.c,'side':'front'})
         Publications(self.s)
         self.assertFalse(self.s.get('cards',self.c)['front_revision'])
+    def test_public_saved_points_include_house_number_but_never_ib_metadata(self):
+        before=self.p.prepare(self.c)
+        with self.s.transaction():
+            self.s.put('ib',{'id':'fictional-ib','card_id':self.c,'address_id':'a2',
+                'road':'Fiktiv vej','number':'3','note':'PRIVATE_IB_NOTE','status':'PRIVATE_IB_STATUS'})
+        recipe=self.p.prepare(self.c)
+        members=recipe['members']
+        self.assertEqual([a['id'] for a in members],['a1','a2'])
+        self.assertNotIn('saved_point',members[0])
+        self.assertTrue(members[1]['saved_point'])
+        self.assertEqual(members[1]['number'],'3')
+        self.assertEqual(members[1]['count'],1)
+        self.assertNotIn('floor',members[1])
+        self.assertNotIn('door',members[1])
+        self.assertNotIn('postcode',members[1])
+        self.assertNotIn('PRIVATE_IB_',json.dumps(recipe))
+        self.assertNotEqual(before['fingerprint'],recipe['fingerprint'])
+        self.assertEqual(recipe['render_revision'],RENDER_REVISION)
+
     def test_public_name_is_in_recipe_and_invalidates_changed_name(self):
         with self.s.transaction():
             c=self.s.get('cards',self.c);c['name']='Fiktivt bykort';self.s.put('cards',c)
