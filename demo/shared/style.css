@@ -82,7 +82,14 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .reportCoverSubtitle{margin:.35em 0 1em;font-size:1.55em}
 @media print{
  .reportCover{min-height:180mm;break-after:page}
- .reportRings{grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm}
- .reportRing svg{width:20mm}
+ .reportRings{grid-template-columns:repeat(2,minmax(0,1fr));gap:3mm;margin:1.5mm 0}
+ .reportRing{padding:1.5mm;gap:2mm}
+ .reportRing svg{width:15mm}
+ .reportRing h4{margin-bottom:1px}
+ .reportRing p{margin:0;font-size:9px}
+ .boundaryReport h2{margin:0}
+ .boundaryReport .metrics{margin:2mm 0}
+ .boundaryReport .metrics>div{padding:4px}
+ .boundaryReport p{margin:0 0 2mm}
  #summaryPrint{display:none}
 }
