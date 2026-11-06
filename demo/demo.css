@@ -38,9 +38,9 @@
  .report .chart{gap:2px}
 }
 @media print{
- .report .reportMap{height:105mm}
+ .reportPrintMap{width:100%;height:auto;break-inside:avoid}
  .report .tablewrap{overflow:visible}
- .report .eyebrow{color:#333}
+ .report .reportMark{color:#333;letter-spacing:normal}
 }
 .reportSummary h2{font-size:28px;font-weight:600;margin:0 0 12px}
 .pageTitle .demoYear{display:grid;gap:2px;flex-shrink:0}

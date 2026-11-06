@@ -149,6 +149,11 @@ async function shot(page, name) {
       await page.evaluate(() => {window.print = () => {window.demoPrinted = true;};});
       await page.locator('[data-do=print-report]').click();
       assert.equal(await page.evaluate(() => window.demoPrinted),true);
+      await page.emulateMedia({media:'print'});
+      assert.equal(await page.locator('.reportMark:visible').count(),3);
+      assert.equal(await page.locator('#reportMap').isVisible(),false);
+      assert.equal(await page.locator('.reportPrintMap:visible polygon').count(),24);
+      await page.emulateMedia({media:'screen'});
       await navigate(page,'map');
       await page.locator('#color').selectOption('age');
       assert.match(await page.locator('.mapLegend').innerText(), /Under 90 days/);

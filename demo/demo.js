@@ -96,9 +96,25 @@ function reportMetrics(stats){
  return `<div class="metrics">${Object.entries(reportLabels()).map(([key,label])=>
   `<div><small>${label}</small><strong>${stats[key]}</strong></div>`).join('')}</div>`;
 }
+const reportMark=()=>`<div class="eyebrow reportMark">DEMO · ${t('OPDIGTEDE DATA','FICTIONAL DATA')}</div>`;
+function printableReportMap(cards,covered){
+ const polygons=cards.filter(c=>c.polygon.length>=3).map(c=>({id:c.id,points:c.polygon.map(([lng,lat])=>
+  [lng*Math.PI/180,Math.log(Math.tan(Math.PI/4+lat*Math.PI/360))])}));
+ if(!polygons.length)return '';
+ const points=polygons.flatMap(c=>c.points),xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
+ const left=Math.min(...xs),right=Math.max(...xs),bottom=Math.min(...ys),top=Math.max(...ys);
+ const scale=Math.min(660/(right-left),355/(top-bottom));
+ if(!Number.isFinite(scale))return '';
+ const width=(right-left)*scale,height=(top-bottom)*scale,x=(700-width)/2,y=(395-height)/2;
+ return `<svg class="printOnly reportPrintMap" viewBox="0 0 700 395" role="img" aria-label="${t('Opdigtede distriktsgrænser','Fictional territory boundaries')}">
+ <rect width="700" height="395" fill="#edf1ef"/>
+ <rect x="${x-8}" y="${y-8}" width="${width+16}" height="${height+16}" fill="none" stroke="#b74337" stroke-width="2" stroke-dasharray="6 4"/>
+ ${polygons.map(c=>`<polygon points="${c.points.map(([lng,lat])=>[(x+(lng-left)*scale).toFixed(2),(y+(top-lat)*scale).toFixed(2)].join(',')).join(' ')}"
+  fill="${covered.has(c.id)?'#81bd9b':'#d6dfe4'}" stroke="${covered.has(c.id)?'#257648':'#657887'}" stroke-width="1.5"/>`).join('')}</svg>`;
+}
 function reportDetails(period,s){
  const labels=reportLabels(),rows=[['total','assigned','home'],['missing','missingAssigned','missingHome']];
- return `<section class="report"><h2>${t('Aktuelle distrikter og udlevering','Current territories and assignments')}</h2>
+ return `<section class="report">${reportMark()}<h2>${t('Aktuelle distrikter og udlevering','Current territories and assignments')}</h2>
  <p>${t('Status den','Status as of')} ${fmt(data.today)}</p><div class="tablewrap"><table>
  <thead><tr><th scope="col">${t('Distrikter','Territories')}</th><th scope="col">${t('I alt','Total')}</th>
  <th scope="col">${t('Udleveret nu','Currently assigned')}</th><th scope="col">${t('Hjemme nu','Currently available')}</th></tr></thead>
@@ -116,12 +132,12 @@ function reports(){
  return header+tabs+`<div class="toolbar noPrint">
  ${reportMode==='calendar'?yearSelect('calendar'):''}
  <button class="primary" data-do="print-report">${t('Print demorapport / PDF','Print demo report / PDF')}</button></div>
- <section class="report reportSummary"><div class="eyebrow">DEMO · ${t('OPDIGTEDE DATA','FICTIONAL DATA')}</div>
+ <section class="report reportSummary">${reportMark()}
  <h2>${reportHeading(reportMode)}</h2><small>${reportDates(period)} · ${t('Rapport udarbejdet den','Report prepared on')} ${fmt(data.today)}</small>
  ${reportMetrics(s)}<p class="hint">${t('Gentagne gennemgange tæller hver gang. Aktuelle distrikter tæller én gang. Udleveret og hjemme beskriver status nu.','Repeated completions count each time. Current territories count once. Assigned and available describe the current status.')}</p>
  <div class="reportchart"><h3>${t('Gennemgange pr. måned','Monthly completions')}</h3>${chart(period)}</div></section>
- <section class="report reportScreenMap"><h2>${t('Gennemgåede distrikter','Completed territories')} · ${reportHeading(reportMode)}</h2><p>${reportDates(period)}</p>
- <div id="reportMap" class="map reportMap"></div><p class="mapCaption">${t('Grøn: gennemgang registreret i perioden. Grå: ingen gennemgang registreret i perioden. Alle grænser er opdigtede.','Green: a completion was recorded in the period. Grey: no completion recorded in the period. All boundaries are fictional.')}</p></section>
+ <section class="report reportScreenMap">${reportMark()}<h2>${t('Gennemgåede distrikter','Completed territories')} · ${reportHeading(reportMode)}</h2><p>${reportDates(period)}</p>
+ <div id="reportMap" class="map reportMap noPrint"></div>${printableReportMap(data.cards,s.coveredIds)}<p class="mapCaption">${t('Grøn: gennemgang registreret i perioden. Grå: ingen gennemgang registreret i perioden. Rød stiplet linje: samlet demogrænse.','Green: a completion was recorded in the period. Grey: no completion recorded in the period. Red dashed line: overall fictional boundary.')}</p></section>
  ${reportDetails(period,s)}<section class="panel noPrint"><h2>S-13</h2><p>${t('Original udfyldt S-13 og samlet rapport med alle perioder findes i den installerede app. Demoen udskriver den viste periode med opdigtede data.','The installed app provides the original filled-in S-13 and a combined report for all periods. The demo prints the displayed period with fictional data.')}</p></section>`;
 }
 function history(){
