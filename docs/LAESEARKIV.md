@@ -6,7 +6,7 @@
 
 De fire PDF'er samler forsider, IB-bagsider, digitale kort og alle opgaver. S-13-mappen indeholder hvert tjenesteår fra den ældste relevante gemte dato til den nyeste, også med arkiverede kort. Manglende historik opfindes ikke. CSV viser kortreferencer, præcise etager/døre og markerer gamle samlede vejlinjer som vejlinjer. Kort uden geografi findes stadig i forsider/CSV.
 
-OpenStreetMap-kort vises ét ad gangen og medtages med **Medtag kort og fortsæt**. Næste kort hentes først efter dette valg; der er ingen automatisk massehentning. Visningen kræver internet, mens den færdige PDF er selvstændig. Digitale kort indeholder ikke IB, private opgaver eller udlånsnavne. OSM-attribution følger billederne.
+OpenStreetMap-kort vises ét ad gangen og medtages med **Medtag kort og fortsæt**. Næste kort hentes først efter dette valg; der er ingen automatisk massehentning. Visningen kræver internet, mens den færdige PDF er selvstændig. Digitale kort viser gemte IB-adressepositioner som neutrale prikker med husnumre, men ikke IB-status, IB-noter, private opgaver eller udlånsnavne. Selve læsearkiv-ZIP'en indeholder stadig private IB-oplysninger og må ikke deles offentligt. OSM-attribution følger billederne.
 
 Pakken hentes først, når alle kort er medtaget. Annullering, manglende kortbaggrund, ændrede data eller et udløbet forløb kræver en ny eksport. Der kan medtages op til 100 MB kortbilleder, og forløbet udløber efter en time. Kontrollér browserens download bagefter. Backupdatoen ændres ikke af et læsearkiv.
 

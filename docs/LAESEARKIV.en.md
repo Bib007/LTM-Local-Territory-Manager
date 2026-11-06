@@ -4,7 +4,7 @@
 
 Open **Settings → Data → Export readable archive**. The ZIP contains four PDFs (card fronts, do-not-call backs, digital maps and tasks), original S-13 reports for all stored service years, and UTF-8 CSV tables. It includes private names, do-not-call records and tasks; keep it private. This archive does not replace the restorable backup.
 
-View and include each OpenStreetMap map individually. The next map loads only after **Include map and continue**. Automatic bulk tile fetching is not used. Internet is needed to display the map; images are embedded in the finished PDF for offline reading. Digital maps omit do-not-call, ignored and retired addresses, as in the existing public map renderer. Cards without geography still appear in the fronts and CSV tables. Archived records are included.
+View and include each OpenStreetMap map individually. The next map loads only after **Include map and continue**. Automatic bulk tile fetching is not used. Internet is needed to display the map; images are embedded in the finished PDF for offline reading. Digital maps include saved do-not-call address positions as neutral markers with house numbers, but not their status or private notes. Ignored and retired addresses remain excluded. The archive ZIP itself still contains private do-not-call data and must not be shared publicly. Cards without geography still appear in the fronts and CSV tables. Archived records are included.
 
 Download starts only when every map is included. Cancellation, missing background tiles, changed data or expiry requires starting again. The export expires after one hour and accepts up to 100 MB of map images. Check browser downloads afterwards. The backup reminder date is unchanged.
 
