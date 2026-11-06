@@ -2,7 +2,11 @@
 const assert=require('node:assert/strict'),path=require('node:path'),{spawn}=require('node:child_process'),{createInterface}=require('node:readline');
 async function openUsers(page){
   await page.locator('#nav [data-navigation="2:2"]').click();
+  // Settings remembers its last tab. Leave any already-rendered users form
+  // before reopening it so the test waits for the freshly loaded role data.
+  await page.locator('[data-work=settings-tab][data-value=general]').click();
   await page.locator('[data-work=settings-tab][data-value=users]').click();
+  await page.locator('#profileRole').waitFor();
 }
 const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
