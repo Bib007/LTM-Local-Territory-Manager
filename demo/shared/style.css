@@ -69,3 +69,20 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .cardPreview[data-form-language=en] .title{left:16.5%;top:17%}.cardPreview[data-form-language=en] .number{left:76.8%;top:17%}.cardPreview[data-form-language=en] .streets{top:25%}
 
 .cardSelection{position:sticky;top:0;z-index:4;background:var(--surface);padding-block:8px}
+
+.reportRings{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin:12px 0}
+.reportRing{display:flex;align-items:center;gap:14px;margin:0;padding:10px;border:1px solid var(--line,#d7e4ed);border-radius:10px;break-inside:avoid}
+.reportRing svg{display:block;width:clamp(68px,12vw,104px);aspect-ratio:1;flex:none}
+.reportRing h4{margin:0 0 6px;font-size:1em}
+.reportRing p{margin:2px 0;font-size:.9em}
+.reportRing p strong{margin-inline-start:.25em}
+.reportCover{box-sizing:border-box;min-height: min(620px,80vh);padding:clamp(24px,9vw,90px) 7%;display:flex;flex-direction:column;justify-content:center;color:#163c57;background:white;border-top:6px solid #5584ab;overflow-wrap:anywhere}
+.reportCover h1{margin:.25em 0;font-size:clamp(30px,6vw,60px);line-height:1.15}
+.reportCoverBrand{color:#426780;font-size:1.1em;font-weight:bold;letter-spacing:.03em}
+.reportCoverSubtitle{margin:.35em 0 1em;font-size:1.55em}
+@media print{
+ .reportCover{min-height:180mm;break-after:page}
+ .reportRings{grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm}
+ .reportRing svg{width:20mm}
+ #summaryPrint{display:none}
+}

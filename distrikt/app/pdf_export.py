@@ -8,19 +8,20 @@ from datetime import date
 def literal(value):
     return str(value or '').encode('cp1252', 'replace').decode('latin1').replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
 
-def pdf_document(pages, width=595.28, height=841.89, image=None):
+def pdf_document(pages, width=595.28, height=841.89, image=None, *, page_images=None):
     objects = [b'<< /Type /Catalog /Pages 2 0 R >>', b'', b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>']
     kids = []
-    if image:
-        raw,iw,ih=image[:3]
-        png=len(image)>3 and image[3]=='png'
+    for source in page_images or ([image] if image else []):
+        raw,iw,ih=source[:3]
+        png=len(source)>3 and source[3]=='png'
         filter_name='/FlateDecode /DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns %s >>'%iw if png else '/DCTDecode'
         objects.append(('<< /Type /XObject /Subtype /Image /Width %s /Height %s /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter %s /Length %s >>\nstream\n'%(iw,ih,filter_name,len(raw))).encode()+raw+b'\nendstream')
-    for commands in pages:
+    for index,commands in enumerate(pages):
         page_id = len(objects)+1
         content_id = page_id+1
         kids.append('%s 0 R' % page_id)
-        resources='/XObject << /Im1 4 0 R >>' if image else ''
+        image_id=4+index if page_images else (4 if image else None)
+        resources='/XObject << /Im1 %s 0 R >>'%image_id if image_id else ''
         objects.append(('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.2f %.2f] /Resources << /Font << /F1 3 0 R >> %s >> /Contents %s 0 R >>' % (width, height, resources,content_id)).encode())
         content = '\n'.join(commands).encode('latin1')
         objects.append(('<< /Length %s >>\nstream\n' % len(content)).encode()+content+b'\nendstream')
@@ -32,6 +33,21 @@ def pdf_document(pages, width=595.28, height=841.89, image=None):
     for offset in offsets[1:]: result.extend(('%010d 00000 n \n' % offset).encode())
     result.extend(('trailer\n<< /Size %s /Root 1 0 R >>\nstartxref\n%s\n%%%%EOF\n' % (len(objects)+1,xref)).encode())
     return bytes(result)
+
+def shared_card_pdf(map_png,front_png):
+    """Place the two approved raster images on separate landscape PDF pages."""
+    import zlib
+    from publication_dates import png_idat,rgb_pixels
+
+    width,height=841.89,595.28
+    scale=min(width/2200,height/1560)
+    w,h=2200*scale,1560*scale
+    draw=['q %.3f 0 0 %.3f %.3f %.3f cm /Im1 Do Q'%(w,h,(width-w)/2,(height-h)/2)]
+    # Reuse the lossless RGB data directly. Convert RGBA only if a browser
+    # generated it, flattening transparency onto white.
+    images=[(png_idat(raw) if raw[25]==2 else zlib.compress(rgb_pixels(raw)),
+             2200,1560,'png') for raw in (map_png,front_png)]
+    return pdf_document([draw,draw],width,height,page_images=images)
 
 def text(x,y,value,size=8,maxchars=None):
     value=str(value or '')

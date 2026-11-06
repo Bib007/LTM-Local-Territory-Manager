@@ -4,12 +4,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 module.exports=async(browser,out)=>{
  const root=path.resolve(__dirname,'../distrikt/app'),points=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];
  const card={id:'c1',number:'F01',name:'Fiktivt kontrastkort',area_id:'a',kind:'By',address_ids:['a1','a2','a3','a4','a5','a6'],geo_polygon:points,map_color:'#477596',addresses:[],public_dates:{completed:'2026-10-01',assigned:'2026-10-10'}};
+ const longRoad='Tæt prøvevej med en fiktiv, ekstra lang vejlinje til kontrol af hele printforsiden og læsbar ombrydning';
  const members=[
   {id:'a1',road:'Fiktiv vej',number:'17',lng:10.004,lat:55.005,count:1},
-  {id:'a2',road:'Tæt prøvevej',number:'2',lng:10.007,lat:55.008,count:12},
-  {id:'a3',road:'Tæt prøvevej',number:'2',lng:10.0070002,lat:55.008,count:5},
-  {id:'a4',road:'Tæt prøvevej',number:'2A',lng:10.007,lat:55.008,count:4},
-  {id:'a5',road:'Tæt prøvevej',number:'3',lng:10.00701,lat:55.00801,count:8},
+  {id:'a2',road:longRoad,number:'2',lng:10.007,lat:55.008,count:12},
+  {id:'a3',road:longRoad,number:'2',lng:10.0070002,lat:55.008,count:5},
+  {id:'a4',road:longRoad,number:'2A',lng:10.007,lat:55.008,count:4},
+  {id:'a5',road:longRoad,number:'3',lng:10.00701,lat:55.00801,count:8},
   {id:'a6',road:'Fiktiv vej',number:'19',lng:10.0102,lat:55.0102,count:5},
  ];
  const visits=members.reduce((sum,a)=>sum+a.count,0);
@@ -28,7 +29,7 @@ module.exports=async(browser,out)=>{
  const backend=(stage,data)=>JSON.parse(execFileSync(process.env.PYTHON||'python3',[
   path.join(__dirname,'fixtures/render_public_dates.py'),stage
  ],{input:JSON.stringify({fixture,data}),maxBuffer:16*1024*1024}).toString());
- let serverPreview='',uploadedPng='';
+ let serverPreview='',uploadedPdf='';
  const context=await browser.newContext({acceptDownloads:true,viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],calls=[];
  try{
   page.on('pageerror',e=>errors.push(e.message));
@@ -57,7 +58,8 @@ module.exports=async(browser,out)=>{
     if(u.pathname==='/api/share/publish'){
      const input=route.request().postDataJSON();
      assert.equal(input.png,serverPreview,'Approval submits the exact displayed image');
-     const {png,...result}=backend('publish',input);uploadedPng=png;return json(result);
+     assert.equal(input.front_png,await page.locator('.sharePreview').nth(1).getAttribute('src'));
+     const {pdf,...result}=backend('publish',input);uploadedPdf=pdf;return json(result);
     }
     throw Error('Unexpected API request '+u.pathname);
    }
@@ -67,7 +69,7 @@ module.exports=async(browser,out)=>{
    assert.ok(file.startsWith(root+path.sep)&&fs.existsSync(file),'Unexpected asset '+u.pathname);return route.fulfill({path:file});
   });
   await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.image.test/');await page.waitForFunction(()=>state!==null);
-  await page.evaluate(geo=>{GeoUI.loaded=true;GeoUI.data=geo;closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');const svg=MapExport.svg;MapExport.svg=function(...args){return window.actualPreviewSvg=svg.apply(this,args);};},geo);
+  await page.evaluate(geo=>{GeoUI.loaded=true;GeoUI.data=geo;closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');const svg=MapExport.svg;MapExport.svg=function(...args){return window.actualPreviewSvg=svg.apply(this,args);};const raster=MapExport.raster;MapExport.raster=function(svg){if(svg.includes('x="44" y="100"'))window.actualFrontSvg=svg;return raster.call(this,svg);};},geo);
   const privateVisits=visits+2;
   const privateMarkers=await page.evaluate(()=>DistrictMap.layer.getLayers()
    .filter(marker=>marker instanceof L.CircleMarker)
@@ -108,7 +110,7 @@ module.exports=async(browser,out)=>{
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
   const result=await page.evaluate(async()=>{
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
-   if(!pending||pending.render_revision!==10||pending.date_updates!==true)throw Error('Missing current preview');
+   if(!pending||pending.render_revision!==11||pending.date_updates!==true)throw Error('Missing current preview');
    if(doc.querySelectorAll('[data-ltm-brand] svg').length!==1||doc.querySelector('[data-ltm-brand] text')?.textContent!=='Local Territory Manager')throw Error('Missing public project identity');
    const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
@@ -140,8 +142,19 @@ module.exports=async(browser,out)=>{
     for(let i=0;i<data.length;i+=4)if((data[i]===140&&data[i+1]===28&&data[i+2]===28))darkPixels++;
     return {number,x,y,darkPixels};
    });
-   return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dots,redRegions,redCenters:dots.filter(p=>pixel(...p).join()==='198,40,40,255').length,neutralCenters:dots.filter(p=>pixel(...p).join()==='101,120,136,255').length,backgroundSamples,labels,svg:window.actualPreviewSvg};
+   const leaders=[...doc.querySelectorAll('[data-number-leader]')].map(n=>n.getAttribute('d'));
+   return {leaders,frontSvg:window.actualFrontSvg,png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dots,redRegions,redCenters:dots.filter(p=>pixel(...p).join()==='198,40,40,255').length,neutralCenters:dots.filter(p=>pixel(...p).join()==='101,120,136,255').length,backgroundSamples,labels,svg:window.actualPreviewSvg};
   });
+  assert.doesNotMatch(result.svg,/Kortets printforside/,'Page one has no miniature front');
+  assert.match(result.frontSvg,/Fiktiv rød vej/);
+  assert.match(result.frontSvg,/læsbar ombrydning/);
+  assert.ok((result.frontSvg.match(/<text x="10.22"/g)||[]).length>5,'The long street wraps to separate lines');
+  assert.doesNotMatch(result.frontSvg,/textLength|PRIVAT_IB_NOTE/);
+  assert.ok(result.leaders.length>0,'Crowded labels have a visible leader');
+  for(const line of result.leaders){
+   const [x,y]=line.slice(1).split('L')[0].split(' ').map(Number);
+   assert.ok(result.dots.some(([cx,cy])=>cx===x&&Math.abs(cy-(y+80))<1e-8),'Leader starts at a rendered dot');
+  }
   assert.equal('data:image/png;base64,'+result.png,serverPreview,'The browser shows the exact server-dated image');
   assert.doesNotMatch(result.svg,/IB_SKAL_IKKE_MED|PRIVAT_IB_NOTE/);assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
   assert.deepEqual([result.width,result.height],[2200,1560]);assert.equal(result.dots.length,visits+2,'SVG includes all regular and both IB address points even with a road filter before export');
@@ -160,17 +173,18 @@ module.exports=async(browser,out)=>{
    await ShareUI.prepare('manual1');
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.manualPreviewSvg,'image/svg+xml'),image=new Image();
    await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
-   return {width:image.naturalWidth,height:image.naturalHeight,png:pending.png,svg:window.manualPreviewSvg,dialog:document.querySelector('#dialog')?.innerHTML||document.body.innerHTML,approvedDisabled:document.querySelector('#sharePublish').disabled};
+   return {width:image.naturalWidth,height:image.naturalHeight,png:pending.png,svg:window.manualPreviewSvg,frontSvg:window.actualFrontSvg,dialog:document.querySelector('#dialog')?.innerHTML||document.body.innerHTML,approvedDisabled:document.querySelector('#sharePublish').disabled};
   });
-  assert.deepEqual([manual.width,manual.height],[2200,1560]);assert.match(manual.svg,/Geografisk kortvisning mangler/);assert.match(manual.svg,/Prøvevej 2–8/);assert.match(manual.svg,/ukendt/);assert.match(manual.svg,/Sikker sti hele vejen/);assert.doesNotMatch(manual.svg,/<circle\b/);assert.doesNotMatch(manual.svg,/0 besøg/);assert.match(manual.dialog,/Nogle manuelle vejlinjer er udeladt/);assert.equal(manual.approvedDisabled,true);assert.ok(!calls.includes('/api/share/publish'));
+  assert.deepEqual([manual.width,manual.height],[2200,1560]);assert.match(manual.svg,/Geografisk kortvisning mangler/);assert.doesNotMatch(manual.svg,/Kortets printforside/);assert.match(manual.frontSvg,/Prøvevej 2–8/);assert.match(manual.frontSvg,/ukendt/);assert.match(manual.frontSvg,/Sikker sti hele vejen/);assert.doesNotMatch(manual.frontSvg,/Udeladt prøvevej/);assert.doesNotMatch(manual.svg,/<circle\b/);assert.doesNotMatch(manual.svg,/0 besøg/);assert.match(manual.dialog,/Nogle manuelle vejlinjer er udeladt/);assert.equal(manual.approvedDisabled,true);assert.ok(!calls.includes('/api/share/publish'));
   await page.evaluate(async()=>{closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');await ShareUI.prepare('c1');});
   await page.locator('#shareApproved').check();
   await page.locator('#sharePublish').click();
   await page.locator('#dialog').waitFor({state:'hidden'});
   assert.equal(calls.filter(call=>call==='/api/share/publish').length,1);
-  assert.equal(uploadedPng,serverPreview,'The Drive worker sends exactly the final approved PNG, with no marker changes');
+  assert.ok(Buffer.from(uploadedPdf,'base64').toString('ascii',0,8).startsWith('%PDF-1.4'));
+  if(out)fs.writeFileSync(path.join(out,'drive-actual-published.pdf'),Buffer.from(uploadedPdf,'base64'));
   assert.deepEqual(errors,[]);
   if(out)fs.writeFileSync(path.join(out,'manual-only-preview.png'),Buffer.from(manual.png.split(',')[1],'base64'));
-  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 37 identical red visit regions, including both IB addresses, approved PNG bytes sent unchanged to offline Drive, private metadata exclusions and manual fallback passed.');
+  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 37 identical red visit regions, including both IB addresses, both approved pages embedded losslessly in a PDF sent to offline Drive, private metadata exclusions and manual fallback passed.');
  }finally{await context.close();}
 };

@@ -40,16 +40,21 @@ def date_text(value):
     return value[8:10]+'.'+value[5:7]+'.'+value[:4]
 
 
-def rgb_pixels(raw):
-    """Decode only an already validated 2200x1560 RGB/RGBA image."""
-    width,height=2200,1560;channels=4 if raw[25]==6 else 3
+def png_idat(raw):
+    """Return the concatenated image data of an already validated PNG."""
     packed=[];pos=8
     while pos<len(raw):
         n=struct.unpack('>I',raw[pos:pos+4])[0]
         if raw[pos+4:pos+8]==b'IDAT':packed.append(raw[pos+8:pos+8+n])
         pos+=12+n
+    return b''.join(packed)
+
+
+def rgb_pixels(raw):
+    """Decode only an already validated 2200x1560 RGB/RGBA image."""
+    width,height=2200,1560;channels=4 if raw[25]==6 else 3
     stride=width*channels;limit=height*(stride+1)
-    decoder=zlib.decompressobj();pixels=decoder.decompress(b''.join(packed),limit+1)
+    decoder=zlib.decompressobj();pixels=decoder.decompress(png_idat(raw),limit+1)
     if len(pixels)!=limit or not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:raise ValueError('Ugyldige PNG-pixels.')
     result=bytearray();previous=bytearray(stride)
     for y in range(height):

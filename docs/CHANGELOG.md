@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.16 · 2026-11-06
+
+- Share one two-page Google Drive PDF with the digital map first and the full printable front second. Long road rows wrap in the printable front.
+- Keep house numbers tied to their rendered dots, with leader lines in crowded areas.
+- Give the internal report a congregation-name cover in print and rings for coverage and card placement.
+
 ## 1.12.15 · 2026-11-06
 
 - Show all saved addresses with identical red dots and house numbers on the public Drive/QR image. Keep the do-not-call list on the physical card back.
