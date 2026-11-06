@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Show all saved addresses with identical red dots and house numbers on the public Drive/QR image. Use one saved-point total and keep the do-not-call list on the physical card back. Existing shared images can be regenerated and approved on the same link.
+- Add a bilingual guide link under Help and keep the setup guide and user administration in Settings.
+
 ## 1.12.14 · 2026-11-06
 
 - Preserve ordinary red address and IB visit markers in private district maps, combined views and local PNG exports, including dense or coincident coordinates.

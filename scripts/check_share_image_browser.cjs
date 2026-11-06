@@ -15,7 +15,7 @@ module.exports=async(browser,out)=>{
  const visits=members.reduce((sum,a)=>sum+a.count,0);
  const excluded=[
   {id:'ignored',road:'IB_SKAL_IKKE_MED',number:'31',lng:10.003,lat:55.003,count:17},
-  {id:'ib',road:'IB_SKAL_IKKE_MED',number:'35',lng:10.003,lat:55.003,count:1},
+  {id:'ib',road:'Fiktiv rød vej',number:'35',lng:10.003,lat:55.003,count:1},
   {id:'legacy-ib',road:'Fiktiv ældre vej',number:'41',floor:'2',door:'tv',lng:10.005,lat:55.004,count:1},
   {id:'retired',road:'IB_SKAL_IKKE_MED',number:'37',lng:10.003,lat:55.003,count:17},
  ];
@@ -108,7 +108,7 @@ module.exports=async(browser,out)=>{
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
   const result=await page.evaluate(async()=>{
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
-   if(!pending||pending.render_revision!==9||pending.date_updates!==true)throw Error('Missing current preview');
+   if(!pending||pending.render_revision!==10||pending.date_updates!==true)throw Error('Missing current preview');
    if(doc.querySelectorAll('[data-ltm-brand] svg').length!==1||doc.querySelector('[data-ltm-brand] text')?.textContent!=='Local Territory Manager')throw Error('Missing public project identity');
    const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
@@ -137,17 +137,17 @@ module.exports=async(browser,out)=>{
     const x=+label.getAttribute('x'),y=+label.getAttribute('y')+80,number=label.textContent;
     const data=ctx.getImageData(Math.floor(x),Math.floor(y)-20,number.length*14+4,24).data;
     let darkPixels=0;
-    for(let i=0;i<data.length;i+=4)if((data[i]===140&&data[i+1]===28&&data[i+2]===28)||(data[i]===69&&data[i+1]===87&&data[i+2]===97))darkPixels++;
+    for(let i=0;i<data.length;i+=4)if((data[i]===140&&data[i+1]===28&&data[i+2]===28))darkPixels++;
     return {number,x,y,darkPixels};
    });
    return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dots,redRegions,redCenters:dots.filter(p=>pixel(...p).join()==='198,40,40,255').length,neutralCenters:dots.filter(p=>pixel(...p).join()==='101,120,136,255').length,backgroundSamples,labels,svg:window.actualPreviewSvg};
   });
   assert.equal('data:image/png;base64,'+result.png,serverPreview,'The browser shows the exact server-dated image');
-  assert.doesNotMatch(result.svg,/IB_SKAL_IKKE_MED|Fiktiv ældre vej|PRIVAT_IB_NOTE/);assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
-  assert.deepEqual([result.width,result.height],[2200,1560]);assert.equal(result.dots.length,visits+2,'SVG includes all regular and both neutral saved points even with a road filter before export');
-  assert.doesNotMatch(result.svg,/Rød = resterende|grå = gemt punkt/,'The public image cannot disclose marker status through its legend');
-   assert.equal(result.redRegions,visits,'The final dated PNG has one independently visible red region per visit');
-  assert.equal(result.redCenters,visits,'Each regular visit has an unobscured red center in the PNG');assert.equal(result.neutralCenters,2,'Both saved points have separate neutral centers in the final PNG');
+  assert.doesNotMatch(result.svg,/IB_SKAL_IKKE_MED|PRIVAT_IB_NOTE/);assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
+  assert.deepEqual([result.width,result.height],[2200,1560]);assert.equal(result.dots.length,visits+2,'SVG includes all regular and both IB address points even with a road filter before export');
+  assert.doesNotMatch(result.svg,/resterende besøg|#657888|#455761/,'The public image cannot disclose marker status through its legend');
+   assert.equal(result.redRegions,privateVisits,'The final dated PNG has one independently visible red region per visit');
+  assert.equal(result.redCenters,privateVisits,'Each regular visit has an unobscured red center in the PNG');assert.equal(result.neutralCenters,0,'No IB-specific grey marker remains');
   assert.ok(result.backgroundSamples>100,'Actual prepared PNG contains 30%-opacity OSM tiles over white');
   assert.deepEqual(result.labels.map(label=>label.number).sort(),['17','19','2','2','2A','3','35','41']);
   assert.equal(new Set(result.labels.map(label=>[label.x,label.y].join())).size,result.labels.length,'Nearby numbers receive separate positions');
@@ -171,6 +171,6 @@ module.exports=async(browser,out)=>{
   assert.equal(uploadedPng,serverPreview,'The Drive worker sends exactly the final approved PNG, with no marker changes');
   assert.deepEqual(errors,[]);
   if(out)fs.writeFileSync(path.join(out,'manual-only-preview.png'),Buffer.from(manual.png.split(',')[1],'base64'));
-  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 35 separate red visit regions and 2 neutral saved points, approved PNG bytes sent unchanged to offline Drive, private metadata exclusions and manual fallback passed.');
+  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 37 identical red visit regions, including both IB addresses, approved PNG bytes sent unchanged to offline Drive, private metadata exclusions and manual fallback passed.');
  }finally{await context.close();}
 };

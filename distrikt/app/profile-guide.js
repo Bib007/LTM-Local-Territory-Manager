@@ -27,5 +27,5 @@ const PersonalGuide={data:null,sequence:0,busy:false,origin:null,visible:false,n
  close(){this.sequence++;this.visible=false;this.busy=false;el('personalGuideTour')?.remove();const origin=this.origin;this.origin=null;if(origin&&this.navigated&&ProfilesUI.pageAllowed(origin.page)){page=origin.page;Navigation.settingsSection=origin.section;render();}this.navigated=false;},
  cancel(){this.sequence++;this.visible=false;this.busy=false;this.data=null;this.origin=null;this.navigated=false;el('personalGuideTour')?.remove();}
 };
-document.addEventListener('click',async event=>{const b=event.target.closest('[data-personal-guide]');if(!b||b.disabled)return;event.preventDefault();if(b.dataset.personalGuide==='replay'){await closeRequested();if(!el('dialog').open)await PersonalGuide.load({replay:true});}else if(b.dataset.personalGuide==='next')await PersonalGuide.next();else PersonalGuide.close();});
+document.addEventListener('click',async event=>{const b=event.target.closest('[data-personal-guide]');if(!b||b.disabled)return;event.preventDefault();if(b.dataset.personalGuide==='next')await PersonalGuide.next();else PersonalGuide.close();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&PersonalGuide.visible&&!PersonalGuide.busy){event.preventDefault();PersonalGuide.close();}});

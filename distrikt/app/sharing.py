@@ -100,7 +100,7 @@ class Drive:
             if p['type']=='anyone':self.api('/files/'+file_id+'/permissions/'+p['id'],method='DELETE')
 
 DATE_RENDER_REVISION=7
-RENDER_REVISION=9
+RENDER_REVISION=10
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -288,7 +288,10 @@ class Publications:
             public_card={k:c.get(k) for k in ('id','number','map_color')}
             if c.get('geo_polygon'):public_card['geo_polygon']=c['geo_polygon']
             public_card.update(name=public_name(self.store,c),public_dates=public_dates)
-            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'dates':public_dates,'card':public_card,'members':public_members(self.store,c),'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
+            # Send the same fields for every dot, regardless of its IB status.
+            members=[{k:a[k] for k in ('id','road','number','lng','lat','count')}
+                     for a in public_members(self.store,c)]
+            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'dates':public_dates,'card':public_card,'members':members,'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
     def date_preview(self,data):
         png=png_bytes(data.get('png'))
         with self.store.lock:
@@ -304,7 +307,7 @@ class Publications:
             for row in rows:
                 if first_due and row['card_id']!=first_due:continue
                 if row.get('status')=='review' and not row.get('date_retry_allowed'):continue
-                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
+                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,9,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
                 c=self.store.get('cards',row['card_id'])
                 if not c or fingerprint(self.store,c)!=row.get('fingerprint'):continue
                 values=dates(self.store,c);key=date_key(values)
