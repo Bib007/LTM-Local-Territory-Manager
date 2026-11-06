@@ -63,8 +63,9 @@ assert.equal(run('testMarkers.length'),1);assert.equal(get('districtMapCount').t
 run("DistrictMap.road='Vej uden besøg';DistrictMap.draw()");assert.equal(run('testMarkers.length'),0);
 run("DistrictMap.dispose();delete L;state.ignored=[]");assert.equal(run('testMapRemoved'),true);
 console.log('Compact address text and shared navigation/export filtering tests passed.');
-run("state.cards[3].addresses=[{road:'Eksempelvej',numbers:'1',count:2,type:'Hus'}];state.ib=[{card_id:'c3',road:'Eksempelvej',number:'1, 1. tv'}]");assert.equal(run("MapExport.members('c3').length"),1);assert.equal(run("visitsCount(state.cards[3])"),2);assert.equal((run("MapExport.svg('c3')").match(/<circle /g)||[]).length,1);
-run("state.ib=[{card_id:'c3',road:'Eksempelvej',number:'1'}]");assert.equal(run("MapExport.members('c3').length"),0);assert(run("DistrictMap.html('c3').includes('Ingen besøg')"));
+run("state.cards[3].addresses=[{road:'Eksempelvej',numbers:'1',count:2,type:'Hus'}];state.ib=[{card_id:'c3',road:'Eksempelvej',number:'1, 1. tv'}]");assert.equal(run("MapExport.members('c3').length"),2);assert.equal(run("visitsCount(state.cards[3])"),2);assert.equal((run("MapExport.svg('c3')").match(/<circle /g)||[]).length,2);
+run("state.ib=[{card_id:'c3',road:'Eksempelvej',number:'1'}]");assert.equal(run("MapExport.members('c3').length"),2);assert(run("DistrictMap.html('c3').includes('2 besøg')"));
+assert.throws(()=>run("MapExport.svg('c3',{publicCard:card('c3')})"),/mangler sin adresseliste/);
 run("state.ib=[{card_id:'c3',road:'PRIVATE_IB_SENTINEL',number:'PRIVATE_NR'}];GeoUI.dirty=false;GeoUI.data.main_boundary={points:[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]};MainBoundaryUI.open()");
 assert.equal(run('GeoUI.whole'),true);assert.equal(run('GeoUI.polygon.length'),4);assert(get('app').innerHTML.includes('5.000'));run('MainBoundaryUI.panel()');assert(get('geoSelection').innerHTML.includes('data-main="prune"'));
 run("GeoUI.polygon[0][0]=9.98");assert.equal(run('GeoUI.data.main_boundary.points[0][0]'),9.99);
@@ -170,7 +171,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("ibTestForm={elements:{card_id:{value:'c3'},road:{value:'Eksempelvej'},number:{value:'1'},address_id:{value:''}}};IBUI.matchFields(ibTestForm)");assert.equal(run('ibTestForm.elements.address_id.value'),'');
  run("IBUI.pick(ibTestForm,'a1')");assert.equal(run('ibTestForm.elements.address_id.value'),'a1');
  run("ibTestForm.elements.number.value='1, 1 tv';IBUI.matchFields(ibTestForm)");assert.equal(run('ibTestForm.elements.address_id.value'),'a2');
- run("state.ib=[{id:'exact',card_id:'c3',address_id:'a2',road:'Eksempelvej',number:'1, 1 tv',date:state.today}]");assert.equal(run("IBUI.find(IBUI.addresses('c3')[0],'c3')"),undefined);assert.equal(run("IBUI.find(IBUI.addresses('c3')[1],'c3').id"),'exact');assert.equal(run("MapExport.members('c3').length"),1);
+ run("state.ib=[{id:'exact',card_id:'c3',address_id:'a2',road:'Eksempelvej',number:'1, 1 tv',date:state.today}]");assert.equal(run("IBUI.find(IBUI.addresses('c3')[0],'c3')"),undefined);assert.equal(run("IBUI.find(IBUI.addresses('c3')[1],'c3').id"),'exact');assert.equal(run("MapExport.members('c3').length"),2);
  run("detail('c3','Adresser')");assert(get('dialog').innerHTML.includes('Rediger IB'));assert(get('dialog').innerHTML.includes('1, 1 tv'));
  // Screenshot export reuses displayed tiles. Coverage checks reject holes/failed tiles.
  assert(run("MapExport.coversViewport([{x:0,y:0,width:50,height:100},{x:50,y:0,width:50,height:100}],100,100)"));
@@ -178,7 +179,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  assert(!run("MapExport.coversViewport([{x:0,y:0,width:100,height:90}],100,100)"));
  run("originalCreateElement=document.createElement;drawnTiles=[];document.createElement=()=>({getContext:()=>({drawImage(...a){drawnTiles.push(a);}}),toDataURL:()=> 'data:image/png;base64,AAAA'});tileImage={complete:true,naturalWidth:256,getBoundingClientRect:()=>({left:10,top:20,width:100,height:100})};fakeContainer={getBoundingClientRect:()=>({left:10,top:20}),querySelectorAll:()=>[tileImage]};captureMap={getContainer:()=>fakeContainer,getSize:()=>({x:100,y:100}),getBounds:()=>({getWest:()=>9.99,getSouth:()=>54.99,getEast:()=>10.02,getNorth:()=>55.02})};DistrictMap.map=captureMap;DistrictMap.id='c3';MapBackground.mode='road';MapBackground.instances.set('districtMap',{map:captureMap,layer:{isLoading:()=>false}});snapshot=MapExport.osmSnapshot('c3')");
  assert.equal(run('drawnTiles.length'),1);assert.equal(run('snapshot.viewBounds[0]'),9.99);
- const osmSvg=run("MapExport.svg('c3',snapshot)");assert(osmSvg.includes('<image href="data:image/png'));assert(osmSvg.includes('openstreetmap.org/copyright'));assert(!osmSvg.includes('PRIVATE_'));assert.equal((osmSvg.match(/<circle /g)||[]).length,1);
+ const osmSvg=run("MapExport.svg('c3',snapshot)");assert(osmSvg.includes('<image href="data:image/png'));assert(osmSvg.includes('openstreetmap.org/copyright'));assert(!osmSvg.includes('PRIVATE_'));assert.equal((osmSvg.match(/<circle /g)||[]).length,2);
  run("tileImage.complete=false");assert.throws(()=>run("MapExport.osmSnapshot('c3')"),/indlæst/);
  run("tileImage.complete=true;MapBackground.mode='local'");assert.throws(()=>run("MapExport.osmSnapshot('c3')"),/Vejkort/);
  // Export automatically fits all roads and crops excess viewport around the complete boundary.

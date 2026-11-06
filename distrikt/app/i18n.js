@@ -2135,7 +2135,7 @@ const I18n={
   "Alle veje":"All roads",
   "Vis vej":"Show road",
   "Geografisk kort med besøgspunkter":"Geographic map with visit points",
-  "Rød prik = ét besøg. Adresser markeret IB, Se bort fra eller nedlagt hos kilden vises ikke som besøg. Veje og bygninger vises fra de lokalt hentede kortdata.":"A red dot represents one visit. Do-not-call, ignored and retired addresses are excluded from visit points. Roads and buildings use locally downloaded map data.",
+  "Rød prik = ét gemt besøgspunkt. Tjek IB på kortets IB-liste. Adresser markeret Se bort fra eller nedlagt hos kilden vises ikke som besøg.":"A red dot represents one saved visit point. Check the card’s do-not-call list. Ignored and retired addresses are excluded from visit points.",
   "Gem PNG · OpenStreetMap":"Save PNG · OpenStreetMap",
   "Gem PNG · lokale kortdata":"Save PNG · local map data",
   "Publicér / opdater på Google Drive":"Publish / update on Google Drive",
