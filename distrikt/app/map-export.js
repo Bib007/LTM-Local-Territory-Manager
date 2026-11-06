@@ -1,13 +1,12 @@
 'use strict';
-// Generated locally from public navigation data. No IB, people or history.
+// Private maps use saved visit points. Public images use the separate sharing recipe.
 const MapExport={
   boundsPoints(id){const c=card(id);return c?.geo_polygon?.length?c.geo_polygon:(c?.geo_addresses?.length?c.geo_addresses:GeoUI.addresses().filter(a=>c?.address_ids?.includes(a.id))).map(a=>[a.lng,a.lat]);},
-  isIB(a,id){const clean=s=>String(s||'').toLowerCase().replace(/[\s.,]+/g,'');return (state.ib||[]).filter(i=>i.card_id===id).some(i=>i.address_id?i.address_id===a.id:RoadSearch.normalize(i.road)===RoadSearch.normalize(a.road)&&(clean(i.number)===clean(a.number)||clean(i.number)===clean([a.number,a.floor,a.door].filter(Boolean).join(' '))));},
   members(id){
     const c=card(id);if(!c)return [];
     const ignored=GeoUI.ignored(),retired=new Set(GeoUI.addresses().filter(a=>a.retired).map(a=>a.id));
     const members=c.geo_addresses?.length?c.geo_addresses:GeoUI.addresses().filter(a=>c.address_ids?.includes(a.id));
-    return members.filter(a=>!ignored.has(a.id)&&!a.retired&&!retired.has(a.id)&&!this.isIB(a,id));
+    return members.filter(a=>!ignored.has(a.id)&&!a.retired&&!retired.has(a.id));
   },
   coversViewport(rectangles,width,height){
     const bands=[...new Set([0,height,...rectangles.flatMap(r=>[Math.max(0,r.y),Math.min(height,r.y+r.height)])])].filter(y=>y>=0&&y<=height).sort((a,b)=>a-b);
@@ -16,7 +15,7 @@ const MapExport={
   exportPoints(id,options={}){return options.publicCard?[...(options.publicCard.geo_polygon||[]),...options.publicMembers.map(a=>[a.lng,a.lat])]:[...this.boundsPoints(id),...this.members(id).map(a=>[a.lng,a.lat])];},
   osmEntry(id){const key=DistrictMap.map&&DistrictMap.id===id?'districtMap':GeoUI.map&&!GeoUI.whole&&GeoUI.target===id?'geographicEditor':'';return MapBackground.instances.get(key);},
   exportPadding(id,map,options){
-    const size=map.getSize(),members=options.publicMembers||this.members(id);
+    const size=map.getSize(),members=options.publicCard?options.publicMembers:this.members(id);
     const visits=members.reduce((n,a)=>n+(a.count||0),0),label=Math.max(0,...members.map(a=>String(a.number).length*12+20));
     const margin=Math.max(label,18+Math.sqrt(visits)*5);
     return Math.ceil(Math.max(20,(options.publicCard?Math.min(margin,120):margin)*Math.min(size.x/1540,size.y/1310)));
@@ -173,7 +172,8 @@ const MapExport={
   },
   svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false}={}){
     const c=publicCard||card(id);if(!c)throw Error('Kortet findes ikke.');
-    const members=publicMembers||this.members(id);
+    const members=publicCard?publicMembers:this.members(id);
+    if(!Array.isArray(members))throw Error('Kortbilledet mangler sin adresseliste.');
     if(publicCard&&Array.isArray(manualFrontRows)&&(manualFrontRows.length||manualIBWithheld)&&!publicCard.geo_polygon?.length&&!members.length)return this.manualDigitalSvg(c,manualFrontRows,publicTemplate);
     const boundaryPoints=publicCard?(publicCard.geo_polygon?.length?publicCard.geo_polygon:members.map(a=>[a.lng,a.lat])):this.boundsPoints(id);if(!boundaryPoints.length)throw Error('Gem et adressevalg på kortet først.');
     const project=p=>[p[0]*Math.PI/180,Math.log(Math.tan(Math.PI/4+p[1]*Math.PI/360))];
@@ -230,7 +230,7 @@ const MapExport={
     // boundary and attribution remain full-strength; private exports are unchanged.
     const mapMarkup=`${publicCard?`<g data-map-background="muted" opacity=".3">${backgroundMarkup}</g>`:backgroundMarkup}<polygon points="${path(c.geo_polygon||[])}" fill="${cardColor(c)}" fill-opacity="${publicCard?0:.08}" stroke="${cardColor(c)}" stroke-width="4" stroke-dasharray="12 7"/>${points}`;
     if(publicCard)return this.digitalSvg(c,members,houses,mapMarkup,publicTemplate,backgroundImage);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560"><defs><clipPath id="mapClip"><rect x="40" y="120" width="1540" height="1310" rx="18"/></clipPath></defs><rect width="2200" height="1560" fill="#fff"/><g font-family="Arial, sans-serif"><text x="42" y="69" font-size="43" font-weight="bold" fill="#263d4e">Distriktskort ${esc(c.number)}</text><text x="42" y="105" font-size="${nameSize}" fill="#263d4e">${esc(name)}</text><text x="2140" y="69" text-anchor="end" font-size="25" fill="#647786">${backgroundImage?'Kortudsnit · ':''}${total} besøg · ${houses.length} ${houses.length===1?'husnummer':'husnumre'}</text><rect x="40" y="120" width="1540" height="1310" rx="18" fill="#edf1ed"/><g clip-path="url(#mapClip)">${mapMarkup}</g><text x="1650" y="132" font-size="22" fill="#a74940">Rød prik = ét besøg</text>${labels.join('')}<rect x="40" y="1445" width="2118" height="40" rx="6" fill="#fff1ef"/><text x="56" y="1474" font-size="28" font-weight="bold" fill="#b3261e">Husk at tjekke efter IB på det fysiske distriktskort</text><text x="42" y="1505" font-size="20" fill="#647786">${backgroundImage?'Kort: © OpenStreetMap-bidragsydere · openstreetmap.org/copyright · Adresser: DAR':'Adresser / vejlinjer: DAR · øvrige veje / bygninger: © OpenStreetMap-bidragsydere, ODbL'}</text><text x="2140" y="1505" text-anchor="end" font-size="20" fill="#647786">${fmt(state.today)}</text></g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560"><defs><clipPath id="mapClip"><rect x="40" y="120" width="1540" height="1310" rx="18"/></clipPath></defs><rect width="2200" height="1560" fill="#fff"/><g font-family="Arial, sans-serif"><text x="42" y="69" font-size="43" font-weight="bold" fill="#263d4e">Distriktskort ${esc(c.number)}</text><text x="42" y="105" font-size="${nameSize}" fill="#263d4e">${esc(name)}</text><text x="2140" y="69" text-anchor="end" font-size="25" fill="#647786">${backgroundImage?'Kortudsnit · ':''}${total} besøg · ${houses.length} ${houses.length===1?'husnummer':'husnumre'}</text><rect x="40" y="120" width="1540" height="1310" rx="18" fill="#edf1ed"/><g clip-path="url(#mapClip)">${mapMarkup}</g><text x="1650" y="132" font-size="22" fill="#a74940">Rød prik = ét gemt besøgspunkt</text>${labels.join('')}<rect x="40" y="1445" width="2118" height="40" rx="6" fill="#fff1ef"/><text x="56" y="1474" font-size="28" font-weight="bold" fill="#b3261e">Husk at tjekke efter IB på det fysiske distriktskort</text><text x="42" y="1505" font-size="20" fill="#647786">${backgroundImage?'Kort: © OpenStreetMap-bidragsydere · openstreetmap.org/copyright · Adresser: DAR':'Adresser / vejlinjer: DAR · øvrige veje / bygninger: © OpenStreetMap-bidragsydere, ODbL'}</text><text x="2140" y="1505" text-anchor="end" font-size="20" fill="#647786">${fmt(state.today)}</text></g></svg>`;
   },
   async frontTemplate(){
     if(!this.templatePromise)this.templatePromise=(async()=>{

@@ -15,20 +15,21 @@ module.exports=async(browser,out)=>{
  const visits=members.reduce((sum,a)=>sum+a.count,0);
  const excluded=[
   {id:'ignored',road:'IB_SKAL_IKKE_MED',number:'31',lng:10.003,lat:55.003,count:17},
-  {id:'ib',road:'IB_SKAL_IKKE_MED',number:'35',lng:10.003,lat:55.003,count:17},
+  {id:'ib',road:'IB_SKAL_IKKE_MED',number:'35',lng:10.003,lat:55.003,count:1},
+  {id:'legacy-ib',road:'Fiktiv ældre vej',number:'41',floor:'2',door:'tv',lng:10.005,lat:55.004,count:1},
   {id:'retired',road:'IB_SKAL_IKKE_MED',number:'37',lng:10.003,lat:55.003,count:17},
  ];
  card.geo_addresses=[...members,...excluded];
  card.address_ids=card.geo_addresses.map(a=>a.id);
  const manualCard={id:'manual1',number:'F125',name:'Fiktivt manuelt kort',temporary:false,addresses:[{road:'Prøvevej',numbers:'2–8',count:0,count_unknown:true},{road:'Udeladt prøvevej',numbers:'99',count:2},{road:'Sikker sti',numbers:'hele vejen',count:3}]};
- const state={revision:'FICTIONAL_R1',today:'2026-10-21',version:'fictional',cards:[card,manualCard],areas:[{id:'a',name:'Fiktivt område'}],publishers:[],loans:[],completions:[],ib:[{id:'ib1',card_id:'c1',address_id:'ib'},{id:'ib2',card_id:'manual1',road:'Udeladt prøvevej',number:'99'}],ignored:[{id:'ignored-row',address_id:'ignored'}],notes:[],tasks:[],visits:[],recovery:[],maps:[],settings:{congregation:'Fiktiv menighed',folder_minimum:30,rural_mode:'manual',rural_minimum:5,onboarding:{completed:true}}};
+ const state={revision:'FICTIONAL_R1',today:'2026-10-21',version:'fictional',cards:[card,manualCard],areas:[{id:'a',name:'Fiktivt område'}],publishers:[],loans:[],completions:[],ib:[{id:'ib1',card_id:'c1',address_id:'ib',note:'PRIVAT_IB_NOTE'},{id:'ib2',card_id:'manual1',road:'Udeladt prøvevej',number:'99'},{id:'ib3',card_id:'c1',road:'Fiktiv ældre vej',number:'41, 2. tv'}],ignored:[{id:'ignored-row',address_id:'ignored'}],notes:[],tasks:[],visits:[],recovery:[],maps:[],settings:{congregation:'Fiktiv menighed',folder_minimum:30,rural_mode:'manual',rural_minimum:5,onboarding:{completed:true}}};
  const geo={addresses:card.geo_addresses.map(a=>a.id==='retired'?{...a,retired:true}:a),buildings:[],roads:[],dividers:[],info:{addresses:1,buildings:0,roads:0},status:{a1:{card_id:'c1',card_number:'F01'}},main_boundary:{points}};
  const fixture={cards:state.cards,addresses:geo.addresses,ignored:state.ignored,ib:state.ib};
  const backend=(stage,data)=>JSON.parse(execFileSync(process.env.PYTHON||'python3',[
   path.join(__dirname,'fixtures/render_public_dates.py'),stage
  ],{input:JSON.stringify({fixture,data}),maxBuffer:16*1024*1024}).toString());
  let serverPreview='',uploadedPng='';
- const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],calls=[];
+ const context=await browser.newContext({acceptDownloads:true,viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],calls=[];
  try{
   page.on('pageerror',e=>errors.push(e.message));
   const tile=Buffer.from(await page.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='rgb(40,90,130)';g.fillRect(0,0,256,256);return c.toDataURL().split(',')[1];}),'base64');
@@ -67,8 +68,38 @@ module.exports=async(browser,out)=>{
   });
   await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.image.test/');await page.waitForFunction(()=>state!==null);
   await page.evaluate(geo=>{GeoUI.loaded=true;GeoUI.data=geo;closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');const svg=MapExport.svg;MapExport.svg=function(...args){return window.actualPreviewSvg=svg.apply(this,args);};},geo);
-  const normalCount=await page.evaluate(()=>DistrictMap.layer.getLayers().filter(layer=>layer instanceof L.CircleMarker).length);
-  assert.equal(normalCount,visits,'The normal map renders all saved visits');
+  const privateVisits=visits+2;
+  const privateMarkers=await page.evaluate(()=>DistrictMap.layer.getLayers()
+   .filter(marker=>marker instanceof L.CircleMarker)
+   .map(marker=>({color:marker.options.fillColor,tooltip:marker.getTooltip().getContent()})));
+  assert.equal(privateMarkers.length,privateVisits,'The normal map keeps ordinary dots for linked and legacy IB addresses');
+  assert.equal(privateMarkers.filter(m=>m.color==='#ca4c43'&&/35|41/.test(m.tooltip)).length,2);
+  assert.match(await page.locator('#districtMapCount').textContent(),new RegExp(privateVisits+' besøg'));
+  const overviewMarkers=await page.evaluate(async()=>{
+   await OverviewMap.open('c1');
+   return OverviewMap.layer.getLayers().filter(marker=>marker instanceof L.CircleMarker).map(marker=>marker.getTooltip().getContent());
+  });
+  assert.equal(overviewMarkers.length,privateVisits,'The focused overview uses the same private membership');
+  assert.equal(overviewMarkers.filter(tooltip=>/35|41/.test(tooltip)).length,2);
+  await page.evaluate(()=>{page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');});
+  for(const action of ['export-map','export-map-osm']){
+   const [download]=await Promise.all([
+    page.waitForEvent('download'),page.locator(`[data-geo="${action}"]`).click()
+   ]);
+   const result=await page.evaluate(async png=>{
+    const svg=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
+    const image=new Image();image.src=png;await image.decode();
+    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+    const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
+    const labels=[...svg.querySelectorAll('text[paint-order="stroke"]')].filter(label=>['35','41'].includes(label.textContent));
+    const visible=labels.map(label=>[...ctx.getImageData(Math.round(+label.getAttribute('x')-11),Math.round(+label.getAttribute('y')+9),1,1).data].join());
+    return {size:[canvas.width,canvas.height],visible,svg:window.actualPreviewSvg,circles:svg.querySelectorAll('circle').length};
+   },'data:image/png;base64,'+fs.readFileSync(await download.path()).toString('base64'));
+   assert.deepEqual(result.size,[2200,1560]);
+   assert.deepEqual(result.visible,['202,76,67,255','202,76,67,255'],action+' contains both ordinary red IB-address dots in the downloaded PNG');
+   assert.equal(result.circles,privateVisits);
+   assert.doesNotMatch(result.svg,/>31<|>37<|PRIVAT_IB_NOTE|41, 2|>tv</);
+  }
   await page.evaluate(()=>{
    DistrictMap.road='Fiktiv vej';DistrictMap.draw();
    DistrictMap.map.setZoom(DistrictMap.map.getZoom()+1);
@@ -112,7 +143,7 @@ module.exports=async(browser,out)=>{
    return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dots,redRegions,redCenters:dots.filter(p=>pixel(...p).join()==='198,40,40,255').length,backgroundSamples,labels,svg:window.actualPreviewSvg};
   });
   assert.equal('data:image/png;base64,'+result.png,serverPreview,'The browser shows the exact server-dated image');
-  assert.doesNotMatch(result.svg,/IB_SKAL_IKKE_MED/);assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
+  assert.doesNotMatch(result.svg,/IB_SKAL_IKKE_MED|Fiktiv ældre vej|PRIVAT_IB_NOTE/);assert.match(result.svg,/Senest gennemgået/);assert.match(result.svg,/Udleveret d\./);assert.ok(/0?1\.10\.2026/.test(result.svg),'SVG shows the registered completion date');
   assert.deepEqual([result.width,result.height],[2200,1560]);assert.equal(result.dots.length,visits,'SVG includes all visits even with a road filter before export');
   assert.equal(result.redRegions,visits,'The final dated PNG has one independently visible red region per visit');
   assert.equal(result.redCenters,visits,'Each SVG circle has an unobscured full-strength red center in the PNG');
