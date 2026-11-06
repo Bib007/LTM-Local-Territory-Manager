@@ -137,7 +137,7 @@ module.exports=async(browser,out)=>{
     const x=+label.getAttribute('x'),y=+label.getAttribute('y')+80,number=label.textContent;
     const data=ctx.getImageData(Math.floor(x),Math.floor(y)-20,number.length*14+4,24).data;
     let darkPixels=0;
-    for(let i=0;i<data.length;i+=4)if(data[i]===140&&data[i+1]===28&&data[i+2]===28)darkPixels++;
+    for(let i=0;i<data.length;i+=4)if((data[i]===140&&data[i+1]===28&&data[i+2]===28)||(data[i]===69&&data[i+1]===87&&data[i+2]===97))darkPixels++;
     return {number,x,y,darkPixels};
    });
    return {png:pending.png.split(',')[1],width:canvas.width,height:canvas.height,dots,redRegions,redCenters:dots.filter(p=>pixel(...p).join()==='198,40,40,255').length,neutralCenters:dots.filter(p=>pixel(...p).join()==='101,120,136,255').length,backgroundSamples,labels,svg:window.actualPreviewSvg};
