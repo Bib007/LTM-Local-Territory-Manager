@@ -292,6 +292,25 @@ class SharingTests(unittest.TestCase):
         self.s.mutate('revision.approve',{'card_id':self.c,'side':'front'})
         Publications(self.s)
         self.assertFalse(self.s.get('cards',self.c)['front_revision'])
+    def test_public_saved_points_include_house_number_but_never_ib_metadata(self):
+        before=self.p.prepare(self.c)
+        with self.s.transaction():
+            self.s.put('ib',{'id':'fictional-ib','card_id':self.c,'address_id':'a2',
+                'road':'Fiktiv vej','number':'3','note':'PRIVATE_IB_NOTE','status':'PRIVATE_IB_STATUS'})
+        recipe=self.p.prepare(self.c)
+        members=recipe['members']
+        self.assertEqual([a['id'] for a in members],['a1','a2'])
+        self.assertNotIn('saved_point',members[0])
+        self.assertTrue(members[1]['saved_point'])
+        self.assertEqual(members[1]['number'],'3')
+        self.assertEqual(members[1]['count'],1)
+        self.assertNotIn('floor',members[1])
+        self.assertNotIn('door',members[1])
+        self.assertNotIn('postcode',members[1])
+        self.assertNotIn('PRIVATE_IB_',json.dumps(recipe))
+        self.assertNotEqual(before['fingerprint'],recipe['fingerprint'])
+        self.assertEqual(recipe['render_revision'],RENDER_REVISION)
+
     def test_public_name_is_in_recipe_and_invalidates_changed_name(self):
         with self.s.transaction():
             c=self.s.get('cards',self.c);c['name']='Fiktivt bykort';self.s.put('cards',c)
