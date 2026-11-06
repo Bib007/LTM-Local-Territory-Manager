@@ -100,7 +100,7 @@ class Drive:
             if p['type']=='anyone':self.api('/files/'+file_id+'/permissions/'+p['id'],method='DELETE')
 
 DATE_RENDER_REVISION=7
-RENDER_REVISION=8
+RENDER_REVISION=9
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -110,7 +110,17 @@ def public_members(store,c):
     clean=lambda s:re.sub(r'[\s.,]+','',str(s or '').lower())
     def blocked(a):
         return any(i.get('address_id')==a['id'] if i.get('address_id') else clean(i.get('road'))==clean(a.get('road')) and clean(i.get('number')) in (clean(a.get('number')),clean(' '.join(str(a.get(k) or '') for k in ('number','floor','door')))) for i in ib)
-    return [{k:a.get(k) for k in ('id','road','number','floor','door','postcode','lng','lat','count')} for a in addresses if a['id'] not in ignored|retired and not a.get('retired') and not blocked(a)]
+    # A saved point remains visible on the reviewed public image, but must not
+    # be counted as an outstanding visit or carry private IB metadata.
+    result=[]
+    for a in addresses:
+        if a['id'] in ignored|retired or a.get('retired'):continue
+        saved=blocked(a)
+        fields=('id','road','number','lng','lat','count') if saved else ('id','road','number','floor','door','postcode','lng','lat','count')
+        row={k:a.get(k) for k in fields}
+        if saved:row['saved_point']=True
+        result.append(row)
+    return result
 
 def public_manual_front(store,c):
     """Return only manual front rows that can be checked safely against IB."""
