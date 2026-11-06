@@ -213,7 +213,7 @@ class SharingTests(unittest.TestCase):
         self.s.mutate('ib.save',{'card_id':self.c,'address_id':'a2','road':'Fiktiv vej','number':'3','date':'2026-01-01'})
         self.s.mutate('publisher.save',{'name':'PRIVATE_PUBLISHER'})
         with self.s.transaction():self.s.put('notes',{'id':'n1','card_id':self.c,'text':'PRIVATE_NOTE'})
-        recipe=self.p.prepare(self.c);self.assertEqual([a['number'] for a in recipe['members']],['1']);self.assertNotIn('PRIVATE',json.dumps(recipe));self.assertNotIn('ib',recipe)
+        recipe=self.p.prepare(self.c);self.assertEqual([a['number'] for a in recipe['members']],['1','3']);self.assertTrue(recipe['members'][1]['saved_point']);self.assertNotIn('floor',recipe['members'][1]);self.assertNotIn('PRIVATE',json.dumps(recipe));self.assertNotIn('ib',recipe)
     def test_publish_queue_stable_file_and_qr(self):
         self.enqueue();self.assertEqual(self.row()['status'],'queued');self.p.process_one();first=self.row();self.assertEqual(first['status'],'published')
         self.assertEqual(self.p.drive.uploads[0][0],self.png);self.assertNotIn('queued_png',first)
