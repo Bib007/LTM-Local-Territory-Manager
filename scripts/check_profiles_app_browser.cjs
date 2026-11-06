@@ -1,5 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict'),path=require('node:path'),{spawn}=require('node:child_process'),{createInterface}=require('node:readline');
+async function openUsers(page){
+  await page.locator('#nav [data-navigation="2:2"]').click();
+  // Settings remembers its last tab. Leave any already-rendered users form
+  // before reopening it so the test waits for the freshly loaded role data.
+  await page.locator('[data-work=settings-tab][data-value=general]').click();
+  await page.locator('[data-work=settings-tab][data-value=users]').click();
+  await page.locator('#profileRole').waitFor();
+}
 const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
  const child=spawn(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/profiles_server.py')],{stdio:['ignore','pipe','inherit']});let browser;
@@ -18,7 +26,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('#profileActivate input[name=name]').fill('Fiktiv admin');await admin.locator('#profileActivate input[name=password]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=repeat]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=confirmation]').fill('AKTIVÉR PROFILER');await admin.locator('#profileActivate button').click();
   await admin.locator('#loginName').waitFor();await login(admin,'Fiktiv admin','Fiktiv-password-123');await postponePersonalGuide(admin);
   assert.equal(await admin.locator('.dashboardRing').count(),2,'Profile administrators retain the familiar home rings');assert.equal(await admin.locator('.dashboardTrend').count(),1,'Home retains the monthly comparison');assert.equal(await admin.locator('.reportOverview').count(),0,'Report layout stays off the home page');
-  await admin.locator('#nav [data-profile=admin]').click();await admin.locator('#profileRole input[name=name]').fill('Kortredaktør');
+  await openUsers(admin);await admin.locator('#profileRole input[name=name]').fill('Kortredaktør');
   for(const right of ['dashboard.view','cards.view','cards.edit','geo.view','notes.view','notes.edit','presence.view','settings.manage'])await admin.locator(`#profilePermissions input[value="${right}"]`).check();
   await admin.evaluate(()=>window.profileDraftNode=document.querySelector('#profileRole input[name=name]'));
   await admin.locator('#navigationLanguage').selectOption('en');
@@ -99,7 +107,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   let releaseOld,oldStarted,delayState=true;const oldReady=new Promise(r=>oldStarted=r),oldRelease=new Promise(r=>releaseOld=r);
   await editor.route('**/api/state',async route=>{if(delayState){delayState=false;const response=await route.fetch();oldStarted();await oldRelease;await route.fulfill({response});}else await route.continue();});
   await editor.evaluate(()=>{window.oldProfileRead=refresh().then(()=>false,()=>true);});await oldReady;
-  await admin.locator('#cardForm [data-action=close]').click();await admin.locator('#nav [data-profile=admin]').click();
+  await admin.locator('#cardForm [data-action=close]').click();await openUsers(admin);
   await admin.locator('#profileRole select').selectOption(role);await admin.locator('#profilePermissions input[value="cards.edit"]').uncheck();await admin.locator('#profilePermissions input[value="backup.notify"]').check();await admin.locator('#profileRole button').click();
   await admin.waitForFunction(()=>document.querySelector('#profileRole select')?.value==='');
   await editor.evaluate(()=>ProfilesUI.poll());

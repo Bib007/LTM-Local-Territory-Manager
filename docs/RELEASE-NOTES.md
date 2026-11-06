@@ -1,7 +1,9 @@
-# LTM 1.12.14 · Digital district map points and reviewed public sharing
+# LTM 1.12.15 · Shared maps, help and district boundary totals
 
-The digital map and exports preserve ordinary red visit markers on private maps, including saved do-not-call addresses and dense or coincident points. The public Google Drive/QR preview displays approved saved do-not-call locations as neutral markers with house numbers. Public images exclude private do-not-call status, notes and personal data.
+The Drive/QR street map gives all saved addresses the same red dots and house-number labels. Its one total covers all saved points. Check the physical card back for the do-not-call list. To update an existing link, review and approve a newly generated image in LTM.
 
-Saved do-not-call address points are included in the total of stored visit points, but not the remaining visits. The dated 2200 × 1560 image is previewed and requires explicit approval before upload. Existing Drive files and QR links are reused only after that approval; installing a new version does not automatically replace the public image.
+Help now opens the Danish or English step-by-step guide. Settings provides access to the setup guide and user administration.
 
-Mac-server distribution remains deferred until physical Apple Silicon, LAN/VPN and restart validation (AFK-002). Final acceptance of the affected private map and the existing Drive/QR image is pending the owner's AFK-001 test.
+The internal report and its print view show total mapped visit points and mapped do-not-call records across the entire saved district boundary. The report includes mapped addresses outside individual cards and respects profile permissions. Records without a confirmed mapped location are excluded.
+
+Mac-server distribution remains deferred until physical Apple Silicon, LAN/VPN and restart validation (AFK-002).

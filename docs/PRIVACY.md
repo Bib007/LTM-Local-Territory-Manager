@@ -14,7 +14,7 @@ Maskinen, som kører Python-appen, opbevarer de private SQLite-filer. Desktopver
 | Godkendt offentligt kort | Et gennemgået PNG-billede med kortnummer/navn, grænse og tilladte besøgspunkter | Den valgte Google Drive-konto |
 | Privat backup | En fil, der hentes til browser/enhed | Det sted, hvor operatøren efterfølgende gemmer den |
 
-Offentlige PNG-billeder indeholder ikke IB-liste, forkyndernavne, udlånsdata, private IB-noter eller databasefiler. Gemte IB-adresser vises derimod som **neutrale prikker med husnummer** på deres præcise position; de tælles med i alle gemte punkter, men ikke i udestående besøg. Ignorerede og nedlagte adresser udelades. **Synlige adresser, præcise punkter og grænser kan være følsomme, også når prikken er neutral.** Gennemgå hele billedet, før det godkendes. Enhver med det offentlige link kan se, kopiere og videresende billedet.
+Offentlige PNG-billeder viser alle gemte adressepunkter med ens røde prikker og husnumre. IB-listen findes på det fysiske korts bagside. Billedet udelader IB-status, IB-noter, forkyndernavne, udlånsdata og databasefiler.
 
 IB-ændringer kræver et nyt billede dannet i browseren og en ny godkendelse. Serveren kan uploade et godkendt billede, men danner ikke selv nye OSM-billeder. Fjernelse af forældet offentlig adgang kræver kontakt til Google. Følg delingsstatus og løs eventuelle fejl.
 

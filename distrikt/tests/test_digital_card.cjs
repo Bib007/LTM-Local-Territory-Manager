@@ -18,17 +18,16 @@ run(`state={today:'2026-10-17',cards:[{id:'fake',number:'PRIVATE_NUMBER',name:'P
 context.recipe={publicCard:{id:'fake',number:'F120',name:'Fiktivt byområde & <prøve>',map_color:'#477596',geo_polygon:[[10,55],[10.02,55],[10.02,55.02],[10,55.02]],addresses:[{road:'PRIVATE_INJECTED',numbers:'99',count:5}],ib:'PRIVATE_IB'},publicMembers:[{id:'public-a',road:'Fiktiv Vej',number:'1',lng:10.005,lat:55.005,count:1,notes:'PRIVATE_MEMBER_NOTE'},{id:'public-b',road:'Fiktiv Vej',number:'3',lng:10.01,lat:55.01,count:2}],publicTemplate:template};
 const before=run('JSON.stringify(state)'),svg=run("MapExport.svg('fake',recipe)");
 assert(svg.includes('DIGITALT DISTRIKTSKORT'));assert(svg.includes('Kortets printforside'));assert(svg.includes('viewBox="0 0 146 94"'));assert(svg.includes(template));assert(svg.includes('Fiktivt byområde &amp; &lt;prøve&gt;'));assert(svg.includes('Fiktiv Vej 1-3'));assert(svg.includes('>3 besøg</text>'));assert(!svg.includes('PRIVATE_'));assert(!svg.includes('<foreignObject'));assert(!svg.includes('<script'));assert.equal((svg.match(/<circle /g)||[]).length,3);
-context.neutral={...context.recipe,publicMembers:[...context.recipe.publicMembers,
- {id:'saved-point',road:'PRIVATE_NEUTRAL_ROAD',number:'35',lng:10.013,lat:55.013,count:1,saved_point:true,notes:'PRIVATE_IB_NOTE'}]};
-const neutralSvg=run("MapExport.svg('fake',neutral)");
-assert.match(neutralSvg,/Prikkerne viser kortets gemte adressepunkter/);
-assert.doesNotMatch(neutralSvg,/Rød = resterende|grå = gemt punkt/,"The public marker legend must not identify the neutral markers as a special status");
-assert.equal((neutralSvg.match(/<circle /g)||[]).length,4);
-assert.equal((neutralSvg.match(/fill="#657888"/g)||[]).length,1,'One neutral saved point has a distinct grey marker');
-assert.match(neutralSvg,/>35<\/text>/,'Approved public house number is shown');
-assert.match(neutralSvg,/>4<\/text><text x="1652" y="330"[^>]*>gemte punkter<\/text>/);
-assert.match(neutralSvg,/>3<\/text><text x="1904" y="330"[^>]*>resterende besøg<\/text>/);
-assert.doesNotMatch(neutralSvg,/PRIVATE_NEUTRAL_ROAD|PRIVATE_IB_NOTE/,'IB metadata and saved-only street are absent');
+context.withIB={...context.recipe,publicMembers:[...context.recipe.publicMembers,
+ {id:'saved-point',road:'Fiktiv prøvevej',number:'35',lng:10.013,lat:55.013,count:1,saved_point:true,notes:'PRIVATE_IB_NOTE'}]};
+const withIB=run("MapExport.svg('fake',withIB)");
+const ordinary=run("MapExport.svg('fake',{...withIB,publicMembers:withIB.publicMembers.map(({saved_point,notes,...address})=>address)})");
+assert.equal(withIB,ordinary,'IB status cannot affect the public drawing, numbers, rows, or totals');
+assert.equal((withIB.match(/<circle [^>]+fill="#c62828"/g)||[]).length,4);
+assert.match(withIB,/>35<[/]text>/,'Approved public house number is shown');
+assert.match(withIB,/>4<[/]text><text x="1652" y="330"[^>]*>gemte adressepunkter<[/]text>/);
+assert.match(withIB,/Fiktiv prøvevej 35/,'The public front includes the address like any other address');
+assert.doesNotMatch(withIB,/resterende besøg|PRIVATE_IB_NOTE|#657888/);
 const separateCoordinates={...context.recipe,publicMembers:[...context.recipe.publicMembers,{id:'public-c',road:'Fiktiv Vej',number:'1',lng:10.015,lat:55.015,count:1}]};
 context.separateCoordinates=separateCoordinates;const separateCoordinatesSvg=run("MapExport.svg('fake',separateCoordinates)");assert.equal((separateCoordinatesSvg.match(/<circle /g)||[]).length,4);assert.equal((separateCoordinatesSvg.match(/>1<[/]text>/g)||[]).length,2,'Same house number at separate coordinates keeps both visit-point clusters');
 assert.equal(run('JSON.stringify(state)'),before);assert.equal(fetched.length,0,'Pure rendering does not fetch anything');

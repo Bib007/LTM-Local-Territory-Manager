@@ -26,6 +26,7 @@ class WorkflowStore:
         self.revision=uuid.uuid4().hex
         self._geo_cache=None
         self._info_cache=None
+        self._boundary_report_cache=None
         self._setup_previews={}
         self._undo=None
         self._tracking=None
