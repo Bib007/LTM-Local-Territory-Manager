@@ -29,6 +29,18 @@ class NativeDesktopTests(unittest.TestCase):
             desktop_entry.main(['--data-dir', '/tmp/fictional', '--no-browser'])
         start.assert_called_once_with(['--data-dir', '/tmp/fictional', '--no-browser'])
 
+    def test_installer_language_is_used_only_as_first_browser_hint(self):
+        import server
+        with tempfile.TemporaryDirectory() as folder:
+            already_running = {'url': 'http://127.0.0.1:8787', 'version': server.VERSION}
+            with patch.object(server, 'running', return_value=already_running), patch.object(server.webbrowser, 'open') as browser:
+                server.main(['--data-dir', folder, '--language', 'da'])
+                browser.assert_called_with('http://127.0.0.1:8787?ltm_start_language=da')
+                server.main(['--data-dir', folder, '--language', 'en'])
+                browser.assert_called_with('http://127.0.0.1:8787?ltm_start_language=en')
+                server.main(['--data-dir', folder])
+                browser.assert_called_with('http://127.0.0.1:8787')
+
     def test_isolated_pdf_worker(self):
         with patch.object(desktop_entry.runpy, 'run_module') as worker, patch.object(desktop_entry.server, 'main') as start:
             desktop_entry.main(['--ltm-read-s13'])
