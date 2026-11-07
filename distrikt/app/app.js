@@ -466,7 +466,7 @@ case 'confirm-delete':await mutate('delete',{module:d.module,id:d.id},{message:I
 case 'purge-recovery':if(window.confirm(I18n.text('Slet hele denne gendannelsespost permanent? Den kan derefter ikke gendannes fra appen.')))await mutate('recovery.purge',{batch:d.id},{close:false,message:I18n.text("Posten er slettet permanent")});break;
 case 'restore':await mutate('restore',{batch:d.id},{close:false,message:I18n.text("Gendannet")});break;
 case 'approve':openDialog(`<h2>${ui(d.side==='front'?'Godkend kortets forside?':'Godkend IB-bagsiden?')}</h2><p>${ui("Bekræft, at siden er kontrolleret og printet til det fysiske kort.")}</p><div class="actions"><button class="primary" data-action="confirm-approve" data-id="${d.id}" data-side="${d.side}">${ui("Kontrolleret og printet")}</button><button data-action="close">${ui("Annuller")}</button></div>`);break;
-case 'confirm-approve':await mutate('revision.approve',{card_id:d.id,side:d.side},{message:I18n.text('Siden er godkendt')});break;
+case 'confirm-approve':await PrintApprovals.confirmSingle(d.id,d.side,target);break;
 case 'draw':editMap=true;mapDraft=[];render();break;
 case 'undo-point':mapDraft.pop();render();break;
 case 'cancel-outline':editMap=false;mapDraft=[];render();break;

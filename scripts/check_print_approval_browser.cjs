@@ -53,6 +53,19 @@ module.exports=async(browser,out)=>{
   assert.equal(await page.locator('[data-printed-index]:checked').count(),4);
   await page.locator('[data-printed-index="3"]').uncheck();await page.locator('[data-action=confirm-printed]').click();
   const writes=await page.evaluate(()=>window.approvalWrites);assert.equal(writes.length,1);assert.equal(writes[0].action,'revision.approve_many');assert.equal(writes[0].data.entries.length,3);assert.equal(await page.evaluate(()=>PrintApprovals.entries.size),1);
-  assert.deepEqual(errors,[]);console.log('Canonical DA/EN front snapshots, real print popups, four-side selection, explicit confirmation and no approval on preview/print passed.');
+  // Hold the real save promise while firing rapid repeat clicks on both paths.
+  await page.evaluate(()=>{window.approvalWrites=[];window.releaseApproval=null;mutate=async(action,data)=>{window.approvalWrites.push({action,data});await new Promise(resolve=>window.releaseApproval=resolve);};});
+  await page.evaluate(()=>PrintApprovals.open());
+  await page.locator('[data-action=confirm-printed]').evaluate(button=>{button.dispatchEvent(new MouseEvent('click',{bubbles:true}));button.dispatchEvent(new MouseEvent('click',{bubbles:true}));});
+  assert.equal(await page.locator('[data-action=confirm-printed]').isEnabled(),false);
+  assert.equal(await page.evaluate(()=>window.approvalWrites.length),1);
+  await page.evaluate(()=>window.releaseApproval());await page.waitForFunction(()=>!PrintApprovals.busy);
+  await page.evaluate(()=>{window.approvalWrites=[];});
+  await page.evaluate(()=>{const button=document.createElement('button');button.dataset.action='approve';button.dataset.id='c101';button.dataset.side='front';document.body.append(button);button.click();button.remove();});
+  await page.locator('[data-action=confirm-approve]').evaluate(button=>{button.dispatchEvent(new MouseEvent('click',{bubbles:true}));button.dispatchEvent(new MouseEvent('click',{bubbles:true}));});
+  assert.equal(await page.locator('[data-action=confirm-approve]').isEnabled(),false);
+  assert.equal(await page.evaluate(()=>window.approvalWrites.length),1);
+  await page.evaluate(()=>window.releaseApproval());await page.waitForFunction(()=>PrintApprovals.singleBusy.size===0);
+  assert.deepEqual(errors,[]);console.log('Canonical DA/EN front snapshots, real print popups, four-side selection, explicit confirmation, rapid repeat-click guards and no approval on preview/print passed.');
  }finally{await context.close();}
 };

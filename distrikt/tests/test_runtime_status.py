@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import threading
 import unittest
 from unittest.mock import Mock,MagicMock,patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
@@ -18,6 +19,32 @@ class RuntimeStatusTests(unittest.TestCase):
         self.bridge=RuntimeStatus(self.schedule,'fictional',True,enabled=True,token='fictional-secret',
             pressure=lambda:self.reading,clock=lambda:self.now,
             transport=lambda *args:self.sent.append(args))
+
+    def test_sampling_does_not_lock_out_overview_while_waiting_for_store(self):
+        # Reproduce the HA loop and a confirmed write holding Store at once.
+        # A bounded test lock reports a regression instead of hanging the suite.
+        class BoundedLock:
+            def __init__(self):self.inner=threading.RLock()
+            def __enter__(self):
+                if not self.inner.acquire(timeout=1):raise RuntimeError('runtime/Store lock inversion')
+                return self
+            def __exit__(self,*args):self.inner.release()
+        self.bridge.lock=BoundedLock()
+        store_lock=threading.RLock();waiting=threading.Event();errors=[]
+        def schedule_status():
+            waiting.set()
+            with store_lock:return self.task.copy()
+        self.schedule.status.side_effect=schedule_status
+        def sampler():
+            try:self.bridge.sample()
+            except Exception as error:errors.append(error)
+        with store_lock:
+            thread=threading.Thread(target=sampler);thread.start()
+            self.assertTrue(waiting.wait(2))
+            try:self.bridge.status()
+            except Exception as error:errors.append(error)
+        thread.join(2)
+        self.assertFalse(thread.is_alive());self.assertEqual(errors,[])
 
     def test_normal_wait_and_budget_are_not_errors_and_pressure_is_sustained(self):
         self.assertEqual(self.bridge.sample()['state'],'waiting')

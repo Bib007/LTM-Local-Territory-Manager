@@ -137,7 +137,12 @@ async function printFrontImage(c){
 }
 
 const PrintApprovals={
- entries:new Map(),pending:null,busy:false,
+ entries:new Map(),pending:null,busy:false,singleBusy:new Set(),
+ async confirmSingle(id,side,button){
+  const key=id+':'+side;if(this.singleBusy.has(key))return;this.singleBusy.add(key);button.disabled=true;
+  try{await mutate('revision.approve',{card_id:id,side},{message:I18n.text('Siden er godkendt')});}
+  finally{this.singleBusy.delete(key);if(button.isConnected!==false)button.disabled=false;}
+ },
  remember(cards,side){for(const c of cards){const token=c[side+'_print_token'];if(token)this.entries.set(c.id+':'+side,{card_id:c.id,side,token,number:c.number});}},
  open(){
   const entries=[...this.entries.values()].filter(e=>card(e.card_id));if(!entries.length){toast(I18n.text('Ingen printede sider afventer godkendelse.'));return;}
@@ -148,6 +153,6 @@ const PrintApprovals={
   if(this.busy||!this.pending)return;
   const entries=[...el('dialog').querySelectorAll('[data-printed-index]:checked')].map(input=>this.pending[Number(input.dataset.printedIndex)]).filter(Boolean);
   if(!entries.length){toast(I18n.text('Vælg de printede sider, der skal godkendes.'));return;}
-  const pending=this.pending;this.busy=true;try{await mutate('revision.approve_many',{entries:entries.map(({number,...e})=>e)},{message:I18n.text('De printede sider er godkendt')});for(const e of entries){const key=e.card_id+':'+e.side;if(this.entries.get(key)?.token===e.token)this.entries.delete(key);}if(this.pending===pending)this.pending=null;}finally{this.busy=false;}
+  const pending=this.pending,button=el('dialog').querySelector('[data-action=confirm-printed]');this.busy=true;if(button)button.disabled=true;try{await mutate('revision.approve_many',{entries:entries.map(({number,...e})=>e)},{message:I18n.text('De printede sider er godkendt')});for(const e of entries){const key=e.card_id+':'+e.side;if(this.entries.get(key)?.token===e.token)this.entries.delete(key);}if(this.pending===pending)this.pending=null;}finally{this.busy=false;if(button?.isConnected)button.disabled=false;}
  }
 };

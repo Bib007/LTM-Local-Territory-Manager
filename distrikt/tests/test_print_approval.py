@@ -4,6 +4,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 import tempfile
 import unittest
+from unittest.mock import patch
 from store import Store
 from profile_policy import mutation
 
@@ -17,6 +18,36 @@ class PrintApprovalTests(unittest.TestCase):
     def tearDown(self):self.s.close();self.folder.cleanup()
     def entries(self,sides=('front','back')):
         return [{'card_id':c['id'],'side':side,'token':c[side+'_print_token']} for c in self.s.state()['cards'] for side in sides]
+    def test_380_cards_share_one_print_context_and_keep_unchanged_tokens(self):
+        with self.s.transaction():
+            for index in range(380):
+                ident='fictional-'+str(index)
+                self.s.put('cards',{'id':ident,'number':str(index+1000),'addresses':[{'road':'Prøvevej','numbers':'1–9','count':5}],
+                    'front_revision':True,'back_revision':True})
+                self.s.put('ib',{'id':'ib-'+ident,'card_id':ident,'road':'Prøvevej','number':'3'})
+                self.s.put('maps',{'id':'map-'+ident,'card_id':ident,'image':'fictional image '*1000})
+        with patch.object(self.s,'all',wraps=self.s.all) as reads:
+            snapshot=self.s.state()
+        self.assertEqual(sum(c.args[0]=='maps' for c in reads.call_args_list),1)
+        self.assertEqual(sum(c.args[0]=='ib' and not c.kwargs.get('deleted') for c in reads.call_args_list),1)
+        entries=[{'card_id':c['id'],'side':side,'token':c[side+'_print_token']} for c in snapshot['cards'] if c['id'].startswith('fictional-') for side in ('front','back')]
+        self.assertEqual(len(entries),760)
+        # Tokens from the previous version are still valid for unchanged content.
+        from hashlib import sha256
+        for side in ('front','back'):
+            c=self.s.require('cards','fictional-0')
+            fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon') if side=='front' else ('id','number')
+            content={k:c.get(k) for k in fields}
+            if side=='back':content['ib']=[self.s.require('ib','ib-fictional-0')]
+            else:content.update(area_name='',links=[])
+            import json
+            self.assertEqual(self.s.print_token(c,side),sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest())
+        with patch.object(self.s,'all',wraps=self.s.all) as reads:
+            self.assertEqual(self.s.mutate('revision.approve_many',{'entries':entries})['approved'],760)
+        self.assertEqual(sum(c.args[0]=='maps' for c in reads.call_args_list),1)
+        self.assertEqual(sum(c.args[0]=='ib' and not c.kwargs.get('deleted') for c in reads.call_args_list),1)
+        self.assertTrue(all(not self.s.require('cards',e['card_id'])[e['side']+'_revision'] for e in entries))
+
     def test_both_sides_approve_atomically_and_repeat_is_idempotent(self):
         entries=self.entries();result=self.s.mutate('revision.approve_many',{'entries':entries})
         self.assertEqual(result['approved'],4)
