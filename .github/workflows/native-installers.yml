@@ -74,6 +74,9 @@ jobs:
           mkdir -p dist-native/_dmg
           ditto dist-native/LTM.app dist-native/_dmg/LTM.app
           python scripts/prepare_dmg.py --folder dist-native/_dmg
+          # Finder uses the image at its actual pixel dimensions. A 2x image
+          # in a 1x window is cropped and misaligns every icon.
+          python -c "from PIL import Image; im=Image.open('dist-native/LTM-DMG-background.png'); assert im.size == (900, 550), im.size"
           brew install create-dmg
           arch=Intel
           if [ "$(uname -m)" = "arm64" ]; then arch=AppleSilicon; fi
@@ -86,7 +89,7 @@ jobs:
             --icon "LTM.app" 218 310 \
             --hide-extension "LTM.app" \
             --app-drop-link 685 310 \
-            --icon "Første åbning - Guide.webloc" 764 487 \
+            --icon "Hjælp - Help.webloc" 765 465 \
             --no-internet-enable \
             "dist-native/LTM-macOS-v${version}-${arch}.dmg" \
             "dist-native/_dmg"
