@@ -98,6 +98,7 @@ class AddressScheduleTests(unittest.TestCase):
         self.due();self.complete();self.assertEqual(self.scheduler.status()['pending'],1)
         self.now+=timedelta(days=8);self.rows=[];self.complete()
         self.assertEqual(self.scheduler.status()['status'],'complete');self.assertEqual(self.scheduler.status()['pending'],0)
+        self.assertIn('Ingen nye adresseændringer',self.scheduler.status()['message'])
     def test_no_concurrent_download_and_disable_waiting_task(self):
         self.due();self.downloads.active='manual';self.scheduler.tick();self.assertFalse(self.calls)
         self.downloads.active=None;self.fail=True;self.complete();self.assertTrue(self.scheduler.busy())

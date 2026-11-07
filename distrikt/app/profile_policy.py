@@ -180,6 +180,7 @@ def state_for(raw,user):
         result['geo_info']=deepcopy(raw['geo_info'])
         result['ignored']=[{k:deepcopy(v) for k,v in r.items() if k in ('id','address_id','label','reason','date')} for r in raw['ignored']]
     if {'cards.view','geo.view'}<=p:result['maps']=deepcopy(raw['maps'])
+    result['loan_delete_tokens']={loan['id']:raw.get('loan_delete_tokens',{}).get(loan['id'],'') for loan in result['loans']}
     if 'sharing.manage' in p:result['public_maps']=deepcopy(raw['public_maps'])
     if 'settings.manage' in p:
         result['address_task']=deepcopy(raw['address_task'])

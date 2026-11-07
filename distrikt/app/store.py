@@ -195,6 +195,14 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             content['links']=context['links'].get(c['id'],[])
         return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
+    @staticmethod
+    def loan_history_tokens(cards, loans):
+        grouped={}
+        for loan in loans:grouped.setdefault(loan['card_id'],[]).append(loan)
+        cards={c['id']:c for c in cards}
+        return {ident:hashlib.sha256(json.dumps({'card_id':ident,'archived':bool(cards.get(ident,{}).get('archived')),
+            'loans':sorted(rows,key=lambda row:row['id'])},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for ident,rows in grouped.items()}
+
     def state(self):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
@@ -202,6 +210,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
             for c in result['cards']:
                 for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side,print_context)
+            histories=self.loan_history_tokens(result['cards'],result['loans'])
+            result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
             front_summaries(result['cards'])
             result['settings'] = self.get('settings', 'config')
             try:
@@ -690,10 +700,17 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             module = data.get('module')
             if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes'):
                 raise ValueError('Denne post kan ikke slettes her.')
-            if module == 'loans' and data.get('history_revision') != self.revision:
-                raise ValueError('Historikken er ændret. Opdater og vælg udleveringen igen.')
             item = self.require(module, data['id'])
             if module == 'loans':
+                if 'history_token' in data:
+                    c=self.require('cards',item['card_id'])
+                    history=[loan for loan in self.all('loans') if loan['card_id']==item['card_id']]
+                    expected=self.loan_history_tokens([c],history)[item['card_id']]
+                    valid=isinstance(data['history_token'],str) and data['history_token']==expected
+                else:
+                    # Older browser tabs retain their conservative revision guard.
+                    valid=data.get('history_revision')==self.revision
+                if not valid:raise ValueError('Historikken er ændret. Opdater og vælg udleveringen igen.')
                 if not item.get('returned'):
                     c = self.require('cards', item['card_id'])
                     if c.get('archived'):

@@ -95,7 +95,7 @@ class AddressSchedule:
                         counts={kind:0 for kind in ('new','changed','retired')}
                         for a in self.store.all('geo'):
                             if a.get('entity')=='address_change' and a.get('check_run')==run.get('id'):counts[a['kind']]+=1
-                        row.update(status='complete',completed_at=iso(current),last_result=counts,message='Adressekontrollen er færdig. Gennemgå og godkend ændringerne.',next_due=next_night(current,row['days'],row['time']))
+                        row.update(status='complete',completed_at=iso(current),last_result=counts,message=('Adressekontrollen er færdig. Gennemgå og godkend ændringerne.' if sum(counts.values()) else 'Adressekontrollen er færdig. Ingen nye adresseændringer fundet.'),next_due=next_night(current,row['days'],row['time']))
                         for key in ('retry_at','retry_reason','retry_streak','last_problem'):row.pop(key,None)
                         self.store.put('settings',row)
                     return
