@@ -18,7 +18,8 @@ from pathlib import Path
 from access import write_private
 from publication_dates import ApprovedImages,dates,date_key,render as render_dates
 from pdf_export import shared_card_pdf
-sys.path.insert(0,str(Path(__file__).resolve().parent/'vendor_py'))
+from resource_paths import vendor_dir
+sys.path.insert(0,str(vendor_dir()))
 import qrcode
 
 SCOPE='https://www.googleapis.com/auth/drive.file'
