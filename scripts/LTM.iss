@@ -39,8 +39,13 @@ Name: "desktopicon"; Description: "Opret genvej på skrivebordet"; GroupDescript
 Source: "{#BuildDir}\LTM\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\LTM"; Filename: "{app}\LTM.exe"
-Name: "{autodesktop}\LTM"; Filename: "{app}\LTM.exe"; Tasks: desktopicon
+; The selected setup language should also be LTM's initial UI language.
+; LTM honours an existing browser choice, so upgrades never reset it.
+Name: "{autoprograms}\LTM"; Filename: "{app}\LTM.exe"; Parameters: "--language=da"; Languages: danish
+Name: "{autoprograms}\LTM"; Filename: "{app}\LTM.exe"; Parameters: "--language=en"; Languages: english
+Name: "{autodesktop}\LTM"; Filename: "{app}\LTM.exe"; Parameters: "--language=da"; Languages: danish; Tasks: desktopicon
+Name: "{autodesktop}\LTM"; Filename: "{app}\LTM.exe"; Parameters: "--language=en"; Languages: english; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\LTM.exe"; Description: "Start LTM"; Flags: postinstall nowait skipifsilent
+Filename: "{app}\LTM.exe"; Parameters: "--language=da"; Languages: danish; Description: "Start LTM"; Flags: postinstall nowait skipifsilent
+Filename: "{app}\LTM.exe"; Parameters: "--language=en"; Languages: english; Description: "Launch LTM"; Flags: postinstall nowait skipifsilent
