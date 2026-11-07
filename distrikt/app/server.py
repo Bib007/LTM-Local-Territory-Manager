@@ -16,6 +16,7 @@ import ipaddress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import TCPServer
 from pathlib import Path
+from resource_paths import app_dir
 from urllib.parse import parse_qs, urlsplit
 from store import Store, MODULES
 from pdf_export import s13_pdf
@@ -34,7 +35,7 @@ from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
 from connection_backup import export as export_connections,restore as restore_connections
 
-APP=Path(__file__).resolve().parent
+APP=app_dir()
 VERSION='1.12.18'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
@@ -424,7 +425,8 @@ def main(argv=None):
             info=None
         if not info:
             log=open(data/'start.log','a')
-            subprocess.Popen([sys.executable,str(APP/'server.py'),'--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
+            command=([sys.executable] if getattr(sys,'frozen',False) else [sys.executable,str(APP/'server.py')])
+            subprocess.Popen(command+['--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
             for _ in range(60):
                 info=running(data)
                 if info:break
