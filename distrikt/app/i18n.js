@@ -2533,7 +2533,15 @@ const I18n={
   for(const kind of ['placeholder','alt','title'])document.querySelectorAll?.('[data-ui-'+kind+']').forEach(node=>node.setAttribute(kind,this.format(node.dataset['ui'+kind[0].toUpperCase()+kind.slice(1)],this.params(node,kind))));
  }
 };
-try{I18n.current=localStorage.getItem('ltm-language')==='da'?'da':'en';}catch{}
+// The installer supplies a *first-use* hint. A user's saved browser preference
+// always wins, including when a new installer is used for an upgrade.
+try{
+ const saved=localStorage.getItem('ltm-language');
+ const initial=new URLSearchParams(location.search).get('ltm_start_language');
+ const language=['da','en'].includes(saved)?saved:(['da','en'].includes(initial)?initial:'en');
+ I18n.current=language;
+ if(!saved&&['da','en'].includes(initial))localStorage.setItem('ltm-language',language);
+}catch{}
 document.addEventListener('DOMContentLoaded',()=>I18n.applyShell());
 document.addEventListener('change',event=>{
  if(event.target.id!=='navigationLanguage')return;
