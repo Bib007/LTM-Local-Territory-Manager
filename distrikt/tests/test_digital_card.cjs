@@ -59,3 +59,10 @@ if(process.argv[2]==='--preview-dir'){
  assert.equal(run('JSON.stringify(state)'),before);
  console.log('Digital QR image: public-only miniature, shared front rows, escaping, dense/empty cards, local asset/retry, unchanged PNG size and explicit approval payload passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
+// Dense labels are optional; approved saved visit dots are never discarded.
+const labelFallbackCase=run("MapExport.publicVisitLayout(Array.from({length:900},(_,i)=>({x:700,y:700,number:String(i+1),count:1})),900)");
+assert.equal((labelFallbackCase.dots.match(/<circle /g)||[]).length,900);
+assert.ok(labelFallbackCase.labels.length<900,'Some labelFallbackCase numbers are omitted instead of blocking publication');
+assert.ok(labelFallbackCase.labels.length>0,'Numbers that do fit remain');
+assert.equal((labelFallbackCase.leaders.match(/data-number-leader/g)||[]).length<=labelFallbackCase.labels.length,true);

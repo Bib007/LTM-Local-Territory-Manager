@@ -22,7 +22,7 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
       });
     });
     const engine = process.env.LTM_BROWSER_ENGINE === 'webkit' ? webkit : chromium;
-    browser = await engine.launch();
+    browser = await engine.launch(process.env.LTM_CHROME && engine===chromium?{executablePath:process.env.LTM_CHROME}:{});
     const errors = [];
     async function open(cookie) {
       const context = await browser.newContext({viewport: {width: 1440, height: 950}});
@@ -71,6 +71,10 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
     assert.equal(await deleteButton(a, f.mistake).evaluate(button => button === document.activeElement), true);
 
     await deleteButton(a, f.mistake).click();
+    assert.ok(await form.getAttribute('data-history-token'),'The viewed history owns a scoped delete token');
+    // A background/local setting save must not force repeated history reloads.
+    await b.evaluate(async()=>{await refresh();await mutate('print.profile.save',{side:'front',profile:defaultPrintProfile('front')},{close:false});});
+    assert.notEqual(await a.evaluate(()=>state.revision),await b.evaluate(()=>state.revision));
     await form.getByRole('button', {name: 'Slet udlevering'}).click();
     await form.waitFor({state: 'hidden'});
     assert.equal(await deleteButton(a, f.mistake).count(), 0);

@@ -173,22 +173,45 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         return {l['id'] for l in self.all('loans')
                 if l['id'] != loan['id'] and l['card_id'] == loan['card_id'] and overlaps(loan, l)}
 
-    def print_token(self, c, side):
+    def print_context(self, ib=None, settings=None, maps=None):
+        # Build once per overview/batch. In particular, never deserialize every
+        # stored map image again for each of hundreds of selected fronts.
+        by_card={};links={}
+        for item in self.all('ib') if ib is None else ib:
+            by_card.setdefault(item.get('card_id'),[]).append(item)
+        for item in self.all('maps') if maps is None else maps:
+            if item.get('entity')=='publication':links.setdefault(item.get('card_id'),[]).append(item.get('front_url',''))
+        return {'ib':{key:sorted(items,key=lambda i:i['id']) for key,items in by_card.items()},
+            'links':{key:sorted(items) for key,items in links.items()},
+            'areas':{item['id']:item.get('name','') for item in (self.all('settings') if settings is None else settings)}}
+
+    def print_token(self, c, side, context=None):
+        context=self.print_context() if context is None else context
         fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon') if side=='front' else ('id','number')
         content={k:c.get(k) for k in fields}
-        if side=='back':content['ib']=sorted([i for i in self.all('ib') if i.get('card_id')==c['id']],key=lambda i:i['id'])
+        if side=='back':content['ib']=context['ib'].get(c['id'],[])
         else:
-            area=self.get('settings',c.get('area_id')) if c.get('area_id') else None
-            content['area_name']=(area or {}).get('name','')
-            content['links']=sorted([m.get('front_url','') for m in self.all('maps') if m.get('entity')=='publication' and m.get('card_id')==c['id']])
+            content['area_name']=context['areas'].get(c.get('area_id'),'')
+            content['links']=context['links'].get(c['id'],[])
         return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+
+    @staticmethod
+    def loan_history_tokens(cards, loans):
+        grouped={}
+        for loan in loans:grouped.setdefault(loan['card_id'],[]).append(loan)
+        cards={c['id']:c for c in cards}
+        return {ident:hashlib.sha256(json.dumps({'card_id':ident,'archived':bool(cards.get(ident,{}).get('archived')),
+            'loans':sorted(rows,key=lambda row:row['id'])},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for ident,rows in grouped.items()}
 
     def state(self):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
             from geography import front_summaries
+            maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
             for c in result['cards']:
-                for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side)
+                for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side,print_context)
+            histories=self.loan_history_tokens(result['cards'],result['loans'])
+            result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
             front_summaries(result['cards'])
             result['settings'] = self.get('settings', 'config')
             try:
@@ -203,7 +226,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             result['cards']=[c for c in result['cards'] if not c.get('archived')]
             result['revision']=self.revision
             result['undo_available']=bool(self._undo and self._undo['revision']==self.revision and self._undo['until']>__import__('time').monotonic())
-            result['maps'] = [{k: v for k, v in m.items() if k != 'image'} for m in self.all('maps') if m.get('entity')!='publication']
+            result['maps'] = [{k: v for k, v in m.items() if k != 'image'} for m in maps if m.get('entity')!='publication']
             result['recovery'] = self.recovery()
             result['today'] = today()
             result['version'] = '1.12.0-beta.7'
@@ -609,7 +632,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             entries=data.get('entries')
             if not isinstance(entries,list) or not entries or len(entries)>10000:
                 raise ValueError('Vælg de printede sider, der skal godkendes.')
-            checked=[];seen=set()
+            context=self.print_context();checked=[];seen=set()
             for item in entries:
                 if not isinstance(item,dict) or item.get('side') not in ('front','back'):
                     raise ValueError('Vælg forside eller bagside.')
@@ -617,7 +640,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 key=(c['id'],side)
                 if key in seen:raise ValueError('Den samme side er valgt flere gange.')
                 seen.add(key)
-                if c.get('archived') or item.get('token')!=self.print_token(c,side):
+                if c.get('archived') or item.get('token')!=self.print_token(c,side,context):
                     raise ValueError('Printgrundlaget er ændret. Åbn print igen.')
                 checked.append((c['id'],side))
             approved=0
@@ -677,10 +700,17 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             module = data.get('module')
             if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes'):
                 raise ValueError('Denne post kan ikke slettes her.')
-            if module == 'loans' and data.get('history_revision') != self.revision:
-                raise ValueError('Historikken er ændret. Opdater og vælg udleveringen igen.')
             item = self.require(module, data['id'])
             if module == 'loans':
+                if 'history_token' in data:
+                    c=self.require('cards',item['card_id'])
+                    history=[loan for loan in self.all('loans') if loan['card_id']==item['card_id']]
+                    expected=self.loan_history_tokens([c],history)[item['card_id']]
+                    valid=isinstance(data['history_token'],str) and data['history_token']==expected
+                else:
+                    # Older browser tabs retain their conservative revision guard.
+                    valid=data.get('history_revision')==self.revision
+                if not valid:raise ValueError('Historikken er ændret. Opdater og vælg udleveringen igen.')
                 if not item.get('returned'):
                     c = self.require('cards', item['card_id'])
                     if c.get('archived'):

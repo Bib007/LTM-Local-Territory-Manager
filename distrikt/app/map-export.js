@@ -176,8 +176,9 @@ const MapExport={
         const position=candidates.find(candidate=>reserve(...candidate));
         if(position)return label(...position);
       }
-      throw Error('Der er ikke plads til at placere alle husnumre tydeligt på kortbilledet.');
-    });
+      // Keep the point when a crowded area has no clear space for its number.
+      return null;
+    }).filter(Boolean);
     return {dots:markup.join(''),leaders:leaders.join(''),labels};
   },
   svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false,sharedPdf=false}={}){

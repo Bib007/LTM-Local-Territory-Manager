@@ -45,3 +45,11 @@ const html=source('index.html');assert(html.indexOf('/i18n.js')<html.indexOf('/n
 assert(html.includes('lang="da"'));assert(!html.includes('Lokalt på din Mac'));
 assert(source('server.py').includes("'/i18n.js'"));
 console.log('Navigation language, unchanged data/routes/drafts, shared guide preference and blocked-storage fallback passed.');
+
+// A completed zero-result check is informational, never a review task.
+for(const language of ['da','en']){
+ const e=environment(language);e.run('const ui=(key,params)=>I18n.label(key,params)');e.run(`state.address_task={available:true,enabled:true,status:'complete',completed_at:'2026-11-07T04:28:30Z',days:29,time:'02:00',last_result:{new:0,changed:0,retired:0},pending:0,message:'Adressekontrollen er færdig. Gennemgå og godkend ændringerne.'}`);
+ assert.equal(e.run('Workspace.addressTaskPanel(true)'), '');
+ const panel=e.run('Workspace.addressTaskPanel(false)');assert.doesNotMatch(panel,/data-work="address-changes"/);assert.match(panel,language==='en'?/No address changes are awaiting review/:/Ingen adresseændringer afventer gennemgang/);
+ e.run('state.address_task.pending=2');assert.match(e.run('Workspace.addressTaskPanel(true)'),/data-work="address-changes"/);
+}

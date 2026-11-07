@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.12.18 · 2026-11-07
+
+- Prevent the Home Assistant status worker and a saved overview from deadlocking while a print approval is being saved.
+- Read print-validation data once per overview or batch instead of repeatedly loading all stored map images for every card.
+- Disable single and batch approval buttons while saving and ignore rapid repeat clicks.
+- Validate assignment deletion against the selected card's history, so unrelated background saves do not force repeated history reloads. Actual history changes still block stale deletion.
+- Hide completed zero-result address checks from the dashboard and remove empty review actions; keep the schedule visible in settings.
+- Publish crowded maps with all red dots even when some house numbers cannot be placed clearly.
+- Cover 380 cards / 760 sides, concurrent HTTP approvals and page reads, unchanged print tokens, the status-worker lock conflict and repeat-click browser flows.
+
 ## 1.12.17 · 2026-11-07
 
 - Render the Google Drive PDF front from the normal print template, browser layout and street grouping in Danish and English, replacing the separate approximation.

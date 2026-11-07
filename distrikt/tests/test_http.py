@@ -24,6 +24,28 @@ class HTTPTests(unittest.TestCase):
         h.update(headers or {})
         req=urllib.request.Request(self.server.origin+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
         return urllib.request.urlopen(req,timeout=3)
+    def test_380_card_approval_and_repeat_with_parallel_reads_remain_responsive(self):
+        import concurrent.futures
+        with self.store.transaction():
+            for index in range(380):
+                ident='fictional-'+str(index)
+                self.store.put('cards',{'id':ident,'number':str(index+1000),'addresses':[], 'front_revision':True,'back_revision':True})
+                self.store.put('ib',{'id':'ib-'+ident,'card_id':ident,'road':'Prøvevej','number':'3'})
+        before=self.store.state()
+        entries=[{'card_id':c['id'],'side':side,'token':c[side+'_print_token']} for c in before['cards'] for side in ('front','back')]
+        def approve():
+            with self.request('/api/mutate',{'action':'revision.approve_many','data':{'entries':entries},'include_state':True}) as response:return json.load(response)
+        def read():
+            with self.request('/api/state') as response:return json.load(response)
+        with concurrent.futures.ThreadPoolExecutor(4) as pool:
+            jobs=[pool.submit(approve),pool.submit(read),pool.submit(approve),pool.submit(read)]
+            replies=[job.result(timeout=5) for job in jobs]
+        self.assertEqual(sum(replies[i]['result']['approved'] for i in (0,2)),760)
+        self.assertTrue(all(not c['front_revision'] and not c['back_revision'] for c in read()['cards']))
+        # A subsequent single approval and overview must remain available too.
+        with self.request('/api/mutate',{'action':'revision.approve','data':{'card_id':'fictional-0','side':'front'},'include_state':True}) as response:
+            self.assertTrue(json.load(response)['ok'])
+
     def test_edit_issue_and_return_survive_status_changes_and_menu_reads(self):
         from datetime import date
         day=date.today().isoformat()

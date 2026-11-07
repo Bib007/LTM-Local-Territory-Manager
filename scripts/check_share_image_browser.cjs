@@ -185,6 +185,13 @@ module.exports=async(browser,out)=>{
   if(out)fs.writeFileSync(path.join(out,'drive-actual-published.pdf'),Buffer.from(uploadedPdf,'base64'));
   assert.deepEqual(errors,[]);
   if(out)fs.writeFileSync(path.join(out,'manual-only-preview.png'),Buffer.from(manual.png.split(',')[1],'base64'));
+  const dense=await page.evaluate(async()=>{
+   const members=Array.from({length:900},(_,i)=>({id:'dense-'+i,road:'Fiktiv tæt vej',number:String(i+1),lng:10.005,lat:55.005,count:1}));
+   const svg=MapExport.svg('c1',{publicCard:{id:'dense',number:'F900',name:'Fiktivt tæt kort',geo_polygon:[[10,55],[10.01,55],[10.01,55.01],[10,55.01]]},publicMembers:members,sharedPdf:true});
+   const doc=new DOMParser().parseFromString(svg,'image/svg+xml'),blob=await MapExport.raster(svg);
+   return {dots:doc.querySelectorAll('circle[fill="#c62828"]').length,labels:[...doc.querySelectorAll('text')].filter(t=>/^\d+$/.test(t.textContent)).length,bytes:blob.size};
+  });
+  assert.equal(dense.dots,900);assert.ok(dense.labels<900);assert.ok(dense.bytes>10000,'A real PNG is generated even when crowded labels are omitted');
   console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 37 identical red visit regions, including both IB addresses, both approved pages embedded losslessly in a PDF sent to offline Drive, private metadata exclusions and manual fallback passed.');
  }finally{await context.close();}
 };
