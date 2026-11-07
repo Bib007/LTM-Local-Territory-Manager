@@ -90,6 +90,7 @@ jobs:
             --hide-extension "LTM.app" \
             --app-drop-link 685 310 \
             --icon "Hjælp - Help.webloc" 765 465 \
+            --hide-extension "Hjælp - Help.webloc" \
             --no-internet-enable \
             "dist-native/LTM-macOS-v${version}-${arch}.dmg" \
             "dist-native/_dmg"
