@@ -83,3 +83,7 @@ When moving between HA, Mac and Windows, retain the same Google account/client i
 - [Drive sharing](https://developers.google.com/workspace/drive/api/guides/manage-sharing)
 
 For Danish instructions included with the program, see [GOOGLE-DRIVE-OPSAETNING.md](../distrikt/GOOGLE-DRIVE-OPSAETNING.md).
+
+## Card front and batch approval
+
+Page 2 of the Drive PDF uses the normal print template and street grouping. Update the card’s Drive upload and review both pages to replace the previous front. After printing, choose “Approve printed sides in the app” to approve the reviewed fronts and backs together, including after printing all cards. Changed content requires a new print. No sides are approved automatically.

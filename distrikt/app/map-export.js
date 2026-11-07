@@ -263,52 +263,8 @@ const MapExport={
     }))});
   },
   async sharedFront(recipe){
-    const language=state.settings?.print_profiles?.front?.form_language||I18n.language();
-    const english=language==='en',template=await this.frontTemplate(language),card=recipe.card;
-    const rows=recipe.geography_missing?recipe.manual_front_rows.map(row=>({
-      label:`${row.road} ${row.numbers}`,count:row.count_unknown?null:row.count
-    })):this.publicFrontRows(recipe.members);
-    const measure=document.createElement('canvas').getContext('2d');
-    if(!measure)throw Error('Browseren understøtter ikke billedeksport.');
-    const wrap=(value,width,size,bold=false)=>{
-      measure.font=`${bold?'bold ':''}${size*10}px Arial`;
-      const fits=text=>measure.measureText(text).width<=width*10;
-      const lines=[];let line='';
-      for(const word of String(value).split(/\s+/)){
-        const next=line?line+' '+word:word;
-        if(fits(next)){line=next;continue;}
-        if(line)lines.push(line);
-        line='';
-        for(const char of word){
-          if(line&&!fits(line+char)){lines.push(line);line='';}
-          line+=char;
-        }
-      }
-      if(line)lines.push(line);
-      return lines;
-    };
-    const font=[3.35,3.1,2.85,2.6,2.35].find(size=>{
-      const lines=rows.reduce((total,row)=>total+wrap(row.label,99,size).length,recipe.geography_missing?0:1);
-      return lines*size*1.28<=40;
-    });
-    if(!font)throw Error('Vejlisten har ikke plads på printforsiden. Tilpas kortet før deling.');
-    const name=String(card.name||''),number=String(card.number),lineHeight=font*1.28;
-    const fit=(value,width)=>{
-      measure.font='35.3px Arial';
-      const actual=measure.measureText(value).width;
-      return actual?Math.min(3.53,3.53*width*10/actual):3.53;
-    };
-    const countLabel=count=>count===null?(english?'unknown':'ukendt'):count+(english?' visits':' besøg');
-    let y=english?27.5:32;
-    const text=rows.map(row=>{
-      const lines=wrap(row.label,99,font),count=countLabel(row.count);
-      const output=lines.map((line,i)=>`<text x="10.22" y="${y+i*lineHeight}">${esc(line)}</text>`).join('')
-        +`<text x="135.78" y="${y}" text-anchor="end">${esc(count)}</text>`;
-      y+=lines.length*lineHeight;
-      return output;
-    }).join('');
-    const total=recipe.geography_missing?'':`<g font-weight="bold"><text x="10.22" y="${y}">${english?'Total':'I alt'}</text><text x="135.78" y="${y}" text-anchor="end">${countLabel(rows.reduce((sum,row)=>sum+row.count,0))}</text></g>`;
-    return this.raster(`<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560" viewBox="0 0 2200 1560"><rect width="2200" height="1560" fill="white"/><svg x="44" y="100" width="2112" height="1360" viewBox="0 0 146 94"><image href="${template}" width="146" height="94"/><g font-family="Arial,sans-serif" font-size="${font}" fill="#111"><text x="${english?24.09:37.96}" y="${english?19:18.2}" font-size="${fit(name,english?76:55)}">${esc(name)}</text><text x="${english?112.13:118.26}" y="${english?19:18.2}" font-size="${fit(number,english?22:16)}">${esc(number)}</text>${text}${total}</g></svg></svg>`);
+    if(!recipe.card.addresses)throw Error('Genindlæs appen og dan kortbilledet igen.');
+    return printFrontImage(recipe.card);
   },
   publicFront(c,members,template){
     if(!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(template))throw Error('Den blanke printforside mangler. Dan kortbilledet igen.');

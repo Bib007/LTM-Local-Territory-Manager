@@ -73,7 +73,7 @@ def route(permissions,path,post=False):
     require(permissions,(POST if post else GET).get(path))
 
 GROUPS={
- ('cards.view','cards.edit'):'card.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit revision.approve',
+ ('cards.view','cards.edit'):'card.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit revision.approve revision.approve_many',
  ('cards.view','geo.view','geo.edit','cards.edit'):'geo.assign geo.boundary geo.preview map.save map.outline card.restructure.preview card.restructure.apply',
  ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune geo.main.download.save geo.main.download.tile geo.main.import.preview ignore.save address.change.review',
  ('connections.manage',):'geo.token',
@@ -140,10 +140,10 @@ def mutation(user,action,data,store):
             if not any(p['name'].casefold()==name.casefold() for p in store.all('publishers')):
                 require(user['permissions'],('publishers.manage',))
     if action=='loan.finish' and data.get('complete'):require(user['permissions'],('history.view','history.edit'))
-    if action=='revision.approve' and data.get('side')=='back':require(user['permissions'],('ib.view',))
+    if (action=='revision.approve' and data.get('side')=='back') or (action=='revision.approve_many' and isinstance(data.get('entries'),list) and any(isinstance(e,dict) and e.get('side')=='back' for e in data['entries'])):require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))
 
-CARD_FIELDS=set('id number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
+CARD_FIELDS=set('id number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
  'publishers':{'id','name','group','group_role','pioneer'},

@@ -68,7 +68,7 @@ class HTTPTests(unittest.TestCase):
         with self.request('/api/share/prepare',{'card_id':card}) as response:recipe=json.load(response)
         self.assertTrue(recipe['geography_missing']);self.assertEqual(recipe['members'],[])
         self.assertEqual([r['road'] for r in recipe['manual_front_rows']],['Sikker prøvevej','Anden sikker vej'])
-        self.assertNotIn('addresses',recipe['card']);self.assertNotIn('publisher',json.dumps(recipe))
+        self.assertEqual(recipe['card']['addresses'],recipe['manual_front_rows']);self.assertNotIn('publisher',json.dumps(recipe))
 
     def test_confirmed_write_can_return_the_complete_current_overview(self):
         note=self.store.mutate('note.save',{'text':'Fiktiv opgave'})

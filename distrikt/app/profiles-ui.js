@@ -33,7 +33,7 @@ const ProfilesUI={
   let needed=action==='delete'?catalog.delete[data.module]:catalog.actions[action];if(!needed)return false;needed=[...needed];
   if(action==='loan.issue'){needed.push('publishers.view');if(!data.publisher_id&&!state.publishers.some(p=>p.name.normalize('NFKC').trim().toLowerCase()===String(data.publisher_name||'').normalize('NFKC').trim().toLowerCase()))needed.push('publishers.manage');}
   if(action==='loan.finish'&&data.complete)needed.push('history.view','history.edit');
-  if(action==='revision.approve'&&data.side==='back')needed.push('ib.view');
+  if(action==='revision.approve'&&data.side==='back'||action==='revision.approve_many'&&data.entries?.some(e=>e.side==='back'))needed.push('ib.view');
   if(['loan.finish','completion.record'].includes(action)&&data.note)needed.push('notes.view','notes.edit');
   return this.has(...needed);
  },

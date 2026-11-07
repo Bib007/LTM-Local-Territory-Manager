@@ -69,7 +69,7 @@ module.exports=async(browser,out)=>{
    assert.ok(file.startsWith(root+path.sep)&&fs.existsSync(file),'Unexpected asset '+u.pathname);return route.fulfill({path:file});
   });
   await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.image.test/');await page.waitForFunction(()=>state!==null);
-  await page.evaluate(geo=>{GeoUI.loaded=true;GeoUI.data=geo;closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');const svg=MapExport.svg;MapExport.svg=function(...args){return window.actualPreviewSvg=svg.apply(this,args);};const raster=MapExport.raster;MapExport.raster=function(svg){if(svg.includes('x="44" y="100"'))window.actualFrontSvg=svg;return raster.call(this,svg);};},geo);
+  await page.evaluate(geo=>{GeoUI.loaded=true;GeoUI.data=geo;closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');const svg=MapExport.svg;MapExport.svg=function(...args){return window.actualPreviewSvg=svg.apply(this,args);};const raster=MapExport.raster;MapExport.raster=function(svg){if(svg.includes('<g transform="translate('))window.actualFrontSvg=svg;return raster.call(this,svg);};},geo);
   const privateVisits=visits+2;
   const privateMarkers=await page.evaluate(()=>DistrictMap.layer.getLayers()
    .filter(marker=>marker instanceof L.CircleMarker)
@@ -110,7 +110,7 @@ module.exports=async(browser,out)=>{
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
   const result=await page.evaluate(async()=>{
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
-   if(!pending||pending.render_revision!==11||pending.date_updates!==true)throw Error('Missing current preview');
+   if(!pending||pending.render_revision!==12||pending.date_updates!==true)throw Error('Missing current preview');
    if(doc.querySelectorAll('[data-ltm-brand] svg').length!==1||doc.querySelector('[data-ltm-brand] text')?.textContent!=='Local Territory Manager')throw Error('Missing public project identity');
    const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
@@ -147,8 +147,8 @@ module.exports=async(browser,out)=>{
   });
   assert.doesNotMatch(result.svg,/Kortets printforside/,'Page one has no miniature front');
   assert.match(result.frontSvg,/Fiktiv rød vej/);
-  assert.match(result.frontSvg,/læsbar ombrydning/);
-  assert.ok((result.frontSvg.match(/<text x="10.22"/g)||[]).length>5,'The long street wraps to separate lines');
+  assert.match(result.frontSvg,/læsbar/);assert.match(result.frontSvg,/ombrydning/);
+  assert.ok((result.frontSvg.match(/<text /g)||[]).length>8,'The long street wraps to separate lines');
   assert.doesNotMatch(result.frontSvg,/textLength|PRIVAT_IB_NOTE/);
   assert.ok(result.leaders.length>0,'Crowded labels have a visible leader');
   for(const line of result.leaders){
@@ -175,7 +175,7 @@ module.exports=async(browser,out)=>{
    await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    return {width:image.naturalWidth,height:image.naturalHeight,png:pending.png,svg:window.manualPreviewSvg,frontSvg:window.actualFrontSvg,dialog:document.querySelector('#dialog')?.innerHTML||document.body.innerHTML,approvedDisabled:document.querySelector('#sharePublish').disabled};
   });
-  assert.deepEqual([manual.width,manual.height],[2200,1560]);assert.match(manual.svg,/Geografisk kortvisning mangler/);assert.doesNotMatch(manual.svg,/Kortets printforside/);assert.match(manual.frontSvg,/Prøvevej 2–8/);assert.match(manual.frontSvg,/ukendt/);assert.match(manual.frontSvg,/Sikker sti hele vejen/);assert.doesNotMatch(manual.frontSvg,/Udeladt prøvevej/);assert.doesNotMatch(manual.svg,/<circle\b/);assert.doesNotMatch(manual.svg,/0 besøg/);assert.match(manual.dialog,/Nogle manuelle vejlinjer er udeladt/);assert.equal(manual.approvedDisabled,true);assert.ok(!calls.includes('/api/share/publish'));
+  assert.deepEqual([manual.width,manual.height],[2200,1560]);assert.match(manual.svg,/Geografisk kortvisning mangler/);assert.doesNotMatch(manual.svg,/Kortets printforside/);assert.match(manual.frontSvg,/Prøvevej 2-8/);assert.match(manual.frontSvg,/ukendt/);assert.match(manual.frontSvg,/Sikker sti hele vejen/);assert.doesNotMatch(manual.frontSvg,/Udeladt prøvevej/);assert.doesNotMatch(manual.svg,/<circle\b/);assert.doesNotMatch(manual.svg,/0 besøg/);assert.match(manual.dialog,/Nogle manuelle vejlinjer er udeladt/);assert.equal(manual.approvedDisabled,true);assert.ok(!calls.includes('/api/share/publish'));
   await page.evaluate(async()=>{closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');await ShareUI.prepare('c1');});
   await page.locator('#shareApproved').check();
   await page.locator('#sharePublish').click();

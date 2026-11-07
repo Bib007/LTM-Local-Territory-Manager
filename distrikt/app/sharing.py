@@ -124,7 +124,7 @@ class Drive:
 
 DATE_RENDER_REVISION=7
 PDF_RENDER_REVISION=11
-RENDER_REVISION=PDF_RENDER_REVISION
+RENDER_REVISION=12
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -315,6 +315,20 @@ class Publications:
             # Send the same fields for every dot, regardless of its IB status.
             members=[{k:a[k] for k in ('id','road','number','lng','lat','count')}
                      for a in public_members(self.store,c)]
+            from geography import front_summaries
+            if has_geo:
+                source=c.get('geo_addresses') or [a for a in self.store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
+                postcodes={a['id']:a.get('postcode','') for a in source}
+                public_card['geo_addresses']=[dict(a,postcode=postcodes.get(a['id'],'')) for a in members]
+                roads={}
+                for a in members:
+                    roads.setdefault(a['road'],[]).append(a)
+                public_card['addresses']=[{'road':road,'numbers':', '.join(a['number'] for a in units),'count':sum(a['count'] for a in units)} for road,units in sorted(roads.items())]
+                front_summaries([public_card])
+                public_card.pop('geo_addresses')
+            else:
+                public_card['addresses']=manual_rows
+                public_card['temporary']=bool(c.get('temporary'))
             return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'pdf':True,'dates':public_dates,'card':public_card,'members':members,'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
     def date_preview(self,data):
         png=png_bytes(data.get('png'))
@@ -331,13 +345,13 @@ class Publications:
             for row in rows:
                 if first_due and row['card_id']!=first_due:continue
                 if row.get('status')=='review' and not row.get('date_retry_allowed'):continue
-                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,9,10,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
+                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,9,10,PDF_RENDER_REVISION,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
                 c=self.store.get('cards',row['card_id'])
                 if not c or fingerprint(self.store,c)!=row.get('fingerprint'):continue
                 values=dates(self.store,c);key=date_key(values)
                 if key==row.get('date_fingerprint'):continue
                 try:
-                    if row.get('render_revision')==PDF_RENDER_REVISION:
+                    if row.get('render_revision',0)>=PDF_RENDER_REVISION:
                         self.images.load(row.get('approved_front_image'))
                     png=render_dates(self.images.load(row.get('approved_image')),values)
                 except (OSError,ValueError):
@@ -428,7 +442,7 @@ class Publications:
                     self.drive.unshare(row['file_id'])
                     with self.store.transaction():row.update(url='',possibly_public=False);self.store.put('maps',row)
                 png=base64.b64decode(row['queued_png'])
-                if row.get('render_revision')==PDF_RENDER_REVISION:
+                if row.get('render_revision',0)>=PDF_RENDER_REVISION:
                     pdf=shared_card_pdf(png,self.images.load(row.get('approved_front_image')))
                     file_id=self.drive.upload_pdf(pdf,c['number'],row.get('file_id'))
                 else:

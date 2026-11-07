@@ -435,6 +435,8 @@ case 'record-completion':recordCompletion(d.id);break;
 case 'desk-tab':deskTab=d.tab;query='';render();break;
 case 'stock':query='';area='';if(d.status==='Udleverede distriktskort'){page=d.status;loanTab='Aktive';}else{page='Distrikter';status=d.status;}render();break;
 case 'print-revisions':printRevisions(d.side);break;
+case 'approve-printed':PrintApprovals.open();break;
+case 'confirm-printed':await PrintApprovals.confirm();break;
 case 'print-defaults':{const f=el('printForm');printOptions(f.dataset.id,f.dataset.side,JSON.parse(f.dataset.ids),true);break;}
 case 'issue':issue(d.id);break;
 case 'initial-loan':issue('',true);break;
