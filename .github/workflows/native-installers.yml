@@ -8,6 +8,7 @@ on:
       - 'distrikt/templates/**'
       - 'distrikt/icon.png'
       - 'scripts/build_native_desktop.py'
+      - 'scripts/prepare_dmg.py'
       - 'scripts/check_native_desktop.py'
       - 'scripts/LTM.iss'
       - '.github/workflows/native-installers.yml'
@@ -50,7 +51,7 @@ jobs:
           else
             python scripts/check_native_desktop.py --executable dist-native/LTM.app/Contents/MacOS/LTM
           fi
-      - name: Create free macOS DMG
+      - name: Create styled macOS installer DMG
         if: runner.os == 'macOS'
         shell: bash
         run: |
@@ -59,10 +60,24 @@ jobs:
           codesign --verify --deep --strict dist-native/LTM.app
           mkdir -p dist-native/_dmg
           ditto dist-native/LTM.app dist-native/_dmg/LTM.app
-          ln -s /Applications dist-native/_dmg/Applications
+          python scripts/prepare_dmg.py --folder dist-native/_dmg
+          brew install create-dmg
           arch=Intel
           if [ "$(uname -m)" = "arm64" ]; then arch=AppleSilicon; fi
-          hdiutil create -volname "LTM" -srcfolder dist-native/_dmg -ov -format UDZO "dist-native/LTM-macOS-v${version}-${arch}.dmg"
+          create-dmg \
+            --volname "LTM · Local Territory Manager" \
+            --background "dist-native/LTM-DMG-background.png" \
+            --window-pos 180 100 \
+            --window-size 900 550 \
+            --icon-size 104 \
+            --icon "LTM.app" 218 310 \
+            --hide-extension "LTM.app" \
+            --app-drop-link 685 310 \
+            --icon "Første åbning - Guide.webloc" 764 487 \
+            --no-internet-enable \
+            "dist-native/LTM-macOS-v${version}-${arch}.dmg" \
+            "dist-native/_dmg"
+          test -f "dist-native/LTM-macOS-v${version}-${arch}.dmg"
       - name: Create free Windows installer
         if: runner.os == 'Windows'
         shell: pwsh
