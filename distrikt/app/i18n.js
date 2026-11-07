@@ -2537,7 +2537,8 @@ const I18n={
 // always wins, including when a new installer is used for an upgrade.
 try{
  const saved=localStorage.getItem('ltm-language');
- const initial=new URLSearchParams(location.search).get('ltm_start_language');
+ const initial=(typeof URLSearchParams!=='undefined'&&typeof location!=='undefined')
+  ?new URLSearchParams(location.search).get('ltm_start_language'):null;
  const language=['da','en'].includes(saved)?saved:(['da','en'].includes(initial)?initial:'en');
  I18n.current=language;
  if(!saved&&['da','en'].includes(initial))localStorage.setItem('ltm-language',language);
