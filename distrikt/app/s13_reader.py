@@ -3,7 +3,16 @@ import io
 import json
 import sys
 from pathlib import Path
-from resource_paths import templates_dir,vendor_dir
+
+# This script is intentionally run with Python -I -S for untrusted PDF input:
+# importing a sibling helper would fail under isolated sys.path rules.
+def templates_dir():
+    return (Path(sys._MEIPASS)/'templates' if getattr(sys,'frozen',False)
+            else Path(__file__).resolve().parents[1]/'templates')
+
+def vendor_dir():
+    return (Path(sys._MEIPASS)/'app'/'vendor_py' if getattr(sys,'frozen',False)
+            else Path(__file__).resolve().parent/'vendor_py')
 
 def read(raw):
     sys.path.insert(0,str(vendor_dir()))
