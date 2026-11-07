@@ -13,11 +13,24 @@ on:
       - 'scripts/LTM.iss'
       - '.github/workflows/native-installers.yml'
   workflow_dispatch:
+    inputs:
+      publish_direct_assets:
+        description: "Publish installers directly to the existing GitHub version release (no ZIP)"
+        type: boolean
+        default: false
+      confirmed_installation:
+        description: "After physical Mac/Windows tests, type INSTALLERS-VERIFIED to publish"
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
 jobs:
+  common:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_direct_assets && inputs.confirmed_installation == 'INSTALLERS-VERIFIED' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/check.yml
   native:
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.runner }}
@@ -96,3 +109,50 @@ jobs:
             dist-native/*.dmg
             dist-native/*-Setup.exe
           if-no-files-found: error
+
+  publish:
+    name: Publish installer files directly (manual, verified only)
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_direct_assets && inputs.confirmed_installation == 'INSTALLERS-VERIFIED' && github.ref == 'refs/heads/main'
+    needs: [native, common]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ltm-native-*
+          merge-multiple: true
+          path: direct
+      - name: Attach exact .dmg and .exe files to an existing version release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version=$(python3 -c "import sys; sys.path.insert(0, 'scripts'); import build_native_desktop as b; print(b.version())")
+          tag="v${version}"
+          files=(
+            "direct/LTM-Windows-v${version}-Setup.exe"
+            "direct/LTM-macOS-v${version}-Intel.dmg"
+            "direct/LTM-macOS-v${version}-AppleSilicon.dmg"
+          )
+          gh release view "$tag" --repo "$GH_REPO" >/dev/null
+          existing=$(gh release view "$tag" --repo "$GH_REPO" --json assets --jq '.assets[].name')
+          for file in "${files[@]}"; do
+            test -s "$file"
+            name=$(basename "$file")
+            if printf '%s\n' "$existing" | grep -Fxq "$name"; then
+              echo "::error::Refusing to overwrite an already published installer: $name"
+              exit 1
+            fi
+          done
+          checksums=()
+          for file in "${files[@]}"; do
+            sumfile="${file}.sha256"
+            (cd "$(dirname "$file")" && sha256sum "$(basename "$file")") > "$sumfile"
+            checksums+=("$sumfile")
+          done
+          gh release upload "$tag" "${files[@]}" "${checksums[@]}" --repo "$GH_REPO"
+          echo "Published three direct installer downloads and their SHA-256 files to $tag"
