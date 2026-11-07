@@ -24,7 +24,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\LTM.exe
-SetupIconFile=distrikt\icon.ico
+SetupIconFile={#BuildDir}\ltm.ico
 CloseApplications=yes
 RestartApplications=no
 
