@@ -52,7 +52,7 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          version=$(python -c "import pathlib,re; print(re.search(r\"^VERSION='([^']+)'\",pathlib.Path('distrikt/app/server.py').read_text(),re.M).group(1))")
+          version=$(python -c "import sys; sys.path.insert(0, 'scripts'); import build_native_desktop as b; print(b.version())")
           codesign --force --deep --sign - --timestamp=none dist-native/LTM.app
           codesign --verify --deep --strict dist-native/LTM.app
           mkdir -p dist-native/_dmg
@@ -64,7 +64,7 @@ jobs:
         shell: pwsh
         run: |
           choco install innosetup --yes --no-progress
-          $version = python -c "import pathlib,re; print(re.search(r\"^VERSION='([^']+)'\",pathlib.Path('distrikt/app/server.py').read_text(),re.M).group(1))"
+          $version = python -c "import sys; sys.path.insert(0, 'scripts'); import build_native_desktop as b; print(b.version())"
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           if (!(Test-Path $iscc)) { throw 'Inno Setup compiler not installed' }
           & $iscc "scripts\LTM.iss" "/DAppVersion=$version" "/DBuildDir=$($PWD.Path)\dist-native" "/DOutputDir=$($PWD.Path)\dist-native"
