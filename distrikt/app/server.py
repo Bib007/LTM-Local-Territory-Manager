@@ -407,7 +407,7 @@ def acquire_lock(path):
     except OSError:stream.close();return None
 
 def main(argv=None):
-    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
+    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--language',choices=('da','en'),help='Installer language for a new browser profile');p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
     if args.bind:
         try:address=ipaddress.IPv4Address(args.bind)
         except ValueError:raise ValueError('Vælg en privat IPv4-adresse til serveren.') from None
@@ -432,7 +432,7 @@ def main(argv=None):
                 if info:break
                 time.sleep(.1)
         if not info:raise RuntimeError('Appen kunne ikke starte. Se start.log i datamappen.')
-        if not args.no_browser:webbrowser.open(info['url'])
+        if not args.no_browser:webbrowser.open(info['url']+('?ltm_start_language='+args.language if args.language else ''))
         print('Distrikt er startet: '+info['url']);return
     if info:return
     lock=acquire_lock(data/'app.lock')
