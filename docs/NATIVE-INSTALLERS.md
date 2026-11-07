@@ -25,3 +25,13 @@ Dette er **lokal app**-sporet; privat LAN/VPN-server og Home Assistant bevarer i
 ## Afprøvning og frigivelse
 
 Workflowet `Native desktop installers (preview)` bygger på de relevante operativsystemer og tester en midlertidig installation med opdigtede kort. Det publicerer kun PR-/Actions-artifacts til test, **aldrig en Stable-release**. Før offentlig udgivelse kræves vellykket download/installationsprøve på fysisk Mac og Windows, kontrol af gamle data og backup samt en opdateret hjemmesideguide.
+
+## LTM installationer og opdateringer
+
+**Mac:** Åbn den nye DMG og træk LTM over i Programmer igen. Finder tilbyder at erstatte den eksisterende app. Luk den tidligere LTM-instans før udskiftning. DMG'en har en grafisk installationsbaggrund med træk-pil og et klikbart link til [første åbning på LTM-hjemmesiden](https://localterritorymanager.netlify.app/da/guide/#mac-first-open).
+
+**Windows:** Kør den nye Setup.exe med samme AppId og installationsmappe. Den opdaterer programfilerne uden at afinstallere brugerdata. Når man vælger dansk eller engelsk i installationsguiden, bruges dette sprog ved den første åbning i en browser uden gemt LTM-sprogvalg. Et senere manuelt valg i appen vinder altid over installationssproget.
+
+**Ingen automatisk opdatering endnu:** Vi viser ikke en falsk auto-update-knap. Før native installer-releases bliver Stable, skal de udgives som individuelle `.dmg`- og `.exe`-assets under GitHub Releases, uden ekstra ZIP-indpakning. GitHub Actions pakker sine midlertidige preview-artifacts i ZIP; det er ikke det endelige downloadformat.
+
+Husk at eksportere backup inden en versionsopgradering, og undlad at slette LTM's datamappe ved afinstallation.
