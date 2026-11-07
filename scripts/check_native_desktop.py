@@ -60,12 +60,21 @@ def check(executable):
                 time.sleep(.1)
             assert not (data / "run.json").exists(), "Server did not stop"
             info = launch()
-            state = request(info["url"], "/api/state")
+            state = request(info["url"], "/api/state", info["token"])
             assert any(card["number"] == "990" for card in state["cards"]), "Existing card lost on restart"
             print("PASS: native offline launch, loopback, isolated PDF worker, stop and preserved fictional data")
         finally:
             if info is not None:
                 execute("--data-dir", str(data), "--stop")
+            # On Windows run.json is removed just before the server releases its
+            # app.lock file. Allow the child to exit before deleting test data.
+            lock = data / "app.lock"
+            for _ in range(100):
+                try:
+                    lock.unlink(missing_ok=True)
+                    break
+                except PermissionError:
+                    time.sleep(.1)
 
 
 if __name__ == "__main__":
