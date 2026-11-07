@@ -10,7 +10,7 @@ Windows SmartScreen kan stadig vise en advarsel om en ukendt udgiver, fordi inst
 
 ## macOS
 
-GitHub Actions bygger en `LTM.app` med en integreret Python-runtime og pakker den som `LTM-macOS-vVERSION-Intel.dmg`. Man åbner DMG-filen og trækker LTM til Programmer. Den første prøveversion bygges på en Intel-runner; Apple Silicon skal testes separat med Rosetta, før vi kan kalde løsningen fuldt afprøvet på M-serien. Målet er senere en native Apple Silicon-pakke.
+GitHub Actions bygger en `LTM.app` med en integreret Python-runtime og pakker den som `LTM-macOS-vVERSION-Intel.dmg` og `LTM-macOS-vVERSION-AppleSilicon.dmg`. Man åbner DMG-filen og trækker LTM til Programmer. Buildworkflowet laver særskilte gratis prøvepakker til **Intel** og **Apple Silicon (M-serien)** på hver sin GitHub-runner. Den bruger fysisk Mac-arkitektur under CI; almindelig installation i Finder på en lokal Mac skal stadig afprøves, før vi kalder udgivelsen klar til alle.
 
 Uden betalt Apple Developer ID kan macOS blokere første opstart. Åbn programmet én gang, gå til **Systemindstillinger → Anonymitet & sikkerhed → Åbn alligevel**, hvis du har kontrolleret og stoler på udgivelsen. Herefter husker macOS normalt undtagelsen. Vi slår ikke Gatekeeper fra og beder ikke brugeren fjerne karantæneattributter.
 
