@@ -70,7 +70,7 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(len(reader.pages),2)
         self.assertTrue(all(len(page.images)==1 for page in reader.pages))
         self.assertNotIn(b'PRIVATE_METADATA',pdf)
-        self.assertEqual(current['render_revision'],PDF_RENDER_REVISION)
+        self.assertEqual(current['render_revision'],RENDER_REVISION)
         with self.assertRaises(ValueError):
             self.enqueue()
 
@@ -164,7 +164,7 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(recipe['manual_front_rows'],[
             {'road':'Sikker Prøvevej','numbers':'2–8','count':None,'count_unknown':True},
             {'road':'Sikker Sti','numbers':'hele vejen','count':4,'count_unknown':False}])
-        self.assertNotIn('geo_polygon',recipe['card']);self.assertNotIn('addresses',recipe['card'])
+        self.assertNotIn('geo_polygon',recipe['card']);self.assertEqual(recipe['card']['addresses'],recipe['manual_front_rows'])
         self.assertNotIn('publisher',json.dumps(recipe));self.assertNotIn('private',json.dumps(recipe).lower())
 
     def test_polygon_card_fingerprint_keeps_pre_manual_front_shape(self):

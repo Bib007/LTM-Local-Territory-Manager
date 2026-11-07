@@ -50,4 +50,5 @@ if(out)fs.mkdirSync(out,{recursive:true});
  await context.close();console.log('Fictional production header: stable/beta, empty/short/long names, four widths; digital cards: dense/sparse, local/raster, full-strength foreground and real PNG decoding passed.');
  await require('./check_partition_browser.cjs')(browser,out);
  await require('./check_share_image_browser.cjs')(browser,out);
+ await require('./check_print_approval_browser.cjs')(browser,out);
 }finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

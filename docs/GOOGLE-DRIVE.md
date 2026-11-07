@@ -74,3 +74,7 @@ Ved flytning beholdes samme Google-konto og klient, hvis QR-links skal bevares. 
 - [Udløb af refresh-tokens](https://developers.google.com/identity/protocols/oauth2#expiration)
 - [Drive-scopes](https://developers.google.com/workspace/drive/api/guides/api-specific-auth)
 - [Fildeling](https://developers.google.com/workspace/drive/api/guides/manage-sharing)
+
+## Kortforside og samlet godkendelse
+
+Drive-PDF’ens side 2 bruger samme printskabelon og vejinddeling som almindeligt print. Opdatér kortets Drive-upload og kontrollér begge sider for at erstatte den tidligere forside. Efter print kan du vælge »Godkend printede sider i appen« og godkende de kontrollerede for- og bagsider samlet. En ændret side kræver nyt print. Det gælder også ved »Print alle«. Ingen sider godkendes automatisk.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.17 · 2026-11-07
+
+- Render the Google Drive PDF front from the normal print template, browser layout and street grouping in Danish and English, replacing the separate approximation.
+- Approve multiple printed fronts and backs together, with explicit review and confirmation. Changed print content rejects the complete batch; opening a preview or printing never approves cards automatically.
+- Keep the accepted red dots, house numbers and two-page PDF structure.
+
 ## 1.12.16 · 2026-11-06
 
 - Share one two-page Google Drive PDF with the digital map first and the full printable front second. Long road rows wrap in the printable front.

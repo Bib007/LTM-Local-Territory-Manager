@@ -3,6 +3,16 @@
 const I18n={
  current:'en',
  english:{
+  "Genindlæs appen og dan kortbilledet igen.":"Reload the app and generate the card image again.",
+  "Godkend printede sider":"Approve printed sides",
+  "Godkend printede sider i appen":"Approve printed sides in the app",
+  "Ingen printede sider afventer godkendelse.":"No printed sides are awaiting approval.",
+  "Bekræft, at de valgte sider er kontrolleret og printet til de fysiske kort.":"Confirm that the selected sides have been checked and printed for the physical cards.",
+  "{count} sider":"{count} sides",
+  "Vælg de printede sider, der skal godkendes.":"Select the printed sides to approve.",
+  "De printede sider er godkendt":"The printed sides have been approved",
+  "Den samme side er valgt flere gange.":"The same side has been selected more than once.",
+
   "Dansk":"Danish",
   "Originale engelske formularer":"Original English forms",
   "Formularsprog":"Form language",

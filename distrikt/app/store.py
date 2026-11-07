@@ -1,5 +1,6 @@
 """Local-only, separate SQLite files. No network, telemetry or external dependency."""
 import json
+import hashlib
 import re
 import os
 import sqlite3
@@ -172,10 +173,22 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         return {l['id'] for l in self.all('loans')
                 if l['id'] != loan['id'] and l['card_id'] == loan['card_id'] and overlaps(loan, l)}
 
+    def print_token(self, c, side):
+        fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon') if side=='front' else ('id','number')
+        content={k:c.get(k) for k in fields}
+        if side=='back':content['ib']=sorted([i for i in self.all('ib') if i.get('card_id')==c['id']],key=lambda i:i['id'])
+        else:
+            area=self.get('settings',c.get('area_id')) if c.get('area_id') else None
+            content['area_name']=(area or {}).get('name','')
+            content['links']=sorted([m.get('front_url','') for m in self.all('maps') if m.get('entity')=='publication' and m.get('card_id')==c['id']])
+        return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+
     def state(self):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
             from geography import front_summaries
+            for c in result['cards']:
+                for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side)
             front_summaries(result['cards'])
             result['settings'] = self.get('settings', 'config')
             try:
@@ -273,7 +286,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),**({'actor_id':review.actor} if review else {})})
-                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve')
+                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -592,6 +605,27 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             c['back_revision'] = True
             self.put('cards', c)
             return {'id': item['id']}
+        if action == 'revision.approve_many':
+            entries=data.get('entries')
+            if not isinstance(entries,list) or not entries or len(entries)>10000:
+                raise ValueError('Vælg de printede sider, der skal godkendes.')
+            checked=[];seen=set()
+            for item in entries:
+                if not isinstance(item,dict) or item.get('side') not in ('front','back'):
+                    raise ValueError('Vælg forside eller bagside.')
+                side=item['side'];c=self.require('cards',item.get('card_id'))
+                key=(c['id'],side)
+                if key in seen:raise ValueError('Den samme side er valgt flere gange.')
+                seen.add(key)
+                if c.get('archived') or item.get('token')!=self.print_token(c,side):
+                    raise ValueError('Printgrundlaget er ændret. Åbn print igen.')
+                checked.append((c['id'],side))
+            approved=0
+            for ident,side in checked:
+                c=self.require('cards',ident)
+                if not c.get(side+'_revision'):continue
+                c[side+'_revision']=False;c[side+'_approved']=now();self.put('cards',c);approved+=1
+            return {'approved':approved,'selected':len(checked)}
         if action == 'revision.approve':
             c = self.require('cards', data['card_id'])
             side = data.get('side')

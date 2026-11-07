@@ -14,7 +14,7 @@ function printOptions(id,side,ids,defaults=false){
  const cards=(ids||[id]).map(card).filter(Boolean);if(!cards.length)return;
  const cfg=defaults?defaultPrintProfile(side):{...defaultPrintProfile(side),...(state.settings.print_profiles?.[side]||{})};
  const options=(items,value)=>items.map(([key,label])=>`<option value="${key}" data-ui="${esc(label)}" lang="${I18n.language()}" ${key===value?'selected':''}>${esc(I18n.text(label))}</option>`).join('');
- openDialog(`<h2>${ui(side==='front'?'Print forside':'Print IB-bagside')}</h2><p class="hint">${cards.length===1?ui('Kort')+' '+esc(cards[0].number):ui('{count} kort',{count:cards.length})+' · '+cards.map(c=>esc(c.number)).join(', ')} · ${ui(!defaults&&state.settings.print_profiles?.[side]?'din gemte printprofil':'standardmål')}</p><form id="printForm" data-id="${cards[0].id}" data-side="${side}" data-ids="${esc(JSON.stringify(cards.map(c=>c.id)))}"><div class="twocol"><div><label>${ui("Papir")}</label><select name="paper">${options([['cut','Forskåret kort'],['a4','A4 · prøve i rigtig størrelse']],cfg.paper)}</select></div><div><label>${ui("Tryk")}</label><select name="mode">${options([['full','Med titler og linjer'],['data','Fortrykt kort · kun oplysninger']],cfg.mode)}</select></div></div><label>${ui("Formularsprog")}</label><select name="form_language">${options([['en','English'],['da','Dansk']],cfg.form_language||I18n.language())}</select><details class="printAdjust"><summary>${ui("Mål og placering")}</summary><label>${ui("Retning")}</label><select name="orientation" id="printOrientation">${options([['portrait','Højkant · stående'],['landscape','Liggende']],cfg.orientation)}</select><div class="twocol">${[['width','Bredde, mm',50,190],['height','Højde, mm',50,277],['x','Flyt højre / venstre, mm',-10,10],['y','Flyt ned / op, mm',-10,10]].map(([key,label,min,max])=>`<div><label>${ui(label)}</label><input name="${key}" type="number" min="${min}" max="${max}" value="${cfg[key]}" step="0.1" required></div>`).join('')}</div><button type="button" data-action="print-defaults">${ui("Brug standardmål")}</button></details><label class="check"><input name="remember" type="checkbox" checked> ${ui(side==='front'?'Husk disse indstillinger til forsider':'Husk disse indstillinger til bagsider')}</label><p class="hint">${ui('Brug 100 % skalering uden sidehoved og sidefod. Prøv på A4 først.')} ${cards.length>1?ui('Der dannes én side pr. kort.'):''}</p><p class="hint">${ui('Originale engelske formularer')}: <a href="/forms/S-12-en.pdf" target="_blank" rel="noopener">S-12 · English PDF</a> · <a href="/forms/S-13-en.pdf" target="_blank" rel="noopener">S-13 · English PDF</a></p>${formEnd('Fremvis og print')}</form>`,I18n.language());
+ openDialog(`<h2>${ui(side==='front'?'Print forside':'Print IB-bagside')}</h2><p class="hint">${cards.length===1?ui('Kort')+' '+esc(cards[0].number):ui('{count} kort',{count:cards.length})+' · '+cards.map(c=>esc(c.number)).join(', ')} · ${ui(!defaults&&state.settings.print_profiles?.[side]?'din gemte printprofil':'standardmål')}</p><form id="printForm" data-id="${cards[0].id}" data-side="${side}" data-ids="${esc(JSON.stringify(cards.map(c=>c.id)))}"><div class="twocol"><div><label>${ui("Papir")}</label><select name="paper">${options([['cut','Forskåret kort'],['a4','A4 · prøve i rigtig størrelse']],cfg.paper)}</select></div><div><label>${ui("Tryk")}</label><select name="mode">${options([['full','Med titler og linjer'],['data','Fortrykt kort · kun oplysninger']],cfg.mode)}</select></div></div><label>${ui("Formularsprog")}</label><select name="form_language">${options([['en','English'],['da','Dansk']],cfg.form_language||I18n.language())}</select><details class="printAdjust"><summary>${ui("Mål og placering")}</summary><label>${ui("Retning")}</label><select name="orientation" id="printOrientation">${options([['portrait','Højkant · stående'],['landscape','Liggende']],cfg.orientation)}</select><div class="twocol">${[['width','Bredde, mm',50,190],['height','Højde, mm',50,277],['x','Flyt højre / venstre, mm',-10,10],['y','Flyt ned / op, mm',-10,10]].map(([key,label,min,max])=>`<div><label>${ui(label)}</label><input name="${key}" type="number" min="${min}" max="${max}" value="${cfg[key]}" step="0.1" required></div>`).join('')}</div><button type="button" data-action="print-defaults">${ui("Brug standardmål")}</button></details><label class="check"><input name="remember" type="checkbox" checked> ${ui(side==='front'?'Husk disse indstillinger til forsider':'Husk disse indstillinger til bagsider')}</label><p class="hint">${ui('Brug 100 % skalering uden sidehoved og sidefod. Prøv på A4 først.')} ${cards.length>1?ui('Der dannes én side pr. kort.'):''}</p><p class="hint">${ui('Originale engelske formularer')}: <a href="/forms/S-12-en.pdf" target="_blank" rel="noopener">S-12 · English PDF</a> · <a href="/forms/S-13-en.pdf" target="_blank" rel="noopener">S-13 · English PDF</a></p>${formEnd('Fremvis og print')}${PrintApprovals.entries.size?`<button type="button" data-action="approve-printed">${ui('Godkend printede sider')}</button>`:''}</form>`,I18n.language());
 }
 // The QR corner stays fixed; the road list uses the space to its left.
 function fitFrontCard(front){
@@ -59,7 +59,7 @@ function printDocument(cards,side,cfg){
  const {width:w,height:h,x,y,mode,paper}=cfg,formLanguage=cfg.form_language||I18n.language();
  const css=`body{margin:0;background:#eee;font:13px Arial;color:black}.bar{background:white;padding:15px;position:sticky;top:0;z-index:10}.sheet{width:${w}mm;height:${h}mm;background:white;margin:20px auto;outline:1px solid #aaa;break-after:page}.sheet:last-child{break-after:auto}.content{transform:translate(${x}mm,${y}mm)}.cardPreview{position:relative;width:${w}mm;height:${h}mm}.cardPreview>img{position:absolute;inset:0;width:100%;height:100%}${cardQRCss()}.title{position:absolute;left:26%;top:calc(17% - 1mm);font-size:10pt}.number{position:absolute;left:81%;top:calc(17% - 1mm);font-size:10pt}.streets{position:absolute;left:7%;top:30%;width:86%;font-size:9pt}.streets>div{display:flex;justify-content:space-between;gap:2mm;padding:1.5mm 0}.cardPreview[data-form-language=en] .title{left:16.5%;top:17%}.cardPreview[data-form-language=en] .number{left:76.8%;top:17%}.cardPreview[data-form-language=en] .streets{top:25%}.ibPreview{width:${w}mm;height:${h}mm;overflow:hidden;padding:5mm;box-sizing:border-box;font:8pt Arial}.ibHead{display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:3mm;font-size:8pt}.ibCols,.ibRow{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #999;padding:1.15mm 0}.ibPreview h4{color:black;margin:2.2mm 0 .8mm}.ibPreview section{break-inside:avoid}${mode==='data'?'.cardPreview>img,.ibHead,.ibCols{visibility:hidden}.ibHead,.ibCols,.ibRow{border-color:transparent}':''}@page{size:${paper==='a4'?'A4 portrait':w+'mm '+h+'mm'};margin:${paper==='a4'?'10mm':'0'}}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:white}.bar{display:none}.sheet{margin:0;outline:0}}`;
  const sheets=cards.flatMap(c=>side==='front'?[`<section class="sheet" data-number="${esc(c.number)}"><div class="content">${frontHTML({...c,form_language:formLanguage})}</div></section>`]:ibPrintPages(c,cfg).map((items,index)=>`<section class="sheet" data-number="${esc(c.number)}" data-page="${index+1}"><div class="content">${backHTML({...c,form_language:formLanguage},items,index>0)}</div></section>`));
- return `<!doctype html><html lang="${formLanguage}"><head><meta charset="utf-8"><title>${language==='en'?'Print territory card':'Print distriktskort'}</title><style>${css}</style></head><body><div class="bar" lang="${language}"><button id="print" disabled>${t('Udskriv / gem PDF')}</button> ${cards.length} ${t('kort')} · ${w} × ${h} mm · ${t(h>w?'højkant':'liggende')} · 100 %<p id="tooLong" role="alert"></p><p>${t('Godkend eventuelt genprint i appen, når de fysiske sider er kontrolleret.')}</p></div>${sheets.join('')}</body></html>`;
+ return `<!doctype html><html lang="${formLanguage}"><head><meta charset="utf-8"><title>${language==='en'?'Print territory card':'Print distriktskort'}</title><style>${css}</style></head><body><div class="bar" lang="${language}"><button id="print" disabled>${t('Udskriv / gem PDF')}</button> ${cards.length} ${t('kort')} · ${w} × ${h} mm · ${t(h>w?'højkant':'liggende')} · 100 %<p id="tooLong" role="alert"></p><button id="approvePrinted" hidden>${t('Godkend printede sider i appen')}</button><p>${t('Godkend eventuelt genprint i appen, når de fysiske sider er kontrolleret.')}</p></div>${sheets.join('')}</body></html>`;
 }
 async function printCard(form){
  if(form.dataset.printing==='yes')return;form.dataset.printing='yes';
@@ -90,9 +90,64 @@ async function printCard(form){
   const messages=[];if(results.some(r=>r.status==='rejected'))messages.push(t('Printbilleder kunne ikke indlæses. Åbn print igen.'));if(overflow.length)messages.push(t('Vejlisten eller QR-koden har ikke plads på kort:')+' '+overflow.join(', ')+'. '+t('Tilpas kortet før print.'));if(missingQR.length)messages.push(t('QR-koden kunne ikke indlæses på kort:')+' '+missingQR.join(', ')+'. '+t('Genåbn kortet og kontrollér publiceringen.'));
   win.document.getElementById('tooLong').textContent=messages.join(' ');win.document.getElementById('print').disabled=messages.length>0;
  };
- win.document.write(markup);win.document.close();win.document.getElementById('print').addEventListener('click',()=>win.print());
+ win.document.write(markup);win.document.close();win.document.getElementById('print').addEventListener('click',()=>{if(win.document.getElementById('print').disabled)return;PrintApprovals.remember(cards,side);const approve=win.document.getElementById('approvePrinted');if(approve)approve.hidden=false;win.print();});
+ const approve=win.document.getElementById('approvePrinted');if(approve)approve.addEventListener('click',()=>{window.focus();PrintApprovals.open();});
  Promise.allSettled(Array.from(win.document.images,img=>img.decode())).then(loaded);
  if(fd.has('remember')){try{await mutate('print.profile.save',{side,profile:cfg},{close:false,message:'Printprofil gemt lokalt'});}catch(error){toast('Printvisningen er åben. Kontrollér gemmestatus for printprofilen før et nyt forsøg.');return;}}
  if(generation===openDialog.generation&&page===origin&&el('printForm')===form)closeDialog();
  }finally{delete form.dataset.printing;}
 }
+
+// Rasterize the measured canonical print DOM, rather than inventing a second layout.
+async function printFrontImage(c){
+ const cfg={...defaultPrintProfile('front'),...(state.settings.print_profiles?.front||{}),mode:'full',paper:'cut',x:0,y:0};
+ let markup=printDocument([c],'front',cfg);
+ for(const source of new Set(Array.from(markup.matchAll(/<img[^>]+src="([^"]+)"/g),m=>m[1]))){
+  const response=await fetch(source);if(!response.ok)throw Error('Printbilleder kunne ikke indlæses. Åbn print igen.');
+  const blob=await response.blob(),data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});
+  markup=markup.split('src="'+source+'"').join('src="'+data+'"');
+ }
+ const frame=document.createElement('iframe');frame.setAttribute('aria-hidden','true');frame.style.cssText='position:fixed;left:-20000px;top:0;width:1200px;height:1000px;border:0;pointer-events:none';document.body.append(frame);
+ try{
+  const doc=frame.contentDocument;doc.open();doc.write(markup);doc.close();
+  await Promise.all(Array.from(doc.images,image=>image.decode()));await doc.fonts.ready;
+  const front=doc.querySelector('.cardPreview');if(!fitFrontCard(front))throw Error('Vejlisten eller QR-koden har ikke plads på kort:');
+  const bounds=front.getBoundingClientRect(),parts=[];
+  for(const image of front.querySelectorAll('img')){
+   const r=image.getBoundingClientRect();parts.push(`<image href="${esc(image.src)}" x="${r.left-bounds.left}" y="${r.top-bounds.top}" width="${r.width}" height="${r.height}"/>`);
+  }
+  const walker=doc.createTreeWalker(front,NodeFilter.SHOW_TEXT),measure=document.createElement('canvas').getContext('2d');
+  while(walker.nextNode()){
+   const node=walker.currentNode,style=frame.contentWindow.getComputedStyle(node.parentElement);if(style.visibility==='hidden')continue;
+   measure.font=`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+   const ascent=measure.measureText('Mg').fontBoundingBoxAscent;if(!Number.isFinite(ascent))throw Error('Browseren understøtter ikke billedeksport.');
+   const range=doc.createRange();let line='',box=null;
+   const flush=()=>{if(line.trim())parts.push(`<text x="${box.left-bounds.left}" y="${box.top-bounds.top+ascent}" font-family="${esc(style.fontFamily)}" font-size="${style.fontSize}" font-weight="${style.fontWeight}" fill="${style.color}" xml:space="preserve">${esc(line)}</text>`);};
+   for(let i=0;i<node.length;i++){
+    range.setStart(node,i);range.setEnd(node,i+1);const r=range.getBoundingClientRect();
+    if(!r.width)continue;
+    if(box&&Math.abs(r.top-box.top)>.5){flush();line='';box=null;}
+    if(!box)box=r;line+=node.textContent[i];
+   }
+   flush();
+  }
+  const scale=Math.min(2112/bounds.width,1472/bounds.height),x=(2200-bounds.width*scale)/2,y=(1560-bounds.height*scale)/2;
+  return await MapExport.raster(`<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1560"><rect width="2200" height="1560" fill="white"/><g transform="translate(${x} ${y}) scale(${scale})">${parts.join('')}</g></svg>`);
+ }finally{frame.remove();}
+}
+
+const PrintApprovals={
+ entries:new Map(),pending:null,busy:false,
+ remember(cards,side){for(const c of cards){const token=c[side+'_print_token'];if(token)this.entries.set(c.id+':'+side,{card_id:c.id,side,token,number:c.number});}},
+ open(){
+  const entries=[...this.entries.values()].filter(e=>card(e.card_id));if(!entries.length){toast(I18n.text('Ingen printede sider afventer godkendelse.'));return;}
+  this.pending=entries;
+  openDialog(`<h2>${ui('Godkend printede sider')}</h2><p>${ui('Bekræft, at de valgte sider er kontrolleret og printet til de fysiske kort.')}</p><p>${ui('{count} sider',{count:entries.length})}</p><div style="max-height:45vh;overflow:auto">${entries.map((e,i)=>`<label class="check"><input type="checkbox" data-printed-index="${i}" checked> ${ui('Kort')} ${esc(e.number)} · ${ui(e.side==='front'?'Kortets forside':'IB-bagside')}</label>`).join('')}</div><div class="actions"><button class="primary" data-action="confirm-printed">${ui('Kontrolleret og printet')}</button><button data-action="close">${ui('Annuller')}</button></div>`);
+ },
+ async confirm(){
+  if(this.busy||!this.pending)return;
+  const entries=[...el('dialog').querySelectorAll('[data-printed-index]:checked')].map(input=>this.pending[Number(input.dataset.printedIndex)]).filter(Boolean);
+  if(!entries.length){toast(I18n.text('Vælg de printede sider, der skal godkendes.'));return;}
+  const pending=this.pending;this.busy=true;try{await mutate('revision.approve_many',{entries:entries.map(({number,...e})=>e)},{message:I18n.text('De printede sider er godkendt')});for(const e of entries){const key=e.card_id+':'+e.side;if(this.entries.get(key)?.token===e.token)this.entries.delete(key);}if(this.pending===pending)this.pending=null;}finally{this.busy=false;}
+ }
+};
