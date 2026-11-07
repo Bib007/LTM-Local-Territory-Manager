@@ -59,6 +59,10 @@ def command(output):
 def build(output):
     args = command(output)
     subprocess.run(args, cwd=ROOT, check=True)
+    if sys.platform == "win32":
+        from PIL import Image
+        with Image.open(ROOT / "distrikt" / "icon.png") as icon:
+            icon.save(Path(output).resolve() / "ltm.ico", format="ICO", sizes=[(16,16),(32,32),(48,48),(64,64),(128,128)])
     result = Path(output).resolve() / ("LTM.app" if sys.platform == "darwin" else "LTM/LTM.exe")
     if not result.exists():
         raise RuntimeError("Missing native application: " + str(result))
