@@ -29,6 +29,8 @@ jobs:
             label: Windows installer
           - runner: macos-15-intel
             label: macOS Intel DMG
+          - runner: macos-15
+            label: macOS Apple Silicon DMG
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -58,7 +60,9 @@ jobs:
           mkdir -p dist-native/_dmg
           ditto dist-native/LTM.app dist-native/_dmg/LTM.app
           ln -s /Applications dist-native/_dmg/Applications
-          hdiutil create -volname "LTM" -srcfolder dist-native/_dmg -ov -format UDZO "dist-native/LTM-macOS-v${version}-Intel.dmg"
+          arch=Intel
+          if [ "$(uname -m)" = "arm64" ]; then arch=AppleSilicon; fi
+          hdiutil create -volname "LTM" -srcfolder dist-native/_dmg -ov -format UDZO "dist-native/LTM-macOS-v${version}-${arch}.dmg"
       - name: Create free Windows installer
         if: runner.os == 'Windows'
         shell: pwsh
