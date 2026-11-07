@@ -13,6 +13,7 @@ import zipfile
 import zlib
 from datetime import date
 from pathlib import Path
+from resource_paths import templates_dir
 from pdf_export import pdf_document, text, s13_pdf, allocation_rows
 from sharing import public_members, public_name, png_bytes, fingerprint, qrcode
 
@@ -99,7 +100,7 @@ def image_pdf(images):
     result.extend(('trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n'%(len(offsets),xref)).encode());return bytes(result)
 
 def fronts_pdf(state):
-    raw=(Path(__file__).resolve().parents[1]/'templates/S-12-source.png').read_bytes();image=png_image(raw)
+    raw=(templates_dir()/'S-12-source.png').read_bytes();image=png_image(raw)
     pages=[];areas={a['id']:a['name'] for a in state['areas']}
     for c in state['cards']+state.get('archived_cards',[]):
         rows=[]
