@@ -478,7 +478,7 @@ case 'profile-mode':configurePrintMode(d.side);break;
 case 'print-options':printOptions(d.id,d.side);break;
 case 'open-data':{const r=await(await api('/api/open-data',{})).json();toast(I18n.format('Datamappe på serveren: {path}',{path:r.path}));} break;
 case 'logout':await api('/api/logout',{});location.replace('/');break;
-case 'backup':case 'backup-save':await backup(d.action==='backup-save');break;
+case 'backup':case 'backup-save':await backup(canChooseBackupLocation());break;
 case 'backup-snooze':await mutate('backup.snooze',{}, {close:false,message:I18n.text('Backuppåmindelse udsat til i morgen')});break;
 case 'cleanup':{const generation=openDialog.generation,info=await(await api('/api/data-info')).json(),count=state.loans.filter(l=>l.returned&&l.returned<info.cutoff).length+state.completions.filter(e=>e.date<info.cutoff).length;if(target.isConnected===false||openDialog.generation!==generation)return;openDialog(`<h2>${ui('Ryd historik før {date}?',{date:fmt(info.cutoff)})}</h2><p>${ui('{count} afsluttede udlån / gennemgange fjernes. Aktive udlån, nyere registreringer, IB, forkyndere og KTM-besøg beholdes.',{count})}</p><p class="hint">${ui("Seneste kendte gennemgang på kortet bevares. Gendannelse ved fejl er mulig i 48 timer.")}</p><div class="actions"><button class="danger" data-action="confirm-cleanup">${ui("Fjern den gamle historik")}</button><button data-action="close">${ui("Annuller")}</button></div>`);break;}
 case 'confirm-cleanup':await mutate('history.cleanup',{},{message:I18n.text("Gammel historik fjernet · 48 timers gendannelse ved fejl")});break;

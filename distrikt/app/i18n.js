@@ -35,6 +35,8 @@ const I18n={
   "Gendan krypteret forbindelsesbackup":"Restore encrypted connection backup",
   "Kryptering kræver en sikker forbindelse. Åbn LTM via HTTPS eller localhost på samme computer, og prøv igen.":"Encryption requires a secure connection. Open LTM over HTTPS or localhost on the same computer and try again.",
   "Browserens kryptering er ikke tilgængelig. Prøv en opdateret browser via HTTPS eller localhost.":"Browser encryption is unavailable. Try an updated browser over HTTPS or localhost.",
+  "Hvis LTM ikke selv kan vise Gem som, kan Chrome spørge om placeringen for hver download: Åbn Indstillinger → Downloads og slå Spørg, hvor hver fil skal gemmes, før download til. Det gælder alle downloads i Chrome.":"If LTM cannot show Save As, Chrome can ask where to save each download: open Settings → Downloads and turn on Ask where to save each file before downloading. This applies to all Chrome downloads.",
+  "Vis husnumre og streger på kortet":"Show house numbers and lines on the map",
   "Denne browser kan ikke kryptere forbindelsesbackup. Brug en moderne browser på din egen enhed.":"This browser cannot encrypt a connection backup. Use a modern browser on your own device.",
   "Ny adgangskode til filen":"New passphrase for the file",
   "Gentag adgangskoden":"Repeat the passphrase",

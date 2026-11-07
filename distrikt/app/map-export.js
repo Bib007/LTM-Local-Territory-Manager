@@ -181,7 +181,7 @@ const MapExport={
     }).filter(Boolean);
     return {dots:markup.join(''),leaders:leaders.join(''),labels};
   },
-  svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false,sharedPdf=false}={}){
+  svg(id,{backgroundImage='',viewBounds=null,publicCard=null,publicMembers=null,publicTemplate='',manualFrontRows=null,manualIBWithheld=false,sharedPdf=false,showHouseNumbers=true}={}){
     const c=publicCard||card(id);if(!c)throw Error('Kortet findes ikke.');
     const members=publicCard?publicMembers:this.members(id);
     if(!Array.isArray(members))throw Error('Kortbilledet mangler sin adresseliste.');
@@ -226,7 +226,7 @@ const MapExport={
     let points;
     if(publicCard){
       const {dots,leaders,labels}=this.publicVisitLayout(pointGroups,total);
-      points=leaders+labels.map(label).join('')+dots;
+      points=(showHouseNumbers?leaders+labels.map(label).join(''):'')+dots;
     }else{
       points=pointGroups.map(group=>{
         const {x,y,count}=group;

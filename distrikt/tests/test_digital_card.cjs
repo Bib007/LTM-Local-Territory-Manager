@@ -21,6 +21,7 @@ assert(svg.includes('DIGITALT DISTRIKTSKORT'));assert(svg.includes('Kortets prin
 context.withIB={...context.recipe,publicMembers:[...context.recipe.publicMembers,
  {id:'saved-point',road:'Fiktiv prøvevej',number:'35',lng:10.013,lat:55.013,count:1,saved_point:true,notes:'PRIVATE_IB_NOTE'}]};
 const withIB=run("MapExport.svg('fake',withIB)");
+const hiddenNumbers=run("MapExport.svg('fake',{...withIB,sharedPdf:true,showHouseNumbers:false})");assert.equal((hiddenNumbers.match(/<circle [^>]+fill="#c62828"/g)||[]).length,4,'All saved visit dots remain');assert.doesNotMatch(hiddenNumbers,/data-number-leader/);assert.doesNotMatch(hiddenNumbers,/>35<\/text>/);
 const ordinary=run("MapExport.svg('fake',{...withIB,publicMembers:withIB.publicMembers.map(({saved_point,notes,...address})=>address)})");
 assert.equal(withIB,ordinary,'IB status cannot affect the public drawing, numbers, rows, or totals');
 assert.equal((withIB.match(/<circle [^>]+fill="#c62828"/g)||[]).length,4);
