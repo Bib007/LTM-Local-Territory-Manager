@@ -33,6 +33,8 @@ const I18n={
   "Filen krypteres i denne browser med din egen adgangskode. LTM kan ikke genskabe en glemt adgangskode.":"The file is encrypted in this browser with your own passphrase. LTM cannot recover a forgotten passphrase.",
   "Opret krypteret forbindelsesbackup":"Create encrypted connection backup",
   "Gendan krypteret forbindelsesbackup":"Restore encrypted connection backup",
+  "Kryptering kræver en sikker forbindelse. Åbn LTM via HTTPS eller localhost på samme computer, og prøv igen.":"Encryption requires a secure connection. Open LTM over HTTPS or localhost on the same computer and try again.",
+  "Browserens kryptering er ikke tilgængelig. Prøv en opdateret browser via HTTPS eller localhost.":"Browser encryption is unavailable. Try an updated browser over HTTPS or localhost.",
   "Denne browser kan ikke kryptere forbindelsesbackup. Brug en moderne browser på din egen enhed.":"This browser cannot encrypt a connection backup. Use a modern browser on your own device.",
   "Ny adgangskode til filen":"New passphrase for the file",
   "Gentag adgangskoden":"Repeat the passphrase",
