@@ -23,6 +23,8 @@ jobs:
         run: python scripts/check_release_smoke.py
       - name: Isolated HA beta package contracts
         run: python -m unittest discover -s scripts -p test_build_beta.py -v
+      - name: Separate release-track package contracts
+        run: python -m unittest discover -s scripts -p test_build_tracks.py -v
   ha-status-blueprint:
     uses: ./.github/workflows/ha-status.yml
   python:
@@ -87,6 +89,20 @@ jobs:
         run: |
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_profiles_app_browser.cjs
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_profiles_app_browser.cjs
+      - name: Exact assignment deletion and recovery from History
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_loan_deletion_browser.cjs
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_ENGINE=webkit node scripts/check_loan_deletion_browser.cjs
+      - name: Task responsibility with fictional local accounts
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_task_ownership_browser.cjs
+      - name: Read-only manual split planning
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_split_suggestions_browser.cjs
+      - name: Reviewed DAR street suggestions and imprecise IB dates
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_street_suggestions_browser.cjs
+      - name: Dense interval fronts and preserved original footer
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_front_intervals_browser.cjs
+      - name: English and Danish originals in real print windows
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_english_forms_browser.cjs
       - name: Offline login and keyboard workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_access_browser.cjs
       - name: Fictional header and digital map visual checks
@@ -94,12 +110,17 @@ jobs:
       - name: HA scheduled address task browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_address_task_browser.cjs
       - name: Fictional visual review images
+        id: fictional-visual-artifact
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: fictional-visual-checks
           path: ${{ runner.temp }}/ltm-visual
           if-no-files-found: ignore
           retention-days: 7
+      - name: Report optional visual artifact upload failure
+        if: ${{ always() && steps.fictional-visual-artifact.outcome == 'failure' }}
+        run: echo "::warning::Visual screenshots could not be uploaded to GitHub artifacts. The independent visual browser assertions still determine pass/fail; review the upload log and retry if screenshots are needed."
       - name: Syntax check
         run: find distrikt/app -maxdepth 1 -name '*.js' -exec node --check {} \;

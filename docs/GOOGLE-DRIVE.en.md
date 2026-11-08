@@ -2,17 +2,17 @@
 
 [Dansk](GOOGLE-DRIVE.md)
 
-LTM works without Google. This optional connection publishes an individually reviewed PNG map to your chosen Drive account and gives the paper card a QR link. People with the link can view the image without signing in to Google; test that with your own account before distributing cards.
+LTM works without Google. This optional connection publishes an individually reviewed PDF to your chosen Drive account and gives the paper card a QR link. People with the link can view the PDF without signing in to Google; test that with your own account before distributing cards.
 
 The private databases, publishers, assignments, notes and do-not-call list are not uploaded by this feature. Visible geography and allowed visit points are still part of the image: inspect the entire preview before approving it.
 
 The installed app is currently Danish. The menu and file names below are the actual Danish names, not labels that depend on a future full English translation.
 
-## Digital card in beta.12
+## Digital map and printable front
 
-From beta.12 the shared image has a new layout with a clear card number/name, a large map and a small printed-front miniature in the corner. The miniature reuses the blank S-12 front and the physical front’s road-row formatter, but is built only from approved public addresses. It does not copy an image of the private card. DNC details, notes and holder records are excluded.
+Starting in Stable v1.12.16, LTM shares one two-page PDF. Page 1 shows the digital street map, card number, name, point total and dates. Page 2 shows the printable front with wrapped street lines. All saved address dots are identically red. The do-not-call list belongs on the physical card back.
 
-Existing QR links and the loan-driven access cycle are preserved. Older layouts are marked under Sharing and QR. Choose **Opdater Google Drive-upload**, review the entire image and miniature, and explicitly approve publication. A layout update does not upload anything by itself. The QR still opens a PNG image on Google Drive; no new public website is created.
+Choose **Update Google Drive upload** and review both pages before approval. If a Drive file already exists, LTM sends the PDF as a new revision of that file. Check the current Drive link before printing QR codes. Date updates reuse the same approved printable front.
 
 ## 1. Create your own Google client
 
@@ -83,3 +83,9 @@ When moving between HA, Mac and Windows, retain the same Google account/client i
 - [Drive sharing](https://developers.google.com/workspace/drive/api/guides/manage-sharing)
 
 For Danish instructions included with the program, see [GOOGLE-DRIVE-OPSAETNING.md](../distrikt/GOOGLE-DRIVE-OPSAETNING.md).
+
+## Card front and batch approval
+
+Page 2 of the Drive PDF uses the normal print template and street grouping. Update the card’s Drive upload and review both pages to replace the previous front. After printing, choose “Approve printed sides in the app” to approve the reviewed fronts and backs together, including after printing all cards. Changed content requires a new print. No sides are approved automatically.
+
+In the preview, switch **Show house numbers and lines on the map** on/off. Every red dot stays. This changes the new image only; approve it again before uploading. Readable-archive fronts now use the same print view as ordinary cards.

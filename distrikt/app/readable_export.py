@@ -13,6 +13,7 @@ import zipfile
 import zlib
 from datetime import date
 from pathlib import Path
+from resource_paths import templates_dir
 from pdf_export import pdf_document, text, s13_pdf, allocation_rows
 from sharing import public_members, public_name, png_bytes, fingerprint, qrcode
 
@@ -98,34 +99,6 @@ def image_pdf(images):
     for n in offsets[1:]:result.extend(('%010d 00000 n \n'%n).encode())
     result.extend(('trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n'%(len(offsets),xref)).encode());return bytes(result)
 
-def fronts_pdf(state):
-    raw=(Path(__file__).resolve().parents[1]/'templates/S-12-source.png').read_bytes();image=png_image(raw)
-    pages=[];areas={a['id']:a['name'] for a in state['areas']}
-    for c in state['cards']+state.get('archived_cards',[]):
-        rows=[]
-        for a in c.get('addresses',[]):
-            label=str(a.get('road',''))+' '+str(a.get('numbers',a.get('from','')))
-            rows.extend(textwrap.wrap(safe(label),57) or [''])
-            rows[-1]+='   (besøg ikke angivet)' if a.get('count_unknown') else '   (%s besøg)'%a.get('count',0)
-        for offset in range(0,max(1,len(rows)),8):
-            # The original blank form is reproduced at its standard 146 x 94 mm.
-            x,y,w,h=90,430,414,266.55
-            commands=['q %.2f 0 0 %.2f %.2f %.2f cm /Im1 Do Q'%(w,h,x,y),line(x+w*.81,y+h*.8,c['number'],9,maxchars=12)]
-            title=c.get('name') or areas.get(c.get('area_id'),'')
-            commands.extend(line(x+w*.26,y+h*.8-i*10,title_line,8) for i,title_line in enumerate(textwrap.wrap(safe(title),45)))
-            link=next((r['url'] for r in state.get('public_maps',[]) if r['card_id']==c['id']),None)
-            if link:
-                qr=qrcode.QRCode(border=4);qr.add_data(link);qr.make(fit=True);matrix=qr.get_matrix();size=52;unit=size/len(matrix);qx,qy=x+w*.84,y+h*.2
-                commands.append('0 g')
-                commands.extend('%.3f %.3f %.3f %.3f re f'%(qx+j*unit,qy+(len(matrix)-i-1)*unit,unit,unit) for i,row in enumerate(matrix) for j,dot in enumerate(row) if dot)
-                commands.append(line(qx,qy+56,'Se digitalt kort',5))
-            commands.extend(line(x+w*.07,y+h*.66-i*12,value,8) for i,value in enumerate(rows[offset:offset+8]))
-            if not c.get('temporary'):
-                total='I alt: ikke angivet' if any(a.get('count_unknown') for a in c.get('addresses',[])) else 'I alt: %s besøg'%sum(a.get('count',0) for a in c.get('addresses',[]))
-                commands.append(line(x+w*.07,y+h*.24,total,8))
-            commands+=[line(40,800,'Forsider · kort '+str(c['number'])+(' · arkiveret' if c.get('archived') else '')+(' · fortsat' if offset else ''),14),line(40,390,'Lokalt læsearkiv · ikke en godkendelse af genprint. Præcise adresser findes i CSV.',8)]
-            pages.append(commands)
-    return pdf_document(pages or [[line(40,800,'Ingen distriktskort.')]],image=(*image,'png'))
 
 def tables(state,geo):
     cards=state['cards']+state.get('archived_cards',[]);refs={c['id']:c['number'] for c in cards};people={p['id']:p['name'] for p in state['publishers']};addresses={a['id']:a for a in geo if a.get('entity')=='address'}
@@ -145,7 +118,7 @@ def tables(state,geo):
     statuses={a['id']:a for a in addresses.values()};ignored={i.get('address_id') for i in state.get('ignored',[])}
     address_rows=[(*row,statuses.get(row[3],{}).get('type',''),bool(statuses.get(row[3],{}).get('retired')),row[3] in ignored) for row in address_rows]
     add('adresser',['kort_id','kortnummer','grundlag','adresse_id','vej','husnummer_eller_gemt_vejlinje','etage','doer','postnummer','besoegstal','laengdegrad','breddegrad','type','nedlagt','se_bort_fra'],address_rows)
-    add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date','')) for r in state['ib']])
+    add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date_text') or r.get('date','')) for r in state['ib']])
     add('udleveringer',['udlaans_id','kort_id','kortnummer','forkynder_id','forkynder','udleveret','aktuel_gennemgang_fra','afleveret'],[(r['id'],r['card_id'],ref(r['card_id']),r['publisher_id'],people.get(r['publisher_id'],''),r['assigned'],r.get('cycle_start',''),r.get('returned','')) for r in state['loans']])
     add('gennemgange',['id','kort_id','kortnummer','dato','forrige_gennemgang','udlaans_id','besoeg','besoeg_ukendt','kilde'],[(r['id'],r['card_id'],ref(r['card_id']),r['date'],r.get('previous_completed',''),r.get('loan_id',''),'' if r.get('visits_unknown') else r.get('visits',''),bool(r.get('visits_unknown')),r.get('source','')) for r in state['completions']])
     add('forkyndere',['id','navn','tjenestegruppe','gruppefunktion','pioner'],[(r['id'],r['name'],r.get('group',''),r.get('group_role',''),bool(r.get('pioneer'))) for r in state['publishers']])
@@ -174,8 +147,8 @@ class ReadableExport:
             for c in state['cards']+state.get('archived_cards',[]):
                 members=public_members(view,c)
                 if c.get('geo_polygon') or members:cards.append({'card':{k:c.get(k) for k in ('id','number','geo_polygon','map_color')},'members':members,'name':public_name(view,c)+(' · Arkiveret' if c.get('archived') else '')})
-            self.job={'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'size':0,'until':time.monotonic()+3600}
-            return {k:self.job[k] for k in ('token','revision','cards')}
+            self.job={'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'front_images':{},'size':0,'until':time.monotonic()+3600}
+            return {**{k:self.job[k] for k in ('token','revision','cards')},'fronts':[c['id'] for c in state['cards']+state.get('archived_cards',[])]}
     def require(self,token):
         job=self.job
         if not job or not secrets.compare_digest(str(token),job['token']) or time.monotonic()>job['until']:raise ValueError('Eksporten er udløbet. Start igen.')
@@ -184,17 +157,21 @@ class ReadableExport:
     def image(self,data):
         with self.lock,self.store.lock:
             job=self.require(data.get('token'));ident=data.get('card_id')
-            if ident not in {c['card']['id'] for c in job['cards']}:raise ValueError('Ukendt eksportkort.')
-            raw=png_bytes(data.get('png'));old=job['images'].get(ident,b'');size=job['size']-len(old)+len(raw)
+            front=data.get('side')=='front'
+            allowed={c['id'] for c in job['state']['cards']+job['state'].get('archived_cards',[])} if front else {c['card']['id'] for c in job['cards']}
+            if ident not in allowed:raise ValueError('Ukendt eksportkort.')
+            images=job['front_images'] if front else job['images']
+            raw=png_bytes(data.get('png'));old=images.get(ident,b'');size=job['size']-len(old)+len(raw)
             if size>MAX_IMAGES:raise ValueError('Kortbillederne fylder mere end 100 MB. Eksporten er stoppet.')
-            job['images'][ident]=raw;job['size']=size;return {'ok':True}
+            images[ident]=raw;job['size']=size;return {'ok':True}
     def finish(self,token):
         with self.lock:
             job=self.require(token)
             if len(job['images'])!=len(job['cards']):raise ValueError('Ikke alle digitale kort er dannet. Ingen eksportpakke er hentet.')
             state=job['state'];files=tables(state,job['geo']);cards=state['cards']+state.get('archived_cards',[]);refs={c['id']:c['number'] for c in cards}
-            files['PDF/01-alle-forsider.pdf']=fronts_pdf(state)
-            files['PDF/02-alle-IB-bagsider.pdf']=text_pdf('IB-bagsider',[(str(c['number']),[str(r.get('road',''))+' '+str(r.get('number',''))+' · '+str(r.get('date','')) for r in state['ib'] if r['card_id']==c['id']]) for c in cards])
+            if len(job['front_images'])!=len(cards):raise ValueError('Ikke alle forsider er dannet. Ingen eksportpakke er hentet.')
+            files['PDF/01-alle-forsider.pdf']=image_pdf([job['front_images'][c['id']] for c in cards]) if cards else text_pdf('Forsider',[])
+            files['PDF/02-alle-IB-bagsider.pdf']=text_pdf('IB-bagsider',[(str(c['number']),[str(r.get('road',''))+' '+str(r.get('number',''))+' · '+str(r.get('date_text') or r.get('date','')) for r in state['ib'] if r['card_id']==c['id']]) for c in cards])
             files['PDF/03-alle-digitale-kort.pdf']=image_pdf([job['images'][c['card']['id']] for c in job['cards']]) if job['cards'] else text_pdf('Digitale kort',[])
             files['PDF/04-alle-opgaver.pdf']=text_pdf('Alle opgaver',[(('Kort '+refs.get(r.get('card_id'),'')+' · ' if r.get('card_id') else '')+('Udført' if r.get('resolved') else 'Åben'),[r.get('text',''),'Oprettet: '+str(r.get('created','')),'Gentagelse: '+json.dumps(r.get('recurrence'),ensure_ascii=False),'Historik: '+json.dumps(r.get('task_history',[]),ensure_ascii=False)]) for r in state['notes']])
             days=[state['today']]

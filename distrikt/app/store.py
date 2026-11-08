@@ -1,5 +1,6 @@
 """Local-only, separate SQLite files. No network, telemetry or external dependency."""
 import json
+import hashlib
 import re
 import os
 import sqlite3
@@ -84,6 +85,15 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         self.db.commit()
         with self.transaction():
             self.migrate_tasks()
+            # Repair old lossy labels from their exact geographic membership.
+            # Manual/imported lines have no authoritative geographic snapshot.
+            from geography import street_rows
+            for c in self.all('cards'):
+                if c.get('geo_addresses'):
+                    rows=street_rows(c['geo_addresses'])
+                    if rows!=c.get('addresses'):
+                        c['addresses']=rows;c['front_revision']=True
+                        self.put('cards',c)
             # Remove the credential belonging to the retired aerial-photo feature only.
             self.db.execute("DELETE FROM geo.records WHERE id = ?",('basemap-config',))
             if not self.get('settings', 'config'):
@@ -106,6 +116,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         self._geo_cache=None
                         self.geo_generation=getattr(self,'geo_generation',0)+1
                     if not self._dirty_modules or 'geo' in self._dirty_modules:self._info_cache=None
+                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored','ib'}):
+                        self._boundary_report_cache=None
             except Exception:
                 self.db.rollback()
                 raise
@@ -156,20 +168,65 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def active_loan(self, card_id):
         return next((l for l in self.all('loans') if l['card_id'] == card_id and not l.get('returned')), None)
 
+    def overlapping_loans(self, loan):
+        from history_loans import overlaps
+        return {l['id'] for l in self.all('loans')
+                if l['id'] != loan['id'] and l['card_id'] == loan['card_id'] and overlaps(loan, l)}
+
+    def print_context(self, ib=None, settings=None, maps=None):
+        # Build once per overview/batch. In particular, never deserialize every
+        # stored map image again for each of hundreds of selected fronts.
+        by_card={};links={}
+        for item in self.all('ib') if ib is None else ib:
+            by_card.setdefault(item.get('card_id'),[]).append(item)
+        for item in self.all('maps') if maps is None else maps:
+            if item.get('entity')=='publication':links.setdefault(item.get('card_id'),[]).append(item.get('front_url',''))
+        return {'ib':{key:sorted(items,key=lambda i:i['id']) for key,items in by_card.items()},
+            'links':{key:sorted(items) for key,items in links.items()},
+            'areas':{item['id']:item.get('name','') for item in (self.all('settings') if settings is None else settings)}}
+
+    def print_token(self, c, side, context=None):
+        context=self.print_context() if context is None else context
+        fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon') if side=='front' else ('id','number')
+        content={k:c.get(k) for k in fields}
+        if side=='back':content['ib']=context['ib'].get(c['id'],[])
+        else:
+            content['area_name']=context['areas'].get(c.get('area_id'),'')
+            content['links']=context['links'].get(c['id'],[])
+        return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+
+    @staticmethod
+    def loan_history_tokens(cards, loans):
+        grouped={}
+        for loan in loans:grouped.setdefault(loan['card_id'],[]).append(loan)
+        cards={c['id']:c for c in cards}
+        return {ident:hashlib.sha256(json.dumps({'card_id':ident,'archived':bool(cards.get(ident,{}).get('archived')),
+            'loans':sorted(rows,key=lambda row:row['id'])},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for ident,rows in grouped.items()}
+
     def state(self):
         with self.lock:
             result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
+            from geography import front_summaries
+            maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
+            for c in result['cards']:
+                for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side,print_context)
+            histories=self.loan_history_tokens(result['cards'],result['loans'])
+            result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
+            front_summaries(result['cards'])
             result['settings'] = self.get('settings', 'config')
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
             result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
+            from redistribution import planning_date
+            for c in result['cards']:
+                if c.get('planning_reference'):c['planning_date']=planning_date(c)
             result['archived_cards']=[c for c in result['cards'] if c.get('archived')]
             result['cards']=[c for c in result['cards'] if not c.get('archived')]
             result['revision']=self.revision
             result['undo_available']=bool(self._undo and self._undo['revision']==self.revision and self._undo['until']>__import__('time').monotonic())
-            result['maps'] = [{k: v for k, v in m.items() if k != 'image'} for m in self.all('maps') if m.get('entity')!='publication']
+            result['maps'] = [{k: v for k, v in m.items() if k != 'image'} for m in maps if m.get('entity')!='publication']
             result['recovery'] = self.recovery()
             result['today'] = today()
             result['version'] = '1.12.0-beta.7'
@@ -186,13 +243,20 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def recovery(self):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
         rows = []
+        actors={batch:{k:event[k] for k in ('actor_id','actor_name','action') if k in event} for event in self.activity(10000) for batch in event.get('batches',[])}
         for m in MODULES:
             if m=='maps':
                 continue
             for item in self.all(m, deleted=True):
                 if item['_deleted_at'] > cutoff:
+                    label = item.get('number') or item.get('name') or item.get('date') or item.get('road') or m
+                    if m == 'loans':
+                        card = self.get('cards', item['card_id'], deleted=True) or {}
+                        publisher = self.get('publishers', item.get('publisher_id')) or {}
+                        dates = item['assigned'] + (' → ' + item['returned'] if item.get('returned') else '')
+                        label = ' · '.join(filter(None, (card.get('number'), publisher.get('name'), dates)))
                     rows.append({'batch': item['_batch'], 'at': item['_deleted_at'],
-                        'label': 'Adresser uden for samlet grænse' if m=='geo' else item.get('number') or item.get('name') or item.get('date') or item.get('road') or m})
+                        'label': 'Adresser uden for samlet grænse' if m=='geo' else label,**actors.get(item['_batch'],{})})
         groups = {}
         for row in rows:
             if row['batch'] not in groups:
@@ -245,8 +309,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         elif current.get('card_id'):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
-                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),**({'actor_id':review.actor} if review else {})})
-                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve')
+                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.alias(module)+'.records WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
+                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -350,7 +414,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                     publisher = self.require('publishers', ident)
             day = valid_day(data.get('date'))
             initial = bool(data.get('initial', False))
-            if not initial and not c['in_folder']:
+            if not initial and not c['in_folder'] and data.get('from_box') is not True:
                 raise ValueError('Læg kortet i mappen først, eller vælg registrering af et eksisterende udlån.')
             item = {'id': new_id(), 'card_id': c['id'], 'publisher_id': publisher['id'],
                 'assigned': day, 'cycle_start': day, 'returned': None, 'initial': initial}
@@ -362,6 +426,23 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             c=self.require('cards',data['card_id']) if data.get('card_id') else None
             item=dict(self.require('notes',data['id']) if data.get('id') else {'id':new_id(),'date':today(),'created':now(),'resolved':False})
             if item.get('entity')=='activity':raise ValueError('Vælg en opgave.')
+            if 'assignee_id' in data:
+                owner=data['assignee_id']
+                if owner is not None and (not isinstance(owner,str) or not re.fullmatch(r'user-[a-f0-9]{32}',owner)):
+                    raise ValueError('Vælg en aktiv bruger som ansvarshavende.')
+                if 'assignee_before' not in data or data['assignee_before']!=item.get('assignee_id'):
+                    raise ValueError('Den ansvarshavende er ændret. Opdater oversigten, og vælg igen.')
+                item['assignee_id']=owner
+            if 'followup_key' in data:
+                key=data['followup_key']
+                try:parts=json.loads(key) if isinstance(key,str) and len(key)<=1000 else None
+                except (ValueError,TypeError):parts=None
+                if not isinstance(parts,list) or len(parts)<2 or parts[0] not in ('checks','reprint','loans','addresses') or not all(isinstance(p,str) for p in parts):
+                    raise ValueError('Vælg en gyldig opfølgning.')
+                if item.get('followup_key') not in (None,key):raise ValueError('Opgavens opfølgning kan ikke ændres.')
+                if any(n.get('followup_key')==key and n['id']!=item['id'] for n in self.all('notes')):
+                    raise ValueError('Opfølgningen har allerede en opgave. Opdater oversigten.')
+                item['followup_key']=key
             item['card_id']=c['id'] if c else None
             item['task']=True
             item['text']=clean_text(data.get('text'),1000,True)
@@ -490,7 +571,10 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Kontrollér retning, papir og tryk.')
             if (profile['orientation'] == 'portrait') != (profile['height'] >= profile['width']):
                 raise ValueError('Retning og kortmål stemmer ikke overens.')
+            form_language=profile.get('form_language')
+            if form_language is not None and form_language not in ('da','en'):raise ValueError('Vælg dansk eller engelsk formular.')
             profile = {key: profile[key] for key in ('orientation', 'paper', 'mode', 'width', 'height', 'x', 'y')}
+            if form_language is not None:profile['form_language']=form_language
             config = dict(self.require('settings', 'config'))
             profiles = dict(config.get('print_profiles') or {})
             profiles[side] = profile
@@ -529,7 +613,13 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 item['address_id'] = address_id
             elif 'address_id' in payload:
                 item.pop('address_id', None)
-            item.update(road=clean_text(payload.get('road'), 120, True), number=clean_text(payload.get('number'), 80, True), date=valid_day(payload.get('date')))
+            date_text=clean_text(payload.get('date_text'),60)
+            if date_text and re.fullmatch(r'\d{4}-\d{2}-\d{2}',date_text):
+                raise ValueError('Brug datofeltet til en præcis dato.')
+            item.update(road=clean_text(payload.get('road'), 120, True), number=clean_text(payload.get('number'), 80, True),
+                        date='' if date_text else valid_day(payload.get('date')))
+            if date_text:item['date_text']=date_text
+            else:item.pop('date_text',None)
             if 'postcode' in payload:
                 postcode=clean_text(payload.get('postcode'),4)
                 if postcode and not re.fullmatch(r'\d{4}',postcode):raise ValueError('Postnummer skal være fire cifre eller stå tomt.')
@@ -539,6 +629,27 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             c['back_revision'] = True
             self.put('cards', c)
             return {'id': item['id']}
+        if action == 'revision.approve_many':
+            entries=data.get('entries')
+            if not isinstance(entries,list) or not entries or len(entries)>10000:
+                raise ValueError('Vælg de printede sider, der skal godkendes.')
+            context=self.print_context();checked=[];seen=set()
+            for item in entries:
+                if not isinstance(item,dict) or item.get('side') not in ('front','back'):
+                    raise ValueError('Vælg forside eller bagside.')
+                side=item['side'];c=self.require('cards',item.get('card_id'))
+                key=(c['id'],side)
+                if key in seen:raise ValueError('Den samme side er valgt flere gange.')
+                seen.add(key)
+                if c.get('archived') or item.get('token')!=self.print_token(c,side,context):
+                    raise ValueError('Printgrundlaget er ændret. Åbn print igen.')
+                checked.append((c['id'],side))
+            approved=0
+            for ident,side in checked:
+                c=self.require('cards',ident)
+                if not c.get(side+'_revision'):continue
+                c[side+'_revision']=False;c[side+'_approved']=now();self.put('cards',c);approved+=1
+            return {'approved':approved,'selected':len(checked)}
         if action == 'revision.approve':
             c = self.require('cards', data['card_id'])
             side = data.get('side')
@@ -591,8 +702,28 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes'):
                 raise ValueError('Denne post kan ikke slettes her.')
             item = self.require(module, data['id'])
-            if module == 'loans' and not item.get('returned'):
-                raise ValueError('Aflever kortet før udlånshistorikken slettes.')
+            if module == 'loans':
+                if 'history_token' in data:
+                    c=self.require('cards',item['card_id'])
+                    history=[loan for loan in self.all('loans') if loan['card_id']==item['card_id']]
+                    expected=self.loan_history_tokens([c],history)[item['card_id']]
+                    valid=isinstance(data['history_token'],str) and data['history_token']==expected
+                else:
+                    # Older browser tabs retain their conservative revision guard.
+                    valid=data.get('history_revision')==self.revision
+                if not valid:raise ValueError('Historikken er ændret. Opdater og vælg udleveringen igen.')
+                if not item.get('returned'):
+                    c = self.require('cards', item['card_id'])
+                    if c.get('archived'):
+                        raise ValueError('Kortet er arkiveret efter sammenlægning.')
+                    location = data.get('location')
+                    if location not in ('folder', 'box'):
+                        raise ValueError('Vælg, hvor det fysiske kort ligger.')
+                    c['in_folder'] = location == 'folder'
+                    self.put('cards', c)
+                # Legacy histories can already overlap. Recovery only rejects new conflicts.
+                item['delete_overlaps'] = sorted(self.overlapping_loans(item))
+                self.put('loans', item)
             batch, stamp = new_id(), now()
             self.mark_deleted(module, item['id'], batch, stamp)
             if module == 'cards':
@@ -606,10 +737,26 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 self.put('cards', c)
             if module == 'completions':
                 c = self.require('cards', item['card_id'])
-                if c.get('last_completed') == item['date']:
-                    remaining = [e['date'] for e in self.all('completions') if e['card_id'] == c['id']]
-                    if item.get('previous_completed'): remaining.append(item['previous_completed'])
-                    c['last_completed'] = max(remaining, default=None)
+                remaining = [e for e in self.all('completions') if e['card_id'] == c['id']]
+                day = item['date']
+                if not any(e['date'] == day for e in remaining):
+                    # Reports also read previous_completed as evidence of older history.
+                    # Remove references to the erroneous date, including in recoverable records.
+                    previous = item.get('previous_completed')
+                    if previous and previous >= day:
+                        previous = None
+                    for e in remaining + self.all('completions', deleted=True):
+                        if e['id'] != item['id'] and e['card_id'] == c['id'] and e.get('previous_completed') == day:
+                            clean = self.get('completions', e['id'], deleted=True)
+                            clean['previous_completed'] = previous
+                            self.put('completions', clean)
+                            e['previous_completed'] = previous
+                if c.get('last_completed') == day:
+                    dates = [e['date'] for e in remaining]
+                    dates.extend(e['previous_completed'] for e in remaining if e.get('previous_completed'))
+                    if item.get('previous_completed') and item['previous_completed'] < day:
+                        dates.append(item['previous_completed'])
+                    c['last_completed'] = max(dates, default=None)
                     self.put('cards', c)
             return {'batch': batch}
         if action == 'recovery.purge':
@@ -645,8 +792,21 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         raise ValueError('Adressen er nu på et distriktskort. Fjern den fra kortet før gendannelse af Se bort fra.')
                 if module in ('ib', 'loans', 'completions') and not self.get('cards', item['card_id']) and not any(m == 'cards' and i['id'] == item['card_id'] for m, i in entries):
                     raise ValueError('Gendan kortet først.')
-                if module == 'loans' and not item.get('returned') and self.active_loan(item['card_id']):
-                    raise ValueError('Kortet har allerede et nyt aktivt udlån.')
+                if module == 'loans' and not item.get('returned'):
+                    c = self.require('cards', item['card_id'])
+                    if c.get('archived'):
+                        raise ValueError('Kortet er arkiveret efter sammenlægning.')
+                    if self.active_loan(c['id']):
+                        raise ValueError('Kortet har allerede et nyt aktivt udlån.')
+                    if c.get('in_folder'):
+                        c['in_folder'] = False
+                        self.put('cards', c)
+                if module == 'loans' and 'delete_overlaps' in item:
+                    if self.overlapping_loans(item).difference(item['delete_overlaps']):
+                        raise ValueError('Udleveringen overlapper en anden udlevering og kan ikke gendannes.')
+                    clean = self.get('loans', item['id'], deleted=True)
+                    clean.pop('delete_overlaps')
+                    self.put('loans', clean)
                 self._dirty_modules.add(module)
                 self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=NULL,batch=NULL WHERE id=?', (item['id'],))
                 if module == 'settings' and item.get('restore_cards'):

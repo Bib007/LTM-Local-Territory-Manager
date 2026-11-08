@@ -1,4 +1,4 @@
-"""Only explicitly prepared public PNGs are sent to Google Drive; never the database."""
+"""Only explicitly prepared public files are sent to Google Drive; never the database."""
 import base64
 import hashlib
 import io
@@ -17,7 +17,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from access import write_private
 from publication_dates import ApprovedImages,dates,date_key,render as render_dates
-sys.path.insert(0,str(Path(__file__).resolve().parent/'vendor_py'))
+from pdf_export import shared_card_pdf
+from resource_paths import vendor_dir
+sys.path.insert(0,str(vendor_dir()))
 import qrcode
 
 SCOPE='https://www.googleapis.com/auth/drive.file'
@@ -81,6 +83,28 @@ class Drive:
         if not re.fullmatch(r'[A-Za-z0-9_-]{5,200}',file_id):raise ValueError('Ugyldigt Google-filnummer.')
         self.api('/files/'+file_id+'?uploadType=media',png,'PATCH','image/png',True)
         return file_id
+    def upload_pdf(self,pdf,number,file_id=None):
+        if file_id:
+            self.valid_id(file_id)
+        mime='application/pdf'
+        safe_number=re.sub(r'[^A-Za-z0-9_-]+','-',str(number)).strip('-') or 'kort'
+        metadata={'name':'Distriktskort-'+safe_number+'.pdf','mimeType':mime,
+                  'description':'Offentligt distriktskort. Digitalt kort og printforside.'}
+        boundary='ltm-'+os.urandom(18).hex()
+        part=('--'+boundary+'\r\n').encode()
+        body=(part+b'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+              +json.dumps(metadata).encode()+b'\r\n'
+              +part+b'Content-Type: application/pdf\r\n\r\n'
+              +pdf+('\r\n--'+boundary+'--\r\n').encode())
+        path='/files'+('/'+file_id if file_id else '')+'?uploadType=multipart&fields=id,mimeType'
+        result=self.api(path,body,'PATCH' if file_id else 'POST',
+                        'multipart/related; boundary='+boundary,True)
+        ident=result.get('id')
+        self.valid_id(ident)
+        if result.get('mimeType')!=mime or (file_id and ident!=file_id):
+            raise ValueError('Google bekræftede ikke kortet som PDF. Kontrollér filen i Drive.')
+        return ident
+
     def share(self,file_id):
         self.valid_id(file_id)
         permissions=self.api('/files/'+file_id+'/permissions?fields=permissions(id,type,role)')['permissions']
@@ -99,7 +123,9 @@ class Drive:
         for p in self.api('/files/'+file_id+'/permissions?fields=permissions(id,type)')['permissions']:
             if p['type']=='anyone':self.api('/files/'+file_id+'/permissions/'+p['id'],method='DELETE')
 
-RENDER_REVISION=7
+DATE_RENDER_REVISION=7
+PDF_RENDER_REVISION=11
+RENDER_REVISION=12
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -109,7 +135,17 @@ def public_members(store,c):
     clean=lambda s:re.sub(r'[\s.,]+','',str(s or '').lower())
     def blocked(a):
         return any(i.get('address_id')==a['id'] if i.get('address_id') else clean(i.get('road'))==clean(a.get('road')) and clean(i.get('number')) in (clean(a.get('number')),clean(' '.join(str(a.get(k) or '') for k in ('number','floor','door')))) for i in ib)
-    return [{k:a.get(k) for k in ('id','road','number','floor','door','postcode','lng','lat','count')} for a in addresses if a['id'] not in ignored|retired and not a.get('retired') and not blocked(a)]
+    # A saved point remains visible on the reviewed public image, but must not
+    # be counted as an outstanding visit or carry private IB metadata.
+    result=[]
+    for a in addresses:
+        if a['id'] in ignored|retired or a.get('retired'):continue
+        saved=blocked(a)
+        fields=('id','road','number','lng','lat','count') if saved else ('id','road','number','floor','door','postcode','lng','lat','count')
+        row={k:a.get(k) for k in fields}
+        if saved:row['saved_point']=True
+        result.append(row)
+    return result
 
 def public_manual_front(store,c):
     """Return only manual front rows that can be checked safely against IB."""
@@ -203,7 +239,7 @@ class Publications:
         with self.store.lock:
             rows=[]
             for row in self.rows():
-                c=self.store.get('cards',row['card_id']);r={k:v for k,v in row.items() if k not in ('png','queued_png')}
+                c=self.store.get('cards',row['card_id']);r={k:v for k,v in row.items() if k not in ('png','queued_png','approved_front_image')}
                 r['number']=c['number'] if c else 'Slettet kort'
                 r['outdated']=not self.current(row)
                 r['date_update_pending']=bool(c and row.get('date_updates') and row.get('fingerprint')==fingerprint(self.store,c) and row.get('date_fingerprint')!=date_key(dates(self.store,c)))
@@ -277,7 +313,24 @@ class Publications:
             public_card={k:c.get(k) for k in ('id','number','map_color')}
             if c.get('geo_polygon'):public_card['geo_polygon']=c['geo_polygon']
             public_card.update(name=public_name(self.store,c),public_dates=public_dates)
-            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'dates':public_dates,'card':public_card,'members':public_members(self.store,c),'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
+            # Send the same fields for every dot, regardless of its IB status.
+            members=[{k:a[k] for k in ('id','road','number','lng','lat','count')}
+                     for a in public_members(self.store,c)]
+            from geography import front_summaries
+            if has_geo:
+                source=c.get('geo_addresses') or [a for a in self.store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
+                postcodes={a['id']:a.get('postcode','') for a in source}
+                public_card['geo_addresses']=[dict(a,postcode=postcodes.get(a['id'],'')) for a in members]
+                roads={}
+                for a in members:
+                    roads.setdefault(a['road'],[]).append(a)
+                public_card['addresses']=[{'road':road,'numbers':', '.join(a['number'] for a in units),'count':sum(a['count'] for a in units)} for road,units in sorted(roads.items())]
+                front_summaries([public_card])
+                public_card.pop('geo_addresses')
+            else:
+                public_card['addresses']=manual_rows
+                public_card['temporary']=bool(c.get('temporary'))
+            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'pdf':True,'dates':public_dates,'card':public_card,'members':members,'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
     def date_preview(self,data):
         png=png_bytes(data.get('png'))
         with self.store.lock:
@@ -293,12 +346,15 @@ class Publications:
             for row in rows:
                 if first_due and row['card_id']!=first_due:continue
                 if row.get('status')=='review' and not row.get('date_retry_allowed'):continue
-                if row.get('manual_withdraw') or row.get('render_revision')!=7 or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
+                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,9,10,PDF_RENDER_REVISION,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
                 c=self.store.get('cards',row['card_id'])
                 if not c or fingerprint(self.store,c)!=row.get('fingerprint'):continue
                 values=dates(self.store,c);key=date_key(values)
                 if key==row.get('date_fingerprint'):continue
-                try:png=render_dates(self.images.load(row.get('approved_image')),values)
+                try:
+                    if row.get('render_revision',0)>=PDF_RENDER_REVISION:
+                        self.images.load(row.get('approved_front_image'))
+                    png=render_dates(self.images.load(row.get('approved_image')),values)
                 except (OSError,ValueError):
                     row['date_error']='Det godkendte lokale kortbillede mangler eller er beskadiget. Opdater Google Drive-upload for at godkende et nyt billede.'
                     self.store.put('maps',row);continue
@@ -308,26 +364,30 @@ class Publications:
         return False
     def enqueue(self,data):
         revision=data.get('render_revision',1)
-        if type(revision) is not int or revision not in (1,2,3,4,5,6,RENDER_REVISION):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
+        if type(revision) is not int or revision not in range(1,RENDER_REVISION+1):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
         png=png_bytes(data.get('png'))
+        front=png_bytes(data.get('front_png')) if revision>=PDF_RENDER_REVISION else None
         if not self.drive.connected():raise ValueError('Forbind Google Drive først.')
         with self.lock,self.store.transaction():
             c=self.store.require('cards',data['card_id']);fp=fingerprint(self.store,c)
             if data.get('fingerprint')!=fp:raise ValueError('Kortet er ændret, mens billedet blev dannet. Åbn kortet igen og publicér på ny.')
-            dated=revision>=7
+            old=self.store.get('maps',self.key(c['id'])) or {}
+            if old.get('approved_front_image') and front is None:
+                raise ValueError('Genindlæs appen, og godkend begge PDF-sider igen.')
+            dated=revision>=DATE_RENDER_REVISION
             if dated:
                 values=dates(self.store,c)
                 if data.get('date_updates') is not True or data.get('date_fingerprint')!=date_key(values):
                     raise ValueError('Kortets datoer skal kontrolleres og godkendes med et nyt kortbillede.')
                 png=render_dates(png,values)
                 approved_image=self.images.save(png)
-            old=self.store.get('maps',self.key(c['id'])) or {}
             row=dict(old,id=self.key(c['id']),entity='publication',card_id=c['id'],fingerprint=fp,status='queued',render_revision=revision,render_refresh=revision<RENDER_REVISION,error='',attempts=0,withdraw_attempts=0,access_attempts=0,access_target='',close_attempts=0,next_close=0,close_error='',next_try=0,queued_png=base64.b64encode(png).decode(),generation=os.urandom(12).hex())
-            for field in ('date_updates','date_fingerprint','date_values','approved_image','date_error','date_close_pending','manual_withdraw','date_retry_allowed'):row.pop(field,None)
+            for field in ('approved_front_image','date_updates','date_fingerprint','date_values','approved_image','date_error','date_close_pending','manual_withdraw','date_retry_allowed'):row.pop(field,None)
+            if front is not None:row['approved_front_image']=self.images.save(front)
             if dated:row.update(date_updates=True,date_fingerprint=date_key(values),date_values=values,approved_image=approved_image,date_close_pending=bool(old.get('file_id') and (old.get('url') or old.get('possibly_public'))))
             self.store.put('maps',row)
         with self.lock,self.store.lock:
-            try:self.images.prune({r.get('approved_image') for r in self.rows() if r.get('approved_image')})
+            try:self.images.prune({r[key] for r in self.rows() for key in ('approved_image','approved_front_image') if r.get(key)})
             except OSError:pass
         return {'ok':True,'status':'queued'}
     def process_one(self):
@@ -382,7 +442,12 @@ class Publications:
                 if not issued and (row.get('url') or row.get('possibly_public')):
                     self.drive.unshare(row['file_id'])
                     with self.store.transaction():row.update(url='',possibly_public=False);self.store.put('maps',row)
-                file_id=self.drive.upload(base64.b64decode(row['queued_png']),row.get('file_id'))
+                png=base64.b64decode(row['queued_png'])
+                if row.get('render_revision',0)>=PDF_RENDER_REVISION:
+                    pdf=shared_card_pdf(png,self.images.load(row.get('approved_front_image')))
+                    file_id=self.drive.upload_pdf(pdf,c['number'],row.get('file_id'))
+                else:
+                    file_id=self.drive.upload(png,row.get('file_id'))
                 # Persist the created ID before sharing so retries update the same file.
                 with self.store.transaction():row['file_id']=file_id;self.store.put('maps',row)
                 if self.stop.is_set():return

@@ -3,7 +3,7 @@
 [Dansk](LIMITATIONS.md)
 
 - Automatic boundary and card division proposals are paused from beta.61 (W81). The code is retained; use the manual map editor. See the [archive](AUTOMATISK-INDDELING.en.md).
-- The stable baseline interface is Danish. English is planned, not complete.
+- The interface supports English and Danish. Original S-12/S-13 forms and stored user content retain their language. Technical diagnostics from external services may retain their source language.
 - Automated tests use fictional data. Real Google publication, physical card/printer alignment, Windows hardware and your HA installation need local verification.
 - Address imports are Danish. From beta.8, a saved personal key enables DAR GraphQL; without a key, the existing source is used. DAR REST is scheduled to retire on 15 January 2027. Testing a real Datafordeler account/HA installation and the separate Adressevælger access change remain outstanding. Saved local data remains available.
 - OSM tiles require internet access and service policy compliance. No offline tile pack, unrestricted bulk download or automatic mass image export is provided.

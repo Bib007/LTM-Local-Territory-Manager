@@ -1,11 +1,11 @@
 // Language changes must leave private data and unfinished form contents alone.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const source=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8');
-function environment(storedLanguage,blocked=false){
+function environment(storedLanguage,blocked=false,initialLanguage=''){
  const stored=new Map(storedLanguage?[['ltm-language',storedLanguage]]:[]),listeners={},writes=[],opened=[];
  const nodes={nav:{innerHTML:''},dialog:{open:true},title:{textContent:''},subtitle:{textContent:''},
   navigationLanguage:{focused:false,focus(){this.focused=true;}},form:{value:'UNSAVED_FICTIONAL_VALUE'},custom:{textContent:'Forside'},brand:{dataset:{ui:'Privat lokal installation'},textContent:''}};
- const context={console,Number,Math,Map,Set,JSON,Object,localStorage:{getItem(k){if(blocked)throw Error('blocked');return stored.get(k);},setItem(k,v){if(blocked)throw Error('blocked');stored.set(k,v);writes.push(k);}},
+ const context={console,Number,Math,Map,Set,JSON,Object,URLSearchParams,location:{search:initialLanguage?'?ltm_start_language='+initialLanguage:''},localStorage:{getItem(k){if(blocked)throw Error('blocked');return stored.get(k);},setItem(k,v){if(blocked)throw Error('blocked');stored.set(k,v);writes.push(k);}},
   state:{cards:[{id:'fictional-card',name:'Forside'}],publishers:[],loans:[]},page:'Distrikter',
   esc:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;'),el:id=>nodes[id],
   render(){throw Error('Language change must not render app forms');},
@@ -16,6 +16,14 @@ function environment(storedLanguage,blocked=false){
  return {context,nodes,listeners,stored,writes,opened,run:s=>vm.runInContext(s,context)};
 }
 assert.equal(environment().run('I18n.language()'),'en');
+const installedDa=environment(undefined,false,'da');
+assert.equal(installedDa.run('I18n.language()'),'da');
+assert.equal(installedDa.stored.get('ltm-language'),'da');
+const existingEn=environment('en',false,'da');
+assert.equal(existingEn.run('I18n.language()'),'en');
+assert.equal(existingEn.stored.get('ltm-language'),'en');
+assert.equal(existingEn.writes.length,0);
+assert.equal(environment(undefined,false,'unsupported').run('I18n.language()'),'en');
 const e=environment('da');assert.equal(e.run('I18n.language()'),'da');
 assert.match(e.run('Navigation.html()'),/Distriktskort/);
 assert.match(e.run('Navigation.html()'),/value="da" selected/);
@@ -45,3 +53,11 @@ const html=source('index.html');assert(html.indexOf('/i18n.js')<html.indexOf('/n
 assert(html.includes('lang="da"'));assert(!html.includes('Lokalt på din Mac'));
 assert(source('server.py').includes("'/i18n.js'"));
 console.log('Navigation language, unchanged data/routes/drafts, shared guide preference and blocked-storage fallback passed.');
+
+// A completed zero-result check is informational, never a review task.
+for(const language of ['da','en']){
+ const e=environment(language);e.run('const ui=(key,params)=>I18n.label(key,params)');e.run(`state.address_task={available:true,enabled:true,status:'complete',completed_at:'2026-11-07T04:28:30Z',days:29,time:'02:00',last_result:{new:0,changed:0,retired:0},pending:0,message:'Adressekontrollen er færdig. Gennemgå og godkend ændringerne.'}`);
+ assert.equal(e.run('Workspace.addressTaskPanel(true)'), '');
+ const panel=e.run('Workspace.addressTaskPanel(false)');assert.doesNotMatch(panel,/data-work="address-changes"/);assert.match(panel,language==='en'?/No address changes are awaiting review/:/Ingen adresseændringer afventer gennemgang/);
+ e.run('state.address_task.pending=2');assert.match(e.run('Workspace.addressTaskPanel(true)'),/data-work="address-changes"/);
+}

@@ -38,7 +38,7 @@ class PublicationDateTests(unittest.TestCase):
     def approve(self):
         recipe=self.p.prepare(self.c)
         preview=self.p.date_preview({'card_id':self.c,'fingerprint':recipe['fingerprint'],'date_fingerprint':recipe['date_fingerprint'],'png':self.url})
-        self.p.enqueue({'card_id':self.c,'render_revision':7,'fingerprint':recipe['fingerprint'],'date_fingerprint':preview['date_fingerprint'],'date_updates':True,'png':preview['png']})
+        self.p.enqueue({'card_id':self.c,'render_revision':10,'fingerprint':recipe['fingerprint'],'date_fingerprint':preview['date_fingerprint'],'date_updates':True,'png':preview['png']})
         self.p.process_one();return preview
     def complete(self,day='2026-01-02'):self.s.mutate('loan.finish',{'id':self.s.active_loan(self.c)['id'],'date':day,'complete':True,'retain':True})
     def drain(self,n=5):

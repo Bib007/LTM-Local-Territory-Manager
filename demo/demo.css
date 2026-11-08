@@ -14,3 +14,37 @@
 .chart{gap:4px}.barItem{min-width:0}.barItem small{font-size:10px}.dashboardTrend{min-width:0}
 
 @media(max-width:450px){.barItem small{font-size:8px}}
+
+/* Report and History use the app's shared report, metric and table styles. */
+.demoYear{margin:0;display:flex;align-items:center;gap:8px}
+.demoYear>select{width:auto;margin:0}
+.report .chart{height:150px}
+.report .barItem small{font-size:clamp(8px,1.2vw,11px);text-align:center}
+.report .coLine{border-color:#b68b26}
+.report .reportMap{height:360px}
+.historyTable td{vertical-align:top}
+.historyTable td:first-child{width:33%;overflow-wrap:anywhere}
+.historyTable td:first-child>button{margin-top:6px}
+.historyTable details{margin-top:10px}
+.historyTable summary{cursor:pointer}
+.historyLoan{border-bottom:1px solid var(--line);padding:8px 0}
+.historyLoan:first-child{padding-top:0}
+.historyLoan .actions{margin-top:5px}
+@media(max-width:550px){
+ .report .reportMap{height:270px}
+ #content .historyTable{min-width:0}
+ .historyTable td,.historyTable th{padding-inline:5px}
+ .historyTable button{font-size:12px;padding:6px 8px}
+ .report .chart{gap:2px}
+}
+@media print{
+ .reportPrintMap{width:100%;height:auto;break-inside:avoid}
+ .report .tablewrap{overflow:visible}
+ .report .reportMark{color:#333;letter-spacing:normal}
+}
+.reportSummary h2{font-size:28px;font-weight:600;margin:0 0 12px}
+.pageTitle .demoYear{display:grid;gap:2px;flex-shrink:0}
+@media(max-width:550px){
+ .reportSummary h2{font-size:23px}
+ .pageTitle:has(.demoYear)>div{flex:1;min-width:145px}
+}

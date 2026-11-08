@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
-from sharing import Publications,Drive,SCOPE,fingerprint,public_members,public_name,png_bytes
+from sharing import Publications,Drive,PDF_RENDER_REVISION,RENDER_REVISION,SCOPE,fingerprint,public_members,public_name,png_bytes
 
 def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
 def png(extra=False):
@@ -25,6 +25,7 @@ class FakeDrive:
     def upload(self,data,file_id=None):
         if self.fail:raise ValueError('Simuleret netfejl')
         self.uploads.append((data,file_id));return file_id or 'TEST_FILE_12345'
+    def upload_pdf(self,data,number,file_id=None):return self.upload(data,file_id)
     def link(self,file_id):return 'https://drive.google.com/file/d/'+file_id+'/view'
     def share(self,file_id):
         if self.fail:raise ValueError('Simuleret netfejl')
@@ -47,12 +48,47 @@ class SharingTests(unittest.TestCase):
     def enqueue(self):return self.p.enqueue({'render_revision':6,'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
     def enqueue_dates(self):
         recipe=self.p.prepare(self.c)
-        return self.p.enqueue({'render_revision':recipe['render_revision'],'card_id':self.c,'fingerprint':recipe['fingerprint'],'date_fingerprint':recipe['date_fingerprint'],'date_updates':True,'png':self.url})
+        return self.p.enqueue({'render_revision':recipe['render_revision'],'card_id':self.c,'fingerprint':recipe['fingerprint'],'date_fingerprint':recipe['date_fingerprint'],'date_updates':True,'png':self.url,'front_png':self.url})
     def row(self):return self.s.get('maps',self.p.key(self.c))
     def finish(self,retain=False):
         return self.s.mutate('loan.finish',{'id':self.loan,'date':'2026-01-02','complete':retain,'retain':retain})
     def issue_again(self):
         self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-03','initial':True})['id']
+    def test_png_upgrades_to_a_two_page_pdf_on_the_same_drive_file(self):
+        from pypdf import PdfReader
+        self.enqueue()
+        self.p.process_one()
+        old=self.row()
+        self.enqueue_dates()
+        self.p.process_one()
+        self.p.process_one()
+        current=self.row()
+        pdf,updated_id=self.p.drive.uploads[-1]
+        self.assertEqual(updated_id,old['file_id'])
+        self.assertEqual(current['front_url'],old['front_url'])
+        reader=PdfReader(io.BytesIO(pdf))
+        self.assertEqual(len(reader.pages),2)
+        self.assertTrue(all(len(page.images)==1 for page in reader.pages))
+        self.assertNotIn(b'PRIVATE_METADATA',pdf)
+        self.assertEqual(current['render_revision'],RENDER_REVISION)
+        with self.assertRaises(ValueError):
+            self.enqueue()
+
+    def test_drive_multipart_updates_pdf_mime_type_and_keeps_id(self):
+        drive=Drive(self.temp.name)
+        with patch.object(drive,'api',return_value={'id':'TEST_FILE_12345','mimeType':'application/pdf'}) as api:
+            self.assertEqual(drive.upload_pdf(b'%PDF-1.4','120','TEST_FILE_12345'),'TEST_FILE_12345')
+        path,body,method,content_type,upload=api.call_args.args
+        self.assertIn('/files/TEST_FILE_12345?',path)
+        self.assertIn('uploadType=multipart',path)
+        self.assertEqual(method,'PATCH')
+        self.assertTrue(upload)
+        self.assertTrue(content_type.startswith('multipart/related;'))
+        self.assertIn(b'"name": "Distriktskort-120.pdf"',body)
+        self.assertIn(b'"mimeType": "application/pdf"',body)
+        self.assertIn(b'Content-Type: application/pdf',body)
+        self.assertIn(b'%PDF-1.4',body)
+
     def test_google_failure_does_not_block_card_edits_or_issuance(self):
         self.enqueue();self.p.process_one();self.finish()
         self.s.mutate('folder.set',{'ids':[self.c],'in_folder':True})
@@ -128,7 +164,7 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(recipe['manual_front_rows'],[
             {'road':'Sikker Prøvevej','numbers':'2–8','count':None,'count_unknown':True},
             {'road':'Sikker Sti','numbers':'hele vejen','count':4,'count_unknown':False}])
-        self.assertNotIn('geo_polygon',recipe['card']);self.assertNotIn('addresses',recipe['card'])
+        self.assertNotIn('geo_polygon',recipe['card']);self.assertEqual(recipe['card']['addresses'],recipe['manual_front_rows'])
         self.assertNotIn('publisher',json.dumps(recipe));self.assertNotIn('private',json.dumps(recipe).lower())
 
     def test_polygon_card_fingerprint_keeps_pre_manual_front_shape(self):
@@ -213,7 +249,7 @@ class SharingTests(unittest.TestCase):
         self.s.mutate('ib.save',{'card_id':self.c,'address_id':'a2','road':'Fiktiv vej','number':'3','date':'2026-01-01'})
         self.s.mutate('publisher.save',{'name':'PRIVATE_PUBLISHER'})
         with self.s.transaction():self.s.put('notes',{'id':'n1','card_id':self.c,'text':'PRIVATE_NOTE'})
-        recipe=self.p.prepare(self.c);self.assertEqual([a['number'] for a in recipe['members']],['1']);self.assertNotIn('PRIVATE',json.dumps(recipe));self.assertNotIn('ib',recipe)
+        recipe=self.p.prepare(self.c);self.assertEqual([a['number'] for a in recipe['members']],['1','3']);self.assertNotIn('saved_point',recipe['members'][1]);self.assertNotIn('floor',recipe['members'][1]);self.assertNotIn('PRIVATE',json.dumps(recipe));self.assertNotIn('ib',recipe)
     def test_publish_queue_stable_file_and_qr(self):
         self.enqueue();self.assertEqual(self.row()['status'],'queued');self.p.process_one();first=self.row();self.assertEqual(first['status'],'published')
         self.assertEqual(self.p.drive.uploads[0][0],self.png);self.assertNotIn('queued_png',first)
@@ -292,6 +328,26 @@ class SharingTests(unittest.TestCase):
         self.s.mutate('revision.approve',{'card_id':self.c,'side':'front'})
         Publications(self.s)
         self.assertFalse(self.s.get('cards',self.c)['front_revision'])
+    def test_public_saved_points_include_house_number_but_never_ib_metadata(self):
+        before=self.p.prepare(self.c)
+        with self.s.transaction():
+            self.s.put('ib',{'id':'fictional-ib','card_id':self.c,'address_id':'a2',
+                'road':'Fiktiv vej','number':'3','note':'PRIVATE_IB_NOTE','status':'PRIVATE_IB_STATUS'})
+        recipe=self.p.prepare(self.c)
+        members=recipe['members']
+        self.assertEqual([a['id'] for a in members],['a1','a2'])
+        self.assertNotIn('saved_point',members[0])
+        self.assertNotIn('saved_point',members[1])
+        self.assertEqual(members,before['members'])
+        self.assertEqual(members[1]['number'],'3')
+        self.assertEqual(members[1]['count'],1)
+        self.assertNotIn('floor',members[1])
+        self.assertNotIn('door',members[1])
+        self.assertNotIn('postcode',members[1])
+        self.assertNotIn('PRIVATE_IB_',json.dumps(recipe))
+        self.assertNotEqual(before['fingerprint'],recipe['fingerprint'])
+        self.assertEqual(recipe['render_revision'],RENDER_REVISION)
+
     def test_public_name_is_in_recipe_and_invalidates_changed_name(self):
         with self.s.transaction():
             c=self.s.get('cards',self.c);c['name']='Fiktivt bykort';self.s.put('cards',c)
@@ -308,17 +364,20 @@ class SharingTests(unittest.TestCase):
         self.assertTrue(self.row()['render_refresh']);self.assertFalse(upgraded.status()['cards'][0]['outdated'])
         self.enqueue_dates();self.assertFalse(self.row()['render_refresh'])
     def test_old_layout_keeps_qr_and_access_until_owner_approves_new_image(self):
-        self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url})
-        self.p.process_one();before=self.row();link=before['front_url']
+        recipe=self.p.prepare(self.c)
+        self.p.enqueue({'card_id':self.c,'fingerprint':recipe['fingerprint'],'png':self.url,
+            'render_revision':7,'date_updates':True,'date_fingerprint':recipe['date_fingerprint']})
+        self.p.process_one();before=self.row();link=before['front_url'];uploads=len(self.p.drive.uploads)
         upgraded=Publications(self.s)
         self.assertTrue(upgraded.status()['cards'][0]['render_refresh'])
         self.assertEqual(upgraded.front_links(),[{'card_id':self.c,'url':link}])
         self.assertEqual(self.row()['file_id'],before['file_id'])
         self.assertEqual(self.row()['status'],'published')
-        self.assertEqual(self.p.prepare(self.c)['render_revision'],7)
+        self.assertEqual(len(self.p.drive.uploads),uploads)
+        self.assertEqual(self.p.prepare(self.c)['render_revision'],RENDER_REVISION)
         self.enqueue_dates();self.p.process_one()
         self.assertEqual(self.row()['front_url'],link)
-        self.assertEqual(self.row()['render_revision'],7)
+        self.assertEqual(self.row()['render_revision'],RENDER_REVISION)
         self.assertFalse(Publications(self.s).status()['cards'][0]['render_refresh'])
     def test_previous_layout_keeps_link_without_automatic_upload(self):
         self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':5})
@@ -339,7 +398,7 @@ class SharingTests(unittest.TestCase):
         self.assertTrue(upgraded.front_links())
 
     def test_unknown_layout_revision_is_rejected_without_writes(self):
-        for revision in ('6',True,0,7):
+        for revision in ('6',True,0,RENDER_REVISION+1):
             with self.subTest(revision=revision),self.assertRaises(ValueError):
                 self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':revision})
         self.assertIsNone(self.row())

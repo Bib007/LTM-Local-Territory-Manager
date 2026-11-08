@@ -47,8 +47,11 @@ class RuntimeStatus:
         self.high_since=None;self.test_at=None;self.last_sent=None;self.failed=False;self.value=None
 
     def sample(self):
+        # Read Store-backed status before taking the bridge lock. App snapshots
+        # hold Store while reading this bridge; reversing that order deadlocks HA.
+        reading=self.pressure();task=self.schedule.status()
         with self.lock:
-            now=self.clock();reading=self.pressure();task=self.schedule.status()
+            now=self.clock()
             self.high_since=(now if self.high_since is None else self.high_since) if reading['high'] else None
             high=self.high_since is not None and now-self.high_since>=120
             bad=task.get('enabled') and task.get('status')=='waiting' and task.get('retry_streak',0)>=4 and task.get('retry_reason') not in ('pressure','budget')

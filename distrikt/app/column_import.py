@@ -3,7 +3,7 @@ from card_import import read_rows,ImportCell
 from ui_errors import UIError
 SCHEMAS={
  'card':[('card','Kortnummer',True),('area','Område',False),('name','Kortnavn',False),('kind','Distriktstype',False),('road','Vejnavn',False),('number','Husnummer / interval',False),('floor','Etage',False),('door','Dør',False),('postcode','Postnummer',False),('type','Adressetype',False),('count','Besøg',False)],
- 'ib':[('road','Vejnavn',True),('number','Husnummer / interval',True),('card','Kortnummer',False),('postcode','Postnummer',False),('floor','Etage',False),('door','Dør',False),('date','Dato (ÅÅÅÅ-MM-DD)',False)]}
+ 'ib':[('road','Vejnavn',True),('number','Husnummer / interval',True),('card','Kortnummer',False),('postcode','Postnummer',False),('floor','Etage',False),('door','Dør',False),('date','Dato eller datotekst',False)]}
 
 def schema(kind):
     if kind not in SCHEMAS:raise ValueError('Vælg Kort eller IB.')

@@ -1,6 +1,6 @@
 # Run LTM on your own computer
 
-Download the complete **LTM-v…zip** package from [the latest stable release](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), then extract it into a normal local folder. Install Python 3.9+ with SQLite. No runtime pip installation is needed. Native EXE/DMG installers are not currently included.
+Download the complete **LTM-v…zip** package from [the latest stable release](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/latest), then extract it into a normal local folder. Install Python 3.9+ with SQLite. No runtime pip installation is needed. For ordinary local use, Mac/Windows [native installers](NATIVE-INSTALLERS.md) include Python. This guide covers legacy Python packages and private servers.
 
 ## New installation
 

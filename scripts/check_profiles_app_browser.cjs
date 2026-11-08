@@ -1,5 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict'),path=require('node:path'),{spawn}=require('node:child_process'),{createInterface}=require('node:readline');
+async function openUsers(page){
+  await page.locator('#nav [data-navigation="2:2"]').click();
+  // Settings remembers its last tab. Leave any already-rendered users form
+  // before reopening it so the test waits for the freshly loaded role data.
+  await page.locator('[data-work=settings-tab][data-value=general]').click();
+  await page.locator('[data-work=settings-tab][data-value=users]').click();
+  await page.locator('#profileRole').waitFor();
+}
 const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
  const child=spawn(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/profiles_server.py')],{stdio:['ignore','pipe','inherit']});let browser;
@@ -11,13 +19,14 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   process.on('unhandledRejection',e=>console.error(e));
   async function newPage(width){const context=await browser.newContext({viewport:{width,height:900}});await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await context.route('**/*',route=>{assert.equal(new URL(route.request().url()).origin,fixture.origin,'Only the temporary local server is contacted');return route.continue();});const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));return page;}
   async function ready(page){await page.waitForFunction(()=>typeof state!=='undefined'&&state&&SaveStatus.kind==='saved');}
+  async function postponePersonalGuide(page){await page.waitForFunction(()=>typeof PersonalGuide!=='undefined'&&PersonalGuide.data!==null);const later=page.locator('[data-personal-guide=later]');if(await later.count()){await later.click();await page.waitForFunction(()=>!document.querySelector('#personalGuideTour'));}}
   async function login(page,name,password){await page.goto(fixture.origin);await page.locator('#loginName').fill(name);await page.locator('#loginPassword').fill(password);await page.locator('#loginForm button').click();await ready(page);const intro=page.locator('[data-profile=welcome-done]'),seen=!!await intro.count();if(seen)await intro.click();return seen;}
   const admin=await newPage(1440);watched=admin;await admin.goto(fixture.origin);await ready(admin);
   await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=users]').click();await admin.locator('[data-profile=activate]').click();
   await admin.locator('#profileActivate input[name=name]').fill('Fiktiv admin');await admin.locator('#profileActivate input[name=password]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=repeat]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=confirmation]').fill('AKTIVÉR PROFILER');await admin.locator('#profileActivate button').click();
-  await admin.locator('#loginName').waitFor();await login(admin,'Fiktiv admin','Fiktiv-password-123');
+  await admin.locator('#loginName').waitFor();await login(admin,'Fiktiv admin','Fiktiv-password-123');await postponePersonalGuide(admin);
   assert.equal(await admin.locator('.dashboardRing').count(),2,'Profile administrators retain the familiar home rings');assert.equal(await admin.locator('.dashboardTrend').count(),1,'Home retains the monthly comparison');assert.equal(await admin.locator('.reportOverview').count(),0,'Report layout stays off the home page');
-  await admin.locator('#nav [data-profile=admin]').click();await admin.locator('#profileRole input[name=name]').fill('Kortredaktør');
+  await openUsers(admin);await admin.locator('#profileRole input[name=name]').fill('Kortredaktør');
   for(const right of ['dashboard.view','cards.view','cards.edit','geo.view','notes.view','notes.edit','presence.view','settings.manage'])await admin.locator(`#profilePermissions input[value="${right}"]`).check();
   await admin.evaluate(()=>window.profileDraftNode=document.querySelector('#profileRole input[name=name]'));
   await admin.locator('#navigationLanguage').selectOption('en');
@@ -98,7 +107,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   let releaseOld,oldStarted,delayState=true;const oldReady=new Promise(r=>oldStarted=r),oldRelease=new Promise(r=>releaseOld=r);
   await editor.route('**/api/state',async route=>{if(delayState){delayState=false;const response=await route.fetch();oldStarted();await oldRelease;await route.fulfill({response});}else await route.continue();});
   await editor.evaluate(()=>{window.oldProfileRead=refresh().then(()=>false,()=>true);});await oldReady;
-  await admin.locator('#cardForm [data-action=close]').click();await admin.locator('#nav [data-profile=admin]').click();
+  await admin.locator('#cardForm [data-action=close]').click();await openUsers(admin);
   await admin.locator('#profileRole select').selectOption(role);await admin.locator('#profilePermissions input[value="cards.edit"]').uncheck();await admin.locator('#profilePermissions input[value="backup.notify"]').check();await admin.locator('#profileRole button').click();
   await admin.waitForFunction(()=>document.querySelector('#profileRole select')?.value==='');
   await editor.evaluate(()=>ProfilesUI.poll());
@@ -115,7 +124,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await editor.waitForFunction(()=>!WriteGuard.uncertain);
   assert.equal(await editor.evaluate(()=>state.notes.filter(n=>n.text==='Fiktiv afbrudt kvittering').length),1);
   assert.equal(await editor.evaluate(()=>state.notes.some(n=>n.text==='Må ikke sendes igen')),false);
-  if(await editor.locator('[data-personal-guide=later]').isVisible())await editor.locator('[data-personal-guide=later]').click();
+  await postponePersonalGuide(editor);
   await editor.locator('.mobileMenu').click();await editor.locator('[data-action=logout]').click();await editor.locator('#loginName').waitFor();
   await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=connections]').click();
   await admin.locator('#driveConnection').waitFor();assert.equal(await admin.locator('[data-profile=activate]').count(),0);assert.equal(await admin.locator('#profileUser').isVisible(),false);

@@ -1,9 +1,13 @@
-# LTM 1.12.3 · The familiar home dashboard is back
+# LTM 1.12.19 · Samlet Stable og fælles udgangspunkt for Beta
 
-This patch corrects a regression in 1.12.2: profile users were shown a report-style summary instead of their familiar home dashboard.
+Forbindelsesbackup virker nu også i Chrome via en lokal HTTP-adresse. Kryptering og dekryptering sker fortsat i browseren, med samme adgangskode og filformat som tidligere.
 
-- Users with the existing detailed overview permissions again see the original home dashboard: card-location and service-year coverage rings, shortcuts, metrics, monthly comparison and follow-ups.
-- Summary-only accounts get the familiar home presentation using permitted aggregate totals. Private cards, names, notes and histories remain protected.
-- The three-period report stays on the Reports page. Existing roles, guides, imports and saved language choices are preserved.
+Læsearkivets forsider dannes fra den normale printvisning. Husnumre og streger kan slås fra i Drive-forhåndsvisningen; alle røde prikker bevares, og et ændret billede skal godkendes igen.
 
-Update the existing installation while preserving its data directory. Keep a private data backup and, when profiles are enabled, a separate account backup. Original printed forms are unchanged.
+Ændringshistorikken og 48-timers gendannelse viser brugeren bag nye handlinger. Backup foreslår Gem som, når browseren understøtter det. Gamle Tally-links er fjernet fra appmenuen.
+
+Mac- og Windows-apps kan installeres direkte fra DMG/Setup.exe uden separat Python. Eksisterende data bevares. Pakkerne er usignerede og kan kræve den sædvanlige første godkendelse. Luk LTM før opdatering. macOS: åbn den DMG, der passer til Intel eller Apple Silicon, og træk LTM til Programmer. Windows: kør Setup.exe.
+
+Home Assistant har en Supervisor-kontrol af, at porten svarer. Den erstatter ikke kontrol af eksterne tjenester. Mac-serveren afventer fortsat sin særskilte fysiske LAN/VPN-prøve.
+
+Beta opdateres til samme funktioner under 1.12.19-beta.1 med egne data og eget login. Fremtidige ændringer afprøves på Beta først. Genindlæs browseren efter opdatering.

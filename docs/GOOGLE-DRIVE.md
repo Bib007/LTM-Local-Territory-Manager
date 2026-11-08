@@ -2,15 +2,15 @@
 
 [English](GOOGLE-DRIVE.en.md) · [Detaljeret dansk kontoguide](../distrikt/GOOGLE-DRIVE-OPSAETNING.md)
 
-LTM fungerer uden Google. Forbindelsen er kun nødvendig, hvis gennemgåede PNG-kort skal deles med et stabilt QR-link. Alle med linket kan se billedet uden Google-login.
+LTM fungerer uden Google. Forbindelsen er kun nødvendig, hvis gennemgåede kort-PDF’er skal deles med et stabilt QR-link. Alle med linket kan se PDF-filen uden Google-login.
 
 Databaser, forkyndere, udleveringer, noter og IB-liste uploades ikke af funktionen. Kortets synlige geografi og tilladte besøgspunkter er en del af billedet. Gennemgå derfor hele previewet.
 
-## Digitalt kort i beta.12
+## Digitalt kort og printforside
 
-Fra beta.12 har kortbilledet et nyt layout med tydeligt kortnummer/navn, stor kortflade og en lille miniature af printforsiden i hjørnet. Miniaturen bruger den samme blanke S-12-forside og samme vejlinjeformatering som printet, men bygges kun af de offentligt godkendte adresser. Den kopierer ikke et billede af dit private kort. IB-oplysninger, noter og kortholderdata indgår ikke.
+Fra Stable v1.12.16 deler LTM én PDF med to sider. Side 1 viser det digitale vejkort, kortnummer, navn, optælling og datoer. Side 2 viser den læsbare printforside med ombrudte vejlinjer. Adresseprikkerne er ens røde. IB-listen hører til på papirkortets bagside.
 
-Eksisterende QR-links og adgangscyklus bevares. Et ældre layout markeres under Deling og QR; vælg **Opdater Google Drive-upload**, kontrollér hele billedet og miniaturen, og godkend publicering. Layoutopdateringen starter ikke upload af sig selv. QR-linket åbner fortsat et PNG-billede på Google Drive; der oprettes ingen ny offentlig hjemmeside.
+Vælg **Opdater Google Drive-upload** og gennemse begge sider, før du godkender. LTM sender PDF’en som en ny revision af Drive-filen, hvis den allerede findes. Kontrollér det aktuelle Drive-link, før du trykker QR-koder. Datoopdateringer bruger den samme godkendte printforside.
 
 ## 1. Opret egen Google-klient
 
@@ -74,3 +74,9 @@ Ved flytning beholdes samme Google-konto og klient, hvis QR-links skal bevares. 
 - [Udløb af refresh-tokens](https://developers.google.com/identity/protocols/oauth2#expiration)
 - [Drive-scopes](https://developers.google.com/workspace/drive/api/guides/api-specific-auth)
 - [Fildeling](https://developers.google.com/workspace/drive/api/guides/manage-sharing)
+
+## Kortforside og samlet godkendelse
+
+Drive-PDF’ens side 2 bruger samme printskabelon og vejinddeling som almindeligt print. Opdatér kortets Drive-upload og kontrollér begge sider for at erstatte den tidligere forside. Efter print kan du vælge »Godkend printede sider i appen« og godkende de kontrollerede for- og bagsider samlet. En ændret side kræver nyt print. Det gælder også ved »Print alle«. Ingen sider godkendes automatisk.
+
+I forhåndsvisningen kan du slå **Vis husnumre og streger på kortet** til/fra. Alle røde prikker bevares. Valget ændrer kun det nye billede; godkend det igen før upload. PDF-læsearkivets forsider bruger nu samme printvisning som de almindelige kort.

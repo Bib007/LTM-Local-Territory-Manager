@@ -38,6 +38,8 @@ def unit(row):return row['number']+(', '+' '.join(row.get(k,'') for k in ('floor
 
 def preview(store,data):
     from store import valid_day,clean_text
+    address_mode=data.get('address_mode','local')
+    if address_mode not in ('local','manual'):raise ValueError('Vælg manuelle IB-linjer eller match med kortets gemte adresser.')
     if 'column_map' in data:
         from column_import import normalized_rows
         source=normalized_rows(data,'ib')
@@ -74,7 +76,7 @@ def preview(store,data):
             requested=norm(v.get('card'))
             if requested and requested not in by_number:raise ValueError('Kortnummeret findes ikke.')
             chosen=by_number[requested] if requested else by_id.get(fallback)
-            candidates=lookup.get((norm(road),norm(v['number']),postcode,norm(v.get('floor')),norm(v.get('door'))),[]) if postcode else []
+            candidates=lookup.get((norm(road),norm(v['number']),postcode,norm(v.get('floor')),norm(v.get('door'))),[]) if postcode and address_mode=='local' else []
             if chosen:candidates=[(c,a) for c,a in candidates if c['id']==chosen['id']]
             if len(candidates)==1:
                 c,a=candidates[0];record={'card_id':c['id'],'address_id':a['id'],'road':a['road'],'number':unit(a),'postcode':postcode}
@@ -83,10 +85,23 @@ def preview(store,data):
                 c=chosen;record={'card_id':c['id'],'road':road,'number':number,'postcode':postcode}
                 row['warnings'].append('Manuel IB-linje på det valgte kort. Adressen er ikke knyttet til en geografisk adresse; kontrollér vej, husnummer og lejlighed.')
             if not postcode:row['warnings'].append('Postnummer mangler. Der gættes ikke et postnummer.');record['missing_fields']=['postcode']
-            record['date']=valid_day(v.get('date') or default_day)
+            entered_date=v.get('date') or default_day
+            if len(entered_date)>60:raise ValueError('Datoteksten må højst være 60 tegn.')
+            # A month, year or handwritten note is not an exact calendar day.
+            # Preserve it literally instead of inventing a day for the card.
+            if re.fullmatch(r'\d{4}-\d{2}-\d{2}',entered_date):
+                record['date']=valid_day(entered_date)
+            else:
+                if (re.fullmatch(r'\d{4}-\d{2}-\d{2}.*',entered_date) or
+                    re.fullmatch(r'\d{1,2}[./-]\d{1,2}[./-]\d{4}',entered_date) or
+                    re.fullmatch(r'\d{4}[./]\d{1,2}[./]\d{1,2}',entered_date)):
+                    raise ValueError('Kontrollér den præcise dato i ÅÅÅÅ-MM-DD-format.')
+                record['date']=''
+                record['date_text']=entered_date
+                row['warnings'].append('Datoen er fri tekst. Kontrollér teksten på IB-bagsiden før import.')
             key=(c['id'],norm(record['road']),norm(record['number']))
             duplicate=key in seen or any(i['card_id']==c['id'] and (record.get('address_id') and i.get('address_id')==record['address_id'] or norm(i['road'])==key[1] and norm(i['number'])==key[2]) for i in existing)
-            row.update(status='existing' if duplicate else 'new',card_number=c['number'],label=record['road']+' '+record['number'],date=record['date'],record=record)
+            row.update(status='existing' if duplicate else 'new',card_number=c['number'],label=record['road']+' '+record['number'],date=record.get('date_text') or record['date'],record=record)
             seen.add(key)
         except (ValueError,TypeError,KeyError) as error:row.update(error_payload(error))
         rows.append(row)

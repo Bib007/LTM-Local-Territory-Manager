@@ -1,10 +1,24 @@
 name: Platformskontrol
 on:
   pull_request:
-    paths: ['distrikt/**', '.github/workflows/platforms.yml']
+    paths:
+      - 'distrikt/**'
+      - '.github/workflows/platforms.yml'
+      - '.gitattributes'
+      - 'docs/CHANGELOG.md'
+      - 'scripts/build_release.py'
+      - 'scripts/build_tracks.py'
+      - 'scripts/test_build_tracks.py'
   push:
     branches: [main, develop]
-    paths: ['distrikt/**', '.github/workflows/platforms.yml']
+    paths:
+      - 'distrikt/**'
+      - '.github/workflows/platforms.yml'
+      - '.gitattributes'
+      - 'docs/CHANGELOG.md'
+      - 'scripts/build_release.py'
+      - 'scripts/build_tracks.py'
+      - 'scripts/test_build_tracks.py'
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -16,10 +30,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        # ARM hosted capacity prevented job acquisition; retain the same macOS smoke checks on Intel.
+        os: [macos-15-intel, windows-latest]
     env:
       PYTHONUTF8: '1'
     steps:
+      - name: Use Windows release checkout line endings
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf true
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
@@ -28,6 +46,9 @@ jobs:
       - run: python -m unittest discover -s distrikt/tests -p test_launcher.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_start_guide.py -v
       - run: python -m unittest discover -s distrikt/tests -p test_lan.py -v
+      - name: Build and verify release-track ZIPs without publishing
+        if: runner.os == 'Windows'
+        run: python -m unittest discover -s scripts -p test_build_tracks.py -v
   home-assistant:
     name: Home Assistant amd64
     runs-on: ubuntu-latest

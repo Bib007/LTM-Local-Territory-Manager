@@ -1,6 +1,22 @@
 # Ønskeliste og nye opgaver
 
-## Current candidate — 1.12.2
+## Current 1.12.5 candidate — critical Drive requests
+
+The actual Drive Wishlist was reread after the owner's reminder. Full public request wording and priorities are in [the carried input](DRIVE-INPUT-2026-11-02.en.md); private guide material remains only in Drive. Six new tracked wishes bring the ledger to 133. After verified 1.12.4, 116/133 are completed/clarified (87%), 17 open. New wishes are not counted as delivered.
+
+W130 preserves year-only, month/year and literal IB wording in imports and manual creation. W131 adds reviewed DAR address and outline suggestions from existing street lines. Both are implemented for 1.12.5 with fictional tests; publication is not yet claimed. W129 adds relevant repository topics. W132 clears transferred inbox text only after the full source and priority are preserved and checked. The existing illustrated README is retained.
+
+W128 international sources and English original forms, W74 native installers/updating, and the private post-release guide remain separately scheduled. No new broad security scan, OCR or automatic territory division is started.
+
+## Historical 1.12.4 candidate — now released
+
+W119 task responsibility and W116 manual redistribution are implemented with explicit previews, whole-unit validation, atomic do-not-call movement, latest-date scheduling references and an interim-card issue/return/finalize workflow. Completion events and S-13 history remain intact. Role changes do not follow an assignment. [Responsibility](../TASK-RESPONSIBILITY.en.md) · [Redistribution](../SPLIT-SUGGESTIONS.en.md).
+
+The W58 interface-label review covers declared labels, instructions, placeholders, accessibility labels and maintenance controls. English remains the default for new users; Danish and saved choices remain. Original forms, user content and external diagnostics retain their language. The readable W65 conflict presentation is included; the owner's remaining visual feedback is optional.
+
+Stable 1.12.4 was released from `9c0c76df056f5d6e8e1546944b6dd882b209ae8b`; all release gates succeeded and the public ZIP/SHA match the exact tested package. The earlier candidate notes below are historical; no new security audit or automatic territory division has been started.
+
+## Historical candidate — 1.12.2
 
 Beta.83 is verified publicly released; see [exact verification](BETA-83-VERIFICERING.md). W121/W123 roles/guides, W127 column import, fictional two-role demo and English-first entry documentation are now integrated in the local stable candidate. Original printed forms remain unchanged. The separate bilingual website is live at https://localterritorymanager.netlify.app. Final release checks/publication are in progress; stable1.12.2 is not yet reported released. Historical status below is retained.
 
@@ -355,7 +371,7 @@ W102 er afsluttet: Datafordeleren administreres under Indstillinger → Forbinde
 
 Validering: 488 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver og faktisk arkivstart består. Lokale browserprøver dækker sletning på samme side uden ekstra oversigts-/geodatakald, nøgleformular/genvej og tomt nøglefelt uden ekstra validering, sprog, mobil/desktop, korteditor, opstartsguide, login i begge temaer, natlig adressekontrol og demo. En ekstra virkelig HTTP-/browserprøve mod en midlertidig opdigtet installation gennemfører både permanent sletning og noteoprettelse fra svarenes oversigter uden menuskift, genindlæsning eller eksterne kald. CI på den præcise udgivelsescommit dækker også WebKit, Windows, Mac, HA og sikkerhed. Kandidatkontrollen fangede henvisninger til den gamle formularplacering: kortprøven blev opdateret, og opstartsguidens rigtige genvej blev flyttet og prøvet før udgivelse. De tidligere kandidater blev ikke udgivet.
 
-Ejerafklaring: W92 om versionsnummer i Tally er udgået. W84 er en privat iPhone/VPN-huskenote, ikke en appfunktion. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt og skal ikke afklares igen. Samtidighed og eventuelle konfliktvalg behandles samlet med profiler. Den generelle synkroniseringsafvisning forbliver pauset; grenoprydning er fortsat udsat.
+Ejerafklaring: W92 om versionsnummer i hjemmesidens feedbackformular er udgået. W84 er en privat iPhone/VPN-huskenote, ikke en appfunktion. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt og skal ikke afklares igen. Samtidighed og eventuelle konfliktvalg behandles samlet med profiler. Den generelle synkroniseringsafvisning forbliver pauset; grenoprydning er fortsat udsat.
 
 Fremdrift efter levering og tre nye ønsker: 87/103 afsluttet/afklaret, 16 åbne, cirka 84 %. W93/W102 er afsluttet. W101 er undersøgt og forbliver åben til valg af adfærd. W103 om overlappende kortgrænser er modtaget under udgivelseskontrollen og planlagt til næste runde; W85/foto-OCR og IB-billeder er fortsat åbne. Den aktuelle oversigt går foran historiske kandidatstatusser nedenfor.
 
@@ -391,7 +407,7 @@ Beta.67 leverer et afgrænset deltrin af W85: højst 20 Excel/CSV-kortfiler i en
 
 OCR-afklaringen: HA-pakken indeholder aktuelt kun Python, ingen OCR-motor. Næste trin skal vælge og pakke lokal genkendelse til HA/Mac/Windows, validere billedformater/størrelse/orientering og vise redigerbare forslag før kort-/IB-match og eksplicit godkendelse. Prøvegrundlaget skal bruge fiktive for-/bagsider, usikre tegn, flere layouts og dubletter. Ingen ekstern AI eller billedoverførsel til cloud indføres som genvej.
 
-W92 undersøgt: Tally dokumenterer forudfyldning via et faktisk konfigureret hidden field og koblet standardværdi (https://tally.so/help/pre-populate-form-fields). Den konkrete formular https://tally.so/r/KpY0ZV kunne ikke læses (HTTP 403/ikke tilgængelig). Feltnavn og kobling er derfor ikke verificeret. Intet gættet versionsparameter er tilføjet; W92 er fortsat åben. Ingen private data eller formularindsendelser er brugt i undersøgelsen.
+W92 undersøgt: hjemmesidens feedbackformular dokumenterer forudfyldning via et faktisk konfigureret hidden field og koblet standardværdi (https://localterritorymanager.netlify.app/da/feedback/). Den konkrete formular https://localterritorymanager.netlify.app/da/feedback/ kunne ikke læses (HTTP 403/ikke tilgængelig). Feltnavn og kobling er derfor ikke verificeret. Intet gættet versionsparameter er tilføjet; W92 er fortsat åben. Ingen private data eller formularindsendelser er brugt i undersøgelsen.
 
 Beta.66 er verificeret udgivet fra `80f3258af1acf2febacd2016d5c2ae86603d6551`, træ `b08bb38ccebd5bc2f93f801b30cd7e868a054936`. HA beta release 40012949488, Checks 40012949416 og Platformskontrol 40012949441 er alle completed/success. Den offentlige HA-beta ZIP har 121 filer, 1.186.440 bytes og SHA256 `5df1b2a5f22a804d4f2ec356fb39d4a5338ac86586140582422404c86f0e4639`, identisk med den lokale pakke. Betakanalen viser 1.12.2-beta.66 på port 8788. W94/W95 er afsluttet. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.66).
 
@@ -426,7 +442,7 @@ Stabil 1.12.1 er udgivet med rettelsen af W89 og seks dokumenter flyttet fra rod
 | --- | --- | --- |
 | W90 | Mere hvid/udfadet baggrund på digitale kort | Første samlede beta. Bevar tydelige prikker, numre, grænse og aktiv godkendelse før ændring af allerede delte billeder. |
 | W91 | Gentagende opgaver og korrekt opgavetæller | Første samlede beta. Udført fører allerede ugentlige opgaver videre med historik. Tæl fremtidige opgaver først fra forfaldsdagen, og forklar gentagelsen. Almindelige åbne opgaver tæller fortsat. |
-| W92 | Automatisk LTM-version i Tally | Udgået efter ejerens valg 24.10.2026. Feedbackformularen og det almindelige link bevares. |
+| W92 | Automatisk LTM-version i hjemmesidens feedbackformular | Udgået efter ejerens valg 24.10.2026. Feedbackformularen og det almindelige link bevares. |
 | W93 | Langsom gemning/permanent sletning | Undersøg med fiktiv reproduktion, også om menuskift blot viser en allerede gemt handling. Bevar slettebekræftelse, atomisk lagring og usikker-resultatbeskyttelse. |
 | W94 | Én Import-fane under Indstillinger | Flyt indgange til S-13/historik, kort og IB. Bevar importforhåndsvisninger og validering. Samles med relevant importarbejde. |
 | W95 | Samlet Opfølgninger | Flyt Kortkontrol, Kort med ændrede sider og relevante genprintpunkter. Hvert forhold har egen linje og tæller, også flere på samme kort. Undgå dublering. |
@@ -493,7 +509,7 @@ Stabil klargøring er nu CI-verificeret på `b62557c3854d67757ca04515ad6c7c183b4
 
 Ejeren bekræfter, at API-adressehentningen virker. W78 afsluttes efter denne konkrete HA-prøve; hastigheden er fortsat oplevet langsom. Den generelle HA-prøve er allerede bekræftet og bestilles ikke igen. Ejeren oplyser også, at LTM-demoen ser fin ud; første åbning er dermed ejerbekræftet (W12). Dette er ikke en samlet kontrol af demosynkronisering (W37), print, QR eller separat gendannelse. Efter genforbindelsesvejledningen skriver ejeren “så kører vi”; ingen særskilt prøve af gamle Drive-billeders adgang er dokumenteret.
 
-W23-opfølgning før stabil: Forkort menupunktet Idéer og feedback til titel og én kort linje om, at tekst/billeder gemmes hos Tally. Bevar formularlink og dansk/engelsk. De øvrige forklaringer findes i formularen. Ændringen er klargjort på develop til kommende udgivelse; den ændrer ikke den allerede udgivne beta.61.
+W23-opfølgning før stabil: Forkort menupunktet Idéer og feedback til titel og én kort linje om, at tekst/billeder gemmes hos hjemmesidens feedbackformular. Bevar formularlink og dansk/engelsk. De øvrige forklaringer findes i formularen. Ændringen er klargjort på develop til kommende udgivelse; den ændrer ikke den allerede udgivne beta.61.
 
 ### W82 · Løbende status under adressehentning · efter næste stabile udgivelse
 
@@ -519,7 +535,7 @@ Senest fuldt verificerede udgivelse er beta.60 fra runtime-commit 16e9e2c5138560
 
 W72 er afsluttet i beta.55 (lille Drive-logo), W73 i beta.56 (natlig adressekontrol), W76/W77 i beta.57 (direkte DAR-udsnit og asynkrone kortforslag), W75 i beta.58 (touchbetjening og mobilgennemgang). Rigtig natlig HA-/Datafordeler-kørsel, ejerens samme problemudsnit/inddeling samt fysisk iPhone/iPad med skærmtastatur er fortsat særskilte ejerprøver; der er ikke brugt private ejerdata i udviklingskontroller.
 
-Fremdrift efter beta.60 og det nye W81: 81 registrerede ønsker, 66 afsluttet/afklaret, 15 åbne, cirka 81 %. Fast plan er afsluttet (10/10). Beta.59 med Tally-link er verificeret udgivet. W23 er afsluttet. W37/W12 webdemo er fortsat åben med den tidligere adgangsbegrænsning. Egen hosting og nye installationsvejledninger i W74 venter til næste stabile udgivelse efter ejerens ønske.
+Fremdrift efter beta.60 og det nye W81: 81 registrerede ønsker, 66 afsluttet/afklaret, 15 åbne, cirka 81 %. Fast plan er afsluttet (10/10). Beta.59 med hjemmesidens feedbackformular-link er verificeret udgivet. W23 er afsluttet. W37/W12 webdemo er fortsat åben med den tidligere adgangsbegrænsning. Egen hosting og nye installationsvejledninger i W74 venter til næste stabile udgivelse efter ejerens ønske.
 
 Nye ønsker W78/W79/W80 fra Google-planen er registreret 21.10.2026 og samlet til beta.60. Med W81 er der nu 81 ønsker. W78 forbliver åben til ejerens konkrete HA-hentning er bekræftet; fiktive fejlprøver kan dokumentere genforsøg, ikke hjemmenetværkets årsag. W79/W80 er afsluttet i beta.60. W78 er fortsat åben for den konkrete ejerprøve. W16, W58 og W74 forbliver parkeret som aftalt.
 
@@ -541,7 +557,7 @@ W75-kontrol: de faktiske daglige touchforløb består i Chromium og WebKit ved 3
 
 W76/W77-kontrol: 469 Python-prøver (én forventet overspringning), JavaScript, faktisk asynkront browserforløb, pakker, Mac, Windows og HA består. Beta.57 fra b7161bd59031cd9ef9fe391addc7db00cee04afc har HA-ZIP-SHA256 ed00025c688a1edb67464862acf419f666063fb67eb07afe6c313b2f36d30cab. Særskilt Windows-opstartsprøve fejlede først på forsinket start uden programdiagnostik; samme test bestod i HA-gaten og derefter i gentaget særskilt job uden kodeændring. Tests er bevaret. En 30-sekunders klienttidsgrænse kan forklare ejerens forbindelsesfejl; dette er udledt fra koden, ikke reproduceret med private data. Vejnetalgoritmerne er ikke ændret.
 
-W23: Ejerens Tally-formular https://tally.so/r/KpY0ZV er oprettet 21.10.2026. En faktisk fiktiv tekstindsendelse er modtaget i arbejdsrummet; ejeren har bekræftet privat browservindue og billedprøve. Dansk validering, fire nødvendige felter, valgfrie bilag, præcise billedtyper og højst tre filer er kontrolleret i opsætningen. Beta.59 kobler formularen på menupunktet med synlig Tally-/dataoplysning og uden automatisk overførsel af lokale oplysninger. Ingen ejeridentitet, svar eller bilagsadresse lægges i koden. Specifikation og prøvestatus: docs/FEEDBACK-UDEN-KONTO.md.
+W23: Ejerens hjemmesidens feedbackformular-formular https://localterritorymanager.netlify.app/da/feedback/ er oprettet 21.10.2026. En faktisk fiktiv tekstindsendelse er modtaget i arbejdsrummet; ejeren har bekræftet privat browservindue og billedprøve. Dansk validering, fire nødvendige felter, valgfrie bilag, præcise billedtyper og højst tre filer er kontrolleret i opsætningen. Beta.59 kobler formularen på menupunktet med synlig hjemmesidens feedbackformular-/dataoplysning og uden automatisk overførsel af lokale oplysninger. Ingen ejeridentitet, svar eller bilagsadresse lægges i koden. Specifikation og prøvestatus: docs/FEEDBACK-UDEN-KONTO.md.
 
 W12: lokal browserforbindelse svarede ikke ved opstart. Den efterfølgende offentlige live-kontrol af demoen i cloud-browser blev afvist af browserens origin-adgangskontrol, fordi tilladelse ikke blev givet. Ingen alternativ browser-/netværksvej er forsøgt efter afvisningen. Første levende åbning er derfor stadig ikke verificeret. W37-demosynkronisering er fortsat åben.
 
@@ -661,7 +677,7 @@ Beta.31 er udgivet og verificeret med kun W49 og W59. W49 bevarer det eksisteren
 | W26 | Rundturen er en obligatorisk del af opsætningen, og opsætningen lukkes efter fuldført rundtur | 2 | Udgivet i beta.23 med grønne program-, platform- og HA-gates | Førstegangsforløbet kan ikke markeres fuldført ved kun at gemme svar. Rundturens sidste trin afslutter forløbet og viser appen/den personlige opgaveliste uden at genåbne guiden. Afbrydelse kan genoptages; eksisterende registreringer og tidligere fuldført opsætning bevares. |
 | W27 | Følg op på adresseimport, januarfristen og egen API-nøgle | 3 | Afsluttet i beta.68: officielle kilder og dansk/engelsk guide genkontrolleret 24.10.2026; ejerens fungerende hentning er tidligere bekræftet | Genkontrollér aktuelle officielle kilder og den eksisterende GraphQL-import/nøglevejledning. Forklar konkret hvad der er klar, hvad ejeren skal oprette, og hvilke kontoprøver der udestår. Ingen adgangsnøgler indsamles i chat/GitHub. |
 | W24 | Redesign af det digitale QR-kort med moderne udseende og lille miniature af kortets printforside | 3 | Udgivet i beta.12; fiktiv visuel SVG/PNG-kontrol og program-/platform-/HA-gates består; egen HA/Drive-prøve udestår | QR-kortet får en tydelig moderne præsentation og en lille visning af det tilsvarende printkort i hjørnet. Vejnavne/layout genbruges fra printforsiden. Ingen IB eller andre private registreringer må indgå. |
-| W23 | Idéer og feedback uden konto eller e-mail | 10 | Afsluttet i verificeret beta.59; formular og ejerprøve bekræftet | Tally med valgfrie billedbilag og indholdsbekræftelse. Ingen automatisk overførsel af lokale data eller offentlig kopiering til GitHub. |
+| W23 | Idéer og feedback uden konto eller e-mail | 10 | Afsluttet i verificeret beta.59; formular og ejerprøve bekræftet | hjemmesidens feedbackformular med valgfrie billedbilag og indholdsbekræftelse. Ingen automatisk overførsel af lokale data eller offentlig kopiering til GitHub. |
 | W20 | Ret opsætningsguidens valgfelter, hvor teksten står ved siden af boksen med knapper | 5 | Udgivet i beta.5 med grønne program/platform/HA-gates; offline layout og guideprøver består | Valg og forklaring holder sig i samme boks ved mobil- og skrivebordsbredder. |
 | W21 | Nulstil betadata, så en test kan begynde forfra | 2 | Færdig og udgivet i beta.2; program-, platform- og HA-kontroller består | Tydelig bekræftelse, sikkerhedskopi og ny opstart; stabil installation berøres ikke, og offentlige kort må ikke efterlades uden registrering. |
 | W22 | Fast topbar under rulning og logo som link til forsiden | 4 | Udgivet i beta.3, samlet med W04/W03; program/platform/HA-gates består | Topbaren bliver på plads, indhold dækkes ikke, og logoet åbner forsiden med appens sædvanlige kontrol af ugemte ændringer. |

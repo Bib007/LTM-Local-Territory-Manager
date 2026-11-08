@@ -16,6 +16,7 @@ import ipaddress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import TCPServer
 from pathlib import Path
+from resource_paths import app_dir
 from urllib.parse import parse_qs, urlsplit
 from store import Store, MODULES
 from pdf_export import s13_pdf
@@ -32,10 +33,13 @@ from ui_errors import UIError,error_payload
 from profile_accounts import ProfileAccounts
 from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
+from connection_backup import export as export_connections,restore as restore_connections
 
-APP=Path(__file__).resolve().parent
-VERSION='1.12.3'
+APP=app_dir()
+VERSION='1.12.19-beta.1'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
+
+if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
@@ -94,6 +98,7 @@ class Server(ThreadingHTTPServer):
                 return self.profiles.state(profile_token,result)
             from profile_features import summaries
             result['dashboard_summary']=summaries(result);result['report_summary']=result['dashboard_summary']
+            result['boundary_report']=self.store.boundary_report()
             result['profiles_available']=True
             return result
 
@@ -154,13 +159,17 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                     if profile:login=login.replace('<label for="loginPassword"', '<label for="loginName" data-ui="Brugernavn">Brugernavn</label><input id="loginName" name="name" autocomplete="username" maxlength="100" required><label for="loginPassword"')
                     return self.send(login.encode(),'text/html')
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.profiles.csrf(self.profile_token()) if profile else self.server.token)
+                if self.server.beta and '<b>LTM</b>' in html:html=html.replace('<b>LTM</b>','<b>LTM Beta</b>').replace('<body>','<body class="betaChannel">')
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/workspace.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/workspace.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
-            if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
+            if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path=='/s12-template-en.png':return self.send((APP.parent/'templates'/'S-12-E-source.png').read_bytes(),'image/png')
+            if path=='/s13-background-en.jpg':return self.send((APP.parent/'templates'/'S-13-E-background.jpg').read_bytes(),'image/jpeg')
+            if path in ('/forms/S-12-en.pdf','/forms/S-13-en.pdf'):return self.send((APP.parent/'templates'/('S-12-E.pdf' if 'S-12' in path else 'S-13-E.pdf')).read_bytes(),'application/pdf')
             if path=='/s12-template.png':return self.send((APP.parent/'templates'/'S-12-source.png').read_bytes(),'image/png')
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
@@ -189,7 +198,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 return self.send(self.server.app_state(self.profile_token()))
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/runtime/status':return self.send(self.server.runtime_status.status())
-            if path=='/api/activity':return self.send({'items':self.server.store.activity()})
+            if path=='/api/activity':return self.send({'items':self.server.profiles.authors(self.server.store.activity())})
             if path=='/api/map':
                 with self.server.store.lock:
                     m=self.server.store.get('maps','background')
@@ -197,9 +206,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path=='/api/export/s13':
                 year=int(q.get('year',['0'])[0])
                 if not 2000<=year<=2200:raise ValueError('Ugyldigt tjenesteår.')
-                return self.send(s13_pdf(self.server.store.state(),year),'application/pdf')
+                return self.send(s13_pdf(self.server.store.state(),year,q.get('language',['da'])[0]),'application/pdf')
             if path=='/api/export/backup':return self.send(snapshot(self.server.store,VERSION),'application/zip',headers={'Content-Disposition':'attachment; filename="Distrikt-sikkerhedskopi.zip"'})
             if path=='/api/address-source/status':return self.send(self.server.address_source.status())
+            if path=='/api/connections/backup':return self.send(export_connections(self.server),headers={'Cache-Control':'no-store'})
             if path=='/api/connections/drive':
                 status=self.server.sharing.status()
                 return self.send({key:status.get(key) for key in ('connected','account')})
@@ -289,6 +299,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                         result=self.server.restores.apply(data.get('token'));self.server.profiles.bases.clear()
                         return self.send(result)
             if self.path=='/api/address-source/connect':return self.send(self.server.address_source.connect(data.get('api_key')))
+            if self.path=='/api/connections/restore':return self.send(restore_connections(self.server,data.get('backup'),data.get('confirmation')))
             if self.path=='/api/address-source/check':return self.send(self.server.address_source.check())
             if self.path=='/api/address-source/diagnose':
                 from dar_diagnostic import diagnose
@@ -337,7 +348,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                             mutation(self.profile_user,data.get('action'),data.get('data',{}),self.server.store)
                             if data.get('action')=='address.task.configure':result=self.server.address_schedule.configure(data.get('data',{}))
                             else:result,editor_snapshot=self.server.profiles.mutate(self.profile_token(),self.profile_user,data.get('action'),data.get('data',{}),data.get('profile_snapshot'))
-                        else:result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
+                        else:
+                            if data.get('action')=='note.save' and 'assignee_id' in data.get('data',{}):
+                                raise ValueError('Aktivér brugerprofiler for at vælge en ansvarshavende.')
+                            result=(self.server.address_schedule.configure(data.get('data',{})) if data.get('action')=='address.task.configure' else self.server.store.mutate(data.get('action'),data.get('data',{})))
                         response={'ok':True,'result':result,'revision':self.server.store.revision,
                             'geo_changed':getattr(self.server.store,'geo_generation',0)!=generation}
                         if editor_snapshot:response['profile_snapshot']=editor_snapshot
@@ -396,7 +410,16 @@ def acquire_lock(path):
     except OSError:stream.close();return None
 
 def main(argv=None):
-    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
+    previous=os.environ.get('LTM_CHANNEL')
+    if '-beta.' in VERSION:os.environ['LTM_CHANNEL']='beta'
+    try:return _main(argv)
+    finally:
+        if previous is None:os.environ.pop('LTM_CHANNEL',None)
+        else:os.environ['LTM_CHANNEL']=previous
+
+
+def _main(argv=None):
+    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--language',choices=('da','en'),help='Installer language for a new browser profile');p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
     if args.bind:
         try:address=ipaddress.IPv4Address(args.bind)
         except ValueError:raise ValueError('Vælg en privat IPv4-adresse til serveren.') from None
@@ -414,13 +437,14 @@ def main(argv=None):
             info=None
         if not info:
             log=open(data/'start.log','a')
-            subprocess.Popen([sys.executable,str(APP/'server.py'),'--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
+            command=([sys.executable] if getattr(sys,'frozen',False) else [sys.executable,str(APP/'server.py')])
+            subprocess.Popen(command+['--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
             for _ in range(60):
                 info=running(data)
                 if info:break
                 time.sleep(.1)
         if not info:raise RuntimeError('Appen kunne ikke starte. Se start.log i datamappen.')
-        if not args.no_browser:webbrowser.open(info['url'])
+        if not args.no_browser:webbrowser.open(info['url']+('?ltm_start_language='+args.language if args.language else ''))
         print('Distrikt er startet: '+info['url']);return
     if info:return
     lock=acquire_lock(data/'app.lock')

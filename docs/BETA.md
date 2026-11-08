@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Betaer samler flere sammenhængende forbedringer, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
+Stable 1.12.19 og Beta 1.12.19-beta.1 har samme funktioner. Fremover afprøves nye ændringer på Beta først. Betaer samler flere sammenhængende forbedringer, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
 
 ## Installer betakanalen én gang
 
@@ -23,7 +23,7 @@ Vælg **Kontrollér for opdateringer** i HA's appbutik, og opdater **Distrikt Be
 
 Start med opdigtede prøveoplysninger. Brug en særskilt Google-konto til Drive-prøver: en beta med rigtige filnumre og den samme Google-konto kan ellers ændre delingen af de rigtige kortbilleder. Google-forbindelsen kopieres ikke fra den stabile app.
 
-Se [betaudgivelserne](https://github.com/Bib007/LTM-Local-Territory-Manager/releases) for versionsnummer og de få ting, som skal prøves i netop den beta. Fejl og idéer beskrives via appens feedbacklink til Tally med opdigtede eksempler.
+Se [betaudgivelserne](https://github.com/Bib007/LTM-Local-Territory-Manager/releases) for versionsnummer og de få ting, som skal prøves i netop den beta. Fejl og idéer beskrives på [hjemmesidens feedbackside](https://localterritorymanager.netlify.app/da/feedback/) med opdigtede eksempler.
 
 ## Til udvikling
 
@@ -35,4 +35,6 @@ HA understøtter en grengiven repositoryadresse: [officiel vejledning](https://c
 
 ## Beta på Mac, Windows eller Linux
 
-Fra beta.74 har udgivelsen også en samlet **LTM-v…zip** med en ny lokal/server-startguide. Hent den komplette ZIP frem for HA-pakken, og følg [Egen hosting](SELF-HOSTING.md). Betaens desktopdata holdes adskilt fra stabil og HA. Python er stadig nødvendig.
+Hent Beta-versionens DMG eller Setup.exe direkte fra GitHub. Mac-programmet hedder **LTM Beta.app**; Windows-installationen hedder **LTM Beta** og har egen programmappe. Begge bruger **Distrikt-beta** som datamappe, separat fra Stable. Ingen separat Python er nødvendig for disse installationsfiler.
+
+Til Linux eller privat server bruges fortsat den samlede LTM-v…zip og [Python-startguiden](SELF-HOSTING.md). Porten er 8788 og data/login holdes adskilt. Opdatér altid den samme kanal; gendan eller flyt kun rigtige data efter en bevidst beslutning og egen backup.

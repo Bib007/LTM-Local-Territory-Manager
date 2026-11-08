@@ -4,11 +4,11 @@
 
 ## Local computer or private server
 
-See [Self-hosting](SELF-HOSTING.en.md) for the shared Windows/Mac/Linux launcher, separate local/server data and private server login. Python is still required; native EXE/DMG installers are not currently included.
+Mac and Windows have [native DMG/Setup installers](NATIVE-INSTALLERS.md) with Python included. Download the correct installer from [Stable 1.12.19](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.19). Private-server and Linux packages still use [Self-hosting](SELF-HOSTING.en.md) with Python. Stop LTM before updating and preserve its data folder.
 
 [Dansk](INSTALL.md)
 
-## Mac
+## Mac · legacy ZIP
 
 Install Python 3.9+ from [python.org](https://www.python.org/downloads/macos/). Extract the full release ZIP to a normal local folder, then open `Distrikt-lokal/Start-Distrikt.command`. From source, the folder is `distrikt` instead.
 
@@ -16,7 +16,7 @@ If macOS blocks the launcher, inspect the file and open it through Finder's Open
 
 Private data: `~/Library/Application Support/Distrikt`. Keep this existing location when updating; changing the product title does not move your databases.
 
-## Windows
+## Windows · legacy ZIP
 
 Install Python 3.9+ from [python.org](https://www.python.org/downloads/windows/) with its launcher or PATH option. Extract the ZIP, then open `Distrikt-lokal/Start-Distrikt.cmd`. Use `Stop-Distrikt.cmd` to stop it. No pip packages or Docker required.
 

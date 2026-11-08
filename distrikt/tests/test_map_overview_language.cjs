@@ -3,9 +3,9 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8'),nodes=new Map();
 const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',style:{},dataset:{},addEventListener(){}});return nodes.get(id);};
-const shape=()=>({addTo(){return this;},bindTooltip(){return this;},on(){return this;}});
+const points=[],shape=()=>({addTo(){return this;},bindTooltip(){return this;},on(){return this;}});
 const c={console,Date,Intl,Math,Number,String,Map,Set,JSON,Array,Object,Promise,setTimeout(){},clearTimeout(){},frontResizeObserver:null,
- L:{polygon:shape,circleMarker:shape},window:{addEventListener(){}},document:{getElementById:get,querySelector(){return {content:'INVENTED'};},querySelectorAll(){return [];},addEventListener(){}},fetch(){throw Error('Network forbidden');}};
+ L:{polygon:shape,circleMarker:point=>{points.push(point);return shape();}},window:{addEventListener(){}},document:{getElementById:get,querySelector(){return {content:'INVENTED'};},querySelectorAll(){return [];},addEventListener(){}},fetch(){throw Error('Network forbidden');}};
 vm.createContext(c);for(const name of ['i18n.js','workspace.js','basemaps.js','overview-map.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);const run=s=>vm.runInContext(s,c);
 run(`GeoUI={data:{main_boundary:{points:[]}}};ReportMap={label:()=>({size:0})};MapExport={members:()=>[]};
@@ -26,4 +26,5 @@ for(const language of ['da','en']){
  assert.equal(run('JSON.stringify(state)'),original);
 }
 assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(results.en,results.da);assert.deepEqual(results.en[0],['folder']);assert.deepEqual(results.en[2],['out']);assert.deepEqual(results.en[4],['folder']);assert.deepEqual(results.en[6],['box']);
+run(`MapExport={members:()=>[{road:'Fiktiv Vej',number:'1',lng:10.005,lat:55.005,count:2},{road:'Fiktiv Vej',number:'1',lng:10.015,lat:55.015,count:1}]};OverviewMap.focus='folder';`);points.length=0;run('OverviewMap.draw()');assert.equal(points.length,3,'Overview map shows one red visit dot for each visit, including separate coordinates for the same house number');
 console.log('Map overview language preserves filter identifiers/results, numeric intervals, user text, counts, legend and read-only state.');

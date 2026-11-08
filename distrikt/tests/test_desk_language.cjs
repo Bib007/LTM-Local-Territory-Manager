@@ -37,9 +37,12 @@ for(const language of ['da','en']){
  assert(!html().includes('value="assigned"'));
  assert.match(html(),language==='en'?/Assign card 120&lt;test&gt;/:/Udlever kort 120&lt;test&gt;/);
  forms[language]=[contract(html())];
- run("issue('stored')");assert.match(html(),/name="initial" type="checkbox" checked/);
- assert.match(html(),language==='en'?/Record an existing assignment/:/Registrer eksisterende udlån/);
+ run("issue('stored')");assert.doesNotMatch(html(),/name="initial" type="checkbox" checked/);
+ assert.match(html(),/data-from-box="true"/);
+ assert.match(html(),language==='en'?/Assign from the storage box/:/Udlever fra kassen/);
  forms[language].push(contract(html()));
+ run("issue('',true)");assert.match(html(),/name="initial" type="checkbox" checked/);
+ assert.match(html(),language==='en'?/Record an existing assignment/:/Registrer eksisterende udlån/);
  for(const retain of [false,true]){
   run(`finish('loan',${retain})`);assert.equal(get('dialog').lang,language);
   assert.match(html(),new RegExp('data-retain="'+(retain?'yes':'no')+'"'));
