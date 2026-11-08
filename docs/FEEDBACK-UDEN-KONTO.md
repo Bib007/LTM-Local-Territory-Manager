@@ -1,6 +1,6 @@
 # Feedback uden GitHub-konto eller egen e-mail
 
-W23 · Valgt retning 21.10.2026 efter ejerens ønske: en Tally-formular med bilag. Afsenderen skal hverken logge ind på GitHub/Tally eller angive en e-mailadresse. Formularen er oprettet og afprøvet 21.10.2026. Beta.59 skifter appens menupunkt til den verificerede formular; GitHub-issues bevares som alternativ.
+W23 · Valgt retning 21.10.2026 efter ejerens ønske: en hjemmesidens feedbackformular-formular med bilag. Afsenderen skal hverken logge ind på GitHub/hjemmesidens feedbackformular eller angive en e-mailadresse. Formularen er oprettet og afprøvet 21.10.2026. Beta.59 skifter appens menupunkt til den verificerede formular; GitHub-issues bevares som alternativ.
 
 ## Oprettet formular
 
@@ -22,11 +22,11 @@ Takside: “Tak! Din feedback er gemt. Vi gennemgår forslagene, men kan ikke sv
 
 ## Ejerskab og aktivering
 
-Formularen ligger i projektejerens Tally-arbejdsrum. Offentligt link: https://tally.so/r/KpY0ZV . Formularadministration og svar kræver ejerens konto; de adresser indgår ikke i appen.
+Formularen ligger i projektejerens hjemmesidens feedbackformular-arbejdsrum. Offentligt link: https://localterritorymanager.netlify.app/da/feedback/ . Formularadministration og svar kræver ejerens konto; de adresser indgår ikke i appen.
 
 Kontrol 21.10.2026: Alle planlagte felter er oprettet, og standardsprog er dansk. Kun emne, kort overskrift, beskrivelse og indholdsbekræftelse er obligatoriske. Valgfrie billeder tillader præcis .jpg/.jpeg/.png/.webp; højst tre filer, gratisgrænse 10 MB pr. fil. Tom indsendelse gav fire danske valideringsfejl. En faktisk fiktiv tekstindsendelse gav taksiden og kunne derefter læses i ejerens Submissions. Preview-prøven skabte ingen rigtig indsendelse. Ejeren bekræftede derefter, at prøven i privat browservindue med billede virker. Den fiktive tekniske tekstprøve er bevaret i arbejdsrummet; den er ikke slettet automatisk. Der er ikke afprøvet uploads over grænserne eller modtaget rigtige brugerdata i udviklingskontroller.
 
-Appen indeholder alene det offentlige formularlink. API-nøgler eller adgang til formens svar må aldrig følge med programpakken eller GitHub. Tallys navn og behandling af manuelt indsendt tekst/bilag skal fremgå, før brugeren åbner formularen. Undlad at love anonymitet over for selve tjenesteudbyderen: “uden konto eller e-mail” beskriver afsenderens formularfelter og login, ikke fravær af tekniske netværksoplysninger.
+Appen indeholder alene det offentlige formularlink. API-nøgler eller adgang til formens svar må aldrig følge med programpakken eller GitHub. hjemmesidens feedbackformulars navn og behandling af manuelt indsendt tekst/bilag skal fremgå, før brugeren åbner formularen. Undlad at love anonymitet over for selve tjenesteudbyderen: “uden konto eller e-mail” beskriver afsenderens formularfelter og login, ikke fravær af tekniske netværksoplysninger.
 
 W23: formular og ejerprøve er bekræftet; menulinket aktiveres med beta.59 efter de sædvanlige udgivelsesgates.
 
@@ -34,12 +34,12 @@ W23: formular og ejerprøve er bekræftet; menulinket aktiveres med beta.59 efte
 
 Læst 21.10.2026:
 
-- [Tally: File uploads](https://tally.so/help/file-uploads): bilag uden respondentkonto, gratis op til 10 MB pr. fil, mulighed for antal-/filtypegrænser.
-- [Tally: API](https://tally.so/help/api): formoprettelse kræver autoriseret adgang til et arbejdsrum.
-- [Tally: MCP](https://tally.so/help/mcp): oprettelse og vedligeholdelse via en tilsluttet konto.
-- [Tally: Self email notifications](https://tally.so/help/self-email-notifications): eventuelle ejerbeskeder konfigureres hos formularens ejer. Afsenderen behøver ikke angive e-mail. Ingen mailbesked er aktiveret her.
+- [hjemmesidens feedbackformular: File uploads](https://localterritorymanager.netlify.app/da/feedback/): bilag uden respondentkonto, gratis op til 10 MB pr. fil, mulighed for antal-/filtypegrænser.
+- [hjemmesidens feedbackformular: API](https://localterritorymanager.netlify.app/da/feedback/): formoprettelse kræver autoriseret adgang til et arbejdsrum.
+- [hjemmesidens feedbackformular: MCP](https://localterritorymanager.netlify.app/da/feedback/): oprettelse og vedligeholdelse via en tilsluttet konto.
+- [hjemmesidens feedbackformular: Self email notifications](https://localterritorymanager.netlify.app/da/feedback/): eventuelle ejerbeskeder konfigureres hos formularens ejer. Afsenderen behøver ikke angive e-mail. Ingen mailbesked er aktiveret her.
 - [GitHub: Creating an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue) og [Configuring notifications](https://docs.github.com/en/subscriptions-and-notifications/get-started/configuring-notifications): GitHubs eksisterende issue-/svaradgang er knyttet til en GitHub-konto; notifications-reply-adresser er ikke en konto-fri indsendelseskanal, der må indbygges i appen.
 
 ## Kortere menutekst før næste stabile udgave · 23.10.2026
 
-Menupunktet hedder fortsat “Idéer og feedback” og viser kun én kort hjælpelinje: “Tekst og billeder gemmes hos Tally.” Oplysninger om konto/e-mail, fiktive eksempler og bilag står i selve formularen. Formularlink, åbning i ny fane og fravær af automatisk vedhæftning er bevaret.
+Menupunktet hedder fortsat “Idéer og feedback” og viser kun én kort hjælpelinje: “Tekst og billeder gemmes hos hjemmesidens feedbackformular.” Oplysninger om konto/e-mail, fiktive eksempler og bilag står i selve formularen. Formularlink, åbning i ny fane og fravær af automatisk vedhæftning er bevaret.

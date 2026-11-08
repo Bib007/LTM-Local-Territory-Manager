@@ -1,10 +1,10 @@
-# LTM på din egen computer eller server · beta
+# LTM · Python-startguide og privat server
 
-Startguiden er første del af W74. Den bruger den samme programpakke på Mac, Windows og Linux. Python 3.9 eller nyere med sqlite3 skal være installeret. Der medfølger endnu ikke en selvstændig app med indbygget Python eller et separat appvindue.
+Denne vejledning gælder Python-/serverpakkerne. Til almindelig lokal brug på Mac og Windows anbefales de [selvstændige installationsfiler](NATIVE-INSTALLERS.md), hvor Python er inkluderet. Server og Linux kræver Python 3.9 eller nyere med sqlite3.
 
 ## Hent og start
 
-Hent **LTM-v1.12.2-beta.82.zip** fra [beta.82](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.82), og pak hele filen ud. HA-installation bruger fortsat sin egen betakanal; desktop-ZIP'en skal ikke kopieres ind i HA.
+Hent den relevante server-/kildepakke fra [GitHub-udgivelserne](https://github.com/Bib007/LTM-Local-Territory-Manager/releases), og pak hele filen ud. HA-installation bruger fortsat sin egen betakanal; desktop-ZIP'en skal ikke kopieres ind i HA.
 
 Åbn filen i **Distrikt-lokal**:
 

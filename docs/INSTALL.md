@@ -1,12 +1,12 @@
 # Installation og opdatering
 
-## Egen computer/server · ny beta-startguide
+## Egen computer eller privat server
 
-Den fælles startguide til Mac/Windows/Linux findes i [Egen hosting](SELF-HOSTING.md). Den tilbyder lokal brug eller en privat server med separat login og data. Den kræver stadig Python og er første del af W74.
+Mac og Windows har nu en selvstændig [DMG-/Setup-installation](NATIVE-INSTALLERS.md) med indbygget Python. Hent filen til din platform fra [Stable-udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.19). Til privat server eller Linux bruges fortsat [Egen hosting](SELF-HOSTING.md) med Python. Luk LTM før opdatering, og behold datamappen.
 
 [English](INSTALL.en.md) · [Kom i gang](FIRST-STEPS.md)
 
-**Stabil udgave: 1.12.1.** Brug den almindelige repositoryadresse til HA; `develop` er til næste version og er ikke en almindelig opdateringskilde.
+**Stabil udgave: 1.12.19.** Brug den almindelige repositoryadresse til HA; `develop` er til næste version og er ikke en almindelig opdateringskilde.
 
 Vil du prøve nye funktioner løbende ved siden af den stabile app, så følg [HA-betavejledningen](BETA.md).
 

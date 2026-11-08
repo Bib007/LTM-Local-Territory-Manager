@@ -87,3 +87,5 @@ For Danish instructions included with the program, see [GOOGLE-DRIVE-OPSAETNING.
 ## Card front and batch approval
 
 Page 2 of the Drive PDF uses the normal print template and street grouping. Update the card’s Drive upload and review both pages to replace the previous front. After printing, choose “Approve printed sides in the app” to approve the reviewed fronts and backs together, including after printing all cards. Changed content requires a new print. No sides are approved automatically.
+
+In the preview, switch **Show house numbers and lines on the map** on/off. Every red dot stays. This changes the new image only; approve it again before uploading. Readable-archive fronts now use the same print view as ordinary cards.
