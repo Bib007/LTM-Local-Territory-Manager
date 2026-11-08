@@ -33,6 +33,10 @@ const I18n={
   "Filen krypteres i denne browser med din egen adgangskode. LTM kan ikke genskabe en glemt adgangskode.":"The file is encrypted in this browser with your own passphrase. LTM cannot recover a forgotten passphrase.",
   "Opret krypteret forbindelsesbackup":"Create encrypted connection backup",
   "Gendan krypteret forbindelsesbackup":"Restore encrypted connection backup",
+  "Kryptering kræver en sikker forbindelse. Åbn LTM via HTTPS eller localhost på samme computer, og prøv igen.":"Encryption requires a secure connection. Open LTM over HTTPS or localhost on the same computer and try again.",
+  "Browserens kryptering er ikke tilgængelig. Prøv en opdateret browser via HTTPS eller localhost.":"Browser encryption is unavailable. Try an updated browser over HTTPS or localhost.",
+  "Hvis LTM ikke selv kan vise Gem som, kan Chrome spørge om placeringen for hver download: Åbn Indstillinger → Downloads og slå Spørg, hvor hver fil skal gemmes, før download til. Det gælder alle downloads i Chrome.":"If LTM cannot show Save As, Chrome can ask where to save each download: open Settings → Downloads and turn on Ask where to save each file before downloading. This applies to all Chrome downloads.",
+  "Vis husnumre og streger på kortet":"Show house numbers and lines on the map",
   "Denne browser kan ikke kryptere forbindelsesbackup. Brug en moderne browser på din egen enhed.":"This browser cannot encrypt a connection backup. Use a modern browser on your own device.",
   "Ny adgangskode til filen":"New passphrase for the file",
   "Gentag adgangskoden":"Repeat the passphrase",
@@ -1882,6 +1886,9 @@ const I18n={
   "Forside og IB-bagside huskes hver for sig. Mål og placering kan justeres i printdialogen.":"The front and do-not-call back keep separate profiles. Adjust size and position in the print dialog.",
   "højkant":"portrait",
   "liggende":"landscape",
+  "Udført af":"Performed by",
+  "Tidligere bruger":"Former user",
+  "Fælles login / system":"Shared login / system",
   "Flyt {x} mm vandret / {y} mm lodret":"Offset {x} mm horizontally / {y} mm vertically",
   "Standardmål · endnu ingen gemt profil":"Default size · no saved profile yet",
   "Lokale data og historik":"Local data and history",
@@ -2533,7 +2540,16 @@ const I18n={
   for(const kind of ['placeholder','alt','title'])document.querySelectorAll?.('[data-ui-'+kind+']').forEach(node=>node.setAttribute(kind,this.format(node.dataset['ui'+kind[0].toUpperCase()+kind.slice(1)],this.params(node,kind))));
  }
 };
-try{I18n.current=localStorage.getItem('ltm-language')==='da'?'da':'en';}catch{}
+// The installer supplies a *first-use* hint. A user's saved browser preference
+// always wins, including when a new installer is used for an upgrade.
+try{
+ const saved=localStorage.getItem('ltm-language');
+ const initial=(typeof URLSearchParams!=='undefined'&&typeof location!=='undefined')
+  ?new URLSearchParams(location.search).get('ltm_start_language'):null;
+ const language=['da','en'].includes(saved)?saved:(['da','en'].includes(initial)?initial:'en');
+ I18n.current=language;
+ if(!saved&&['da','en'].includes(initial))localStorage.setItem('ltm-language',language);
+}catch{}
 document.addEventListener('DOMContentLoaded',()=>I18n.applyShell());
 document.addEventListener('change',event=>{
  if(event.target.id!=='navigationLanguage')return;

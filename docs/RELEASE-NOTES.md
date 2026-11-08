@@ -1,13 +1,13 @@
-# LTM 1.12.18 · Responsive print approvals in Home Assistant
+# LTM 1.12.19 · Samlet Stable og fælles udgangspunkt for Beta
 
-Fix a lock conflict between Home Assistant runtime-status sampling and the overview returned after saving. It could leave a print approval showing Saving, time out, and then prevent page reloads until the app was restarted.
+Forbindelsesbackup virker nu også i Chrome via en lokal HTTP-adresse. Kryptering og dekryptering sker fortsat i browseren, med samme adgangskode og filformat som tidligere.
 
-Batch approval now reads its validation data once, including for 380 cards / 760 sides. Single and batch approval buttons are disabled while saving and rapid repeat clicks are ignored. Changed print content still requires a new print.
+Læsearkivets forsider dannes fra den normale printvisning. Husnumre og streger kan slås fra i Drive-forhåndsvisningen; alle røde prikker bevares, og et ændret billede skal godkendes igen.
 
-Assignment deletion checks the selected card's actual loan history instead of every change anywhere in the database. Unrelated background saves no longer force a reload; genuine changes to the card's history still require review.
+Ændringshistorikken og 48-timers gendannelse viser brugeren bag nye handlinger. Backup foreslår Gem som, når browseren understøtter det. Gamle Tally-links er fjernet fra appmenuen.
 
-Completed address checks with no pending changes are hidden from the dashboard and have no empty review button. The schedule remains available in settings.
+Mac- og Windows-apps kan installeres direkte fra DMG/Setup.exe uden separat Python. Eksisterende data bevares. Pakkerne er usignerede og kan kræve den sædvanlige første godkendelse. Luk LTM før opdatering. macOS: åbn den DMG, der passer til Intel eller Apple Silicon, og træk LTM til Programmer. Windows: kør Setup.exe.
 
-Crowded Drive maps keep every red dot and omit only the house numbers that have no clear position, so an approved PDF/QR map can still be produced. The two-page Drive PDF and canonical print front from 1.12.17 are preserved. After updating, reload the browser so it uses the updated approval controls. If the previous app is already stuck, restart it once in Home Assistant as part of the update.
+Home Assistant har en Supervisor-kontrol af, at porten svarer. Den erstatter ikke kontrol af eksterne tjenester. Mac-serveren afventer fortsat sin særskilte fysiske LAN/VPN-prøve.
 
-Mac-server distribution remains deferred under AFK-002.
+Beta opdateres til samme funktioner under 1.12.19-beta.1 med egne data og eget login. Fremtidige ændringer afprøves på Beta først. Genindlæs browseren efter opdatering.

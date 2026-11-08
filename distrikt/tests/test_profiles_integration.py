@@ -81,6 +81,17 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_activity_and_recovery_name_the_authenticated_actor(self):
+        before=self.state(self.admin)
+        changed=self.change(self.admin,before,'delete',{'module':'notes','id':self.note})
+        event=next(e for e in self.store.activity() if e['action']=='delete')
+        self.assertEqual(event['actor_name'],'Fiktiv admin')
+        self.assertEqual(event['actor_id'],self.server.accounts.data['users'][event['actor_id']]['id'])
+        recovered=self.state(self.admin)['recovery'][0]
+        self.assertEqual(recovered['actor_name'],'Fiktiv admin')
+        self.assertEqual(recovered['batch'],event['batches'][0])
+        self.assertNotIn('Opdigtet privat opgave',str(event))
+
     def test_boundary_report_respects_report_geo_and_ib_permissions(self):
         self.store.mutate('geo.main.save',{'points':[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]})
         self.store.mutate('geo.manual',{'road':'Fiktiv vej','number':'1','postcode':'9999','lng':10,'lat':55})

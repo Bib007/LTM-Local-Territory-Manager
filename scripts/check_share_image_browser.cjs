@@ -166,6 +166,16 @@ module.exports=async(browser,out)=>{
   assert.equal(new Set(result.labels.map(label=>[label.x,label.y].join())).size,result.labels.length,'Nearby numbers receive separate positions');
   assert.ok(result.labels.every(label=>label.darkPixels>15),`Expected visible ink for each house number: ${JSON.stringify(result.labels)}`);
   assert.match(result.svg,/<g data-map-background="muted" opacity=".3"><image /);assert.ok(!calls.includes('/api/share/publish'),'Preview never uploads');assert.deepEqual(errors,[]);
+  await page.locator('#shareApproved').check();
+  try{await page.locator('#shareHouseNumbers').uncheck();}catch(e){throw Error('Toggle error: '+await page.locator('#toast').textContent()+' / '+e.message);}
+  await page.waitForFunction(()=>!ShareUI.busy&&!document.querySelector('#shareHouseNumbers').disabled);
+  assert.equal(await page.locator('#shareApproved').isChecked(),false);
+  assert.equal(await page.locator('#sharePublish').isDisabled(),true);
+  const noLabels=await page.evaluate(()=>{
+   const doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
+   return {dots:doc.querySelectorAll('circle[fill="#c62828"]').length,labels:doc.querySelectorAll('text[fill="#8c1c1c"]').length,leaders:doc.querySelectorAll('path[stroke="#ad4848"]').length};
+  });assert.equal(noLabels.dots,privateVisits);assert.equal(noLabels.labels,0);assert.equal(noLabels.leaders,0);
+  await page.locator('#shareHouseNumbers').check();await page.waitForFunction(()=>!ShareUI.busy);
   if(out)fs.writeFileSync(path.join(out,'drive-actual-preview.png'),Buffer.from(result.png,'base64'));
   const manual=await page.evaluate(async()=>{
    closeDialog();page='Indstillinger';DistrictMap.map=null;DistrictMap.id='manual1';

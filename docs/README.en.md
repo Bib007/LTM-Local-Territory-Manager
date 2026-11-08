@@ -9,7 +9,7 @@
 
 LTM is a free, unofficial tool for territory administration in congregations of Jehovah’s Witnesses. Find an available card, record an assignment or return, and keep its history together. Start with your existing paper cards and add addresses and maps when you are ready.
 
-**[Website](https://localterritorymanager.netlify.app) · [Try the demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](INSTALL.en.md) · [Ideas and feedback](https://tally.so/r/KpY0ZV)**
+**[Website](https://localterritorymanager.netlify.app) · [Try the demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Get started](INSTALL.en.md) · [Ideas and feedback](https://localterritorymanager.netlify.app/en/feedback/)**
 
 The demo uses fictional examples and needs no installation or account. The feedback form is currently in Danish.
 
@@ -69,7 +69,7 @@ Map backgrounds, address searches and optional Google Drive sharing use the inte
 
 ## Ideas and feedback
 
-[Send feedback](https://tally.so/r/KpY0ZV) without an account or email address. The form accepts pictures and currently uses Danish. Submit fictional examples only, without private records, real do-not-call details, backups or passwords. Your submitted text and pictures are stored by Tally.
+[Send feedback](https://localterritorymanager.netlify.app/en/feedback/) without an account or email address. The form accepts pictures and currently uses Danish. Submit fictional examples only, without private records, real do-not-call details, backups or passwords. Your submitted text and pictures are stored by hjemmesidens feedbackformular.
 
 ## About LTM
 

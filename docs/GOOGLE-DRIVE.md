@@ -78,3 +78,5 @@ Ved flytning beholdes samme Google-konto og klient, hvis QR-links skal bevares. 
 ## Kortforside og samlet godkendelse
 
 Drive-PDF’ens side 2 bruger samme printskabelon og vejinddeling som almindeligt print. Opdatér kortets Drive-upload og kontrollér begge sider for at erstatte den tidligere forside. Efter print kan du vælge »Godkend printede sider i appen« og godkende de kontrollerede for- og bagsider samlet. En ændret side kræver nyt print. Det gælder også ved »Print alle«. Ingen sider godkendes automatisk.
+
+I forhåndsvisningen kan du slå **Vis husnumre og streger på kortet** til/fra. Alle røde prikker bevares. Valget ændrer kun det nye billede; godkend det igen før upload. PDF-læsearkivets forsider bruger nu samme printvisning som de almindelige kort.

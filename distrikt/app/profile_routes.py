@@ -61,9 +61,15 @@ class ProfileRuntime:
     def cookie_header(self,token):
         return self.cookie+'='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='+('43200' if token else '0')
 
+    def authors(self,items):
+        # Resolve legacy IDs only to known accounts; never guess an author.
+        with self.accounts.lock:
+            return [{**item,**({'actor_name':self.accounts.data['users'][item['actor_id']]['name']} if not item.get('actor_name') and item.get('actor_id') in self.accounts.data['users'] else {})} for item in items]
+
     def state(self,token,raw):
         with self.accounts.authorized_session(token) as user,self.server.store.lock:
             result=state_for(raw,user)
+            result['recovery']=self.authors(result.get('recovery',[]))
             permissions=user['permissions']
             if 'reports.view' in permissions:
                 result['report_congregation']=raw['settings'].get('congregation','')
@@ -99,6 +105,7 @@ class ProfileRuntime:
                 protected=self.bases.is_protected(snapshot,token)
                 def reserve(observed):reserved.append(self.bases.create(token,'workspace','workspace',observed,protected=protected))
                 reviewed=ReviewedMutation(base,user['id'],reserve)
+                reviewed.actor_name=user['name']
                 try:result=store.mutate(action,data,review=reviewed)
                 except BaseException:
                     for key in reserved:self.bases.discard(key,token)
