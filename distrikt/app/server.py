@@ -37,7 +37,6 @@ from connection_backup import export as export_connections,restore as restore_co
 
 APP=app_dir()
 VERSION='1.12.19'
-if '-beta.' in VERSION:os.environ['LTM_CHANNEL']='beta'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -411,6 +410,15 @@ def acquire_lock(path):
     except OSError:stream.close();return None
 
 def main(argv=None):
+    previous=os.environ.get('LTM_CHANNEL')
+    if '-beta.' in VERSION:os.environ['LTM_CHANNEL']='beta'
+    try:return _main(argv)
+    finally:
+        if previous is None:os.environ.pop('LTM_CHANNEL',None)
+        else:os.environ['LTM_CHANNEL']=previous
+
+
+def _main(argv=None):
     p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--language',choices=('da','en'),help='Installer language for a new browser profile');p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
     if args.bind:
         try:address=ipaddress.IPv4Address(args.bind)

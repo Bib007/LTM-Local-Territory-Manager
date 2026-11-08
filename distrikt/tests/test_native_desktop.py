@@ -1,5 +1,6 @@
 """Offline tests for native LTM app entry and static asset paths."""
 import sys
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -48,6 +49,12 @@ class NativeDesktopTests(unittest.TestCase):
         self.assertIn('DefaultDirName={localappdata}\\Programs\\{#InstallFolder}',setup)
         self.assertIn('#define InstallFolder "LTM-Beta"',setup)
         self.assertIn('VersionInfoVersion={#NumericVersion}',setup)
+
+    def test_beta_channel_is_inherited_by_children_without_import_side_effects(self):
+        import server
+        with patch.dict(os.environ,{},clear=True),patch.object(server,'VERSION','1.12.19-beta.1'),patch.object(server,'_main',side_effect=lambda argv:os.environ.get('LTM_CHANNEL')):
+            self.assertEqual(server.main([]),'beta')
+            self.assertNotIn('LTM_CHANNEL',os.environ)
 
     def test_isolated_pdf_worker(self):
         with patch.object(desktop_entry.runpy, 'run_module') as worker, patch.object(desktop_entry.server, 'main') as start:
