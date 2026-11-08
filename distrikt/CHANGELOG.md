@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.12.19-beta.1
+
+- Synchronize Beta with the verified Stable 1.12.19 feature set. Keep independent program/data directories, HA port 8788, logins and native installer identities. Future trials use Beta first.
+
 ## 1.12.19
 
 - Local Chrome connection backups work with browser-side authenticated encryption, including private HTTP access; existing encrypted files remain compatible.
