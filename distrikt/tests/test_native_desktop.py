@@ -41,6 +41,14 @@ class NativeDesktopTests(unittest.TestCase):
                 server.main(['--data-dir', folder])
                 browser.assert_called_with('http://127.0.0.1:8787')
 
+    def test_beta_installation_identity_stays_separate_and_stable_id_is_preserved(self):
+        setup=(APP.parents[1]/'scripts/LTM.iss').read_text()
+        self.assertIn('"{{B7195427-A9D7-4BE6-8BC6-5D629688DD97}"',setup)
+        self.assertIn('"{{B7195427-A9D7-4BE6-8BC6-5D629688DD98}"',setup)
+        self.assertIn('DefaultDirName={localappdata}\\Programs\\{#InstallFolder}',setup)
+        self.assertIn('#define InstallFolder "LTM-Beta"',setup)
+        self.assertIn('VersionInfoVersion={#NumericVersion}',setup)
+
     def test_isolated_pdf_worker(self):
         with patch.object(desktop_entry.runpy, 'run_module') as worker, patch.object(desktop_entry.server, 'main') as start:
             desktop_entry.main(['--ltm-read-s13'])

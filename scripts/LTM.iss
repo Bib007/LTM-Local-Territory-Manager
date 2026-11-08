@@ -12,16 +12,22 @@
 #if Pos("-beta.", AppVersion) > 0
   #define AppSuffix " Beta"
   #define InstallFolder "LTM-Beta"
-  #define InstallId "B7195427-A9D7-4BE6-8BC6-5D629688DD98"
+  #define InstallId "{{B7195427-A9D7-4BE6-8BC6-5D629688DD98}"
 #else
   #define AppSuffix ""
   #define InstallFolder "LTM"
-  #define InstallId "B7195427-A9D7-4BE6-8BC6-5D629688DD97"
+  #define InstallId "{{B7195427-A9D7-4BE6-8BC6-5D629688DD97}"
+#endif
+#if Pos("-", AppVersion) > 0
+  #define NumericVersion Copy(AppVersion, 1, Pos("-", AppVersion) - 1)
+#else
+  #define NumericVersion AppVersion
 #endif
 [Setup]
 AppId={#InstallId}
 AppName=LTM{#AppSuffix} - Local Territory Manager
 AppVersion={#AppVersion}
+VersionInfoVersion={#NumericVersion}
 AppVerName=LTM {#AppVersion}
 DefaultDirName={localappdata}\Programs\{#InstallFolder}
 DefaultGroupName=LTM{#AppSuffix}
