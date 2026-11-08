@@ -4,10 +4,14 @@ const Navigation={
   ['',[['Forside','Forside'],['Daglig brug','Udlevering']]],
   ['Overblik',[['Distriktskort','Distrikter','Alle'],['Kortoversigt','Kortoversigt'],['Forkyndere','Forkyndere'],['Opgaver','Opgaver'],['Opfølgninger','Opfølgninger']]],
   ['Administration',[['Rapporter og historik','Rapporter','Rapport'],['Kort og adresser','Adresser','Mangler på kort'],['Indstillinger','Indstillinger','general']]],
-  ['Hjælp',[['Idéer og feedback','Feedback']]]
+  ['Hjælp',[]]
  ],opened:{},settingsSection:'general',
+ guideLink(){
+  const lang=I18n.language();
+  return `<a class="navExternal" data-help-guide href="https://localterritorymanager.netlify.app/${lang}/guide/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">?</span><span class="navExternalLabel">${esc(I18n.text('Trinvis LTM-guide'))}<small>${esc(I18n.text('Se hvordan du kommer i gang og bruger LTM.'))}</small></span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
+ },
  active(item){return page==='Opstart'&&item[1]==='Indstillinger'||page===item[1]||page==='Kortopsætning'&&item[1]==='Adresser';},
- html(){const followupCount=typeof GeoUI!=='undefined'&&GeoUI.loaded?Workspace.followupItems().length:null;const icons={Forside:'⌂',Udlevering:'⇄',Distrikter:'▤',Kortoversigt:'◇',Forkyndere:'♙',Opgaver:'☑',Opfølgninger:'◉',Rapporter:'▥',Adresser:'⌖',Indstillinger:'⚙',Feedback:'✎'};return this.groups.map(([name,items],i)=>`${name?`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>`:''}${items.map((item,j)=>typeof ProfilesUI!=='undefined'&&!ProfilesUI.pageAllowed(item[1])?'':item[1]==='Feedback'?`<a class="navExternal" href="https://tally.so/r/KpY0ZV" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">${icons.Feedback}</span><span class="navExternalLabel">${esc(I18n.text(item[0]))}<small>${esc(I18n.text("Tekst og billeder gemmes hos Tally."))}</small></span><span class="navExternalMark" aria-hidden="true">↗</span></a>`:`<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icons[item[1]]}</span>${esc(I18n.text(item[0]))}${item[1]==='Opfølgninger'&&followupCount!==null?`<span class="navFollowupCount" ${I18n.attribute('aria','Til opfølgning: {count}',{count:followupCount})}>${followupCount}</span>`:''}${item[1]==='Opgaver'?`<span class="navTaskCount" ${I18n.attribute('aria','{count} åbne opgaver',{count:Workspace.actionableTasks().length})}>${Workspace.actionableTasks().length}</span>`:''}</button>`).join('')}`).join('')+(typeof ProfilesUI!=='undefined'?ProfilesUI.navigation():'')+`<label class="languageChoice" lang="${I18n.language()}">${esc(I18n.text('Appens og guidens sprog'))}<select id="navigationLanguage"><option value="da" ${I18n.language()==='da'?'selected':''}>Dansk</option><option value="en" ${I18n.language()==='en'?'selected':''}>English</option></select><small>${esc(I18n.text('Oversættelsen er delvis · noget indhold er stadig på dansk.'))}</small></label>`+(typeof Theme!=='undefined'?Theme.html(I18n.language()):'');},
+ html(){const followupCount=typeof GeoUI!=='undefined'&&GeoUI.loaded?Workspace.followupItems().length:null;const icons={Forside:'⌂',Udlevering:'⇄',Distrikter:'▤',Kortoversigt:'◇',Forkyndere:'♙',Opgaver:'☑',Opfølgninger:'◉',Rapporter:'▥',Adresser:'⌖',Indstillinger:'⚙',Feedback:'✎'};return this.groups.map(([name,items],i)=>`${name?`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>`:''}${name==='Hjælp'?this.guideLink():''}${items.map((item,j)=>typeof ProfilesUI!=='undefined'&&!ProfilesUI.pageAllowed(item[1])?'':`<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icons[item[1]]}</span>${esc(I18n.text(item[0]))}${item[1]==='Opfølgninger'&&followupCount!==null?`<span class="navFollowupCount" ${I18n.attribute('aria','Til opfølgning: {count}',{count:followupCount})}>${followupCount}</span>`:''}${item[1]==='Opgaver'?`<span class="navTaskCount" ${I18n.attribute('aria','{count} åbne opgaver',{count:Workspace.actionableTasks().length})}>${Workspace.actionableTasks().length}</span>`:''}</button>`).join('')}`).join('')+`<label class="languageChoice" lang="${I18n.language()}">${esc(I18n.text('Appens og guidens sprog'))}<select id="navigationLanguage"><option value="da" ${I18n.language()==='da'?'selected':''}>Dansk</option><option value="en" ${I18n.language()==='en'?'selected':''}>English</option></select><small>${esc(I18n.text('Originale printformularer og gemt brugerindhold bevarer deres sprog.'))}</small></label>`+(typeof Theme!=='undefined'?Theme.html(I18n.language()):'');},
  paintFollowupCount(){
   const button=document.querySelector('#nav [data-navigation="1:4"]');if(!button||!GeoUI.loaded)return;
   button.querySelector('.navFollowupCount')?.remove();const count=Workspace.followupItems().length;
@@ -19,7 +23,7 @@ const Navigation={
   I18n.applyShell();
   if(typeof ProfilesUI!=='undefined')ProfilesUI.localize();
   
-  if(typeof GuidedTour!=='undefined')GuidedTour.localize();
+  if(typeof GuidedTour!=='undefined')GuidedTour.localize();if(typeof PersonalGuide!=='undefined')PersonalGuide.localize();
   if(typeof Onboarding!=='undefined')Onboarding.localizePanel();
   if(typeof BoundaryImportUI!=='undefined')BoundaryImportUI.localize();
   if(typeof PublisherSearch!=='undefined')PublisherSearch.localize();
@@ -36,7 +40,7 @@ const Navigation={
   Workspace.remember();Workspace.menu(false,document.body?.classList.contains('menuOpen'));
   if(item[1]==='Opfølgninger'){await Workspace.openFollowups();return;}
   if(item[1]==='Kortoversigt'){if(!GeoUI.loaded)await GeoUI.load();MapBackground.mode='road';page='Kortoversigt';render();return;}
-  if(['Adresser','Rapporter'].includes(item[1])&&!GeoUI.loaded)await GeoUI.load();
+  if((item[1]==='Adresser'||item[1]==='Rapporter'&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('cards.view','geo.view')))&&!GeoUI.loaded)await GeoUI.load();
   GeoUI.dirty=false;page=item[1];Workspace.restore(page);render();
  },
  selectRow(target,event){if(target.closest('button,input,select,textarea,a,label,[data-action]'))return false;const row=target.closest('[data-card-row]');if(!row)return false;if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return false;if(event.type==='click'&&window.getSelection?.().toString())return false;event.preventDefault();selected=row.dataset.cardRow;render();if(event.type==='keydown')document.querySelector(`[data-card-row="${CSS.escape(selected)}"]`)?.focus();return true;}

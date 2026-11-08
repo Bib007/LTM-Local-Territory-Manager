@@ -8,7 +8,7 @@ VIEWS = {
     'cards': ('cards.view', ('id','number','name','kind','area_id','map_color','temporary','in_folder','archived')),
     'publishers': ('publishers.view', ('id','name')),
     'loans': ('loans.view', ('id','card_id','publisher_id','assigned','cycle_start','returned','initial')),
-    'ib': ('ib.view', ('id','card_id','address_id','road','number','date')),
+    'ib': ('ib.view', ('id','card_id','address_id','road','number','date','date_text')),
     'notes': ('notes.view', ('id','card_id','loan_id','text','date','created','resolved','resolved_at','task','recurrence')),
     'completions': ('history.view', ('id','card_id','loan_id','date','previous_completed')),
     'visits': ('history.view', ('id','date','note')),

@@ -1,4 +1,132 @@
-# Ændringsliste
+# Changelog
+
+## 1.12.19-beta.1
+
+- Synchronize Beta with the verified Stable 1.12.19 feature set. Keep independent program/data directories, HA port 8788, logins and native installer identities. Future trials use Beta first.
+
+## 1.12.19
+
+- Local Chrome connection backups work with browser-side authenticated encryption, including private HTTP access; existing encrypted files remain compatible.
+- Readable-archive fronts use the same measured print renderer as ordinary cards, including lettered house numbers and archived cards.
+- Choose whether Drive maps show house numbers and leader lines; all red visit dots remain and changed images require fresh approval.
+- Activity and 48-hour recovery identify the authenticated user and show a clearer timeline. Historical names are never invented.
+- Backup uses Save as where supported and explains the browser download setting otherwise. Remove the old Tally menu link.
+- Native Mac Intel/Apple Silicon DMG and Windows Setup installers preserve the existing data directory. Owner confirmed first-install/update tests on both systems on 8 November 2026.
+- Home Assistant declares its independent Supervisor TCP watchdog. Mac-server remains pending its separate physical LAN/VPN test.
+- Stable is the verified baseline. Beta is refreshed from the same feature set, with separate data/login; future trials use Beta before Stable.
+
+## 1.12.18 · 2026-11-07
+
+- Prevent the Home Assistant status worker and a saved overview from deadlocking while a print approval is being saved.
+- Read print-validation data once per overview or batch instead of repeatedly loading all stored map images for every card.
+- Disable single and batch approval buttons while saving and ignore rapid repeat clicks.
+- Validate assignment deletion against the selected card's history, so unrelated background saves do not force repeated history reloads. Actual history changes still block stale deletion.
+- Hide completed zero-result address checks from the dashboard and remove empty review actions; keep the schedule visible in settings.
+- Publish crowded maps with all red dots even when some house numbers cannot be placed clearly.
+- Cover 380 cards / 760 sides, concurrent HTTP approvals and page reads, unchanged print tokens, the status-worker lock conflict and repeat-click browser flows.
+
+## 1.12.17 · 2026-11-07
+
+- Render the Google Drive PDF front from the normal print template, browser layout and street grouping in Danish and English, replacing the separate approximation.
+- Approve multiple printed fronts and backs together, with explicit review and confirmation. Changed print content rejects the complete batch; opening a preview or printing never approves cards automatically.
+- Keep the accepted red dots, house numbers and two-page PDF structure.
+
+## 1.12.16 · 2026-11-06
+
+- Share one two-page Google Drive PDF with the digital map first and the full printable front second. Long road rows wrap in the printable front.
+- Keep house numbers tied to their rendered dots, with leader lines in crowded areas.
+- Give the internal report a congregation-name cover in print and rings for coverage and card placement.
+
+## 1.12.15 · 2026-11-06
+
+- Show all saved addresses with identical red dots and house numbers on the public Drive/QR image. Keep the do-not-call list on the physical card back.
+- Add the bilingual guide link under Help and remove duplicate shortcuts to the setup guide and user administration.
+- Report mapped visit points and do-not-call records across the saved district boundary, with the existing access controls.
+
+## 1.12.14 · 2026-11-06
+
+- Preserve ordinary red address and IB visit markers in private district maps, combined views and local PNG exports, including dense or coincident coordinates.
+- On explicitly approved public Drive/QR map images, show saved IB locations as neutral address dots with approved house numbers, without private IB status or notes. Include these in saved-point totals but not in remaining visits.
+- Validate the actual dated 2200 × 1560 PNG and approval flow. Keep existing Drive/QR links unchanged until a fresh reviewed image is explicitly approved. Clarify Danish and English privacy guidance.
+
+## 1.12.13 · 2026-11-05
+
+- Delete a single erroneous assignment from History after reviewing the card, publisher, dates and status. Choose the physical location when removing an active assignment. Existing completions and notes are kept, and the assignment is recoverable for 48 hours unless a newer assignment conflicts.
+
+## 1.12.12 · 2026-11-05
+
+- Keep close visit dots individually visible in digital district maps and their PNGs, including during export after a zoom. Previously shared images can be regenerated and approved on the same Google Drive file and QR link.
+
+## 1.12.11 · 2026-11-05
+
+- Keep visit markers at every saved map coordinate, including the focused map view, so distinct locations do not collapse into one red dot.
+- Continue very long do-not-call backs onto clearly labelled extra print pages, with a compact readable layout. Find do-not-call entries by date or address and print a combined overview without inventing an exact date from month/year or year-only wording.
+- Offer a reviewed local address suggestion for a manual do-not-call line. Nothing is linked automatically; the record ID and recorded date remain intact, and the line can stay manual.
+- Keep connections separate from data and account backups. A connections administrator can create a browser-encrypted Google Drive/Datafordeler/Adressevælger backup with a personal passphrase, then explicitly restore it and check the connections again.
+- Prepare five independently publishable tracks from one source/version: Home Assistant, macOS app, macOS server, Windows app and Windows server. The first desktop assets remain platform-labelled Python ZIPs, not DMG or EXE installers.
+
+## 1.12.10 · 2026-11-04
+
+- Review the exact card, date and assignment before deleting an erroneous completion. An active assignment remains in place, the card's latest completion is recalculated, and later history no longer reintroduces the deleted date.
+- Show only the selected report period on screen for calendar year, service year or the last 12 months. Each period has matching totals, chart and map; calendar-year selection appears only for its own view.
+
+## 1.12.9 · 2026-11-04
+
+- Assign a card directly from the storage box, move selected cards between the box and folder beside the list, and see where each is kept.
+- Add the supplied original English S-12 and S-13 PDFs without modifying them. English/Danish form selection is available for card printing and remembered per print side; report originals follow the interface language.
+- Use a separate English S-13 field map/background for browser and PDF output. Danish S-13 PDF output remains byte-identical to 1.12.8 for the compatibility fixture. Dates, names, exact address membership and visit counts remain intact.
+- Include original English downloads in the app and website. Preserve Danish forms and separate stable/beta data.
+
+## 1.12.8 · 2026-11-02
+
+- Show numeric street envelopes on physical fronts: internal letter variants no longer split a range. A missing numeric base creates a break, whether absent from the source or outside the card. Keep the final boundary suffix, e.g. 3–9B, and retain separate even/odd lines.
+- Compute display summaries from saved membership, including after a cold reload. Exact selected units, visits, manual street text, public-map privacy and original forms are unchanged.
+
+## 1.12.7 · 2026-11-02
+
+- Restore compact, exact street intervals with `&` at gaps and separate even/odd lines per road. Consecutive lettered houses also form intervals. Physical fronts combine address types without changing visits or stored address membership.
+- Prevent street text from overlapping the original form footer. Dense fronts are fitted in the bounded content area; an impossible layout is visibly flagged and print remains blocked.
+- Add a real-browser regression for dense fronts at desktop/mobile widths and original-size print. Original S-12/S-13 assets remain unchanged.
+- Use a new version so installations that already installed 1.12.6 receive a normal Home Assistant update.
+
+## 1.12.6 · 2026-11-02
+
+- Fix lossy street labels: separate number parity, preserve gaps/lettered houses, split long rows and repair saved geographic labels with print review.
+
+- Understand whole-street wording, “kun lige/ulige” qualifiers and street-side ranges such as “23-25 & 24-26” in reviewed DAR suggestions. Preserve parity restrictions and include every apartment in the selected house numbers.
+- Default the IB import screen to explicit manual lines without DAR. Import fronts and backs from separate Excel/CSV files, preserve dates and print both sides without geographic addresses.
+- Link an imported manual IB entry to one explicit address on the same card later. Changing the import linking policy requires a new preview; existing records are not rebound silently.
+- Clarify own-file column mapping and the optional role of DAR in the English import guide.
+
+## 1.12.5 · 2026-11-02
+
+- Preserve a known month/year, a year alone or literal date wording when importing or manually creating a do-not-call entry. No day or month is invented; wording survives editing, card backs, private export and backup.
+- Suggest DAR addresses from a card's existing street names and number ranges after confirming each postcode. Download complete roads, review all units and the suggested boundary, then explicitly save. Stale street/address data, reserved units and unclear ranges block unsafe application.
+- Mark the changed front for printing and preserve existing loans, completion history and do-not-call records.
+- Carry the current Drive requests into the plan with original priorities; international address sources and English original forms remain subsequent work.
+
+## 1.12.4 · Task responsibility and manual redistribution
+
+- Optional responsible accounts, private self labels, task filters and linked follow-up tasks.
+- Manual split/transfer suggestions, exact address-unit previews and atomic movement with coupled do-not-call records.
+- Explicit latest-date scheduling reference or an interim-card issue/return/finalize workflow, retained history and reprint tasks.
+- Complete declared English interface-label coverage, localized task/maintenance controls and readable conflict fields; original forms and stored user content retain their language.
+- Preserve the restored home dashboard, existing roles, guides, imports and separate beta data.
+
+
+## 1.12.3 · Restore the familiar home dashboard
+
+- Restore the original home dashboard for profile users with the relevant record permissions, including its rings, shortcuts, metrics, monthly comparison and follow-ups.
+- Give summary-only users the familiar home layout using aggregate totals, without exposing private records or changing report permissions.
+- Keep the three-period report on the Reports page.
+
+## 1.12.2 · Profiles, dependable saving and flexible imports
+
+- Individual profiles and administrator-controlled roles; independent home/report summary permissions and permission-filtered personal guides.
+- Sheet/header/column selection for supported card and IB spreadsheet imports with explicit preview/confirmation.
+- Honest save acknowledgements, editor-owned bases, preserved conflict proposals and reliable tour completion.
+- Clearer reports and safe approved manual street rows on online card fronts.
+- English-first README, new-browser interface and documentation, plus a fictional demo with two role views. Original printed forms remain unchanged; translation is still partial.
 
 ## 1.12.2-beta.83 · Gemning, rundtur og manuelle onlinekort
 

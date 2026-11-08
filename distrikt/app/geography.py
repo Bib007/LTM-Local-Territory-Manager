@@ -88,19 +88,45 @@ def enclosing_outline(points, padding_m=12):
 
 
 def format_numbers(values):
-    """User's compact first–last label; membership and visit counts remain exact."""
+    """Lossless labels: keep gaps and lettered houses explicit, separate sides."""
     values=sorted({str(v).strip().upper() for v in values},key=number_key)
-    if not values:return ''
-    if len(values)==1:return values[0]
-    parities={number_key(v)[0]%2 for v in values}
-    return values[0]+'–'+values[-1]+(f" ({'lige' if 0 in parities else 'ulige'})" if len(parities)==1 else '')
+    parts=[]
+    for parity in (0,1):
+        side=[v for v in values if number_key(v)[0]%2==parity]
+        if not side:continue
+        labels=[];i=0
+        while i<len(side):
+            j=i
+            # Compress adjacent houses only; a gap starts another interval.
+            def adjacent(a,b):
+                n,sa=number_key(a);m,sb=number_key(b)
+                return (not sa and not sb and m==n+2) or (n==m and len(sb)==1 and ((not sa and sb=='A') or (len(sa)==1 and ord(sb)==ord(sa)+1)))
+            while j+1<len(side) and adjacent(side[j],side[j+1]):j+=1
+            if j>i:labels.append(side[i]+'–'+side[j])
+            else:labels.extend(side[i:j+1])
+            i=j+1
+        label=' & '.join(labels)
+        parts.append(label+(f" ({'lige' if parity==0 else 'ulige'})" if len(values)>1 else ''))
+    return ' & '.join(parts)
 
 
 def street_rows(addresses):
     groups=defaultdict(list)
-    for a in addresses:groups[(a['road'],a.get('postcode',''),a.get('type','Hus'))].append(a)
-    return [{'road':road,'numbers':format_numbers([a['number'] for a in members]),'count':sum(a.get('count',1) for a in members),'type':typ}
-        for (road,post,typ),members in sorted(groups.items(),key=lambda p:(p[0][0].casefold(),p[0][1],p[0][2]))]
+    for a in addresses:
+        groups[(a['road'],a.get('postcode',''),a.get('type','Hus'),number_key(a['number'])[0]%2)].append(a)
+    rows=[]
+    for (road,post,typ,parity),members in sorted(groups.items(),key=lambda p:(p[0][0].casefold(),p[0][1],p[0][2],p[0][3])):
+        houses=defaultdict(list)
+        for a in members:houses[a['number']].append(a)
+        batch=[]
+        def emit():
+            rows.append({'road':road,'numbers':format_numbers([a['number'] for a in batch]),'count':sum(a.get('count',1) for a in batch),'type':typ})
+        for number in sorted(houses,key=number_key):
+            if batch and len(format_numbers([a['number'] for a in batch]+[number]))>100:
+                emit();batch=[]
+            batch.extend(houses[number])
+        if batch:emit()
+    return rows
 
 
 def wgs84_to_utm32(lng,lat):
@@ -137,3 +163,30 @@ def decode_dar(items):
             'postcode':(h.get('postnummer') or {}).get('postnr',''),'floor':floor,'door':door,'label':a.get('adressebetegnelse',''),
             'lng':point[0],'lat':point[1],'count':1,'type':'Lejlighed' if floor or door else 'Hus','verified':True})
     return output
+
+
+def front_summaries(cards):
+    """Numeric display intervals; missing base numbers split, internal letters do not."""
+    for card in cards:
+        members=card.get('geo_addresses') or []
+        if not members:continue
+        # Incomplete legacy snapshots retain their existing street text.
+        try:
+            groups=defaultdict(list)
+            for a in members:groups[(a['road'],a.get('postcode',''),number_key(a['number'])[0]%2)].append(a)
+        except (KeyError,ValueError,TypeError):continue
+        rows=[]
+        for (road,post,parity),units in sorted(groups.items(),key=lambda item:(item[0][0].casefold(),item[0][1],item[0][2])):
+            houses=defaultdict(list)
+            for a in units:houses[number_key(a['number'])[0]].append(a['number'])
+            selected=sorted(houses);intervals=[];start=end=selected[0]
+            def label(first,last):
+                tail=max(houses[last],key=number_key)
+                return str(first) if first==last else str(first)+'–'+tail
+            for n in selected[1:]:
+                if n!=end+2:
+                    intervals.append(label(start,end));start=n
+                end=n
+            intervals.append(label(start,end))
+            rows.append({'road':road,'numbers':' & '.join(intervals)+f" ({'ulige' if parity else 'lige'})",'count':sum(a.get('count',1) for a in units),'type':'Hus'})
+        card['front_addresses']=rows

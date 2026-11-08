@@ -163,6 +163,11 @@ class GeoStore(MainBoundaryStore):
         if action=='geo.preview':
             return self.geo_preview(data)
         if action=='geo.assign':
+            if data.get('street_expected'):
+                from street_suggestions import suggest
+                current=suggest(self,data)
+                if current['street_expected']!=data['street_expected']:
+                    raise ValueError('Adressegrundlaget er ændret. Hent et nyt vejlinjeforslag.')
             preview=self.geo_preview(data)
             if preview['conflicts']:raise ValueError('Nogle adresser findes på et andet kort eller i 48-timers gendannelse. Fjern dem fra valget først.')
             if preview['retired']:raise ValueError('Nogle adresser er ikke længere gældende hos DAR. Fjern dem fra valget først.')
@@ -179,7 +184,9 @@ class GeoStore(MainBoundaryStore):
             c=self.require('cards',c['id']);c['address_ids']=[a['id'] for a in members];c['geo_addresses']=members
             polygon=data.get('polygon')
             c['geo_polygon']=valid_polygon(polygon,limit=5000) if polygon else enclosing_outline([[a['lng'],a['lat']] for a in members])
-            c['geo_outline_source']='manual' if polygon else 'suggestion';c['geo_updated']=stamp();self.put('cards',c)
+            c['geo_outline_source']='manual' if polygon else 'suggestion';c['geo_updated']=stamp()
+            if data.get('street_expected'):c['front_revision']=True
+            self.put('cards',c)
             return {'id':c['id'],'count':len(members),'visits':sum(a['count'] for a in members),'rows':rows}
         if action=='geo.boundary':
             c=self.require('cards',data['card_id']);c['geo_polygon']=valid_polygon(data['polygon'],limit=5000);c['geo_outline_source']='manual';self.put('cards',c);return {}
@@ -208,6 +215,12 @@ class GeoStore(MainBoundaryStore):
             road=text(data.get('road'),120,True);post=text(data.get('postcode'),4,True)
             in_number_range(data.get('from'),data.get('from'),data.get('to'),data.get('parity','all'))
             selected=[a for a in all_addresses if not a.get('retired') and a['road'].casefold()==road.casefold() and a['postcode']==post and in_number_range(a['number'],data.get('from'),data.get('to'),data.get('parity','all'))]
+        elif mode=='street_lines':
+            from street_suggestions import suggest
+            result=suggest(self,data)
+            if data.get('planning_only'):return result
+            preview=self.geo_preview({'card_id':data.get('card_id'),'address_ids':result['address_ids']})
+            return dict(preview,**{k:v for k,v in result.items() if k!='address_ids'})
         elif mode=='ids':
             ids=data.get('address_ids',[])
             if not isinstance(ids,list) or len(ids)>10000:raise ValueError('For mange adresser.')

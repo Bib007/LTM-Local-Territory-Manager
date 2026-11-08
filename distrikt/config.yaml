@@ -1,5 +1,5 @@
 name: Distrikt Beta
-version: "1.12.2-beta.83"
+version: "1.12.19-beta.1"
 slug: distrikt_beta
 init: false
 description: "Lokalt overblik over distriktskort, udleveringer, gennemgange og print"
@@ -21,6 +21,9 @@ ports:
 ports_description:
   8788/tcp: "Privat webside med eget login — kun LAN/VPN"
 webui: "http://[HOST]:[PORT:8788]/"
+# Supervisor checks that the listening port accepts connections. This does not
+# establish that application requests or external services are healthy.
+watchdog: "tcp://[HOST]:[PORT:8788]"
 options:
   access_host: "homeassistant.local"
   password: ""

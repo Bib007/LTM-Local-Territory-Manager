@@ -61,9 +61,25 @@ class ProfileRuntime:
     def cookie_header(self,token):
         return self.cookie+'='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='+('43200' if token else '0')
 
+    def authors(self,items):
+        # Resolve legacy IDs only to known accounts; never guess an author.
+        with self.accounts.lock:
+            return [{**item,**({'actor_name':self.accounts.data['users'][item['actor_id']]['name']} if not item.get('actor_name') and item.get('actor_id') in self.accounts.data['users'] else {})} for item in items]
+
     def state(self,token,raw):
         with self.accounts.authorized_session(token) as user,self.server.store.lock:
             result=state_for(raw,user)
+            result['recovery']=self.authors(result.get('recovery',[]))
+            permissions=user['permissions']
+            if 'reports.view' in permissions:
+                result['report_congregation']=raw['settings'].get('congregation','')
+            if {'reports.view','cards.view','geo.view'}<=permissions:
+                totals=self.server.store.boundary_report()
+                result['boundary_report']=None if totals is None else {
+                    key:value for key,value in totals.items() if key!='ib' or 'ib.view' in permissions
+                }
+            if {'users.manage','notes.view'}<=user['permissions']:
+                result['task_users']=[{'id':u['id'],'name':u['name']} for u in self.accounts.data['users'].values() if not u.get('disabled')]
             from profile_policy import MODULE_RIGHT
             modules={m for m,right in MODULE_RIGHT.items() if right in user['permissions']}
             if 'settings.manage' in user['permissions']:modules.add('settings')
@@ -78,12 +94,18 @@ class ProfileRuntime:
         store=self.server.store
         with store.lock:
             mutation(user,action,data,store)
+            if action=='note.save' and data.get('assignee_id'):
+                owner=self.accounts.data['users'].get(data['assignee_id']) if isinstance(data['assignee_id'],str) else None
+                current=store.get('notes',data.get('id')) or {}
+                if (not owner or owner.get('disabled')) and data['assignee_id']!=current.get('assignee_id'):
+                    raise ValueError('Vælg en aktiv bruger som ansvarshavende.')
             if action.endswith('.preview'):return store.mutate(action,data),None
             with self.bases.claim(snapshot,token,'workspace','workspace') as base:
                 reserved=[]
                 protected=self.bases.is_protected(snapshot,token)
                 def reserve(observed):reserved.append(self.bases.create(token,'workspace','workspace',observed,protected=protected))
                 reviewed=ReviewedMutation(base,user['id'],reserve)
+                reviewed.actor_name=user['name']
                 try:result=store.mutate(action,data,review=reviewed)
                 except BaseException:
                     for key in reserved:self.bases.discard(key,token)
@@ -143,6 +165,8 @@ class ProfileRoutes:
     def profile_get(self,path):
         if not self.server.profiles.enabled:return False
         runtime=self.server.profiles;token=self.profile_token()
+        if path=='/api/profiles/guide':
+            self.send(self.server.accounts.guide_current(token));return True
         if path=='/api/profiles/backup':
             from profile_recovery import backup_value
             self.send(backup_value(self.server.accounts),headers={'Content-Disposition':'attachment; filename="LTM-kontobackup.json"'});return True
@@ -199,9 +223,23 @@ class ProfileRoutes:
                 if module=='roles':ident=self.server.accounts.save_role(token,data.get('name'),data.get('permissions'),data.get('id'),base=base)
                 else:ident=self.server.accounts.save_user(token,data.get('name'),data.get('roles'),data.get('id'),data.get('disabled',False),data.get('password'),base=base)
                 self.send({'id':ident});return True
+        if path=='/api/profiles/guide/preview':
+            from profile_features import STEPS
+            from copy import deepcopy
+            user=self.server.accounts.data['users'].get(data.get('user_id'))
+            if not user:raise ValueError('Account not found')
+            rights=self.server.accounts._permissions(self.server.accounts.data,user)
+            self.send({'preview':True,'steps':[deepcopy(s) for s in STEPS if set(s['requires'])<=rights]});return True
+        if path=='/api/profiles/guide/assign':
+            assigned=self.server.accounts.guide_assign(token,data.get('user_id'),data.get('kind'),data.get('expected_assignment'))
+            self.send({'ok':True,'assigned':assigned});return True
+        if path=='/api/profiles/guide/replay':
+            self.send(self.server.accounts.guide_replay(token));return True
+        if path=='/api/profiles/guide/progress':
+            self.send(self.server.accounts.guide_progress(token,data.get('run_id'),data.get('request_id'),data.get('step_id')));return True
         if path=='/api/profiles/heartbeat':
             self.server.accounts.heartbeat(token)
-            self.send({'ok':True,'permissions':sorted(self.profile_user['permissions']),
+            self.send({'ok':True,'permissions':sorted(self.profile_user['permissions']),'auth_revision':self.server.accounts.generation,
                        'conflicts':len(runtime.workspace.conflicts(token))+(len(self.server.accounts.reviews(token)) if 'users.manage' in self.profile_user['permissions'] else 0)});return True
         if path=='/api/profiles/intro/complete':
             self.server.accounts.complete_intro(token);self.send({'ok':True});return True
