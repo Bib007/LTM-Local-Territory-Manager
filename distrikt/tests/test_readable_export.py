@@ -27,12 +27,14 @@ class ReadableExportTests(unittest.TestCase):
             self.store.put('geo',{'id':'config','token':'DO_NOT_EXPORT_TOKEN'})
             self.store.put('ib',{'id':'i','card_id':'c','address_id':'ib','road':'Eksempelvej','number':'9 2 tv','date':'2024-01-01'})
         self.export=ReadableExport(self.store)
+        self.raw_front=png()
     def tearDown(self):self.store.close();self.tmp.cleanup()
     def test_complete_private_zip_allowlists_and_exact_addresses(self):
         revision=self.store.revision;job=self.export.prepare();self.assertEqual(len(job['cards']),1)
         self.assertEqual([a['id'] for a in job['cards'][0]['members']],['one','ib']);self.assertTrue(job['cards'][0]['members'][1]['saved_point']);self.assertEqual(job['cards'][0]['members'][1]['number'],'9');self.assertNotIn('floor',job['cards'][0]['members'][1])
         self.assertNotIn('ib',job['cards'][0]['card']);self.assertNotIn('notes',job)
         self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
+        for ident in job['fronts']:self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
         raw=self.export.finish(job['token']);self.assertEqual(self.store.revision,revision)
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             names=z.namelist();self.assertEqual(len([n for n in names if n.startswith('PDF/')]),4)
@@ -55,12 +57,19 @@ class ReadableExportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Data er ændret'):self.export.finish(second['token'])
     def test_data_changed_during_pdf_generation_stops_download(self):
         job=self.export.prepare();self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
-        def change(_state):
+        for ident in job['fronts']:self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
+        def change(_images):
             with self.store.transaction():self.store.put('notes',{'id':'during-export','task':True,'text':'Fiktiv nyere opgave'})
             return b'%PDF-FICTIONAL'
-        with patch('readable_export.fronts_pdf',side_effect=change):
+        with patch('readable_export.image_pdf',side_effect=change):
             with self.assertRaisesRegex(ValueError,'Data er ændret'):self.export.finish(job['token'])
         self.assertIsNotNone(self.store.get('notes','during-export'))
+
+    def test_missing_canonical_front_blocks_finish(self):
+        job=self.export.prepare()
+        self.assertEqual(job['fronts'],['c','arch'])
+        self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
+        with self.assertRaisesRegex(ValueError,'Ikke alle forsider'):self.export.finish(job['token'])
 
     def test_prepare_reads_geography_once_for_many_cards(self):
         with self.store.transaction():
@@ -70,12 +79,9 @@ class ReadableExportTests(unittest.TestCase):
         self.assertLessEqual(sum(call.args==('geo',) and not call.kwargs.get('deleted',False) for call in reads.call_args_list),2)
 
     def test_unknown_manual_counts_remain_unknown_in_print_and_csv(self):
-        from readable_export import fronts_pdf, tables
+        from readable_export import tables
         state=self.store.state()
         state['cards']=[{'id':'manual','number':'F107','addresses':[{'road':'Fiktiv intervalvej','numbers':'1–19','count':0,'count_unknown':True}]}]
-        front=fronts_pdf(state)
-        self.assertIn(b'bes',front);self.assertIn(b'ikke angivet',front)
-        self.assertNotIn(b'(0 bes',front)
         files=tables(state,[])
         text=files['CSV/adresser.csv'].decode('utf-8-sig')
         self.assertIn('besøg ukendt',text);self.assertIn('1–19',text)

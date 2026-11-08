@@ -30,7 +30,8 @@ def source(data):
         except (ValueError,binascii.Error):raise ValueError('PDF-filen kunne ikke læses.') from None
         if len(raw)>MAX_BYTES:raise ValueError('Filen må højst fylde 2 MB.')
         try:
-            run=subprocess.run([sys.executable,'-I','-S',str(Path(__file__).with_name('s13_reader.py'))],input=raw,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=15,check=True)
+            command=([sys.executable,'--ltm-read-s13'] if getattr(sys,'frozen',False) else [sys.executable,'-I','-S',str(Path(__file__).with_name('s13_reader.py'))])
+            run=subprocess.run(command,input=raw,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=15,check=True)
             parsed=json.loads(run.stdout)
         except (subprocess.SubprocessError,ValueError,OSError):raise ValueError('PDF-filen kunne ikke aflæses lokalt. Brug CSV-skabelonen.') from None
         if parsed.get('error'):raise ValueError(parsed['error'])

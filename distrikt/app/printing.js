@@ -99,8 +99,8 @@ async function printCard(form){
 }
 
 // Rasterize the measured canonical print DOM, rather than inventing a second layout.
-async function printFrontImage(c){
- const cfg={...defaultPrintProfile('front'),...(state.settings.print_profiles?.front||{}),mode:'full',paper:'cut',x:0,y:0};
+async function printFrontImage(c,options={}){
+ const cfg={...defaultPrintProfile('front'),...(state.settings.print_profiles?.front||{}),mode:'full',paper:'cut',x:0,y:0,...options.profile};
  let markup=printDocument([c],'front',cfg);
  for(const source of new Set(Array.from(markup.matchAll(/<img[^>]+src="([^"]+)"/g),m=>m[1]))){
   const response=await fetch(source);if(!response.ok)throw Error('Printbilleder kunne ikke indlæses. Åbn print igen.');

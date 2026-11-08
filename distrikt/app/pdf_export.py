@@ -3,6 +3,7 @@ import math
 import re
 import json
 from pathlib import Path
+from resource_paths import templates_dir
 from datetime import date
 
 def literal(value):
@@ -94,7 +95,7 @@ def allocation_rows(state, year, language='da'):
 def s13_pdf(state,year,language='da'):
     if language not in ('da','en'):raise ValueError('Vælg dansk eller engelsk formular.')
     """Flatten values over the supplied original S-13 image, with safe A4 margins."""
-    folder=Path(__file__).resolve().parents[1]/'templates'
+    folder=templates_dir()
     template=json.loads((folder/('S-13-E-fields.json' if language=='en' else 'S-13-fields.json')).read_text())
     width=template['width'];height=template['height'];fields=template['fields']
     rows=allocation_rows(state,year,language);chunks=[rows[i:i+20] for i in range(0,len(rows),20)] or [[]]

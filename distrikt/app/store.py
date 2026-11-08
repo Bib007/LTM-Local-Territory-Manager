@@ -243,6 +243,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def recovery(self):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
         rows = []
+        actors={batch:{k:event[k] for k in ('actor_id','actor_name','action') if k in event} for event in self.activity(10000) for batch in event.get('batches',[])}
         for m in MODULES:
             if m=='maps':
                 continue
@@ -255,7 +256,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         dates = item['assigned'] + (' → ' + item['returned'] if item.get('returned') else '')
                         label = ' · '.join(filter(None, (card.get('number'), publisher.get('name'), dates)))
                     rows.append({'batch': item['_batch'], 'at': item['_deleted_at'],
-                        'label': 'Adresser uden for samlet grænse' if m=='geo' else label})
+                        'label': 'Adresser uden for samlet grænse' if m=='geo' else label,**actors.get(item['_batch'],{})})
         groups = {}
         for row in rows:
             if row['batch'] not in groups:
@@ -308,7 +309,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                         elif current.get('card_id'):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
-                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),**({'actor_id':review.actor} if review else {})})
+                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.alias(module)+'.records WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
                 reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None

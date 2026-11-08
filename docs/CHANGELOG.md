@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.12.19
+
+- Local Chrome connection backups work with browser-side authenticated encryption, including private HTTP access; existing encrypted files remain compatible.
+- Readable-archive fronts use the same measured print renderer as ordinary cards, including lettered house numbers and archived cards.
+- Choose whether Drive maps show house numbers and leader lines; all red visit dots remain and changed images require fresh approval.
+- Activity and 48-hour recovery identify the authenticated user and show a clearer timeline. Historical names are never invented.
+- Backup uses Save as where supported and explains the browser download setting otherwise. Remove the old Tally menu link.
+- Native Mac Intel/Apple Silicon DMG and Windows Setup installers preserve the existing data directory. Owner confirmed first-install/update tests on both systems on 8 November 2026.
+- Home Assistant declares its independent Supervisor TCP watchdog. Mac-server remains pending its separate physical LAN/VPN test.
+- Stable is the verified baseline. Beta is refreshed from the same feature set, with separate data/login; future trials use Beta before Stable.
+
 ## 1.12.18 · 2026-11-07
 
 - Prevent the Home Assistant status worker and a saved overview from deadlocking while a print approval is being saved.

@@ -4,16 +4,26 @@ import json
 import sys
 from pathlib import Path
 
+# This script is intentionally run with Python -I -S for untrusted PDF input:
+# importing a sibling helper would fail under isolated sys.path rules.
+def templates_dir():
+    return (Path(sys._MEIPASS)/'templates' if getattr(sys,'frozen',False)
+            else Path(__file__).resolve().parents[1]/'templates')
+
+def vendor_dir():
+    return (Path(sys._MEIPASS)/'app'/'vendor_py' if getattr(sys,'frozen',False)
+            else Path(__file__).resolve().parent/'vendor_py')
+
 def read(raw):
-    sys.path.insert(0,str(Path(__file__).with_name('vendor_py')))
-    sys.path.insert(0,str(Path(__file__).with_name('vendor_py')/'pypdf-6.21.4.zip'))
+    sys.path.insert(0,str(vendor_dir()))
+    sys.path.insert(0,str(vendor_dir()/'pypdf-6.21.4.zip'))
     import pypdf
     from pypdf import filters
     filters.ZLIB_MAX_OUTPUT_LENGTH=8000000
     reader=pypdf.PdfReader(io.BytesIO(raw),strict=True)
     if reader.is_encrypted:raise ValueError('Fjern PDF-adgangskoden, eller brug CSV-skabelonen.')
     if not 1<=len(reader.pages)<=20:raise ValueError('Brug højst 20 S-13-sider ad gangen.')
-    folder=Path(__file__).resolve().parents[1]/'templates'
+    folder=templates_dir()
     template=json.loads((folder/'S-13-fields.json').read_text());fields=template['fields'];rows=[];records=[]
     background=(folder/'S-13-background.jpg').read_bytes()
     for page_number,page in enumerate(reader.pages,1):

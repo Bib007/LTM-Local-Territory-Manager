@@ -24,6 +24,13 @@ const ReadableExportUI={busy:false,
   this.busy=true;button.disabled=true;const watch=setInterval(()=>{try{current();}catch{controller.abort();}},100);let timer=setTimeout(()=>controller.abort(),3600000);
   try{
    message('Forbereder læsearkiv…');const job=await(await this.request('prepare',{},controller.signal)).json();current();if(job.revision!==revision)throw Error(I18n.text('Eksportgrundlaget er ændret. Start igen.'));
+   for(let i=0;i<job.fronts.length;i++){
+    const id=job.fronts[i],front=[...snapshot.cards,...(snapshot.archived_cards||[])].find(c=>c.id===id);if(!front)throw Error(I18n.text('Eksportgrundlaget er ændret. Start igen.'));
+    message('Danner kort {index} af {total}…',{index:i+1,total:job.fronts.length});
+    const blob=await printFrontImage(front);current();
+    const png=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});current();
+    await this.request('image',{token:job.token,card_id:id,side:'front',png},controller.signal);current();
+   }
    for(let i=0;i<job.cards.length;i++){
     const item=job.cards[i],card={...item.card,name:item.name};message('Danner kort {index} af {total}…',{index:i+1,total:job.cards.length});
     const background=await this.background(card,item.members,current);current();

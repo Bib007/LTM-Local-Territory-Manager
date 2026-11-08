@@ -38,6 +38,18 @@ module.exports=async(browser,out)=>{
    if(out){fs.writeFileSync(path.join(out,'canonical-front-'+language+'.png'),Buffer.from(result.data.split(',')[1],'base64'));await popup.locator('.cardPreview').screenshot({path:path.join(out,'normal-front-'+language+'.png')});}
    await popup.close();
   }
+  const lettered=await page.evaluate(async()=>{
+   await printFrontImage({...state.cards[0],addresses:[{road:'Bogstavvej',numbers:'8A, 8B, 8C, 8D',count:4}]});
+   return [...new DOMParser().parseFromString(window.lastFrontSvg,'image/svg+xml').querySelectorAll('text')].map(n=>n.textContent).join(' ');
+  });
+  assert.match(lettered,/Bogstavvej 8A-8D/);assert.doesNotMatch(lettered,/&amp;|8A & 8B/);
+  const encrypted=await page.evaluate(async()=>{
+   if(globalThis.isSecureContext)throw Error('HTTP fixture must exercise browser fallback');
+   const input={schema:1,connections:{adressevaelger:{token:'FIKTIVT'}}};
+   const file=await ConnectionBackupUI.encrypt(input,'Fiktiv adgangskode 123');
+   const output=await ConnectionBackupUI.decrypt(new File([JSON.stringify(file)],'fiktiv.json'),'Fiktiv adgangskode 123');
+   return JSON.stringify(output)===JSON.stringify(input);
+  });assert.equal(encrypted,true);
   await page.evaluate(()=>{closeDialog();page='Distrikter';window.approvalWrites=[];mutate=async(action,data)=>{window.approvalWrites.push({action,data});};});
   for(const side of ['front','back']){
    await page.evaluate(side=>printOptions(state.cards[0].id,side,state.cards.map(c=>c.id)),side);

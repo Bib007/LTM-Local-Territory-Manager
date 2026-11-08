@@ -16,6 +16,7 @@ import ipaddress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import TCPServer
 from pathlib import Path
+from resource_paths import app_dir
 from urllib.parse import parse_qs, urlsplit
 from store import Store, MODULES
 from pdf_export import s13_pdf
@@ -34,9 +35,12 @@ from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
 from connection_backup import export as export_connections,restore as restore_connections
 
-APP=Path(__file__).resolve().parent
-VERSION='1.12.18'
+APP=app_dir()
+VERSION='1.12.19'
+if '-beta.' in VERSION:os.environ['LTM_CHANNEL']='beta'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
+
+if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
@@ -156,11 +160,12 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                     if profile:login=login.replace('<label for="loginPassword"', '<label for="loginName" data-ui="Brugernavn">Brugernavn</label><input id="loginName" name="name" autocomplete="username" maxlength="100" required><label for="loginPassword"')
                     return self.send(login.encode(),'text/html')
                 html=(APP/'index.html').read_text().replace('__TOKEN__',self.server.profiles.csrf(self.profile_token()) if profile else self.server.token)
+                if self.server.beta and '<b>LTM</b>' in html:html=html.replace('<b>LTM</b>','<b>LTM Beta</b>').replace('<body>','<body class="betaChannel">')
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
             if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/workspace.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/printing.js','/admin.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
-            if path in ('/vendor/leaflet.js','/vendor/leaflet.css'):
+            if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
             if path=='/s12-template-en.png':return self.send((APP.parent/'templates'/'S-12-E-source.png').read_bytes(),'image/png')
@@ -194,7 +199,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 return self.send(self.server.app_state(self.profile_token()))
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/runtime/status':return self.send(self.server.runtime_status.status())
-            if path=='/api/activity':return self.send({'items':self.server.store.activity()})
+            if path=='/api/activity':return self.send({'items':self.server.profiles.authors(self.server.store.activity())})
             if path=='/api/map':
                 with self.server.store.lock:
                     m=self.server.store.get('maps','background')
@@ -406,7 +411,7 @@ def acquire_lock(path):
     except OSError:stream.close();return None
 
 def main(argv=None):
-    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
+    p=argparse.ArgumentParser();p.add_argument('--data-dir',default=os.environ.get('DISTRIKT_DATA_DIR',str(DEFAULT_DATA)));p.add_argument('--language',choices=('da','en'),help='Installer language for a new browser profile');p.add_argument('--serve',action='store_true');p.add_argument('--stop',action='store_true');p.add_argument('--no-browser',action='store_true');p.add_argument('--lan',action='store_true');p.add_argument('--access-host');p.add_argument('--bind');p.add_argument('--port',type=int,default=8787);args=p.parse_args(argv)
     if args.bind:
         try:address=ipaddress.IPv4Address(args.bind)
         except ValueError:raise ValueError('Vælg en privat IPv4-adresse til serveren.') from None
@@ -424,13 +429,14 @@ def main(argv=None):
             info=None
         if not info:
             log=open(data/'start.log','a')
-            subprocess.Popen([sys.executable,str(APP/'server.py'),'--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
+            command=([sys.executable] if getattr(sys,'frozen',False) else [sys.executable,str(APP/'server.py')])
+            subprocess.Popen(command+['--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
             for _ in range(60):
                 info=running(data)
                 if info:break
                 time.sleep(.1)
         if not info:raise RuntimeError('Appen kunne ikke starte. Se start.log i datamappen.')
-        if not args.no_browser:webbrowser.open(info['url'])
+        if not args.no_browser:webbrowser.open(info['url']+('?ltm_start_language='+args.language if args.language else ''))
         print('Distrikt er startet: '+info['url']);return
     if info:return
     lock=acquire_lock(data/'app.lock')

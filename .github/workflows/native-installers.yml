@@ -1,0 +1,164 @@
+name: Native desktop installers (preview)
+
+# Only test builds. Never publish or replace a Stable release automatically.
+on:
+  pull_request:
+    paths:
+      - 'distrikt/app/**'
+      - 'distrikt/templates/**'
+      - 'distrikt/icon.png'
+      - 'scripts/build_native_desktop.py'
+      - 'scripts/prepare_dmg.py'
+      - 'scripts/check_native_desktop.py'
+      - 'scripts/LTM.iss'
+      - '.github/workflows/native-installers.yml'
+  workflow_dispatch:
+    inputs:
+      publish_direct_assets:
+        description: "Publish installers directly to the existing GitHub version release (no ZIP)"
+        type: boolean
+        default: false
+      confirmed_installation:
+        description: "After physical Mac/Windows tests, type INSTALLERS-VERIFIED to publish"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  common:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_direct_assets && inputs.confirmed_installation == 'INSTALLERS-VERIFIED' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    uses: ./.github/workflows/check.yml
+  native:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            label: Windows installer
+          - runner: macos-15-intel
+            label: macOS Intel DMG
+          - runner: macos-15
+            label: macOS Apple Silicon DMG
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install free packaging dependencies
+        run: python -m pip install pyinstaller==6.22.3 pillow==11.3.0 qrcode==8.2 pypdf==6.21.4 typing_extensions==4.16.0
+      - name: Check native entry and paths
+        run: python -m unittest discover -s distrikt/tests -p test_native_desktop.py -v
+      - name: Build self-contained LTM
+        run: python scripts/build_native_desktop.py --output dist-native
+      - name: Smoke-test isolated app with fictional records
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            python scripts/check_native_desktop.py --executable dist-native/LTM/LTM.exe
+          else
+            python scripts/check_native_desktop.py --executable dist-native/LTM.app/Contents/MacOS/LTM
+          fi
+      - name: Create styled macOS installer DMG
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          version=$(python -c "import sys; sys.path.insert(0, 'scripts'); import build_native_desktop as b; print(b.version())")
+          codesign --force --deep --sign - --timestamp=none dist-native/LTM.app
+          codesign --verify --deep --strict dist-native/LTM.app
+          mkdir -p dist-native/_dmg
+          app_name="LTM.app"
+          if [[ "$version" == *-beta.* ]]; then app_name="LTM Beta.app"; fi
+          ditto dist-native/LTM.app "dist-native/_dmg/$app_name"
+          python scripts/prepare_dmg.py --folder dist-native/_dmg
+          # Finder uses the image at its actual pixel dimensions. A 2x image
+          # in a 1x window is cropped and misaligns every icon.
+          python -c "from PIL import Image; im=Image.open('dist-native/LTM-DMG-background.png'); assert im.size == (900, 550), im.size"
+          brew install create-dmg
+          arch=Intel
+          if [ "$(uname -m)" = "arm64" ]; then arch=AppleSilicon; fi
+          create-dmg \
+            --volname "LTM · Local Territory Manager" \
+            --background "dist-native/LTM-DMG-background.png" \
+            --window-pos 180 100 \
+            --window-size 900 550 \
+            --icon-size 104 \
+            --icon "$app_name" 218 310 \
+            --hide-extension "$app_name" \
+            --app-drop-link 685 310 \
+            --icon "Hjælp - Help.webloc" 765 465 \
+            --hide-extension "Hjælp - Help.webloc" \
+            --no-internet-enable \
+            "dist-native/LTM-macOS-v${version}-${arch}.dmg" \
+            "dist-native/_dmg"
+          test -f "dist-native/LTM-macOS-v${version}-${arch}.dmg"
+      - name: Create free Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup --yes --no-progress
+          $version = python -c "import sys; sys.path.insert(0, 'scripts'); import build_native_desktop as b; print(b.version())"
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) { throw 'Inno Setup compiler not installed' }
+          & $iscc "scripts\LTM.iss" "/DAppVersion=$version" "/DBuildDir=$($PWD.Path)\dist-native" "/DOutputDir=$($PWD.Path)\dist-native"
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup packaging failed' }
+      - name: Upload preview installer (not a Stable release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ltm-native-${{ matrix.label }}
+          path: |
+            dist-native/*.dmg
+            dist-native/*-Setup.exe
+          if-no-files-found: error
+
+  publish:
+    name: Publish installer files directly (manual, verified only)
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_direct_assets && inputs.confirmed_installation == 'INSTALLERS-VERIFIED' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    needs: [native, common]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ltm-native-*
+          merge-multiple: true
+          path: direct
+      - name: Attach exact .dmg and .exe files to an existing version release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version=$(python3 -c "import sys; sys.path.insert(0, 'scripts'); import build_native_desktop as b; print(b.version())")
+          tag="v${version}"
+          files=(
+            "direct/LTM-Windows-v${version}-Setup.exe"
+            "direct/LTM-macOS-v${version}-Intel.dmg"
+            "direct/LTM-macOS-v${version}-AppleSilicon.dmg"
+          )
+          gh release view "$tag" --repo "$GH_REPO" >/dev/null
+          existing=$(gh release view "$tag" --repo "$GH_REPO" --json assets --jq '.assets[].name')
+          for file in "${files[@]}"; do
+            test -s "$file"
+            name=$(basename "$file")
+            if printf '%s\n' "$existing" | grep -Fxq "$name"; then
+              echo "::error::Refusing to overwrite an already published installer: $name"
+              exit 1
+            fi
+          done
+          checksums=()
+          for file in "${files[@]}"; do
+            sumfile="${file}.sha256"
+            (cd "$(dirname "$file")" && sha256sum "$(basename "$file")") > "$sumfile"
+            checksums+=("$sumfile")
+          done
+          gh release upload "$tag" "${files[@]}" "${checksums[@]}" --repo "$GH_REPO"
+          echo "Published three direct installer downloads and their SHA-256 files to $tag"
