@@ -69,12 +69,16 @@ def check(executable):
             # On Windows run.json is removed just before the server releases its
             # app.lock file. Allow the child to exit before deleting test data.
             lock = data / "app.lock"
+            log = data / "start.log"
             for _ in range(100):
                 try:
                     lock.unlink(missing_ok=True)
+                    log.unlink(missing_ok=True)
                     break
                 except PermissionError:
                     time.sleep(.1)
+            else:
+                raise AssertionError("Native child did not release test files after shutdown")
 
 
 if __name__ == "__main__":
