@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.19-beta.2 · 2026-11-09
+
+- Fill the original 94 × 146 mm IB-card back more efficiently, retaining every entry and creating extra card pages only when necessary. A4 remains proof paper, never an enlarged card.
+- Replace daily-use card-number creation with a search and explicit confirmation for placing an existing card in the carry folder. Preserve issue status, card identity and history; keep creation in Territory cards.
+- Move “Longest since completion” from Daily use to an independently resettable sort in Territory cards. Unknown dates sort first; area, status and text filters remain selected.
+- Show current / suggested active card counts for publishers based on locally adjustable publisher, pioneer, service-group assistant and overseer guidance. Combined roles use the highest suggestion; exceeding it never blocks an assignment.
+- Test fictional IB lists, A4/cut PDFs, card searches and folder moves, territory ordering and combined filters, publisher assignments/settings and desktop/mobile layouts. Stable 1.12.19 remains unchanged.
+
 ## 1.12.19-beta.1
 
 - Synchronize Beta with the verified Stable 1.12.19 feature set. Keep independent program/data directories, HA port 8788, logins and native installer identities. Future trials use Beta first.
