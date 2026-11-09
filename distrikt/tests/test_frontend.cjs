@@ -312,7 +312,7 @@ assert.equal(run("compactAddressNumbers('20, 22, 24, 28, 30 (lige)')"),'20-24 & 
  run("confirmFolderCard('folder')");
  assert(get('dialog').innerHTML.includes('Allerede i mappen'));
  run("confirmFolderCard('issued')");
- assert(get('dialog').innerHTML.includes('Udlånt'));
+ assert(get('dialog').innerHTML.includes('Udleveret'));
  run("globalThis.ProfilesUI.canAction=()=>false;chooseFolderCard()");
  assert(!get('dialog').innerHTML.includes('data-action="folder-card-confirm"'));
  assert.equal(run("state.cards.length"),3);
