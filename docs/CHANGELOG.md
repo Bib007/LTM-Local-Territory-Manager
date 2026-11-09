@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.12.20 · 2026-11-09
+
+- Promote the tested 1.12.19-beta.4 code to Stable: personal open-task greeting with authorized automatic refresh and shortcut to the user's filtered task list.
+- Suggested card counts by publisher role now persist and display correctly with accounts, and never restrict issuance.
+- Select existing cards into the daily-use folder without duplicating cards; sort territory cards by longest time since completion while preserving filters.
+- Improve original-size IB-card back pagination and protect historic task listings and profile access.
+- Keep Stable and Home Assistant Beta separately installed, with separate data and ports. Update release version and tested stable artifacts.
+
+## 1.12.19-beta.4 · 2026-11-09
+
+- Show the authenticated user's own currently actionable tasks next to the personal home welcome, with a shortcut opening the Open / Mine task filters.
+- Keep the count private, permission-gated and automatically refreshed via the existing profile heartbeat, including changes made by other logged-in users.
+- Preserve the original task listing and its historical notes, followups, due-date behavior and navigation counts; fix the JavaScript contract failure introduced by the new personal filter.
+- Test fictional administrator/editor profiles, read permissions, zero/one counts, task completion, role reassignment and phone/desktop navigation. Stable 1.12.19 remains unchanged.
+
+## 1.12.19-beta.3 · 2026-11-09
+
+- Fix profile-mode settings silently reverting publisher card guidance to the default role counts after saving. Persisted values now pass through the authenticated settings snapshot and refresh correctly.
+- Share the configured advisory counts with users allowed to view publishers, without granting permission to edit settings or exposing unrelated administration data.
+- Add real authenticated HTTP save/refresh and responsive browser save/reload regression tests with fictional accounts; recommendations never block issuing extra cards.
+
+## 1.12.19-beta.2 · 2026-11-09
+
+- Fill the original 94 × 146 mm IB-card back more efficiently, retaining every entry and creating extra card pages only when necessary. A4 remains proof paper, never an enlarged card.
+- Replace daily-use card-number creation with a search and explicit confirmation for placing an existing card in the carry folder. Preserve issue status, card identity and history; keep creation in Territory cards.
+- Move “Longest since completion” from Daily use to an independently resettable sort in Territory cards. Unknown dates sort first; area, status and text filters remain selected.
+- Show current / suggested active card counts for publishers based on locally adjustable publisher, pioneer, service-group assistant and overseer guidance. Combined roles use the highest suggestion; exceeding it never blocks an assignment.
+- Test fictional IB lists, A4/cut PDFs, card searches and folder moves, territory ordering and combined filters, publisher assignments/settings and desktop/mobile layouts. Stable 1.12.19 remains unchanged.
+
+## 1.12.19-beta.1
+
+- Synchronize Beta with the verified Stable 1.12.19 feature set. Keep independent program/data directories, HA port 8788, logins and native installer identities. Future trials use Beta first.
+
 ## 1.12.19
 
 - Local Chrome connection backups work with browser-side authenticated encryption, including private HTTP access; existing encrypted files remain compatible.

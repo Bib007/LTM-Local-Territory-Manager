@@ -107,6 +107,53 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1})
 
+    def test_role_guidance_survives_profile_settings_save_and_real_http_refresh(self):
+        # Regression: before this fix the authenticated state stripped the four
+        # saved counts, so refreshing the Settings page reset them to defaults.
+        defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+        before = self.state(self.admin)
+        other = self.login('Fiktiv admin', 'Fiktiv-password-123')
+        stale = self.state(other)
+        self.assertEqual(before['settings']['publisher_card_guidance'], defaults)
+        changed = {'member': 0, 'pioneer': 4, 'assistant': 1, 'overseer': 7}
+        result = self.change(self.admin, before, 'settings.save', {
+            'congregation': 'Fiktiv menighed',
+            'folder_minimum': 0, 'rural_minimum': 0, 'rural_mode': 'auto',
+            'require_revision': False, 'publisher_card_guidance': changed,
+        })
+        self.assertEqual(result['state']['settings']['publisher_card_guidance'], changed,
+                         'A successful save must return the saved values in the write response')
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed,
+                         'A separate GET must retain saved values after rerender/reload')
+        self.assertEqual(self.store.get('settings', 'config')['publisher_card_guidance'], changed)
+
+        # A second admin saving a stale, unchanged guidance field must not
+        # reverse the newer guidance while editing the congregation name.
+        stale_payload = {
+            'congregation': 'Ny fiktiv menighed',
+            'folder_minimum': 0, 'rural_minimum': 0, 'rural_mode': 'auto',
+            'require_revision': False, 'publisher_card_guidance': defaults,
+        }
+        second = self.change(other, stale, 'settings.save', stale_payload)
+        self.assertEqual(second['state']['settings']['publisher_card_guidance'], changed)
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed)
+        self.assertEqual(self.state(self.admin)['settings']['congregation'], 'Ny fiktiv menighed')
+
+        # A publisher-list reader can display the same advisory numbers but may
+        # neither edit them nor see unrelated settings.
+        reader, role, _ = self.reader(['publishers.view', 'loans.view'])
+        visible = self.state(reader)
+        self.assertEqual(visible['settings']['publisher_card_guidance'], changed)
+        self.assertNotIn('print_profiles', visible['settings'])
+        with self.assertRaises(urllib.error.HTTPError) as rejected:
+            self.change(reader, visible, 'settings.save', {'publisher_card_guidance': defaults})
+        self.assertEqual(rejected.exception.code, 403)
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed)
+
+        self.value('/api/profiles/roles/save', {'id': role, 'name': 'Fiktiv rolle',
+                   'permissions': ['cards.view']}, self.admin)
+        self.assertNotIn('publisher_card_guidance', self.state(reader)['settings'])
+
     def test_group_fields_merge_under_profiles_and_import_requires_current_rights(self):
         ident=self.store.mutate('publisher.save',{'name':'Fiktiv gruppeperson'})['id']
         second=self.login('Fiktiv admin','Fiktiv-password-123')
@@ -486,6 +533,54 @@ class ProfilesIntegrationTests(unittest.TestCase):
 
     def assign_task(self,owner,before=None,**extra):
         return self.change(self.admin,self.state(self.admin),'note.save',{'id':self.note,'card_id':self.card,'text':'Fictional assigned task','assignee_id':owner,'assignee_before':before,**extra})
+
+
+    def test_home_personal_task_count_heartbeat_rights_and_live_changes(self):
+        """Real HTTP with fictional users; never expose colleagues' task counts."""
+        from datetime import date, timedelta
+        from profile_features import personal_open_task_count
+        viewer, role, owner = self.reader(['notes.view', 'notes.edit'])
+        admin_id = self.state(self.admin)['profile']['user']['id']
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 0)
+        self.assign_task(owner)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 1)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, self.admin)['my_open_tasks'], 0)
+
+        other_id = self.server.accounts.save_user(self.admin['token'], 'Fiktiv kollega',
+                    [role], password='Fiktiv-password-789')
+        other = self.login('Fiktiv kollega', 'Fiktiv-password-789')
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, other)['my_open_tasks'], 0)
+        self.assertNotIn(owner, json.dumps(self.value('/api/profiles/heartbeat', {}, other)))
+        self.assertNotIn(other_id, json.dumps(self.value('/api/profiles/heartbeat', {}, viewer)))
+
+        self.change(viewer, self.state(viewer), 'note.resolve', {'id': self.note, 'resolved': True})
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 0)
+        self.change(viewer, self.state(viewer), 'note.resolve', {'id': self.note, 'resolved': False})
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 1)
+
+        # Another user's reassignment is visible on the next heartbeat.
+        self.assign_task(admin_id, before=owner)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 0)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, self.admin)['my_open_tasks'], 1)
+        self.value('/api/profiles/roles/save', {'id': role, 'name': 'Fiktiv rolle',
+                    'permissions': ['cards.view']}, self.admin)
+        restricted = self.value('/api/profiles/heartbeat', {}, viewer)
+        self.assertNotIn('my_open_tasks', restricted)
+
+        now = date.today().isoformat()
+        future = (date.today() + timedelta(days=7)).isoformat()
+        sample = [
+            {'assignee_id': owner, 'text': 'active', 'task': True, 'resolved': False},
+            {'assignee_id': owner, 'text': 'closed', 'task': True, 'resolved': True},
+            {'assignee_id': owner, 'text': 'ignored', 'task': True, 'ignored': True},
+            {'assignee_id': owner, 'text': 'future', 'task': True, 'recurrence': {'next_due': future}},
+            {'assignee_id': owner, 'text': 'due', 'task': True, 'recurrence': {'next_due': now}},
+            {'assignee_id': owner, 'text': 'not a task', 'task': False},
+            {'assignee_id': admin_id, 'text': 'another user', 'task': True},
+            {'assignee_id': owner, 'text': 'activity', 'entity': 'activity'},
+        ]
+        self.assertEqual(personal_open_task_count(sample, now, owner), 2)
+        self.assertEqual(personal_open_task_count(sample, now, admin_id), 1)
 
     def test_task_ownership_directory_and_private_self_label(self):
         session,role,user=self.reader(['cards.view','notes.view','notes.edit'])

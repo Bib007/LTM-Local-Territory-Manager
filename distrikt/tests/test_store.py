@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store, MODULES
+from profile_policy import ACTIONS, require
 from pdf_export import s13_pdf, allocation_rows
 
 class StorageTests(unittest.TestCase):
@@ -17,12 +18,98 @@ class StorageTests(unittest.TestCase):
         return self.s.mutate('card.save',data)['id']
     def issue(self,c,initial=False):
         return self.s.mutate('loan.issue',{'card_id':c,'publisher_id':self.publisher,'date':date.today().isoformat(),'initial':initial})['id']
+
+    def test_role_guidance_config_is_local_persistent_and_never_blocks_loan_issue(self):
+        defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+        self.assertEqual(self.s.get('settings', 'config')['publisher_card_guidance'], defaults)
+        limits = {'member': 0, 'pioneer': 3, 'assistant': 5, 'overseer': 6}
+        self.s.mutate('settings.save', {'publisher_card_guidance': limits})
+        self.assertEqual(self.s.get('settings', 'config')['publisher_card_guidance'], limits)
+        # An older settings client that omits the new field must preserve it.
+        self.s.mutate('settings.save', {'congregation': 'Fiktiv menighed'})
+        self.assertEqual(self.s.get('settings', 'config')['publisher_card_guidance'], limits)
+        self.s.close()
+        self.s = Store(self.tmp.name)
+        self.assertEqual(self.s.get('settings', 'config')['publisher_card_guidance'], limits)
+        loans = []
+        for number in ('F100', 'F101', 'F102'):
+            ident = self.make_card(number)
+            loans.append(self.issue(ident, True))
+        self.assertEqual(len([l for l in self.s.all('loans') if not l['returned']]), 3)
+        # The member suggestion is zero, yet all three real assignments are valid.
+        self.assertEqual(self.s.get('settings', 'config')['publisher_card_guidance']['member'], 0)
+        self.s.mutate('loan.finish', {'id': loans[0], 'date': date.today().isoformat(),
+                                     'complete': False, 'retain': False})
+        self.assertEqual(len([l for l in self.s.all('loans') if not l['returned']]), 2)
+
+    def test_role_guidance_requires_complete_bounded_integers_and_rolls_back(self):
+        defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+        invalid = [
+            {}, {'member': 1, 'pioneer': 2}, dict(defaults, member=-1),
+            dict(defaults, member=True), dict(defaults, pioneer=3.1),
+            dict(defaults, assistant='2'), dict(defaults, overseer=101),
+            dict(defaults, other=3), [1, 2, 3, 4],
+        ]
+        before = self.s.get('settings', 'config')
+        for value in invalid:
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    self.s.mutate('settings.save', {'publisher_card_guidance': value})
+                self.assertEqual(self.s.get('settings', 'config'), before)
+
     def test_separate_files_and_persistence(self):
         c=self.make_card();self.issue(c,True);before=self.s.state()
         self.assertEqual(len(list(Path(self.tmp.name).glob('*.sqlite3'))),len(MODULES))
         self.s.close();self.s=Store(self.tmp.name)
         after=self.s.state()
         for module in ('cards','publishers','loans','ib','visits','completions'):self.assertEqual(before[module],after[module])
+
+    def test_folder_selection_requires_loan_management_permission(self):
+        required = ACTIONS['folder.set']
+        self.assertEqual(required, frozenset({'cards.view', 'loans.view', 'loans.manage'}))
+        with self.assertRaises(PermissionError):
+            require({'cards.view', 'loans.view'}, required)
+        require({'cards.view', 'loans.view', 'loans.manage'}, required)
+
+    def test_specific_existing_card_stays_the_same_record(self):
+        target = self.make_card('F-42')
+        other = self.make_card('F-43')
+        self.s.mutate('completion.record', {'card_id': target, 'date': '2026-10-01'})
+        history = self.s.all('completions')
+        original = self.s.get('cards', target)
+        before_loans = self.s.all('loans')
+        moved = self.s.mutate('folder.set', {
+            'ids': [target], 'in_folder': True, 'expected_in_folder': False
+        })
+        self.assertEqual(moved['count'], 1)
+        self.assertTrue(self.s.get('cards', target)['in_folder'])
+        self.assertEqual(self.s.get('cards', target)['number'], 'F-42')
+        self.assertEqual(self.s.get('cards', other)['in_folder'], False)
+        self.assertEqual(self.s.get('cards', target)['last_completed'], original['last_completed'])
+        self.assertEqual(self.s.all('completions'), history)
+        self.assertEqual(self.s.all('loans'), before_loans)
+        self.assertEqual(len(self.s.all('cards')), 2)
+
+    def test_specific_folder_pick_rejects_stale_duplicates_and_issued(self):
+        first = self.make_card('F-51')
+        second = self.make_card('F-52')
+        with self.assertRaisesRegex(ValueError, 'flere gange'):
+            self.s.mutate('folder.set', {'ids': [first, first], 'in_folder': True})
+        self.assertFalse(self.s.get('cards', first)['in_folder'])
+        with self.assertRaisesRegex(ValueError, 'forventet'):
+            self.s.mutate('folder.set', {'ids': [first], 'in_folder': True, 'expected_in_folder': 'false'})
+        self.s.mutate('folder.set', {'ids': [first], 'in_folder': True, 'expected_in_folder': False})
+        with self.assertRaisesRegex(ValueError, 'allerede flyttet'):
+            self.s.mutate('folder.set', {'ids': [first, second], 'in_folder': True, 'expected_in_folder': False})
+        self.assertFalse(self.s.get('cards', second)['in_folder'])
+        loan_id = self.issue(second, True)
+        before_loans = self.s.all('loans')
+        with self.assertRaisesRegex(ValueError, 'udlånt'):
+            self.s.mutate('folder.set', {'ids': [second], 'in_folder': True, 'expected_in_folder': False})
+        self.assertFalse(self.s.get('cards', second)['in_folder'])
+        self.assertEqual(self.s.all('loans'), before_loans)
+        self.assertEqual(self.s.get('loans', loan_id)['returned'], None)
+
     def test_no_folder_issuance_except_initial(self):
         c=self.make_card()
         with self.assertRaises(ValueError):self.issue(c)

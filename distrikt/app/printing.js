@@ -41,24 +41,87 @@ function fitFrontCard(front){
  return fits;
 }
 function cardQRCss(){return '.cardQR{position:absolute;right:2%;bottom:19%;width:14%;text-align:center;color:black;font-family:Arial,sans-serif}.cardQR span{display:block;font-size:5.5pt;line-height:1.15;margin:0 0 1mm;overflow-wrap:normal}.cardQR img{display:block;width:100%;height:auto;aspect-ratio:1;background:white}';}
-function ibPrintPages(c,cfg){
- const items=state.ib.filter(i=>i.card_id===c.id).sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number));
- // Reserve space for the header, column labels and the form margins. This is
- // deliberately conservative so a continuation page is preferable to clipped text.
- const capacity=Math.max(2,Math.floor((Number(cfg.height)-34)/6.3));
- const pages=[],page=[];let used=0,lastRoad='';
- for(const item of items){const startsRoad=item.road!==lastRoad,cost=1+(startsRoad?1:0);if(page.length&&used+cost>capacity){pages.push(page.splice(0));used=0;lastRoad='';}
-  const nextRoad=item.road!==lastRoad;page.push(item);used+=1+(nextRoad?1:0);lastRoad=item.road;
+// Lay out IB entries against the actual browser dimensions, not estimated row counts.
+// This also protects the smaller pre-cut cards: each column is filled before continuing.
+// Fill the ORIGINAL card dimensions, including when previewed on A4 paper.
+// First try a full-width column; use two fixed-width columns if necessary.
+// Browser measurements, not a fixed row count, control all page breaks.
+function paginateIBSheets(doc){
+ const failures=[];
+ for(const original of [...doc.querySelectorAll('.sheet.ibSheet')]){
+  const preview=original.querySelector('.ibPreview'),head=preview?.querySelector('.ibHead'),labels=preview?.querySelector('.ibCols');
+  if(!head||!labels)continue;
+  const entries=[];
+  for(const section of preview.querySelectorAll('section')){
+   const road=section.querySelector('h4');
+   for(const row of section.querySelectorAll('.ibRow'))entries.push({road:road?.cloneNode(true),row:row.cloneNode(true)});
+  }
+  function render(maxColumns){
+   let lastSheet=null,currentSheet=null,column=null,lastSection=null,lastRoad=null,columnCount=0,rowCount=0,pageNo=0;
+   const added=[],failed=[];
+   function nextPage(){
+    pageNo++;
+    currentSheet=pageNo===1?original:original.cloneNode(true);
+    if(pageNo>1){lastSheet.after(currentSheet);added.push(currentSheet);}
+    lastSheet=currentSheet;
+    currentSheet.dataset.page=String(pageNo);
+    const panel=currentSheet.querySelector('.ibPreview');
+    panel.replaceChildren();panel.dataset.columns=String(maxColumns);
+    const header=head.cloneNode(true);
+    if(pageNo>1){panel.dataset.continuation='yes';header.querySelector('b')?.append(doc.createTextNode(' · '+(doc.documentElement.lang==='en'?'continued':'fortsat')));}
+    else delete panel.dataset.continuation;
+    panel.append(header);
+    const body=doc.createElement('div');body.className='ibBody';panel.append(body);
+    columnCount=0;nextColumn();
+   }
+   function nextColumn(){
+    const body=currentSheet.querySelector('.ibBody');
+    column=doc.createElement('div');column.className='ibPrintColumn';
+    column.append(labels.cloneNode(true));body.append(column);
+    columnCount++;lastSection=null;lastRoad=null;rowCount=0;
+   }
+   function fits(){
+    const limit=column.getBoundingClientRect(),box=column.lastElementChild?.getBoundingClientRect();
+    return column.clientHeight>0&&column.scrollHeight<=column.clientHeight+1&&column.scrollWidth<=column.clientWidth+1&&(!box||box.bottom<=limit.bottom+1);
+   }
+   nextPage();
+   for(const entry of entries){
+    let placed=false;
+    while(!placed){
+     let addedSection=false;
+     const roadText=entry.road?.textContent||'';
+     if(!lastSection||lastRoad!==roadText){
+      lastSection=doc.createElement('section');
+      if(entry.road)lastSection.append(entry.road.cloneNode(true));
+      column.append(lastSection);lastRoad=roadText;addedSection=true;
+     }
+     const row=entry.row.cloneNode(true);lastSection.append(row);
+     if(fits()){rowCount++;placed=true;continue;}
+     row.remove();
+     if(addedSection){lastSection.remove();lastSection=null;lastRoad=null;}
+     if(rowCount===0){failed.push(original.dataset.number||'?');break;}
+     if(columnCount<maxColumns)nextColumn();else nextPage();
+    }
+    if(!placed)break;
+   }
+   return {pages:pageNo,added,failed};
+  }
+  const single=render(1);
+  if(single.pages===1&&!single.failed.length)continue;
+  single.added.forEach(sheet=>sheet.remove());
+  const double=render(2);
+  failures.push(...double.failed);
  }
- if(page.length||!pages.length)pages.push(page);return pages;
+ return failures;
 }
 function ibOverviewDocument(items){const language=I18n.language(),t=(key,params)=>esc(I18n.format(key,params));return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><title>${t('IB-overblik')}</title><style>body{margin:0;background:#eee;color:#182b38;font:12px Arial}.bar{background:white;padding:15px;position:sticky;top:0}.page{max-width:180mm;margin:20px auto;background:white;padding:12mm;box-sizing:border-box}.page h1{margin:0 0 3mm}.page p{color:#526976}table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #ccd8df;padding:2.5mm 2mm}th{background:#edf3f6;font-size:10px}@page{size:A4 portrait;margin:15mm}@media print{body{background:white}.bar{display:none}.page{max-width:none;margin:0;padding:0}thead{display:table-header-group}tr{break-inside:avoid}}</style></head><body><div class="bar"><button id="printIBOverview">${t('Udskriv / gem PDF')}</button><p>${t('A4 · 15 mm margener · listen indeholder private IB-oplysninger.')}</p></div><main class="page"><h1>${t('IB-overblik')}</h1><p>${t('{count} IB · kun lokal udskrift',{count:items.length})}</p><table><thead><tr><th>${t('Kort')}</th><th>${t('Vej, nr.')}</th><th>${t('Dato eller datotekst')}</th></tr></thead><tbody>${items.map(i=>`<tr><td>${esc(card(i.card_id)?.number||'—')}</td><td>${esc(i.road)} ${esc(i.number)}</td><td>${i.date_text?esc(i.date_text):fmt(i.date)}</td></tr>`).join('')}</tbody></table></main></body></html>`;}
 async function printIBOverview(items){if(printIBOverview.busy)return;printIBOverview.busy=true;let win;try{win=window.open('','_blank');if(!win)throw Error('Tillad et nyt vindue til print.');win.document.open();win.document.write(ibOverviewDocument(items));win.document.close();win.document.getElementById('printIBOverview').addEventListener('click',()=>win.print());}catch(error){win?.close();throw error;}finally{printIBOverview.busy=false;}}
 function printDocument(cards,side,cfg){
  const language=I18n.language(),t=key=>esc(I18n.text(key));
  const {width:w,height:h,x,y,mode,paper}=cfg,formLanguage=cfg.form_language||I18n.language();
- const css=`body{margin:0;background:#eee;font:13px Arial;color:black}.bar{background:white;padding:15px;position:sticky;top:0;z-index:10}.sheet{width:${w}mm;height:${h}mm;background:white;margin:20px auto;outline:1px solid #aaa;break-after:page}.sheet:last-child{break-after:auto}.content{transform:translate(${x}mm,${y}mm)}.cardPreview{position:relative;width:${w}mm;height:${h}mm}.cardPreview>img{position:absolute;inset:0;width:100%;height:100%}${cardQRCss()}.title{position:absolute;left:26%;top:calc(17% - 1mm);font-size:10pt}.number{position:absolute;left:81%;top:calc(17% - 1mm);font-size:10pt}.streets{position:absolute;left:7%;top:30%;width:86%;font-size:9pt}.streets>div{display:flex;justify-content:space-between;gap:2mm;padding:1.5mm 0}.cardPreview[data-form-language=en] .title{left:16.5%;top:17%}.cardPreview[data-form-language=en] .number{left:76.8%;top:17%}.cardPreview[data-form-language=en] .streets{top:25%}.ibPreview{width:${w}mm;height:${h}mm;overflow:hidden;padding:5mm;box-sizing:border-box;font:8pt Arial}.ibHead{display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:3mm;font-size:8pt}.ibCols,.ibRow{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #999;padding:1.15mm 0}.ibPreview h4{color:black;margin:2.2mm 0 .8mm}.ibPreview section{break-inside:avoid}${mode==='data'?'.cardPreview>img,.ibHead,.ibCols{visibility:hidden}.ibHead,.ibCols,.ibRow{border-color:transparent}':''}@page{size:${paper==='a4'?'A4 portrait':w+'mm '+h+'mm'};margin:${paper==='a4'?'10mm':'0'}}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:white}.bar{display:none}.sheet{margin:0;outline:0}}`;
- const sheets=cards.flatMap(c=>side==='front'?[`<section class="sheet" data-number="${esc(c.number)}"><div class="content">${frontHTML({...c,form_language:formLanguage})}</div></section>`]:ibPrintPages(c,cfg).map((items,index)=>`<section class="sheet" data-number="${esc(c.number)}" data-page="${index+1}"><div class="content">${backHTML({...c,form_language:formLanguage},items,index>0)}</div></section>`));
+ let css=`body{margin:0;background:#eee;font:13px Arial;color:black}.bar{background:white;padding:15px;position:sticky;top:0;z-index:10}.sheet{width:${w}mm;height:${h}mm;background:white;margin:20px auto;outline:1px solid #aaa;break-after:page}.sheet:last-child{break-after:auto}.content{transform:translate(${x}mm,${y}mm)}.cardPreview{position:relative;width:${w}mm;height:${h}mm}.cardPreview>img{position:absolute;inset:0;width:100%;height:100%}${cardQRCss()}.title{position:absolute;left:26%;top:calc(17% - 1mm);font-size:10pt}.number{position:absolute;left:81%;top:calc(17% - 1mm);font-size:10pt}.streets{position:absolute;left:7%;top:30%;width:86%;font-size:9pt}.streets>div{display:flex;justify-content:space-between;gap:2mm;padding:1.5mm 0}.cardPreview[data-form-language=en] .title{left:16.5%;top:17%}.cardPreview[data-form-language=en] .number{left:76.8%;top:17%}.cardPreview[data-form-language=en] .streets{top:25%}.ibPreview{width:${w}mm;height:${h}mm;overflow:hidden;padding:5mm;box-sizing:border-box;font:8pt Arial}.ibHead{display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:3mm;font-size:8pt}.ibCols,.ibRow{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #999;padding:1.15mm 0}.ibPreview h4{color:black;margin:2.2mm 0 .8mm}.ibPreview section{break-inside:avoid}${mode==='data'?'.cardPreview>img,.ibHead,.ibCols{visibility:hidden}.ibHead,.ibCols,.ibRow{border-color:transparent}':''}@page{size:${paper==='a4'?'A4 portrait':w+'mm '+h+'mm'};margin:${paper==='a4'?'10mm':'0'}}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:white}.bar{display:none}.sheet{margin:0;outline:0}}`;
+ if(side==='back')css+=`.sheet.ibSheet .content{width:100%;height:100%}.sheet.ibSheet .ibPreview{display:flex;flex-direction:column;overflow:hidden;padding:4mm;font:8pt/1.25 Arial,sans-serif}.sheet.ibSheet .ibHead{flex:none;gap:2mm;align-items:center;padding-bottom:2mm;margin-bottom:1.5mm;font-size:8pt}.sheet.ibSheet .ibHead b{overflow-wrap:anywhere}.sheet.ibSheet .ibBody{display:grid;grid-template-columns:minmax(0,1fr);column-gap:2.5mm;flex:1 1 auto;min-height:0}.sheet.ibSheet .ibPreview[data-columns="2"] .ibBody{grid-template-columns:repeat(2,minmax(0,1fr))}.sheet.ibSheet .ibPrintColumn{flex:1 1 0;min-width:0;min-height:0;height:100%}.sheet.ibSheet .ibCols,.sheet.ibSheet .ibRow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2mm;line-height:1.2;padding:.55mm 0}.sheet.ibSheet .ibCols{flex:none;font-size:7.8pt;margin-bottom:.7mm}.sheet.ibSheet .ibRow{font-size:8pt;break-inside:avoid}.sheet.ibSheet .ibRow span,.sheet.ibSheet h4{min-width:0;white-space:normal;overflow-wrap:anywhere}.sheet.ibSheet h4{font-size:8pt;line-height:1.2;margin:1.4mm 0 .45mm}.sheet.ibSheet section{break-inside:auto}`;
+ const sheets=cards.flatMap(c=>side==='front'?[`<section class="sheet" data-number="${esc(c.number)}"><div class="content">${frontHTML({...c,form_language:formLanguage})}</div></section>`]:[`<section class="sheet ibSheet" data-number="${esc(c.number)}" data-page="1"><div class="content">${backHTML({...c,form_language:formLanguage})}</div></section>`]);
  return `<!doctype html><html lang="${formLanguage}"><head><meta charset="utf-8"><title>${language==='en'?'Print territory card':'Print distriktskort'}</title><style>${css}</style></head><body><div class="bar" lang="${language}"><button id="print" disabled>${t('Udskriv / gem PDF')}</button> ${cards.length} ${t('kort')} · ${w} × ${h} mm · ${t(h>w?'højkant':'liggende')} · 100 %<p id="tooLong" role="alert"></p><button id="approvePrinted" hidden>${t('Godkend printede sider i appen')}</button><p>${t('Godkend eventuelt genprint i appen, når de fysiske sider er kontrolleret.')}</p></div>${sheets.join('')}</body></html>`;
 }
 async function printCard(form){
@@ -83,16 +146,17 @@ async function printCard(form){
   if(!current()||JSON.stringify([...new FormData(form)])!==signature)throw Error('Printgrundlaget er ændret. Åbn print igen.');
  }catch(error){win.close();throw error;}
 
- const loaded=results=>{if(win.closed)return;const overflow=[],missingQR=[];for(const sheet of win.document.querySelectorAll('.sheet')){const content=sheet.querySelector('.content'),streets=sheet.querySelector('.streets'),qr=sheet.querySelector('.cardQR'),image=qr?.querySelector('img');let collision=false;const fits=fitFrontCard(sheet.querySelector('.cardPreview'));if(streets&&qr){const a=streets.getBoundingClientRect(),b=qr.getBoundingClientRect();collision=a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;}
-   if(!fits||content.scrollHeight>sheet.clientHeight+2||content.scrollWidth>sheet.clientWidth+2||(streets&&streets.offsetTop+streets.scrollHeight>sheet.clientHeight)||collision)overflow.push(sheet.dataset.number);
+ const loaded=(results,ibErrors=[])=>{if(win.closed)return;const overflow=[],missingQR=[];for(const sheet of win.document.querySelectorAll('.sheet')){const content=sheet.querySelector('.content'),streets=sheet.querySelector('.streets'),qr=sheet.querySelector('.cardQR'),image=qr?.querySelector('img');let collision=false;const fits=fitFrontCard(sheet.querySelector('.cardPreview'));if(streets&&qr){const a=streets.getBoundingClientRect(),b=qr.getBoundingClientRect();collision=a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;}
+   const ibOverflow=[...sheet.querySelectorAll('.ibPrintColumn')].some(col=>col.clientHeight===0||col.scrollHeight>col.clientHeight+1||col.scrollWidth>col.clientWidth+1);if(!fits||ibOverflow||content.scrollHeight>sheet.clientHeight+2||content.scrollWidth>sheet.clientWidth+2||(streets&&streets.offsetTop+streets.scrollHeight>sheet.clientHeight)||collision)overflow.push(sheet.dataset.number);
    if(image&&(!image.complete||!image.naturalWidth))missingQR.push(sheet.dataset.number);
   }
-  const messages=[];if(results.some(r=>r.status==='rejected'))messages.push(t('Printbilleder kunne ikke indlæses. Åbn print igen.'));if(overflow.length)messages.push(t('Vejlisten eller QR-koden har ikke plads på kort:')+' '+overflow.join(', ')+'. '+t('Tilpas kortet før print.'));if(missingQR.length)messages.push(t('QR-koden kunne ikke indlæses på kort:')+' '+missingQR.join(', ')+'. '+t('Genåbn kortet og kontrollér publiceringen.'));
+  const messages=[];if(ibErrors.length)messages.push((language==='en'?'IB entries do not fit on the printed page: ':'IB-posterne kan ikke være på udskriftssiden: ')+[...new Set(ibErrors)].join(', '));if(results.some(r=>r.status==='rejected'))messages.push(t('Printbilleder kunne ikke indlæses. Åbn print igen.'));if(overflow.length)messages.push(t('Vejlisten eller QR-koden har ikke plads på kort:')+' '+overflow.join(', ')+'. '+t('Tilpas kortet før print.'));if(missingQR.length)messages.push(t('QR-koden kunne ikke indlæses på kort:')+' '+missingQR.join(', ')+'. '+t('Genåbn kortet og kontrollér publiceringen.'));
   win.document.getElementById('tooLong').textContent=messages.join(' ');win.document.getElementById('print').disabled=messages.length>0;
  };
  win.document.write(markup);win.document.close();win.document.getElementById('print').addEventListener('click',()=>{if(win.document.getElementById('print').disabled)return;PrintApprovals.remember(cards,side);const approve=win.document.getElementById('approvePrinted');if(approve)approve.hidden=false;win.print();});
  const approve=win.document.getElementById('approvePrinted');if(approve)approve.addEventListener('click',()=>{window.focus();PrintApprovals.open();});
- Promise.allSettled(Array.from(win.document.images,img=>img.decode())).then(loaded);
+ const imageTasks=Array.from(win.document.images,img=>img.decode());if(win.document.fonts?.ready)imageTasks.push(win.document.fonts.ready);
+ Promise.allSettled(imageTasks).then(results=>loaded(results,side==='back'?paginateIBSheets(win.document,cfg):[]));
  if(fd.has('remember')){try{await mutate('print.profile.save',{side,profile:cfg},{close:false,message:'Printprofil gemt lokalt'});}catch(error){toast('Printvisningen er åben. Kontrollér gemmestatus for printprofilen før et nyt forsøg.');return;}}
  if(generation===openDialog.generation&&page===origin&&el('printForm')===form)closeDialog();
  }finally{delete form.dataset.printing;}
