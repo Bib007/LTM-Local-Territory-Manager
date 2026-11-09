@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.19-beta.3 · 2026-11-09
+
+- Fix profile-mode settings silently reverting publisher card guidance to the default role counts after saving. Persisted values now pass through the authenticated settings snapshot and refresh correctly.
+- Share the configured advisory counts with users allowed to view publishers, without granting permission to edit settings or exposing unrelated administration data.
+- Add real authenticated HTTP save/refresh and responsive browser save/reload regression tests with fictional accounts; recommendations never block issuing extra cards.
+
 ## 1.12.19-beta.2 · 2026-11-09
 
 - Fill the original 94 × 146 mm IB-card back more efficiently, retaining every entry and creating extra card pages only when necessary. A4 remains proof paper, never an enlarged card.
