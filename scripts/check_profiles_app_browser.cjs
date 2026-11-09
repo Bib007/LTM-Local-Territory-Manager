@@ -285,6 +285,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     'Desktop counts only the admin-owned task, not the mobile user or unassigned task');
   assert.ok((await admin.locator('.welcomeTasksNotice').boundingBox()).width>100);
   await admin.locator('[data-work="my-tasks"]').click();
+  await admin.waitForFunction(()=>page==='Opgaver'&&Workspace.taskOwnerFilter==='mine'&&Workspace.taskFilter==='open');
   assert.deepEqual(await admin.evaluate(()=>[page,Workspace.taskOwnerFilter,Workspace.taskFilter,Workspace.taskQuery]),
     ['Opgaver','mine','open',''],'Desktop link selects only current open tasks');
   assert.ok((await admin.locator('#app').innerText()).includes('Fiktiv administrationsopgave'));
@@ -302,6 +303,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await mobileTasks.screenshot({path:'/tmp/ltm-my-tasks-mobile.png',fullPage:true});
   await mobileTasks.evaluate(()=>{Workspace.taskFilter='done';Workspace.taskOwnerFilter='all';Workspace.taskQuery='irrelevant';});
   await mobileTasks.locator('[data-work="my-tasks"]').click();
+  await mobileTasks.waitForFunction(()=>page==='Opgaver'&&Workspace.taskOwnerFilter==='mine'&&Workspace.taskFilter==='open');
   assert.deepEqual(await mobileTasks.evaluate(()=>[page,Workspace.taskOwnerFilter,Workspace.taskFilter,Workspace.taskQuery]),
     ['Opgaver','mine','open',''],'The button resets stale task filters and search');
   assert.ok((await mobileTasks.locator('#app').innerText()).includes('Fiktiv mobilopgave'));
@@ -313,6 +315,9 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await mobileTasks.locator('.welcomeTasksNotice').count(),0,'Completed tasks vanish immediately without reload');
 
   await admin.evaluate(async()=>{
+    // The editor just changed this record in another session. Refresh the
+    // observed base before attempting an intentional reopen.
+    await refresh();
     const id=state.notes.find(n=>n.text==='Fiktiv mobilopgave').id;
     await mutate('note.resolve',{id,resolved:false},{close:false});
   });
@@ -325,6 +330,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await mobileTasks.locator('#navigationLanguage').selectOption('da');
   await mobileTasks.evaluate(()=>render());
   await admin.evaluate(async()=>{
+    await refresh();
     const id=state.notes.find(n=>n.text==='Fiktiv mobilopgave').id;
     await mutate('note.resolve',{id,resolved:true},{close:false});
   });
