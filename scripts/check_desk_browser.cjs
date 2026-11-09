@@ -71,6 +71,46 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
 
  if(touch&&width<=750){await page.locator('.mobileMenu').tap();assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'true');await page.locator('.mobileMenu').tap();assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'false');}
  await page.evaluate(()=>{page='Distrikter';render();});
+
+ // Real desktop/mobile UI: fake data only, no writes, existing filters retained.
+ await page.evaluate(()=>{
+  window.__territorySortRestore={cards:state.cards.map(c=>({...c})),areas:state.areas.map(a=>({...a})),query,area,status,territorySort,page,view};
+  const dates={folder:'2026-09-01',blocked:null,box:'2024-01-01',one:null,two:'2025-04-01',three:'2026-01-01'};
+  state.cards.forEach(c=>{c.last_completed=dates[c.id];if(c.id==='three')c.area_id='other';});
+  state.areas.push({id:'other',name:'Andet fiktivt område'});
+  territorySort='number';status='Alle';query='';area='';view='Liste';render();
+ });
+ assert.equal(await page.locator('#territorySort').isVisible(),true);
+ assert.equal(await page.locator('.territorySortControls').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;}),true,'Sort control fits desktop/mobile');
+ const listed=()=>page.locator('.cardRow[data-card-row]').evaluateAll(nodes=>nodes.map(n=>n.dataset.cardRow));
+ assert.deepEqual(await listed(),['folder','blocked','box','one','two','three']);
+ await page.locator('#territorySort').selectOption('oldest');
+ assert.deepEqual(await listed(),['blocked','one','box','two','three','folder'],'Unknown completions first, then oldest');
+ await page.locator('#areaFilter').selectOption('a');
+ await page.locator('#statusFilter').selectOption('Kort i mappen');
+ await page.locator('#search').fill('fiktivt');
+ assert.deepEqual(await listed(),['blocked','folder'],'Age sort works with area, status and search');
+ await activate(page.locator('[data-action=reset-territory-sort]'));
+ assert.deepEqual(await listed(),['folder','blocked'],'Reset returns to number order without clearing other filters');
+ assert.equal(await page.locator('#territorySort').inputValue(),'number');
+ assert.equal(await page.locator('#areaFilter').inputValue(),'a');
+ assert.equal(await page.locator('#statusFilter').inputValue(),'Kort i mappen');
+ assert.equal(await page.locator('#search').inputValue(),'fiktivt');
+ await page.locator('#search').fill('ingen-fiktive-kort');
+ assert.equal(await page.locator('.cardRow[data-card-row]').count(),0);
+ await page.locator('#territorySort').selectOption('oldest');
+ assert.equal(await page.locator('.cardRow[data-card-row]').count(),0,'No cards does not break sorting');
+ await activate(page.locator('[data-action=reset-territory-sort]'));
+ assert.equal(await page.locator('#search').inputValue(),'ingen-fiktive-kort');
+ await page.evaluate(()=>{
+  const saved=window.__territorySortRestore;
+  state.cards=saved.cards;state.areas=saved.areas;query=saved.query;area=saved.area;status=saved.status;territorySort=saved.territorySort;page=saved.page;view=saved.view;
+  delete window.__territorySortRestore;render();
+ });
+ await page.evaluate(()=>{page='Udlevering';render();});
+ assert.equal(await page.locator('.oldestCards').count(),0,'The old Daily use table is removed after replacing it with the inventory sort');
+ await page.evaluate(()=>{page='Distrikter';render();});
+
  for(const name of ['issued','folder','box']){assert.ok(await page.locator('.statusBadge.'+name).count());const style=await page.locator('.statusBadge.'+name).first().evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(style.color,style.background)>=4.5,name+' contrast');}
  for(const cls of ['issueAction','returnAction']){const s=await page.locator('.'+cls+':not(:disabled)').first().evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(s.color,s.background)>=4.5,cls+' contrast');}
  assert.equal(await page.locator('[data-card-row=blocked] .issueAction').isDisabled(),true);assert.match(await page.locator('[data-card-row=folder] .taskAlert').innerText(),/1/);assert.equal(await page.locator('[data-card-row=box] .taskAlert').count(),0);assert.equal(await page.locator('.navTaskCount').innerText(),'2');
