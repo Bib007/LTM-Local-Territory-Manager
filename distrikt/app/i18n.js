@@ -3,6 +3,10 @@
 const I18n={
  current:'en',
  english:{
+  "Ugyldig kortliste eller samme kort valgt flere gange.":"Invalid card list or the same card was selected more than once.",
+  "Ugyldig forventet kortplacering.":"Invalid expected card location.",
+  "Kortet er allerede flyttet. Opdater siden og vælg igen.":"The card has already been moved. Refresh the page and choose again.",
+
   "Gå til Distriktskort og opret kort":"Go to Territory cards to create cards",
 
   "Læg specifikt kort i mappen":"Put a specific card in the carry folder",
