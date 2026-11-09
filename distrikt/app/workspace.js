@@ -140,7 +140,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  myOpenTasks(){return state?.profile&&ProfilesUI.pageAllowed('Opgaver')?this.actionableTasks().filter(n=>n.assignee_self===true):[];},
  myTasksWelcome(count=this.myOpenTasks().length){
   if(!state?.profile||!ProfilesUI.pageAllowed('Opgaver')||!Number.isInteger(count)||count<=0)return '';
-  return `<div class="welcomeTasksNotice" role="status" style="display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-top:12px;padding:12px 15px;border:1px solid var(--line);border-radius:9px"><span>${ui('Du er ansvarlig for {count} åbne opgaver',{count})}</span><button type="button" data-work="my-tasks" class="primary" style="font-size:12px;min-height:34px">${ui('Se mine opgaver')}</button></div>`;
+  return `<div class="welcomeTasksNotice" role="status" style="display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-top:12px;padding:12px 15px;border:1px solid var(--line);border-radius:9px"><span>${ui(count===1?'Du er ansvarlig for 1 åben opgave':'Du er ansvarlig for {count} åbne opgaver',{count})}</span><button type="button" data-work="my-tasks" class="primary" style="font-size:12px;min-height:34px">${ui('Se mine opgaver')}</button></div>`;
  },
 
  taskSchedule(n){return n.recurrence?`<p class="hint">${ui('Ugentligt · {day}',{day:I18n.text(this.weekdays[n.recurrence.weekday])})} · ${ui('Næste gang: {date}',{date:fmt(n.recurrence.next_due)})}${n.recurrence.next_due<=state.today?' · '+ui('Forfalden'):''}</p>`:'';},
