@@ -303,7 +303,7 @@ assert.equal(run("compactAddressNumbers('20, 22, 24, 28, 30 (lige)')"),'20-24 & 
  const all=run("folderCardPickerRows('')");
  assert.match(all,/data-id="folder" disabled/);
  assert.match(all,/data-id="issued" disabled/);
- assert.match(all,/data-id="available" [^>]*>Vælg kort/);
+ assert.match(all,/data-id="available" [^>]*>\s*<span[^>]*>Vælg kort<\/span>/);
  run("chooseFolderCard()");
  assert(get('dialog').innerHTML.includes('id="folderCardSearch"'));
  assert(!get('dialog').innerHTML.includes('data-action="new-card"'));
