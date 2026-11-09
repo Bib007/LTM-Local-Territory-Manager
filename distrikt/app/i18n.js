@@ -3,6 +3,9 @@
 const I18n={
  current:'en',
  english:{
+  "Sortér efter":"Sort by",
+  "Nulstil sortering":"Reset sorting",
+  "{count} kort · sorteret efter kortnummer":"{count} cards · sorted by card number",
   "Adressekontrollen er færdig. Ingen adresseændringer afventer gennemgang.":"The address check is complete. No address changes are awaiting review.",
   "Adressekontrollen er færdig. Ingen nye adresseændringer fundet.":"The address check is complete. No new address changes found.",
   "Genindlæs appen og dan kortbilledet igen.":"Reload the app and generate the card image again.",
