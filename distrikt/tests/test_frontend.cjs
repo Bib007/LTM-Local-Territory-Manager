@@ -4,8 +4,7 @@ let src=fs.readFileSync(path.join(__dirname,'../app/app.js'),'utf8');src=src.sli
 const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,{id,innerHTML:'',textContent:'',className:'',style:{},dataset:{},classList:{toggle(){}},addEventListener(){},removeEventListener(){},setAttribute(){},showModal(){},close(){},querySelector(){return null}});return nodes.get(id);};
 const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,requestAnimationFrame:callback=>setTimeout(callback,0),setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),getElementById:get},window:{addEventListener(){},removeEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/publisher-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
 run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],completions:[],ib:[],visits:[],maps:[],recovery:[],settings:{folder_minimum:30,rural_mode:'manual',rural_minimum:5,require_revision:false,congregation:''},today:'2026-10-06',version:'1.2.0'}`);
-
- // The new inventory sort uses the existing age(), keeps unknowns first and
+// The new inventory sort uses the existing age(), keeps unknowns first and
  // never erases search, area or placement selections.
  {
   const snapshot=run('JSON.stringify({state,query,area,status,territorySort,page,view})');
@@ -36,6 +35,7 @@ run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],compl
   assert.equal(run('territorySort'),'number');
   console.log('Inventory sort: unknown dates, combined filters, deterministic order, reset isolation and empty state passed.');
  }
+
 
 for(const p of ['Udlevering','Distrikter','Udleverede distriktskort','Forkyndere','Rapporter','Adresser','Kortopsætning','Indstillinger']){run(`page='${p}';render()`);assert(get('app').innerHTML.length>150,p);}
 run(`for(let i=0;i<40;i++)state.cards.push({id:'c'+i,number:String(i),temporary:true,kind:i<8?'Land':'By',in_folder:false,last_completed:i===0?null:'2026-01-01',addresses:[]});`);
@@ -131,6 +131,45 @@ assert.throws(()=>run('GeoUI.boundsForDownload()'),/Kortopsætning/);
 
 run("GeoUI.data.info.postcodes=[{postcode:'9999',name:'Testby',snapshot:'2026-08-01T00:00:00Z',roads:[{status:'done',road:'Eksempelvej'}]}]");
 assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run("GeoUI.postcodeList().includes('Opdater postnummer')"));
+// Daily-use selection never creates a new card: it looks up existing ids only.
+{
+ const before=run('JSON.stringify(state)');context.folderPickerOriginalState=before;context.folderPickerPrevious={page:run('page'),deskTab:run('deskTab'),selected:run('selected'),query:run('query'),dialog:get('dialog').innerHTML};
+ run(`state={...state,areas:[{id:'north',name:'Fiktivt nord'}],
+ cards:[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},
+        {id:'folder',number:'102',name:'Indlagt',area_id:'north',in_folder:true},
+        {id:'issued',number:'103',name:'Udlånt',area_id:'north',in_folder:false}],
+ loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true,dialog(){}};`);
+ const desk=run('home()');
+ assert(desk.includes('data-action="folder-card-picker"'));
+ assert(!desk.includes('data-action="new-card"'));
+ const filtered=run("folderCardPickerRows('fIkTiVt <test>')");
+ assert(filtered.includes('data-id="available"')&&filtered.includes('Fiktivt &lt;test&gt;'));
+ assert(!filtered.includes('data-id="folder"')&&!filtered.includes('data-id="issued"'));
+ const all=run("folderCardPickerRows('')");
+ assert.match(all,/data-id="folder" disabled/);
+ assert.match(all,/data-id="issued" disabled/);
+ assert.match(all,/data-id="available" [^>]*>\s*<span[^>]*>Vælg kort<\/span>/);
+ run("chooseFolderCard()");
+ assert(get('dialog').innerHTML.includes('id="folderCardSearch"'));
+ assert(!get('dialog').innerHTML.includes('data-action="new-card"'));
+ run("confirmFolderCard('available')");
+ assert(get('dialog').innerHTML.includes('Læg kort 101 i mappen?'));
+ run("confirmFolderCard('folder')");
+ assert(get('dialog').innerHTML.includes('Allerede i mappen'));
+ run("confirmFolderCard('issued')");
+ assert(get('dialog').innerHTML.includes('Udleveret'));
+ run("globalThis.ProfilesUI.canAction=()=>false;chooseFolderCard()");
+ assert(!get('dialog').innerHTML.includes('data-action="folder-card-confirm"'));
+ run("state.cards=[];state.loans=[]");
+ const emptyDesk=run('home()');
+ assert(emptyDesk.includes('data-page="Distrikter"')&&!emptyDesk.includes('data-action="new-card"')&&!emptyDesk.includes('data-admin="quick"'));
+ run("state.cards=[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},{id:'folder',number:'102',area_id:'north',in_folder:true},{id:'issued',number:'103',area_id:'north',in_folder:false}];state.loans=[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]");
+ assert.equal(run("state.cards.length"),3);
+ assert.equal(run("state.loans.length"),1);
+ run("state=JSON.parse(folderPickerOriginalState);page=folderPickerPrevious.page;deskTab=folderPickerPrevious.deskTab;selected=folderPickerPrevious.selected;query=folderPickerPrevious.query;delete globalThis.ProfilesUI");get("dialog").innerHTML=context.folderPickerPrevious.dialog;
+ console.log('Daily-use existing-card picker: search, escaped results, in-folder, issued, role guard, no creation passed.');
+}
+
 (async()=>{
  run("originalApi=api;adminWrites=[];originalAdminMutate=mutate;mutate=async(action,data)=>{adminWrites.push({action,data});};api=async()=>({json:async()=>({result:{count:2,numbers:['1','2'],duplicates:[]}})})");
  try{
@@ -317,3 +356,5 @@ assert.equal(run("compactAddressNumbers('36A, 36B, 36C, 36D (lige)')"),'36A-36D 
 assert.equal(run("compactAddressNumbers('36A & 36C-36D (lige)')"),'36A & 36C-36D (lige)');
 
 assert.equal(run("compactAddressNumbers('20, 22, 24, 28, 30 (lige)')"),'20-24 & 28-30 (lige)');
+
+

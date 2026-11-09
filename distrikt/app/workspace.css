@@ -144,10 +144,3 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .columnImport{margin:1rem 0;padding:1rem;border:1px solid var(--border,#d9dfe5);border-radius:10px}.columnImportFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin:1rem 0}.columnImportFields label{min-width:0;overflow-wrap:anywhere}.columnImport select,.columnImport input[type=number]{max-width:100%}.columnImport td{white-space:pre-wrap;overflow-wrap:anywhere;min-width:85px;max-width:240px}.columnImport .tablewrap{max-width:100%;overflow:auto}
 
 .activityEvent{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--line,#8395a433)}.activityDot{flex:0 0 32px;height:32px;border-radius:50%;background:#24744822;color:#30865a;display:grid;place-items:center}.activityEvent strong{display:block}.activityActor{margin:8px 0 4px}.activityEvent small{color:var(--muted,#7c919e)}
-
-/* Separate, accessible territory-card sort control; keep all other filters intact. */
-.territorySortControls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0;max-width:100%}
-.territorySortControls label{margin:0;white-space:nowrap}
-.territorySortControls select{min-width:165px;max-width:100%;flex:1 1 165px}
-.territorySortControls button{flex:0 0 auto}
-@media(max-width:750px){.territorySortControls{width:100%}.territorySortControls label{flex-basis:100%}.territorySortControls select{min-width:0;flex:1 1 150px}.territorySortControls button{flex:0 1 auto}}
