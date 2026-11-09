@@ -107,6 +107,39 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1})
 
+    def test_role_guidance_survives_profile_settings_save_and_real_http_refresh(self):
+        # Regression: before this fix the authenticated state stripped the four
+        # saved counts, so refreshing the Settings page reset them to defaults.
+        defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+        before = self.state(self.admin)
+        self.assertEqual(before['settings']['publisher_card_guidance'], defaults)
+        changed = {'member': 0, 'pioneer': 4, 'assistant': 1, 'overseer': 7}
+        result = self.change(self.admin, before, 'settings.save', {
+            'congregation': 'Fiktiv menighed',
+            'folder_minimum': 0, 'rural_minimum': 0, 'rural_mode': 'auto',
+            'require_revision': False, 'publisher_card_guidance': changed,
+        })
+        self.assertEqual(result['state']['settings']['publisher_card_guidance'], changed,
+                         'A successful save must return the saved values in the write response')
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed,
+                         'A separate GET must retain saved values after rerender/reload')
+        self.assertEqual(self.store.get('settings', 'config')['publisher_card_guidance'], changed)
+
+        # A publisher-list reader can display the same advisory numbers but may
+        # neither edit them nor see unrelated settings.
+        reader, role, _ = self.reader(['publishers.view', 'loans.view'])
+        visible = self.state(reader)
+        self.assertEqual(visible['settings']['publisher_card_guidance'], changed)
+        self.assertNotIn('print_profiles', visible['settings'])
+        with self.assertRaises(urllib.error.HTTPError) as rejected:
+            self.change(reader, visible, 'settings.save', {'publisher_card_guidance': defaults})
+        self.assertEqual(rejected.exception.code, 403)
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed)
+
+        self.value('/api/profiles/roles/save', {'id': role, 'name': 'Fiktiv rolle',
+                   'permissions': ['cards.view']}, self.admin)
+        self.assertNotIn('publisher_card_guidance', self.state(reader)['settings'])
+
     def test_group_fields_merge_under_profiles_and_import_requires_current_rights(self):
         ident=self.store.mutate('publisher.save',{'name':'Fiktiv gruppeperson'})['id']
         second=self.login('Fiktiv admin','Fiktiv-password-123')
