@@ -1,23 +1,21 @@
-# LTM 1.12.19-beta.2 · IB-kort, mapper, sortering og vejledende kortantal
+# LTM 1.12.19-beta.3 · Rettelse af vejledende kortantal
 
-Denne beta samler forbedringerne fra PR #33–36. Stable 1.12.19 er uændret.
+Denne beta retter en fejl i den forrige beta (`1.12.19-beta.2`). Stable 1.12.19 er uændret.
 
-## Dette er nyt
+## Rettet
 
-- **IB-bagsider:** Kortene bliver fortsat trykt i det originale format 94 × 146 mm. Pladsen udnyttes bedre med automatisk sideopdeling og eventuelt to spalter, så intet klippes.
-- **Læg specifikt kort i mappen:** Søg efter et eksisterende kort fra Daglig brug, vælg det og bekræft. Ingen nye kortnumre eller ændringer af udleveringshistorikken.
-- **Senest gennemgået:** Sortér distriktskort efter længst tid siden gennemgang under Distriktskort. Kort uden dato kommer først, og nulstilling påvirker ikke andre filtre.
-- **Vejledende antal pr. forkynder:** Fire redigerbare rolletal under Indstillinger (menighedsforkynder 1, pioner 2, assistent 2, gruppetilsynsmand 3). Visning af aktuelt / vejledende i lister og ved udlevering. **Aldrig en blokering.**
+- **Gem indstillinger fungerer nu for vejledende kortantal pr. forkynder.** Ændringer til de fire roller bliver vist efter gemning, når appen bruger brugerprofiler, og de samme værdier vises igen efter genindlæsning eller nyt login.
+- **Samme vejledende antal for hele holdet.** Brugere med adgang til forkynderoversigten ser de gemte anbefalinger uden at få ret til at ændre indstillingerne.
+- **Ingen udleveringsgrænse.** Anbefalingerne er stadig kun vejledende. En forkynder kan få flere distriktskort end det angivne antal.
 
-## Afprøv gerne
+De øvrige forbedringer fra 1.12.19-beta.2 er fortsat med: mere plads på IB-bagsider, søgning efter et eksisterende kort til mappen og sortering efter længst tid siden gennemgang.
 
-1. Prøv IB-kort med få, mellemstore og mange fiktive adresser på både forskåret kort og A4-prøveark, også som PDF.
-2. Læg et eksisterende kort i mappen via søgning. Kontrollér at udleverede og allerede placerede kort ikke kan flyttes på denne måde.
-3. Sortér Distriktskort efter gammel/ukendt gennemgang, vælg område og status, og nulstil kun sorteringen.
-4. Justér vejledende antal for hver rolle; afprøv kombinerede roller, udlevering og aflevering og kontrollér at ekstra kort stadig kan udleveres.
+## Afprøv med fiktive data
 
-Betaen anvender i Home Assistant **port 8788, egen datamappe og eget login**. Den almindelige Beta-opdatering bevarer Beta-prøvedata, men lav altid en privat sikkerhedskopi først. Stable påvirkes ikke.
+1. Gå til **Indstillinger → Menighed og mappe**, og ændr alle fire vejledende antal (f.eks. til 0, 4, 1 og 7).
+2. Tryk **Gem indstillinger**. Kontrollér, at tallene forbliver uændrede efter gemning, sideopdatering og genåbning.
+3. Gå til **Forkyndere** og prøv at udlevere og aflevere et kort. Kontrollér visningen *aktuelt / vejledende*, også når antal overskrides.
 
-Brug kun opdigtede kort og en særskilt testforbindelse til Google Drive. Betaens programmæssige pakker indeholder ingen brugerdata.
+**Home Assistant Beta** beholder eget login, egen datamappe og port 8788. Tag en privat backup, før du opdaterer. Stable berøres ikke, og pakken indeholder ingen brugerdata.
 
-Se [betavejledningen](BETA.md) for installation og [Stable-noterne](RELEASE-NOTES.md) for den stabile udgave.
+Læs [betavejledningen](BETA.md) ved installation og [changeloggen](CHANGELOG.md) for ændringerne.

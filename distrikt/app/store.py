@@ -19,6 +19,7 @@ MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkynde
            'loans': 'udleveringer', 'completions': 'gennemgange', 'ib': 'ib',
            'visits': 'ktm_besoeg', 'maps': 'kortbilleder', 'geo': 'geodata', 'ignored': 'se_bort_fra', 'notes': 'kortnoter'}
 ADDRESS_TYPES = ['Hus', 'Lejlighed', 'Lejlighedskompleks', 'Butik', 'Kontor', 'Virksomhed', 'Andet']
+DEFAULT_PUBLISHER_CARD_GUIDANCE = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec='seconds')
@@ -99,7 +100,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             if not self.get('settings', 'config'):
                 self.put('settings', {'id': 'config', 'congregation': '', 'folder_minimum': 0,
                     'rural_mode': 'auto', 'rural_minimum': 0, 'require_revision': False,
-                    'publisher_card_guidance': {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}, 'schema': 1})
+                    'publisher_card_guidance': dict(DEFAULT_PUBLISHER_CARD_GUIDANCE), 'schema': 1})
         self.purge_expired()
 
     @contextmanager
@@ -546,7 +547,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
                 raise ValueError('Kontrollér minimum og antal landkort.')
             # Local suggestions only: never used to reject loan.issue / loan.finish.
-            defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+            defaults = DEFAULT_PUBLISHER_CARD_GUIDANCE
             limits = data.get('publisher_card_guidance', c.get('publisher_card_guidance', defaults))
             if not isinstance(limits, dict) or set(limits) != set(defaults) or any(
                 type(value) is not int or not 0 <= value <= 100 for value in limits.values()
