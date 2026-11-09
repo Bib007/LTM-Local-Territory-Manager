@@ -1,0 +1,32 @@
+name: One-time cleanup of merged PR 36 branch
+on:
+  push:
+    branches: [develop]
+    paths: ['.github/workflows/prune-merged-publisher-guidance-20261109.yml']
+permissions:
+  contents: write
+jobs:
+  prune:
+    if: contains(github.event.head_commit.message, 'Start post-merge PR36 branch cleanup')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify merged PR and delete only its unchanged original branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch='feature/publisher-role-card-guidance-20261109'
+          expected='1dd6756ac4be11c190c982ae39d4209b87204a74'
+          pr=$(gh api "repos/$GH_REPO/pulls/36")
+          [[ "$(jq -r '.merged_at // empty' <<< "$pr")" != '' ]] || exit 1
+          [[ "$(jq -r .head.ref <<< "$pr")" == "$branch" ]] || exit 1
+          [[ "$(jq -r .head.sha <<< "$pr")" == "$expected" ]] || exit 1
+          [[ "$(jq -r .head.repo.full_name <<< "$pr")" == "$GH_REPO" ]] || exit 1
+          current=$(gh api "repos/$GH_REPO/git/ref/heads/$branch" --jq .object.sha)
+          [[ "$current" == "$expected" ]] || exit 1
+          protected=$(gh api "repos/$GH_REPO/branches/$branch" --jq .protected)
+          [[ "$protected" == false ]] || exit 1
+          gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$branch"
+          echo 'Deleted merged PR #36 branch with unchanged head SHA.'
