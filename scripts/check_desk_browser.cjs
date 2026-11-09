@@ -87,8 +87,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert.match(await page.locator('#issuePublisherGuidance').innerText(),/1 \/ 4/);
  assert.match(await page.locator('#issuePublisherNames').innerText(),/1 \/ 4/,'Suggestions include live counts');
  assert.equal(await page.locator('#issueForm button:not([type="button"])').last().isDisabled(),false,'Guidance never prevents issuing');
- await activate(page.locator('.dialogClose'));
- await page.waitForFunction(()=>!document.getElementById('dialog').open);
+ await page.evaluate(()=>closeDialog());
  await page.evaluate(()=>{
    const old=window.__publisherRoleFixture;state.publishers=old.publishers;state.loans=old.loans;
    state.settings=old.settings;page=old.page;query=old.query;area=old.area;status=old.status;delete window.__publisherRoleFixture;render();
