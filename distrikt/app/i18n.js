@@ -3,6 +3,15 @@
 const I18n={
  current:'en',
  english:{
+  "Kontrollér de vejledende kortantal (0–100).":"Check suggested card counts (0–100).",
+  "Kun vejledende – det er altid muligt at udlevere flere kort.":"Suggested only – additional cards can always be assigned.",
+  "Aktuelt / vejledende: {current} / {recommended} kort":"Current / suggested: {current} / {recommended} cards",
+  "Aktuelt / vejledende antal kort":"Current / suggested number of cards",
+  "Tallene er lokale forslag og blokerer aldrig en udlevering. Ved flere roller bruges det højeste antal.":"These are local suggestions and never block an assignment. For multiple roles, the highest number is used.",
+  "Titler og funktioner":"Titles and functions",
+  "Vejledende distriktskort pr. forkynder":"Suggested territory cards per publisher",
+  "Assistent i gruppen":"Service group assistant",
+  "Menighedsforkynder":"Congregation publisher",
   "{count} kort · sorteret efter kortnummer":"{count} cards · sorted by card number",
   "Nulstil sortering":"Reset sorting",
   "Sortér efter":"Sort by",

@@ -4,6 +4,47 @@ let src=fs.readFileSync(path.join(__dirname,'../app/app.js'),'utf8');src=src.sli
 const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,{id,innerHTML:'',textContent:'',className:'',style:{},dataset:{},classList:{toggle(){}},addEventListener(){},removeEventListener(){},setAttribute(){},showModal(){},close(){},querySelector(){return null}});return nodes.get(id);};
 const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,requestAnimationFrame:callback=>setTimeout(callback,0),setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),getElementById:get},window:{addEventListener(){},removeEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/publisher-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
 run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],completions:[],ib:[],visits:[],maps:[],recovery:[],settings:{folder_minimum:30,rural_mode:'manual',rural_minimum:5,require_revision:false,congregation:''},today:'2026-10-06',version:'1.2.0'}`);
+
+ // Publisher role suggestions are advisory, computed live from currently open loans.
+ {
+  const old=run('JSON.stringify(state)');
+  context.roleGuidancePriorState=old;
+  run(`state={...state,settings:{...state.settings,publisher_card_guidance:{member:1,pioneer:5,assistant:3,overseer:4}},
+    publishers:[
+      {id:'plain',name:'Fiktiv almindelig'},
+      {id:'pioneer',name:'Fiktiv pioner',pioneer:true},
+      {id:'assistant',name:'Fiktiv assistent',group:'A',group_role:'assistant'},
+      {id:'both',name:'Fiktiv dobbeltrolle',group:'B',group_role:'overseer',pioneer:true}
+    ],cards:[{id:'c1',number:'1',in_folder:false},{id:'c2',number:'2',in_folder:false},{id:'c3',number:'3',in_folder:false},{id:'c4',number:'4',in_folder:false}],
+    loans:[{card_id:'c1',publisher_id:'pioneer',returned:null},
+      {card_id:'c2',publisher_id:'pioneer',returned:null},
+      {card_id:'c2',publisher_id:'pioneer',returned:null},
+      {card_id:'c3',publisher_id:'pioneer',returned:'2025-01-01'},
+      {card_id:'c3',publisher_id:'assistant',returned:null}]};`);
+  assert.equal(run("publisherGuidanceText(state.publishers[0])"),'0 / 1');
+  assert.equal(run("publisherGuidanceText(state.publishers[1])"),'2 / 5');
+  assert.equal(run("publisherGuidanceText(state.publishers[2])"),'1 / 3');
+  assert.equal(run("publisherGuidanceText(state.publishers[3])"),'0 / 5','Multiple roles take the higher locally configured count');
+  assert.equal(run("publisherGuidanceText({id:'unknown',group_role:'invalid'})"),'0 / 1','Unknown roles fall back to member');
+  assert.match(run("publishersPage()"),/2 \/ 5/);
+  assert.match(run("publishersPage()"),/0 \/ 5/);
+  const html=run('settingsPage()');
+  for(const name of ['guide_member','guide_pioneer','guide_assistant','guide_overseer'])assert(html.includes('name="'+name+'"'));
+  assert(html.includes('value="5"'));
+  run('issue("c4",true)');
+  assert(get('dialog').innerHTML.includes('issuePublisherGuidance'));
+  assert(!get('dialog').innerHTML.includes('data-guidance-block'),'Advisory limits must never block issuance');
+  run("state.loans[0].returned='2026-11-09'");
+  assert.equal(run("publisherGuidanceText(state.publishers[1])"),'1 / 5','Returning a card changes the current count');
+  run("state.loans.push({card_id:'c5',publisher_id:'pioneer',returned:null})");
+  assert.equal(run("publisherGuidanceText(state.publishers[1])"),'2 / 5','A new assignment updates the count without waiting for a settings change');
+  run("state.settings.publisher_card_guidance={member:2,pioneer:1,assistant:6,overseer:3}");
+  assert.equal(run("publisherGuidanceText(state.publishers[3])"),'0 / 3','Use the highest applicable configured guide, not hardcoded role precedence');
+  assert.equal(run("publisherGuidanceText(state.publishers[0])"),'0 / 2');
+  run("state=JSON.parse(roleGuidancePriorState)");
+  console.log('Publisher guidance: unassigned, pioneer, assistant, combined roles, live loans, expired loans and settings passed.');
+ }
+
 // The new inventory sort uses the existing age(), keeps unknowns first and
  // never erases search, area or placement selections.
  {
@@ -58,7 +99,7 @@ run("loanTab='Historik'");assert(run(`loans().includes('data-admin="correct"')`)
 console.log('Frontend planning/rendering and administration tests passed.');
 run(`state.publishers=[{id:'p1',name:'Eksempelperson'},{id:'p2',name:'Testperson 2'}];state.loans=[{id:'l1',card_id:'c1',publisher_id:'p1',assigned:'2026-01-01',cycle_start:'2026-01-01',returned:null},{id:'l2',card_id:'c2',publisher_id:'p1',assigned:'2026-01-02',cycle_start:'2026-01-02',returned:null}];query='';page='Forkyndere';render();`);
 assert(get('app').innerHTML.includes('2 kort'));assert(get('app').innerHTML.includes('Tilføj forkynder'));
-run("publisherProfile('p1')");assert(get('dialog').innerHTML.includes('2 udleverede distriktskort'));
+run("publisherProfile('p1')");assert(get('dialog').innerHTML.includes('2 / 1'),'The profile shows active / suggested cards, even when above guidance');
 run("detail('c1')");assert(get('dialog').innerHTML.includes('Print forside'));assert(get('dialog').innerHTML.includes('Tegn og vælg adresser'));
 assert(!run("frontHTML(state.cards[1]).includes('0 besøg')"));
 run(`GeoUI.data={addresses:[{id:'a1',road:'Eksempelvej',number:'1',postcode:'9999',floor:'',door:'',lng:10,lat:55,count:1,type:'Hus',label:'Eksempelvej 1'},{id:'a2',road:'Eksempelvej',number:'1',postcode:'9999',floor:'1',door:'tv',lng:10,lat:55,count:1,type:'Lejlighed',label:'Eksempelvej 1, 1. tv'}],roads:[],buildings:[],info:{addresses:2}};GeoUI.target='c3';GeoUI.ids=new Set();GeoUI.loaded=true;state.ignored=[];`);

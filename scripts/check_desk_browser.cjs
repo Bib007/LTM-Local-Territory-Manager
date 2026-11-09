@@ -58,6 +58,42 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  const activate=locator=>touch?locator.tap():locator.click();
  if(process.env.LTM_THEME)await context.addInitScript(mode=>{if(!localStorage.getItem('ltm-appearance'))localStorage.setItem('ltm-appearance',mode);},process.env.LTM_THEME);
  await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.desk.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
+
+ // Fictional role quotas: ensure the real responsive UI shows live, advisory-only figures.
+ await page.evaluate(()=>{
+   window.__publisherRoleFixture={
+     publishers:structuredClone(state.publishers),loans:structuredClone(state.loans),
+     settings:structuredClone(state.settings),page,query,area,status
+   };
+   state.settings.publisher_card_guidance={member:1,pioneer:4,assistant:3,overseer:5};
+   state.publishers[0].pioneer=true;
+   state.publishers[1].group='Fiktiv gruppe';
+   state.publishers[1].group_role='assistant';
+   state.publishers.push({id:'p3',name:'Fiktiv dobbelttjeneste',group:'Anden gruppe',group_role:'overseer',pioneer:true});
+   page='Forkyndere';query='';render();
+ });
+ for(const [id,expected] of [['p1','1 / 4'],['p2','2 / 3'],['p3','0 / 5']]){
+   const row=page.locator('tr').filter({has:page.locator('[data-action=publisher-profile][data-id="'+id+'"]')});
+   assert.equal(await row.locator('.publisherGuidance').innerText(),expected,'Publisher roles and active counts appear in the list');
+ }
+ await page.evaluate(()=>{page='Indstillinger';render();});
+ for(const [role,value] of [['member','1'],['pioneer','4'],['assistant','3'],['overseer','5']])
+   assert.equal(await page.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,'Guidance settings are editable');
+ const gridFits=await page.locator('.guidanceSettings').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;});
+ assert(gridFits,'Role setting controls fit the desktop/mobile viewport');
+ await page.evaluate(()=>{page='Udlevering';issue('folder');});
+ const publisherInput=page.locator('#issuePublisherName');
+ await publisherInput.fill('Fiktiv <A>');
+ assert.match(await page.locator('#issuePublisherGuidance').innerText(),/1 \/ 4/);
+ assert.match(await page.locator('#issuePublisherNames').innerText(),/1 \/ 4/,'Suggestions include live counts');
+ assert.equal(await page.locator('#issueForm button:not([type="button"])').last().isDisabled(),false,'Guidance never prevents issuing');
+ await page.evaluate(()=>closeDialog());
+ await page.evaluate(()=>{
+   const old=window.__publisherRoleFixture;state.publishers=old.publishers;state.loans=old.loans;
+   state.settings=old.settings;page=old.page;query=old.query;area=old.area;status=old.status;delete window.__publisherRoleFixture;render();
+ });
+ assert.equal(writes.length,0,'Role guidance checks never write or create user data');
+
  // A rejected write keeps a readable, scrollable explanation on real touch layouts.
  await page.evaluate(()=>SaveStatus.set('error','Ændringen blev afvist','Fiktiv forklaring om en afvist ændring. '.repeat(35)+'SLUT_FIKTIV_FORKLARING'));
  await activate(page.locator('.saveExplanation>summary'));
@@ -120,7 +156,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  await page.locator('#issueForm [name=card_id]').selectOption('blocked');assert.equal(await page.locator('.issueTaskAlert').count(),0);await page.locator('#issueForm [name=card_id]').selectOption('folder');assert.equal(await page.locator('.issueTaskAlert').count(),1);await activate(page.locator('.dialogClose'));
  await activate(page.locator('[data-card-row=one] .returnAction'));await page.locator('#finishForm').waitFor();assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-one');assert.equal(writes.length,0);await activate(page.locator('.dialogClose'));
  await page.locator('[data-card-row=one] [data-action=select]').click();assert.match(await page.locator('.details').innerText(),/Fiktiv <A>/);assert.equal(await page.locator('.details [data-action=complete]').count(),1);
- await page.evaluate(()=>{page='Udlevering';render();});await page.locator('[data-action=desk-tab][data-tab=Forkyndere]').click();assert.equal(await page.locator('.publisherReturnGroup').count(),2);assert.match(await page.locator('.publisherReturnGroup h3').first().innerText(),/Fiktiv B[\s\S]*2 kort/);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),3);assert.equal(await page.locator('.publisherReturnGroup script').count(),0);
+ await page.evaluate(()=>{page='Udlevering';render();});await page.locator('[data-action=desk-tab][data-tab=Forkyndere]').click();assert.equal(await page.locator('.publisherReturnGroup').count(),2);assert.match(await page.locator('.publisherReturnGroup h3').first().innerText(),/Fiktiv B[\s\S]*2 \/ 1/);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),3);assert.equal(await page.locator('.publisherReturnGroup script').count(),0);
  await page.locator('#search').fill('<A>');assert.equal(await page.locator('.publisherReturnGroup').count(),1);assert.match(await page.locator('.publisherReturnGroup h3').innerText(),/Fiktiv <A>/);await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('#search').inputValue(),'<A>');assert.match(await page.locator('[data-tab=Forkyndere]').innerText(),/Return by publisher/);await page.locator('#search').fill('');await page.locator('#navigationLanguage').selectOption('da');
  await page.locator('.publisherReturnGroup [data-card-row=three]').focus();await page.keyboard.press('Enter');assert.match(await page.locator('.details strong').first().innerText(),/6/);assert.equal(await page.locator('.details [data-action=return]').getAttribute('data-id'),'loan-three');
  for(const cls of ['issueAction','returnAction']){const button=page.locator('.'+cls+':not(:disabled)').first();if(await button.count()){const s=await button.evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(s.color,s.background)>=4.5);}}

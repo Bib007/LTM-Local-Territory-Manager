@@ -27,13 +27,14 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
   run(`I18n.set('${language}');Workspace.activityData=[{action:'settings.save',fields:['name','Kort'],cards:['101 <invented>'],at:'2026-10-15T12:00:00Z',count:1},{action:'Gem',at:'2026-10-15T12:00:00Z',count:1}]`);const html=run('settingsPage()');contracts[language]=[contract(html),contract(run('Workspace.settingsNav()'))];
   const activity=run('Workspace.activity()');assert.match(activity,language==='en'?/>Settings changed<\//:/>Indstillinger ændret<\//);assert.match(activity,/101 &lt;invented&gt;/);assert.match(activity,/>Gem</,'Unknown action identifiers stay unchanged');assert.match(activity,/, Kort</,'Unknown field identifiers stay unchanged');
   assert.match(html,/Områder &lt;invented&gt; &amp; Kort/);assert.match(html,/Menighed og mappe &lt;invented&gt;/);assert.match(html,/Gendan &lt;invented&gt;/);
-  assert.match(html,/value="manual" selected/);assert.match(html,/name="rural_minimum"[^>]*max="30"/);assert.match(html,language==='en'?/>Save settings<\//:/>Gem indstillinger<\//);
+  assert.match(html,/value="manual" selected/);assert.match(html,/name="rural_minimum"[^>]*max="30"/);
+  for(const role of ['member','pioneer','assistant','overseer'])assert.match(html,new RegExp('name="guide_'+role+'"[^>]*min="0"[^>]*max="100"'));assert.match(html,language==='en'?/>Save settings<\//:/>Gem indstillinger<\//);
   assert.match(html,language==='en'?/>Card front<\//:/>Kortets forside<\//,'A print-profile front is distinct from the Home navigation label');
   run("editArea('area-1')");contracts[language].push(contract(get('dialog').innerHTML));assert.equal(get('dialog').lang,language);
   assert.match(get('dialog').innerHTML,/value="Menighed og mappe &lt;invented&gt;"/);
   const start=writes.length;
-  await submit({target:form('settingsForm',[['congregation','Områder <invented> & Kort'],['folder_minimum','30'],['rural_mode','manual'],['rural_minimum','7'],['require_revision','on']]),preventDefault(){}});
-  await submit({target:form('settingsForm',[['congregation','Områder <invented> & Kort'],['folder_minimum','0'],['rural_mode','auto'],['rural_minimum','0']]),preventDefault(){}});
+  await submit({target:form('settingsForm',[['congregation','Områder <invented> & Kort'],['folder_minimum','30'],['rural_mode','manual'],['rural_minimum','7'],['require_revision','on'],['guide_member','1'],['guide_pioneer','2'],['guide_assistant','3'],['guide_overseer','4']]),preventDefault(){}});
+  await submit({target:form('settingsForm',[['congregation','Områder <invented> & Kort'],['folder_minimum','0'],['rural_mode','auto'],['rural_minimum','0'],['guide_member','0'],['guide_pioneer','4'],['guide_assistant','1'],['guide_overseer','2']]),preventDefault(){}});
   await submit({target:form('areaForm',[['name','Menighed og mappe <invented>']],{id:'area-1'}),preventDefault(){}});
   payloads[language]=JSON.parse(JSON.stringify(writes.slice(start).map(({action,data})=>({action,data}))));
   const before=writes.length;await run('TransferUI.preview({size:12})');assert.equal(writes.length,before,'Preview must never import data');
@@ -43,6 +44,8 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
  }
  assert.deepEqual(contracts.en,contracts.da,'Translated labels must keep values, keys, limits and confirmation actions');
  assert.deepEqual(payloads.en,payloads.da);assert.equal(payloads.en[0].data.folder_minimum,30);assert.equal(payloads.en[0].data.require_revision,true);assert.equal(payloads.en[1].data.require_revision,false);assert.equal(payloads.en[1].data.rural_mode,'auto');
+ assert.deepEqual(payloads.en[0].data.publisher_card_guidance,{member:1,pioneer:2,assistant:3,overseer:4});
+ assert.deepEqual(payloads.en[1].data.publisher_card_guidance,{member:0,pioneer:4,assistant:1,overseer:2});
  c.fetch=async()=>({ok:true,json:async()=>({token:'VISIBLE_COUNTS',counts:{cards:99,notes:12},visible_counts:{cards:2,notes:1}})});await run('TransferUI.preview({size:12})');assert.match(get('dialog').innerHTML,/<td>0<\/td><td>2<\/td>/);assert.doesNotMatch(get('dialog').innerHTML,/<td>99<\/td>|<td>12<\/td>/,'The comparison must use the restored app-list counts');
  c.fetch=async()=>({ok:true,json:async()=>({token:'LEGACY_COUNTS',counts:{cards:99}})});await run('TransferUI.preview({size:12})');assert.match(get('dialog').innerHTML,/<td>99<\/td>/,'An older server response remains supported');
  const applyRequests=[];c.applyRequests=applyRequests;
