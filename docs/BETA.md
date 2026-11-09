@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Stable 1.12.19 er uændret. Beta 1.12.19-beta.4 indeholder personlige åbne opgaver på forsiden, forbedret IB-udskrivning, søgning efter eksisterende kort til mappen, sortering efter gennemgang og vejledende kortantal efter rolle. Fremover afprøves nye ændringer på Beta først. Betaer samler flere sammenhængende forbedringer, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
+Stable 1.12.20 indeholder nu de godkendte forbedringer fra Beta 1.12.19-beta.4. Betakanalen er fortsat en separat testinstallation; Beta 1.12.19-beta.4 indeholder personlige åbne opgaver på forsiden, forbedret IB-udskrivning, søgning efter eksisterende kort til mappen, sortering efter gennemgang og vejledende kortantal efter rolle. Fremover afprøves nye ændringer på Beta først. Betaer samler flere sammenhængende forbedringer, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
 
 ## Installer betakanalen én gang
 

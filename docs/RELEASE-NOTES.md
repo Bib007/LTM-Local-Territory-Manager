@@ -1,13 +1,22 @@
-# LTM 1.12.19 · Samlet Stable og fælles udgangspunkt for Beta
+# LTM 1.12.20 · Samlet Stable efter beta.4
 
-Forbindelsesbackup virker nu også i Chrome via en lokal HTTP-adresse. Kryptering og dekryptering sker fortsat i browseren, med samme adgangskode og filformat som tidligere.
+Den gennemtestede Beta 1.12.19-beta.4 er nu samlet i Stable 1.12.20. Eksisterende Stable-installationer kan opdateres uden at skifte til betakanalen. Luk programmet og tag en privat backup før opdatering.
 
-Læsearkivets forsider dannes fra den normale printvisning. Husnumre og streger kan slås fra i Drive-forhåndsvisningen; alle røde prikker bevares, og et ændret billede skal godkendes igen.
+## Nyheder og forbedringer
 
-Ændringshistorikken og 48-timers gendannelse viser brugeren bag nye handlinger. Backup foreslår Gem som, når browseren understøtter det. Gamle Tally-links er fjernet fra appmenuen.
+- **Personlige opgaver på forsiden.** Når du er logget ind med opgaveadgang, viser velkomsten antallet af egne, aktuelle, åbne opgaver samt knappen **Se mine opgaver**. Andre brugeres, afsluttede og ignorerede opgaver tæller ikke med. Antallet opdateres automatisk ved ændringer fra andre konti.
+- **Vejledende distriktskort pr. forkynder.** Indstil anbefalede antal for forkyndere, pionerer, gruppeassistenter og tilsynsmænd. Tallene gemmes korrekt også med brugerprofiler og vises i forkynderoversigten. Flere roller bruger det højeste forslag; antal begrænser aldrig udlevering.
+- **Hurtigere daglig brug.** Find og læg et allerede eksisterende distriktskort i mappen uden at oprette et nyt. Kortidentitet, udleveringer og historik bevares.
+- **Bedre overblik.** Sortér distriktskort efter længst tid siden gennemgang, også når sidste dato er ukendt, og bevar dine øvrige filtre.
+- **Korrekt IB-print.** IB-bagsiden udnytter det originale 94 × 146 mm kortformat bedre, og ekstra kortsider oprettes kun ved behov. A4 er stadig kontrolark, ikke et forstørret distriktskort.
+- **Kompatibilitet og datasikkerhed.** Ældre opgaveposter bevares i almindelige lister; opgavetallet viser kun egne data og kræver de rette læserettigheder.
 
-Mac- og Windows-apps kan installeres direkte fra DMG/Setup.exe uden separat Python. Eksisterende data bevares. Pakkerne er usignerede og kan kræve den sædvanlige første godkendelse. Luk LTM før opdatering. macOS: åbn den DMG, der passer til Intel eller Apple Silicon, og træk LTM til Programmer. Windows: kør Setup.exe.
+Alle automatiske Python-, JavaScript-, browser-, sikkerheds- og platformskontroller for den tilsvarende Beta-kode blev bestået inden Stable-forberedelsen. Der er anvendt fiktive konti og testdata.
 
-Home Assistant har en Supervisor-kontrol af, at porten svarer. Den erstatter ikke kontrol af eksterne tjenester. Mac-serveren afventer fortsat sin særskilte fysiske LAN/VPN-prøve.
+## Installation og kanaler
 
-Beta opdateres til samme funktioner under 1.12.19-beta.1 med egne data og eget login. Fremtidige ændringer afprøves på Beta først. Genindlæs browseren efter opdatering.
+**Home Assistant Stable:** Brug den almindelige repositoryadresse uden `#beta`. Stable beholder port 8787 og sin eksisterende datamappe. Beta er en separat installation med port 8788 og eget login og data; dens data overføres ikke automatisk til Stable.
+
+**Mac og Windows:** Brug de særskilte, kontrollerede Stable-releasefiler for den relevante platform. Den native Mac-server med LAN/VPN kræver fortsat sin særskilte fysiske godkendelse. Installationsfiler er usignerede og kan kræve første-gangsgodkendelse. Luk programmet før en opdatering.
+
+Ændringerne fra beta.2–beta.4 er samlet i [changeloggen](CHANGELOG.md). De tidligere betaudgivelser forbliver tilgængelige som prereleases.

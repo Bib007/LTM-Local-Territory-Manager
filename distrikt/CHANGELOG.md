@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.20 · 2026-11-09
+
+- Promote the tested 1.12.19-beta.4 code to Stable: personal open-task greeting with authorized automatic refresh and shortcut to the user's filtered task list.
+- Suggested card counts by publisher role now persist and display correctly with accounts, and never restrict issuance.
+- Select existing cards into the daily-use folder without duplicating cards; sort territory cards by longest time since completion while preserving filters.
+- Improve original-size IB-card back pagination and protect historic task listings and profile access.
+- Keep Stable and Home Assistant Beta separately installed, with separate data and ports. Update release version and tested stable artifacts.
+
 ## 1.12.19-beta.4 · 2026-11-09
 
 - Show the authenticated user's own currently actionable tasks next to the personal home welcome, with a shortcut opening the Open / Mine task filters.
