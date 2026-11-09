@@ -1,0 +1,65 @@
+name: One-time verified merged-branch cleanup
+on:
+  push:
+    branches: [develop]
+    paths: ['.github/workflows/prune-merged-branches-20261109.yml']
+permissions:
+  contents: write
+jobs:
+  prune:
+    if: contains(github.event.head_commit.message, 'Start verified branch cleanup 2026-11-09')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete only original, verified heads of merged PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          removed=0; skipped=0
+          while IFS='|' read -r branch pr expected; do
+            [[ -n "$branch" ]] || continue
+            case "$branch" in
+              main|develop|beta|feature/free-native-installers|prepare/stable-pending|feature/publisher-role-card-guidance-20261109)
+                echo "Protected/active branch, keeping $branch"; skipped=$((skipped+1)); continue;;
+            esac
+            record=$(gh api "repos/$GH_REPO/pulls/$pr")
+            merged=$(jq -r '.merged_at // empty' <<< "$record")
+            pr_head=$(jq -r '.head.ref // empty' <<< "$record")
+            pr_sha=$(jq -r '.head.sha // empty' <<< "$record")
+            pr_repo=$(jq -r '.head.repo.full_name // empty' <<< "$record")
+            if [[ -z "$merged" || "$pr_head" != "$branch" || "$pr_sha" != "$expected" || "$pr_repo" != "$GH_REPO" ]]; then
+              echo "SKIP $branch: PR not merged or source changed"; skipped=$((skipped+1)); continue
+            fi
+            current=$(gh api "repos/$GH_REPO/git/ref/heads/$branch" --jq '.object.sha' 2>/dev/null || true)
+            if [[ "$current" != "$expected" ]]; then
+              echo "SKIP $branch: ref changed or missing"; skipped=$((skipped+1)); continue
+            fi
+            protected=$(gh api "repos/$GH_REPO/branches/$branch" --jq '.protected' 2>/dev/null || echo true)
+            if [[ "$protected" != false ]]; then
+              echo "SKIP $branch: protected or cannot verify protection"; skipped=$((skipped+1)); continue
+            fi
+            gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$branch" >/dev/null
+            echo "DELETED $branch (merged PR #$pr)"; removed=$((removed+1))
+          done <<'MERGED_BRANCHES'
+          codex/digital-map-red-markers|18|76071f95450d8ca6470161546848f4aba96b8101
+          codex/history-delete-loan|20|c12d856162d7dbf12363ba5d9304a7d7ce1756bc
+          codex/windows-release-packaging|19|b6fa69a4e4ababf4a32b8a2d759a9b2112acb388
+          demo/stable-parity|21|3ed7a0fb3ec2824c2ad09b916f1707bceb00e78b
+          feature/choose-existing-folder-card|34|db765a18abcceeee652aca80001db16078a03353
+          feature/territory-completion-sorting-20261109|35|49be03198afe1d1cd05e68c78fb7a91e7ca308df
+          fix/completion-history-periods-1210|15|d74dc21de7fce7e0f40c7f8541e4721de089d750
+          fix/drive-print-approval|27|0c4debaecded0d97928e38981681c3ec16565a9c
+          fix/ha-print-approval|28|ead4042932a6944d3a5a1aecc77758166ec9b63b
+          fix/ib-a4-pagination-20261109|33|fd0dc946983a836bb3c7c6b9352603a569834499
+          fix/identical-public-map-dots-and-help|25|f18b0432aaeb42addc69ed4743f0f96af5c574f9
+          fix/optional-visual-artifact-upload-1211|17|231445ec099100bf300dc47220df514d360c720b
+          fix/private-map-ib-dots|22|f653e08b7c00cf2cad167c0fd7e2532d33f68191
+          fix/public-neutral-saved-points|24|9f268eb822a11a5b0a697f117fa01d9b2c613e95
+          prepare/release-tracks|16|5fe7765e2188c21b6f842b6335e2e38da2891f9b
+          release/v1.12.16-drive-pdf-and-report|26|7d180c60e42a73ee9f7ace22f68c27401cff63dc
+          release/1.12.19-beta.1|32|0787ab52a708a37815224991d884b56e6ff8f41d
+          release/1.12.19-stable-beta-baseline|31|a6dd9f6536661c7e281047a15ef1039ae39c4f7f
+          MERGED_BRANCHES
+          echo "Verified cleanup complete: deleted=$removed, skipped=$skipped"
