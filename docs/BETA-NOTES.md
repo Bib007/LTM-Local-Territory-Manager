@@ -1,21 +1,25 @@
-# LTM 1.12.19-beta.3 · Rettelse af vejledende kortantal
+# LTM 1.12.19-beta.4 · Dine åbne opgaver på forsiden
 
-Denne beta retter en fejl i den forrige beta (`1.12.19-beta.2`). Stable 1.12.19 er uændret.
+Denne beta tilføjer en personlig opgavebesked på forsiden og retter den fejlede testkørsel fra udviklingsversionen. Stable 1.12.19 er uændret.
 
-## Rettet
+## Nyt
 
-- **Gem indstillinger fungerer nu for vejledende kortantal pr. forkynder.** Ændringer til de fire roller bliver vist efter gemning, når appen bruger brugerprofiler, og de samme værdier vises igen efter genindlæsning eller nyt login.
-- **Samme vejledende antal for hele holdet.** Brugere med adgang til forkynderoversigten ser de gemte anbefalinger uden at få ret til at ændre indstillingerne.
-- **Ingen udleveringsgrænse.** Anbefalingerne er stadig kun vejledende. En forkynder kan få flere distriktskort end det angivne antal.
+- **Dine egne opgaver ved velkomsten.** Når du er logget ind med adgang til Opgaver, viser forsiden kun antallet af **dine egne åbne, aktive opgaver**. Beskeden skjules automatisk, når der ikke er nogen.
+- **Se mine opgaver.** Knappen åbner opgavelisten med **Mine opgaver** og **Åbne opgaver** valgt. Den starter med en opdateret visning.
+- **Automatisk opdatering.** Når andre ændrer en opgaves ansvarshavende eller markerer den udført, opdateres beskeden ved den eksisterende statuskontrol (normalt inden for 30 sekunder), uden at du behøver genindlæse.
+- **Korrekte rettigheder.** Uden adgang til opgaver vises intet antal. Andre brugeres opgaver, udførte eller ignorerede opgaver og ugentlige opgaver, der først er aktuelle senere, tælles ikke med.
+- **Eksisterende opgavelister bevaret.** Ældre opfølgningsposter vises fortsat i de almindelige lister, så nyt personligt filter ikke ændrer gammel funktionalitet.
 
-De øvrige forbedringer fra 1.12.19-beta.2 er fortsat med: mere plads på IB-bagsider, søgning efter et eksisterende kort til mappen og sortering efter længst tid siden gennemgang.
+Den forrige beta 1.12.19-beta.3's rettelse af vejledende kortantal og øvrige forbedringer fra beta.2 er også med.
 
-## Afprøv med fiktive data
+## Test med fiktive konti
 
-1. Gå til **Indstillinger → Menighed og mappe**, og ændr alle fire vejledende antal (f.eks. til 0, 4, 1 og 7).
-2. Tryk **Gem indstillinger**. Kontrollér, at tallene forbliver uændrede efter gemning, sideopdatering og genåbning.
-3. Gå til **Forkyndere** og prøv at udlevere og aflevere et kort. Kontrollér visningen *aktuelt / vejledende*, også når antal overskrides.
+1. Log ind som en fiktiv bruger med rettigheden **Se opgaver**, og tildel brugeren én opgave. Kontrollér beskeden **Du er ansvarlig for 1 åben opgave**.
+2. Tildel en anden bruger en opgave. Den skal ikke påvirke dit tal.
+3. Vælg **Se mine opgaver**; kontrollér at kun dine egne aktuelle opgaver vises.
+4. Afslut opgaven, eller fjern ansvarshavende i en anden session. Kontrollér, at tallet ændrer sig eller forsvinder senest ved næste statuskontrol.
+5. Gentag på telefon og computer og med en konto uden rettigheden **Se opgaver**.
 
-**Home Assistant Beta** beholder eget login, egen datamappe og port 8788. Tag en privat backup, før du opdaterer. Stable berøres ikke, og pakken indeholder ingen brugerdata.
+**Home Assistant Beta** har fortsat eget login, egen datamappe og port 8788. Tag privat backup før opdateringen. Stable påvirkes ikke; pakken indeholder ingen brugerdata.
 
-Læs [betavejledningen](BETA.md) ved installation og [changeloggen](CHANGELOG.md) for ændringerne.
+Læs [betavejledningen](BETA.md) for installation og [changeloggen](CHANGELOG.md) for den samlede ændringsliste.
