@@ -39,6 +39,17 @@ fire('keydown',{key:'ArrowDown'});run("I18n.set('da');PublisherSearch.localize()
 fire('focusout',{relatedTarget:{}});assert.equal(list.hidden,true);
 fire('focusin');const mouse=fire('pointerdown',{target:options[1],pointerType:'mouse'});assert(mouse.prevented);
 const touch=fire('pointerdown',{target:options[1],pointerType:'touch'});assert.equal(touch.prevented,undefined,'Touch scrolling must not be cancelled');focused=false;fire('click',{target:options[1]});assert.equal(input.value,'Eksempel 2');assert.equal(list.hidden,true);assert.match(hint.textContent,/Navnet er valgt/);
+
+context.selectedAdvisory=[];
+run("PublisherSearch.attach(input,records,p=>p.name==='Anna Test Jensen'?'2 / 5':'0 / 1',name=>selectedAdvisory.push(name))");
+type('anna');
+assert.match(list.innerHTML,/Anna Test Jensen/);
+assert.match(list.innerHTML,/2 \/ 5/,'Suggestions expose active / suggested counts');
+assert(context.selectedAdvisory.includes('anna'),'Typing updates the advisory preview');
+focused=false;fire('click',{target:options[0]});
+assert.equal(input.value,'Anna Test Jensen');
+assert.equal(context.selectedAdvisory.at(-1),'Anna Test Jensen','Selecting a suggestion updates preview immediately');
+
 assert.equal(JSON.stringify(records),original,'Suggestions never create or change records');
 assert.match(run('PublisherSearch.field()'),/name="publisher_name"/);assert.match(run('PublisherSearch.field()'),/maxlength="100" required autocomplete="off"/);
 const index=read('index.html'),server=read('server.py');assert(index.indexOf('/publisher-search.js')<index.indexOf('/app.js'));assert(server.includes("'/publisher-search.js'"),'Server must actually serve the module');
