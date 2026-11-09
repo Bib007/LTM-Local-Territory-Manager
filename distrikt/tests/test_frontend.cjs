@@ -315,6 +315,10 @@ assert.equal(run("compactAddressNumbers('20, 22, 24, 28, 30 (lige)')"),'20-24 & 
  assert(get('dialog').innerHTML.includes('Udleveret'));
  run("globalThis.ProfilesUI.canAction=()=>false;chooseFolderCard()");
  assert(!get('dialog').innerHTML.includes('data-action="folder-card-confirm"'));
+ run("state.cards=[];state.loans=[]");
+ const emptyDesk=run('home()');
+ assert(emptyDesk.includes('data-page="Distrikter"')&&!emptyDesk.includes('data-action="new-card"')&&!emptyDesk.includes('data-admin="quick"'));
+ run("state.cards=[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},{id:'folder',number:'102',area_id:'north',in_folder:true},{id:'issued',number:'103',area_id:'north',in_folder:false}];state.loans=[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]");
  assert.equal(run("state.cards.length"),3);
  assert.equal(run("state.loans.length"),1);
  run("state=JSON.parse(folderPickerOriginalState);delete globalThis.ProfilesUI");
