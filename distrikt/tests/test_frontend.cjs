@@ -100,7 +100,7 @@ run("GeoUI.data.info.postcodes=[{postcode:'9999',name:'Testby',snapshot:'2026-08
 assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run("GeoUI.postcodeList().includes('Opdater postnummer')"));
 // Daily-use selection never creates a new card: it looks up existing ids only.
 {
- const before=run('JSON.stringify(state)');context.folderPickerOriginalState=before;
+ const before=run('JSON.stringify(state)');context.folderPickerOriginalState=before;context.folderPickerPrevious={page:run('page'),deskTab:run('deskTab'),selected:run('selected'),query:run('query'),dialog:get('dialog').innerHTML};
  run(`state={...state,areas:[{id:'north',name:'Fiktivt nord'}],
  cards:[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},
         {id:'folder',number:'102',name:'Indlagt',area_id:'north',in_folder:true},
@@ -133,7 +133,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("state.cards=[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},{id:'folder',number:'102',area_id:'north',in_folder:true},{id:'issued',number:'103',area_id:'north',in_folder:false}];state.loans=[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]");
  assert.equal(run("state.cards.length"),3);
  assert.equal(run("state.loans.length"),1);
- run("state=JSON.parse(folderPickerOriginalState);delete globalThis.ProfilesUI");
+ run("state=JSON.parse(folderPickerOriginalState);page=folderPickerPrevious.page;deskTab=folderPickerPrevious.deskTab;selected=folderPickerPrevious.selected;query=folderPickerPrevious.query;delete globalThis.ProfilesUI");get("dialog").innerHTML=context.folderPickerPrevious.dialog;
  console.log('Daily-use existing-card picker: search, escaped results, in-folder, issued, role guard, no creation passed.');
 }
 
