@@ -43,8 +43,11 @@ function fitFrontCard(front){
 function cardQRCss(){return '.cardQR{position:absolute;right:2%;bottom:19%;width:14%;text-align:center;color:black;font-family:Arial,sans-serif}.cardQR span{display:block;font-size:5.5pt;line-height:1.15;margin:0 0 1mm;overflow-wrap:normal}.cardQR img{display:block;width:100%;height:auto;aspect-ratio:1;background:white}';}
 // Lay out IB entries against the actual browser dimensions, not estimated row counts.
 // This also protects the smaller pre-cut cards: each column is filled before continuing.
-function paginateIBSheets(doc,cfg){
- const failures=[],maxColumns=2;
+// Fill the ORIGINAL card dimensions, including when previewed on A4 paper.
+// First try a full-width column; use two fixed-width columns if necessary.
+// Browser measurements, not a fixed row count, control all page breaks.
+function paginateIBSheets(doc){
+ const failures=[];
  for(const original of [...doc.querySelectorAll('.sheet.ibSheet')]){
   const preview=original.querySelector('.ibPreview'),head=preview?.querySelector('.ibHead'),labels=preview?.querySelector('.ibCols');
   if(!head||!labels)continue;
@@ -53,56 +56,61 @@ function paginateIBSheets(doc,cfg){
    const road=section.querySelector('h4');
    for(const row of section.querySelectorAll('.ibRow'))entries.push({road:road?.cloneNode(true),row:row.cloneNode(true)});
   }
-  let lastSheet=null,currentSheet=null,column=null,lastSection=null,lastRoad=null,columnCount=0,rowCount=0,pageNo=0;
-  function nextPage(){
-   pageNo++;
-   currentSheet=pageNo===1?original:original.cloneNode(true);
-   if(pageNo>1)lastSheet.after(currentSheet);
-   lastSheet=currentSheet;
-   currentSheet.dataset.page=String(pageNo);
-   const panel=currentSheet.querySelector('.ibPreview');
-   panel.replaceChildren();
-   const header=head.cloneNode(true);
-   if(pageNo>1){panel.dataset.continuation='yes';header.querySelector('b')?.append(doc.createTextNode(' · '+(doc.documentElement.lang==='en'?'continued':'fortsat')));}
-   else delete panel.dataset.continuation;
-   panel.append(header);
-   const body=doc.createElement('div');body.className='ibBody';panel.append(body);
-   columnCount=0;nextColumn();
-  }
-  function nextColumn(){
-   const body=currentSheet.querySelector('.ibBody');
-   column=doc.createElement('div');column.className='ibPrintColumn';
-   column.append(labels.cloneNode(true));body.append(column);
-   columnCount++;lastSection=null;lastRoad=null;rowCount=0;
-  }
-  function fits(){
-   const limit=column.getBoundingClientRect(),last=column.lastElementChild,box=last?.getBoundingClientRect();
-   return column.clientHeight>0&&column.scrollHeight<=column.clientHeight+1&&column.scrollWidth<=column.clientWidth+1&&(!box||box.bottom<=limit.bottom+1);
-  }
-  nextPage();
-  for(const entry of entries){
-   let placed=false;
-   // A single exceptionally long entry is never silently clipped.
-   while(!placed){
-    let addedSection=false;
-    const roadText=entry.road?.textContent||'';
-    if(!lastSection||lastRoad!==roadText){
-     lastSection=doc.createElement('section');
-     if(entry.road)lastSection.append(entry.road.cloneNode(true));
-     column.append(lastSection);lastRoad=roadText;addedSection=true;
-    }
-    const row=entry.row.cloneNode(true);lastSection.append(row);
-    if(fits()){rowCount++;placed=true;continue;}
-    row.remove();
-    if(addedSection){lastSection.remove();lastSection=null;lastRoad=null;}
-    if(rowCount===0){
-     failures.push(original.dataset.number||'?');
-     break;
-    }
-    if(columnCount<maxColumns)nextColumn();else nextPage();
+  function render(maxColumns){
+   let lastSheet=null,currentSheet=null,column=null,lastSection=null,lastRoad=null,columnCount=0,rowCount=0,pageNo=0;
+   const added=[],failed=[];
+   function nextPage(){
+    pageNo++;
+    currentSheet=pageNo===1?original:original.cloneNode(true);
+    if(pageNo>1){lastSheet.after(currentSheet);added.push(currentSheet);}
+    lastSheet=currentSheet;
+    currentSheet.dataset.page=String(pageNo);
+    const panel=currentSheet.querySelector('.ibPreview');
+    panel.replaceChildren();panel.dataset.columns=String(maxColumns);
+    const header=head.cloneNode(true);
+    if(pageNo>1){panel.dataset.continuation='yes';header.querySelector('b')?.append(doc.createTextNode(' · '+(doc.documentElement.lang==='en'?'continued':'fortsat')));}
+    else delete panel.dataset.continuation;
+    panel.append(header);
+    const body=doc.createElement('div');body.className='ibBody';panel.append(body);
+    columnCount=0;nextColumn();
    }
-   if(!placed)break;
+   function nextColumn(){
+    const body=currentSheet.querySelector('.ibBody');
+    column=doc.createElement('div');column.className='ibPrintColumn';
+    column.append(labels.cloneNode(true));body.append(column);
+    columnCount++;lastSection=null;lastRoad=null;rowCount=0;
+   }
+   function fits(){
+    const limit=column.getBoundingClientRect(),box=column.lastElementChild?.getBoundingClientRect();
+    return column.clientHeight>0&&column.scrollHeight<=column.clientHeight+1&&column.scrollWidth<=column.clientWidth+1&&(!box||box.bottom<=limit.bottom+1);
+   }
+   nextPage();
+   for(const entry of entries){
+    let placed=false;
+    while(!placed){
+     let addedSection=false;
+     const roadText=entry.road?.textContent||'';
+     if(!lastSection||lastRoad!==roadText){
+      lastSection=doc.createElement('section');
+      if(entry.road)lastSection.append(entry.road.cloneNode(true));
+      column.append(lastSection);lastRoad=roadText;addedSection=true;
+     }
+     const row=entry.row.cloneNode(true);lastSection.append(row);
+     if(fits()){rowCount++;placed=true;continue;}
+     row.remove();
+     if(addedSection){lastSection.remove();lastSection=null;lastRoad=null;}
+     if(rowCount===0){failed.push(original.dataset.number||'?');break;}
+     if(columnCount<maxColumns)nextColumn();else nextPage();
+    }
+    if(!placed)break;
+   }
+   return {pages:pageNo,added,failed};
   }
+  const single=render(1);
+  if(single.pages===1&&!single.failed.length)continue;
+  single.added.forEach(sheet=>sheet.remove());
+  const double=render(2);
+  failures.push(...double.failed);
  }
  return failures;
 }
@@ -112,7 +120,7 @@ function printDocument(cards,side,cfg){
  const language=I18n.language(),t=key=>esc(I18n.text(key));
  const {width:w,height:h,x,y,mode,paper}=cfg,formLanguage=cfg.form_language||I18n.language();
  let css=`body{margin:0;background:#eee;font:13px Arial;color:black}.bar{background:white;padding:15px;position:sticky;top:0;z-index:10}.sheet{width:${w}mm;height:${h}mm;background:white;margin:20px auto;outline:1px solid #aaa;break-after:page}.sheet:last-child{break-after:auto}.content{transform:translate(${x}mm,${y}mm)}.cardPreview{position:relative;width:${w}mm;height:${h}mm}.cardPreview>img{position:absolute;inset:0;width:100%;height:100%}${cardQRCss()}.title{position:absolute;left:26%;top:calc(17% - 1mm);font-size:10pt}.number{position:absolute;left:81%;top:calc(17% - 1mm);font-size:10pt}.streets{position:absolute;left:7%;top:30%;width:86%;font-size:9pt}.streets>div{display:flex;justify-content:space-between;gap:2mm;padding:1.5mm 0}.cardPreview[data-form-language=en] .title{left:16.5%;top:17%}.cardPreview[data-form-language=en] .number{left:76.8%;top:17%}.cardPreview[data-form-language=en] .streets{top:25%}.ibPreview{width:${w}mm;height:${h}mm;overflow:hidden;padding:5mm;box-sizing:border-box;font:8pt Arial}.ibHead{display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:3mm;font-size:8pt}.ibCols,.ibRow{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #999;padding:1.15mm 0}.ibPreview h4{color:black;margin:2.2mm 0 .8mm}.ibPreview section{break-inside:avoid}${mode==='data'?'.cardPreview>img,.ibHead,.ibCols{visibility:hidden}.ibHead,.ibCols,.ibRow{border-color:transparent}':''}@page{size:${paper==='a4'?'A4 portrait':w+'mm '+h+'mm'};margin:${paper==='a4'?'10mm':'0'}}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:white}.bar{display:none}.sheet{margin:0;outline:0}}`;
- if(side==='back')css+=`.sheet.ibSheet .content{width:100%;height:100%}.sheet.ibSheet .ibPreview{display:flex;flex-direction:column;overflow:hidden;padding:4mm;font:8pt/1.25 Arial,sans-serif}.sheet.ibSheet .ibHead{flex:none;gap:2mm;align-items:center;padding-bottom:2mm;margin-bottom:1.5mm;font-size:8pt}.sheet.ibSheet .ibHead b{overflow-wrap:anywhere}.sheet.ibSheet .ibBody{display:flex;gap:2.5mm;flex:1 1 auto;min-height:0}.sheet.ibSheet .ibPrintColumn{flex:1 1 0;min-width:0;min-height:0;height:100%}.sheet.ibSheet .ibCols,.sheet.ibSheet .ibRow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2mm;line-height:1.2;padding:.55mm 0}.sheet.ibSheet .ibCols{flex:none;font-size:7.8pt;margin-bottom:.7mm}.sheet.ibSheet .ibRow{font-size:8pt;break-inside:avoid}.sheet.ibSheet .ibRow span,.sheet.ibSheet h4{min-width:0;white-space:normal;overflow-wrap:anywhere}.sheet.ibSheet h4{font-size:8pt;line-height:1.2;margin:1.4mm 0 .45mm}.sheet.ibSheet section{break-inside:auto}`;
+ if(side==='back')css+=`.sheet.ibSheet .content{width:100%;height:100%}.sheet.ibSheet .ibPreview{display:flex;flex-direction:column;overflow:hidden;padding:4mm;font:8pt/1.25 Arial,sans-serif}.sheet.ibSheet .ibHead{flex:none;gap:2mm;align-items:center;padding-bottom:2mm;margin-bottom:1.5mm;font-size:8pt}.sheet.ibSheet .ibHead b{overflow-wrap:anywhere}.sheet.ibSheet .ibBody{display:grid;grid-template-columns:minmax(0,1fr);column-gap:2.5mm;flex:1 1 auto;min-height:0}.sheet.ibSheet .ibPreview[data-columns="2"] .ibBody{grid-template-columns:repeat(2,minmax(0,1fr))}.sheet.ibSheet .ibPrintColumn{flex:1 1 0;min-width:0;min-height:0;height:100%}.sheet.ibSheet .ibCols,.sheet.ibSheet .ibRow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2mm;line-height:1.2;padding:.55mm 0}.sheet.ibSheet .ibCols{flex:none;font-size:7.8pt;margin-bottom:.7mm}.sheet.ibSheet .ibRow{font-size:8pt;break-inside:avoid}.sheet.ibSheet .ibRow span,.sheet.ibSheet h4{min-width:0;white-space:normal;overflow-wrap:anywhere}.sheet.ibSheet h4{font-size:8pt;line-height:1.2;margin:1.4mm 0 .45mm}.sheet.ibSheet section{break-inside:auto}`;
  const sheets=cards.flatMap(c=>side==='front'?[`<section class="sheet" data-number="${esc(c.number)}"><div class="content">${frontHTML({...c,form_language:formLanguage})}</div></section>`]:[`<section class="sheet ibSheet" data-number="${esc(c.number)}" data-page="1"><div class="content">${backHTML({...c,form_language:formLanguage})}</div></section>`]);
  return `<!doctype html><html lang="${formLanguage}"><head><meta charset="utf-8"><title>${language==='en'?'Print territory card':'Print distriktskort'}</title><style>${css}</style></head><body><div class="bar" lang="${language}"><button id="print" disabled>${t('Udskriv / gem PDF')}</button> ${cards.length} ${t('kort')} · ${w} × ${h} mm · ${t(h>w?'højkant':'liggende')} · 100 %<p id="tooLong" role="alert"></p><button id="approvePrinted" hidden>${t('Godkend printede sider i appen')}</button><p>${t('Godkend eventuelt genprint i appen, når de fysiske sider er kontrolleret.')}</p></div>${sheets.join('')}</body></html>`;
 }
