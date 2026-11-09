@@ -482,12 +482,20 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             return {'id': loan['id']}
         if action == 'folder.set':
             ids = data.get('ids', [])
-            if not isinstance(ids, list):
-                raise ValueError('Ugyldig kortliste.')
-            for ident in ids:
-                c = self.require('cards', ident)
-                if self.active_loan(ident):
+            if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids) or len(ids) != len(set(ids)):
+                raise ValueError('Ugyldig kortliste eller samme kort valgt flere gange.')
+            expected = data.get('expected_in_folder')
+            if 'expected_in_folder' in data and not isinstance(expected, bool):
+                raise ValueError('Ugyldig forventet kortplacering.')
+            # Check all cards before writing any changes; another session may have
+            # moved or issued one since the picker was opened.
+            cards = [self.require('cards', ident) for ident in ids]
+            for c in cards:
+                if self.active_loan(c['id']):
                     raise ValueError('Et udlånt kort kan ikke lægges i mappen.')
+                if 'expected_in_folder' in data and bool(c.get('in_folder')) != expected:
+                    raise ValueError('Kortet er allerede flyttet. Opdater siden og vælg igen.')
+            for c in cards:
                 c['in_folder'] = bool(data.get('in_folder'))
                 self.put('cards', c)
             return {'count': len(ids)}

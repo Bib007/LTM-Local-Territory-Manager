@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store, MODULES
+from profile_policy import ACTIONS, require
 from pdf_export import s13_pdf, allocation_rows
 
 class StorageTests(unittest.TestCase):
@@ -23,6 +24,53 @@ class StorageTests(unittest.TestCase):
         self.s.close();self.s=Store(self.tmp.name)
         after=self.s.state()
         for module in ('cards','publishers','loans','ib','visits','completions'):self.assertEqual(before[module],after[module])
+
+    def test_folder_selection_requires_loan_management_permission(self):
+        required = ACTIONS['folder.set']
+        self.assertEqual(required, frozenset({'cards.view', 'loans.view', 'loans.manage'}))
+        with self.assertRaises(PermissionError):
+            require({'cards.view', 'loans.view'}, required)
+        require({'cards.view', 'loans.view', 'loans.manage'}, required)
+
+    def test_specific_existing_card_stays_the_same_record(self):
+        target = self.make_card('F-42')
+        other = self.make_card('F-43')
+        self.s.mutate('completion.record', {'card_id': target, 'date': '2026-10-01'})
+        history = self.s.all('completions')
+        original = self.s.get('cards', target)
+        before_loans = self.s.all('loans')
+        moved = self.s.mutate('folder.set', {
+            'ids': [target], 'in_folder': True, 'expected_in_folder': False
+        })
+        self.assertEqual(moved['count'], 1)
+        self.assertTrue(self.s.get('cards', target)['in_folder'])
+        self.assertEqual(self.s.get('cards', target)['number'], 'F-42')
+        self.assertEqual(self.s.get('cards', other)['in_folder'], False)
+        self.assertEqual(self.s.get('cards', target)['last_completed'], original['last_completed'])
+        self.assertEqual(self.s.all('completions'), history)
+        self.assertEqual(self.s.all('loans'), before_loans)
+        self.assertEqual(len(self.s.all('cards')), 2)
+
+    def test_specific_folder_pick_rejects_stale_duplicates_and_issued(self):
+        first = self.make_card('F-51')
+        second = self.make_card('F-52')
+        with self.assertRaisesRegex(ValueError, 'flere gange'):
+            self.s.mutate('folder.set', {'ids': [first, first], 'in_folder': True})
+        self.assertFalse(self.s.get('cards', first)['in_folder'])
+        with self.assertRaisesRegex(ValueError, 'forventet'):
+            self.s.mutate('folder.set', {'ids': [first], 'in_folder': True, 'expected_in_folder': 'false'})
+        self.s.mutate('folder.set', {'ids': [first], 'in_folder': True, 'expected_in_folder': False})
+        with self.assertRaisesRegex(ValueError, 'allerede flyttet'):
+            self.s.mutate('folder.set', {'ids': [first, second], 'in_folder': True, 'expected_in_folder': False})
+        self.assertFalse(self.s.get('cards', second)['in_folder'])
+        loan_id = self.issue(second, True)
+        before_loans = self.s.all('loans')
+        with self.assertRaisesRegex(ValueError, 'udlånt'):
+            self.s.mutate('folder.set', {'ids': [second], 'in_folder': True, 'expected_in_folder': False})
+        self.assertFalse(self.s.get('cards', second)['in_folder'])
+        self.assertEqual(self.s.all('loans'), before_loans)
+        self.assertEqual(self.s.get('loans', loan_id)['returned'], None)
+
     def test_no_folder_issuance_except_initial(self):
         c=self.make_card()
         with self.assertRaises(ValueError):self.issue(c)

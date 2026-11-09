@@ -3,6 +3,30 @@
 const I18n={
  current:'en',
  english:{
+  "Ugyldig kortliste eller samme kort valgt flere gange.":"Invalid card list or the same card was selected more than once.",
+  "Ugyldig forventet kortplacering.":"Invalid expected card location.",
+  "Kortet er allerede flyttet. Opdater siden og vælg igen.":"The card has already been moved. Refresh the page and choose again.",
+
+  "Gå til Distriktskort og opret kort":"Go to Territory cards to create cards",
+
+  "Læg specifikt kort i mappen":"Put a specific card in the carry folder",
+  "Vælg et eksisterende kort fra kassen. Kortets historik og udleveringer ændres ikke.":"Select an existing card from the storage box. Its history and assignments will not change.",
+  "Søg kortnummer, navn eller område":"Search card number, name or area",
+  "Søg blandt eksisterende kort":"Search existing cards",
+  "Allerede i mappen":"Already in the carry folder",
+  "Kan ikke vælges":"Unavailable",
+  "Vælg kort":"Select card",
+  "Ingen eksisterende kort matcher søgningen.":"No existing cards match your search.",
+  "Viser {shown} af {total} kort. Søg mere præcist.":"Showing {shown} of {total} cards. Narrow your search.",
+  "Kortet findes ikke længere.":"The card no longer exists.",
+  "Et udlånt kort kan ikke lægges i mappen.":"An assigned card cannot be placed in the carry folder.",
+  "Kortet er allerede i mappen.":"The card is already in the carry folder.",
+  "Læg kort {number} i mappen?":"Put card {number} in the carry folder?",
+  "Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.":"Only the location changes. The card number, history and assignment status are preserved.",
+  "Vælg et andet kort":"Choose another card",
+  "Kortets placering er ændret. Vælg det igen.":"The card location has changed. Select it again.",
+  "Kortet er lagt i mappen":"The card has been placed in the carry folder.",
+
   "Adressekontrollen er færdig. Ingen adresseændringer afventer gennemgang.":"The address check is complete. No address changes are awaiting review.",
   "Adressekontrollen er færdig. Ingen nye adresseændringer fundet.":"The address check is complete. No new address changes found.",
   "Genindlæs appen og dan kortbilledet igen.":"Reload the app and generate the card image again.",
