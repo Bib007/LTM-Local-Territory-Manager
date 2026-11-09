@@ -155,7 +155,7 @@ FIELDS={
 }
 MODULE_RIGHT={'cards':'cards.view','archived_cards':'cards.view','publishers':'publishers.view',
               'loans':'loans.view','ib':'ib.view','notes':'notes.view','completions':'history.view','visits':'history.view'}
-CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
+CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
@@ -171,6 +171,11 @@ def state_for(raw,user):
         if 'users.manage' not in p:note.pop('assignee_id',None)
         if 'geo.view' not in p:note.pop('followup_key',None)
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}
+    # Non-managers who see assignments need the same advisory counts as admins,
+    # without receiving unrelated administration or personal settings.
+    if 'settings.manage' not in p and 'publishers.view' in p:
+        from store import DEFAULT_PUBLISHER_CARD_GUIDANCE
+        result['settings']['publisher_card_guidance']=deepcopy(raw['settings'].get('publisher_card_guidance', DEFAULT_PUBLISHER_CARD_GUIDANCE))
     if 'backup.notify' not in p:
         for key in ('last_backup','backup_snoozed_until','backup_history'):result['settings'].pop(key,None)
     result['backup_status']=({'last_day':raw['backup_last_day'],'snoozed_until':raw['settings'].get('backup_snoozed_until')} if 'backup.notify' in p else None)
