@@ -58,6 +58,42 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  const activate=locator=>touch?locator.tap():locator.click();
  if(process.env.LTM_THEME)await context.addInitScript(mode=>{if(!localStorage.getItem('ltm-appearance'))localStorage.setItem('ltm-appearance',mode);},process.env.LTM_THEME);
  await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.desk.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
+
+ // Fictional role quotas: ensure the real responsive UI shows live, advisory-only figures.
+ await page.evaluate(()=>{
+   window.__publisherRoleFixture={
+     publishers:structuredClone(state.publishers),loans:structuredClone(state.loans),
+     settings:structuredClone(state.settings),page,query,area,status
+   };
+   state.settings.publisher_card_guidance={member:1,pioneer:4,assistant:3,overseer:5};
+   state.publishers[0].pioneer=true;
+   state.publishers[1].group='Fiktiv gruppe';
+   state.publishers[1].group_role='assistant';
+   state.publishers.push({id:'p3',name:'Fiktiv dobbelttjeneste',group:'Anden gruppe',group_role:'overseer',pioneer:true});
+   page='Forkyndere';query='';render();
+ });
+ for(const [id,expected] of [['p1','1 / 4'],['p2','2 / 3'],['p3','0 / 5']]){
+   const row=page.locator('tr').filter({has:page.locator('[data-action=publisher-profile][data-id="'+id+'"]')});
+   assert.equal(await row.locator('.publisherGuidance').innerText(),expected,'Publisher roles and active counts appear in the list');
+ }
+ await page.evaluate(()=>{page='Indstillinger';render();});
+ for(const [role,value] of [['member','1'],['pioneer','4'],['assistant','3'],['overseer','5']])
+   assert.equal(await page.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,'Guidance settings are editable');
+ const gridFits=await page.locator('.guidanceSettings').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;});
+ assert(gridFits,'Role setting controls fit the desktop/mobile viewport');
+ await page.evaluate(()=>{page='Udlevering';issue('folder');});
+ const publisherInput=page.locator('#issuePublisherName');
+ await publisherInput.fill('Fiktiv <A>');
+ assert.match(await page.locator('#issuePublisherGuidance').innerText(),/1 \/ 4/);
+ assert.match(await page.locator('#issuePublisherNames').innerText(),/1 \/ 4/,'Suggestions include live counts');
+ assert.equal(await page.locator('#issueForm button:not([type="button"])').last().isDisabled(),false,'Guidance never prevents issuing');
+ await activate(page.locator('.dialogClose'));
+ await page.evaluate(()=>{
+   const old=window.__publisherRoleFixture;state.publishers=old.publishers;state.loans=old.loans;
+   state.settings=old.settings;page=old.page;query=old.query;area=old.area;status=old.status;delete window.__publisherRoleFixture;render();
+ });
+ assert.equal(writes.length,0,'Role guidance checks never write or create user data');
+
  // A rejected write keeps a readable, scrollable explanation on real touch layouts.
  await page.evaluate(()=>SaveStatus.set('error','Ændringen blev afvist','Fiktiv forklaring om en afvist ændring. '.repeat(35)+'SLUT_FIKTIV_FORKLARING'));
  await activate(page.locator('.saveExplanation>summary'));
