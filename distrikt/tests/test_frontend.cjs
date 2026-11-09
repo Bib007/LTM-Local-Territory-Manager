@@ -99,7 +99,7 @@ run("loanTab='Historik'");assert(run(`loans().includes('data-admin="correct"')`)
 console.log('Frontend planning/rendering and administration tests passed.');
 run(`state.publishers=[{id:'p1',name:'Eksempelperson'},{id:'p2',name:'Testperson 2'}];state.loans=[{id:'l1',card_id:'c1',publisher_id:'p1',assigned:'2026-01-01',cycle_start:'2026-01-01',returned:null},{id:'l2',card_id:'c2',publisher_id:'p1',assigned:'2026-01-02',cycle_start:'2026-01-02',returned:null}];query='';page='Forkyndere';render();`);
 assert(get('app').innerHTML.includes('2 kort'));assert(get('app').innerHTML.includes('Tilføj forkynder'));
-run("publisherProfile('p1')");assert(get('dialog').innerHTML.includes('2 udleverede distriktskort'));
+run("publisherProfile('p1')");assert(get('dialog').innerHTML.includes('2 / 1'),'The profile shows active / suggested cards, even when above guidance');
 run("detail('c1')");assert(get('dialog').innerHTML.includes('Print forside'));assert(get('dialog').innerHTML.includes('Tegn og vælg adresser'));
 assert(!run("frontHTML(state.cards[1]).includes('0 besøg')"));
 run(`GeoUI.data={addresses:[{id:'a1',road:'Eksempelvej',number:'1',postcode:'9999',floor:'',door:'',lng:10,lat:55,count:1,type:'Hus',label:'Eksempelvej 1'},{id:'a2',road:'Eksempelvej',number:'1',postcode:'9999',floor:'1',door:'tv',lng:10,lat:55,count:1,type:'Lejlighed',label:'Eksempelvej 1, 1. tv'}],roads:[],buildings:[],info:{addresses:2}};GeoUI.target='c3';GeoUI.ids=new Set();GeoUI.loaded=true;state.ignored=[];`);
