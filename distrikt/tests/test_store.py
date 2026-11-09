@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store, MODULES
+from profile_policy import ACTIONS, require
 from pdf_export import s13_pdf, allocation_rows
 
 class StorageTests(unittest.TestCase):
@@ -23,6 +24,13 @@ class StorageTests(unittest.TestCase):
         self.s.close();self.s=Store(self.tmp.name)
         after=self.s.state()
         for module in ('cards','publishers','loans','ib','visits','completions'):self.assertEqual(before[module],after[module])
+
+    def test_folder_selection_requires_loan_management_permission(self):
+        required = ACTIONS['folder.set']
+        self.assertEqual(required, frozenset({'cards.view', 'loans.view', 'loans.manage'}))
+        with self.assertRaises(PermissionError):
+            require({'cards.view', 'loans.view'}, required)
+        require({'cards.view', 'loans.view', 'loans.manage'}, required)
 
     def test_specific_existing_card_stays_the_same_record(self):
         target = self.make_card('F-42')
