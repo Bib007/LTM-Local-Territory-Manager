@@ -112,6 +112,8 @@ class ProfilesIntegrationTests(unittest.TestCase):
         # saved counts, so refreshing the Settings page reset them to defaults.
         defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
         before = self.state(self.admin)
+        other = self.login('Fiktiv admin', 'Fiktiv-password-123')
+        stale = self.state(other)
         self.assertEqual(before['settings']['publisher_card_guidance'], defaults)
         changed = {'member': 0, 'pioneer': 4, 'assistant': 1, 'overseer': 7}
         result = self.change(self.admin, before, 'settings.save', {
@@ -124,6 +126,18 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed,
                          'A separate GET must retain saved values after rerender/reload')
         self.assertEqual(self.store.get('settings', 'config')['publisher_card_guidance'], changed)
+
+        # A second admin saving a stale, unchanged guidance field must not
+        # reverse the newer guidance while editing the congregation name.
+        stale_payload = {
+            'congregation': 'Ny fiktiv menighed',
+            'folder_minimum': 0, 'rural_minimum': 0, 'rural_mode': 'auto',
+            'require_revision': False, 'publisher_card_guidance': defaults,
+        }
+        second = self.change(other, stale, 'settings.save', stale_payload)
+        self.assertEqual(second['state']['settings']['publisher_card_guidance'], changed)
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed)
+        self.assertEqual(self.state(self.admin)['settings']['congregation'], 'Ny fiktiv menighed')
 
         # A publisher-list reader can display the same advisory numbers but may
         # neither edit them nor see unrelated settings.
