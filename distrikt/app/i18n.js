@@ -3,6 +3,8 @@
 const I18n={
  current:'en',
  english:{
+  "Gå til Distriktskort og opret kort":"Go to Territory cards to create cards",
+
   "Læg specifikt kort i mappen":"Put a specific card in the carry folder",
   "Vælg et eksisterende kort fra kassen. Kortets historik og udleveringer ændres ikke.":"Select an existing card from the storage box. Its history and assignments will not change.",
   "Søg kortnummer, navn eller område":"Search card number, name or area",
