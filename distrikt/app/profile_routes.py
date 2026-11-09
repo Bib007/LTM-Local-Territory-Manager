@@ -239,8 +239,15 @@ class ProfileRoutes:
             self.send(self.server.accounts.guide_progress(token,data.get('run_id'),data.get('request_id'),data.get('step_id')));return True
         if path=='/api/profiles/heartbeat':
             self.server.accounts.heartbeat(token)
-            self.send({'ok':True,'permissions':sorted(self.profile_user['permissions']),'auth_revision':self.server.accounts.generation,
-                       'conflicts':len(runtime.workspace.conflicts(token))+(len(self.server.accounts.reviews(token)) if 'users.manage' in self.profile_user['permissions'] else 0)});return True
+            status={'ok':True,'permissions':sorted(self.profile_user['permissions']),'auth_revision':self.server.accounts.generation,
+                    'conflicts':len(runtime.workspace.conflicts(token))+(len(self.server.accounts.reviews(token)) if 'users.manage' in self.profile_user['permissions'] else 0)}
+            if 'notes.view' in self.profile_user['permissions']:
+                # Return only this account's count, never other users' task data.
+                from profile_features import personal_open_task_count
+                from datetime import date
+                with self.server.store.lock:
+                    status['my_open_tasks']=personal_open_task_count(self.server.store.all('notes'),date.today().isoformat(),self.profile_user['id'])
+            self.send(status);return True
         if path=='/api/profiles/intro/complete':
             self.server.accounts.complete_intro(token);self.send({'ok':True});return True
         if path=='/api/profiles/conflicts/acknowledge':

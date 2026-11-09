@@ -264,7 +264,76 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('.profileAccountBackup summary').filter({hasText:'Gendan konti og roller fra fil'}).click();
   await admin.locator('#profileAccountPreview input[name=backup]').setInputFiles(backupPath);await admin.locator('#profileAccountPreview input[name=password]').fill('Fiktiv-password-123');await admin.locator('#profileAccountPreview button').click();
   await admin.locator('#profileAccountApply').waitFor();await admin.locator('#profileAccountApply input[name=confirmation]').fill('GENDAN KONTI');await admin.locator('#profileAccountApply button').click();await admin.locator('#loginName').waitFor();
-  assert.equal(await login(admin,'Fiktiv admin','Fiktiv-password-123'),false,'Restored introduction remains completed');assert.deepEqual(errors,[]);
+  assert.equal(await login(admin,'Fiktiv admin','Fiktiv-password-123'),false,'Restored introduction remains completed');
+  await postponePersonalGuide(admin);
+  // Real authenticated desktop/mobile flow with independent accounts. No
+  // invented live data, remote origins or manually refreshed task counts.
+  const mobileTasks=await newPage(390);
+  await login(mobileTasks,'Fiktiv redaktør','Fiktiv-password-456');
+  await postponePersonalGuide(mobileTasks);
+  assert.equal(await admin.locator('.welcomeTasksNotice').count(),0);
+  assert.equal(await mobileTasks.locator('.welcomeTasksNotice').count(),0);
+  const mobileUser=await admin.evaluate(()=>state.task_users.find(u=>u.name==='Fiktiv redaktør')?.id);
+  assert.ok(mobileUser,'The fictional editor must exist in the restored account directory');
+  await admin.evaluate(async ({owner,cardId})=>{
+    await mutate('note.save',{card_id:cardId,text:'Fiktiv mobilopgave',assignee_id:owner,assignee_before:null},{close:false});
+    await mutate('note.save',{card_id:cardId,text:'Fiktiv administrationsopgave',assignee_id:state.profile.user.id,assignee_before:null},{close:false});
+    await mutate('note.save',{card_id:cardId,text:'Fiktiv opgave uden ejer'},{close:false});
+  },{owner:mobileUser,cardId:fixture.card});
+  await admin.waitForFunction(()=>document.querySelector('.welcomeTasksNotice')?.textContent.includes('1 åben opgave'));
+  assert.ok((await admin.locator('.welcomeTasksNotice').innerText()).includes('1 åben opgave'),
+    'Desktop counts only the admin-owned task, not the mobile user or unassigned task');
+  assert.ok((await admin.locator('.welcomeTasksNotice').boundingBox()).width>100);
+  await admin.locator('[data-work="my-tasks"]').click();
+  assert.deepEqual(await admin.evaluate(()=>[page,Workspace.taskOwnerFilter,Workspace.taskFilter,Workspace.taskQuery]),
+    ['Opgaver','mine','open',''],'Desktop link selects only current open tasks');
+  assert.ok((await admin.locator('#app').innerText()).includes('Fiktiv administrationsopgave'));
+  assert.ok(!(await admin.locator('#app').innerText()).includes('Fiktiv mobilopgave'));
+  await admin.evaluate(()=>{page='Forside';render();});
+
+  // The editor's already-open homepage receives the new count through its
+  // existing authenticated heartbeat, without a manual reload or navigation.
+  await mobileTasks.waitForFunction(()=>!ProfilesUI.polling);
+  await mobileTasks.evaluate(()=>ProfilesUI.poll());
+  await mobileTasks.locator('.welcomeTasksNotice').waitFor();
+  assert.ok((await mobileTasks.locator('.welcomeTasksNotice').innerText()).includes('1 åben opgave'));
+  assert.ok(await mobileTasks.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
+    'The welcome shortcut must not overflow a phone viewport');
+  await mobileTasks.screenshot({path:'/tmp/ltm-my-tasks-mobile.png',fullPage:true});
+  await mobileTasks.evaluate(()=>{Workspace.taskFilter='done';Workspace.taskOwnerFilter='all';Workspace.taskQuery='irrelevant';});
+  await mobileTasks.locator('[data-work="my-tasks"]').click();
+  assert.deepEqual(await mobileTasks.evaluate(()=>[page,Workspace.taskOwnerFilter,Workspace.taskFilter,Workspace.taskQuery]),
+    ['Opgaver','mine','open',''],'The button resets stale task filters and search');
+  assert.ok((await mobileTasks.locator('#app').innerText()).includes('Fiktiv mobilopgave'));
+  assert.ok(!(await mobileTasks.locator('#app').innerText()).includes('Fiktiv administrationsopgave'));
+  assert.equal(await mobileTasks.locator('.taskRow').count(),1);
+  await mobileTasks.locator('.taskRow [data-work="resolve"]').click();
+  await mobileTasks.waitForFunction(()=>state.notes.find(n=>n.text==='Fiktiv mobilopgave')?.resolved===true);
+  await mobileTasks.evaluate(()=>{page='Forside';render();});
+  assert.equal(await mobileTasks.locator('.welcomeTasksNotice').count(),0,'Completed tasks vanish immediately without reload');
+
+  await admin.evaluate(async()=>{
+    const id=state.notes.find(n=>n.text==='Fiktiv mobilopgave').id;
+    await mutate('note.resolve',{id,resolved:false},{close:false});
+  });
+  await mobileTasks.waitForFunction(()=>!ProfilesUI.polling);
+  await mobileTasks.evaluate(()=>ProfilesUI.poll());
+  await mobileTasks.locator('.welcomeTasksNotice').waitFor();
+  await mobileTasks.locator('#navigationLanguage').selectOption('en');
+  await mobileTasks.evaluate(()=>render());
+  assert.ok((await mobileTasks.locator('.welcomeTasksNotice').innerText()).includes('You are responsible for 1 open task'));
+  await mobileTasks.locator('#navigationLanguage').selectOption('da');
+  await mobileTasks.evaluate(()=>render());
+  await admin.evaluate(async()=>{
+    const id=state.notes.find(n=>n.text==='Fiktiv mobilopgave').id;
+    await mutate('note.resolve',{id,resolved:true},{close:false});
+  });
+  await mobileTasks.waitForFunction(()=>!ProfilesUI.polling);
+  await mobileTasks.evaluate(()=>ProfilesUI.poll());
+  assert.equal(await mobileTasks.locator('.welcomeTasksNotice').count(),0,
+    'A colleague finishing the task clears the already-open home notice on the next heartbeat');
+  assert.deepEqual(errors,[]);
+
   console.log('Normal app: profile activation, own settings tabs, hidden connections, backup notification rights, two sessions, merged autosaves, conflict choice/acknowledgement with immediate reminder update, changed access, unknown save result, account backup/confirmed restore, manual intervals/register import, unknown historical counts, later count editing, local Excel group import, group filtering/editing, login and mobile layout passed.');
  }catch(e){for(const context of browser?.contexts()||[])for(const p of context.pages()){console.error('Browser state:',await p.locator('body').innerText());await p.screenshot({path:'/tmp/ltm-profiles-failure-'+(await p.viewportSize()).width+'.png',fullPage:true});}throw e;}finally{if(browser)await browser.close();child.kill('SIGTERM');await new Promise(resolve=>child.once('exit',resolve));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
