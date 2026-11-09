@@ -1,0 +1,30 @@
+name: Cleanup merged beta3 fix branch
+on:
+  push:
+    branches: [develop]
+    paths: ['.github/workflows/prune-merged-beta3-fix-20261109.yml']
+permissions:
+  contents: write
+jobs:
+  prune:
+    if: contains(github.event.head_commit.message, 'Start verified beta3 branch cleanup')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove only the original, unchanged merged branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          name='fix/publisher-guidance-profile-settings-beta3'
+          expected='2dcc82923e5436fbe3ebb12df076da6c7a076713'
+          record=$(gh api "repos/$GH_REPO/pulls/37")
+          [[ "$(jq -r '.merged_at // empty' <<< "$record")" != '' ]]
+          [[ "$(jq -r .head.ref <<< "$record")" == "$name" ]]
+          [[ "$(jq -r .head.repo.full_name <<< "$record")" == "$GH_REPO" ]]
+          [[ "$(jq -r .head.sha <<< "$record")" == "$expected" ]]
+          [[ "$(gh api "repos/$GH_REPO/git/ref/heads/$name" --jq .object.sha)" == "$expected" ]]
+          [[ "$(gh api "repos/$GH_REPO/branches/$name" --jq .protected)" == false ]]
+          gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$name"
+          echo "Removed merged PR 37 branch without touching other work."
