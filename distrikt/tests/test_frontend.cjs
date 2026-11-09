@@ -80,7 +80,7 @@ run("page='Opfølgninger';Workspace.followupFilter='reprint'");assert(run("Works
 assert.equal(run("elapsedSince('2026-01-31','2026-02-28')"),'1 måned og 0 dage siden');
 assert.equal(run("elapsedSince('2025-09-06','2026-10-06')"),'13 måneder og 0 dage siden');
 assert.equal(run("elapsedSince(null)"),'Ingen dato registreret');
-assert(run("home().includes('Længst tid siden gennemgang')"));assert.equal(run("position(state.cards[1])"),'Udleverede distriktskort');
+assert(!run("home().includes('Længst tid siden gennemgang')"));assert(run("territories().includes('Længst tid siden gennemgang')"));assert.equal(run("position(state.cards[1])"),'Udleverede distriktskort');
 run(`state.cards[3].geo_addresses=GeoUI.data.addresses.slice(0,2);state.ib=[{card_id:'c3',road:'PRIVATE_IB_SENTINEL',number:'PRIVATE_NR'}];state.publishers.push({id:'private',name:'PRIVATE_PERSON_SENTINEL'});state.loans.push({card_id:'c3',publisher_id:'private',assigned:'PRIVATE_HISTORY_SENTINEL'});`);
 const svg=run("MapExport.svg('c3')");assert(svg.includes('width="2200"'));assert(svg.includes('2 besøg'));assert.equal((svg.match(/<circle /g)||[]).length,2);assert(!svg.includes('PRIVATE_'));assert(!svg.includes('Gl. Fiktivvej 3'));
 run("savedLabelAddresses=state.cards[3].geo_addresses;state.cards[3].geo_addresses=[{id:'label-test',road:'Testvej',number:'42B',postcode:'9999',lng:10,lat:55,count:1}]");
