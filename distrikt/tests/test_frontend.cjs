@@ -284,3 +284,39 @@ assert.equal(run("compactAddressNumbers('36A, 36B, 36C, 36D (lige)')"),'36A-36D 
 assert.equal(run("compactAddressNumbers('36A & 36C-36D (lige)')"),'36A & 36C-36D (lige)');
 
 assert.equal(run("compactAddressNumbers('20, 22, 24, 28, 30 (lige)')"),'20-24 & 28-30 (lige)');
+
+
+// Daily-use selection never creates a new card: it looks up existing ids only.
+{
+ const before=run('JSON.stringify(state)');context.folderPickerOriginalState=before;
+ run(`state={...state,areas:[{id:'north',name:'Fiktivt nord'}],
+ cards:[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},
+        {id:'folder',number:'102',name:'Indlagt',area_id:'north',in_folder:true},
+        {id:'issued',number:'103',name:'Udlånt',area_id:'north',in_folder:false}],
+ loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true};`);
+ const desk=run('loans()');
+ assert(desk.includes('data-action="folder-card-picker"'));
+ assert(!desk.includes('data-action="new-card"'));
+ const filtered=run("folderCardPickerRows('fIkTiVt <test>')");
+ assert(filtered.includes('data-id="available"')&&filtered.includes('Fiktivt &lt;test&gt;'));
+ assert(!filtered.includes('data-id="folder"')&&!filtered.includes('data-id="issued"'));
+ const all=run("folderCardPickerRows('')");
+ assert.match(all,/data-id="folder" disabled/);
+ assert.match(all,/data-id="issued" disabled/);
+ assert.match(all,/data-id="available" [^>]*>Vælg kort/);
+ run("chooseFolderCard()");
+ assert(get('dialog').innerHTML.includes('id="folderCardSearch"'));
+ assert(!get('dialog').innerHTML.includes('data-action="new-card"'));
+ run("confirmFolderCard('available')");
+ assert(get('dialog').innerHTML.includes('Læg kort 101 i mappen?'));
+ run("confirmFolderCard('folder')");
+ assert(get('dialog').innerHTML.includes('Allerede i mappen'));
+ run("confirmFolderCard('issued')");
+ assert(get('dialog').innerHTML.includes('Udlånt'));
+ run("globalThis.ProfilesUI.canAction=()=>false;chooseFolderCard()");
+ assert(!get('dialog').innerHTML.includes('data-action="folder-card-confirm"'));
+ assert.equal(run("state.cards.length"),3);
+ assert.equal(run("state.loans.length"),1);
+ run("state=JSON.parse(folderPickerOriginalState);delete globalThis.ProfilesUI");
+ console.log('Daily-use existing-card picker: search, escaped results, in-folder, issued, role guard, no creation passed.');
+}
