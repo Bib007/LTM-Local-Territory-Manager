@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.19-beta.4 · 2026-11-09
+
+- Show the authenticated user's own currently actionable tasks next to the personal home welcome, with a shortcut opening the Open / Mine task filters.
+- Keep the count private, permission-gated and automatically refreshed via the existing profile heartbeat, including changes made by other logged-in users.
+- Preserve the original task listing and its historical notes, followups, due-date behavior and navigation counts; fix the JavaScript contract failure introduced by the new personal filter.
+- Test fictional administrator/editor profiles, read permissions, zero/one counts, task completion, role reassignment and phone/desktop navigation. Stable 1.12.19 remains unchanged.
+
 ## 1.12.19-beta.3 · 2026-11-09
 
 - Fix profile-mode settings silently reverting publisher card guidance to the default role counts after saving. Persisted values now pass through the authenticated settings snapshot and refresh correctly.
