@@ -37,13 +37,13 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   for(const [role,value] of Object.entries(suggested))
     assert.equal(await admin.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,
       'Settings must not revert to default counts after the confirmed save');
-  await admin.reload();await ready(admin);
+  await admin.reload();await ready(admin);await postponePersonalGuide(admin);
   await admin.locator('[data-navigation="2:2"]').click();
   await admin.locator('[data-work=settings-tab][data-value=general]').click();
   for(const [role,value] of Object.entries(suggested))
     assert.equal(await admin.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,
       'Saved card guidance must survive a real server reload');
-  await admin.locator('[data-navigation="0:0"]').click();
+  await admin.locator('#nav [data-navigation="0:0"]').click();
   assert.equal(await admin.locator('.dashboardRing').count(),2,'Profile administrators retain the familiar home rings');assert.equal(await admin.locator('.dashboardTrend').count(),1,'Home retains the monthly comparison');assert.equal(await admin.locator('.reportOverview').count(),0,'Report layout stays off the home page');
   await openUsers(admin);await admin.locator('#profileRole input[name=name]').fill('Kortredaktør');
   for(const right of ['dashboard.view','cards.view','cards.edit','geo.view','notes.view','notes.edit','presence.view','settings.manage'])await admin.locator(`#profilePermissions input[value="${right}"]`).check();
