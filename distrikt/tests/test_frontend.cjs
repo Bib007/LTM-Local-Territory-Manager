@@ -15,7 +15,7 @@ run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],compl
       {id:'pioneer',name:'Fiktiv pioner',pioneer:true},
       {id:'assistant',name:'Fiktiv assistent',group:'A',group_role:'assistant'},
       {id:'both',name:'Fiktiv dobbeltrolle',group:'B',group_role:'overseer',pioneer:true}
-    ],cards:[{id:'c1',number:'1',in_folder:false},{id:'c2',number:'2',in_folder:false},{id:'c3',number:'3',in_folder:false}],
+    ],cards:[{id:'c1',number:'1',in_folder:false},{id:'c2',number:'2',in_folder:false},{id:'c3',number:'3',in_folder:false},{id:'c4',number:'4',in_folder:false}],
     loans:[{card_id:'c1',publisher_id:'pioneer',returned:null},
       {card_id:'c2',publisher_id:'pioneer',returned:null},
       {card_id:'c2',publisher_id:'pioneer',returned:null},
@@ -31,12 +31,12 @@ run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],compl
   const html=run('settingsPage()');
   for(const name of ['guide_member','guide_pioneer','guide_assistant','guide_overseer'])assert(html.includes('name="'+name+'"'));
   assert(html.includes('value="5"'));
-  run('issue("c1",true)');
+  run('issue("c4",true)');
   assert(get('dialog').innerHTML.includes('issuePublisherGuidance'));
   assert(!get('dialog').innerHTML.includes('data-guidance-block'),'Advisory limits must never block issuance');
   run("state.loans[0].returned='2026-11-09'");
   assert.equal(run("publisherGuidanceText(state.publishers[1])"),'1 / 5','Returning a card changes the current count');
-  run("state.loans.push({card_id:'c4',publisher_id:'pioneer',returned:null})");
+  run("state.loans.push({card_id:'c5',publisher_id:'pioneer',returned:null})");
   assert.equal(run("publisherGuidanceText(state.publishers[1])"),'2 / 5','A new assignment updates the count without waiting for a settings change');
   run("state.settings.publisher_card_guidance={member:2,pioneer:1,assistant:6,overseer:3}");
   assert.equal(run("publisherGuidanceText(state.publishers[3])"),'0 / 3','Use the highest applicable configured guide, not hardcoded role precedence');
