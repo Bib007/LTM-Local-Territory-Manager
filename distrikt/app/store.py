@@ -98,7 +98,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self.db.execute("DELETE FROM geo.records WHERE id = ?",('basemap-config',))
             if not self.get('settings', 'config'):
                 self.put('settings', {'id': 'config', 'congregation': '', 'folder_minimum': 0,
-                    'rural_mode': 'auto', 'rural_minimum': 0, 'require_revision': False, 'schema': 1})
+                    'rural_mode': 'auto', 'rural_minimum': 0, 'require_revision': False,
+                    'publisher_card_guidance': {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}, 'schema': 1})
         self.purge_expired()
 
     @contextmanager
@@ -482,12 +483,20 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             return {'id': loan['id']}
         if action == 'folder.set':
             ids = data.get('ids', [])
-            if not isinstance(ids, list):
-                raise ValueError('Ugyldig kortliste.')
-            for ident in ids:
-                c = self.require('cards', ident)
-                if self.active_loan(ident):
+            if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids) or len(ids) != len(set(ids)):
+                raise ValueError('Ugyldig kortliste eller samme kort valgt flere gange.')
+            expected = data.get('expected_in_folder')
+            if 'expected_in_folder' in data and not isinstance(expected, bool):
+                raise ValueError('Ugyldig forventet kortplacering.')
+            # Check all cards before writing any changes; another session may have
+            # moved or issued one since the picker was opened.
+            cards = [self.require('cards', ident) for ident in ids]
+            for c in cards:
+                if self.active_loan(c['id']):
                     raise ValueError('Et udlånt kort kan ikke lægges i mappen.')
+                if 'expected_in_folder' in data and bool(c.get('in_folder')) != expected:
+                    raise ValueError('Kortet er allerede flyttet. Opdater siden og vælg igen.')
+            for c in cards:
                 c['in_folder'] = bool(data.get('in_folder'))
                 self.put('cards', c)
             return {'count': len(ids)}
@@ -536,8 +545,16 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 rural = min(rural, minimum)
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
                 raise ValueError('Kontrollér minimum og antal landkort.')
+            # Local suggestions only: never used to reject loan.issue / loan.finish.
+            defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+            limits = data.get('publisher_card_guidance', c.get('publisher_card_guidance', defaults))
+            if not isinstance(limits, dict) or set(limits) != set(defaults) or any(
+                type(value) is not int or not 0 <= value <= 100 for value in limits.values()
+            ):
+                raise ValueError('Kontrollér de vejledende kortantal (0–100).')
             c.update(congregation=clean_text(data.get('congregation'), 100), folder_minimum=minimum,
-                rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')))
+                rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')),
+                publisher_card_guidance=dict(limits))
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)
