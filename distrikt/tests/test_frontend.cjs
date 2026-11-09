@@ -293,8 +293,8 @@ assert.equal(run("compactAddressNumbers('20, 22, 24, 28, 30 (lige)')"),'20-24 & 
  cards:[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},
         {id:'folder',number:'102',name:'Indlagt',area_id:'north',in_folder:true},
         {id:'issued',number:'103',name:'Udlånt',area_id:'north',in_folder:false}],
- loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true};`);
- const desk=run('loans()');
+ loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true,dialog(){}};`);
+ const desk=run('home()');
  assert(desk.includes('data-action="folder-card-picker"'));
  assert(!desk.includes('data-action="new-card"'));
  const filtered=run("folderCardPickerRows('fIkTiVt <test>')");
