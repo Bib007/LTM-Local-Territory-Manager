@@ -280,8 +280,8 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await mutate('note.save',{card_id:cardId,text:'Fiktiv administrationsopgave',assignee_id:state.profile.user.id,assignee_before:null},{close:false});
     await mutate('note.save',{card_id:cardId,text:'Fiktiv opgave uden ejer'},{close:false});
   },{owner:mobileUser,cardId:fixture.card});
-  await admin.waitForFunction(()=>document.querySelector('.welcomeTasksNotice')?.textContent.includes('1 åbne opgaver'));
-  assert.ok((await admin.locator('.welcomeTasksNotice').innerText()).includes('1 åbne opgaver'),
+  await admin.waitForFunction(()=>document.querySelector('.welcomeTasksNotice')?.textContent.includes('1 åben opgave'));
+  assert.ok((await admin.locator('.welcomeTasksNotice').innerText()).includes('1 åben opgave'),
     'Desktop counts only the admin-owned task, not the mobile user or unassigned task');
   assert.ok((await admin.locator('.welcomeTasksNotice').boundingBox()).width>100);
   await admin.locator('[data-work="my-tasks"]').click();
@@ -296,7 +296,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await mobileTasks.waitForFunction(()=>!ProfilesUI.polling);
   await mobileTasks.evaluate(()=>ProfilesUI.poll());
   await mobileTasks.locator('.welcomeTasksNotice').waitFor();
-  assert.ok((await mobileTasks.locator('.welcomeTasksNotice').innerText()).includes('1 åbne opgaver'));
+  assert.ok((await mobileTasks.locator('.welcomeTasksNotice').innerText()).includes('1 åben opgave'));
   assert.ok(await mobileTasks.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
     'The welcome shortcut must not overflow a phone viewport');
   await mobileTasks.screenshot({path:'/tmp/ltm-my-tasks-mobile.png',fullPage:true});
@@ -321,7 +321,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await mobileTasks.locator('.welcomeTasksNotice').waitFor();
   await mobileTasks.locator('#navigationLanguage').selectOption('en');
   await mobileTasks.evaluate(()=>render());
-  assert.ok((await mobileTasks.locator('.welcomeTasksNotice').innerText()).includes('You are responsible for 1 open tasks'));
+  assert.ok((await mobileTasks.locator('.welcomeTasksNotice').innerText()).includes('You are responsible for 1 open task'));
   await mobileTasks.locator('#navigationLanguage').selectOption('da');
   await mobileTasks.evaluate(()=>render());
   await admin.evaluate(async()=>{
