@@ -20,6 +20,26 @@ STEPS=(
  {'id':'settings','page':'Indstillinger','section':'general','requires':('settings.manage',),'title':('Fælles opsætning','Shared setup'),'text':('Fælles opsætning er adskilt fra din personlige guide. Guiden ændrer ingen indstillinger.','Shared setup is separate from your personal guide. The guide changes no settings.')},
 )
 
+def personal_open_task_count(notes, today, user_id):
+    """Count only currently actionable assignments for one authenticated account.
+
+    No task text or other account's identifiers leave the heartbeat endpoint.
+    A weekly task scheduled in the future is not open for action yet.
+    """
+    return sum(
+        1 for note in notes
+        if note.get('assignee_id') == user_id
+        and user_id is not None
+        and not note.get('resolved')
+        and not note.get('ignored')
+        and note.get('task') is not False
+        and note.get('entity') != 'activity'
+        and (not note.get('recurrence')
+             or (isinstance(note['recurrence'].get('next_due'), str)
+                 and note['recurrence']['next_due'] <= today))
+    )
+
+
 def summaries(raw):
     """No raw identifiers/text/addresses leave this projection."""
     today=date.fromisoformat(raw['today']);y=today.year;service=y+1 if today.month>=9 else y
