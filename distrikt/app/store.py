@@ -47,6 +47,16 @@ def clean_text(value, maxlen=100, required=False):
         raise ValueError('Udfyld det krævede felt.')
     return value
 
+def split_fingerprint(card, limit):
+    """Bind a suggestion to the current estimated visits, membership and limit."""
+    rows=card.get('addresses') or []
+    if not rows or any(not isinstance(row,dict) or row.get('count_unknown') or type(row.get('count')) is not int or row['count']<0 for row in rows):
+        return None
+    total=sum(row['count'] for row in rows)
+    if total<=limit:return None
+    return json.dumps([card['id'],card['number'],total,limit,sorted(card.get('address_ids') or [])],ensure_ascii=False,separators=(',',':'))
+
+
 class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
     def __init__(self, root):
         self.geo_generation=0
@@ -537,6 +547,26 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             batch, stamp = new_id(), now()
             self.mark_deleted('settings', ident, batch, stamp)
             return {'batch': batch}
+        if action in ('split.suggestion.ignore','split.suggestion.restore'):
+            config=dict(self.require('settings','config'))
+            ignored=dict(config.get('split_suggestion_ignored') or {})
+            ident=data.get('card_id')
+            if not isinstance(ident,str) or not ident or len(ident)>100:
+                raise ValueError('Vælg et gyldigt distriktskort.')
+            if action=='split.suggestion.ignore':
+                c=self.require('cards',ident)
+                limit=config.get('split_visit_limit',50)
+                fingerprint=split_fingerprint(c,limit)
+                if not fingerprint or data.get('fingerprint')!=fingerprint:
+                    raise ValueError('Opdelingsforslaget er ændret. Opdater listen først.')
+                reason=clean_text(data.get('reason'),300,True)
+                ignored[ident]={'fingerprint':fingerprint,'reason':reason,'at':now()}
+            else:
+                if ident not in ignored:raise ValueError('Forslaget er allerede gendannet.')
+                ignored.pop(ident)
+            config['split_suggestion_ignored']=ignored
+            self.put('settings',config)
+            return {}
         if action == 'settings.save':
             c = dict(self.require('settings', 'config'))
             minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
@@ -546,6 +576,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 rural = min(rural, minimum)
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
                 raise ValueError('Kontrollér minimum og antal landkort.')
+            limit=data.get('split_visit_limit',c.get('split_visit_limit',50))
+            if type(limit) is not int or not 1<=limit<=1000:
+                raise ValueError('Grænsen for besøg pr. kort skal være 1–1.000.')
             # Local suggestions only: never used to reject loan.issue / loan.finish.
             defaults = DEFAULT_PUBLISHER_CARD_GUIDANCE
             limits = data.get('publisher_card_guidance', c.get('publisher_card_guidance', defaults))
@@ -555,7 +588,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Kontrollér de vejledende kortantal (0–100).')
             c.update(congregation=clean_text(data.get('congregation'), 100), folder_minimum=minimum,
                 rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')),
-                publisher_card_guidance=dict(limits))
+                publisher_card_guidance=dict(limits), split_visit_limit=limit)
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)
