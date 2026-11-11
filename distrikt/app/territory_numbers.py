@@ -123,7 +123,10 @@ class TerritoryNumbering:
                     continue
                 config = scheme_values(config)
                 candidate = ""
-                for n in range(config["start"], config["end"] + 1):
+                # At most len(used)+1 candidates are needed to locate a free value.
+                # Never iterate across a billion-number sparse interval.
+                last = min(config["end"], config["start"] + len(used))
+                for n in range(config["start"], last + 1):
                     value = config["prefix"] + str(n).zfill(config["width"])
                     if value.casefold() not in used:
                         candidate = value
