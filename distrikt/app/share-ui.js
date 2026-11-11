@@ -97,7 +97,8 @@ const ShareUI={loadSequence:0,qrSequence:0,connecting:false,publishing:false,dat
    if(!this.sameContext(context)||this.pending!==pending||el('shareMapPreview')!==image)return;
    if(recipe.date_updates){const preview=await(await api('/api/share/date-preview',{card_id:pending.card_id,fingerprint:recipe.fingerprint,date_fingerprint:recipe.date_fingerprint,png})).json();png=preview.png;}
    if(!this.sameContext(context)||this.pending!==pending||el('shareMapPreview')!==image)return;
-   pending.png=png;pending.showHouseNumbers=checked;pending.request_id=this.uploadRequestId();image.src=png;this.failedHouseChoice=null;this.progress('complete',pending.card_id,{preview:true,number:recipe.card.number});
+   // A user must explicitly approve the newly generated image, even if the checkbox changed during rendering.
+   approve.checked=false;pending.png=png;pending.showHouseNumbers=checked;pending.request_id=this.uploadRequestId();image.src=png;this.failedHouseChoice=null;this.progress('complete',pending.card_id,{preview:true,number:recipe.card.number});
   }catch(error){if(el('shareHouseNumbers')===toggle){toggle.checked=pending.showHouseNumbers;this.failedHouseChoice=checked;this.progress('error',pending.card_id,{error:error?.message||I18n.text('Kortbilledet kunne ikke dannes.'),retry:'house'});}throw error;}
   finally{this.busy=false;if(el('shareHouseNumbers')===toggle){toggle.disabled=false;approve.disabled=false;}}
  },
