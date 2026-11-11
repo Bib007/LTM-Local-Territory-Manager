@@ -5,11 +5,50 @@ const AdminUI={
  current(c){const n=this.context();return c.page===n.page&&c.generation===n.generation&&c.revision===n.revision&&(!c.open||n.open)&&c.form===n.form&&c.values===n.values;},
  bytes(n){return n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KiB`:`${(n/1048576).toFixed(2)} MiB`;},
  fields(keep=false){return `<label><span data-ui="Område">Område</span></label><select name="area_id">${keep?'<option value="__keep__" data-ui="Behold nuværende område">Behold nuværende område</option>':''}<option value="" data-ui="Intet område">Intet område</option>${state.areas.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select><label><span data-ui="Distriktstype">Distriktstype</span></label><select name="kind">${keep?'<option value="__keep__" data-ui="Behold nuværende type">Behold nuværende type</option>':''}${['Ukendt','By','Land'].map(k=>`<option value="${esc(k)}" data-ui="${esc(k)}">${esc(I18n.text(k))}</option>`).join('')}</select>`;},
+ folderPending:null,folderConfirmBusy:false,
+ selectedCards(){
+  this.selected=new Set([...this.selected].filter(id=>card(id)));
+  return [...this.selected].map(id=>card(id));
+ },
+ folderReason(c){
+  if(!c)return 'Kortet findes ikke længere.';
+  if(loanFor(c.id))return 'Et udlånt kort kan ikke lægges i mappen.';
+  if(c.in_folder)return 'Kortet er allerede i mappen.';
+  return '';
+ },
  folderIds(cards,inFolder){return cards.filter(c=>c&&this.selected.has(c.id)&&!loanFor(c.id)&&!!c.in_folder!==inFolder).map(c=>c.id);},
- selection(cards){this.selected=new Set([...this.selected].filter(id=>card(id)));return `<div class="actions cardSelection"><button data-admin="all"><span data-ui="Vælg viste kort">Vælg viste kort</span></button><button data-admin="none"><span data-ui="Fravælg alle">Fravælg alle</span></button><button data-admin="bulk" ${this.selected.size?'':'disabled'}>${ui('Ændr område / type · {count} valgt',{count:this.selected.size})}</button>${[true,false].map(inFolder=>{
- const count=this.folderIds(cards,inFolder).length;
- return count?`<button data-action="folder-selection" data-destination="${inFolder?'folder':'box'}">${ui(inFolder?'Læg {count} i mappen':'Flyt {count} til kassen',{count})}</button>`:'';
- }).join('')}</div>`;},
+ selection(cards){
+  this.visible=cards.map(c=>c.id);
+  const chosen=this.selectedCards(),toFolder=this.folderIds(chosen,true),toBox=this.folderIds(chosen,false),excluded=chosen.length-toFolder.length;
+  return `<div class="actions cardSelection"><button data-admin="all">${ui('Vælg viste kort')}</button><button data-admin="none">${ui('Fravælg alle')}</button><button data-admin="bulk" ${chosen.length?'':'disabled'}>${ui('Ændr område / type · {count} valgt',{count:chosen.length})}</button><button data-action="folder-selection" ${toFolder.length?'':'disabled'}>${ui('Læg {count} i mappen',{count:toFolder.length})}${excluded?' · '+ui('{count} springes over',{count:excluded}):''}</button>${toBox.length?`<button data-action="folder-selection-box">${ui('Flyt {count} til kassen',{count:toBox.length})}</button>`:''}</div>
+  <p class="hint" role="status">${ui('{count} kort valgt på tværs af filtre',{count:chosen.length})}${chosen.length?': '+chosen.map(c=>`${esc(c.number)}${this.folderReason(c)?' ('+esc(I18n.text(this.folderReason(c)))+')':''}`).join(' · '):''}</p>`;
+ },
+ folderPreview(){
+  if(this.folderConfirmBusy)return;
+  const chosen=this.selectedCards();
+  const eligible=chosen.filter(c=>!this.folderReason(c)),skipped=chosen.filter(c=>this.folderReason(c)).map(c=>({id:c.id,reason:this.folderReason(c)}));
+  this.folderPending={ids:eligible.map(c=>c.id),skipped,labels:Object.fromEntries(chosen.map(c=>[c.id,c.number]))};
+  const row=({id,reason})=>`<li>${esc(this.folderPending.labels[id]||id)} · ${esc(I18n.text(reason))}</li>`;
+  openDialog(`<h2>${ui('Læg valgte kort i mappen?')}</h2><p><b>${ui('{count} kort flyttes til mappen',{count:eligible.length})}</b> · ${ui('{count} springes over',{count:skipped.length})}</p><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><h3>${ui('Kort der flyttes')}</h3><p>${eligible.map(c=>esc(c.number)).join(' · ')||ui('Ingen kort kan flyttes.')}</p>${skipped.length?`<h3>${ui('Kort der springes over')}</h3><ul>${skipped.map(row).join('')}</ul>`:''}<div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary" data-admin="folder-confirm" ${eligible.length?'':'disabled'}>${ui('Bekræft og læg {count} i mappen',{count:eligible.length})}</button><button data-action="close">${ui('Annuller')}</button></div>`,I18n.language());
+ },
+ async folderConfirm(){
+  const pending=this.folderPending;
+  if(!pending||this.folderConfirmBusy||!pending.ids.length)return;
+  this.folderConfirmBusy=true;
+  try{
+   // The existing mutation queue owns the profile edit base, response receipt,
+   // live state refresh and uncertain-write guard.
+   const result=await mutate('folder.set_many',{ids:pending.ids,in_folder:true,expected_in_folder:false},{close:false,autosave:true});
+   if(!result||!Array.isArray(result.updated)||!Array.isArray(result.skipped))throw new RequestError('Svaret på ændringen kunne ikke læses. Kontrollér de gemte data med Opdater før et nyt forsøg.','response');
+   for(const id of result.updated)this.selected.delete(id);
+   this.folderPending=null;
+   render();
+   const label=id=>esc(pending.labels[id]||card(id)?.number||I18n.text('Kortet findes ikke længere.'));
+   const skipped=[...pending.skipped,...result.skipped];
+   openDialog(`<h2>${ui('Resultat af massehandling')}</h2><p><b>${ui('{count} kort lagt i mappen',{count:result.updated.length})}</b> · ${ui('{count} kort ikke ændret',{count:skipped.length})}</p>${result.updated.length?`<p>${result.updated.map(label).join(' · ')}</p>`:''}${skipped.length?`<h3>${ui('Kort der ikke blev ændret')}</h3><ul>${skipped.map(item=>`<li>${label(item.id)} · ${esc(I18n.text(item.reason))}</li>`).join('')}</ul>`:''}<p class="hint">${ui('Status, tællere og aktivitetshistorik er opdateret.')}</p><div class="actions"><button data-action="close">${ui('Luk')}</button></div>`,I18n.language());
+   return result;
+  }finally{this.folderConfirmBusy=false;}
+ },
  quick(){this.pending=null;openDialog(`<h2><span data-ui="Hurtig oprettelse">Hurtig oprettelse</span></h2><p class="hint"><span data-ui="Midlertidige kort til register og udlevering. Vejliste og korttegning kan tilføjes senere.">Midlertidige kort til register og udlevering. Vejliste og korttegning kan tilføjes senere.</span></p><form id="adminQuick"><label for="quickNumberMode">${ui('Nummerering')}</label><select id="quickNumberMode" name="numbering_mode"><option value="list" data-ui="Egen liste">${I18n.text('Egen liste')}</option><option value="range" data-ui="Interval · start og slut inklusive">${I18n.text('Interval · start og slut inklusive')}</option></select><fieldset id="quickListFields"><label><span data-ui="Kortnumre · ét pr. linje, eller adskilt med mellemrum / komma">Kortnumre · ét pr. linje, eller adskilt med mellemrum / komma</span></label><textarea name="numbers" rows="8" maxlength="20000" required placeholder="120\n584\n684"></textarea><p class="hint"><span data-ui="Højst 500 ad gangen. 1–10 oprettes som ét kortnummer, ikke en serie.">Højst 500 ad gangen. 1–10 oprettes som ét kortnummer, ikke en serie.</span></p></fieldset><fieldset id="quickRangeFields" hidden disabled><legend>${ui('Interval · start og slut inklusive')}</legend><div class="twocol"><div><label>${ui('Startnummer')}</label><input name="range_start" type="number" min="0" max="999999999" step="1" value="0" required></div><div><label>${ui('Slutnummer')}</label><input name="range_end" type="number" min="0" max="999999999" step="1" value="0" required></div></div><label>${ui('Antal cifre · 0 betyder ingen nuludfyldning')}</label><input name="range_digits" type="number" min="0" max="29" step="1" value="0" required><label>${ui('Forbogstav · valgfrit, ét bogstav')}</label><input name="range_prefix" maxlength="1" autocomplete="off"><p class="hint">${ui('Begge ender tælles med. 0–300 med fire cifre giver 0000–0300, i alt 301 kort. Højst 500 kort ad gangen. Eksisterende numre overskrives ikke.')}</p></fieldset>${this.fields()}${formEnd('Kontrollér numre')}</form>`,I18n.language());},
  quickMode(form){const range=form.elements.numbering_mode.value==='range';const list=form.querySelector('#quickListFields'),interval=form.querySelector('#quickRangeFields');list.hidden=range;list.disabled=range;interval.hidden=!range;interval.disabled=!range;},
  bulk(){const ids=[...this.selected].filter(id=>card(id));if(!ids.length)return;this.pending=null;openDialog(`<h2>${ui('Ændr {count} kort',{count:ids.length})}</h2><p class="hint"><span data-ui="Kun område og distriktstype ændres. Numre, adresser, IB, placering og historik bevares.">Kun område og distriktstype ændres. Numre, adresser, IB, placering og historik bevares.</span></p><p>${ids.map(id=>esc(card(id).number)).join(' · ')}</p><form id="adminBulk" data-ids="${esc(JSON.stringify(ids))}">${this.fields(true)}${formEnd('Vis ændringer')}</form>`);},
@@ -30,5 +69,5 @@ const AdminUI={
  }
 };
 document.addEventListener('change',e=>{if(e.target.id==='quickNumberMode')AdminUI.quickMode(e.target.form);else if(e.target.matches('[data-bulk-id]')){const id=e.target.dataset.bulkId;e.target.checked?AdminUI.selected.add(id):AdminUI.selected.delete(id);render();}});
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-admin]');if(!b||b.disabled)return;e.preventDefault();try{switch(b.dataset.admin){case 'quick':AdminUI.quick();break;case 'bulk':AdminUI.bulk();break;case 'correct':AdminUI.correct(b.dataset.id);break;case 'all':AdminUI.visible.forEach(id=>AdminUI.selected.add(id));render();break;case 'none':AdminUI.selected.clear();render();break;case 'storage':await AdminUI.storage();break;case 'confirm':b.disabled=true;await AdminUI.confirm();break;}}catch(err){if(el('formError'))I18n.errorContent(el('formError'),err);else toast(err);b.disabled=false;}});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-admin]');if(!b||b.disabled)return;e.preventDefault();try{switch(b.dataset.admin){case 'quick':AdminUI.quick();break;case 'folder-confirm':if(AdminUI.folderConfirmBusy)return;b.disabled=true;await AdminUI.folderConfirm();break;case 'bulk':AdminUI.bulk();break;case 'correct':AdminUI.correct(b.dataset.id);break;case 'all':AdminUI.visible.forEach(id=>AdminUI.selected.add(id));render();break;case 'none':AdminUI.selected.clear();render();break;case 'storage':await AdminUI.storage();break;case 'confirm':b.disabled=true;await AdminUI.confirm();break;}}catch(err){if(el('formError'))I18n.errorContent(el('formError'),err);else toast(err);b.disabled=false;}});
 document.addEventListener('submit',async e=>{const f=e.target;if(!f.id?.startsWith('admin'))return;e.preventDefault();if(f.dataset.saving||!f.reportValidity())return;f.dataset.saving='yes';const b=f.querySelector('button:not([type=button])');b.disabled=true;try{const data=Object.fromEntries(new FormData(f));let action;if(f.id==='adminQuick')action='card.bulk.preview';else if(f.id==='adminBulk'){action='card.bulk.edit.preview';data.ids=JSON.parse(f.dataset.ids);}else{action='loan.correct.preview';data.id=f.dataset.id;}await AdminUI.preview(action,data);}catch(err){I18n.errorContent(el('formError'),err);}finally{delete f.dataset.saving;b.disabled=false;}});
