@@ -189,7 +189,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
 
     def print_token(self, c, side, context=None):
         context=self.print_context() if context is None else context
-        fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon') if side=='front' else ('id','number')
+        fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon','front_line_overrides') if side=='front' else ('id','number')
         content={k:c.get(k) for k in fields}
         if side=='back':content['ib']=context['ib'].get(c['id'],[])
         else:
@@ -215,6 +215,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             histories=self.loan_history_tokens(result['cards'],result['loans'])
             result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
             front_summaries(result['cards'])
+            from front_labels import token as front_labels_token
+            for c in result['cards']:c['front_labels_token']=front_labels_token(c)
             result['settings'] = self.get('settings', 'config')
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
@@ -312,7 +314,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.alias(module)+'.records WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
-                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve','revision.approve_many')
+                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -328,6 +330,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             return self.admin_mutate(action,data)
         if isinstance(action,str) and (action.startswith('geo.') or action.startswith('ignore.')):
             return self.geo_mutate(action,data)
+        if action == 'card.front_labels.save':
+            from front_labels import save
+            return save(self,data)
         if action == 'card.color':
             card = self.require('cards', data['card_id'])
             color = data.get('map_color')

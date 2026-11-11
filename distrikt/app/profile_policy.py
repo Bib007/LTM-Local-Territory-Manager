@@ -73,7 +73,7 @@ def route(permissions,path,post=False):
     require(permissions,(POST if post else GET).get(path))
 
 GROUPS={
- ('cards.view','cards.edit'):'card.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit revision.approve revision.approve_many',
+ ('cards.view','cards.edit'):'card.save card.front_labels.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit revision.approve revision.approve_many',
  ('cards.view','geo.view','geo.edit','cards.edit'):'geo.assign geo.boundary geo.preview map.save map.outline card.restructure.preview card.restructure.apply',
  ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune geo.main.download.save geo.main.download.tile geo.main.import.preview ignore.save address.change.review',
  ('connections.manage',):'geo.token',
