@@ -57,8 +57,8 @@ const ShareUI={loadSequence:0,qrSequence:0,connecting:false,publishing:false,dat
   }catch(error){if(sequence===this.loadSequence&&node&&el('shareStatus')===node&&!this.connecting)I18n.errorContent(node,error);if(required)throw error;}
  },
  async update(id){
-  if(this.busy||this.opening||this.publishing)return;this.opening=true;this.progress('preparing',id);
-  try{await closeRequested();if(el('dialog').open)return;const context=this.context();if(!GeoUI.loaded)await GeoUI.load();if(!this.sameContext(context))return;
+  if(this.busy||this.opening||this.publishing)return;this.opening=true;
+  try{await closeRequested();if(el('dialog').open)return;this.progress('preparing',id);const context=this.context();if(!GeoUI.loaded)await GeoUI.load();if(!this.sameContext(context))return;
    if(!card(id))throw Error(I18n.text('Kortet findes ikke længere.'));detail(id);this.mountProgress();await this.prepare(id);
   }catch(error){this.progress('error',id,{error:error?.message||I18n.text('Kortbilledet kunne ikke dannes.'),retry:'update'});throw error;}finally{this.opening=false;}
  },
