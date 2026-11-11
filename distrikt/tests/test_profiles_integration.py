@@ -83,7 +83,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
 
     def test_bulk_folder_two_authenticated_users_and_permission_denial(self):
         """Two different accounts race on one fictional card; only one changes it."""
-        guest, _, _ = self.reader(['cards.view', 'loans.view', 'loans.manage'])
+        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'loans.manage'])
         admin_base = self.state(self.admin)
         guest_base = self.state(guest)
         ready = threading.Barrier(2)
@@ -102,7 +102,13 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(self.store.get('cards', self.card)['in_folder'])
         self.assertEqual(sum(len(item['skipped']) for item in outcomes), 1)
 
-        without_manage, _, _ = self.reader(['cards.view', 'loans.view'])
+        # Reuse the fictional account after revoking manage; reader() creates a
+        # same-named role and user and cannot be called twice in this fixture.
+        self.value('/api/profiles/roles/save', {
+            'id': guest_role, 'name': 'Fiktiv rolle',
+            'permissions': ['cards.view', 'loans.view']
+        }, self.admin)
+        without_manage = guest
         with self.assertRaises(urllib.error.HTTPError) as error:
             self.change(without_manage, self.state(without_manage),
                         'folder.set_many', payload)
