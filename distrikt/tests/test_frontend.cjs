@@ -161,6 +161,11 @@ run("state.settings.print_profiles={front:{orientation:'landscape',paper:'a4',mo
 const printHTML=run("printDocument([state.cards[1],state.cards[2]],'front',defaultPrintProfile('front'))");
 assert.equal((printHTML.match(/class="sheet"/g)||[]).length,2);assert(printHTML.includes('146mm 94mm'));assert(!printHTML.includes('PRIVATE_'));
 assert(run("printDocument([state.cards[1]],'back',defaultPrintProfile('back')).includes('94mm 146mm')"));
+// The A4 preview is real-size paper, not a scaled pre-cut card; template offsets are shared with PDF output.
+const s12Page=run("printDocument([state.cards[1]],'front',{...defaultPrintProfile('front'),paper:'a4',form_language:'da',s12_layout:{da:{title:{x:1.5,y:-1,scale:1.05},number:{x:0,y:0,scale:1},streets:{x:0,y:0,scale:1},qr:{x:0,y:0,scale:1}}}})");
+assert(s12Page.includes('class="paperPage"'));assert(s12Page.includes('width:210mm;height:297mm'));
+assert(s12Page.includes('translate(1.5mm,-1mm) scale(1.05)'));assert(s12Page.includes('cardQR{transform:translate(0mm,0mm) scale(1)'));
+
 assert.throws(()=>run("printSettings({...defaultPrintProfile('front'),x:'0; color:red'})"));
 run("state.cards[1].front_revision=true;printRevisions('front')");assert(get('dialog').innerHTML.includes('data-ids='));
 run("issue('c4',true)");assert(get('dialog').innerHTML.includes('data-publisher-search'));assert(!get('dialog').innerHTML.includes('name="new_publisher"'));
