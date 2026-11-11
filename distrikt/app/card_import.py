@@ -11,9 +11,9 @@ from decimal import Decimal,InvalidOperation
 from ui_errors import UIError,error_payload
 from xml.etree import ElementTree as ET
 
-HEADERS=['kortnummer','område','kortnavn','distriktstype','vejnavn','husnummer','etage','dør','postnummer','adressetype','besøg']
-ALIASES=dict(zip(HEADERS,['card','area','name','kind','road','number','floor','door','postcode','type','count']))
-ALIASES.update(dict(zip(['card','area','name','kind','road','number','floor','door','postcode','type','count'],['card','area','name','kind','road','number','floor','door','postcode','type','count'])))
+HEADERS=['kortnummer','område','kortnavn','distriktstype','vejnavn','husnummer','etage','dør','postnummer','adressetype','besøg','internt_nummer']
+ALIASES=dict(zip(HEADERS,['card','area','name','kind','road','number','floor','door','postcode','type','count','internal_number']))
+ALIASES.update(dict(zip(['card','area','name','kind','road','number','floor','door','postcode','type','count','internal_number'],['card','area','name','kind','road','number','floor','door','postcode','type','count','internal_number'])))
 NS={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main','r':'http://schemas.openxmlformats.org/officeDocument/2006/relationships'}
 MAX_BYTES=2000000
 
@@ -158,6 +158,7 @@ def read_rows(data,sheet_name='Distriktskort',*,list_sheets=False,strict_sheet=F
 
 def preview(store,data):
     from store import ADDRESS_TYPES,clean_text
+    from territory_numbers import internal_code
     if 'column_map' in data:
         from column_import import normalized_rows
         rows=normalized_rows(data,'card')
@@ -168,6 +169,8 @@ def preview(store,data):
         raise ValueError('Brug skabelonens kolonneoverskrifter. Kortnummer er påkrævet; vejliste kan tilføjes senere.')
     cards={};errors=[];addresses={};duplicates=0
     reserved={norm(c['number']) for c in store.all('cards')+store.all('cards',deleted=True)}
+    reserved_internal={norm(c.get('internal_number')) for c in store.all('cards')+store.all('cards',deleted=True) if c.get('internal_number')}
+    seen_internal={}
     old_areas={norm(a['name']):a for a in store.all('settings') if a.get('id')!='config' and not a.get('entity')}
     removed_areas={norm(a.get('name')) for a in store.all('settings',deleted=True) if not a.get('entity')}
     occupied=set()
@@ -181,15 +184,19 @@ def preview(store,data):
             if any(len(x)>250 for x in v.values()):raise ValueError('Et felt er for langt.')
             number=clean_text(v.get('card'),30,True);key=norm(number)
             if key in reserved:raise ValueError('Kortnummeret findes allerede eller er reserveret i Gendan ved fejl.')
-            meta={'area':clean_text(v.get('area'),80),'name':clean_text(v.get('name'),100),'kind':v.get('kind') or ''}
+            meta={'area':clean_text(v.get('area'),80),'name':clean_text(v.get('name'),100),'kind':v.get('kind') or '', 'internal_number': internal_code(v.get('internal_number',''))}
+            code=meta['internal_number']
+            if code and (norm(code) in reserved_internal or norm(code) in seen_internal and seen_internal[norm(code)]!=key):
+                raise ValueError('Det interne nummer findes allerede, også i gendannelse eller en anden importeret række.')
+            if code:seen_internal[norm(code)]=key
             if meta['kind'] and meta['kind'] not in ('By','Land','Ukendt'):raise ValueError('Distriktstype skal være By, Land eller Ukendt.')
             if key not in cards:
                 if len(cards)>=500:raise ValueError('Importér højst 500 kort ad gangen.')
-                cards[key]={'number':number,'area':'','name':'','kind':'','addresses':[],'lines':[]}
+                cards[key]={'number':number,'internal_number':'','area':'','name':'','kind':'','addresses':[],'lines':[]}
             c=cards[key]
             for field,val in meta.items():
                 if not val:continue
-                if c[field] and norm(c[field])!=norm(val):raise UIError('Samme kort har forskellige oplysninger i kolonnen {field}.',field={'area':'område','name':'kortnavn','kind':'distriktstype'}[field])
+                if c[field] and norm(c[field])!=norm(val):raise UIError('Samme kort har forskellige oplysninger i kolonnen {field}.',field={'area':'område','name':'kortnavn','kind':'distriktstype','internal_number':'internt nummer'}[field])
                 c[field]=val
             if norm(c['area']) in removed_areas and norm(c['area']) not in old_areas:raise ValueError('Området findes i Gendan ved fejl. Gendan eller omdøb det først.')
             road=clean_text(v.get('road'),120);house=clean_text(v.get('number'),100)
@@ -241,7 +248,7 @@ def apply(store,data):
         area=norm(c['area'])
         if area and area not in areas:areas[area]=store._mutate('area.save',{'name':c['area']})['id']
         rows=[dict({k:a[k] for k in ('road','numbers','count','type')},**({'count_unknown':True} if a.get('count_unknown') else {})) for a in c['addresses']]
-        ident=store._mutate('card.save',{'number':c['number'],'name':c['name'],'area_id':areas.get(area,''),'kind':c['kind'],'temporary':not rows,'addresses':rows})['id']
+        ident=store._mutate('card.save',{'number':c['number'],'internal_number':c['internal_number'],'name':c['name'],'area_id':areas.get(area,''),'kind':c['kind'],'temporary':not rows,'addresses':rows})['id']
         item=dict(store.require('cards',ident),imported_addresses=[a for a in c['addresses'] if not a.get('line_only')],front_revision=bool(rows),back_revision=bool(rows))
         store.put('cards',item);ids.append(ident)
     return {'ids':ids,'count':len(ids),'addresses':plan['addresses'],'visits':plan['visits']}
