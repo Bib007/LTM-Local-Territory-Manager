@@ -180,6 +180,7 @@ function mutate(action,data,{close=true,message='Gemt',autosave=false}={}){
   const error=el('formError');if(error&&generation===openDialog.generation)error.textContent='';
   if(!autosave)toast(message);
   const note=el('formSaved');if(note&&generation===openDialog.generation)note.innerHTML=ui('Gemt automatisk');
+  return result.result;
  });
  saveQueue=work.catch(()=>{});
  return work.catch(e=>{if(accepted)WriteGuard.requireRefresh(e);failed(e);const err=el('formError');if(err&&generation===openDialog.generation)I18n.errorContent(err,e);else toast(e);throw e;}).finally(()=>{if(context){context.pending--;EditorBases.release(context);}});
@@ -522,10 +523,10 @@ case 'folder-card-confirm':{
  break;
 }
 case 'folder':await mutate('folder.set',{ids:[d.id],in_folder:!card(d.id).in_folder},{close:false,message:'Kortets placering gemt'});break;
-case 'folder-selection':{
- const inFolder=d.destination==='folder';
- const ids=AdminUI.folderIds(AdminUI.visible.map(card),inFolder);
- if(ids.length)await mutate('folder.set',{ids,in_folder:inFolder},{close:false,message:'Kortets placering gemt'});
+case 'folder-selection':AdminUI.folderPreview();break;
+case 'folder-selection-box':{
+ const ids=AdminUI.folderIds(state.cards,false);
+ if(ids.length)await mutate('folder.set',{ids,in_folder:false,expected_in_folder:true},{close:false,message:'Kortets placering gemt'});
  break;
 }
 case 'replenish':await mutate('folder.set',{ids:folderPlan().picked.map(c=>c.id),in_folder:true},{close:false,message:'Kortene er registreret i mappen'});break;

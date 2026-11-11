@@ -77,7 +77,7 @@ GROUPS={
  ('cards.view','geo.view','geo.edit','cards.edit'):'geo.assign geo.boundary geo.preview map.save map.outline card.restructure.preview card.restructure.apply',
  ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune geo.main.download.save geo.main.download.tile geo.main.import.preview ignore.save address.change.review',
  ('connections.manage',):'geo.token',
- ('cards.view','loans.view','loans.manage'):'folder.set loan.issue loan.finish',
+ ('cards.view','loans.view','loans.manage'):'folder.set folder.set_many loan.issue loan.finish',
  ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct',
  ('publishers.view','publishers.manage'):'publisher.save setup.publisher-import.preview setup.publisher-import.apply',
  ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete',

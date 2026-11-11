@@ -81,6 +81,39 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_bulk_folder_two_authenticated_users_and_permission_denial(self):
+        """Two different accounts race on one fictional card; only one changes it."""
+        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'loans.manage'])
+        admin_base = self.state(self.admin)
+        guest_base = self.state(guest)
+        ready = threading.Barrier(2)
+        payload = {'ids': [self.card], 'in_folder': True,
+                   'expected_in_folder': False}
+
+        def change(session, base):
+            ready.wait(timeout=5)
+            return self.change(session, base, 'folder.set_many', payload)['result']
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(change, self.admin, admin_base)
+            second = pool.submit(change, guest, guest_base)
+            outcomes = [first.result(), second.result()]
+        self.assertEqual(sorted(item['count'] for item in outcomes), [0, 1])
+        self.assertTrue(self.store.get('cards', self.card)['in_folder'])
+        self.assertEqual(sum(len(item['skipped']) for item in outcomes), 1)
+
+        # Reuse the fictional account after revoking manage; reader() creates a
+        # same-named role and user and cannot be called twice in this fixture.
+        self.value('/api/profiles/roles/save', {
+            'id': guest_role, 'name': 'Fiktiv rolle',
+            'permissions': ['cards.view', 'loans.view']
+        }, self.admin)
+        without_manage = guest
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(without_manage, self.state(without_manage),
+                        'folder.set_many', payload)
+        self.assertEqual(error.exception.code, 403)
+
     def test_activity_and_recovery_name_the_authenticated_actor(self):
         before=self.state(self.admin)
         changed=self.change(self.admin,before,'delete',{'module':'notes','id':self.note})

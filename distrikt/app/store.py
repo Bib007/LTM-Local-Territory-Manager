@@ -312,7 +312,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.alias(module)+'.records WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
-                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','revision.approve','revision.approve_many')
+                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -485,6 +485,27 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self.put('loans', loan)
             if note:self.put('notes',{'id':new_id(),'card_id':c['id'],'loan_id':loan['id'],'date':day,'text':note,'created':now(),'resolved':False})
             return {'id': loan['id']}
+        if action == 'folder.set_many':
+            # One locked transaction, but each card is validated through the same
+            # domain operation as a single move. A stale/issued card cannot block
+            # the other explicitly selected cards.
+            ids = data.get('ids')
+            if (not isinstance(ids, list) or not 1 <= len(ids) <= 500
+                    or any(not isinstance(i, str) or not i or len(i) > 100 for i in ids)
+                    or len(set(ids)) != len(ids)
+                    or data.get('in_folder') is not True
+                    or data.get('expected_in_folder') is not False):
+                raise ValueError('Vælg 1–500 forskellige kort, der skal lægges i mappen.')
+            updated, skipped = [], []
+            for ident in ids:
+                try:
+                    self._mutate('folder.set', {'ids': [ident],
+                        'in_folder': True, 'expected_in_folder': False})
+                except (ValueError, KeyError) as error:
+                    skipped.append({'id': ident, 'reason': str(error)})
+                else:
+                    updated.append(ident)
+            return {'count': len(updated), 'updated': updated, 'skipped': skipped}
         if action == 'folder.set':
             ids = data.get('ids', [])
             if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids) or len(ids) != len(set(ids)):
