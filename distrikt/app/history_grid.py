@@ -50,12 +50,12 @@ def mutate_grid(store, action, data):
             raise ValueError('Et arkiveret kort kan ikke have et aktivt udlån.')
         if completed and not returned:
             raise ValueError('Vælg indleveringsdato før du markerer kortet gennemgået.')
-        _check_interval(store, card['id'], assigned, returned)
         matches = [l for l in store.all('loans') if l['card_id'] == card['id']
                    and l.get('publisher_id') == publisher['id'] and l['assigned'] == assigned
                    and l.get('returned') == returned]
         if matches:
             raise ValueError('Udleveringen er allerede registreret.')
+        _check_interval(store, card['id'], assigned, returned)
         events = [e for e in _known_dates(store, card['id']) if returned and e['date'] == returned]
         if len(events) > 1 or events and events[0].get('loan_id'):
             raise ValueError('Der er allerede en anden gennemgang på indleveringsdatoen.')
