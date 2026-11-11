@@ -93,3 +93,38 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
  .boundaryReport p{margin:0 0 2mm}
  #summaryPrint{display:none}
 }
+
+
+/* Authorized publisher register: separate totals and independently wrapped group sections. */
+.publisherOverview{min-width:0}
+.publisherStats{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.publisherStat{flex:1 1 150px;max-width:250px;padding:15px 18px;background:var(--surface);border:1px solid var(--line);border-radius:7px}
+.publisherStat small{display:block;margin-bottom:5px}
+.publisherStat strong{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.publisherToolbar{align-items:stretch}
+.publisherToolbar input{flex:1 1 190px;min-width:0}
+.publisherToolbar select{flex:0 1 230px;min-width:0}
+.publisherGroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));align-items:start;gap:16px;margin-bottom:18px}
+.publisherGroup{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.publisherGroupHeading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.publisherGroupHeading h2{margin:0;min-width:0;overflow-wrap:anywhere}
+.publisherGroupCount{flex:none;color:var(--muted);font-size:12px}
+.publisherItems{display:grid;gap:10px}
+.publisherItem{border:1px solid var(--line);border-radius:6px;padding:13px;min-width:0}
+.publisherItemHeading{display:flex;justify-content:space-between;align-items:start;gap:12px;min-width:0}
+.publisherItemHeading>div{min-width:0;overflow-wrap:anywhere}
+.publisherItemHeading small{display:block;line-height:1.5;margin-top:4px}
+.publisherItemHeading .publisherGuidance{flex:none}
+.publisherItemLoans{padding:10px 0 5px;min-width:0;overflow-wrap:anywhere}
+.publisherItemLoans small{display:block;margin-bottom:5px}
+.publisherItemLoans button{padding:6px 8px;font-size:12px;margin:0 5px 5px 0}
+.publisherItemActions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.publisherItemActions button{flex:1 1 auto;font-size:12px;min-height:40px;white-space:normal}
+@media(max-width:600px){
+ .publisherStat{max-width:none;flex-basis:calc(50% - 6px);padding:12px}
+ .publisherGroup{padding:12px}
+ .publisherToolbar input,.publisherToolbar select{flex:1 1 100%;width:100%}
+ .publisherToolbar button{flex:1 1 auto}
+ .publisherGroupHeading{align-items:start}
+ .publisherItemHeading{flex-wrap:wrap}
+}
