@@ -24,7 +24,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
 (async()=>{
  const submitted={};
  for(const language of ['da','en']){
-  run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({calendar:'<div>FIXED_CALENDAR_MAP</div>',service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'})");
+  run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({calendar:'<div>FIXED_CALENDAR_MAP</div>',service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'},'all')");
   assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],language==='en'?/s13-background-en.jpg/:/s13-background.jpg/);if(language==='da')assert.match(print[language],/Hus til hus/);else assert.doesNotMatch(print[language],/Hus til hus/);
   assert.match(print[language],/<section class="reportCover"[^>]*>[\s\S]*?<h1>Tjenesteår &lt;invented&gt; &amp; Kort<\/h1>/);
   assert.equal((print[language].match(/class="reportRing"/g)||[]).length,6);
@@ -38,7 +38,18 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.doesNotMatch(run('(()=>{delete state.boundary_report.ib; const html=Workspace.boundaryReport(); state.boundary_report.ib=7; return html;})()'),ib);
   const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage[^"]*">([\s\S]*?)<\/section>/g),m=>m[1]);
   assert.equal(mapPages.length,3);assert.match(mapPages[0],/Kalenderår 2026/);assert.match(mapPages[0],/FIXED_CALENDAR_MAP/);assert.match(mapPages[1],/Tjenesteår 2026\/2027/);assert.match(mapPages[1],/FIXED_SERVICE_MAP/);assert.match(mapPages[2],/Seneste 12 måneder/);assert.match(mapPages[2],/FIXED_ROLLING_MAP/);assert.doesNotMatch(print[language],/data-ui|Kort til opfølgning|AKTUEL OPFØLGNING/);
-  const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.doesNotMatch(summary,/Anslåede besøg|Estimated visits/);assert.match(summary,/>50%<\/text>/);
+  // Deliberate print choice: never include unrelated period pages.
+   for(const chosen of ['calendar','service','rolling']){
+    const single=run(`reportPrintDocument({calendar:'<div>FIXED_CALENDAR_MAP</div>',service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'},'${chosen}')`);
+    assert.equal((single.match(/class="report reportMapPage/g)||[]).length,1,chosen);
+    assert.equal((single.match(/class="reportchart"/g)||[]).length,1,chosen);
+    assert.match(single,/Gennemgange pr. måned/);assert.match(single,/Sidste KTM besøg/);
+    for(const name of ['calendar','service','rolling'])assert.equal(single.includes('FIXED_'+name.toUpperCase()+'_MAP'),name===chosen,chosen+' must not contain '+name);
+    assert.equal(single.includes('s13-background'),chosen==='service','Original S-13 belongs only to service year');
+    assert.equal(run('Workspace.reportPeriod'),'service','Print restores the selected screen period');
+   }
+   assert.throws(()=>run("reportPrintDocument(null,'invalid')"),/Ugyldigt rapportperiodevalg/);
+   const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.doesNotMatch(summary,/Anslåede besøg|Estimated visits/);assert.match(summary,/>50%<\/text>/);
   const beforeOverview=run('Workspace.reportPeriod'),overview=run('Workspace.reportOverview(true)');
   assert.equal(run('Workspace.reportPeriod'),beforeOverview,'Comparing periods must not change map selection');
   assert.match(overview,language==='en'?/Combined report overview/:/Samlet rapportoversigt/);
@@ -48,9 +59,9 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.deepEqual(Array.from(figures[1][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['1','1','1','1','3','2','0','1']);
   assert.deepEqual(Array.from(figures[2][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['2','0','1','1','4','2','0','0']);
   assert.doesNotMatch(overview,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|reportDistrictMap|<invented>/);
-  assert.equal((print[language].match(/class="report reportOverview"/g)||[]).length,1);
-  assert.equal((print[language].match(/data-report-period=/g)||[]).length,3);
-  assert(print[language].indexOf('reportOverview')<print[language].indexOf('<section class="report reportMapPage'));
+  assert.equal((print[language].match(/class="reportchart"/g)||[]).length,3,'All three periods intentionally include their own month timelines');
+  assert.equal((print[language].match(/data-report-period=/g)||[]).length,0,'No combined overview is included in the period PDFs');
+  assert(print[language].indexOf('reportchart')<print[language].indexOf('<section class="report reportMapPage'));assert.match(print[language],/Sidste KTM besøg/);
   assert.match(summary,language==='en'?/>Current territories completed<\//:/>Gennemgåede aktuelle distrikter<\//);
   const service=counts(run("Workspace.reportChart('2026-09-01','2027-08-31')"));assert.equal(service.length,12);assert.equal(service.reduce((a,b)=>a+b,0),3);assert.equal(service[0],2);assert.equal(service[1],1);
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
@@ -63,7 +74,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    assert.match(screen,points);assert.match(screen,ib);
    assert.equal((screen.match(/class="reportRing"/g)||[]).length,2);
    assert.doesNotMatch(screen,/class="reportComparison"/);
-   assert.equal(screen.includes('id="calendarYear"'),mode==='calendar');
+   assert.equal(screen.includes('id="calendarYear"'),mode==='calendar');assert.match(screen,/id="reportPrintPeriod"/);assert.match(screen,new RegExp('value="'+mode+'" selected'));
   }
   run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg|Kort til opfølgning|AKTUEL OPFØLGNING/);assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);assert.match(visits,/OLD/,'Historic remarks remain visible in the visit list');contracts[language]=[formContract(visits)];
@@ -83,6 +94,15 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   const details=run('reportDetails(true)');assert.doesNotMatch(details,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|Midlertidige kort|Temporary cards/);assert.doesNotMatch(details,/Forkynder|publisher|Anslåede|Estimated|IB-registreringer/);assert.match(details,/class="tablewrap"/);
   assert.equal(run('JSON.stringify(state)'),original);
  }
+ // Empty periods still show a timeline and zero totals without a fabricated visit.
+ c.emptyStateFixture=run('JSON.stringify(state)');run('state.completions=[];state.visits=[]');
+ for(const chosen of ['calendar','service','rolling','all']){
+  const emptyPdf=run(`reportPrintDocument({},'${chosen}')`);
+  assert.match(emptyPdf,/Gennemgange pr. måned/);assert.doesNotMatch(emptyPdf,/Sidste KTM besøg/);
+  assert.equal((emptyPdf.match(/class="reportchart"/g)||[]).length,chosen==='all'?3:1);
+  assert.doesNotMatch(emptyPdf,/NaN|Infinity|undefined/);
+ }
+ run('state=JSON.parse(emptyStateFixture)');
  const unchangedPrintSections=html=>html.split('<div class="printReports">')[1].replace(/<section class="(?:report (?:s13Original|boundaryReport)|reportCover)"[\s\S]*?<\/section>/g,'');assert.equal(unchangedPrintSections(print.en),unchangedPrintSections(print.da),'Language switching preserves all other printed report data; original S-13 follows the chosen language');assert.match(print.en,/>Print \/ save PDF<\//);assert.match(print.da,/>Udskriv \/ gem PDF<\//);assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
  assert.deepEqual(Array.from(run("Workspace.periodBounds('calendar')")),['2026-01-01','2026-10-16']);
  run('Workspace.calendarYear=2025');assert.deepEqual(Array.from(run("Workspace.periodBounds('calendar')")),['2025-01-01','2025-12-31']);
