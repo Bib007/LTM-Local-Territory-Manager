@@ -3,6 +3,10 @@
 const I18n={
  current:'en',
  english:{
+  "Ugyldig S-12-skabelon.":"Invalid S-12 template.",
+  "Kontrollér S-12-felterne.":"Check the S-12 fields.",
+  "Kontrollér S-12-positionerne.":"Check the S-12 positions.",
+  "S-12-offset skal være højst 2 mm; tekstskala 95–105 %. QR-størrelse fastholdes.":"S-12 offset must be at most 2 mm; text scale 95–105%. QR size remains fixed.",
   "Du er ansvarlig for 1 åben opgave":"You are responsible for 1 open task",
   "Du er ansvarlig for {count} åbne opgaver":"You are responsible for {count} open tasks",
   "Se mine opgaver":"View my tasks",
