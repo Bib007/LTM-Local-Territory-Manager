@@ -3,6 +3,11 @@
 const I18n={
  current:'en',
  english:{
+  "Forkyndere i alt":"Total publishers",
+  "Forkyndere i visningen":"Publishers in current view",
+  "{count} i gruppen":"{count} in group",
+  "Ingen forkyndere matcher søgningen i denne gruppe.":"No publishers match the search in this group.",
+  "{count} kort udlånt i alt.":"{count} cards currently assigned in total.",
   "Du er ansvarlig for 1 åben opgave":"You are responsible for 1 open task",
   "Du er ansvarlig for {count} åbne opgaver":"You are responsible for {count} open tasks",
   "Se mine opgaver":"View my tasks",
