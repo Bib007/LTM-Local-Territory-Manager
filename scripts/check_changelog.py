@@ -31,9 +31,9 @@ def validate(da: bytes, en: bytes, ha_da: bytes, ha_en: bytes, current: str) -> 
         raise ValueError("Project and HA changelogs differ. Sync distrikt/CHANGELOG.md from docs/CHANGELOG.md.")
     if en != ha_en:
         raise ValueError("Project and HA English changelogs differ.")
-    if not da.startswith("# Ændringslog\n"):
+    if not da.startswith("# Ændringslog\n".encode("utf-8")):
         raise ValueError("Danish changelog must remain the default.")
-    if not en.startswith("# Changelog"):
+    if not en.startswith(b"# Changelog"):
         raise ValueError("English changelog must have its own language heading.")
     da_versions = _versions(da, "Danish")
     en_versions = _versions(en, "English")
