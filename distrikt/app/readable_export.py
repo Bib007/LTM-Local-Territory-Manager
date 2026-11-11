@@ -105,7 +105,7 @@ def tables(state,geo):
     def ref(ident):return refs.get(ident,'')
     result={}
     def add(name,headers,rows):result['CSV/'+name+'.csv']=csv_file(headers,rows)
-    add('kort',['kort_id','kortnummer','navn','omraade_id','arkiveret','seneste_gennemgang','type','midlertidig','i_mappen'],[(c['id'],c['number'],c.get('name',''),c.get('area_id',''),bool(c.get('archived')),c.get('last_completed',''),c.get('kind',''),bool(c.get('temporary')),bool(c.get('in_folder'))) for c in cards])
+    add('kort',['kort_id','kortnummer','navn','omraade_id','arkiveret','seneste_gennemgang','type','midlertidig','i_mappen','internt_nummer'],[(c['id'],c['number'],c.get('name',''),c.get('area_id',''),bool(c.get('archived')),c.get('last_completed',''),c.get('kind',''),bool(c.get('temporary')),bool(c.get('in_folder')),c.get('internal_number','')) for c in cards])
     address_rows=[]
     for c in cards:
         members=c.get('geo_addresses') or [addresses[i] for i in c.get('address_ids',[]) if i in addresses]
