@@ -2254,6 +2254,8 @@ const I18n={
   "Gennemgange pr. måned":"Completions by month",
   "Udskriv periode":"PDF report period",
   "Alle tre perioder":"All three periods",
+  "Forbereder den valgte rapport…":"Preparing the selected report…",
+  "A4 · 15 mm margener. Vælg 100 % og slå browserens sidehoved og sidefod fra.":"A4 · 15 mm margins. Choose 100% and disable the browser header and footer.",
   "Gennemgange":"Completions",
   "Gennemgange pr. måned. Tallene findes også i tabellen nedenfor.":"Completions by month. The figures are also available in the table below.",
   "Sidste KTM besøg · {date}":"Last CO visit · {date}",
