@@ -36,8 +36,8 @@ same name fails instead of replacing a file.
 
 ## Before a later release
 
-1. Keep the version, app configuration and changelog synchronized in the
-   common source.
+1. Keep the version, app configuration and Danish/English changelogs synchronized in the
+   common source. `scripts/check_changelog.py` checks both languages and both Home Assistant copies.
 2. Run the common checks on the precise `main` commit.
 3. Run the selected track manually. Confirm its own platform result and
    publicly downloaded ZIP/checksum before reporting that track released.
