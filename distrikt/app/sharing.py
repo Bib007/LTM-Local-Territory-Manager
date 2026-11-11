@@ -239,7 +239,7 @@ class Publications:
         with self.store.lock:
             rows=[]
             for row in self.rows():
-                c=self.store.get('cards',row['card_id']);r={k:v for k,v in row.items() if k not in ('png','queued_png','approved_front_image')}
+                c=self.store.get('cards',row['card_id']);r={k:v for k,v in row.items() if k not in ('png','queued_png','approved_front_image','request_id')}
                 r['number']=c['number'] if c else 'Slettet kort'
                 # Transient worker signal: do not claim Google is uploading while queued or retrying.
                 r['upload_active']=self.uploading_card_id==row['card_id'] and row.get('status') in ('queued','retry')
