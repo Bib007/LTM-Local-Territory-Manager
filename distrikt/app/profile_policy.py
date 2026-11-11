@@ -180,6 +180,7 @@ def state_for(raw,user):
         for key in ('last_backup','backup_snoozed_until','backup_history'):result['settings'].pop(key,None)
     result['backup_status']=({'last_day':raw['backup_last_day'],'snoozed_until':raw['settings'].get('backup_snoozed_until')} if 'backup.notify' in p else None)
     result['areas']=[{k:deepcopy(v) for k,v in r.items() if k in ('id','name','numbering')} for r in raw['areas']] if 'cards.view' in p else []
+    result['numbering_last_batch']=deepcopy(raw.get('numbering_last_batch')) if {'cards.view','cards.edit'}<=p else None
     result.update(ignored=[],maps=[],recovery=[],public_maps=[],geo_info={},address_task={},backup_last_day=None,undo_available=False)
     if 'geo.view' in p:
         result['geo_info']=deepcopy(raw['geo_info'])
