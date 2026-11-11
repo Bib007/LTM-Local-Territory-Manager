@@ -12,6 +12,12 @@ Opdatér begge sprog ved ændringer i arbejdsgange. Filnavne, kodeeksempler, for
 
 Appens standardsprog er dansk. Oversæt kun fast betjeningstekst; brugerens navne, noter, indtastede værdier og opbevarede protokolværdier må ikke oversættes. Officielle betegnelser skal kontrolleres i offentlige, officielle kilder, før de præsenteres som officielle.
 
+## Versionsnoter på dansk og engelsk
+
+Ved hver Beta- og Stable-version skal udvikleren samtidig opdatere `docs/CHANGELOG.md` på dansk og `docs/CHANGELOG.en.md` på engelsk. Brug samme versionsnummer, rækkefølge og fyldestgørende brugerrettede ændringer. Kopiér den danske fil til `distrikt/CHANGELOG.md` og den engelske til `distrikt/CHANGELOG.en.md`. Home Assistant viser den danske fil som standard. Ældre historik må ikke slettes eller omnummereres.
+
+GitHub Actions og pakkeværktøjet kører `python scripts/check_changelog.py` og afviser manglende, afvigende eller tomme versionsafsnit. Automatisk maskinoversættelse udføres ikke; sprogkvalitet kontrolleres ved PR-review. Beta-releasen bruger desuden danske `docs/BETA-NOTES.md`, og Stable bruger danske `docs/RELEASE-NOTES.md`. Skriv noterne, før udgivelsen igangsættes.
+
 ## Private oplysninger
 
 Vedhæft ikke rigtige databaser, forkyndernavne, IB-adresser, billeder med personoplysninger, adgangskoder eller Google-forbindelsesfiler. Logfiler må ikke indeholde private payloads. Automatiske prøver skal bruge midlertidige mapper og opdigtede registreringer og må aldrig åbne programmets normale datamappe.
