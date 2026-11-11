@@ -34,6 +34,8 @@ const form=(remember=true)=>{const f={dataset:{id:'c1',side:'front',ids:'["c1"]'
  // Report navigation during an awaited map must preserve the newer page and period.
  let releaseMap;c.mapWait=new Promise(r=>releaseMap=r);run("ReportMap.printable=async()=>mapWait");const jobReport=run('printReport()');await run('printReport()');run("page='Forside';Workspace.reportPeriod='rolling';ReportMap.map={}");releaseMap('<svg>fictional</svg>');await assert.rejects(jobReport,/Printgrundlaget er ændret/);assert.equal(run('Workspace.reportPeriod'),'rolling');assert.equal(win.closed,true);assert.equal(run('printReport.busy'),false);
  // A print session captures exactly the selected period and only renders its map.
+ // The isolated DOM fixture must supply the report period dropdown explicitly.
+ nodes.set('reportPrintPeriod',{value:'service',isConnected:true});
  const reportPicker=nodes.get('reportPrintPeriod');c.reportModeCalls=[];c.reportDocumentCalls=[];
  run("page='Rapporter';ReportMap.printable=async()=>{reportModeCalls.push(Workspace.reportPeriod);return '<svg>fictional</svg>'};reportPrintDocument=(maps,selected)=>{reportDocumentCalls.push({selected,keys:Object.keys(maps)});return '<p>FICTIONAL REPORT</p>'};inlineReportAssets=async value=>value");
  for(const selectedPeriod of ['calendar','service','rolling','all']){
