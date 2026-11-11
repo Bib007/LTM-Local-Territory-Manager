@@ -27,12 +27,12 @@ async function inlineReportAssets(markup){
 }
 async function printReport({withoutBackground=false}={}){
  if(printReport.busy)return;printReport.busy=true;
- const origin=page,originalState=state,revision=state.revision,originalYear=year,originalCalendarYear=Workspace.calendarYear,map=ReportMap.map,before=Workspace.reportPeriod,language=I18n.language();let owned=before,win,buildingMap=true;
+ const origin=page,originalState=state,revision=state.revision,originalYear=year,originalCalendarYear=Workspace.calendarYear,map=ReportMap.map,before=Workspace.reportPeriod,language=I18n.language();let owned=before,win,buildingMap=false;
  const current=()=>page===origin&&state===originalState&&state.revision===revision&&year===originalYear&&Workspace.calendarYear===originalCalendarYear&&ReportMap.map===map&&Workspace.reportPeriod===owned&&!win.closed;
  const check=()=>{if(!current())throw Error('Printgrundlaget er ændret. Åbn print igen.');};
  try{
   win=window.open('','_blank');if(!win)throw Error('Tillad et nyt vindue til rapportprint.');
-  win.document.write('<p>'+esc(I18n.text('Forbereder rapportperioder og original S-13…'))+'</p>');
+  win.document.write('<p>'+esc(I18n.text('Forbereder rapportperioder og original S-13…'))+'</p>');buildingMap=true;
   owned=Workspace.reportPeriod='calendar';ReportMap.draw();const calendar=await ReportMap.printable({withoutBackground});check();
   owned=Workspace.reportPeriod='service';ReportMap.draw();const service=await ReportMap.printable({withoutBackground});check();
   owned=Workspace.reportPeriod='rolling';ReportMap.draw();const rolling=await ReportMap.printable({withoutBackground});check();
