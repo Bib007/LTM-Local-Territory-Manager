@@ -108,7 +108,7 @@
 ## 1.12.7 · 2026-11-02
 
 - Gendan kompakte, præcise vejintervaller med `&` ved huller, separate lige/ulige linjer og intervaller for sammenhængende bogstavnumre. Kombinér adressetyper på forside uden at ændre besøg eller gemte adresser.
-- Beskyt formularens oprindelige sidefod mod overlappende vejteks­ter. Tilpas tætte forsider inden for det tilladte område, og blokér print med tydelig fejl, hvis indholdet ikke kan være der.
+- Beskyt formularens oprindelige sidefod mod overlappende vejtekster. Tilpas tætte forsider inden for det tilladte område, og blokér print med tydelig fejl, hvis indholdet ikke kan være der.
 - Tilføj browsertest af tætte forsider, mobil/desktop og print i original størrelse. S-12-/S-13-originaler ændres ikke.
 - Brug nyt versionsnummer, så installationer med 1.12.6 får en normal Home Assistant-opdatering.
 
