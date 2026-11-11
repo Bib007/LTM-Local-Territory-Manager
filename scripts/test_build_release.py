@@ -35,9 +35,12 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.add('scripts/Opdater-Home-Assistant-Mac.command','#!/bin/bash\n')
         for name in release.REQUIRED:self.add('distrikt/templates/'+name,'invented form fixture')
         for name in release.ROOT_DOCS:self.add(name,'# Fictional project document\n')
-        self.changelog='# Fictional changes\n\n## 9.9.0 · Current version\n\nNew changes.\n\n## 9.8.0 · Previous version\n\nPreserved history.\n'
+        self.changelog='# Ændringslog\n\n## 9.9.0 · Current version\n\nNye ændringer.\n\n## 9.8.0 · Previous version\n\nHistorik bevaret.\n'
+        self.english_changelog='# Changelog\n\n## 9.9.0 · Current version\n\nNew changes.\n\n## 9.8.0 · Previous version\n\nPreserved history.\n'
         self.add('docs/CHANGELOG.md',self.changelog)
         self.add('distrikt/CHANGELOG.md',self.changelog)
+        self.add('docs/CHANGELOG.en.md',self.english_changelog)
+        self.add('distrikt/CHANGELOG.en.md',self.english_changelog)
         for name in release.BRAND_FILES:self.add('assets/brand/'+name,'invented vector fixture')
         for name in release.SCREENSHOT_FILES:self.add('assets/screenshots/'+name,'invented screenshot fixture')
         self.add('docs/INSTALL.md','# Fictional installation guide\n')
@@ -104,10 +107,21 @@ class ReleaseArchiveTests(unittest.TestCase):
         with zipfile.ZipFile(self.build('changelog')) as archive:
             for name in ('docs/CHANGELOG.md','Distrikt-lokal/CHANGELOG.md','Home-Assistant/distrikt/CHANGELOG.md'):
                 self.assertEqual(archive.read(name),self.changelog.encode())
+            for name in ('docs/CHANGELOG.en.md','Home-Assistant/distrikt/CHANGELOG.en.md'):
+                self.assertEqual(archive.read(name),self.english_changelog.encode())
 
     def test_stale_ha_changelog_blocks_release(self):
         self.add('distrikt/CHANGELOG.md','# Fictional changes\n\n## 9.8.0 · Previous version\n')
         with self.assertRaisesRegex(ValueError,'changelogs differ'):self.build('stale')
+
+    def test_missing_english_release_entry_blocks_release(self):
+        self.add('docs/CHANGELOG.en.md','# Changelog\n\n## 9.8.0\n\nOlder English history.\n')
+        self.add('distrikt/CHANGELOG.en.md','# Changelog\n\n## 9.8.0\n\nOlder English history.\n')
+        with self.assertRaisesRegex(ValueError,'Danish and English changelog versions differ'):self.build('english-stale')
+
+    def test_english_ha_copy_must_match(self):
+        self.add('distrikt/CHANGELOG.en.md','# Changelog\n\n## 9.9.0\n\nWrong English copy.\n')
+        with self.assertRaisesRegex(ValueError,'English changelogs differ'):self.build('ha-english-stale')
 
     def test_current_version_must_be_first_in_changelog(self):
         old_first=self.changelog.replace('## 9.9.0 · Current version','## 9.8.0 · Old version',1)
@@ -115,7 +129,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'current version first'):self.build('old-first')
 
     def test_missing_changelog_version_blocks_release(self):
-        for name in ('docs/CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,'# Fictional changes\n')
+        for name in ('docs/CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,'# Ændringslog\n')
         with self.assertRaisesRegex(ValueError,'current version first'):self.build('missing-version')
 
     def test_all_packaged_relative_links_are_validated(self):
