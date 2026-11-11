@@ -87,28 +87,29 @@ const ShareUI={loadSequence:0,qrSequence:0,connecting:false,publishing:false,dat
   }catch(error){if(!validMap||current())throw error;}finally{this.busy=false;}
  },
  async updateHouseNumbers(checked){
-  if(this.busy||!this.pending||!this.previewRecipe)return;
+  if(this.busy||this.publishing||!this.pending||!this.previewRecipe){const toggle=el('shareHouseNumbers');if(toggle&&this.pending)toggle.checked=this.pending.showHouseNumbers;return;}
   const {recipe,manualOnly,background}=this.previewRecipe,context=this.approvalContext,pending=this.pending,image=el('shareMapPreview'),toggle=el('shareHouseNumbers'),approve=el('shareApproved'),publish=el('sharePublish');
   if(!image||!toggle||!this.sameContext(context))return;
-  this.busy=true;toggle.disabled=true;approve.checked=false;approve.disabled=true;publish.disabled=true;
+  this.busy=true;toggle.disabled=true;approve.checked=false;approve.disabled=true;publish.disabled=true;this.progress('generating',pending.card_id);
   try{
    const blob=await MapExport.blob(pending.card_id,'local',{...background,publicCard:recipe.card,publicMembers:recipe.members,sharedPdf:!!recipe.pdf,showHouseNumbers:checked});
    let png=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error(I18n.text('Kortbilledet kunne ikke læses.')));reader.readAsDataURL(blob);});
    if(!this.sameContext(context)||this.pending!==pending||el('shareMapPreview')!==image)return;
    if(recipe.date_updates){const preview=await(await api('/api/share/date-preview',{card_id:pending.card_id,fingerprint:recipe.fingerprint,date_fingerprint:recipe.date_fingerprint,png})).json();png=preview.png;}
    if(!this.sameContext(context)||this.pending!==pending||el('shareMapPreview')!==image)return;
-   pending.png=png;image.src=png;
-  }catch(error){if(el('shareHouseNumbers')===toggle)toggle.checked=!checked;throw error;}
+   pending.png=png;pending.showHouseNumbers=checked;pending.request_id=this.uploadRequestId();image.src=png;this.failedHouseChoice=null;this.progress('complete',pending.card_id,{preview:true});
+  }catch(error){if(el('shareHouseNumbers')===toggle){toggle.checked=pending.showHouseNumbers;this.failedHouseChoice=checked;this.progress('error',pending.card_id,{error:error?.message||I18n.text('Kortbilledet kunne ikke dannes.'),retry:'house'});}throw error;}
   finally{this.busy=false;if(el('shareHouseNumbers')===toggle){toggle.disabled=false;approve.disabled=false;}}
  },
+ async retryHouseNumbers(){if(this.failedHouseChoice!==null&&this.failedHouseChoice!==undefined)await this.updateHouseNumbers(this.failedHouseChoice);},
  async publish(){
-  if(this.publishing||!el('shareApproved')?.checked||!this.pending)return;
+  if(this.publishing||this.busy||!el('shareApproved')?.checked||!this.pending)return;
   if(!this.sameContext(this.approvalContext))throw Error(I18n.text('Kortdata er ændret. Dan og kontrollér et nyt preview.'));
-  const button=el('sharePublish'),pending=this.pending,context=this.context();this.publishing=true;button.disabled=true;
-  try{await confirmedWrite('/api/share/publish',pending,async()=>{if(this.pending===pending)this.pending=null;
+  const button=el('sharePublish'),pending=this.pending,context=this.context();this.publishing=true;button.disabled=true;const toggle=el('shareHouseNumbers');if(toggle)toggle.disabled=true;this.progress('submitting',pending.card_id);
+  try{const payload={...pending};delete payload.showHouseNumbers;await confirmedWrite('/api/share/publish',payload,async()=>{if(this.pending===pending)this.pending=null;this.progress('queued',pending.card_id,{watchUpload:true});
    if(this.sameContext(context)){closeDialog();page='Indstillinger';Navigation.settingsSection='sharing';render();}
    await this.load({required:true});toast(I18n.text('Billedet er lagt i uploadkøen. Du kan lukke browseren.'));return true;});
-  }catch(error){if(el('sharePublish')===button)button.disabled=false;throw error;}finally{this.publishing=false;}
+  }catch(error){if(el('sharePublish')===button){button.disabled=false;this.progress('error',pending.card_id,{error:error?.message||I18n.text('Uploaden blev afbrudt. Kontrollér forbindelsen, og prøv igen.')});}throw error;}finally{this.publishing=false;if(el('shareHouseNumbers')===toggle)toggle.disabled=false;}
  },
  async qr(id){
   const sequence=++this.qrSequence,context=this.context(),loaded=await this.load();if(!loaded||sequence!==this.qrSequence||!this.sameContext(context))return;
@@ -119,7 +120,7 @@ const ShareUI={loadSequence:0,qrSequence:0,connecting:false,publishing:false,dat
  },
  async printQR(id){const row=this.data?.cards.find(r=>r.card_id===id);if(!row)return;const win=window.open('','_blank');if(!win)throw Error(I18n.text('Tillad et nyt vindue til print.'));try{const svg=await(await api('/api/share/qr?card_id='+encodeURIComponent(id))).text();if(win.closed)return;win.document.write(`<!doctype html><meta charset="utf-8"><title>${esc(I18n.format('QR · kort {number}',{number:row.number}))}</title><style>body{font:14px Arial;margin:15mm;color:black}img{width:35mm;height:35mm;display:block}@page{size:A4;margin:15mm}@media print{button{display:none}}</style><button id="print">${ui("Print QR-mærke")}</button><p>${ui('kort {number}',{number:row.number})}</p><img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}" ${I18n.attribute('alt','QR-kode')}>`);win.document.close();win.document.getElementById('print').addEventListener('click',()=>win.print());}catch(error){win.close();throw error;}},
  async write(action,data){return confirmedWrite('/api/share/'+action,data,async()=>{if(action==='disconnect')await this.loadConnection({required:true});else await this.load({required:true});return true;});},
- async handle(action,id){switch(action){case 'connection-load':await this.loadConnection();break;case 'load':await this.load();break;case 'prepare':await this.prepare(id);break;case 'update':await this.update(id);break;case 'publish':await this.publish();break;case 'qr':await this.qr(id);break;case 'print-qr':await this.printQR(id);break;case 'retry':await this.write('retry',{card_id:id});break;case 'withdraw':if(!window.confirm(I18n.text('Fjern offentlig adgang til kortbilledet? QR-linket virker først igen efter ny publicering.')))return;await this.write('withdraw',{card_id:id});break;case 'disconnect':if(!window.confirm(I18n.text('Afbryd Google-forbindelsen? Delte billeder forbliver offentlige. Fjern deres offentlige adgang først, hvis de skal lukkes.')))return;await this.write('disconnect',{});break;}}
+ async handle(action,id){switch(action){case 'connection-load':await this.loadConnection();break;case 'load':await this.load();break;case 'prepare':await this.prepare(id);break;case 'update':await this.update(id);break;case 'publish':await this.publish();break;case 'retry-house-numbers':await this.retryHouseNumbers();break;case 'qr':await this.qr(id);break;case 'print-qr':await this.printQR(id);break;case 'retry':await this.retryUpload(id);break;case 'withdraw':if(!window.confirm(I18n.text('Fjern offentlig adgang til kortbilledet? QR-linket virker først igen efter ny publicering.')))return;await this.write('withdraw',{card_id:id});break;case 'disconnect':if(!window.confirm(I18n.text('Afbryd Google-forbindelsen? Delte billeder forbliver offentlige. Fjern deres offentlige adgang først, hvis de skal lukkes.')))return;await this.write('disconnect',{});break;}}
 };
 document.addEventListener('click',async e=>{const button=e.target.closest('[data-share]');if(!button||button.disabled)return;e.preventDefault();button.disabled=true;try{await ShareUI.handle(button.dataset.share,button.dataset.id);}catch(error){toast(error);}finally{if(button.isConnected!==false)button.disabled=false;}});
-document.addEventListener('change',async e=>{try{if(e.target.id==='shareApproved')el('sharePublish').disabled=!e.target.checked;if(e.target.id==='shareHouseNumbers')await ShareUI.updateHouseNumbers(e.target.checked);if(e.target.id==='driveConnection'){const file=e.target.files[0];if(file)await ShareUI.connectFile(file,e.target);}}catch(error){toast(error);}});
+document.addEventListener('change',async e=>{try{if(e.target.id==='shareApproved')el('sharePublish').disabled=!e.target.checked||ShareUI.busy||ShareUI.publishing;if(e.target.id==='shareHouseNumbers')await ShareUI.updateHouseNumbers(e.target.checked);if(e.target.id==='driveConnection'){const file=e.target.files[0];if(file)await ShareUI.connectFile(file,e.target);}}catch(error){toast(error);}});
