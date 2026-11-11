@@ -221,7 +221,10 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore):
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
-            result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
+            settings_rows=self.all('settings')
+            result['areas'] = [x for x in settings_rows if x['id'] != 'config' and not x.get('entity')]
+            number_batches=sorted((x for x in settings_rows if x.get('entity')=='territory-numbering-batch' and not x.get('undone_at')),key=lambda x:x.get('created',''),reverse=True)
+            result['numbering_last_batch']=({'id':number_batches[0]['id'],'count':len(number_batches[0]['changes'])} if number_batches else None)
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
             from redistribution import planning_date
             for c in result['cards']:
