@@ -77,7 +77,7 @@ Object.assign(I18n.english,{
  'Se manuelle forslag; opdeling kræver fortsat særskilt kontrol og godkendelse.':'Review manual suggestions; splitting still requires separate review and approval.',
  '{count} distriktskort overstiger den fastsatte grænse på {limit} besøg.':'{count} territory cards exceed the configured limit of {limit} visits.',
  '{count} forslag er skjult efter vurdering.':'{count} suggestions have been dismissed.',
- 'Besøgsgrænsen fastsættes under Indstillinger → Menighed og mappe. Kun kassefilteret huskes i browseren.':'Set the visit limit in Settings → Congregation and carry folder. Only the box filter is saved in this browser.',
+ 'Menighedens faste grænse indstilles under Indstillinger → Menighed og mappe. Dette tal kan ændres midlertidigt for at prøve andre forslag; kun kassefilteret huskes i browseren.':'Set the congregation limit in Settings → Congregation and carry folder. You may temporarily try another target here; only the box filter is saved in the browser.',
  'Se bort fra forslag':'Dismiss suggestion','Gendan forslag':'Restore suggestion','Skjulte forslag':'Dismissed suggestions',
  'Hvorfor skal dette forslag ignoreres?':'Why should this suggestion be dismissed?',
  'Kortet findes ikke længere.':'Card no longer exists.'
@@ -140,7 +140,7 @@ const SplitSuggestions={
   if(!this.available())return;await closeRequested();if(el('dialog').open)return;
   this.target=this.visitLimit();
   try{const options=JSON.parse(localStorage.getItem('ltm-split-suggestions'));if(typeof options?.boxOnly==='boolean')this.boxOnly=options.boxOnly;}catch{}
-  openDialog(`<h2>${ui('Opdelingsforslag')}</h2><p>${ui('Forslag ud fra indlæste besøgstal. Ingen kort, adresser, datoer eller udleveringer ændres.')}</p><label for="splitTarget">${ui('Ca. besøg pr. kort')}</label><input id="splitTarget" type="number" min="1" max="1000" step="1" value="${this.target}" readonly><label class="check"><input id="splitBoxOnly" type="checkbox" ${this.boxOnly?'checked':''}>${ui('Kun kort i kassen')}</label><p class="hint">${ui('Besøgsgrænsen fastsættes under Indstillinger → Menighed og mappe. Kun kassefilteret huskes i browseren.')}</p><p class="hint">${ui('Kort i mappen og udleverede kort er skjult, når kassefilteret er valgt. Modtagerkort skal altid være hjemme.')}</p><div id="splitSuggestionResults" aria-live="polite"></div><p class="hint">${ui('Alternativerne skal vurderes hver for sig. Kontrollér geografien og genberegn efter en ændring.')}</p><p class="notice">${ui('Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.')}</p><p class="hint">${ui('Historik bevares på de oprindelige kort. Et nyt kort får ingen opdigtet gennemgang og skal kontrolleres og genprintes.')}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
+  openDialog(`<h2>${ui('Opdelingsforslag')}</h2><p>${ui('Forslag ud fra indlæste besøgstal. Ingen kort, adresser, datoer eller udleveringer ændres.')}</p><label for="splitTarget">${ui('Ca. besøg pr. kort')}</label><input id="splitTarget" type="number" min="1" max="1000" step="any" value="${this.target}"><label class="check"><input id="splitBoxOnly" type="checkbox" ${this.boxOnly?'checked':''}>${ui('Kun kort i kassen')}</label><p class="hint">${ui('Menighedens faste grænse indstilles under Indstillinger → Menighed og mappe. Dette tal kan ændres midlertidigt for at prøve andre forslag; kun kassefilteret huskes i browseren.')}</p><p class="hint">${ui('Kort i mappen og udleverede kort er skjult, når kassefilteret er valgt. Modtagerkort skal altid være hjemme.')}</p><div id="splitSuggestionResults" aria-live="polite"></div><p class="hint">${ui('Alternativerne skal vurderes hver for sig. Kontrollér geografien og genberegn efter en ændring.')}</p><p class="notice">${ui('Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.')}</p><p class="hint">${ui('Historik bevares på de oprindelige kort. Et nyt kort får ingen opdigtet gennemgang og skal kontrolleres og genprintes.')}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
   this.paint();
  },
  addresses(units){return `<details><summary>${ui('Se foreslåede adresser')}</summary><ul>${units.map(a=>`<li style="overflow-wrap:anywhere">${esc(a.label||[a.road,a.number,a.floor,a.door].filter(Boolean).join(' '))} · ${esc(a.count)}</li>`).join('')}</ul></details>`;},
@@ -193,6 +193,7 @@ const SplitSuggestions={
   }
   if(action==='ignore'){
    if(state.profile&&!ProfilesUI.canAction('split.suggestion.ignore'))return;
+   if(this.target!==this.visitLimit())throw Error('Se bort fra kræver menighedens faste besøgsgrænse. Nulstil prøvegrænsen først.');
    const proposal=this.current?.suggestions.find(m=>m.c.id===id);if(!proposal)return;
    const reason=window.prompt(I18n.text('Hvorfor skal dette forslag ignoreres?'), '');
    if(reason===null)return;
@@ -211,7 +212,7 @@ const SplitSuggestions={
  }
 };
 document.addEventListener('click',event=>{const b=event.target.closest('[data-split-suggestions]');if(!b)return;event.preventDefault();SplitSuggestions.handle(b.dataset.splitSuggestions,b.dataset.id,b.dataset.target).catch(error=>toast(error));});
-// The congregation threshold is read-only here; changing it requires settings.manage.
+document.addEventListener('input',event=>{if(event.target.id==='splitTarget')SplitSuggestions.paint();});
 document.addEventListener('change',event=>{if(event.target.id==='splitBoxOnly')SplitSuggestions.paint();});
 
 document.addEventListener('change',event=>{const f=event.target.form;if(event.target.id!=='transferPolicy'||f?.dataset.workForm!=='redistribute')return;const interim=event.target.value==='interim';f.querySelector('#interimTransferFields').hidden=!interim;f.elements.interim_number.required=interim;});
