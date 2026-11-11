@@ -810,9 +810,14 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Gendannelsesperioden er udløbet.')
             for module, item in entries:
                 if module == 'publishers':
-                    if any(other['id'] != item['id'] and other['name'].casefold() == item['name'].casefold()
-                           for other in self.all('publishers')):
-                        raise ValueError('Navnet findes allerede. Ret den eksisterende forkynder før gendannelse.')
+                    from card_import import norm
+                    for other in self.all('publishers'):
+                        if other['id'] == item['id']:continue
+                        if other['name'].casefold() == item['name'].casefold():
+                            raise ValueError('Navnet findes allerede. Ret den eksisterende forkynder før gendannelse.')
+                        if (item.get('group_role') and item.get('group_role') == other.get('group_role')
+                                and norm(item.get('group')) == norm(other.get('group'))):
+                            raise ValueError('Der er flere med samme gruppefunktion i tjenestegruppen. Ret valget før gemning.')
                 if module=='cards':
                     from geo_store import address_key
                     keys={address_key(a) for a in item.get('geo_addresses',[])};ids=set(item.get('address_ids',[]))
