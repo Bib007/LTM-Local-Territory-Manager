@@ -309,6 +309,7 @@ function publisherOverviewGroups(people){
   const key=p.group?'group:'+publisherGroupKey(p.group):'__none__';
   if(!groups.has(key))groups.set(key,{key,name:p.group||I18n.text('Ingen tjenestegruppe'),people:[]});
  }
+ if(publisherGroupFilter==='__none__'&&!groups.has('__none__'))groups.set('__none__',{key:'__none__',name:I18n.text('Ingen tjenestegruppe'),people:[]});
  for(const p of people){
   const key=p.group?'group:'+publisherGroupKey(p.group):'__none__';
   groups.get(key)?.people.push(p);
