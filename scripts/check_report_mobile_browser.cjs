@@ -50,12 +50,12 @@ async function main(){
      });
      await page.addScriptTag({content:fixture});
      for(const js of ['vendor/leaflet.js','s13-template.js','map-export.js','report-map.js','report-print.js'])await page.addScriptTag({path:path.join(appDir,js)});
-     await page.evaluate(()=>{
+     await page.evaluate(mode=>{
       const rows=[{number:'F-101',previous:'2026-06-01',allocations:[{person:'Opdigtet Person',assigned:'2026-09-01',completed:'2026-10-01'}]}];
       document.getElementById('fixture').innerHTML=s13OriginalPages(rows)+'<section class="report reportScreenMap">'+ReportMap.html(true)+'</section>';
-      ReportMap.tileTimeoutMs=400;
+      ReportMap.tileTimeoutMs=mode==='timeout'?400:mode==='slow'?4000:8000;
       ReportMap.mount();
-     });
+     },mode);
      return {context,page,errors};
     }
     for(const cfg of configurations){
