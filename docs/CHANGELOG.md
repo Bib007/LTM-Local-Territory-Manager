@@ -1,153 +1,153 @@
-# Changelog
+# Ændringslog
+
+> Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
 ## 1.12.19-beta.4 · 2026-11-09
 
-- Show the authenticated user's own currently actionable tasks next to the personal home welcome, with a shortcut opening the Open / Mine task filters.
-- Keep the count private, permission-gated and automatically refreshed via the existing profile heartbeat, including changes made by other logged-in users.
-- Preserve the original task listing and its historical notes, followups, due-date behavior and navigation counts; fix the JavaScript contract failure introduced by the new personal filter.
-- Test fictional administrator/editor profiles, read permissions, zero/one counts, task completion, role reassignment and phone/desktop navigation. Stable 1.12.19 remains unchanged.
+- Vis brugerens egne aktuelle, åbne opgaver ved den personlige velkomst, og giv en genvej til filtrene **Åbne** og **Mine opgaver**.
+- Hold optællingen privat og rettighedsstyret. Opdater automatisk via den eksisterende profilstatus, også når en anden bruger ændrer opgaver.
+- Bevar historiske opgaver, noter, opfølgninger, tidsfrister og menutællere; ret JavaScript-kontraktfejlen fra det nye personfilter.
+- Test med opdigtede administrator-/redaktørkonti, forskellige læserettigheder, opgavetællinger, ændret ansvar og mobil/desktop. Stable 1.12.19 påvirkes ikke.
 
 ## 1.12.19-beta.3 · 2026-11-09
 
-- Fix profile-mode settings silently reverting publisher card guidance to the default role counts after saving. Persisted values now pass through the authenticated settings snapshot and refresh correctly.
-- Share the configured advisory counts with users allowed to view publishers, without granting permission to edit settings or exposing unrelated administration data.
-- Add real authenticated HTTP save/refresh and responsive browser save/reload regression tests with fictional accounts; recommendations never block issuing extra cards.
+- Ret en fejl, hvor vejledende kortantal blev nulstillet til rollefordelingen efter gemning med brugerprofiler. Gemte tal bevares og vises korrekt efter opdatering.
+- Vis de vejledende antal til brugere med adgang til forkyndere, uden at give ekstra redigeringsrettigheder eller adgang til anden administration.
+- Tilføj HTTP- og browsertests af gemning, genindlæsning og mobilvisning med opdigtede konti. Anbefalingerne begrænser aldrig udlevering.
 
 ## 1.12.19-beta.2 · 2026-11-09
 
-- Fill the original 94 × 146 mm IB-card back more efficiently, retaining every entry and creating extra card pages only when necessary. A4 remains proof paper, never an enlarged card.
-- Replace daily-use card-number creation with a search and explicit confirmation for placing an existing card in the carry folder. Preserve issue status, card identity and history; keep creation in Territory cards.
-- Move “Longest since completion” from Daily use to an independently resettable sort in Territory cards. Unknown dates sort first; area, status and text filters remain selected.
-- Show current / suggested active card counts for publishers based on locally adjustable publisher, pioneer, service-group assistant and overseer guidance. Combined roles use the highest suggestion; exceeding it never blocks an assignment.
-- Test fictional IB lists, A4/cut PDFs, card searches and folder moves, territory ordering and combined filters, publisher assignments/settings and desktop/mobile layouts. Stable 1.12.19 remains unchanged.
+- Udnyt bagsiden af det originale IB-kort på 94 × 146 mm bedre. Alle oplysninger bevares, og ekstra kortsider laves kun ved behov; A4 er fortsat kontrolark.
+- Erstat oprettelse af nye kortnumre under daglig brug med søgning og bekræftet placering af et eksisterende kort i mappen. Identitet, udlevering og historik bevares.
+- Flyt sorteringen **Længst siden gennemgang** til distriktskortoversigten, uafhængigt af øvrige filtre; kort uden kendt dato vises først.
+- Vis nuværende og vejledende antal aktive kort efter lokalt indstillede roller for forkyndere, pionerer, gruppeassistenter og tilsynsmænd. Ved flere roller bruges det højeste forslag uden spærring.
+- Test IB, kortsøgning, mappeflytning, sortering, roller, filtre og mobil/desktop med opdigtede data. Stable 1.12.19 ændres ikke.
 
 ## 1.12.19-beta.1
 
-- Synchronize Beta with the verified Stable 1.12.19 feature set. Keep independent program/data directories, HA port 8788, logins and native installer identities. Future trials use Beta first.
+- Synkronisér Beta med den verificerede Stable 1.12.19. Bevar særskilte program- og datamapper, port 8788 i Home Assistant, logins og native installationsidentiteter. Nye funktioner prøves først i Beta.
 
 ## 1.12.19
 
-- Local Chrome connection backups work with browser-side authenticated encryption, including private HTTP access; existing encrypted files remain compatible.
-- Readable-archive fronts use the same measured print renderer as ordinary cards, including lettered house numbers and archived cards.
-- Choose whether Drive maps show house numbers and leader lines; all red visit dots remain and changed images require fresh approval.
-- Activity and 48-hour recovery identify the authenticated user and show a clearer timeline. Historical names are never invented.
-- Backup uses Save as where supported and explains the browser download setting otherwise. Remove the old Tally menu link.
-- Native Mac Intel/Apple Silicon DMG and Windows Setup installers preserve the existing data directory. Owner confirmed first-install/update tests on both systems on 8 November 2026.
-- Home Assistant declares its independent Supervisor TCP watchdog. Mac-server remains pending its separate physical LAN/VPN test.
-- Stable is the verified baseline. Beta is refreshed from the same feature set, with separate data/login; future trials use Beta before Stable.
+- Muliggør lokal sikkerhedskopi af forbindelser i Chrome via browserbaseret kryptering, også over privat HTTP. Eksisterende krypterede filer fungerer fortsat.
+- Brug den almindelige, opmålte printmotor til forsider fra læsearkivet, også med bogstavhusnumre og arkiverede kort.
+- Lad brugeren vælge husnumre og forbindelsesstreger på Drive-kort; alle røde besøgsprikker bevares, og ændrede billeder kræver ny godkendelse.
+- Vis den autentificerede bruger i aktivitetsoversigten og 48-timers gendannelse; opfind aldrig navne på ældre hændelser.
+- Brug **Gem som**, hvor browseren tillader det, og forklar ellers downloadindstillingerne. Fjern det gamle Tally-menulink.
+- Native macOS-installationer til Intel/Apple Silicon og Windows Setup bevarer datamappen. Ejeren bekræftede installation og opdatering 8. november 2026.
+- Home Assistant får sin egen Supervisor TCP-watchdog. Mac-serveren afventer fortsat særskilt fysisk LAN/VPN-test.
+- Stable er den verificerede basis; Beta får samme funktioner, men beholder særskilte data og login.
 
 ## 1.12.18 · 2026-11-07
 
-- Prevent the Home Assistant status worker and a saved overview from deadlocking while a print approval is being saved.
-- Read print-validation data once per overview or batch instead of repeatedly loading all stored map images for every card.
-- Disable single and batch approval buttons while saving and ignore rapid repeat clicks.
-- Validate assignment deletion against the selected card's history, so unrelated background saves do not force repeated history reloads. Actual history changes still block stale deletion.
-- Hide completed zero-result address checks from the dashboard and remove empty review actions; keep the schedule visible in settings.
-- Publish crowded maps with all red dots even when some house numbers cannot be placed clearly.
-- Cover 380 cards / 760 sides, concurrent HTTP approvals and page reads, unchanged print tokens, the status-worker lock conflict and repeat-click browser flows.
+- Undgå deadlock mellem Home Assistants statusarbejder og en gemt oversigt, når printgodkendelse gemmes.
+- Indlæs printvalideringsdata én gang pr. oversigt eller batch i stedet for at hente alle gemte kortbilleder gentagne gange.
+- Deaktivér godkendelsesknapper under gemning, og ignorér hurtige gentagne klik.
+- Kontrollér sletning af udlevering mod historikken for netop det valgte kort; uvedkommende baggrundsgemninger må ikke tvinge genindlæsning, men reelle historikændringer skal stadig blokere forældet sletning.
+- Skjul afsluttede adressekontroller med nul fund fra forsiden, og fjern tomme gennemgangshandlinger; tidsplanen findes fortsat i indstillingerne.
+- Udgiv kort med alle røde prikker, selv når ikke alle husnumre kan placeres tydeligt på tætte kort.
+- Test 380 kort/760 sider, samtidige HTTP-godkendelser, printtokener, deadlock og dobbeltklik.
 
 ## 1.12.17 · 2026-11-07
 
-- Render the Google Drive PDF front from the normal print template, browser layout and street grouping in Danish and English, replacing the separate approximation.
-- Approve multiple printed fronts and backs together, with explicit review and confirmation. Changed print content rejects the complete batch; opening a preview or printing never approves cards automatically.
-- Keep the accepted red dots, house numbers and two-page PDF structure.
+- Dan Google Drive-PDF'ens forside med den normale printskabelon, browseropsætning og vejgruppering på dansk og engelsk i stedet for en særskilt tilnærmelse.
+- Godkend flere printede for- og bagsider samlet efter gennemgang og udtrykkelig bekræftelse. Ændret indhold afviser hele batchen; forhåndsvisning og print godkender aldrig automatisk.
+- Bevar de godkendte røde prikker, husnumre og PDF'ens struktur med to sider.
 
 ## 1.12.16 · 2026-11-06
 
-- Share one two-page Google Drive PDF with the digital map first and the full printable front second. Long road rows wrap in the printable front.
-- Keep house numbers tied to their rendered dots, with leader lines in crowded areas.
-- Give the internal report a congregation-name cover in print and rings for coverage and card placement.
+- Del én Google Drive-PDF på to sider: først det digitale kort og derefter hele den printbare forside. Lange vejlinjer ombrydes.
+- Bevar forbindelsen mellem husnumre og deres røde prikker med hjælpelinjer i tætte områder.
+- Tilføj menighedsnavn på intern rapports forside samt ringdiagrammer for gennemgange og kortplacering.
 
 ## 1.12.15 · 2026-11-06
 
-- Show all saved addresses with identical red dots and house numbers on the public Drive/QR image. Keep the do-not-call list on the physical card back.
-- Add the bilingual guide link under Help and remove duplicate shortcuts to the setup guide and user administration.
-- Report mapped visit points and do-not-call records across the saved district boundary, with the existing access controls.
+- Vis alle gemte adresser som røde prikker med husnumre på det offentlige Drive-/QR-billede. IB-listen forbliver på det fysiske korts bagside.
+- Tilføj link til den tosprogede vejledning under Hjælp, og fjern dobbelte genveje til opsætning og brugeradministration.
+- Medtag kortlagte besøgssteder og IB-poster inden for distriktsgrænsen i rapporten med uændret adgangskontrol.
 
 ## 1.12.14 · 2026-11-06
 
-- Preserve ordinary red address and IB visit markers in private district maps, combined views and local PNG exports, including dense or coincident coordinates.
-- On explicitly approved public Drive/QR map images, show saved IB locations as neutral address dots with approved house numbers, without private IB status or notes. Include these in saved-point totals but not in remaining visits.
-- Validate the actual dated 2200 × 1560 PNG and approval flow. Keep existing Drive/QR links unchanged until a fresh reviewed image is explicitly approved. Clarify Danish and English privacy guidance.
+- Bevar alle almindelige røde adresse- og IB-besøgsmarkører på private distriktskort, samlede kort og lokale PNG-filer, også ved tætte eller sammenfaldende koordinater.
+- På udtrykkeligt godkendte offentlige Drive-/QR-billeder vises gemte IB-steder som neutrale adresseprikker med godkendte husnumre, uden privat IB-status eller noter. De tælles som gemte punkter, men ikke som resterende besøg.
+- Kontrollér daterede PNG-billeder i 2200 × 1560 og godkendelsen; eksisterende Drive-/QR-links ændres først ved ny, godkendt billedudgave. Præcisér privatlivsvejledning på begge sprog.
 
 ## 1.12.13 · 2026-11-05
 
-- Delete a single erroneous assignment from History after reviewing the card, publisher, dates and status. Choose the physical location when removing an active assignment. Existing completions and notes are kept, and the assignment is recoverable for 48 hours unless a newer assignment conflicts.
+- Slet en enkelt fejlagtig udlevering fra Historik efter kontrol af kort, forkynder, datoer og status. Vælg fysisk placering ved sletning af en aktiv udlevering. Bevar gennemgange og noter; udleveringen kan gendannes i 48 timer, medmindre en nyere udlevering skaber konflikt.
 
 ## 1.12.12 · 2026-11-05
 
-- Keep close visit dots individually visible in digital district maps and their PNGs, including during export after a zoom. Previously shared images can be regenerated and approved on the same Google Drive file and QR link.
+- Hold tætsiddende besøgsprikker adskilt i digitale distriktskort og PNG'er, også ved eksport efter zoom. Tidligere delte billeder kan gendannes og godkendes igen på samme Google Drive-fil og QR-link.
 
 ## 1.12.11 · 2026-11-05
 
-- Keep visit markers at every saved map coordinate, including the focused map view, so distinct locations do not collapse into one red dot.
-- Continue very long do-not-call backs onto clearly labelled extra print pages, with a compact readable layout. Find do-not-call entries by date or address and print a combined overview without inventing an exact date from month/year or year-only wording.
-- Offer a reviewed local address suggestion for a manual do-not-call line. Nothing is linked automatically; the record ID and recorded date remain intact, and the line can stay manual.
-- Keep connections separate from data and account backups. A connections administrator can create a browser-encrypted Google Drive/Datafordeler/Adressevælger backup with a personal passphrase, then explicitly restore it and check the connections again.
-- Prepare five independently publishable tracks from one source/version: Home Assistant, macOS app, macOS server, Windows app and Windows server. The first desktop assets remain platform-labelled Python ZIPs, not DMG or EXE installers.
+- Vis en besøgsmarkør ved hver gemt kortkoordinat, også i fokuseret kortvisning, så forskellige steder ikke smelter sammen til én rød prik.
+- Fortsæt lange IB-bagsider på tydeligt mærkede ekstra printsider. Søg på dato eller adresse, og print en samlet oversigt uden at opfinde dag eller måned for upræcise datoer.
+- Tilbyd et gennemgået lokalt adresseforslag til en manuel IB-linje. Intet tilknyttes automatisk; post-ID og registreret dato bevares, og linjen må forblive manuel.
+- Hold forbindelser adskilt fra data- og kontobackup. En forbindelsesadministrator kan lave browserkrypteret backup af Google Drive, Datafordeler og Adressevælger med egen adgangsfrase og gendanne den efter udtrykkelig godkendelse.
+- Forbered fem uafhængige udgivelsesspor fra samme kode/version: Home Assistant, macOS-app, macOS-server, Windows-app og Windows-server. Første desktoppakker er platformmærkede Python-ZIP'er, ikke DMG/EXE.
 
 ## 1.12.10 · 2026-11-04
 
-- Review the exact card, date and assignment before deleting an erroneous completion. An active assignment remains in place, the card's latest completion is recalculated, and later history no longer reintroduces the deleted date.
-- Show only the selected report period on screen for calendar year, service year or the last 12 months. Each period has matching totals, chart and map; calendar-year selection appears only for its own view.
+- Kræv gennemgang af præcis kort, dato og udlevering før sletning af en fejlagtig gennemgang. Aktiv udlevering bevares, seneste gennemgang genberegnes, og den slettede dato dukker ikke op igen via historikken.
+- Vis kun den valgte rapportperiode: kalenderår, tjenesteår eller seneste 12 måneder. Tal, diagrammer og kort følger valget.
 
 ## 1.12.9 · 2026-11-04
 
-- Assign a card directly from the storage box, move selected cards between the box and folder beside the list, and see where each is kept.
-- Add the supplied original English S-12 and S-13 PDFs without modifying them. English/Danish form selection is available for card printing and remembered per print side; report originals follow the interface language.
-- Use a separate English S-13 field map/background for browser and PDF output. Danish S-13 PDF output remains byte-identical to 1.12.8 for the compatibility fixture. Dates, names, exact address membership and visit counts remain intact.
-- Include original English downloads in the app and website. Preserve Danish forms and separate stable/beta data.
+- Udlever kort direkte fra kassen, flyt valgte kort mellem kassen og mappen i oversigten, og vis deres aktuelle placering.
+- Medtag originale engelske S-12- og S-13-PDF'er uændret. Formularsprog kan vælges separat for hver printside og huskes; rapportformularer følger brugerfladens sprog.
+- Brug særskilt engelsk S-13-feltkort/baggrund i browser og PDF. Dansk S-13-PDF forbliver byteidentisk med 1.12.8; datoer, navne, adresseudvalg og besøgstal bevares.
+- Tilbyd engelske originalfiler i app og på website; bevar danske formularer og adskilte Beta-/Stable-data.
 
 ## 1.12.8 · 2026-11-02
 
-- Show numeric street envelopes on physical fronts: internal letter variants no longer split a range. A missing numeric base creates a break, whether absent from the source or outside the card. Keep the final boundary suffix, e.g. 3–9B, and retain separate even/odd lines.
-- Compute display summaries from saved membership, including after a cold reload. Exact selected units, visits, manual street text, public-map privacy and original forms are unchanged.
+- Vis sammenhængende husnummerintervaller på fysiske forsider uden at splitte ved interne bogstavvarianter. Manglende grundnumre giver brud; sidste bogstav (fx 3–9B) og separate lige/ulige rækker bevares.
+- Beregn vejoversigter fra gemt adressemedlemskab, også efter kold genindlæsning, uden ændringer af besøg, manuelle vejtekster, offentlig kortprivatliv eller originalformularer.
 
 ## 1.12.7 · 2026-11-02
 
-- Restore compact, exact street intervals with `&` at gaps and separate even/odd lines per road. Consecutive lettered houses also form intervals. Physical fronts combine address types without changing visits or stored address membership.
-- Prevent street text from overlapping the original form footer. Dense fronts are fitted in the bounded content area; an impossible layout is visibly flagged and print remains blocked.
-- Add a real-browser regression for dense fronts at desktop/mobile widths and original-size print. Original S-12/S-13 assets remain unchanged.
-- Use a new version so installations that already installed 1.12.6 receive a normal Home Assistant update.
+- Gendan kompakte, præcise vejintervaller med `&` ved huller, separate lige/ulige linjer og intervaller for sammenhængende bogstavnumre. Kombinér adressetyper på forside uden at ændre besøg eller gemte adresser.
+- Beskyt formularens oprindelige sidefod mod overlappende vejteks­ter. Tilpas tætte forsider inden for det tilladte område, og blokér print med tydelig fejl, hvis indholdet ikke kan være der.
+- Tilføj browsertest af tætte forsider, mobil/desktop og print i original størrelse. S-12-/S-13-originaler ændres ikke.
+- Brug nyt versionsnummer, så installationer med 1.12.6 får en normal Home Assistant-opdatering.
 
 ## 1.12.6 · 2026-11-02
 
-- Fix lossy street labels: separate number parity, preserve gaps/lettered houses, split long rows and repair saved geographic labels with print review.
-
-- Understand whole-street wording, “kun lige/ulige” qualifiers and street-side ranges such as “23-25 & 24-26” in reviewed DAR suggestions. Preserve parity restrictions and include every apartment in the selected house numbers.
-- Default the IB import screen to explicit manual lines without DAR. Import fronts and backs from separate Excel/CSV files, preserve dates and print both sides without geographic addresses.
-- Link an imported manual IB entry to one explicit address on the same card later. Changing the import linking policy requires a new preview; existing records are not rebound silently.
-- Clarify own-file column mapping and the optional role of DAR in the English import guide.
+- Ret vejlabels, der mistede oplysninger: hold lige og ulige numre adskilt, bevar huller og bogstavnumre, ombryd lange linjer, og kræv ny printgennemgang af reparerede geografiske etiketter.
+- Forstå hele veje, **kun lige/ulige** og intervaller som **23–25 & 24–26** i gennemgåede DAR-forslag. Bevar paritetskrav, og medtag alle lejligheder under valgte husnumre.
+- Lad IB-import starte med eksplicitte manuelle linjer uden DAR; indlæs forsider og bagsider fra separate Excel-/CSV-filer, bevar datoer, og print uden geografiske adresser.
+- Tilknyt senere én manuel IB-linje til én konkret adresse på samme kort. Ændret importpolitik kræver ny forhåndsvisning; eksisterende poster genkobles aldrig i stilhed.
+- Forklar kolonnemapping fra egne filer og DAR's valgfrie rolle i den engelske importvejledning.
 
 ## 1.12.5 · 2026-11-02
 
-- Preserve a known month/year, a year alone or literal date wording when importing or manually creating a do-not-call entry. No day or month is invented; wording survives editing, card backs, private export and backup.
-- Suggest DAR addresses from a card's existing street names and number ranges after confirming each postcode. Download complete roads, review all units and the suggested boundary, then explicitly save. Stale street/address data, reserved units and unclear ranges block unsafe application.
-- Mark the changed front for printing and preserve existing loans, completion history and do-not-call records.
-- Carry the current Drive requests into the plan with original priorities; international address sources and English original forms remain subsequent work.
+- Bevar kendt måned/år, kun årstal eller bogstavelig datoformulering ved import og manuel oprettelse af IB. Opfind aldrig dag/måned; oplysningerne bevares ved redigering, print, privat eksport og backup.
+- Foreslå DAR-adresser ud fra kortets eksisterende vejnavne og husnummerintervaller efter bekræftelse af postnummer. Hent hele veje, gennemgå alle enheder og grænseforslag, og gem først efter bekræftelse. Forældede data, reserverede enheder og uklare intervaller blokerer usikker anvendelse.
+- Markér ændret forside til print; bevar udleveringer, gennemgangshistorik og IB-poster.
+- Overfør aktuelle Drive-ønsker med deres oprindelige prioritet til planen. Internationale adresser og engelske originalformularer behandles senere.
 
-## 1.12.4 · Task responsibility and manual redistribution
+## 1.12.4 · Opgaveansvar og manuel fordeling
 
-- Optional responsible accounts, private self labels, task filters and linked follow-up tasks.
-- Manual split/transfer suggestions, exact address-unit previews and atomic movement with coupled do-not-call records.
-- Explicit latest-date scheduling reference or an interim-card issue/return/finalize workflow, retained history and reprint tasks.
-- Complete declared English interface-label coverage, localized task/maintenance controls and readable conflict fields; original forms and stored user content retain their language.
-- Preserve the restored home dashboard, existing roles, guides, imports and separate beta data.
+- Giv mulighed for ansvarlige brugere på opgaver, private egne etiketter, opgavefiltre og tilknyttede opfølgninger.
+- Tilføj manuelt forslag til opdeling/flytning med præcis forhåndsvisning af adresser og atomisk flytning af tilhørende IB-poster.
+- Bevar seneste datoreference til planlægning, eller brug midlertidige kort med udlevering, aflevering og afslutning; historik og genprintopgaver bevares.
+- Færdiggør erklærede engelske brugerfladetekster, opgave- og vedligeholdelsesfunktioner og læsbare konfliktfelter; originalformularer og brugerdata beholder sproget.
+- Bevar den gendannede forside, roller, guider, import og særskilte Beta-data.
 
+## 1.12.3 · Gendan den velkendte forside
 
-## 1.12.3 · Restore the familiar home dashboard
+- Gendan den velkendte forside for profilbrugere med relevante rettigheder, herunder ringdiagrammer, genveje, nøgletal, månedssammenligning og opfølgninger.
+- Giv brugere med kun opsummeringsadgang samme forside baseret på samlede tal uden adgang til private registreringer eller ændring af rapportrettigheder.
+- Bevar rapporten med tre perioder på siden Rapporter.
 
-- Restore the original home dashboard for profile users with the relevant record permissions, including its rings, shortcuts, metrics, monthly comparison and follow-ups.
-- Give summary-only users the familiar home layout using aggregate totals, without exposing private records or changing report permissions.
-- Keep the three-period report on the Reports page.
+## 1.12.2 · Profiler, sikker gemning og fleksibel import
 
-## 1.12.2 · Profiles, dependable saving and flexible imports
-
-- Individual profiles and administrator-controlled roles; independent home/report summary permissions and permission-filtered personal guides.
-- Sheet/header/column selection for supported card and IB spreadsheet imports with explicit preview/confirmation.
-- Honest save acknowledgements, editor-owned bases, preserved conflict proposals and reliable tour completion.
-- Clearer reports and safe approved manual street rows on online card fronts.
-- English-first README, new-browser interface and documentation, plus a fictional demo with two role views. Original printed forms remain unchanged; translation is still partial.
+- Tilføj personlige profiler, administratorstyrede roller, separate oversigtsrettigheder til forside og rapporter samt rettighedsfiltrerede personlige guider.
+- Understøt valg af ark, overskriftsrække og kolonner ved import af understøttede kort- og IB-regneark, med forhåndsvisning og godkendelse.
+- Vis pålidelige gemmekvitteringer, bevar editorens udgangspunkt og konfliktforslag, og afslut rundtur sikkert.
+- Forbedr rapporter og tillad godkendte manuelle vejlinjer på onlinekortets forside.
+- Tilføj engelsksproget README, førstegangsgrænseflade og dokumentation samt en demo med to fiktive rollevisninger. Originale printformularer ændres ikke; oversættelsen er fortsat delvis.
 
 ## 1.12.2-beta.83 · Gemning, rundtur og manuelle onlinekort
 
