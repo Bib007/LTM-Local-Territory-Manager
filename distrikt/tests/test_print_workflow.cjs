@@ -33,6 +33,21 @@ const form=(remember=true)=>{const f={dataset:{id:'c1',side:'front',ids:'["c1"]'
  c.window.open=()=>win=popup();
  // Report navigation during an awaited map must preserve the newer page and period.
  let releaseMap;c.mapWait=new Promise(r=>releaseMap=r);run("ReportMap.printable=async()=>mapWait");const jobReport=run('printReport()');await run('printReport()');run("page='Forside';Workspace.reportPeriod='rolling';ReportMap.map={}");releaseMap('<svg>fictional</svg>');await assert.rejects(jobReport,/Printgrundlaget er ændret/);assert.equal(run('Workspace.reportPeriod'),'rolling');assert.equal(win.closed,true);assert.equal(run('printReport.busy'),false);
+ // A print session captures exactly the selected period and only renders its map.
+ const reportPicker=nodes.get('reportPrintPeriod');c.reportModeCalls=[];c.reportDocumentCalls=[];
+ run("page='Rapporter';ReportMap.printable=async()=>{reportModeCalls.push(Workspace.reportPeriod);return '<svg>fictional</svg>'};reportPrintDocument=(maps,selected)=>{reportDocumentCalls.push({selected,keys:Object.keys(maps)});return '<p>FICTIONAL REPORT</p>'};inlineReportAssets=async value=>value");
+ for(const selectedPeriod of ['calendar','service','rolling','all']){
+  reportPicker.value=selectedPeriod;c.reportModeCalls.length=0;c.reportDocumentCalls.length=0;run("Workspace.reportPeriod='service'");
+  c.window.open=()=>{win=popup();return win;};
+  await run('printReport()');
+  const wanted=selectedPeriod==='all'?['calendar','service','rolling']:[selectedPeriod];
+  assert.deepEqual(c.reportModeCalls,wanted);
+  assert.equal(c.reportDocumentCalls[0].selected,selectedPeriod);
+  assert.deepEqual(c.reportDocumentCalls[0].keys,wanted);
+  assert.equal(run('Workspace.reportPeriod'),'service');
+  assert.equal(run('printReport.busy'),false);
+ }
+ reportPicker.value='service';
  // Missing report images fail closed after the document is assembled.
  run("page='Rapporter';Workspace.reportPeriod='service';ReportMap.printable=async()=>'<svg>fictional</svg>';reportPrintDocument=()=>'<p>FICTIONAL REPORT</p>';inlineReportAssets=async s=>s");
  c.window.open=()=>{win=popup();win.document.querySelectorAll=()=>[{getAttribute:()=>'/corrupt.jpg'}];return win;};decodeFails=true;await run('printReport()');assert.equal(win.controls.printReport.disabled,true);assert.match(win.controls.printAssetError.textContent,/Print images could not load/);assert.equal(run('Workspace.reportPeriod'),'service');
