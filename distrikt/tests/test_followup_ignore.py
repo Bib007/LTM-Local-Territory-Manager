@@ -103,6 +103,8 @@ class FollowupIgnoreTests(unittest.TestCase):
     def test_profile_state_filters_readers_and_edit_authorization(self):
         self.write(Actor('a', 'Fiktiv A'), True)
         base = self.store.state()
+        # The HTTP state endpoint adds this channel flag before profile filtering.
+        base['beta'] = False
         def user(rights):
             return {'id': 'user-viewer', 'name': 'Fiktiv læser', 'onboarded': True,
                     'revision': 1, 'permissions': set(rights)}
