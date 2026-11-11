@@ -83,6 +83,18 @@ class PublisherDeletionTests(unittest.TestCase):
         self.assertIsNone(self.store.get('publishers', person['id']))
         self.assertIsNotNone(self.store.get('publishers', newer['id']))
 
+    def test_restoring_publisher_cannot_duplicate_service_group_function(self):
+        person = self.create()
+        self.store.mutate('publisher.save', {'id': person['id'], 'name': person['name'],
+                                             'group': 'Gruppe 01', 'group_role': 'overseer'})
+        person = self.store.require('publishers', person['id'])
+        result = self.delete(person)
+        self.store.mutate('publisher.save', {'name': 'Anden Fiktiv', 'group': 'Gruppe 01',
+                                              'group_role': 'overseer'})
+        with self.assertRaisesRegex(ValueError, 'samme gruppefunktion'):
+            self.store.mutate('restore', result)
+        self.assertIsNone(self.store.get('publishers', person['id']))
+
     def test_role_requires_publisher_management_and_loan_read(self):
         person = self.create()
         request = {'module': 'publishers', 'id': person['id'],
