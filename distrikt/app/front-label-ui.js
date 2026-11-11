@@ -21,7 +21,7 @@ const FrontLabelsUI={
     <p class="hint">${esc(row.road)} ${esc(row.numbers)} · ${row.count} ${ui('besøg')}</p>
     <div class="twocol">${field(row,'road','Vejnavn')}${field(row,'numbers','Husnummer / husnummerrække')}</div>
     <button type="button" data-front-reset>${ui('Nulstil til DAR')}</button></fieldset>`).join('')}
-   ${c.front_label_unmatched?`<label class="check"><input type="checkbox" name="clear_unmatched"> ${ui('Nulstil uafklarede overstyringer til DAR (kan ikke fortrydes uden backup)')}</label>`:''}
+   ${c.front_label_unmatched?`<label class="check"><input type="checkbox" name="clear_unmatched"> ${ui('Nulstil uafklarede overstyringer til DAR')}</label>`:''}
    <p class="hint">${ui('Kontrollér kortets forhåndsvisning. For lange vejlinjer blokerer print og billedeksport.')}</p>
    ${formEnd('Gem forsidetekst')}</form>`,I18n.language());
  },
