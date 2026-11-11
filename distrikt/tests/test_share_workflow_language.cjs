@@ -20,6 +20,29 @@ const contract=html=>(html.match(/(?:data-share|data-id|href|download|id)="[^"]*
  let release;c.pending=new Promise(r=>release=r);run("DistrictMap.map={};DistrictMap.id='c1';api=()=>pending");let pending=run("ShareUI.prepare('c1')");run("openDialog('<form>NEWER DRAFT</form>')");release({json:async()=>c.recipe});await pending;assert.match(get('dialog').innerHTML,/NEWER DRAFT/);assert.equal(run('ShareUI.pending'),null);
  // Positive preview: exact public recipe, revision and approval gate; unapproved does nothing.
  run("DistrictMap.map={};DistrictMap.id='c1';api=async()=>({json:async()=>recipe})");await run("ShareUI.prepare('c1')");assert.match(get('dialog').innerHTML,/Publish card 101/);assert.doesNotMatch(get('dialog').innerHTML,/PRIVATE_/);get('shareApproved').checked=false;run('api=async(url,data)=>{writes.push({url,data});return {json:async()=>shareFixture}}');await run('ShareUI.publish()');assert.equal(writes.length,0);
+
+ // Fictional slow rendering: do not post an upload until the new preview is complete and approved.
+ let renderRelease;c.renderWait=new Promise(r=>renderRelease=r);c.originalRender=run('MapExport.blob');
+ run('MapExport.blob=async()=>renderWait');get('shareHouseNumbers').checked=false;
+ let rendering=run('ShareUI.updateHouseNumbers(false)');assert.equal(run('ShareUI.activity.phase'),'generating');assert.equal(get('shareHouseNumbers').disabled,true);
+ get('shareApproved').checked=true;await run('ShareUI.publish()');assert.equal(writes.length,0,'A click cannot upload while generating');
+ await run('ShareUI.updateHouseNumbers(true)');assert.equal(get('shareHouseNumbers').checked,true,'Overlapping toggle restores the saved choice');
+ renderRelease({});await rendering;assert.equal(run('ShareUI.pending.showHouseNumbers'),false);assert.equal(run('ShareUI.activity.phase'),'complete');assert.equal(get('shareApproved').checked,false);
+ // A failed regeneration preserves the previous PNG and offers one retry.
+ const beforePNG=run('ShareUI.pending.png'),beforeId=run('ShareUI.pending.request_id');
+ run('MapExport.blob=async()=>{throw Error("Fictional render failure")}');get('shareHouseNumbers').checked=true;
+ await assert.rejects(run('ShareUI.updateHouseNumbers(true)'),/Fictional render failure/);
+ assert.equal(run('ShareUI.pending.png'),beforePNG);assert.equal(run('ShareUI.pending.request_id'),beforeId);
+ assert.equal(run('ShareUI.activity.retry'),'house');assert.equal(get('shareHouseNumbers').checked,false);
+ run('MapExport.blob=async()=>({})');await run('ShareUI.retryHouseNumbers()');
+ assert.equal(run('ShareUI.pending.showHouseNumbers'),true);assert.equal(run('ShareUI.activity.phase'),'complete');
+ assert.notEqual(run('ShareUI.pending.request_id'),beforeId);run('MapExport.blob=originalRender');
+ // Only a reported active worker may display "uploading"; queueing is not upload progress.
+ run('ShareUI.progress("queued","c1",{watchUpload:true})');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"queued",upload_active:false}])');assert.equal(run('ShareUI.activity.phase'),'queued');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"queued",upload_active:true}])');assert.equal(run('ShareUI.activity.phase'),'uploading');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"retry",upload_active:false}])');assert.equal(run('ShareUI.activity.phase'),'queued');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"ready",upload_active:false,outdated:false}])');assert.equal(run('ShareUI.activity.phase'),'complete');
  // A changed data revision requires a new preview before sending any write.
  get('shareApproved').checked=true;run('state.revision="changed"');await assert.rejects(run('ShareUI.publish()'),/new preview/);assert.equal(writes.length,0);run('state.revision="fictional-r1"');
  // Deduplicate publish and preserve a newer dialog/navigation after the accepted write.
