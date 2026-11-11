@@ -171,6 +171,12 @@ def state_for(raw,user):
         if 'users.manage' not in p:note.pop('assignee_id',None)
         if 'geo.view' not in p:note.pop('followup_key',None)
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}
+    # Show viewers only the non-sensitive threshold and opaque suppression keys,
+    # never an administrator's free-text reason.
+    if 'settings.manage' not in p and {'cards.view','geo.view','loans.view'}<=p:
+        result['settings']['split_visit_limit']=raw['settings'].get('split_visit_limit',50)
+        ignored=raw['settings'].get('split_suggestion_ignored') or {}
+        result['settings']['split_suggestion_ignored']={k:{'fingerprint':v.get('fingerprint')} for k,v in ignored.items() if isinstance(v,dict)}
     # Non-managers who see assignments need the same advisory counts as admins,
     # without receiving unrelated administration or personal settings.
     if 'settings.manage' not in p and 'publishers.view' in p:
