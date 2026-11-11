@@ -19,21 +19,23 @@ const AdminUI={
  folderIds(cards,inFolder){return cards.filter(c=>c&&this.selected.has(c.id)&&!loanFor(c.id)&&!!c.in_folder!==inFolder).map(c=>c.id);},
  selection(cards){
   this.visible=cards.map(c=>c.id);
-  const chosen=this.selectedCards(),toFolder=this.folderIds(chosen,true),toBox=this.folderIds(chosen,false),excluded=chosen.length-toFolder.length;
-  return `<div class="actions cardSelection"><button data-admin="all">${ui('Vælg viste kort')}</button><button data-admin="none">${ui('Fravælg alle')}</button><button data-admin="bulk" ${chosen.length?'':'disabled'}>${ui('Ændr område / type · {count} valgt',{count:chosen.length})}</button><button data-action="folder-selection" ${toFolder.length?'':'disabled'}>${ui('Læg {count} i mappen',{count:toFolder.length})}${excluded?' · '+ui('{count} springes over',{count:excluded}):''}</button>${toBox.length?`<button data-action="folder-selection-box">${ui('Flyt {count} til kassen',{count:toBox.length})}</button>`:''}</div>
+  const chosen=this.selectedCards(),toFolder=this.folderIds(chosen,true),toBox=this.folderIds(chosen,false),excluded=chosen.length-toFolder.length,canMove=typeof ProfilesUI==='undefined'||ProfilesUI.canAction('folder.set');
+  return `<div class="actions cardSelection"><button data-admin="all">${ui('Vælg viste kort')}</button><button data-admin="none">${ui('Fravælg alle')}</button><button data-admin="bulk" ${chosen.length?'':'disabled'}>${ui('Ændr område / type · {count} valgt',{count:chosen.length})}</button><button data-action="folder-selection" ${toFolder.length&&toFolder.length<=500&&canMove?'':'disabled'}>${ui('Læg {count} i mappen',{count:toFolder.length})}${excluded?' · '+ui('{count} springes over',{count:excluded}):''}</button>${toBox.length?`<button data-action="folder-selection-box">${ui('Flyt {count} til kassen',{count:toBox.length})}</button>`:''}</div>
   <p class="hint" role="status">${ui('{count} kort valgt på tværs af filtre',{count:chosen.length})}${chosen.length?': '+chosen.map(c=>`${esc(c.number)}${this.folderReason(c)?' ('+esc(I18n.text(this.folderReason(c)))+')':''}`).join(' · '):''}</p>`;
  },
  folderPreview(){
   if(this.folderConfirmBusy)return;
+  if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set')){toast(I18n.text('Din rolle giver ikke adgang til denne handling.'));return;}
   const chosen=this.selectedCards();
   const eligible=chosen.filter(c=>!this.folderReason(c)),skipped=chosen.filter(c=>this.folderReason(c)).map(c=>({id:c.id,reason:this.folderReason(c)}));
   this.folderPending={ids:eligible.map(c=>c.id),skipped,labels:Object.fromEntries(chosen.map(c=>[c.id,c.number]))};
   const row=({id,reason})=>`<li>${esc(this.folderPending.labels[id]||id)} · ${esc(I18n.text(reason))}</li>`;
-  openDialog(`<h2>${ui('Læg valgte kort i mappen?')}</h2><p><b>${ui('{count} kort flyttes til mappen',{count:eligible.length})}</b> · ${ui('{count} springes over',{count:skipped.length})}</p><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><h3>${ui('Kort der flyttes')}</h3><p>${eligible.map(c=>esc(c.number)).join(' · ')||ui('Ingen kort kan flyttes.')}</p>${skipped.length?`<h3>${ui('Kort der springes over')}</h3><ul>${skipped.map(row).join('')}</ul>`:''}<div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary" data-admin="folder-confirm" ${eligible.length?'':'disabled'}>${ui('Bekræft og læg {count} i mappen',{count:eligible.length})}</button><button data-action="close">${ui('Annuller')}</button></div>`,I18n.language());
+  openDialog(`<h2>${ui('Læg valgte kort i mappen?')}</h2><p><b>${ui('{count} kort flyttes til mappen',{count:eligible.length})}</b> · ${ui('{count} springes over',{count:skipped.length})}</p><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><h3>${ui('Kort der flyttes')}</h3><p>${eligible.map(c=>esc(c.number)).join(' · ')||ui('Ingen kort kan flyttes.')}</p>${skipped.length?`<h3>${ui('Kort der springes over')}</h3><ul>${skipped.map(row).join('')}</ul>`:''}${eligible.length>500?`<p class="formError">${ui("Vælg højst 500 kort ad gangen.")}</p>`:''}<div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary" data-admin="folder-confirm" ${eligible.length&&eligible.length<=500?'':'disabled'}>${ui('Bekræft og læg {count} i mappen',{count:eligible.length})}</button><button data-action="close">${ui('Annuller')}</button></div>`,I18n.language());
  },
  async folderConfirm(){
   const pending=this.folderPending;
-  if(!pending||this.folderConfirmBusy||!pending.ids.length)return;
+  if(!pending||this.folderConfirmBusy||!pending.ids.length||pending.ids.length>500)return;
+  if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set'))throw new RequestError('Din rolle giver ikke adgang til denne handling.','rejected');
   this.folderConfirmBusy=true;
   try{
    // The existing mutation queue owns the profile edit base, response receipt,
