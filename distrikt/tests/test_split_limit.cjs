@@ -18,7 +18,7 @@ assert.equal(run('SplitSuggestions.plan(state.cards,[],5,false,ignored).ignored'
 assert.equal(run('SplitSuggestions.plan(state.cards,[],4,false,ignored).total'),1);
 run('fictive.addresses[0].count=9');
 assert.equal(run('SplitSuggestions.plan(state.cards,[],5,false,ignored).total'),1);
-run('state.settings.split_suggestion_ignored=ignored;state.settings.split_visit_limit=5');
+run("I18n.set('da');state.settings.split_suggestion_ignored=ignored;state.settings.split_visit_limit=5");
 assert.match(run('SplitSuggestions.entry()'),/1 distriktskort overstiger/);
 run('state.settings.split_visit_limit=9');
 assert.match(run('SplitSuggestions.entry()'),/0 distriktskort overstiger/);
