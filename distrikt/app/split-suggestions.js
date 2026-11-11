@@ -74,7 +74,13 @@ Object.assign(I18n.english,{
  'Historik bevares på de oprindelige kort. Et nyt kort får ingen opdigtet gennemgang og skal kontrolleres og genprintes.':'History stays with the original cards. A new card gets no invented completion and must be reviewed and reprinted.',
  'Oversigten er ændret. Gennemgå de opdaterede forslag igen.':'The overview has changed. Review the updated suggestions again.',
  'Kontrollér besøgstal og mulige opdelinger · valgfrit':'Review visit estimates and possible splits · optional',
- 'Se manuelle forslag; opdeling kræver fortsat særskilt kontrol og godkendelse.':'Review manual suggestions; splitting still requires separate review and approval.'
+ 'Se manuelle forslag; opdeling kræver fortsat særskilt kontrol og godkendelse.':'Review manual suggestions; splitting still requires separate review and approval.',
+ '{count} distriktskort overstiger den fastsatte grænse på {limit} besøg.':'{count} territory cards exceed the configured limit of {limit} visits.',
+ '{count} forslag er skjult efter vurdering.':'{count} suggestions have been dismissed.',
+ 'Besøgsgrænsen fastsættes under Indstillinger → Menighed og mappe. Kun kassefilteret huskes i browseren.':'Set the visit limit in Settings → Congregation and carry folder. Only the box filter is saved in this browser.',
+ 'Se bort fra forslag':'Dismiss suggestion','Gendan forslag':'Restore suggestion','Skjulte forslag':'Dismissed suggestions',
+ 'Hvorfor skal dette forslag ignoreres?':'Why should this suggestion be dismissed?',
+ 'Kortet findes ikke længere.':'Card no longer exists.'
 });
 
 const SplitSuggestions={
@@ -148,6 +154,7 @@ const SplitSuggestions={
   node.innerHTML=`${this.pendingHTML()}${this.ignoredHTML()}<p>${ui('Viser {shown} af {total} kort over målet.',{shown:list.length,total:this.current.total})}</p><p class="hint">${ui('{count} kort har ukendt eller ugyldigt besøgstal og bruges ikke i beregningen.',{count:this.current.unknown})} ${ui('Besøgstal er skøn, ikke registrerede husbesøg.')}</p>${list.map(m=>`<section class="panel" data-split-card="${esc(m.c.id)}"><h3>${ui('Kort')} ${esc(m.c.number)} · ${esc(m.count)}</h3><p style="overflow-wrap:anywhere">${esc(m.c.name||'')}</p><p>${m.parts>1?ui('Forslag: cirka {parts} kort med {count} besøg pr. kort.',{parts:m.parts,count:Math.round(m.count/m.parts)}):ui('Et ekstra kort alene vil give for små kort. Undersøg manuel omfordeling.')}</p>${m.issued||m.c.in_folder?`<p class="notice">${ui(m.issued?'Udleveret kort · planlæg først ændringen, når kortet er afleveret.':'Begge kort skal være færdige, afleverede og ligge i kassen.')}</p>`:m.duplicate?`<p class="notice">${ui('Dublerede adressevalg skal afklares før opdeling.')}</p>`:!m.exact||m.c.temporary?`<p class="hint">${ui('Præcist adressevalg mangler eller stemmer ikke med besøgstallet. Intet adressevalg gættes.')}</p>`:''}${m.split?`<p>${ui('Muligt nyt kort: {count} besøg · tilbage på kortet: {remaining}.',{count:m.split.count,remaining:m.count-m.split.count})}</p>${this.addresses(m.split.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="split" data-id="${esc(m.c.id)}">${ui('Gennemgå opdeling til nyt kort')}</button>`:''}`:''}${m.moves.map(move=>`<div class="notice"><p>${ui('Mulig omfordeling til kort {number}: {count} besøg · forventede skøn {source} / {target}.',{number:move.target.number,count:move.count,source:move.sourceCount,target:move.targetCount})}</p><p class="hint">${ui('Samme område, type og vejnavn. Det er ikke en kontrol af geografisk sammenhæng.')}</p>${this.addresses(move.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="transfer" data-id="${esc(m.c.id)}" data-target="${esc(move.target.id)}">${ui('Flyt adresser til kortet')}</button>`:''}<button data-split-suggestions="card" data-id="${esc(move.target.id)}">${ui('Åbn modtagerkort')}</button></div>`).join('')}${!state.profile||ProfilesUI.canAction('split.suggestion.ignore')?`<button data-split-suggestions="ignore" data-id="${esc(m.c.id)}">${ui('Se bort fra forslag')}</button>`:''}<button data-split-suggestions="card" data-id="${esc(m.c.id)}">${ui('Åbn kort')}</button></section>`).join('')||`<p>${ui('Ingen kort over målet i denne visning.')}</p>`}`;
  },
  ignoredHTML(){
+  if(state.profile&&!ProfilesUI.canAction('split.suggestion.restore'))return '';
   const records=Object.entries(this.ignored());
   if(!records.length)return '';
   return `<details><summary>${ui('Skjulte forslag')} (${records.length})</summary>${records.map(([id,record])=>{
