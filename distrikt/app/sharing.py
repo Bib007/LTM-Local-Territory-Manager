@@ -187,7 +187,9 @@ def fingerprint(store,c,legacy=False):
     if not c.get('geo_polygon') and not c.get('geo_addresses') and not c.get('address_ids') and c.get('addresses'):
         source_rows=[{'road':str(a.get('road') or ''),'numbers':str(a.get('numbers') or ''),'count':None if a.get('count_unknown') else a.get('count',0),'count_unknown':bool(a.get('count_unknown'))} for a in c['addresses']]
         content['manual_front']={'rows':manual_rows,'source_rows':source_rows,'withheld':withheld,'layout':'manual-front-v1'}
-    if not legacy:content['name']=public_name(store,c)
+    if not legacy:
+        content['name']=public_name(store,c)
+        content['front_line_overrides']=c.get('front_line_overrides') or []
     if c.get('archived'):content['archived']=True
     return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
@@ -318,6 +320,7 @@ class Publications:
                      for a in public_members(self.store,c)]
             from geography import front_summaries
             if has_geo:
+                public_card['front_line_overrides']=c.get('front_line_overrides') or []
                 source=c.get('geo_addresses') or [a for a in self.store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
                 postcodes={a['id']:a.get('postcode','') for a in source}
                 public_card['geo_addresses']=[dict(a,postcode=postcodes.get(a['id'],'')) for a in members]
@@ -326,6 +329,7 @@ class Publications:
                     roads.setdefault(a['road'],[]).append(a)
                 public_card['addresses']=[{'road':road,'numbers':', '.join(a['number'] for a in units),'count':sum(a['count'] for a in units)} for road,units in sorted(roads.items())]
                 front_summaries([public_card])
+                public_card.pop('front_line_overrides',None)
                 public_card.pop('geo_addresses')
             else:
                 public_card['addresses']=manual_rows

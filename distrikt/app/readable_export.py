@@ -118,6 +118,24 @@ def tables(state,geo):
     statuses={a['id']:a for a in addresses.values()};ignored={i.get('address_id') for i in state.get('ignored',[])}
     address_rows=[(*row,statuses.get(row[3],{}).get('type',''),bool(statuses.get(row[3],{}).get('retired')),row[3] in ignored) for row in address_rows]
     add('adresser',['kort_id','kortnummer','grundlag','adresse_id','vej','husnummer_eller_gemt_vejlinje','etage','doer','postnummer','besoegstal','laengdegrad','breddegrad','type','nedlagt','se_bort_fra'],address_rows)
+    # Keep current DAR values and local display overrides in separate columns.
+    # Also export unmatched manual entries for review after a DAR split/merge.
+    front_label_rows=[]
+    for c in cards:
+        for row in c.get('front_addresses',[]):
+            if row.get('manual_road') or row.get('manual_numbers'):
+                front_label_rows.append((c['id'],c['number'],'aktiv',','.join(row.get('source_ids',[])),
+                    row['road'],row['numbers'],row.get('display_road',row['road']),
+                    row.get('display_numbers',row['numbers'])))
+        for entry in c.get('front_line_overrides',[]):
+            if not any(set(entry.get('source_ids') or []).intersection(r.get('source_ids') or [])
+                       for r in c.get('front_addresses',[])):
+                front_label_rows.append((c['id'],c['number'],'afventer gennemgang',
+                    ','.join(entry.get('source_ids') or []),entry.get('dar_road',''),
+                    entry.get('dar_numbers',''),entry.get('road') or entry.get('dar_road',''),
+                    entry.get('numbers') or entry.get('dar_numbers','')))
+    add('forsidetekster',['kort_id','kortnummer','status','adresse_ider','dar_vej','dar_numre',
+        'vist_vej','viste_numre'],front_label_rows)
     add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date_text') or r.get('date','')) for r in state['ib']])
     add('udleveringer',['udlaans_id','kort_id','kortnummer','forkynder_id','forkynder','udleveret','aktuel_gennemgang_fra','afleveret'],[(r['id'],r['card_id'],ref(r['card_id']),r['publisher_id'],people.get(r['publisher_id'],''),r['assigned'],r.get('cycle_start',''),r.get('returned','')) for r in state['loans']])
     add('gennemgange',['id','kort_id','kortnummer','dato','forrige_gennemgang','udlaans_id','besoeg','besoeg_ukendt','kilde'],[(r['id'],r['card_id'],ref(r['card_id']),r['date'],r.get('previous_completed',''),r.get('loan_id',''),'' if r.get('visits_unknown') else r.get('visits',''),bool(r.get('visits_unknown')),r.get('source','')) for r in state['completions']])
