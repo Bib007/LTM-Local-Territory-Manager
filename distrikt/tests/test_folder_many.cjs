@@ -12,7 +12,7 @@ const cards=[
 const c={console,Map,Set,JSON,Array,Object,Date,Math,Number,String,Promise,
  state:{cards,loans:[{card_id:'c',returned:null}]},dialogHtml:'',renderCount:0,
  I18n:{text:s=>s,language:()=> 'da'},
- ui:(s,values={})=>s.replace(/\\{(\\w+)\\}/g,(_,k)=>values[k]??''),
+ ui:(s,values={})=>s.replace(/\{(\w+)\}/g,(_,k)=>values[k]??''),
  esc:s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'),
  openDialog(html){c.dialogHtml=html;},
  render(){c.renderCount++;},
