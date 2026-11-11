@@ -45,7 +45,7 @@ const S12Layout = {
  // Disable printing if an offset would clip a field or overlap other variable content.
  fits(front){
   if(!front)return true;
-  const mm=front.clientWidth/(parseFloat(front.style.width)||146),rect=front.getBoundingClientRect();
+  const mm=front.clientWidth/Number(front.closest('.sheet')?.dataset.widthMm||146),rect=front.getBoundingClientRect();
   const parts=this.fields.map(key=>front.querySelector(key==='qr'?'.cardQR':'.'+key)).filter(Boolean);
   const bounds=parts.map(node=>node.getBoundingClientRect());
   if(bounds.some(b=>b.left<rect.left+mm*1.5-1||b.right>rect.right-mm*1.5+1||b.top<rect.top+mm*1.5-1||b.bottom>rect.bottom-mm*1.5+1))return false;
