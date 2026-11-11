@@ -73,6 +73,8 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_demo_browser.cjs
       - name: Offline geographic editor browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
+      - name: Responsive S-13 and synthetic mobile OSM failures (Chromium / WebKit)
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_report_mobile_browser.cjs
       - name: Original-size IB cards, pagination and A4/cut PDF checks
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_ib_print_browser.cjs
       - name: Unified setup and required tour browser workflows
