@@ -12,6 +12,7 @@ from pathlib import Path
 from geo_store import GeoStore
 from admin_store import AdminStore
 from workflow_store import WorkflowStore
+from followup_store import FollowupStore
 from setup_store import SetupStore
 from ui_errors import UIError
 
@@ -47,7 +48,7 @@ def clean_text(value, maxlen=100, required=False):
         raise ValueError('Udfyld det krævede felt.')
     return value
 
-class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
+class Store(SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
     def __init__(self, root):
         self.geo_generation=0
         self.workflow_init()
@@ -220,6 +221,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
             result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
+            result['followup_ignores'] = [x for x in self.all('settings') if x.get('entity') == 'followup_ignore']
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
             from redistribution import planning_date
             for c in result['cards']:
@@ -294,6 +296,11 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self._tracking={}
             try:
                 if review:data=review.prepare(self,action,data)
+                if action == 'followup.ignore':
+                    # Identity is trusted only from the authenticated profile session.
+                    # Client-supplied actor fields are never accepted.
+                    data = {**data, '_actor_id':review.actor if review else None,
+                            '_actor_name':getattr(review,'actor_name','') if review else ''}
                 result = self._mutate(action, data)
                 self.onboarding_after_write(action,data)
                 touched=self._tracking
@@ -321,6 +328,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         return result
 
     def _mutate(self, action, data, *, geographic=False):
+        if action == 'followup.ignore':return self.followup_mutate(data)
         if action.startswith('setup.'):return self.setup_mutate(action,data)
         if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete'):
             return self.workflow_mutate(action,data)
