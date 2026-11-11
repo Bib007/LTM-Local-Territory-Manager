@@ -85,7 +85,10 @@ const SplitSuggestions={
   if(!Array.isArray(rows)||!rows.length||rows.some(r=>r.count_unknown||!Number.isSafeInteger(r.count)||r.count<0))return null;
   const count=rows.reduce((sum,r)=>sum+r.count,0);return Number.isSafeInteger(count)?count:null;
  },
- plan(cards,loans,target,boxOnly=true){
+ fingerprint(c,target){return JSON.stringify([c.id,c.number,this.count(c),target,[...(c.address_ids||[])].sort()]);},
+ ignored(){return state?.settings?.split_suggestion_ignored||{};},
+ visitLimit(){const n=state?.settings?.split_visit_limit;return Number.isInteger(n)&&n>=1&&n<=1000?n:50;},
+ plan(cards,loans,target,boxOnly=true,ignored={}){
   if(!Number.isInteger(target)||target<1||target>1000)throw Error('Vælg et helt antal fra 1 til 1.000.');
   const active=new Set(loans.filter(l=>!l.returned).map(l=>l.card_id));
   const live=cards.filter(c=>!c.archived),ownership=new Map();
@@ -99,7 +102,8 @@ const SplitSuggestions={
    return [c.id,{c,count,units,duplicate,exact,roads:new Set(units.filter(a=>typeof a.road==='string'&&a.road.trim()&&typeof a.postcode==='string'&&a.postcode.trim()).map(a=>JSON.stringify([a.road,a.postcode])))}];
   }));
   const pool=[...metadata.values()].filter(m=>!m.c.interim_transfer&&(!boxOnly||inBox(m.c)));
-  const oversized=pool.filter(m=>m.count!==null&&m.count>target).sort((a,b)=>b.count-a.count||cmp(a.c.number,b.c.number));
+  const candidates=pool.filter(m=>m.count!==null&&m.count>target);
+  const oversized=candidates.filter(m=>ignored[m.c.id]?.fingerprint!==this.fingerprint(m.c,target)).sort((a,b)=>b.count-a.count||cmp(a.c.number,b.c.number));
   const choose=(units,limit)=>{
    const chosen=[];let count=0;
    for(const a of [...units].sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.id,b.id)))if(a.count>0&&count+a.count<=limit){chosen.push(a);count+=a.count;}
@@ -119,24 +123,37 @@ const SplitSuggestions={
    }
    return result;
   });
-  return {suggestions,total:oversized.length,unknown:pool.filter(m=>m.count===null).length};
+  return {suggestions,total:oversized.length,ignored:candidates.length-oversized.length,unknown:pool.filter(m=>m.count===null).length};
  },
- entry(){return this.available()?`<div class="notice"><h3>${ui('Opdelingsforslag')}</h3><p>${ui('Forslag ud fra indlæste besøgstal. Ingen kort, adresser, datoer eller udleveringer ændres.')}</p><button data-split-suggestions="open">${ui('Se manuelle opdelingsforslag')}</button></div>`:'';},
+ entry(){
+  if(!this.available())return '';
+  const limit=this.visitLimit(),report=this.plan(state.cards||[],state.loans||[],limit,false,this.ignored());
+  return `<div class="notice" role="status"><h3>${ui('Opdelingsforslag')}</h3><p>${ui('{count} distriktskort overstiger den fastsatte grænse på {limit} besøg.',{count:report.total,limit})} ${report.ignored?ui('{count} forslag er skjult efter vurdering.',{count:report.ignored}):''}</p><button data-split-suggestions="open">${ui('Se manuelle opdelingsforslag')}</button></div>`;
+ },
  async open(){
   if(!this.available())return;await closeRequested();if(el('dialog').open)return;
-  try{const options=JSON.parse(localStorage.getItem('ltm-split-suggestions'));if(Number.isInteger(options?.target)&&options.target>=1&&options.target<=1000)this.target=options.target;if(typeof options?.boxOnly==='boolean')this.boxOnly=options.boxOnly;}catch{}
-  openDialog(`<h2>${ui('Opdelingsforslag')}</h2><p>${ui('Forslag ud fra indlæste besøgstal. Ingen kort, adresser, datoer eller udleveringer ændres.')}</p><label for="splitTarget">${ui('Ca. besøg pr. kort')}</label><input id="splitTarget" type="number" min="1" max="1000" step="1" value="${this.target}"><label class="check"><input id="splitBoxOnly" type="checkbox" ${this.boxOnly?'checked':''}>${ui('Kun kort i kassen')}</label><p class="hint">${ui('Målet og filteret huskes i denne browser.')}</p><p class="hint">${ui('Kort i mappen og udleverede kort er skjult, når kassefilteret er valgt. Modtagerkort skal altid være hjemme.')}</p><div id="splitSuggestionResults" aria-live="polite"></div><p class="hint">${ui('Alternativerne skal vurderes hver for sig. Kontrollér geografien og genberegn efter en ændring.')}</p><p class="notice">${ui('Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.')}</p><p class="hint">${ui('Historik bevares på de oprindelige kort. Et nyt kort får ingen opdigtet gennemgang og skal kontrolleres og genprintes.')}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
+  this.target=this.visitLimit();
+  try{const options=JSON.parse(localStorage.getItem('ltm-split-suggestions'));if(typeof options?.boxOnly==='boolean')this.boxOnly=options.boxOnly;}catch{}
+  openDialog(`<h2>${ui('Opdelingsforslag')}</h2><p>${ui('Forslag ud fra indlæste besøgstal. Ingen kort, adresser, datoer eller udleveringer ændres.')}</p><label for="splitTarget">${ui('Ca. besøg pr. kort')}</label><input id="splitTarget" type="number" min="1" max="1000" step="1" value="${this.target}" readonly><label class="check"><input id="splitBoxOnly" type="checkbox" ${this.boxOnly?'checked':''}>${ui('Kun kort i kassen')}</label><p class="hint">${ui('Besøgsgrænsen fastsættes under Indstillinger → Menighed og mappe. Kun kassefilteret huskes i browseren.')}</p><p class="hint">${ui('Kort i mappen og udleverede kort er skjult, når kassefilteret er valgt. Modtagerkort skal altid være hjemme.')}</p><div id="splitSuggestionResults" aria-live="polite"></div><p class="hint">${ui('Alternativerne skal vurderes hver for sig. Kontrollér geografien og genberegn efter en ændring.')}</p><p class="notice">${ui('Datoen styrer kortets alder i planlægningen. Gennemgange og S-13-historik ændres ikke.')}</p><p class="hint">${ui('Historik bevares på de oprindelige kort. Et nyt kort får ingen opdigtet gennemgang og skal kontrolleres og genprintes.')}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
   this.paint();
  },
  addresses(units){return `<details><summary>${ui('Se foreslåede adresser')}</summary><ul>${units.map(a=>`<li style="overflow-wrap:anywhere">${esc(a.label||[a.road,a.number,a.floor,a.door].filter(Boolean).join(' '))} · ${esc(a.count)}</li>`).join('')}</ul></details>`;},
  paint(){
   const node=el('splitSuggestionResults');if(!node||!this.available())return;
   const value=el('splitTarget').value;this.target=value.trim()?Number(value):NaN;this.boxOnly=el('splitBoxOnly').checked;
-  try{this.current=this.plan(state.cards||[],state.loans||[],this.target,this.boxOnly);}catch{this.current=null;node.innerHTML=`<p role="alert">${ui('Vælg et helt antal fra 1 til 1.000.')}</p>`;return;}
-  try{localStorage.setItem('ltm-split-suggestions',JSON.stringify({target:this.target,boxOnly:this.boxOnly}));}catch{}
+  try{this.current=this.plan(state.cards||[],state.loans||[],this.target,this.boxOnly,this.ignored());}catch{this.current=null;node.innerHTML=`<p role="alert">${ui('Vælg et helt antal fra 1 til 1.000.')}</p>`;return;}
+  try{localStorage.setItem('ltm-split-suggestions',JSON.stringify({boxOnly:this.boxOnly}));}catch{}
   this.revision=state.revision;
   const list=this.current.suggestions;
-  node.innerHTML=`${this.pendingHTML()}<p>${ui('Viser {shown} af {total} kort over målet.',{shown:list.length,total:this.current.total})}</p><p class="hint">${ui('{count} kort har ukendt eller ugyldigt besøgstal og bruges ikke i beregningen.',{count:this.current.unknown})} ${ui('Besøgstal er skøn, ikke registrerede husbesøg.')}</p>${list.map(m=>`<section class="panel" data-split-card="${esc(m.c.id)}"><h3>${ui('Kort')} ${esc(m.c.number)} · ${esc(m.count)}</h3><p style="overflow-wrap:anywhere">${esc(m.c.name||'')}</p><p>${m.parts>1?ui('Forslag: cirka {parts} kort med {count} besøg pr. kort.',{parts:m.parts,count:Math.round(m.count/m.parts)}):ui('Et ekstra kort alene vil give for små kort. Undersøg manuel omfordeling.')}</p>${m.issued||m.c.in_folder?`<p class="notice">${ui(m.issued?'Udleveret kort · planlæg først ændringen, når kortet er afleveret.':'Begge kort skal være færdige, afleverede og ligge i kassen.')}</p>`:m.duplicate?`<p class="notice">${ui('Dublerede adressevalg skal afklares før opdeling.')}</p>`:!m.exact||m.c.temporary?`<p class="hint">${ui('Præcist adressevalg mangler eller stemmer ikke med besøgstallet. Intet adressevalg gættes.')}</p>`:''}${m.split?`<p>${ui('Muligt nyt kort: {count} besøg · tilbage på kortet: {remaining}.',{count:m.split.count,remaining:m.count-m.split.count})}</p>${this.addresses(m.split.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="split" data-id="${esc(m.c.id)}">${ui('Gennemgå opdeling til nyt kort')}</button>`:''}`:''}${m.moves.map(move=>`<div class="notice"><p>${ui('Mulig omfordeling til kort {number}: {count} besøg · forventede skøn {source} / {target}.',{number:move.target.number,count:move.count,source:move.sourceCount,target:move.targetCount})}</p><p class="hint">${ui('Samme område, type og vejnavn. Det er ikke en kontrol af geografisk sammenhæng.')}</p>${this.addresses(move.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="transfer" data-id="${esc(m.c.id)}" data-target="${esc(move.target.id)}">${ui('Flyt adresser til kortet')}</button>`:''}<button data-split-suggestions="card" data-id="${esc(move.target.id)}">${ui('Åbn modtagerkort')}</button></div>`).join('')}<button data-split-suggestions="card" data-id="${esc(m.c.id)}">${ui('Åbn kort')}</button></section>`).join('')||`<p>${ui('Ingen kort over målet i denne visning.')}</p>`}`;
+  node.innerHTML=`${this.pendingHTML()}${this.ignoredHTML()}<p>${ui('Viser {shown} af {total} kort over målet.',{shown:list.length,total:this.current.total})}</p><p class="hint">${ui('{count} kort har ukendt eller ugyldigt besøgstal og bruges ikke i beregningen.',{count:this.current.unknown})} ${ui('Besøgstal er skøn, ikke registrerede husbesøg.')}</p>${list.map(m=>`<section class="panel" data-split-card="${esc(m.c.id)}"><h3>${ui('Kort')} ${esc(m.c.number)} · ${esc(m.count)}</h3><p style="overflow-wrap:anywhere">${esc(m.c.name||'')}</p><p>${m.parts>1?ui('Forslag: cirka {parts} kort med {count} besøg pr. kort.',{parts:m.parts,count:Math.round(m.count/m.parts)}):ui('Et ekstra kort alene vil give for små kort. Undersøg manuel omfordeling.')}</p>${m.issued||m.c.in_folder?`<p class="notice">${ui(m.issued?'Udleveret kort · planlæg først ændringen, når kortet er afleveret.':'Begge kort skal være færdige, afleverede og ligge i kassen.')}</p>`:m.duplicate?`<p class="notice">${ui('Dublerede adressevalg skal afklares før opdeling.')}</p>`:!m.exact||m.c.temporary?`<p class="hint">${ui('Præcist adressevalg mangler eller stemmer ikke med besøgstallet. Intet adressevalg gættes.')}</p>`:''}${m.split?`<p>${ui('Muligt nyt kort: {count} besøg · tilbage på kortet: {remaining}.',{count:m.split.count,remaining:m.count-m.split.count})}</p>${this.addresses(m.split.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="split" data-id="${esc(m.c.id)}">${ui('Gennemgå opdeling til nyt kort')}</button>`:''}`:''}${m.moves.map(move=>`<div class="notice"><p>${ui('Mulig omfordeling til kort {number}: {count} besøg · forventede skøn {source} / {target}.',{number:move.target.number,count:move.count,source:move.sourceCount,target:move.targetCount})}</p><p class="hint">${ui('Samme område, type og vejnavn. Det er ikke en kontrol af geografisk sammenhæng.')}</p>${this.addresses(move.units)}${!state.profile||ProfilesUI.canAction('card.restructure.preview')?`<button data-split-suggestions="transfer" data-id="${esc(m.c.id)}" data-target="${esc(move.target.id)}">${ui('Flyt adresser til kortet')}</button>`:''}<button data-split-suggestions="card" data-id="${esc(move.target.id)}">${ui('Åbn modtagerkort')}</button></div>`).join('')}${!state.profile||ProfilesUI.canAction('split.suggestion.ignore')?`<button data-split-suggestions="ignore" data-id="${esc(m.c.id)}">${ui('Se bort fra forslag')}</button>`:''}<button data-split-suggestions="card" data-id="${esc(m.c.id)}">${ui('Åbn kort')}</button></section>`).join('')||`<p>${ui('Ingen kort over målet i denne visning.')}</p>`}`;
+ },
+ ignoredHTML(){
+  const records=Object.entries(this.ignored());
+  if(!records.length)return '';
+  return `<details><summary>${ui('Skjulte forslag')} (${records.length})</summary>${records.map(([id,record])=>{
+   const c=card(id);
+   return `<div class="line"><div><strong>${ui('Kort')} ${esc(c?.number||'—')}</strong><p class="hint">${esc(record.reason||'')}${!c?' · '+ui('Kortet findes ikke længere.'):''}</p></div>${!state.profile||ProfilesUI.canAction('split.suggestion.restore')?`<button data-split-suggestions="restore" data-id="${esc(id)}">${ui('Gendan forslag')}</button>`:''}</div>`;
+  }).join('')}</details>`;
  },
  effectiveDate(c){
   if(typeof c.planning_date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.planning_date))return c.planning_date;
@@ -162,6 +179,20 @@ const SplitSuggestions={
   if(action==='open')return this.open();if(!this.available()||!el('splitSuggestionResults'))return;
   if(this.revision!==state.revision){this.paint();toast('Oversigten er ændret. Gennemgå de opdaterede forslag igen.');return;}
   if(action==='card'){if(card(id))detail(id);return;}
+  if(action==='restore'){
+   if(state.profile&&!ProfilesUI.canAction('split.suggestion.restore'))return;
+   await mutate('split.suggestion.restore',{card_id:id},{message:'Opdelingsforslag gendannet'});
+   return;
+  }
+  if(action==='ignore'){
+   if(state.profile&&!ProfilesUI.canAction('split.suggestion.ignore'))return;
+   const proposal=this.current?.suggestions.find(m=>m.c.id===id);if(!proposal)return;
+   const reason=window.prompt(I18n.text('Hvorfor skal dette forslag ignoreres?'), '');
+   if(reason===null)return;
+   if(!reason.trim()||reason.trim().length>300)throw Error('Skriv en begrundelse på 1–300 tegn.');
+   await mutate('split.suggestion.ignore',{card_id:id,reason:reason.trim(),fingerprint:this.fingerprint(proposal.c,this.target)},{message:'Forslag markeret Se bort fra'});
+   return;
+  }
   if(action==='finalize'){const source=card(id),target=card(source?.interim_transfer?.target_id);if(!state.profile||ProfilesUI.canAction('card.restructure.preview'))this.transferForm(source,target,source?.geo_addresses||[],true);return;}
   const proposal=this.current?.suggestions.find(m=>m.c.id===id);
   if(action==='transfer'){const move=proposal?.moves.find(m=>m.target.id===targetId);if(move&&(!state.profile||ProfilesUI.canAction('card.restructure.preview')))this.transferForm(proposal.c,move.target,move.units);return;}
@@ -173,7 +204,7 @@ const SplitSuggestions={
  }
 };
 document.addEventListener('click',event=>{const b=event.target.closest('[data-split-suggestions]');if(!b)return;event.preventDefault();SplitSuggestions.handle(b.dataset.splitSuggestions,b.dataset.id,b.dataset.target).catch(error=>toast(error));});
-document.addEventListener('input',event=>{if(event.target.id==='splitTarget')SplitSuggestions.paint();});
+// The congregation threshold is read-only here; changing it requires settings.manage.
 document.addEventListener('change',event=>{if(event.target.id==='splitBoxOnly')SplitSuggestions.paint();});
 
 document.addEventListener('change',event=>{const f=event.target.form;if(event.target.id!=='transferPolicy'||f?.dataset.workForm!=='redistribute')return;const interim=event.target.value==='interim';f.querySelector('#interimTransferFields').hidden=!interim;f.elements.interim_number.required=interim;});
