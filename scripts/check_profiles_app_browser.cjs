@@ -148,6 +148,13 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=connections]').click();
   await admin.locator('#driveConnection').waitFor();assert.equal(await admin.locator('[data-profile=activate]').count(),0);assert.equal(await admin.locator('#profileUser').isVisible(),false);
   await admin.locator('[data-work=settings-tab][data-value=data]').click();
+  assert.equal((await admin.locator('[data-publisher-total]').innerText()).trim(),'2','Moving to another group keeps the total');
+  assert.equal((await admin.locator('[data-publisher-visible]').innerText()).trim(),'1','Moving to another group updates the filtered count');
+  for(const width of [390,768,1440]){
+   await admin.setViewportSize({width,height:900});
+   assert.ok(await admin.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Publisher groups must not cause horizontal overflow at '+width+'px');
+   assert.equal(await admin.locator('.publisherGroup').count(),1,'Group remains visible at '+width+'px');
+  }
   await admin.setViewportSize({width:390,height:900});
   await admin.waitForFunction(()=>document.querySelector('aside').getBoundingClientRect().right<=1);
   await admin.locator('#runtimePanel').waitFor();
@@ -241,7 +248,13 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('#publisherImportConfirm').fill('IMPORTÉR GRUPPER');await admin.locator('[data-publisher-import=apply]').click();
   await admin.waitForFunction(()=>state.publishers.length===2&&!document.querySelector('#dialog').open);
   assert.equal(await admin.evaluate(()=>state.publishers.find(p=>p.name==='Fiktiv Gruppe A').group_role),'overseer');
+  assert.equal((await admin.locator('[data-publisher-total]').innerText()).trim(),'2','Total counts all imported fictional publishers');
+  assert.equal((await admin.locator('[data-publisher-visible]').innerText()).trim(),'2','All-view count includes both groups');
+  assert.equal(await admin.locator('.publisherGroup').count(),2,'All-view groups are separated');
   await admin.locator('#publisherGroupFilter').selectOption('group:gruppe 01');
+  assert.equal((await admin.locator('[data-publisher-total]').innerText()).trim(),'2');
+  assert.equal((await admin.locator('[data-publisher-visible]').innerText()).trim(),'1');
+  assert.equal(await admin.locator('.publisherGroup').count(),1);
   assert.ok((await admin.locator('#app').innerText()).includes('Pioner'));
   const person=await admin.evaluate(()=>state.publishers.find(p=>p.name==='Fiktiv Gruppe A').id);
   await admin.locator('[data-action=publisher][data-id="'+person+'"]').click();
