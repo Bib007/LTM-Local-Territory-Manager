@@ -3,6 +3,7 @@
 const I18n={
  current:'en',
  english:{
+  "Det interne nummer findes allerede (evt. i 48-timers gendannelse).":"The internal identifier already exists (possibly in the 48-hour recovery list).",
   "Du er ansvarlig for 1 åben opgave":"You are responsible for 1 open task",
   "Du er ansvarlig for {count} åbne opgaver":"You are responsible for {count} open tasks",
   "Se mine opgaver":"View my tasks",
