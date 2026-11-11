@@ -3,6 +3,16 @@
 const I18n={
  current:'en',
  english:{
+  "S-12 · justér tekst og QR":"S-12 · adjust text and QR",
+  "Placering måles i mm fra skabelonens oprindelige position (højre/ned = positiv). Tekst kan skaleres 95–105 %. QR-størrelsen fastholdes af hensyn til læsbarheden. Indstillinger gemmes kun for dette formularsprog i denne menighed.":"Positions are measured in millimetres from the template's original placement (right/down is positive). Text may be scaled 95–105%. QR size stays fixed for readability. Settings are saved only for this form language in this congregation.",
+  "Nulstil S-12-felter":"Reset S-12 fields",
+  "Se A4-prøven i 100 %, kontrollér skabelonens faste felter og scan QR-koden før endeligt print.":"View the A4 proof at 100%, check the template's fixed fields, and scan the QR code before final printing.",
+  "Distriktets navn":"Territory name",
+  "Vej- og adresselinjer":"Street and address lines",
+  "Vandret, mm":"Horizontal, mm",
+  "Lodret, mm":"Vertical, mm",
+  "Tekststørrelse":"Text size",
+  "S-12: højst ±2 mm, tekst 95–105 %.":"S-12: at most ±2 mm, text scale 95–105%.",
   "Ugyldig S-12-skabelon.":"Invalid S-12 template.",
   "Kontrollér S-12-felterne.":"Check the S-12 fields.",
   "Kontrollér S-12-positionerne.":"Check the S-12 positions.",
