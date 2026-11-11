@@ -3,6 +3,18 @@
 const I18n={
  current:'en',
  english:{
+  "Prøv igen":"Try again",
+  "Forbereder kortbilledet…":"Preparing card image…",
+  "Genererer kortbilledet…":"Generating card image…",
+  "Gemmer godkendelsen i uploadkøen…":"Saving approval to the upload queue…",
+  "Venter på at Google-upload starter":"Waiting for Google Drive upload to start",
+  "Uploader til Google Drive…":"Uploading to Google Drive…",
+  "Uploader til Google Drive":"Uploading to Google Drive",
+  "Færdig · forhåndsvisningen er klar (ikke uploadet)":"Done · preview is ready (not uploaded)",
+  "Færdig · Google Drive har bekræftet uploaden":"Done · Google Drive confirmed the upload",
+  "Handlingen kunne ikke gennemføres":"The operation could not be completed",
+  "Kortbilledet kunne ikke dannes.":"Could not generate the card image.",
+  "Uploaden blev afbrudt. Kontrollér forbindelsen, og prøv igen.":"The upload was interrupted. Check your connection and try again.",
   "Du er ansvarlig for 1 åben opgave":"You are responsible for 1 open task",
   "Du er ansvarlig for {count} åbne opgaver":"You are responsible for {count} open tasks",
   "Se mine opgaver":"View my tasks",
