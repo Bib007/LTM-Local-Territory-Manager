@@ -76,6 +76,7 @@ GROUPS={
  ('cards.view','cards.edit'):'card.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit revision.approve revision.approve_many',
  ('cards.view','geo.view','geo.edit','cards.edit'):'geo.assign geo.boundary geo.preview map.save map.outline card.restructure.preview card.restructure.apply',
  ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune geo.main.download.save geo.main.download.tile geo.main.import.preview ignore.save address.change.review',
+ ('cards.view','geo.view','geo.edit'):'followup.ignore',
  ('connections.manage',):'geo.token',
  ('cards.view','loans.view','loans.manage'):'folder.set folder.set_many loan.issue loan.finish',
  ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct',
@@ -181,11 +182,13 @@ def state_for(raw,user):
         for key in ('last_backup','backup_snoozed_until','backup_history'):result['settings'].pop(key,None)
     result['backup_status']=({'last_day':raw['backup_last_day'],'snoozed_until':raw['settings'].get('backup_snoozed_until')} if 'backup.notify' in p else None)
     result['areas']=[{k:deepcopy(v) for k,v in r.items() if k in ('id','name')} for r in raw['areas']] if 'cards.view' in p else []
-    result.update(ignored=[],maps=[],recovery=[],public_maps=[],geo_info={},address_task={},backup_last_day=None,undo_available=False)
+    result.update(ignored=[],followup_ignores=[],maps=[],recovery=[],public_maps=[],geo_info={},address_task={},backup_last_day=None,undo_available=False)
     if 'geo.view' in p:
         result['geo_info']=deepcopy(raw['geo_info'])
         result['ignored']=[{k:deepcopy(v) for k,v in r.items() if k in ('id','address_id','label','reason','date')} for r in raw['ignored']]
-    if {'cards.view','geo.view'}<=p:result['maps']=deepcopy(raw['maps'])
+    if {'cards.view','geo.view'}<=p:
+        result['maps']=deepcopy(raw['maps'])
+        result['followup_ignores']=[{k:deepcopy(v) for k,v in row.items() if k in ('key','ignored','token','history')} for row in raw['followup_ignores']]
     result['loan_delete_tokens']={loan['id']:raw.get('loan_delete_tokens',{}).get(loan['id'],'') for loan in result['loans']}
     if 'sharing.manage' in p:result['public_maps']=deepcopy(raw['public_maps'])
     if 'settings.manage' in p:

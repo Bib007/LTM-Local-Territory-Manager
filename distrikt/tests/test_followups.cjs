@@ -41,6 +41,28 @@ run(`state={today:'2026-10-23',cards:[
  const overlapHTML=run('Workspace.followupItems().filter(r=>r.relatedCard).map(r=>Workspace.followupRow(r)).join("")');
  assert.match(overlapHTML,/data-id="one"/);assert.match(overlapHTML,/data-id="two"/);assert.doesNotMatch(overlapHTML,/data-action="approve"/);
  for(const lang of ['da','en']){run(`I18n.set('${lang}');Workspace.followupQuery='Related <fictional>'`);assert.match(run('Workspace.followups()'),/Grænsen overlapper|The boundary overlaps/);}
+ // Only explicitly selected, non-critical overlaps can be dismissed.
+ const overlapKey=run('Workspace.followupItems().find(r=>r.relatedCard).key');
+ const initial=run('Workspace.followupItems().length');
+ const criticalHTML=run("Workspace.followupItems().filter(r=>r.side||r.change||r.loan).map(r=>Workspace.followupRow(r)).join('')");
+ assert.doesNotMatch(criticalHTML,/data-work="followup-ignore"/,'Critical reprint, loan and address items cannot be dismissed');
+ await run(`Workspace.handle('followup-ignore',{key:${JSON.stringify(overlapKey)},value:'ignore'})`);
+ assert.equal(writes.at(-1).action,'followup.ignore');
+ assert.deepEqual(JSON.parse(JSON.stringify(writes.at(-1).data)),{key:overlapKey,ignored:true,expected_token:''});
+ run(`state.followup_ignores=[{key:${JSON.stringify(overlapKey)},ignored:true,token:'fake-token',history:[{ignored:true,at:'2026-10-23T12:00:00Z',actor_name:'Fiktiv bruger'}]}]`);
+ assert.equal(run('Workspace.followupItems().length'),initial-1);
+ assert.equal(run('Workspace.followupItems(true).filter(r=>r.ignored).length'),1);
+ run("Workspace.followupFilter='ignored';Workspace.followupQuery=''");
+ const ignoredHTML=run('Workspace.followups()');
+ assert.equal((ignoredHTML.match(/data-followup=/g)||[]).length,1);
+ assert.match(ignoredHTML,/data-work="followup-ignore"/);
+ assert.match(ignoredHTML,/Fiktiv bruger/);
+ assert.match(ignoredHTML,/fake-token/);
+ assert.match(run('Navigation.html()'),new RegExp('navFollowupCount[^>]*>'+String(initial-1)+'</span>'));
+ await run(`Workspace.handle('followup-ignore',{key:${JSON.stringify(overlapKey)},value:'activate'})`);
+ assert.deepEqual(JSON.parse(JSON.stringify(writes.at(-1).data)),{key:overlapKey,ignored:false,expected_token:'fake-token'});
+ run("state.followup_ignores[0].ignored=false;Workspace.followupFilter='checks'");
+ assert.equal(run('Workspace.followupItems().length'),initial,'Reactivated overlap returns to active list and badge');
  run("state.cards[0].geo_polygon=[[11,55],[11.01,55],[11,55.01]]");assert.equal(run('Workspace.followupItems().filter(r=>r.relatedCard).length'),0);
  // A late geographic load cannot navigate away from a newer page or dialog.
  let release;c.pending=new Promise(r=>release=r);run("GeoUI.load=()=>pending;page='Forside'");let waiting=run("Workspace.openFollowups('checks')");await new Promise(r=>setImmediate(r));run("page='Opgaver'");release();await waiting;assert.equal(run('page'),'Opgaver');
