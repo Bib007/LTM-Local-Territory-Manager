@@ -17,7 +17,7 @@ await row.getByRole('checkbox').check();
 await page.getByRole('button',{name:'Læg 1 i mappen',exact:true}).click();
 await page.getByRole('button',{name:'Bekræft og læg 1 i mappen',exact:true}).click();
 await page.waitForFunction(id=>card(id).in_folder,cardId);
-await page.locator('#dialog [data-action="close"]').click();
+await page.locator('#dialog [data-action="close"]').last().click();
 await row.getByRole('checkbox').check();
 await page.getByRole('button',{name:'Flyt 1 til kassen',exact:true}).click();
 await page.waitForFunction(id=>!card(id).in_folder,cardId);
