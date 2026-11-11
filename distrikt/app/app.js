@@ -324,7 +324,7 @@ function publisherOverviewCard(p){
   +'<div class="publisherItemLoans"><small>'+ui('Kortnumre')+'</small><div>'+(
    active.map(l=>'<button data-action="detail" data-id="'+esc(l.card_id)+'">'+ui('Nr.')+' '+esc(card(l.card_id)?.number)+'</button>').join(' ')||'—'
   )+'</div></div>'
-  +'<div class="publisherItemActions"><button data-action="publisher-profile" data-id="'+esc(p.id)+'">'+ui('Kort og historik')+'</button><button data-action="publisher" data-id="'+esc(p.id)+'">'+ui('Rediger forkynder')+'</button></div></article>';
+  +'<div class="publisherItemActions"><button data-action="publisher-profile" data-id="'+esc(p.id)+'">'+ui('Kort og historik')+'</button><button data-action="publisher" data-id="'+esc(p.id)+'">'+ui('Rediger forkynder')+'</button><button class="danger" data-action="delete" data-module="publishers" data-id="'+esc(p.id)+'">'+ui('Slet forkynder')+'</button></div></article>';
 }
 function publishersPage(){
  // No separate person cache, public endpoint or group table: show only the authorized state snapshot.
@@ -349,7 +349,7 @@ function publishersPage(){
 function publisherProfile(id){
  const p=state.publishers.find(p=>p.id===id);if(!p)return;
  const active=state.loans.filter(l=>l.publisher_id===id&&!l.returned).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number)),history=state.loans.filter(l=>l.publisher_id===id&&l.returned).sort((a,b)=>cmp(b.assigned,a.assigned));
- openDialog(`<h2>${esc(p.name)}</h2>${publisherGroupInfo(p)}${publisherGuidanceDisplay(p)}<div class="actions"><button data-action="publisher" data-id="${id}">${ui('Rediger forkynder')}</button></div><h3>${ui('Aktuelle kort')}</h3>${active.map(l=>`<div class="line"><span><button class="link" data-action="detail" data-id="${l.card_id}"><b>${ui('Kort')} ${esc(card(l.card_id)?.number)}</b></button><br><small>${esc(areaName(card(l.card_id)?.area_id))} · ${ui('Udleveret')} ${fmt(l.assigned)}</small></span><div><button data-action="complete" data-id="${l.id}">${ui('Gennemgået')}</button> <button data-action="return" data-id="${l.id}">${ui('Aflever')}</button></div></div>`).join('')||`<p class="hint">${ui('Ingen udleverede distriktskort.')}</p>`}<h3>${ui('Tidligere udleveringer')}</h3>${history.map(l=>`<div class="line"><span>${ui('Kort')} ${esc(card(l.card_id)?.number)}<br><small>${fmt(l.assigned)} – ${fmt(l.returned)}</small></span><button data-action="detail" data-id="${l.card_id}">${ui('Åbn kort')}</button></div>`).join('')||`<p class="hint">${ui('Ingen afsluttede udlån registreret.')}</p>`}<div class="actions"><button data-action="close">${ui('Luk')}</button></div>`,I18n.language());
+ openDialog(`<h2>${esc(p.name)}</h2>${publisherGroupInfo(p)}${publisherGuidanceDisplay(p)}<div class="actions"><button data-action="publisher" data-id="${esc(id)}">${ui('Rediger forkynder')}</button><button class="danger" data-action="delete" data-module="publishers" data-id="${esc(id)}">${ui('Slet forkynder')}</button></div><h3>${ui('Aktuelle kort')}</h3>${active.map(l=>`<div class="line"><span><button class="link" data-action="detail" data-id="${l.card_id}"><b>${ui('Kort')} ${esc(card(l.card_id)?.number)}</b></button><br><small>${esc(areaName(card(l.card_id)?.area_id))} · ${ui('Udleveret')} ${fmt(l.assigned)}</small></span><div><button data-action="complete" data-id="${l.id}">${ui('Gennemgået')}</button> <button data-action="return" data-id="${l.id}">${ui('Aflever')}</button></div></div>`).join('')||`<p class="hint">${ui('Ingen udleverede distriktskort.')}</p>`}<h3>${ui('Tidligere udleveringer')}</h3>${history.map(l=>`<div class="line"><span>${ui('Kort')} ${esc(card(l.card_id)?.number)}<br><small>${fmt(l.assigned)} – ${fmt(l.returned)}</small></span><button data-action="detail" data-id="${l.card_id}">${ui('Åbn kort')}</button></div>`).join('')||`<p class="hint">${ui('Ingen afsluttede udlån registreret.')}</p>`}<div class="actions"><button data-action="close">${ui('Luk')}</button></div>`,I18n.language());
 }
 function yearBounds(){return [`${year-1}-09-01`,`${year}-08-31`<state.today?`${year}-08-31`:state.today];}
 function eventsInYear(){const [a,b]=page==='Rapporter'?Workspace.periodBounds():yearBounds();return state.completions.filter(e=>e.date>=a&&e.date<=b);}
@@ -458,7 +458,19 @@ function confirmLoanDelete(loan){
  const location=loan.returned?'':`<label for="deleteLoanLocation">${ui('Hvor ligger det fysiske kort?')}</label><select id="deleteLoanLocation" name="location" required><option value="">${ui('Vælg placering')}</option><option value="folder">${ui('Kort i mappen')}</option><option value="box">${ui('Kort i kassen')}</option></select>`;
  openDialog(`<h2>${ui('Slet fejlagtig udlevering?')}</h2><p><b>${ui('Kort')} ${esc(territory.number)}</b>${territory.name?' · '+esc(territory.name):''}${territory.archived?' · '+ui('arkiveret efter sammenlægning'):''}<br>${ui('Forkynder')}: ${esc(publisherName(loan.publisher_id,I18n.text('Ukendt')))}<br>${ui('Udleveret')} ${fmt(loan.assigned)} · ${status}</p><p>${ui('Udleveringen fjernes. Registrerede gennemgange og noter bevares.')}</p><form id="deleteLoanForm" data-id="${esc(loan.id)}" data-history-revision="${esc(historyRevision)}" data-history-token="${esc(state.loan_delete_tokens?.[loan.id]||'')}">${location}<p class="hint">${ui(deleteRecoveryHint)}</p><div id="formError" class="formError" role="alert"></div><div class="actions"><button class="danger">${ui('Slet udlevering')}</button><button type="button" data-action="close">${ui('Annuller')}</button></div></form>`,I18n.language());
 }
+function confirmPublisherDelete(id){
+ const p=state.publishers.find(p=>p.id===id);if(!p)return;
+ if(state.profile&&!ProfilesUI.canAction('delete',{module:'publishers'}))return;
+ const related=state.loans.filter(l=>l.publisher_id===id);
+ if(related.length){
+  openDialog('<h2>'+ui('Forkynderen kan ikke slettes')+'</h2><p><b>'+esc(p.name)+'</b></p><p>'+ui('Forkynderen har registrerede udleveringer eller historik. Behold forkynderen for at bevare rapporterne.')+'</p><div class="actions"><button data-action="close">'+ui('Luk')+'</button></div>',I18n.language());
+  return;
+ }
+ const expected={name:p.name,group:p.group||'',group_role:p.group_role||'',pioneer:p.pioneer===true};
+ openDialog('<h2>'+ui('Slet forkynder?')+'</h2><p><b>'+esc(p.name)+'</b></p><p>'+ui('Kun forkynderen fjernes fra listen. Kort og anden historik ændres ikke.')+'</p><p class="hint">'+ui(deleteRecoveryHint)+'</p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="publishers" data-id="'+esc(id)+'" data-expected="'+esc(JSON.stringify(expected))+'">'+ui('Ja, slet forkynder')+'</button><button data-action="close">'+ui('Annuller')+'</button></div>',I18n.language());
+}
 function confirmDelete(module,id){const item=state[module]?.find(i=>i.id===id);if(!item)return;
+ if(module==='publishers')return confirmPublisherDelete(id);
  if(module==='loans')return confirmLoanDelete(item);
  const completion=module==='completions';
  const territory=completion&&(card(item.card_id)||(state.archived_cards||[]).find(c=>c.id===item.card_id));
@@ -577,7 +589,7 @@ case 'report-tab':reportTab=d.tab;render();break;
 case 'visit':editVisit(d.id);break;
 case 'ib':editIB(d.id,d.card);break;
 case 'delete':confirmDelete(d.module,d.id);break;
-case 'confirm-delete':await mutate('delete',{module:d.module,id:d.id},{message:I18n.text("Slettet · kan gendannes i 48 timer ved fejl")});break;
+case 'confirm-delete':await mutate('delete',{module:d.module,id:d.id,...(d.module==='publishers'?{confirmation:'SLET FORKYNDER',expected:JSON.parse(d.expected||'null')}:{})},{message:I18n.text("Slettet · kan gendannes i 48 timer ved fejl")});break;
 case 'purge-recovery':if(window.confirm(I18n.text('Slet hele denne gendannelsespost permanent? Den kan derefter ikke gendannes fra appen.')))await mutate('recovery.purge',{batch:d.id},{close:false,message:I18n.text("Posten er slettet permanent")});break;
 case 'restore':await mutate('restore',{batch:d.id},{close:false,message:I18n.text("Gendannet")});break;
 case 'approve':openDialog(`<h2>${ui(d.side==='front'?'Godkend kortets forside?':'Godkend IB-bagsiden?')}</h2><p>${ui("Bekræft, at siden er kontrolleret og printet til det fysiske kort.")}</p><div class="actions"><button class="primary" data-action="confirm-approve" data-id="${d.id}" data-side="${d.side}">${ui("Kontrolleret og printet")}</button><button data-action="close">${ui("Annuller")}</button></div>`);break;
