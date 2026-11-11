@@ -38,6 +38,7 @@ const I18n={
   "Kort der ikke blev ændret":"Cards that were not changed",
   "Status, tællere og aktivitetshistorik er opdateret.":"Status, counts and activity history are up to date.",
   "Vælg 1–500 forskellige kort, der skal lægges i mappen.":"Select 1–500 distinct cards to put in the carry folder.",
+  "Vælg højst 500 kort ad gangen.":"Select no more than 500 cards at a time.",
   "Læg specifikt kort i mappen":"Put a specific card in the carry folder",
   "Vælg et eksisterende kort fra kassen. Kortets historik og udleveringer ændres ikke.":"Select an existing card from the storage box. Its history and assignments will not change.",
   "Søg kortnummer, navn eller område":"Search card number, name or area",
