@@ -319,6 +319,10 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  assert.equal(run("cardColor({map_color:'#cc33aa'})"),'#cc33aa');assert.equal(run("cardColor({map_color:'red'})"),'#477596');
  assert(run("GeoUI.page().includes('id=\"geoColor\"')"));
  const css=fs.readFileSync(path.join(__dirname,'../app/style.css'),'utf8');assert(!css.includes('.report svg{'));assert(css.includes('svg.leaflet-attribution-flag{display:inline;width:1em;height:.6667em'));
+ // GeoUI.page() may remount the page and dispose the previous report-map mock.
+ // Reinstall the synthetic map immediately before exercising the snapshot.
+ run("ReportMap.map=captureMap;ReportMap.tiles={isLoading:()=>false};ReportMap.tileFailed=false");
+ assert(run('Boolean(ReportMap.map&&ReportMap.tiles&&!ReportMap.tileFailed)'));
  const reportSnapshot=await run('ReportMap.printable()');assert(reportSnapshot.includes('data:image/png;base64,AAAA'));assert(reportSnapshot.includes('#52aa82'));assert(reportSnapshot.includes('stroke="#b83b35"'));assert(reportSnapshot.includes('stroke-dasharray="8 5"'));assert(reportSnapshot.includes('samlet distriktsgrænse'));assert(reportSnapshot.includes('openstreetmap.org/copyright'));assert(!reportSnapshot.includes('PRIVATE_NOTE'));
  context.reportSnapshotFixture=reportSnapshot;const reportWithMap=run('reportPrintDocument(reportSnapshotFixture)');assert(reportWithMap.includes('data:image/png;base64,AAAA'));assert(!reportWithMap.includes('id="reportDistrictMap"'));assert(reportWithMap.includes('s13-background.jpg'));assert(!reportWithMap.includes('PRIVATE_NOTE'));
  run("GeoUI.data.main_boundary=savedMainBoundary;ReportMap.map=null;ReportMap.tiles=null;document.createElement=originalCreateElement;state.cards=savedReportCards;state.completions=savedReportCompletions;year=savedReportYear");
