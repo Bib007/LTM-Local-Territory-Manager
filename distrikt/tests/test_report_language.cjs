@@ -66,9 +66,20 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    assert.equal(screen.includes('id="calendarYear"'),mode==='calendar');
   }
   run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg|Kort til opfølgning|AKTUEL OPFØLGNING/);assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
-  run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);contracts[language]=[formContract(visits)];
-  run("editVisit('v')");assert.equal(get('dialog').lang,language);assert.match(get('dialog').innerHTML,/value="KTM-besøg &lt;invented&gt; &amp; Kort"/);contracts[language].push(formContract(get('dialog').innerHTML));
-  const fields=[['date','2026-09-11'],['note','KTM-besøg <invented> & Kort']];await submit({target:{id:'visitForm',dataset:{id:'v'},fields,reportValidity(){return true;},querySelector(){return {disabled:false};}},preventDefault(){}});submitted[language]=JSON.parse(JSON.stringify(writes.at(-1)));
+  run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);assert.match(visits,/OLD/,'Historic remarks remain visible in the visit list');contracts[language]=[formContract(visits)];
+  assert.equal(run("ktmTuesday('2026-09-08')"),true);
+  assert.equal(run("ktmTuesday('2026-09-11')"),false);
+  assert.equal(run("latestKtmTuesday('2026-10-16')"),'2026-10-13');
+  run("editVisit()");assert.match(get('dialog').innerHTML,/value="2026-10-13"/,'New visits default to the current week Tuesday');
+  run("editVisit('v')");assert.equal(get('dialog').lang,language);
+  const visitForm=get('dialog').innerHTML;
+  assert.match(visitForm,/value="2026-09-10"/,'Historic non-Tuesday dates remain visible without migration');
+  assert.match(visitForm,/id="ktmVisitDate"[^>]*aria-describedby="ktmTuesdayHint"/);
+  assert.match(visitForm,language==='en'?/Select the Tuesday of the CO visit week/:/Vælg tirsdagen i KTM-ugen/);
+  assert.doesNotMatch(visitForm,/name="note"|KTM-besøg &lt;invented&gt; &amp; Kort/,'Existing remarks are not editable from the date dialog');
+  contracts[language].push(formContract(visitForm));
+  const fields=[['date','2026-09-08']];await submit({target:{id:'visitForm',dataset:{id:'v'},fields,reportValidity(){return true;},querySelector(){return {disabled:false};}},preventDefault(){}});submitted[language]=JSON.parse(JSON.stringify(writes.at(-1)));
+  assert.equal('note' in submitted[language].data,false,'Omitted remarks are preserved by the server');
   const details=run('reportDetails(true)');assert.doesNotMatch(details,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|Midlertidige kort|Temporary cards/);assert.doesNotMatch(details,/Forkynder|publisher|Anslåede|Estimated|IB-registreringer/);assert.match(details,/class="tablewrap"/);
   assert.equal(run('JSON.stringify(state)'),original);
  }
