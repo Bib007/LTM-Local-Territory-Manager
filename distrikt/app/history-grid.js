@@ -43,7 +43,7 @@ const HistoryGrid={
     (!loans.length&&!unlinked.length?'<p>Ingen historik registreret</p>':'')+'</div></details>';
  },
  row(c){
-  const loans=this.loansFor(c.id),latest=loans.slice(-2),slots=latest.length===1?[null,latest[0]]:latest.length===0?[null,null]:latest;
+  const loans=this.loansFor(c.id),latest=loans.slice(-2),slots=latest.length===1?[latest[0],null]:latest.length===0?[null,null]:latest;
   const active=loans.find(l=>!l.returned),issue=this.problem(c,loans);
   const placement=active?'Udleveret · '+publisherName(active.publisher_id):c.in_folder?'I mappen':'I kassen';
   return '<tr class="'+(issue?'hg-warning':'')+'"><td><strong>'+esc(c.number)+'</strong><small>'+esc(c.name||areaName(c.area_id))+'</small><small>Senest gennemgået: '+esc(this.dateText(c.last_completed)||'ukendt')+'</small></td>'+
