@@ -45,7 +45,7 @@ const form=(remember=true)=>{const f={dataset:{id:'c1',side:'front',ids:'["c1"]'
   const wanted=selectedPeriod==='all'?['calendar','service','rolling']:[selectedPeriod];
   assert.deepEqual(c.reportModeCalls,wanted);
   assert.equal(c.reportDocumentCalls[0].selected,selectedPeriod);
-  assert.deepEqual(c.reportDocumentCalls[0].keys,wanted);
+  assert.deepEqual(Array.from(c.reportDocumentCalls[0].keys),wanted);
   assert.equal(run('Workspace.reportPeriod'),'service');
   assert.equal(run('printReport.busy'),false);
  }
