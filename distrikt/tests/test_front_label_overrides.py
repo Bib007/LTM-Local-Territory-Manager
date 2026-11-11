@@ -95,6 +95,23 @@ class FrontLabelOverrideTests(unittest.TestCase):
                          {'Fiktivvej','Anden fiktiv vej'})
         self.assertEqual(len(self.store.require('cards',self.ident)['front_line_overrides']),1)
 
+    def test_unmatched_overrides_require_explicit_reset(self):
+        self.save('Fiktiv manuel tekst')
+        self.replace_members([address('1','Fiktivvej','2'),address('2','Anden vej','4')])
+        card=self.view()
+        self.assertEqual(card['front_label_unmatched'],1)
+        rows=[{'source_ids':row['source_ids'],'road':None,'numbers':None}
+              for row in card['front_addresses']]
+        self.store.mutate('card.front_labels.save',{
+            'card_id':self.ident,'expected_token':card['front_labels_token'],'rows':rows})
+        self.assertEqual(self.view()['front_label_unmatched'],1)
+        card=self.view()
+        self.store.mutate('card.front_labels.save',{
+            'card_id':self.ident,'expected_token':card['front_labels_token'],
+            'rows':rows,'clear_unmatched':True})
+        self.assertEqual(self.view()['front_label_unmatched'],0)
+        self.assertEqual(self.store.require('cards',self.ident)['front_line_overrides'],[])
+
     def test_stale_save_rejected_and_no_overwrite(self):
         original=self.view()['front_labels_token']
         self.save('Version A',expected=original)

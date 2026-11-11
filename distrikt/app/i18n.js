@@ -3,6 +3,7 @@
 const I18n={
  current:'en',
  english:{
+  "Nulstil uafklarede overstyringer til DAR (kan ikke fortrydes uden backup)":"Reset unresolved overrides to DAR (cannot be undone without backup)",
   "Brug DAR-data":"Use DAR data",
   "Brug egen tekst":"Use custom text",
   "Original DAR-værdi":"Original DAR value",

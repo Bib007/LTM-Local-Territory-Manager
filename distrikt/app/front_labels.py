@@ -71,6 +71,9 @@ def save(store,data):
     previous=card.get('front_line_overrides') or []
     if not isinstance(previous,list):raise ValueError('Gemte forsidetekster har et ugyldigt format.')
     matched,pending=_match(source_rows,previous)
+    clear_unmatched=data.get('clear_unmatched',False)
+    if not isinstance(clear_unmatched,bool):raise ValueError('Ugyldigt valg for nulstilling til DAR.')
+    if clear_unmatched:pending=[]
     updated=[]
     for source,entry in zip(source_rows,submitted):
         if not isinstance(entry,dict) or entry.get('source_ids')!=source.get('source_ids'):

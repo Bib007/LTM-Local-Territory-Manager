@@ -21,6 +21,7 @@ const FrontLabelsUI={
     <p class="hint">${esc(row.road)} ${esc(row.numbers)} · ${row.count} ${ui('besøg')}</p>
     <div class="twocol">${field(row,'road','Vejnavn')}${field(row,'numbers','Husnummer / husnummerrække')}</div>
     <button type="button" data-front-reset>${ui('Nulstil til DAR')}</button></fieldset>`).join('')}
+   ${c.front_label_unmatched?`<label class="check"><input type="checkbox" name="clear_unmatched"> ${ui('Nulstil uafklarede overstyringer til DAR (kan ikke fortrydes uden backup)')}</label>`:''}
    <p class="hint">${ui('Kontrollér kortets forhåndsvisning. For lange vejlinjer blokerer print og billedeksport.')}</p>
    ${formEnd('Gem forsidetekst')}</form>`,I18n.language());
  },
@@ -64,7 +65,8 @@ document.addEventListener('submit',async event=>{
  form.dataset.saving='yes';
  try{
   const rows=FrontLabelsUI.collect(form);
-  await mutate('card.front_labels.save',{card_id:form.dataset.id,expected_token:form.dataset.token,rows},
+  await mutate('card.front_labels.save',{card_id:form.dataset.id,expected_token:form.dataset.token,rows,
+   clear_unmatched:!!form.querySelector('input[name="clear_unmatched"]:checked')},
    {message:I18n.text('Forsidens tekst er gemt')});
  }catch(error){const message=form.querySelector('#formError');if(message)I18n.errorContent(message,error);else toast(error);}
  finally{delete form.dataset.saving;}
