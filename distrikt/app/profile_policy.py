@@ -155,7 +155,7 @@ FIELDS={
 }
 MODULE_RIGHT={'cards':'cards.view','archived_cards':'cards.view','publishers':'publishers.view',
               'loans':'loans.view','ib':'ib.view','notes':'notes.view','completions':'history.view','visits':'history.view'}
-CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
+CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
