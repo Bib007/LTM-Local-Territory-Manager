@@ -199,6 +199,38 @@ class TerritoryNumberTests(unittest.TestCase):
         self.assertIn("T0025", csv_data)
         # Both PDF card sides and S-13 continue reading the legacy/public 'number'.
 
+    def test_s12_s13_and_qr_retain_identity_and_follow_public_number(self):
+        from pdf_export import allocation_rows, s13_pdf
+        from sharing import Publications, fingerprint
+        year = date.today().year + 1
+        ident = self.card("25", "T0025")
+        before = self.store.state()
+        saved = next(c for c in before["cards"] if c["id"] == ident)
+        self.assertEqual(allocation_rows(before, year)[0]["number"], "25")
+        with self.store.transaction():
+            self.store.put("maps", {
+                "id": "publication:" + ident, "entity": "publication",
+                "card_id": ident, "status": "published",
+                "url": "https://drive.google.com/file/d/TEST_FICTIONAL/view",
+                "fingerprint": fingerprint(self.store, saved)
+            })
+        original_qr = Publications(self.store).qr(ident)
+        self.assertIn(b"<svg", original_qr)
+        plan = self.preview(scope="card", mode="swap", card_id=ident)
+        self.apply(plan, scope="card", mode="swap", card_id=ident)
+        after = self.store.state()
+        updated = next(c for c in after["cards"] if c["id"] == ident)
+        self.assertEqual(allocation_rows(after, year)[0]["number"], "T0025")
+        self.assertEqual(updated["id"], saved["id"])
+        self.assertNotEqual(updated["front_print_token"], saved["front_print_token"])
+        self.assertNotEqual(updated["back_print_token"], saved["back_print_token"])
+        self.assertNotEqual(fingerprint(self.store, updated), fingerprint(self.store, saved))
+        # Pre-existing public URLs and QR artifacts are not destroyed by a rename.
+        self.assertEqual(Publications(self.store).qr(ident), original_qr)
+        with self.assertRaisesRegex(ValueError, "Publicér igen"):
+            Publications(self.store).qr(ident, require_current=True)
+        self.assertTrue(s13_pdf(after, year).startswith(b"%PDF"))
+
     def test_roles_require_edit_rights_and_area_policy(self):
         self.assertIn("cards.edit", ACTIONS["card.numbering.apply"])
         self.assertIn("cards.edit", ACTIONS["card.numbering.undo"])
