@@ -1,3 +1,5 @@
+[Dansk](SPLIT-SUGGESTIONS.md)
+
 # Manual split suggestions and address transfers
 
 Available from LTM 1.12.4. Open **Settings → Congregation and carry folder → Split suggestions**, or the optional setup-checklist item. Choose an approximate visit target and a box-only filter. These preferences are remembered in this browser without storing account or territory data in browser preferences.
@@ -28,3 +30,12 @@ Review the resulting boundaries and print both changed sides. Print the final re
 ## Dates and records
 
 The scheduling reference uses the latest known source/receiver date, including an actual interim completion when present. It affects card-age planning, not recorded service-year completions or original S-13 output. A later unrelated change to address membership invalidates the inherited reference. Original records and printed forms retain their language. Automatic territory division is not enabled by this workflow.
+
+
+## Congregation threshold and dismissed proposals (development feature)
+
+The **Territory cards** page shows a live count of cards exceeding the congregation's separate **Settings → Congregation and carry folder → Maximum visits per card for split suggestions** value (1–1,000). This advisory limit does not modify the target used for automatic card creation or block assignments. Existing assignments and completed records are never altered by generating a suggestion.
+
+An administrator may **Dismiss suggestion** with a 1–300-character reason and **Restore suggestion** later. A dismissal is tied to card identity, current estimated visits, address membership, and the threshold; changing any of these makes a changed proposal visible again. Non-administrators do not receive the free-text reason. New mutations are `split.suggestion.ignore` and `split.suggestion.restore`, authorized by `settings.manage`. Existing local SQLite settings and backup retain them without schema changes.
+
+Moves to an existing card and splits to a new card still go through explicit preview/confirmation, preserving loan-history requirements. Same area/type/street name does not by itself prove geographic continuity: an operator must verify the boundaries before applying. Combining selected visits from two source cards into a third card is **not implemented** by this PR. Synthetic tests cover changed limits, stale dismissals, restore and existing split planning; physical platform checks remain outstanding.
