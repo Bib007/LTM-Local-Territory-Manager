@@ -189,7 +189,8 @@ def fingerprint(store,c,legacy=False):
         content['manual_front']={'rows':manual_rows,'source_rows':source_rows,'withheld':withheld,'layout':'manual-front-v1'}
     if not legacy:
         content['name']=public_name(store,c)
-        content['front_line_overrides']=c.get('front_line_overrides') or []
+        if c.get('front_line_overrides'):
+            content['front_line_overrides']=c['front_line_overrides']
     if c.get('archived'):content['archived']=True
     return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 

@@ -127,9 +127,9 @@ def tables(state,geo):
                 front_label_rows.append((c['id'],c['number'],'aktiv',','.join(row.get('source_ids',[])),
                     row['road'],row['numbers'],row.get('display_road',row['road']),
                     row.get('display_numbers',row['numbers'])))
-        for entry in c.get('front_line_overrides',[]):
-            if not any(set(entry.get('source_ids') or []).intersection(r.get('source_ids') or [])
-                       for r in c.get('front_addresses',[])):
+        from front_labels import _match
+        _,pending=_match(c.get('front_addresses',[]),c.get('front_line_overrides',[]))
+        for entry in pending:
                 front_label_rows.append((c['id'],c['number'],'afventer gennemgang',
                     ','.join(entry.get('source_ids') or []),entry.get('dar_road',''),
                     entry.get('dar_numbers',''),entry.get('road') or entry.get('dar_road',''),

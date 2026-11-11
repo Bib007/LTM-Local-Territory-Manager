@@ -105,7 +105,7 @@ class FrontLabelOverrideTests(unittest.TestCase):
     def test_reject_controls_wrong_source_and_excessive_length(self):
         original=self.store.require('cards',self.ident)
         base=self.view()
-        for road in ('', 'X'*121,'falsk\\nvej','skjult\\u202e vej',42):
+        for road in ('', 'X'*121,'falsk'+chr(10)+'vej','skjult'+chr(0x202e)+' vej',42):
             with self.subTest(road=repr(road)):
                 with self.assertRaises(ValueError):
                     self.save(road)

@@ -189,8 +189,10 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
 
     def print_token(self, c, side, context=None):
         context=self.print_context() if context is None else context
-        fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon','front_line_overrides') if side=='front' else ('id','number')
+        fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon') if side=='front' else ('id','number')
         content={k:c.get(k) for k in fields}
+        if side=='front' and c.get('front_line_overrides'):
+            content['front_line_overrides']=c['front_line_overrides']
         if side=='back':content['ib']=context['ib'].get(c['id'],[])
         else:
             content['area_name']=context['areas'].get(c.get('area_id'),'')
