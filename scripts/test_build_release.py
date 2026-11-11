@@ -124,13 +124,13 @@ class ReleaseArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'English changelogs differ'):self.build('ha-english-stale')
 
     def test_current_version_must_be_first_in_changelog(self):
-        old_first=self.changelog.replace('## 9.9.0 · Current version','## 9.8.0 · Old version',1)
-        for name in ('docs/CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,old_first+'\n## 9.9.0 · Misplaced version\n')
+        old_first=self.changelog.replace('## 9.9.0 · Current version','## 9.9.1 · Wrong version',1)
+        for name in ('docs/CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,old_first+'\n## 9.9.0 · Misplaced version\n\nLate notes.\n')
         with self.assertRaisesRegex(ValueError,'current version first'):self.build('old-first')
 
     def test_missing_changelog_version_blocks_release(self):
         for name in ('docs/CHANGELOG.md','distrikt/CHANGELOG.md'):self.add(name,'# Ændringslog\n')
-        with self.assertRaisesRegex(ValueError,'current version first'):self.build('missing-version')
+        with self.assertRaisesRegex(ValueError,'missing or duplicate changelog versions'):self.build('missing-version')
 
     def test_all_packaged_relative_links_are_validated(self):
         self.add('docs/OTHER.md','[Missing](../missing-guide.md)\n')
