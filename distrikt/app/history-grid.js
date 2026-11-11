@@ -37,8 +37,10 @@ const HistoryGrid={
  },
  details(c,loans){
   const known=new Set(loans.map(l=>l.id)),unlinked=this.datesFor(c.id).filter(e=>!e.loan_id||!known.has(e.loan_id));
-  return '<details><summary>Hele historikken ('+loans.length+' udleveringer · '+this.datesFor(c.id).length+' gennemgange)</summary><div class="hg-full">'+
-    loans.slice().reverse().map(l=>Workspace.loanLine(l)).join('')+
+  const ordered=loans.slice().reverse(),older=ordered.slice(3);
+  return '<details open><summary>Hele historikken ('+loans.length+' udleveringer · '+this.datesFor(c.id).length+' gennemgange)</summary><div class="hg-full">'+
+    ordered.slice(0,3).map(l=>Workspace.loanLine(l)).join('')+
+    (older.length?'<details><summary>'+ui('{count} tidligere udleveringer',{count:older.length})+'</summary>'+older.map(l=>Workspace.loanLine(l)).join('')+'</details>':'')+
     (unlinked.length?'<h4>Øvrige gennemgange</h4>'+unlinked.map(e=>'<p>'+esc(this.dateText(e.date))+' · '+(e.loan_id?'Udlevering ikke fundet':'Uden udlevering')+'</p>').join(''):'')+
     (!loans.length&&!unlinked.length?'<p>Ingen historik registreret</p>':'')+'</div></details>';
  },
