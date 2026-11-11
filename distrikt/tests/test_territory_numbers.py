@@ -55,8 +55,6 @@ class TerritoryNumberTests(unittest.TestCase):
                                        "name": "Fiktivt distrikt"})
         self.assertEqual(self.store.require("cards", old)["number"], "25")
         self.assertEqual(self.store.require("cards", old)["internal_number"], "")
-        with self.assertRaisesRegex(ValueError, "mangler internt"):
-            pass  # The preview reports conflicts instead of throwing.
         # No startup/global operation backfills or renumbers existing territory cards.
         self.assertTrue(self.preview(scope="all", mode="swap")["conflicts"])
 
@@ -86,6 +84,7 @@ class TerritoryNumberTests(unittest.TestCase):
         changed = self.apply(plan, scope="card", mode="swap", card_id=card_id)
         self.store.close()
         self.store = Store(self.temp.name)
+        self.addCleanup(self.store.close)
         undo = self.store.mutate("card.numbering.undo.preview", {"batch_id": changed["batch_id"]})
         self.assertEqual(undo["conflicts"], [])
         self.store.mutate("card.numbering.undo", {
