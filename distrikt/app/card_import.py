@@ -11,9 +11,10 @@ from decimal import Decimal,InvalidOperation
 from ui_errors import UIError,error_payload
 from xml.etree import ElementTree as ET
 
-HEADERS=['kortnummer','område','kortnavn','distriktstype','vejnavn','husnummer','etage','dør','postnummer','adressetype','besøg','internt_nummer']
+HEADERS=['kortnummer','område','kortnavn','distriktstype','vejnavn','husnummer','etage','dør','postnummer','adressetype','besøg']
 ALIASES=dict(zip(HEADERS,['card','area','name','kind','road','number','floor','door','postcode','type','count','internal_number']))
 ALIASES.update(dict(zip(['card','area','name','kind','road','number','floor','door','postcode','type','count','internal_number'],['card','area','name','kind','road','number','floor','door','postcode','type','count','internal_number'])))
+ALIASES['internt_nummer']='internal_number'  # Optional column; shipped XLSX template remains unchanged.
 NS={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main','r':'http://schemas.openxmlformats.org/officeDocument/2006/relationships'}
 MAX_BYTES=2000000
 
