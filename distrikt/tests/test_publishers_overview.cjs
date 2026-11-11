@@ -4,7 +4,7 @@ const read=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8');
 const nodes=new Map();
 const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',style:{},dataset:{},addEventListener(){},showModal(){this.open=true;},close(){this.open=false;}});return nodes.get(id);};
 const context={console,Date,Intl,Number,String,Math,Map,Set,JSON,Array,Object,Promise,WeakMap,
- setTimeout(){},clearTimeout(){},DistrictMap:{dispose(){}},AdminUI:{selected:new Set(),selection(){return '';}},
+ setTimeout(){},clearTimeout(){},frontResizeObserver:null,DistrictMap:{dispose(){}},AdminUI:{selected:new Set(),selection(){return '';}},
  window:{addEventListener(){}},document:{addEventListener(){},getElementById:get,querySelector(){return {content:'FICTIONAL_TOKEN'};},querySelectorAll(){return [];}},
  fetch(){throw Error('No network requests allowed for publisher view');}};
 vm.createContext(context);
