@@ -15,6 +15,7 @@ from workflow_store import WorkflowStore
 from followup_store import FollowupStore
 from setup_store import SetupStore
 from ui_errors import UIError
+from territory_numbers import TerritoryNumbering, internal_code
 
 MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkyndere',
            'loans': 'udleveringer', 'completions': 'gennemgange', 'ib': 'ib',
@@ -48,7 +49,7 @@ def clean_text(value, maxlen=100, required=False):
         raise ValueError('Udfyld det krævede felt.')
     return value
 
-class Store(SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
+class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
     def __init__(self, root):
         self.geo_generation=0
         self.workflow_init()
@@ -212,6 +213,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
             from geography import front_summaries
             maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
             for c in result['cards']:
+                c.setdefault('internal_number','')  # Old cards remain valid.
                 for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side,print_context)
             histories=self.loan_history_tokens(result['cards'],result['loans'])
             result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
@@ -220,8 +222,11 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
-            result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
-            result['followup_ignores'] = [x for x in self.all('settings') if x.get('entity') == 'followup_ignore']
+            settings_rows=self.all('settings')
+            result['areas'] = [x for x in settings_rows if x['id'] != 'config' and not x.get('entity')]
+            number_batches=sorted((x for x in settings_rows if x.get('entity')=='territory-numbering-batch' and not x.get('undone_at')),key=lambda x:x.get('created',''),reverse=True)
+            result['numbering_last_batch']=({'id':number_batches[0]['id'],'count':len(number_batches[0]['changes'])} if number_batches else None)
+            result['followup_ignores'] = [x for x in settings_rows if x.get('entity') == 'followup_ignore']
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
             from redistribution import planning_date
             for c in result['cards']:
@@ -332,6 +337,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
             from history_grid import mutate_grid
             return mutate_grid(self, action, data)
         if action == 'followup.ignore':return self.followup_mutate(data)
+        if action.startswith(('card.numbering.', 'area.numbering.')):return self.numbering_mutate(action,data)
         if action.startswith('setup.'):return self.setup_mutate(action,data)
         if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete'):
             return self.workflow_mutate(action,data)
@@ -357,7 +363,10 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
             reserved = self.all('cards') + self.all('cards', deleted=True)
             if any(c['number'].casefold() == number.casefold() and c['id'] != card['id'] for c in reserved):
                 raise ValueError('Kortnummeret findes allerede (evt. i 48-timers gendannelse).')
-            card.update(number=number, name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
+            internal=internal_code(data.get('internal_number',card.get('internal_number','')))
+            if any(c.get('internal_number','').casefold()==internal.casefold() and c['id']!=card['id'] for c in reserved) and internal:
+                raise ValueError('Det interne nummer findes allerede (evt. i 48-timers gendannelse).')
+            card.update(number=number, internal_number=internal, name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
                         kind=data.get('kind', 'Ukendt'), temporary=bool(data.get('temporary', True)))
             color = data.get('map_color', card.get('map_color', '#477596'))
             if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
