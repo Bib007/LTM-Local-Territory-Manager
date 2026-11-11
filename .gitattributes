@@ -1,2 +1,5 @@
-# Match the Home Assistant copy for byte-for-byte release validation.
+# Keep the canonical changelogs byte-identical across Windows, macOS and Linux.
 /docs/CHANGELOG.md text eol=lf
+/docs/CHANGELOG.en.md text eol=lf
+/distrikt/CHANGELOG.md text eol=lf
+/distrikt/CHANGELOG.en.md text eol=lf
