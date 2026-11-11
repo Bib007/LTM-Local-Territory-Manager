@@ -57,7 +57,7 @@ const TerritoryNumbersUI = {
    const scheme=action==='area.numbering.preview';
    const undo=action==='card.numbering.undo.preview';
    const confirm=scheme?'GEM INTERVAL':undo?'FORTRYD NUMRE':payload.mode==='swap'?'BYT NUMRE':'TILDEL NUMRE';
-   const nextAction=action.replace(/\.preview$/,scheme?'.save':undo?'':' .apply').replace(' .apply','.apply');
+   const nextAction=scheme?'area.numbering.save':undo?'card.numbering.undo':'card.numbering.apply';
    const beforeAfter=scheme
      ?`<p>Område: ${esc(state.areas.find(a=>a.id===payload.area_id)?.name||'')}</p><p>Før: ${esc(JSON.stringify(plan.before))}</p><p>Efter: ${esc(JSON.stringify(plan.after))}</p>`
      :`<div class="tablewrap"><table><thead><tr><th>Kort-ID</th><th>Offentligt før</th><th>Internt før</th><th>Offentligt efter</th><th>Internt efter</th></tr></thead><tbody>${changes.slice(0,300).map(c=>`<tr><td><small>${esc(c.id.slice(0,12))}</small></td><td>${esc(undo?c.after.number:c.before.number)}</td><td>${esc(undo?c.after.internal_number:c.before.internal_number)}</td><td>${esc(undo?c.before.number:c.after.number)}</td><td>${esc(undo?c.before.internal_number:c.after.internal_number)}</td></tr>`).join('')}</tbody></table></div>${changes.length>300?'<p>Kun de første 300 kort vises. Alle ændringer kontrolleres af serveren.</p>':''}`;
@@ -82,7 +82,8 @@ const TerritoryNumbersUI = {
  undo() {
    const batch=state.numbering_last_batch;
    if(!batch)return toast('Ingen nummerændring kan fortrydes.');
-   this.preview('card.numbering.undo.preview',{batch_id:batch.id});
+   openDialog('<h2>Fortryd nummerændring</h2><p>Kontrollerer de tidligere numre og aktuelle konflikter…</p>');
+   return this.preview('card.numbering.undo.preview',{batch_id:batch.id});
  }
 };
 document.addEventListener('change',e=>{
