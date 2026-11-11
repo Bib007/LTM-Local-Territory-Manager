@@ -57,19 +57,20 @@ const ShareUI={loadSequence:0,qrSequence:0,connecting:false,publishing:false,dat
   }catch(error){if(sequence===this.loadSequence&&node&&el('shareStatus')===node&&!this.connecting)I18n.errorContent(node,error);if(required)throw error;}
  },
  async update(id){
-  if(this.busy||this.opening)throw Error(I18n.text('Vent på det igangværende kortbillede.'));this.opening=true;
+  if(this.busy||this.opening||this.publishing)return;this.opening=true;this.progress('preparing',id);
   try{await closeRequested();if(el('dialog').open)return;const context=this.context();if(!GeoUI.loaded)await GeoUI.load();if(!this.sameContext(context))return;
-   if(!card(id))throw Error(I18n.text('Kortet findes ikke længere.'));detail(id);await this.prepare(id);
-  }finally{this.opening=false;}
+   if(!card(id))throw Error(I18n.text('Kortet findes ikke længere.'));detail(id);this.mountProgress();await this.prepare(id);
+  }catch(error){this.progress('error',id,{error:error?.message||I18n.text('Kortbilledet kunne ikke dannes.'),retry:'update'});throw error;}finally{this.opening=false;}
  },
  async prepare(id){
-  if(this.busy)throw Error(I18n.text('Vent på det igangværende kortbillede.'));this.busy=true;this.pending=null;const context=this.context(),map=DistrictMap.map,validMap=!!map&&DistrictMap.id===id,current=()=>this.sameContext(context)&&DistrictMap.map===map&&DistrictMap.id===id;
+  if(this.busy||this.publishing)throw Error(I18n.text('Vent på det igangværende kortbillede.'));this.busy=true;this.pending=null;this.progress('preparing',id);this.mountProgress();const context=this.context(),map=DistrictMap.map,validMap=!!map&&DistrictMap.id===id,current=()=>this.sameContext(context)&&DistrictMap.map===map&&DistrictMap.id===id;
   try{
   const manualCandidate=!!card(id)?.addresses?.length&&!card(id)?.geo_addresses?.length&&!card(id)?.address_ids?.length;
    if(!validMap&&!manualCandidate)throw Error(I18n.text('Åbn kortets geografiske visning først.'));
    const recipe=await(await api('/api/share/prepare',{card_id:id})).json();if(!current())return;
    const manualOnly=recipe.geography_missing;
    if(!manualOnly){await MapBackground.change('districtMap','road');if(!current())return;}
+   this.progress('generating',id);
    const blob=await MapExport.blob(id,manualOnly?'local':'osm',{publicCard:recipe.card,publicMembers:recipe.members,...(recipe.pdf?{sharedPdf:true}:{}),...(manualOnly?{manualFrontRows:recipe.manual_front_rows,manualIBWithheld:recipe.manual_ib_withheld}:{})});if(!current())return;
    const imageData=blob=>new Promise((resolve,reject)=>{
     const reader=new FileReader();reader.onload=()=>resolve(reader.result);
@@ -78,10 +79,11 @@ const ShareUI={loadSequence:0,qrSequence:0,connecting:false,publishing:false,dat
    let png=await imageData(blob);if(!current())return;
    const front=recipe.pdf?await imageData(await MapExport.sharedFront(recipe)):null;if(!current())return;
    if(recipe.date_updates){const preview=await(await api('/api/share/date-preview',{card_id:id,fingerprint:recipe.fingerprint,date_fingerprint:recipe.date_fingerprint,png})).json();if(!current())return;png=preview.png;}
-   this.pending={card_id:id,fingerprint:recipe.fingerprint,render_revision:recipe.render_revision,png,...(front?{front_png:front}:{}),...(recipe.date_updates?{date_updates:true,date_fingerprint:recipe.date_fingerprint}:{})};
+   this.pending={card_id:id,fingerprint:recipe.fingerprint,render_revision:recipe.render_revision,png,request_id:this.uploadRequestId(),showHouseNumbers:true,...(front?{front_png:front}:{}),...(recipe.date_updates?{date_updates:true,date_fingerprint:recipe.date_fingerprint}:{})};
    this.previewRecipe={recipe,manualOnly,background:manualOnly?{}:MapExport.osmSnapshot(id,{tight:true,publicCard:recipe.card,publicMembers:recipe.members})};
    const pages=front?`<h3>${ui('Side 1 · Digitalt kort')}</h3><img id="shareMapPreview" class="sharePreview" src="${png}" ${I18n.attribute('alt','Side 1 · Digitalt kort')}><h3>${ui('Side 2 · Kortets printforside')}</h3><img class="sharePreview" src="${front}" ${I18n.attribute('alt','Side 2 · Kortets printforside')}>`:`<img id="shareMapPreview" class="sharePreview" src="${png}" ${I18n.attribute('alt','Kortbilledet som bliver delt')}>`;
-   openDialog(`<h2>${ui('Publicér kort {number}',{number:recipe.card.number})}</h2><p>${ui(front?'Mens kortet er udleveret, kan alle med linket åbne, hente og videresende PDF-filen. Ellers gemmes den privat til næste udlevering.':'Mens kortet er udleveret, kan alle med QR-linket se, hente og videresende billedet uden login. Ellers gemmes det privat til næste udlevering.')}</p>${recipe.manual_ib_withheld?`<p class="notice warning">${ui('Nogle manuelle vejlinjer er udeladt, fordi de ikke kunne kontrolleres sikkert mod IB.')}</p>`:''}${manualOnly?'':`<label class="check"><input type="checkbox" id="shareHouseNumbers" checked> ${ui('Vis husnumre og streger på kortet')}</label>`}${pages}<label class="check"><input type="checkbox" id="shareApproved"> ${ui(front?'Jeg har kontrolleret begge PDF-sider og godkender deling samt automatisk opdatering af datoerne.':recipe.date_updates?'Jeg har kontrolleret kortbilledet og godkender deling samt automatisk opdatering af de to datoer.':'Jeg har kontrolleret kortbilledet og vil dele det.')}</label><div class="actions"><button data-share="publish" id="sharePublish" class="primary" disabled>${ui('Publicér på Google Drive')}</button><button data-action="close">${ui('Annuller')}</button></div><p class="hint">${ui(recipe.date_updates?'Det godkendte kortgrundlag gemmes lokalt. De to datoer opdateres på samme Google-fil og QR-link, når registreringerne ændres. Øvrige kortændringer kræver nyt preview og godkendelse.':'Opdatering bruger samme fil og QR-link. Der uploades kun billedet ovenfor.')}</p>`);this.approvalContext=this.context();
+   this.progress('complete',id,{preview:true});this.failedHouseChoice=null;
+   openDialog(`<h2>${ui('Publicér kort {number}',{number:recipe.card.number})}</h2><div id="shareProgress" class="shareProgress" role="status" aria-live="polite">${this.activityHTML()}</div><p>${ui(front?'Mens kortet er udleveret, kan alle med linket åbne, hente og videresende PDF-filen. Ellers gemmes den privat til næste udlevering.':'Mens kortet er udleveret, kan alle med QR-linket se, hente og videresende billedet uden login. Ellers gemmes det privat til næste udlevering.')}</p>${recipe.manual_ib_withheld?`<p class="notice warning">${ui('Nogle manuelle vejlinjer er udeladt, fordi de ikke kunne kontrolleres sikkert mod IB.')}</p>`:''}${manualOnly?'':`<label class="check"><input type="checkbox" id="shareHouseNumbers" checked> ${ui('Vis husnumre og streger på kortet')}</label>`}${pages}<label class="check"><input type="checkbox" id="shareApproved"> ${ui(front?'Jeg har kontrolleret begge PDF-sider og godkender deling samt automatisk opdatering af datoerne.':recipe.date_updates?'Jeg har kontrolleret kortbilledet og godkender deling samt automatisk opdatering af de to datoer.':'Jeg har kontrolleret kortbilledet og vil dele det.')}</label><div class="actions"><button data-share="publish" id="sharePublish" class="primary" disabled>${ui('Publicér på Google Drive')}</button><button data-action="close">${ui('Annuller')}</button></div><p class="hint">${ui(recipe.date_updates?'Det godkendte kortgrundlag gemmes lokalt. De to datoer opdateres på samme Google-fil og QR-link, når registreringerne ændres. Øvrige kortændringer kræver nyt preview og godkendelse.':'Opdatering bruger samme fil og QR-link. Der uploades kun billedet ovenfor.')}</p>`);this.approvalContext=this.context();
   }catch(error){if(!validMap||current())throw error;}finally{this.busy=false;}
  },
  async updateHouseNumbers(checked){
