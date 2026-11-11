@@ -122,8 +122,9 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual([event['ignored'] for event in events],[True,False])
         self.assertEqual([event['actor_name'] for event in events],['Fiktiv bruger','Fiktiv admin'])
         self.assertTrue(all(event['at'] for event in events))
-        hidden,_,_=self.reader(['cards.view'])
-        self.assertEqual(self.state(hidden)['followup_ignores'],[])
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle',
+                   'permissions':['cards.view']},self.admin)
+        self.assertEqual(self.state(reader)['followup_ignores'],[])
     def test_boundary_report_respects_report_geo_and_ib_permissions(self):
         self.store.mutate('geo.main.save',{'points':[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]})
         self.store.mutate('geo.manual',{'road':'Fiktiv vej','number':'1','postcode':'9999','lng':10,'lat':55})
