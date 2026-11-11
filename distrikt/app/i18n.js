@@ -3,6 +3,10 @@
 const I18n={
  current:'en',
  english:{
+  "Vælg et gyldigt distriktskort.":"Select a valid territory card.",
+  "Opdelingsforslaget er ændret. Opdater listen først.":"The split suggestion has changed. Refresh the list first.",
+  "Forslaget er allerede gendannet.":"The suggestion has already been restored.",
+  "Grænsen for besøg pr. kort skal være 1–1.000.":"The maximum visits per card must be between 1 and 1,000.",
   "Du er ansvarlig for 1 åben opgave":"You are responsible for 1 open task",
   "Du er ansvarlig for {count} åbne opgaver":"You are responsible for {count} open tasks",
   "Se mine opgaver":"View my tasks",
