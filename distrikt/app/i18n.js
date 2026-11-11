@@ -2258,6 +2258,7 @@ const I18n={
   "A4 · 15 mm margener. Vælg 100 % og slå browserens sidehoved og sidefod fra.":"A4 · 15 mm margins. Choose 100% and disable the browser header and footer.",
   "Gennemgange":"Completions",
   "Gennemgange pr. måned. Tallene findes også i tabellen nedenfor.":"Completions by month. The figures are also available in the table below.",
+  "Sidste KTM besøg":"Last CO visit",
   "Sidste KTM besøg · {date}":"Last CO visit · {date}",
   "Ingen gennemgange registreret i denne periode endnu.":"No completions recorded for this period yet.",
   "Vis månedstallene som tabel":"View monthly figures as a table",
