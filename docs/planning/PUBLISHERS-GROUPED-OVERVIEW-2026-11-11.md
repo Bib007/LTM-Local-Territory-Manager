@@ -9,7 +9,7 @@
 ## Afhængigheder ved parallelt arbejde
 - Base: develop ved cb684ff30f9f51e78f0e419318edb2d48df740eb. Arbejd kun på feature-branchen, ikke direkte på develop/main.
 - Database: ingen migration, ny tabel eller semantikændring. Eksisterende publishers.group genbruges. En selvstændig deaktiveringsfunktion er ikke del af denne ændring.
-- API: ingen nye endpoints eller kontraktændringer; den eksisterende autoriserede state-projektion og API-adgangskontrol genbruges.
+- API: ingen nye endpoints. Den eksisterende autoriserede state-projektion genbruges; delete-kontrakten udvides kun for module=publishers med confirmation og expected.
 - Delte filer: distrikt/app/app.js, distrikt/app/style.css og distrikt/app/i18n.js. Konfliktkontrollér ved opdatering mod seneste develop, især når andre UI-PR'er berører disse filer. Den nye testfil er distrikt/tests/test_publishers_overview.cjs.
 - Persondata: ingen navne eller tilknytninger indlægges i offentligt website/demo, logges, hardkodes eller sendes til andre tjenester. Forkynderrettigheder håndhæves fortsat af backend og eksisterende UI-handlingskontrol.
 
