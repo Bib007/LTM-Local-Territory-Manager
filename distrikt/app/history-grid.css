@@ -1,0 +1,24 @@
+/* Compact, keyboard-first history grid. Horizontal scrolling on narrow displays. */
+.hg-panel .hg-toolbar{display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;margin:12px 0}
+.hg-toolbar label{display:flex;flex-direction:column;gap:5px;min-width:180px}
+.hg-toolbar input{min-width:160px}
+.hg-scroll{max-height:70vh;overflow:auto;overscroll-behavior:contain}
+.hg-table{width:100%;min-width:980px;border-collapse:collapse}
+.hg-table th{position:sticky;top:0;z-index:1;background:var(--surface,#fff);white-space:nowrap;text-align:left}
+.hg-table td{vertical-align:top;min-width:132px;padding:9px 7px}
+.hg-table td:first-child{min-width:145px}
+.hg-table td small{display:block;margin-top:3px}
+.hg-table td:nth-child(6){min-width:190px}
+.hg-table td:last-child{min-width:180px}
+.hg-table .hg-warning{outline:1px solid var(--warn,#bc7738)}
+.hg-date{display:flex;align-items:center;gap:3px;flex-wrap:nowrap}
+.hg-date-text{width:108px;min-width:108px;max-width:108px;font-variant-numeric:tabular-nums}
+.hg-date-picker{width:38px;min-width:38px;max-width:38px;padding:4px 0;color:transparent}
+.hg-date-picker::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer}
+.hg-empty{display:inline-block;min-width:100px;text-align:center;opacity:.65}
+.hg-table button{margin:5px 0 0}
+.hg-full{min-width:260px;max-height:350px;overflow:auto;padding:8px 0}
+.hg-full h4{margin:10px 0 5px}
+.hg-full .historyLoan{padding:8px 0;border-bottom:1px solid var(--line)}
+.hg-table input:focus-visible,.hg-table button:focus-visible{outline:2px solid var(--focus,#1d6dba);outline-offset:2px}
+@media(max-width:780px){.hg-panel .hg-toolbar{align-items:stretch}.hg-toolbar label{min-width:130px}.hg-scroll{max-height:65vh}.hg-table{min-width:970px}}
