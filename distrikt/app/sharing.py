@@ -220,7 +220,7 @@ def png_bytes(value):
 
 class Publications:
     def __init__(self,store):
-        self.store=store;self.images=ApprovedImages(store.root);self.drive=Drive(store.root);self.lock=threading.RLock();self.stop=threading.Event();self.worker=None
+        self.store=store;self.images=ApprovedImages(store.root);self.drive=Drive(store.root);self.lock=threading.RLock();self.stop=threading.Event();self.worker=None;self.uploading_card_id=None
         with store.transaction():
             for row in self.rows():
                 c=store.get('cards',row['card_id'])
@@ -241,6 +241,8 @@ class Publications:
             for row in self.rows():
                 c=self.store.get('cards',row['card_id']);r={k:v for k,v in row.items() if k not in ('png','queued_png','approved_front_image')}
                 r['number']=c['number'] if c else 'Slettet kort'
+                # Transient worker signal: do not claim Google is uploading while queued or retrying.
+                r['upload_active']=self.uploading_card_id==row['card_id'] and row.get('status') in ('queued','retry')
                 r['outdated']=not self.current(row)
                 r['date_update_pending']=bool(c and row.get('date_updates') and row.get('fingerprint')==fingerprint(self.store,c) and row.get('date_fingerprint')!=date_key(dates(self.store,c)))
                 r['issued']=self.issued(row['card_id'])
@@ -365,6 +367,9 @@ class Publications:
     def enqueue(self,data):
         revision=data.get('render_revision',1)
         if type(revision) is not int or revision not in range(1,RENDER_REVISION+1):raise ValueError('Ukendt kortlayout. Genindlæs appen og dan kortbilledet igen.')
+        request_id=data.get('request_id')
+        if request_id is not None and (not isinstance(request_id,str) or not re.fullmatch(r'[A-Za-z0-9_-]{12,100}',request_id)):
+            raise ValueError('Ugyldigt upload-id. Dan et nyt kortbillede.')
         png=png_bytes(data.get('png'))
         front=png_bytes(data.get('front_png')) if revision>=PDF_RENDER_REVISION else None
         if not self.drive.connected():raise ValueError('Forbind Google Drive først.')
@@ -372,6 +377,10 @@ class Publications:
             c=self.store.require('cards',data['card_id']);fp=fingerprint(self.store,c)
             if data.get('fingerprint')!=fp:raise ValueError('Kortet er ændret, mens billedet blev dannet. Åbn kortet igen og publicér på ny.')
             old=self.store.get('maps',self.key(c['id'])) or {}
+            # Repeated confirmation of the same click must never enqueue a second upload,
+            # including when the first HTTP response was lost after the write committed.
+            if request_id and old.get('request_id')==request_id:
+                return {'ok':True,'status':old.get('status','queued'),'already_queued':True}
             if old.get('approved_front_image') and front is None:
                 raise ValueError('Genindlæs appen, og godkend begge PDF-sider igen.')
             dated=revision>=DATE_RENDER_REVISION
@@ -382,7 +391,8 @@ class Publications:
                 png=render_dates(png,values)
                 approved_image=self.images.save(png)
             row=dict(old,id=self.key(c['id']),entity='publication',card_id=c['id'],fingerprint=fp,status='queued',render_revision=revision,render_refresh=revision<RENDER_REVISION,error='',attempts=0,withdraw_attempts=0,access_attempts=0,access_target='',close_attempts=0,next_close=0,close_error='',next_try=0,queued_png=base64.b64encode(png).decode(),generation=os.urandom(12).hex())
-            for field in ('approved_front_image','date_updates','date_fingerprint','date_values','approved_image','date_error','date_close_pending','manual_withdraw','date_retry_allowed'):row.pop(field,None)
+            for field in ('approved_front_image','date_updates','date_fingerprint','date_values','approved_image','date_error','date_close_pending','manual_withdraw','date_retry_allowed','request_id'):row.pop(field,None)
+            if request_id:row['request_id']=request_id
             if front is not None:row['approved_front_image']=self.images.save(front)
             if dated:row.update(date_updates=True,date_fingerprint=date_key(values),date_values=values,approved_image=approved_image,date_close_pending=bool(old.get('file_id') and (old.get('url') or old.get('possibly_public'))))
             self.store.put('maps',row)
@@ -445,9 +455,14 @@ class Publications:
                 png=base64.b64decode(row['queued_png'])
                 if row.get('render_revision',0)>=PDF_RENDER_REVISION:
                     pdf=shared_card_pdf(png,self.images.load(row.get('approved_front_image')))
-                    file_id=self.drive.upload_pdf(pdf,c['number'],row.get('file_id'))
+                    send=lambda:self.drive.upload_pdf(pdf,c['number'],row.get('file_id'))
                 else:
-                    file_id=self.drive.upload(png,row.get('file_id'))
+                    send=lambda:self.drive.upload(png,row.get('file_id'))
+                # Expose upload progress only for the duration of the real Drive API call.
+                with self.store.lock:self.uploading_card_id=row['card_id']
+                try:file_id=send()
+                finally:
+                    with self.store.lock:self.uploading_card_id=None
                 # Persist the created ID before sharing so retries update the same file.
                 with self.store.transaction():row['file_id']=file_id;self.store.put('maps',row)
                 if self.stop.is_set():return
