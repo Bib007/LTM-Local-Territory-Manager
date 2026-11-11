@@ -303,10 +303,47 @@ function publisherIssueGuidance(name){
 
 function publisherGroupInfo(p){return '<small>'+esc(p.group||I18n.text('Ingen tjenestegruppe'))+(p.group_role?' · '+ui(publisherRoleLabels[p.group_role]||'Ingen gruppefunktion'):'')+(p.pioneer?' · '+ui('Pioner'):'')+'</small>';}
 function publisherGroupOptions(value=''){const groups=new Map();for(const p of state.publishers){if(p.group)groups.set(publisherGroupKey(p.group),p.group);}return '<option value="" data-ui="Alle tjenestegrupper">'+I18n.text('Alle tjenestegrupper')+'</option><option value="__none__" data-ui="Ingen tjenestegruppe" '+(value==='__none__'?'selected':'')+'>'+I18n.text('Ingen tjenestegruppe')+'</option>'+[...groups].sort((a,b)=>cmp(a[1],b[1])).map(([key,name])=>'<option value="'+esc('group:'+key)+'" '+(value==='group:'+key?'selected':'')+'>'+esc(name)+'</option>').join('');}
+function publisherOverviewGroups(people){
+ const groups=new Map();
+ for(const p of state.publishers){
+  const key=p.group?'group:'+publisherGroupKey(p.group):'__none__';
+  if(!groups.has(key))groups.set(key,{key,name:p.group||I18n.text('Ingen tjenestegruppe'),people:[]});
+ }
+ for(const p of people){
+  const key=p.group?'group:'+publisherGroupKey(p.group):'__none__';
+  groups.get(key)?.people.push(p);
+ }
+ return [...groups.values()].filter(g=>publisherGroupFilter?g.key===publisherGroupFilter:g.people.length>0)
+  .sort((a,b)=>(a.key==='__none__')-(b.key==='__none__')||cmp(a.name,b.name));
+}
+function publisherOverviewCard(p){
+ const active=state.loans.filter(l=>l.publisher_id===p.id&&!l.returned).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number));
+ return '<article class="publisherItem">'
+  +'<div class="publisherItemHeading"><div><button class="link" data-action="publisher-profile" data-id="'+esc(p.id)+'"><b>'+esc(p.name)+'</b></button>'+publisherGroupInfo(p)+'</div>'+publisherGuidanceDisplay(p)+'</div>'
+  +'<div class="publisherItemLoans"><small>'+ui('Kortnumre')+'</small><div>'+(
+   active.map(l=>'<button data-action="detail" data-id="'+esc(l.card_id)+'">'+ui('Nr.')+' '+esc(card(l.card_id)?.number)+'</button>').join(' ')||'—'
+  )+'</div></div>'
+  +'<div class="publisherItemActions"><button data-action="publisher-profile" data-id="'+esc(p.id)+'">'+ui('Kort og historik')+'</button><button data-action="publisher" data-id="'+esc(p.id)+'">'+ui('Rediger forkynder')+'</button></div></article>';
+}
 function publishersPage(){
+ // No separate person cache, public endpoint or group table: show only the authorized state snapshot.
  if(publisherGroupFilter.startsWith('group:')&&!state.publishers.some(p=>'group:'+publisherGroupKey(p.group)===publisherGroupFilter))publisherGroupFilter='';
- const q=query.toLowerCase(),people=state.publishers.slice().sort((a,b)=>cmp(a.name,b.name)).filter(p=>[p.name,p.group,I18n.text(publisherRoleLabels[p.group_role]||''),p.pioneer?I18n.text('Pioner'):''].join(' ').toLowerCase().includes(q)).filter(p=>{if(!publisherGroupFilter)return true;if(publisherGroupFilter==='__none__')return !p.group;return publisherGroupFilter==='group:'+publisherGroupKey(p.group);});
- return `<div class="toolbar"><input id="search" ${I18n.attribute('aria','Søg forkynder')} ${I18n.attribute('placeholder','Søg forkynder')} value="${esc(query)}"><select id="publisherGroupFilter" ${I18n.attribute('aria','Tjenestegruppe')}> ${publisherGroupOptions(publisherGroupFilter)}</select><button class="primary" data-action="publisher">${ui('Tilføj forkynder')}</button><button data-publisher-import="open">${ui('Importér gruppeliste')}</button></div><section class="panel"><div class="tablewrap"><table><thead><tr><th>${ui('Forkynder')}</th><th>${ui('Aktuelt / vejledende antal kort')}</th><th>${ui('Kortnumre')}</th><th></th></tr></thead><tbody>${people.map(p=>{const active=state.loans.filter(l=>l.publisher_id===p.id&&!l.returned).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number));return `<tr><td><button class="link" data-action="publisher-profile" data-id="${p.id}">${esc(p.name)}</button>${publisherGroupInfo(p)}</td><td>${publisherGuidanceDisplay(p)}</td><td>${active.map(l=>`<button data-action="detail" data-id="${l.card_id}">${ui('Nr.')} ${esc(card(l.card_id)?.number)}</button>`).join(' ')||'—'}</td><td><button data-action="publisher-profile" data-id="${p.id}">${ui('Kort og historik')}</button> <button data-action="publisher" data-id="${p.id}">${ui('Rediger forkynder')}</button></td></tr>`;}).join('')||`<tr><td colspan="4">${ui('Ingen forkyndere fundet. Tilføj dem her eller ved udlevering.')}</td></tr>`}</tbody></table></div><p class="hint">${ui('{people} registrerede forkyndere · {cards} kort udlånt i alt.',{people:state.publishers.length,cards:state.loans.filter(l=>!l.returned).length})}</p></section>`;
+ const q=query.toLocaleLowerCase('da-DK').trim();
+ const people=state.publishers.slice().sort((a,b)=>cmp(a.name,b.name))
+  .filter(p=>[p.name,p.group,I18n.text(publisherRoleLabels[p.group_role]||''),p.pioneer?I18n.text('Pioner'):''].join(' ').toLocaleLowerCase('da-DK').includes(q))
+  .filter(p=>!publisherGroupFilter||(publisherGroupFilter==='__none__'?!p.group:publisherGroupFilter==='group:'+publisherGroupKey(p.group)));
+ const groups=publisherOverviewGroups(people);
+ const stats='<div class="publisherStats" role="status" aria-live="polite">'
+  +'<div class="publisherStat"><small>'+ui('Forkyndere i alt')+'</small><strong data-publisher-total>'+state.publishers.length+'</strong></div>'
+  +'<div class="publisherStat"><small>'+ui('Forkyndere i visningen')+'</small><strong data-publisher-visible>'+people.length+'</strong></div></div>';
+ const toolbar='<div class="toolbar publisherToolbar"><input id="search" '+I18n.attribute('aria','Søg forkynder')+' '+I18n.attribute('placeholder','Søg forkynder')+' value="'+esc(query)+'">'
+  +'<select id="publisherGroupFilter" '+I18n.attribute('aria','Tjenestegruppe')+'>'+publisherGroupOptions(publisherGroupFilter)+'</select>'
+  +'<button class="primary" data-action="publisher">'+ui('Tilføj forkynder')+'</button><button data-publisher-import="open">'+ui('Importér gruppeliste')+'</button></div>';
+ const content=groups.length?'<div class="publisherGroups">'+groups.map(g=>'<section class="publisherGroup" data-publisher-group="'+esc(g.key)+'" aria-label="'+esc(g.name)+'">'
+  +'<div class="publisherGroupHeading"><h2>'+esc(g.name)+'</h2><span class="publisherGroupCount" data-publisher-count="'+g.people.length+'">'+ui('{count} i gruppen',{count:g.people.length})+'</span></div>'
+  +(g.people.length?'<div class="publisherItems">'+g.people.map(publisherOverviewCard).join('')+'</div>':'<p class="hint">'+ui('Ingen forkyndere matcher søgningen i denne gruppe.')+'</p>')+'</section>').join('')+'</div>'
+  :'<section class="panel"><p class="empty">'+ui('Ingen forkyndere fundet. Tilføj dem her eller ved udlevering.')+'</p></section>';
+ return '<div class="publisherOverview">'+stats+toolbar+content+'<p class="hint">'+ui('{count} kort udlånt i alt.',{count:state.loans.filter(l=>!l.returned).length})+'</p></div>';
 }
 function publisherProfile(id){
  const p=state.publishers.find(p=>p.id===id);if(!p)return;
