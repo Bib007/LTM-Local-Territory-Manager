@@ -924,6 +924,7 @@ const I18n={
   "Forbogstavet skal være tomt eller præcis ét bogstav.":"The prefix must be empty or exactly one letter.",
   "Vælg egen liste eller interval.":"Choose a custom list or a range.",
   "Bemærkning · valgfri":"Comment · optional",
+  "Vælg tirsdagen i KTM-ugen":"Select the Tuesday of the CO visit week",
   "Opgaver":"Tasks",
   "Vælg en opgave.":"Choose a task.",
   "Ugyldig opgavestatus.":"Invalid task status.",

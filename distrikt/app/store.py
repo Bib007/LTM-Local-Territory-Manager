@@ -604,8 +604,15 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             old = self.get('visits', data.get('id')) if data.get('id') else None
             if data.get('id') and not old:
                 raise ValueError('Posten er ændret eller slettet. Opdater siden.')
-            item = dict(old or {'id': new_id()})
-            item.update(date=day, note=clean_text(data.get('note'), 200))
+            # Existing non-Tuesday dates remain readable and can be saved unchanged.
+            # New dates represent the Tuesday in the CO visit week.
+            if (not old or day != old['date']) and date.fromisoformat(day).weekday() != 1:
+                raise UIError('Vælg tirsdagen i KTM-ugen')
+            item = dict(old or {'id': new_id(), 'note': ''})
+            item['date'] = day
+            # Omitted note means untouched, not cleared: preserve all historic remarks.
+            if 'note' in data:
+                item['note'] = clean_text(data['note'], 200)
             self.put('visits', item)
             return {'id': item['id']}
         if action == 'ib.save':
