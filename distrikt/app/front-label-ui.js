@@ -1,26 +1,30 @@
 'use strict';
 // Front-only DAR label controls. This module intentionally never edits geo_addresses.
 const FrontLabelsUI={
+ canEdit(c){
+  return !!c?.front_labels_token&&c.front_addresses?.some(row=>row.source_ids?.length)&&ProfilesUI.has('cards.view','cards.edit');
+ },
+ button(c){
+  return this.canEdit(c)?`<button type="button" data-action="front-labels" data-id="${esc(c.id)}">${ui('Rediger forsidens vejlinjer')}</button>`:'';
+ },
  open(id){
   const c=card(id);
-  if(!c?.geo_addresses?.length||!ProfilesUI.has('cards.view','cards.edit'))return;
-  const field=(row,key,title)=>{
-   const original=String(row[key]||''),custom=!!row['manual_'+key];
-   const current=custom?String(row['display_'+key]):original;
-   return `<div data-front-label-field><label>${ui(title)} · ${ui('Kilde')}</label>
-    <select data-front-label-mode data-key="${key}"><option value="dar" ${custom?'':'selected'}>${ui('Brug DAR-data')}</option><option value="custom" ${custom?'selected':''}>${ui('Brug egen tekst')}</option></select>
-    <label>${ui('Original DAR-værdi')}</label><output class="hint">${esc(original)}</output>
-    <label>${ui('Tekst på forsiden')}</label><input data-front-label-text data-dar="${esc(original)}" value="${esc(current)}" maxlength="${key==='road'?120:100}" ${custom?'':'disabled'}></div>`;
+  if(!this.canEdit(c))return;
+  const field=(row,key,title,limit)=>{
+   return `<div data-front-label-field>
+    <p class="hint">DAR · ${esc(row[key])}</p>
+    <label>${ui(title)}</label>
+    <input data-front-label-text data-key="${key}" value="${esc(row['extra_'+key])}" maxlength="${limit}">
+    </div>`;
   };
   const rows=(c.front_addresses||[]).filter(row=>row.source_ids?.length);
   openDialog(`<h2>${ui('Vejlinjer på kortets forside')} · ${esc(c.number)}</h2>
-   <p class="hint">${ui('Ændringerne gælder kun tekst på forsiden. DAR-adresser, kortgrænser og besøgsantal ændres ikke.')}</p>
+   <p class="hint">${ui('Din tekst vises efter DAR-vejlinjen på forsiden. Begge felter kan stå tomme.')}</p>
    ${c.front_label_unmatched?`<p class="notice warning">${ui('Tidligere overstyringer er bevaret, men nogle kan ikke knyttes entydigt til de nye DAR-vejlinjer. Kontrollér dem i eksporten.')}</p>`:''}
    <form id="frontLabelsForm" data-id="${esc(id)}" data-token="${esc(c.front_labels_token)}">
    ${rows.map((row,i)=>`<fieldset class="frontLabelRow" data-source-ids="${esc(JSON.stringify(row.source_ids))}"><legend>${ui('Vejlinje')} ${i+1}</legend>
-    <p class="hint">${esc(row.road)} ${esc(row.numbers)} · ${row.count} ${ui('besøg')}</p>
-    <div class="twocol">${field(row,'road','Vejnavn')}${field(row,'numbers','Husnummer / husnummerrække')}</div>
-    <button type="button" data-front-reset>${ui('Nulstil til DAR')}</button></fieldset>`).join('')}
+    <div class="twocol">${field(row,'road','Egen tekst til vejnavn',120)}${field(row,'numbers','Egen tekst til husnumre',100)}</div>
+    <button type="button" data-front-reset>${ui('Ryd egen tekst på linjen')}</button></fieldset>`).join('')}
    ${c.front_label_unmatched?`<label class="check"><input type="checkbox" name="clear_unmatched"> ${ui('Nulstil uafklarede overstyringer til DAR')}</label>`:''}
    <p class="hint">${ui('Kontrollér kortets forhåndsvisning. For lange vejlinjer blokerer print og billedeksport.')}</p>
    ${formEnd('Gem forsidetekst')}</form>`,I18n.language());
@@ -28,33 +32,29 @@ const FrontLabelsUI={
  collect(form){
   return [...form.querySelectorAll('.frontLabelRow')].map(row=>{
    const values={source_ids:JSON.parse(row.dataset.sourceIds)};
-   for(const section of row.querySelectorAll('[data-front-label-field]')){
-    const select=section.querySelector('[data-front-label-mode]'),text=section.querySelector('[data-front-label-text]');
-    values[select.dataset.key]=select.value==='custom'?text.value:null;
+   for(const input of row.querySelectorAll('[data-front-label-text]')){
+    values[input.dataset.key]=input.value.trim()?input.value:null;
    }
    return values;
   });
  }
 };
-document.addEventListener('click',event=>{
+document.addEventListener('click',async event=>{
  const target=event.target.closest('[data-action="front-labels"],[data-front-reset]');
  if(!target)return;
  event.preventDefault();
  if(target.hasAttribute('data-front-reset')){
-  for(const section of target.closest('.frontLabelRow').querySelectorAll('[data-front-label-field]')){
-   section.querySelector('[data-front-label-mode]').value='dar';
-   const input=section.querySelector('[data-front-label-text]');
-   input.value=input.dataset.dar;input.disabled=true;
+  for(const input of target.closest('.frontLabelRow').querySelectorAll('[data-front-label-text]')){
+   input.value='';
   }
- }else FrontLabelsUI.open(target.dataset.id);
-});
-document.addEventListener('change',event=>{
- const select=event.target.closest('[data-front-label-mode]');
- if(!select)return;
- const input=select.closest('[data-front-label-field]').querySelector('[data-front-label-text]');
- input.disabled=select.value!=='custom';
- if(input.disabled)input.value=input.dataset.dar;
- else{input.focus();input.select();}
+  return;
+ }
+ if(el('cardForm')){
+  const generation=openDialog.generation;
+  await closeRequested();
+  if(openDialog.generation!==generation||el('dialog').open)return;
+ }
+ FrontLabelsUI.open(target.dataset.id);
 });
 document.addEventListener('submit',async event=>{
  const form=event.target;
@@ -63,11 +63,13 @@ document.addEventListener('submit',async event=>{
  if(form.dataset.saving==='yes'||!form.reportValidity())return;
  if(!ProfilesUI.has('cards.view','cards.edit'))return;
  form.dataset.saving='yes';
+ const generation=openDialog.generation,id=form.dataset.id;
  try{
   const rows=FrontLabelsUI.collect(form);
-  await mutate('card.front_labels.save',{card_id:form.dataset.id,expected_token:form.dataset.token,rows,
+  await mutate('card.front_labels.save',{card_id:id,expected_token:form.dataset.token,rows,
    clear_unmatched:!!form.querySelector('input[name="clear_unmatched"]:checked')},
-   {message:I18n.text('Forsidens tekst er gemt')});
+   {close:false,message:I18n.text('Forsidens tekst er gemt')});
+  if(openDialog.generation===generation&&el('dialog').open)detail(id);
  }catch(error){const message=form.querySelector('#formError');if(message)I18n.errorContent(message,error);else toast(error);}
  finally{delete form.dataset.saving;}
 });

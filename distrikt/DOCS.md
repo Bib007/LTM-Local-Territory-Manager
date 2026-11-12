@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Stable 1.12.20 er uændret. Beta 1.12.19-beta.5 samler tolv nye funktioner: grupperede forkyndere med bekræftet sletning, gennemgangshistorik, KTM-besøg, S-13 på mobil, massehandling på distriktskort, separate interne/offentlige numre, rapportperioder, reversible opfølgninger, Google Drive-uploadstatus, manuelle DAR-forsidetekster, S-12-layout og opdelingsforslag. Tidligere Beta-forbedringer er bevaret. Beta afprøves særskilt fra Stable, som fortsat installeres fra den almindelige repositoryadresse.
+Beta 1.12.19-beta.6 lader dig tilføje egen tekst til DAR-vejlinjen på kortets forside. Åbn **Rediger kort → Vejliste og adressetyper → Rediger forsidens vejlinjer**. Du kan udfylde ét eller begge fritekstfelter. Den oprindelige DAR-vejlinje vises først. Tidligere gemt fritekst følger med som et supplement.
 
 ## Installer betakanalen én gang
 
@@ -35,6 +35,6 @@ HA understøtter en grengiven repositoryadresse: [officiel vejledning](https://c
 
 ## Beta på Mac, Windows eller Linux
 
-Hent Beta-versionens DMG eller Setup.exe direkte fra GitHub. Mac-programmet hedder **LTM Beta.app**; Windows-installationen hedder **LTM Beta** og har egen programmappe. Begge bruger **Distrikt-beta** som datamappe, separat fra Stable. Ingen separat Python er nødvendig for disse installationsfiler.
+Når din Beta-udgivelse tilbyder en DMG eller Setup.exe, kan du hente installationsfilen direkte fra GitHub. Den samlede ZIP til Beta findes under udgivelsens filer. Mac-programmet hedder **LTM Beta.app**; Windows-installationen hedder **LTM Beta** og har egen programmappe. Begge bruger **Distrikt-beta** som datamappe, separat fra Stable. Ingen separat Python er nødvendig for disse installationsfiler.
 
 Til Linux eller privat server bruges fortsat den samlede LTM-v…zip og [Python-startguiden](SELF-HOSTING.md). Porten er 8788 og data/login holdes adskilt. Opdatér altid den samme kanal; gendan eller flyt kun rigtige data efter en bevidst beslutning og egen backup.
