@@ -1,7 +1,7 @@
 {
-  "version": "1.12.19-beta.5",
+  "version": "1.12.19-beta.6",
   "files": {
-    "shared/style.css": "52baded8d746ad613df65fc0de97973ddce145249f9ed0ae4ccc2970ca432548",
+    "shared/style.css": "b25ba4a6a65d459bc918c002676c5bd7ec2111160ab6ed5f2bb92e21290b833a",
     "shared/workspace.css": "19e135a34ef082ed6f07d7bb34fdffff3d58467e7703285a05e9d4afeb8dbb00",
     "shared/theme.css": "ef265c8771ac8493296ab6651bb1598ce455b38f924a9f50632d75b98438dcff",
     "shared/theme.js": "96800ce8ad1608cf664ce737c0385c3a503865555d38214832a2bd11441bf265",

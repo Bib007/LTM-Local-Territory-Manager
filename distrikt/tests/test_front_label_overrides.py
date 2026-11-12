@@ -61,15 +61,16 @@ class FrontLabelOverrideTests(unittest.TestCase):
         card=self.view()
         line=card['front_addresses'][0]
         self.assertEqual(line['road'],'Fiktivvej')
-        self.assertEqual(line['display_road'],'Egen Vej')
-        self.assertEqual(line['display_numbers'],'2A–8B (lige)')
-        self.assertTrue(line['manual_road'] and line['manual_numbers'])
+        self.assertEqual(line['extra_road'],'Egen Vej')
+        self.assertEqual(line['extra_numbers'],'2A–8B (lige)')
+        self.assertEqual(line['numbers'],'2–4 (lige)')
         self.assertEqual(self.store.require('cards',self.ident)['geo_addresses'],original_geo)
         self.assertTrue(card['front_revision'])
         self.assertNotEqual(before['front_print_token'],card['front_print_token'])
         self.save(None,None)
-        self.assertFalse(self.view()['front_addresses'][0]['manual_road'])
-        self.assertEqual(self.view()['front_addresses'][0]['display_road'],'Fiktivvej')
+        self.assertEqual(self.view()['front_addresses'][0]['extra_road'],'')
+        self.assertEqual(self.view()['front_addresses'][0]['extra_numbers'],'')
+        self.assertEqual(self.view()['front_addresses'][0]['road'],'Fiktivvej')
         self.assertEqual(self.store.require('cards',self.ident)['front_line_overrides'],[])
 
     def test_refresh_and_dar_rename_preserve_manual_overrides(self):
@@ -79,11 +80,11 @@ class FrontLabelOverrideTests(unittest.TestCase):
                               address('3','Omdøbt DAR-vej','6')])
         line=self.view()['front_addresses'][0]
         self.assertEqual(line['road'],'Omdøbt DAR-vej')
-        self.assertEqual(line['display_road'],'Manuelt vejnavn')
-        self.assertFalse(line['manual_numbers'])
+        self.assertEqual(line['extra_road'],'Manuelt vejnavn')
+        self.assertEqual(line['extra_numbers'],'')
         self.store.close()
         self.store=Store(Path(self.tmp.name)/'source')
-        self.assertEqual(self.view()['front_addresses'][0]['display_road'],'Manuelt vejnavn')
+        self.assertEqual(self.view()['front_addresses'][0]['extra_road'],'Manuelt vejnavn')
         self.assertEqual(self.store.require('cards',self.ident)['front_line_overrides'][0]['dar_road'],'Fiktivvej')
 
     def test_split_is_pending_not_silently_moved_to_wrong_road(self):
@@ -91,8 +92,8 @@ class FrontLabelOverrideTests(unittest.TestCase):
         self.replace_members([address('1','Fiktivvej','2'),address('2','Anden fiktiv vej','4')])
         card=self.view()
         self.assertEqual(card['front_label_unmatched'],1)
-        self.assertEqual({r['display_road'] for r in card['front_addresses']},
-                         {'Fiktivvej','Anden fiktiv vej'})
+        self.assertEqual({r['extra_road'] for r in card['front_addresses']},
+                         {''})
         self.assertEqual(len(self.store.require('cards',self.ident)['front_line_overrides']),1)
 
     def test_unmatched_overrides_require_explicit_reset(self):
@@ -117,7 +118,7 @@ class FrontLabelOverrideTests(unittest.TestCase):
         self.save('Version A',expected=original)
         with self.assertRaisesRegex(ValueError,'ændret'):
             self.save('Version B',expected=original)
-        self.assertEqual(self.view()['front_addresses'][0]['display_road'],'Version A')
+        self.assertEqual(self.view()['front_addresses'][0]['extra_road'],'Version A')
 
     def test_reject_controls_wrong_source_and_excessive_length(self):
         original=self.store.require('cards',self.ident)
@@ -144,13 +145,14 @@ class FrontLabelOverrideTests(unittest.TestCase):
         self.assertNotEqual(before,after,'Manual edits must invalidate previously published cards')
         recipe=Publications(self.store).prepare(self.ident)
         line=recipe['card']['front_addresses'][0]
-        self.assertEqual(line['display_road'],'Eksporteret Fiktivvej')
+        self.assertEqual((line['road'],line['numbers']),('Fiktivvej','2–4 (lige)'))
+        self.assertEqual((line['extra_road'],line['extra_numbers']),('Eksporteret Fiktivvej','2–4'))
         self.assertNotIn('geo_addresses',recipe['card'])
         archive=tables(self.store.state(),self.store.all('geo'))
         text=archive['CSV/forsidetekster.csv'].decode('utf-8-sig')
-        self.assertIn('Fiktivvej',text)
-        self.assertIn('Eksporteret Fiktivvej',text)
-        self.assertIn('2–4',text)
+        self.assertIn('vist_vej;viste_numre',text)
+        self.assertIn('Fiktivvej – Eksporteret Fiktivvej',text)
+        self.assertIn('2–4 (lige) – 2–4',text)
         target=Store(Path(self.tmp.name)/'target')
         try:
             restorer=Restores(target,'fictional')

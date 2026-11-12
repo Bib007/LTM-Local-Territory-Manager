@@ -94,12 +94,12 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
  #summaryPrint{display:none}
 }
 
-/* DAR front-label overrides share the same responsive form grid as other editors. */
+/* DAR street lines share the same responsive form grid as other editors. */
 .frontLabelRow{margin:1rem 0;padding:1rem;border:1px solid var(--border,#cbd5df);border-radius:8px;min-width:0}
 .frontLabelRow .twocol>*{min-width:0}
 .frontLabelRow [data-front-label-field]{display:flex;flex-direction:column;gap:.35rem;min-width:0}
-.frontLabelRow output{overflow-wrap:anywhere;white-space:normal;display:block}
-.frontLabelRow input,.frontLabelRow select{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.frontLabelRow p{margin:0;overflow-wrap:anywhere}
+.frontLabelRow input{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
 .frontLabelRow [data-front-reset]{margin-top:.75rem}
 /* Google Drive steps: an indeterminate spinner only while a step is actually running. */
 .shareProgress{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:.93em}

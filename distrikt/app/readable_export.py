@@ -123,10 +123,11 @@ def tables(state,geo):
     front_label_rows=[]
     for c in cards:
         for row in c.get('front_addresses',[]):
-            if row.get('manual_road') or row.get('manual_numbers'):
+            if row.get('extra_road') or row.get('extra_numbers'):
                 front_label_rows.append((c['id'],c['number'],'aktiv',','.join(row.get('source_ids',[])),
-                    row['road'],row['numbers'],row.get('display_road',row['road']),
-                    row.get('display_numbers',row['numbers'])))
+                    row['road'],row['numbers'],
+                    ' – '.join(filter(None,(row['road'],row['extra_road']))),
+                    ' – '.join(filter(None,(row['numbers'],row['extra_numbers'])))))
         from front_labels import _match
         _,pending=_match(c.get('front_addresses',[]),c.get('front_line_overrides',[]))
         for entry in pending:

@@ -51,6 +51,8 @@ Each recorded completion counts, including repeated completions of the same card
 
 ## 5. Add detail when ready
 
+Choose **Edit card → Road list and address types → Edit front-side street lines** to add text for the street name and house numbers. The card front shows the DAR street line followed by your text, for example `Example Road 2–8 (even) – Entrance from the courtyard – Gate B`.
+
 - Import/draw the congregation's outer boundary, review it, then fetch addresses inside it. Keep your actual KML and records private.
 - Fill in existing cards individually, or draw each card and select addresses in the map editor. Automatic division proposals are paused from beta.61.
 - Select do-not-call entries from the card's own addresses. The English abbreviation is DNC; the installed Danish app uses IB.

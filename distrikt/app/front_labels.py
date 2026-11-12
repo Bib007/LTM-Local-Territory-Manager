@@ -1,4 +1,4 @@
-"""Local S-12 display-only overrides. Never modifies authoritative DAR/geographic rows."""
+"""Local S-12 text supplements for authoritative DAR/geographic rows."""
 import hashlib
 import json
 import unicodedata
@@ -30,16 +30,14 @@ def _match(rows, overrides):
 
 
 def apply_overrides(card, rows):
-    """Enrich transient front rows; keep original DAR road/numbers untouched."""
+    """Attach free text to transient front rows alongside their original DAR values."""
     saved=card.get('front_line_overrides') or []
     if not isinstance(saved,list):saved=[]
     matched,pending=_match(rows,saved)
     for j,row in enumerate(rows):
         item=saved[matched[j]] if j in matched else {}
-        row['display_road']=item.get('road') or row['road']
-        row['display_numbers']=item.get('numbers') or row['numbers']
-        row['manual_road']=bool(item.get('road'))
-        row['manual_numbers']=bool(item.get('numbers'))
+        row['extra_road']=item.get('road') or ''
+        row['extra_numbers']=item.get('numbers') or ''
     card['front_label_unmatched']=len(pending)
 
 
@@ -64,7 +62,7 @@ def save(store,data):
     from geography import front_summaries
     working={'geo_addresses':card['geo_addresses']}
     front_summaries([working])
-    source_rows=working.get('front_addresses') or []
+    source_rows=[row for row in working.get('front_addresses',[]) if row['source_ids']]
     submitted=data.get('rows')
     if not isinstance(submitted,list) or len(submitted)!=len(source_rows) or len(submitted)>300:
         raise ValueError('Vejlinjerne er ændret. Genåbn redigeringen.')

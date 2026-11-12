@@ -1,29 +1,11 @@
-# LTM 1.12.19-beta.5 · 12 nye funktioner i samme Beta
+# LTM 1.12.19-beta.6 · Egen tekst ved siden af DAR
 
-Denne beta samler de tolv udviklingsopgaver fra PR #41–#52 og deres fælles integrationstests. Tidligere Beta-forbedringer er bevaret. **Stable 1.12.20 er uændret.**
+På et kort med DAR-adresser åbner du **Rediger kort → Vejliste og adressetyper → Rediger forsidens vejlinjer**. Skriv eventuelt egen tekst til vejnavnet, husnumrene eller begge dele. Efter **Gem forsidetekst** åbner kortets opdaterede forside.
 
-## Nyt i denne beta
+Forsiden viser fx **Eksempelvej 2–8 (lige) – Indgang fra gården – Port B**. Den samme vejlinje bruges i forhåndsvisning, print og PNG. Tidligere gemt fritekst vises som et supplement. Du kan fjerne den ved at tømme feltet og gemme.
 
-- **Forkyndere:** Samlet og filtreret optælling, grupperet visning og sikker sletning med bekræftelse, hvor eksisterende udleveringshistorik respekteres.
-- **Gennemgange og historik:** Bedre oversigt med kontrolleret redigering af kendte datoer.
-- **Sidste KTM-besøg:** Hjælpeteksten viser »Vælg tirsdagen i KTM-ugen«, mens gamle bemærkninger bevares.
-- **Mobil og tablet:** S-13-forhåndsvisning uden Print; OpenStreetMap kan prøves igen, eller rapporten kan genereres uden baggrundskort.
-- **Læg i mappen:** Flervalg og bekræftelse for flere udvalgte kort, med konflikt- og rettighedskontrol.
-- **Distriktsnumre:** Separate offentlige og interne numre med sikker omnummerering, samtidig med at stabile kort-ID'er og relationer bevares.
-- **Rapportudskrivning:** Vælg én af tre periodetyper eller alle tre; månedstidslinjen og »Sidste KTM besøg« vises korrekt.
-- **Opfølgninger:** Reversibelt »Se bort fra« med hændelseshistorik, genaktivering og adgangsstyring.
-- **Google Drive:** Ægte arbejdsstatus for generering/upload, beskyttelse mod dobbeltklik og sikker mulighed for at prøve igen.
-- **DAR-etiketter:** Overstyr tekst på forsidens vej- og husnummerlinjer uden at ændre de originale DAR-adressedata.
-- **S-12-layout:** Små, begrænsede justeringer af tekst/QR med nulstilling og korrekt A4-print.
-- **Opdelingsforslag:** Lokal grænse for besøg pr. kort og mulighed for at ignorere/genaktivere konkrete forslag.
+Se [betavejledningen](BETA.md) og [ændringsloggen](CHANGELOG.md).
 
-## Før du tester
+## English
 
-1. **Tag en privat sikkerhedskopi af dine Beta-data**, og bevar den et sikkert sted. Brug gerne opdigtede kort og adresser til de nye funktionstests.
-2. Kontrollér især kortnumre, udleveringshistorik, IB-forside/-bagside og S-12/S-13 PDF efter opdatering, før du printer fysiske kort.
-3. Test gerne mobilvisning, Google Drive-status og afbrydelse/genforsøg. Del ikke følsomme IB- eller forkynderoplysninger offentligt.
-4. Home Assistant Beta beholder sin **egen datamappe, login og port 8788**, adskilt fra Stable. Opdatering til Beta ændrer ikke Stable-installationen.
-
-Automatiserede tests anvender fiktive data og omfatter blandt andet adgangsrettigheder, kort-/historikregression, responsive browsere, print, backup og platformskontrol.
-
-Se [betavejledningen](BETA.md), den [danske changelog](CHANGELOG.md) og den [engelske changelog](CHANGELOG.en.md) for flere oplysninger.
+Open **Edit card → Road list and address types → Edit front-side street lines** to add optional text for the street name and house numbers. The card front keeps the DAR line and appends your text. Previously saved text is retained as a supplement. See the [English changelog](CHANGELOG.en.md).
