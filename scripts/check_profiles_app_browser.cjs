@@ -148,13 +148,6 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=connections]').click();
   await admin.locator('#driveConnection').waitFor();assert.equal(await admin.locator('[data-profile=activate]').count(),0);assert.equal(await admin.locator('#profileUser').isVisible(),false);
   await admin.locator('[data-work=settings-tab][data-value=data]').click();
-  assert.equal((await admin.locator('[data-publisher-total]').innerText()).trim(),'2','Moving to another group keeps the total');
-  assert.equal((await admin.locator('[data-publisher-visible]').innerText()).trim(),'1','Moving to another group updates the filtered count');
-  for(const width of [390,768,1440]){
-   await admin.setViewportSize({width,height:900});
-   assert.ok(await admin.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Publisher groups must not cause horizontal overflow at '+width+'px');
-   assert.equal(await admin.locator('.publisherGroup').count(),1,'Group remains visible at '+width+'px');
-  }
   await admin.setViewportSize({width:390,height:900});
   await admin.waitForFunction(()=>document.querySelector('aside').getBoundingClientRect().right<=1);
   await admin.locator('#runtimePanel').waitFor();
@@ -264,6 +257,13 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.waitForFunction(id=>state.publishers.find(p=>p.id===id).group==='Gruppe 02'&&!document.querySelector('#dialog').open,person);
   assert.equal(await admin.evaluate(id=>state.publishers.find(p=>p.id===id).pioneer,person),false);
   await admin.locator('#publisherGroupFilter').selectOption('group:gruppe 02');
+  assert.equal((await admin.locator('[data-publisher-total]').innerText()).trim(),'2','Moving to another group keeps the total');
+  assert.equal((await admin.locator('[data-publisher-visible]').innerText()).trim(),'1','Moving to another group updates the filtered count');
+  for(const width of [390,768,1440]){
+   await admin.setViewportSize({width,height:900});
+   assert.ok(await admin.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Publisher groups must not cause horizontal overflow at '+width+'px');
+   assert.equal(await admin.locator('.publisherGroup').count(),1,'Group remains visible at '+width+'px');
+  }
   assert.equal(await admin.locator('#app [data-action=publisher-profile]').filter({hasText:'Fiktiv Gruppe B'}).count(),0);
   // End-to-end deletion uses only fictional publishers and requires an explicit second click.
   await admin.locator('#publisherGroupFilter').selectOption('');
