@@ -2,6 +2,23 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.21 · 2026-11-12
+
+- **Samlet Stable efter Beta 1.12.19-beta.6:** Saml forbedringerne fra beta.5 og beta.6 i en ny Stable-udgave, med samme programkode som den kontrollerede beta samt særskilt Stable-version.
+- **Forkyndere og kort:** Gruppedelte lister og korrekte optællinger, bekræftet sletning, massehandling til mappen og separate offentlige/interne distriktsnumre med stabile kort-ID'er.
+- **Gennemgange og rapporter:** Bedre historikredigering, vejledning til KTM-besøg, eksplicit rapportperiode og genskabt tidslinje med »Sidste KTM besøg«.
+- **Kort, DAR og print:** S-13-forhåndsvisning på mobil, OSM-genprøvning eller rapport uden baggrundskort, valgfrie DAR-forsidetekster og begrænsede S-12-layoutjusteringer.
+- **Opgaver og deling:** Reversibelt »Se bort fra« på opfølgninger, tydelig uploadstatus og sikker genprøve i Google Drive samt kontrollerede forslag til distriktsopdeling.
+- Bevar Stable og Beta som separate installationer med egne data, login og porte. Mac-server-udgivelse kræver fortsat sin særskilte fysiske godkendelse.
+
+## 1.12.20 · 2026-11-09
+
+- Overfør de afprøvede forbedringer fra Beta 1.12.19-beta.4 til Stable: personlig påmindelse om åbne opgaver med adgangsstyret automatisk opdatering og genvej til brugerens egne opgaver.
+- Bevar og vis korrekt de vejledende kortantal for forkynderroller ved brugerkonti. Vejledningen begrænser ikke udlevering.
+- Vælg allerede eksisterende kort til den daglige mappe uden dubletter; sortér distriktskort efter længst tid siden gennemgang uden at miste filtrene.
+- Forbedr IB-bagsidens udskrivning i originalstørrelse med korrekt sideopdeling, og bevar historiske opgavelister og profilrettigheder.
+- Hold Stable og Home Assistant Beta adskilt med egne data og porte. Versionsnummer og afprøvede Stable-pakker opdateres særskilt.
+
 ## 1.12.19-beta.6 · 2026-11-12
 
 - **DAR på kortets forside:** Tilføj valgfri fritekst til vejnavn og husnumre. Forsiden viser DAR-vejlinjen efterfulgt af din tekst. Tidligere gemt fritekst bevares som et supplement.

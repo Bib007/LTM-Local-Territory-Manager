@@ -2,6 +2,23 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.21 · 2026-11-12
+
+- **Stable promotion of Beta 1.12.19-beta.6:** Combine the beta.5 and beta.6 improvements into a new Stable version, retaining the verified beta application code with separate Stable version metadata.
+- **Publishers and territories:** Grouped lists and accurate totals, confirmed deletion, bulk folder actions and distinct public/internal territory numbers with persistent technical card IDs.
+- **Completions and reports:** Improved history editing, KTM visit guidance, explicit report-period choice and restored month timeline with the last KTM visit indicator.
+- **Maps, DAR and printing:** Mobile S-13 preview, OSM retry or background-free report generation, optional DAR front-line text and bounded S-12 layout adjustments.
+- **Tasks and sharing:** Reversible follow-up dismissals, accurate Google Drive upload progress and guarded retries, plus reviewed territory split suggestions.
+- Keep Stable and Beta installations, records, logins and ports separate. The macOS server track still requires independent physical validation.
+
+## 1.12.20 · 2026-11-09
+
+- Promote the tested 1.12.19-beta.4 code to Stable: personal open-task greeting with authorized automatic refresh and shortcut to the user's filtered task list.
+- Suggested card counts by publisher role now persist and display correctly with accounts, and never restrict issuance.
+- Select existing cards into the daily-use folder without duplicating cards; sort territory cards by longest time since completion while preserving filters.
+- Improve original-size IB-card back pagination and protect historic task listings and profile access.
+- Keep Stable and Home Assistant Beta separately installed, with separate data and ports. Update release version and tested stable artifacts.
+
 ## 1.12.19-beta.6 · 2026-11-12
 
 - **DAR on the card front:** Add optional free text for the street name and house numbers. The card front keeps the DAR line and appends your text. Previously saved text is retained as a supplement.
