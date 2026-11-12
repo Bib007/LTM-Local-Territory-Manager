@@ -132,7 +132,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  assert.equal(markers.length,1);assert.match(markers[0].options.icon.html,/>120</);assert.equal(leaders.length,1);
  assert(leaders[0][0].lng>=10&&leaders[0][0].lng<=11,'The leader must start inside its own narrow district');
  run('state.cards=JSON.parse(savedCardsFixture);ReportMap.map=null;ReportMap.layer=null');
- const notices=[],tileErrors=[];c.notices=notices;c.L={map(){return {remove(){},attributionControl:{setPrefix(){}},on(){}};},tileLayer(){return {addTo(){return this;},on(name,fn){tileErrors.push(fn);}};},layerGroup(){return {addTo(){return this;}};}};
+ const notices=[],tileErrors=[];c.notices=notices;c.L={map(){return {remove(){},attributionControl:{setPrefix(){}},on(){}};},tileLayer(){return {addTo(){return this;},on(name,fn){if(name==='tileerror')tileErrors.push(fn);}};},layerGroup(){return {addTo(){return this;}};}};
  run('savedFailed=ReportMap.failed;ReportMap.failed=function(error){notices.push(error.message);return savedFailed.call(this,error)};ReportMap.points=()=>[[10,55]];ReportMap.fit=()=>{};ReportMap.draw=()=>{};ReportMap.mount()');tileErrors[0]();tileErrors[0]();assert.equal(notices.length,1,'Repeated tile failures show one notice for the current map');run('ReportMap.mount()');tileErrors[0]();assert.equal(notices.length,1,'A removed map must not show a stale failure');tileErrors[1]();assert.equal(notices.length,2);
  console.log('Report language: calendar/service/rolling boundaries, repeated and archived events, known dates, current assignment aggregates, chart/table equality, private-data omission and unchanged original Danish form passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
