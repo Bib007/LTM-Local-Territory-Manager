@@ -53,7 +53,7 @@ async function main(){
      await page.evaluate(mode=>{
       const rows=[{number:'F-101',previous:'2026-06-01',allocations:[{person:'Opdigtet Person',assigned:'2026-09-01',completed:'2026-10-01'}]}];
       document.getElementById('fixture').innerHTML=s13OriginalPages(rows)+'<section class="report reportScreenMap">'+ReportMap.html(true)+'</section>';
-      ReportMap.tileTimeoutMs=mode==='timeout'?400:mode==='slow'?4000:8000;
+      ReportMap.tileTimeoutMs=mode==='timeout'?400:mode==='slow'?4000:mode==='success'?8000:2000;
       ReportMap.mount();
      },mode);
      return {context,page,errors};
