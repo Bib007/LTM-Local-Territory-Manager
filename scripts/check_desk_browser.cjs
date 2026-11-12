@@ -73,7 +73,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
    page='Forkyndere';query='';render();
  });
  for(const [id,expected] of [['p1','1 / 4'],['p2','2 / 3'],['p3','0 / 5']]){
-   const row=page.locator('tr').filter({has:page.locator('[data-action=publisher-profile][data-id="'+id+'"]')});
+   const row=page.locator('.publisherItem').filter({has:page.locator('[data-action=publisher-profile][data-id="'+id+'"]')});
    assert.equal(await row.locator('.publisherGuidance').innerText(),expected,'Publisher roles and active counts appear in the list');
  }
  await page.evaluate(()=>{page='Indstillinger';render();});

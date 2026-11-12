@@ -308,15 +308,53 @@ function publisherIssueGuidance(name){
 
 function publisherGroupInfo(p){return '<small>'+esc(p.group||I18n.text('Ingen tjenestegruppe'))+(p.group_role?' · '+ui(publisherRoleLabels[p.group_role]||'Ingen gruppefunktion'):'')+(p.pioneer?' · '+ui('Pioner'):'')+'</small>';}
 function publisherGroupOptions(value=''){const groups=new Map();for(const p of state.publishers){if(p.group)groups.set(publisherGroupKey(p.group),p.group);}return '<option value="" data-ui="Alle tjenestegrupper">'+I18n.text('Alle tjenestegrupper')+'</option><option value="__none__" data-ui="Ingen tjenestegruppe" '+(value==='__none__'?'selected':'')+'>'+I18n.text('Ingen tjenestegruppe')+'</option>'+[...groups].sort((a,b)=>cmp(a[1],b[1])).map(([key,name])=>'<option value="'+esc('group:'+key)+'" '+(value==='group:'+key?'selected':'')+'>'+esc(name)+'</option>').join('');}
+function publisherOverviewGroups(people){
+ const groups=new Map();
+ for(const p of state.publishers){
+  const key=p.group?'group:'+publisherGroupKey(p.group):'__none__';
+  if(!groups.has(key))groups.set(key,{key,name:p.group||I18n.text('Ingen tjenestegruppe'),people:[]});
+ }
+ if(publisherGroupFilter==='__none__'&&!groups.has('__none__'))groups.set('__none__',{key:'__none__',name:I18n.text('Ingen tjenestegruppe'),people:[]});
+ for(const p of people){
+  const key=p.group?'group:'+publisherGroupKey(p.group):'__none__';
+  groups.get(key)?.people.push(p);
+ }
+ return [...groups.values()].filter(g=>publisherGroupFilter?g.key===publisherGroupFilter:g.people.length>0)
+  .sort((a,b)=>(a.key==='__none__')-(b.key==='__none__')||cmp(a.name,b.name));
+}
+function publisherOverviewCard(p){
+ const active=state.loans.filter(l=>l.publisher_id===p.id&&!l.returned).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number));
+ return '<article class="publisherItem">'
+  +'<div class="publisherItemHeading"><div><button class="link" data-action="publisher-profile" data-id="'+esc(p.id)+'"><b>'+esc(p.name)+'</b></button>'+publisherGroupInfo(p)+'</div>'+publisherGuidanceDisplay(p)+'</div>'
+  +'<div class="publisherItemLoans"><small>'+ui('Kortnumre')+'</small><div>'+(
+   active.map(l=>'<button data-action="detail" data-id="'+esc(l.card_id)+'">'+ui('Nr.')+' '+esc(card(l.card_id)?.number)+'</button>').join(' ')||'—'
+  )+'</div></div>'
+  +'<div class="publisherItemActions"><button data-action="publisher-profile" data-id="'+esc(p.id)+'">'+ui('Kort og historik')+'</button><button data-action="publisher" data-id="'+esc(p.id)+'">'+ui('Rediger forkynder')+'</button><button class="danger" data-action="delete" data-module="publishers" data-id="'+esc(p.id)+'">'+ui('Slet forkynder')+'</button></div></article>';
+}
 function publishersPage(){
+ // No separate person cache, public endpoint or group table: show only the authorized state snapshot.
  if(publisherGroupFilter.startsWith('group:')&&!state.publishers.some(p=>'group:'+publisherGroupKey(p.group)===publisherGroupFilter))publisherGroupFilter='';
- const q=query.toLowerCase(),people=state.publishers.slice().sort((a,b)=>cmp(a.name,b.name)).filter(p=>[p.name,p.group,I18n.text(publisherRoleLabels[p.group_role]||''),p.pioneer?I18n.text('Pioner'):''].join(' ').toLowerCase().includes(q)).filter(p=>{if(!publisherGroupFilter)return true;if(publisherGroupFilter==='__none__')return !p.group;return publisherGroupFilter==='group:'+publisherGroupKey(p.group);});
- return `<div class="toolbar"><input id="search" ${I18n.attribute('aria','Søg forkynder')} ${I18n.attribute('placeholder','Søg forkynder')} value="${esc(query)}"><select id="publisherGroupFilter" ${I18n.attribute('aria','Tjenestegruppe')}> ${publisherGroupOptions(publisherGroupFilter)}</select><button class="primary" data-action="publisher">${ui('Tilføj forkynder')}</button><button data-publisher-import="open">${ui('Importér gruppeliste')}</button></div><section class="panel"><div class="tablewrap"><table><thead><tr><th>${ui('Forkynder')}</th><th>${ui('Aktuelt / vejledende antal kort')}</th><th>${ui('Kortnumre')}</th><th></th></tr></thead><tbody>${people.map(p=>{const active=state.loans.filter(l=>l.publisher_id===p.id&&!l.returned).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number));return `<tr><td><button class="link" data-action="publisher-profile" data-id="${p.id}">${esc(p.name)}</button>${publisherGroupInfo(p)}</td><td>${publisherGuidanceDisplay(p)}</td><td>${active.map(l=>`<button data-action="detail" data-id="${l.card_id}">${ui('Nr.')} ${esc(card(l.card_id)?.number)}</button>`).join(' ')||'—'}</td><td><button data-action="publisher-profile" data-id="${p.id}">${ui('Kort og historik')}</button> <button data-action="publisher" data-id="${p.id}">${ui('Rediger forkynder')}</button></td></tr>`;}).join('')||`<tr><td colspan="4">${ui('Ingen forkyndere fundet. Tilføj dem her eller ved udlevering.')}</td></tr>`}</tbody></table></div><p class="hint">${ui('{people} registrerede forkyndere · {cards} kort udlånt i alt.',{people:state.publishers.length,cards:state.loans.filter(l=>!l.returned).length})}</p></section>`;
+ const q=query.toLocaleLowerCase('da-DK').trim();
+ const people=state.publishers.slice().sort((a,b)=>cmp(a.name,b.name))
+  .filter(p=>[p.name,p.group,I18n.text(publisherRoleLabels[p.group_role]||''),p.pioneer?I18n.text('Pioner'):''].join(' ').toLocaleLowerCase('da-DK').includes(q))
+  .filter(p=>!publisherGroupFilter||(publisherGroupFilter==='__none__'?!p.group:publisherGroupFilter==='group:'+publisherGroupKey(p.group)));
+ const groups=publisherOverviewGroups(people);
+ const stats='<div class="publisherStats" role="status" aria-live="polite">'
+  +'<div class="publisherStat"><small>'+ui('Forkyndere i alt')+'</small><strong data-publisher-total>'+state.publishers.length+'</strong></div>'
+  +'<div class="publisherStat"><small>'+ui('Forkyndere i visningen')+'</small><strong data-publisher-visible>'+people.length+'</strong></div></div>';
+ const toolbar='<div class="toolbar publisherToolbar"><input id="search" '+I18n.attribute('aria','Søg forkynder')+' '+I18n.attribute('placeholder','Søg forkynder')+' value="'+esc(query)+'">'
+  +'<select id="publisherGroupFilter" '+I18n.attribute('aria','Tjenestegruppe')+'>'+publisherGroupOptions(publisherGroupFilter)+'</select>'
+  +'<button class="primary" data-action="publisher">'+ui('Tilføj forkynder')+'</button><button data-publisher-import="open">'+ui('Importér gruppeliste')+'</button></div>';
+ const content=groups.length?'<div class="publisherGroups">'+groups.map(g=>'<section class="publisherGroup" data-publisher-group="'+esc(g.key)+'" aria-label="'+esc(g.name)+'">'
+  +'<div class="publisherGroupHeading"><h2>'+esc(g.name)+'</h2><span class="publisherGroupCount" data-publisher-count="'+g.people.length+'">'+ui('{count} i gruppen',{count:g.people.length})+'</span></div>'
+  +(g.people.length?'<div class="publisherItems">'+g.people.map(publisherOverviewCard).join('')+'</div>':'<p class="hint">'+ui('Ingen forkyndere matcher søgningen i denne gruppe.')+'</p>')+'</section>').join('')+'</div>'
+  :'<section class="panel"><p class="empty">'+ui('Ingen forkyndere fundet. Tilføj dem her eller ved udlevering.')+'</p></section>';
+ return '<div class="publisherOverview">'+stats+toolbar+content+'<p class="hint">'+ui('{count} kort udlånt i alt.',{count:state.loans.filter(l=>!l.returned).length})+'</p></div>';
 }
 function publisherProfile(id){
  const p=state.publishers.find(p=>p.id===id);if(!p)return;
  const active=state.loans.filter(l=>l.publisher_id===id&&!l.returned).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number)),history=state.loans.filter(l=>l.publisher_id===id&&l.returned).sort((a,b)=>cmp(b.assigned,a.assigned));
- openDialog(`<h2>${esc(p.name)}</h2>${publisherGroupInfo(p)}${publisherGuidanceDisplay(p)}<div class="actions"><button data-action="publisher" data-id="${id}">${ui('Rediger forkynder')}</button></div><h3>${ui('Aktuelle kort')}</h3>${active.map(l=>`<div class="line"><span><button class="link" data-action="detail" data-id="${l.card_id}"><b>${ui('Kort')} ${esc(card(l.card_id)?.number)}</b></button><br><small>${esc(areaName(card(l.card_id)?.area_id))} · ${ui('Udleveret')} ${fmt(l.assigned)}</small></span><div><button data-action="complete" data-id="${l.id}">${ui('Gennemgået')}</button> <button data-action="return" data-id="${l.id}">${ui('Aflever')}</button></div></div>`).join('')||`<p class="hint">${ui('Ingen udleverede distriktskort.')}</p>`}<h3>${ui('Tidligere udleveringer')}</h3>${history.map(l=>`<div class="line"><span>${ui('Kort')} ${esc(card(l.card_id)?.number)}<br><small>${fmt(l.assigned)} – ${fmt(l.returned)}</small></span><button data-action="detail" data-id="${l.card_id}">${ui('Åbn kort')}</button></div>`).join('')||`<p class="hint">${ui('Ingen afsluttede udlån registreret.')}</p>`}<div class="actions"><button data-action="close">${ui('Luk')}</button></div>`,I18n.language());
+ openDialog(`<h2>${esc(p.name)}</h2>${publisherGroupInfo(p)}${publisherGuidanceDisplay(p)}<div class="actions"><button data-action="publisher" data-id="${esc(id)}">${ui('Rediger forkynder')}</button><button class="danger" data-action="delete" data-module="publishers" data-id="${esc(id)}">${ui('Slet forkynder')}</button></div><h3>${ui('Aktuelle kort')}</h3>${active.map(l=>`<div class="line"><span><button class="link" data-action="detail" data-id="${l.card_id}"><b>${ui('Kort')} ${esc(card(l.card_id)?.number)}</b></button><br><small>${esc(areaName(card(l.card_id)?.area_id))} · ${ui('Udleveret')} ${fmt(l.assigned)}</small></span><div><button data-action="complete" data-id="${l.id}">${ui('Gennemgået')}</button> <button data-action="return" data-id="${l.id}">${ui('Aflever')}</button></div></div>`).join('')||`<p class="hint">${ui('Ingen udleverede distriktskort.')}</p>`}<h3>${ui('Tidligere udleveringer')}</h3>${history.map(l=>`<div class="line"><span>${ui('Kort')} ${esc(card(l.card_id)?.number)}<br><small>${fmt(l.assigned)} – ${fmt(l.returned)}</small></span><button data-action="detail" data-id="${l.card_id}">${ui('Åbn kort')}</button></div>`).join('')||`<p class="hint">${ui('Ingen afsluttede udlån registreret.')}</p>`}<div class="actions"><button data-action="close">${ui('Luk')}</button></div>`,I18n.language());
 }
 function yearBounds(){return [`${year-1}-09-01`,`${year}-08-31`<state.today?`${year}-08-31`:state.today];}
 function eventsInYear(){const [a,b]=page==='Rapporter'?Workspace.periodBounds():yearBounds();return state.completions.filter(e=>e.date>=a&&e.date<=b);}
@@ -428,7 +466,19 @@ function confirmLoanDelete(loan){
  const location=loan.returned?'':`<label for="deleteLoanLocation">${ui('Hvor ligger det fysiske kort?')}</label><select id="deleteLoanLocation" name="location" required><option value="">${ui('Vælg placering')}</option><option value="folder">${ui('Kort i mappen')}</option><option value="box">${ui('Kort i kassen')}</option></select>`;
  openDialog(`<h2>${ui('Slet fejlagtig udlevering?')}</h2><p><b>${ui('Kort')} ${esc(territory.number)}</b>${territory.name?' · '+esc(territory.name):''}${territory.archived?' · '+ui('arkiveret efter sammenlægning'):''}<br>${ui('Forkynder')}: ${esc(publisherName(loan.publisher_id,I18n.text('Ukendt')))}<br>${ui('Udleveret')} ${fmt(loan.assigned)} · ${status}</p><p>${ui('Udleveringen fjernes. Registrerede gennemgange og noter bevares.')}</p><form id="deleteLoanForm" data-id="${esc(loan.id)}" data-history-revision="${esc(historyRevision)}" data-history-token="${esc(state.loan_delete_tokens?.[loan.id]||'')}">${location}<p class="hint">${ui(deleteRecoveryHint)}</p><div id="formError" class="formError" role="alert"></div><div class="actions"><button class="danger">${ui('Slet udlevering')}</button><button type="button" data-action="close">${ui('Annuller')}</button></div></form>`,I18n.language());
 }
+function confirmPublisherDelete(id){
+ const p=state.publishers.find(p=>p.id===id);if(!p)return;
+ if(state.profile&&!ProfilesUI.canAction('delete',{module:'publishers'}))return;
+ const related=state.loans.filter(l=>l.publisher_id===id);
+ if(related.length){
+  openDialog('<h2>'+ui('Forkynderen kan ikke slettes')+'</h2><p><b>'+esc(p.name)+'</b></p><p>'+ui('Forkynderen har registrerede udleveringer eller historik. Behold forkynderen for at bevare rapporterne.')+'</p><div class="actions"><button data-action="close">'+ui('Luk')+'</button></div>',I18n.language());
+  return;
+ }
+ const expected={name:p.name,group:p.group||'',group_role:p.group_role||'',pioneer:p.pioneer===true};
+ openDialog('<h2>'+ui('Slet forkynder?')+'</h2><p><b>'+esc(p.name)+'</b></p><p>'+ui('Kun forkynderen fjernes fra listen. Kort og anden historik ændres ikke.')+'</p><p class="hint">'+ui(deleteRecoveryHint)+'</p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="publishers" data-id="'+esc(id)+'" data-expected="'+esc(JSON.stringify(expected))+'">'+ui('Ja, slet forkynder')+'</button><button data-action="close">'+ui('Annuller')+'</button></div>',I18n.language());
+}
 function confirmDelete(module,id){const item=state[module]?.find(i=>i.id===id);if(!item)return;
+ if(module==='publishers')return confirmPublisherDelete(id);
  if(module==='loans')return confirmLoanDelete(item);
  const completion=module==='completions';
  const territory=completion&&(card(item.card_id)||(state.archived_cards||[]).find(c=>c.id===item.card_id));
@@ -547,7 +597,12 @@ case 'report-tab':reportTab=d.tab;render();break;
 case 'visit':editVisit(d.id);break;
 case 'ib':editIB(d.id,d.card);break;
 case 'delete':confirmDelete(d.module,d.id);break;
-case 'confirm-delete':await mutate('delete',{module:d.module,id:d.id},{message:I18n.text("Slettet · kan gendannes i 48 timer ved fejl")});break;
+case 'confirm-delete':{
+ if(d.module==='publishers'&&target.disabled)break;
+ if(d.module==='publishers')target.disabled=true;
+ try{await mutate('delete',{module:d.module,id:d.id,...(d.module==='publishers'?{confirmation:'SLET FORKYNDER',expected:JSON.parse(d.expected||'null')}:{})},{message:I18n.text("Slettet · kan gendannes i 48 timer ved fejl")});}
+ catch(error){if(d.module==='publishers')target.disabled=false;throw error;}
+ break;}
 case 'purge-recovery':if(window.confirm(I18n.text('Slet hele denne gendannelsespost permanent? Den kan derefter ikke gendannes fra appen.')))await mutate('recovery.purge',{batch:d.id},{close:false,message:I18n.text("Posten er slettet permanent")});break;
 case 'restore':await mutate('restore',{batch:d.id},{close:false,message:I18n.text("Gendannet")});break;
 case 'approve':openDialog(`<h2>${ui(d.side==='front'?'Godkend kortets forside?':'Godkend IB-bagsiden?')}</h2><p>${ui("Bekræft, at siden er kontrolleret og printet til det fysiske kort.")}</p><div class="actions"><button class="primary" data-action="confirm-approve" data-id="${d.id}" data-side="${d.side}">${ui("Kontrolleret og printet")}</button><button data-action="close">${ui("Annuller")}</button></div>`);break;

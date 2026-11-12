@@ -826,9 +826,24 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             return {}
         if action == 'delete':
             module = data.get('module')
-            if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes'):
+            if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes', 'publishers'):
                 raise ValueError('Denne post kan ikke slettes her.')
             item = self.require(module, data['id'])
+            if module == 'publishers':
+                # Require the exact observed person, not an ID from an out-of-date dialog.
+                expected = data.get('expected')
+                fields = ('name', 'group', 'group_role', 'pioneer')
+                if (data.get('confirmation') != 'SLET FORKYNDER'
+                        or not isinstance(expected, dict)
+                        or set(expected) != set(fields)):
+                    raise ValueError('Bekræft sletningen af forkynderen igen.')
+                if any(item.get(key, '' if key != 'pioneer' else False) != expected[key] for key in fields):
+                    raise ValueError('Forkynderen er ændret. Opdater og kontrollér før sletning.')
+                # Both current and recoverable assignments retain the person ID.
+                # Never orphan S-13 allocations, returns or old reports.
+                if any(loan.get('publisher_id') == item['id']
+                       for loan in self.all('loans') + self.all('loans', deleted=True)):
+                    raise ValueError('Forkynderen har udleveringer eller historik og kan ikke slettes. Behold forkynderen for at bevare historikken.')
             if module == 'loans':
                 if 'history_token' in data:
                     c=self.require('cards',item['card_id'])
@@ -903,6 +918,15 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             if not entries:
                 raise ValueError('Gendannelsesperioden er udløbet.')
             for module, item in entries:
+                if module == 'publishers':
+                    from card_import import norm
+                    for other in self.all('publishers'):
+                        if other['id'] == item['id']:continue
+                        if other['name'].casefold() == item['name'].casefold():
+                            raise ValueError('Navnet findes allerede. Ret den eksisterende forkynder før gendannelse.')
+                        if (item.get('group_role') and item.get('group_role') == other.get('group_role')
+                                and norm(item.get('group')) == norm(other.get('group'))):
+                            raise ValueError('Der er flere med samme gruppefunktion i tjenestegruppen. Ret valget før gemning.')
                 if module=='cards':
                     from geo_store import address_key
                     keys={address_key(a) for a in item.get('geo_addresses',[])};ids=set(item.get('address_ids',[]))
