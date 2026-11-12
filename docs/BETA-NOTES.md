@@ -1,25 +1,29 @@
-# LTM 1.12.19-beta.4 · Dine åbne opgaver på forsiden
+# LTM 1.12.19-beta.5 · 12 nye funktioner i samme Beta
 
-Denne beta tilføjer en personlig opgavebesked på forsiden og retter den fejlede testkørsel fra udviklingsversionen. Stable 1.12.19 er uændret.
+Denne beta samler de tolv udviklingsopgaver fra PR #41–#52 og deres fælles integrationstests. Tidligere Beta-forbedringer er bevaret. **Stable 1.12.19 er uændret.**
 
-## Nyt
+## Nyt i denne beta
 
-- **Dine egne opgaver ved velkomsten.** Når du er logget ind med adgang til Opgaver, viser forsiden kun antallet af **dine egne åbne, aktive opgaver**. Beskeden skjules automatisk, når der ikke er nogen.
-- **Se mine opgaver.** Knappen åbner opgavelisten med **Mine opgaver** og **Åbne opgaver** valgt. Den starter med en opdateret visning.
-- **Automatisk opdatering.** Når andre ændrer en opgaves ansvarshavende eller markerer den udført, opdateres beskeden ved den eksisterende statuskontrol (normalt inden for 30 sekunder), uden at du behøver genindlæse.
-- **Korrekte rettigheder.** Uden adgang til opgaver vises intet antal. Andre brugeres opgaver, udførte eller ignorerede opgaver og ugentlige opgaver, der først er aktuelle senere, tælles ikke med.
-- **Eksisterende opgavelister bevaret.** Ældre opfølgningsposter vises fortsat i de almindelige lister, så nyt personligt filter ikke ændrer gammel funktionalitet.
+- **Forkyndere:** Samlet og filtreret optælling, grupperet visning og sikker sletning med bekræftelse, hvor eksisterende udleveringshistorik respekteres.
+- **Gennemgange og historik:** Bedre oversigt med kontrolleret redigering af kendte datoer.
+- **Sidste KTM-besøg:** Hjælpeteksten viser »Vælg tirsdagen i KTM-ugen«, mens gamle bemærkninger bevares.
+- **Mobil og tablet:** S-13-forhåndsvisning uden Print; OpenStreetMap kan prøves igen, eller rapporten kan genereres uden baggrundskort.
+- **Læg i mappen:** Flervalg og bekræftelse for flere udvalgte kort, med konflikt- og rettighedskontrol.
+- **Distriktsnumre:** Separate offentlige og interne numre med sikker omnummerering, samtidig med at stabile kort-ID'er og relationer bevares.
+- **Rapportudskrivning:** Vælg én af tre periodetyper eller alle tre; månedstidslinjen og »Sidste KTM besøg« vises korrekt.
+- **Opfølgninger:** Reversibelt »Se bort fra« med hændelseshistorik, genaktivering og adgangsstyring.
+- **Google Drive:** Ægte arbejdsstatus for generering/upload, beskyttelse mod dobbeltklik og sikker mulighed for at prøve igen.
+- **DAR-etiketter:** Overstyr tekst på forsidens vej- og husnummerlinjer uden at ændre de originale DAR-adressedata.
+- **S-12-layout:** Små, begrænsede justeringer af tekst/QR med nulstilling og korrekt A4-print.
+- **Opdelingsforslag:** Lokal grænse for besøg pr. kort og mulighed for at ignorere/genaktivere konkrete forslag.
 
-Den forrige beta 1.12.19-beta.3's rettelse af vejledende kortantal og øvrige forbedringer fra beta.2 er også med.
+## Før du tester
 
-## Test med fiktive konti
+1. **Tag en privat sikkerhedskopi af dine Beta-data**, og bevar den et sikkert sted. Brug gerne opdigtede kort og adresser til de nye funktionstests.
+2. Kontrollér især kortnumre, udleveringshistorik, IB-forside/-bagside og S-12/S-13 PDF efter opdatering, før du printer fysiske kort.
+3. Test gerne mobilvisning, Google Drive-status og afbrydelse/genforsøg. Del ikke følsomme IB- eller forkynderoplysninger offentligt.
+4. Home Assistant Beta beholder sin **egen datamappe, login og port 8788**, adskilt fra Stable. Opdatering til Beta ændrer ikke Stable-installationen.
 
-1. Log ind som en fiktiv bruger med rettigheden **Se opgaver**, og tildel brugeren én opgave. Kontrollér beskeden **Du er ansvarlig for 1 åben opgave**.
-2. Tildel en anden bruger en opgave. Den skal ikke påvirke dit tal.
-3. Vælg **Se mine opgaver**; kontrollér at kun dine egne aktuelle opgaver vises.
-4. Afslut opgaven, eller fjern ansvarshavende i en anden session. Kontrollér, at tallet ændrer sig eller forsvinder senest ved næste statuskontrol.
-5. Gentag på telefon og computer og med en konto uden rettigheden **Se opgaver**.
+Automatiserede tests anvender fiktive data og omfatter blandt andet adgangsrettigheder, kort-/historikregression, responsive browsere, print, backup og platformskontrol.
 
-**Home Assistant Beta** har fortsat eget login, egen datamappe og port 8788. Tag privat backup før opdateringen. Stable påvirkes ikke; pakken indeholder ingen brugerdata.
-
-Læs [betavejledningen](BETA.md) for installation og [changeloggen](CHANGELOG.md) for den samlede ændringsliste.
+Se [betavejledningen](BETA.md), den [danske changelog](CHANGELOG.md) og den [engelske changelog](CHANGELOG.en.md) for flere oplysninger.
