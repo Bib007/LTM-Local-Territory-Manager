@@ -93,3 +93,14 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
  .boundaryReport p{margin:0 0 2mm}
  #summaryPrint{display:none}
 }
+
+
+/* Google Drive steps: an indeterminate spinner only while a step is actually running. */
+.shareProgress{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:.93em}
+.shareProgress:empty{display:none}
+.shareActivityLine{display:inline-flex;align-items:center;gap:8px}
+.shareActivityError{display:block;margin-top:6px;overflow-wrap:anywhere}
+.shareProgress button{margin:8px 0 0}
+.shareSpinner{display:inline-block;width:1em;height:1em;vertical-align:middle;border:2px solid var(--line);border-top-color:var(--link);border-radius:50%;animation:shareRotate .85s linear infinite}
+@keyframes shareRotate{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.shareSpinner{animation:none;border-style:dashed}}
