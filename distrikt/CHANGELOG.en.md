@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.6 · 2026-11-12
+
+- **DAR on the card front:** Add optional free text for the street name and house numbers. The card front keeps the DAR line and appends your text. Previously saved text is retained as a supplement.
+
 ## 1.12.19-beta.5 · 2026-11-12
 
 - **Publishers:** Show accurate totals and filtered counts, group by service group and require confirmation for safe deletion while preserving permissions and assignment history.

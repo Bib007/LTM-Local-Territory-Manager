@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.6 · 2026-11-12
+
+- **DAR på kortets forside:** Tilføj valgfri fritekst til vejnavn og husnumre. Forsiden viser DAR-vejlinjen efterfulgt af din tekst. Tidligere gemt fritekst bevares som et supplement.
+
 ## 1.12.19-beta.5 · 2026-11-12
 
 - **Forkyndere:** Vis korrekte totaler og filtrerede optællinger, gruppér efter menighedsgruppe og kræv bekræftelse før sikker sletning. Bevar rettigheder og historiske udleveringer.

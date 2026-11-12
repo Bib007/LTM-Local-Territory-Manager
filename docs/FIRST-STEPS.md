@@ -52,6 +52,7 @@ Hver registreret gennemgang tæller, også flere gennemgange af samme kort. Ansl
 
 - Importér eller tegn den samlede grænse, kontrollér den, og hent adresser indenfor. Virkelige KML-filer og registreringer bliver private.
 - Udfyld eksisterende kort enkeltvis, eller tegn hvert kort og vælg adresser i korteditoren. Du tegner og kontrollerer selv kortgrænserne.
+- Åbn **Rediger kort → Vejliste og adressetyper → Rediger forsidens vejlinjer** for at tilføje egen tekst til vejnavn og husnumre. Forsiden viser DAR-vejlinjen efterfulgt af de udfyldte felter, fx `Eksempelvej 2–8 (lige) – Indgang fra gården – Port B`.
 - Vælg IB fra det konkrete korts egne adresser.
 - Brug almindeligt papir til den første printtilpasning, og gem printerprofilen.
 - [Google Drive og QR](GOOGLE-DRIVE.md) er valgfrit.
