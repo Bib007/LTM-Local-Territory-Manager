@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-profiles-') as root:
         for name in source.namelist():
             raw=source.read(name)
             if name=='xl/worksheets/sheet1.xml':
-                rows=[['Fiktiv Gruppe A','Gruppe 01','Gruppetilsynsmand','Ja'],['Fiktiv Gruppe B','Gruppe 01','Assistent','Nej']]
+                rows=[['Fiktiv Gruppe A','Gruppe 01','Gruppetilsynsmand','Ja'],['Fiktiv Gruppe B','Gruppe 03','Assistent','Nej']]
                 extra=''.join('<row r="'+str(i)+'">'+''.join('<c r="'+chr(65+j)+str(i)+'" t="inlineStr"><is><t>'+escape(value)+'</t></is></c>' for j,value in enumerate(row))+'</row>' for i,row in enumerate(rows,2))
                 raw=raw.decode().replace('</sheetData>',extra+'</sheetData>').encode()
             target.writestr(name,raw)
