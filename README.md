@@ -149,6 +149,6 @@ Yes, for supported card and do-not-call imports: upload an XLSX or CSV file, sel
 
 [Documentation overview](docs/README.en.md) · [First steps](docs/FIRST-STEPS.en.md) · [Accounts and roles](docs/USERS.en.md) · [Printing](docs/PRINT.en.md) · [Privacy](docs/PRIVACY.en.md) · [Contributing](docs/CONTRIBUTING.en.md)
 
-[Report a bug or suggest an improvement](https://tally.so/r/KpY0ZV). Describe the steps and include invented examples. Never submit real names, do-not-call records, private databases, passwords or connection files. The feedback form is operated separately by Tally.
+[Report a bug or suggest an improvement](https://localterritorymanager.netlify.app/en/feedback/). Describe the steps and include invented examples. Never submit real names, do-not-call records, private databases, passwords or connection files.
 
 LTM is an independent, unofficial open-source project. It is not developed, published or endorsed by Jehovah’s Witnesses or their organisation. No official affiliation is implied.

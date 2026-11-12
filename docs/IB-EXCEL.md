@@ -1,6 +1,6 @@
 # IB fra Excel eller CSV
 
-W117 · frigivet i verificeret beta.79 · [udgivelsesbevis](planning/BETA-79-VERIFICERING.md).
+W117 · frigivet i verificeret beta.79 · [udgivelsesbevis](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/e37b7ce09a172bf4fe769abf070f418692837823/docs/planning/BETA-79-VERIFICERING.md).
 
 Åbn **Indstillinger → Import → Åbn lokal IB-import**. Hent Excel-skabelonen, og udfyld fanen **IB**. CSV virker også. Regnearket behandles af din lokale LTM-installation; det sendes ikke til en ekstern tjeneste.
 

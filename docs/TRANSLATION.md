@@ -1,6 +1,6 @@
 # Sprog og dækning
 
-Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne, noter, søgninger og opbevarede værdier bevares. Originale formularer og rapportindhold er danske; printbetjeningen kan vælges på begge sprog.
+Engelsk er standard for nye brugere. Det valgte sprog ændrer appens faste betjening; brugerens navne, noter, søgninger og opbevarede værdier bevares. Originale formularer og rapportindhold er danske; printbetjeningen kan vælges på begge sprog.
 
 | Område | Status på develop |
 | --- | --- |
@@ -17,6 +17,6 @@ Dansk er standardsprog. Engelsk ændrer fast markeret betjening; brugerens navne
 | Dialoglabels, tastatur og fokus | Klargjort og prøvet med native Chromium-dialoger |
 | Printbetjening | Dansk/engelsk klargjort og prøvet; originale formularer og dansk rapportindhold bevares |
 
-[Køreplan](planning/KOREPLAN.md). Klargjort udviklingskode er ikke en stabil udgivelse.
+[Bidrag og kontrol](../.github/CONTRIBUTING.md).
 
 Førstegangsopsætningen, den personlige plan, rundturen og Excel-/CSV-importens betjening kan vælges på dansk eller engelsk. XLSX-skabelonens kolonneoverskrifter er danske på begge sprog, så filformatet er entydigt. Fælles domænefejl og lokal IB-import er klargjort; øvrig fejldækning kontrolleres fortsat. IMPORTÉR IB er samme bekræftelsesord på begge sprog. Automatisk kortinddeling og OPRET KORT-forløbet er arkiveret fra beta.61; de arkiverede sprog-/payloadprøver bevares til senere udvikling.

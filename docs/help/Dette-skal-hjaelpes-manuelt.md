@@ -24,4 +24,4 @@ Fremtidige repository-opdateringer hentes i HA. Privat backup tages gennem appen
 - Egen Datafordeler-konto og adresseopdatering på installationen.
 - Egen skærmlæser/hjælpemidler, hvis de bruges.
 
-Disse lokale prøver markeres ikke som udført af automatiske test. Se [printvejledningen](../PRINT.md) og [slutkontrollen](../SLUTKONTROL.md). Ønskelisten er en separat kø efter den faste køreplan.
+Disse lokale prøver markeres ikke som udført af automatiske test. Se [printvejledningen](../PRINT.md) og [slutkontrollen](../SLUTKONTROL.md).
