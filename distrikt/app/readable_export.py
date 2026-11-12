@@ -105,7 +105,7 @@ def tables(state,geo):
     def ref(ident):return refs.get(ident,'')
     result={}
     def add(name,headers,rows):result['CSV/'+name+'.csv']=csv_file(headers,rows)
-    add('kort',['kort_id','kortnummer','navn','omraade_id','arkiveret','seneste_gennemgang','type','midlertidig','i_mappen'],[(c['id'],c['number'],c.get('name',''),c.get('area_id',''),bool(c.get('archived')),c.get('last_completed',''),c.get('kind',''),bool(c.get('temporary')),bool(c.get('in_folder'))) for c in cards])
+    add('kort',['kort_id','kortnummer','navn','omraade_id','arkiveret','seneste_gennemgang','type','midlertidig','i_mappen','internt_nummer'],[(c['id'],c['number'],c.get('name',''),c.get('area_id',''),bool(c.get('archived')),c.get('last_completed',''),c.get('kind',''),bool(c.get('temporary')),bool(c.get('in_folder')),c.get('internal_number','')) for c in cards])
     address_rows=[]
     for c in cards:
         members=c.get('geo_addresses') or [addresses[i] for i in c.get('address_ids',[]) if i in addresses]
@@ -118,6 +118,25 @@ def tables(state,geo):
     statuses={a['id']:a for a in addresses.values()};ignored={i.get('address_id') for i in state.get('ignored',[])}
     address_rows=[(*row,statuses.get(row[3],{}).get('type',''),bool(statuses.get(row[3],{}).get('retired')),row[3] in ignored) for row in address_rows]
     add('adresser',['kort_id','kortnummer','grundlag','adresse_id','vej','husnummer_eller_gemt_vejlinje','etage','doer','postnummer','besoegstal','laengdegrad','breddegrad','type','nedlagt','se_bort_fra'],address_rows)
+    # Keep current DAR values and local display overrides in separate columns.
+    # Also export unmatched manual entries for review after a DAR split/merge.
+    front_label_rows=[]
+    for c in cards:
+        for row in c.get('front_addresses',[]):
+            if row.get('extra_road') or row.get('extra_numbers'):
+                front_label_rows.append((c['id'],c['number'],'aktiv',','.join(row.get('source_ids',[])),
+                    row['road'],row['numbers'],
+                    ' – '.join(filter(None,(row['road'],row['extra_road']))),
+                    ' – '.join(filter(None,(row['numbers'],row['extra_numbers'])))))
+        from front_labels import _match
+        _,pending=_match(c.get('front_addresses',[]),c.get('front_line_overrides',[]))
+        for entry in pending:
+                front_label_rows.append((c['id'],c['number'],'afventer gennemgang',
+                    ','.join(entry.get('source_ids') or []),entry.get('dar_road',''),
+                    entry.get('dar_numbers',''),entry.get('road') or entry.get('dar_road',''),
+                    entry.get('numbers') or entry.get('dar_numbers','')))
+    add('forsidetekster',['kort_id','kortnummer','status','adresse_ider','dar_vej','dar_numre',
+        'vist_vej','viste_numre'],front_label_rows)
     add('ib',['ib_id','kort_id','kortnummer','adresse_id','vej','nummer','dato'],[(r['id'],r.get('card_id',''),ref(r.get('card_id')),r.get('address_id',''),r.get('road',''),r.get('number',''),r.get('date_text') or r.get('date','')) for r in state['ib']])
     add('udleveringer',['udlaans_id','kort_id','kortnummer','forkynder_id','forkynder','udleveret','aktuel_gennemgang_fra','afleveret'],[(r['id'],r['card_id'],ref(r['card_id']),r['publisher_id'],people.get(r['publisher_id'],''),r['assigned'],r.get('cycle_start',''),r.get('returned','')) for r in state['loans']])
     add('gennemgange',['id','kort_id','kortnummer','dato','forrige_gennemgang','udlaans_id','besoeg','besoeg_ukendt','kilde'],[(r['id'],r['card_id'],ref(r['card_id']),r['date'],r.get('previous_completed',''),r.get('loan_id',''),'' if r.get('visits_unknown') else r.get('visits',''),bool(r.get('visits_unknown')),r.get('source','')) for r in state['completions']])

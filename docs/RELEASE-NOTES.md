@@ -1,22 +1,18 @@
-# LTM 1.12.20 · Samlet Stable efter beta.4
+# LTM 1.12.21 · Beta 1.12.19-beta.6 bliver til Stable
 
-Den gennemtestede Beta 1.12.19-beta.4 er nu samlet i Stable 1.12.20. Eksisterende Stable-installationer kan opdateres uden at skifte til betakanalen. Luk programmet og tag en privat backup før opdatering.
+Denne udgave samler de 12 forbedringer fra Beta 1.12.19-beta.5 og rettelsen i beta.6. Den bevarer eksisterende Stable-installation og brugerdata på deres sædvanlige placering.
 
-## Nyheder og forbedringer
+## Nyheder
 
-- **Personlige opgaver på forsiden.** Når du er logget ind med opgaveadgang, viser velkomsten antallet af egne, aktuelle, åbne opgaver samt knappen **Se mine opgaver**. Andre brugeres, afsluttede og ignorerede opgaver tæller ikke med. Antallet opdateres automatisk ved ændringer fra andre konti.
-- **Vejledende distriktskort pr. forkynder.** Indstil anbefalede antal for forkyndere, pionerer, gruppeassistenter og tilsynsmænd. Tallene gemmes korrekt også med brugerprofiler og vises i forkynderoversigten. Flere roller bruger det højeste forslag; antal begrænser aldrig udlevering.
-- **Hurtigere daglig brug.** Find og læg et allerede eksisterende distriktskort i mappen uden at oprette et nyt. Kortidentitet, udleveringer og historik bevares.
-- **Bedre overblik.** Sortér distriktskort efter længst tid siden gennemgang, også når sidste dato er ukendt, og bevar dine øvrige filtre.
-- **Korrekt IB-print.** IB-bagsiden udnytter det originale 94 × 146 mm kortformat bedre, og ekstra kortsider oprettes kun ved behov. A4 er stadig kontrolark, ikke et forstørret distriktskort.
-- **Kompatibilitet og datasikkerhed.** Ældre opgaveposter bevares i almindelige lister; opgavetallet viser kun egne data og kræver de rette læserettigheder.
+- **Forkyndere og daglig brug:** korrekte optællinger efter menighedsgrupper, bekræftet sletning, massehandling til mappen og særskilte interne/offentlige distriktsnumre.
+- **Historik og rapportering:** tydeligere gennemgange, KTM-vejledning, valgbare rapportperioder og tidslinje for seneste KTM-besøg.
+- **Kort og formularer:** mobilvisning af S-13, robust OpenStreetMap-fallback, valgfri egen tekst ved DAR-vejlinjer, S-12-justering og forslag til opdeling af distrikter.
+- **Opfølgning og Google Drive:** reversibel ignorering af enkelte opfølgninger samt arbejdsstatus, dobbeltklikværn og genprøvning ved upload.
 
-Alle automatiske Python-, JavaScript-, browser-, sikkerheds- og platformskontroller for den tilsvarende Beta-kode blev bestået inden Stable-forberedelsen. Der er anvendt fiktive konti og testdata.
+## Opdatering og sikkerhed
 
-## Installation og kanaler
+Tag en **privat backup af distriktsdata** og, hvis profiler er aktiveret, en separat konto-backup før opdatering. Installer ny Stable på samme kanal; behold eksisterende data og login. Beta er fortsat separat og bruger sin egen datamappe og Home Assistant-port 8788 i stedet for Stable-port 8787. Brug kun fiktive data til nye prøveforløb.
 
-**Home Assistant Stable:** Brug den almindelige repositoryadresse uden `#beta`. Stable beholder port 8787 og sin eksisterende datamappe. Beta er en separat installation med port 8788 og eget login og data; dens data overføres ikke automatisk til Stable.
+Udgivelsesprocessen kræver grønne tests på den **endelige Stable-commit** og separat kontrolleret publicering pr. platform. macOS-server må ikke udgives, før den særskilte fysiske LAN/VPN/genstartstest er godkendt. Stable-assets og gamle betaudgivelser må ikke overskrives.
 
-**Mac og Windows:** Brug de særskilte, kontrollerede Stable-releasefiler for den relevante platform. Den native Mac-server med LAN/VPN kræver fortsat sin særskilte fysiske godkendelse. Installationsfiler er usignerede og kan kræve første-gangsgodkendelse. Luk programmet før en opdatering.
-
-Ændringerne fra beta.2–beta.4 er samlet i [changeloggen](CHANGELOG.md). De tidligere betaudgivelser forbliver tilgængelige som prereleases.
+Se [den danske ændringslog](CHANGELOG.md), [den engelske ændringslog](CHANGELOG.en.md) og [betavejledningen](BETA.md).

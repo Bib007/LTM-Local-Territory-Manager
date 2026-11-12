@@ -59,6 +59,32 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.s.get('cards',c)['addresses'][0]['count'],2)
         self.assertEqual(self.s.geo_state()['status']['a2']['card_id'],c)
 
+    def test_ktm_tuesday_validation_and_historical_notes(self):
+        # All identifiers and note contents are synthetic; no personal data is used.
+        created=self.s.mutate('visit.save',{'date':'2026-10-06','note':'Fiktiv arkivbemærkning'})['id']
+        self.assertEqual(self.s.get('visits',created)['note'],'Fiktiv arkivbemærkning')
+        self.s.mutate('visit.save',{'id':created,'date':'2026-10-13'})
+        self.assertEqual(self.s.get('visits',created),{'id':created,'date':'2026-10-13','note':'Fiktiv arkivbemærkning'})
+        self.assertEqual(self.s.mutate('visit.save',{'date':'2026-10-13'})['id'] is not None,True)
+        with self.assertRaisesRegex(ValueError,'Vælg tirsdagen i KTM-ugen'):
+            self.s.mutate('visit.save',{'date':'2026-10-07'})
+        with self.assertRaisesRegex(ValueError,'Vælg tirsdagen i KTM-ugen'):
+            self.s.mutate('visit.save',{'id':created,'date':'2026-10-08'})
+        with self.assertRaises(ValueError):
+            self.s.mutate('visit.save',{'date':'2026-02-30'})
+        with self.assertRaises(ValueError):
+            self.s.mutate('visit.save',{'date':'2099-01-01'})
+        with self.s.transaction():
+            self.s.put('visits',{'id':'historic','date':'2026-09-10','note':'Bevaret gammel tekst'})
+        self.s.mutate('visit.save',{'id':'historic','date':'2026-09-10'})
+        self.assertEqual(self.s.get('visits','historic')['note'],'Bevaret gammel tekst')
+        with self.assertRaisesRegex(ValueError,'Vælg tirsdagen i KTM-ugen'):
+            self.s.mutate('visit.save',{'id':'historic','date':'2026-09-11'})
+        self.s.close();self.s=Store(self.tmp.name)
+        self.assertEqual(self.s.get('visits',created)['note'],'Fiktiv arkivbemærkning')
+        self.assertEqual(self.s.get('visits','historic')['date'],'2026-09-10')
+        self.assertEqual(self.s.get('visits','historic')['note'],'Bevaret gammel tekst')
+
     def test_person_and_issue_commit_together_and_name_reuses_existing(self):
         c=self.card();future=(date.today()+timedelta(days=1)).isoformat()
         with self.assertRaises(ValueError):self.s.mutate('loan.issue',{'card_id':c,'publisher_name':'Skal rulles tilbage','initial':True,'date':future})

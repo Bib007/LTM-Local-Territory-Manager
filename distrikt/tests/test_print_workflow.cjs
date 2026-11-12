@@ -9,7 +9,7 @@ let win;
 class Fields{constructor(f){this.fields=f.fields;}has(k){return this.fields.some(([key])=>key===k);}[Symbol.iterator](){return this.fields[Symbol.iterator]();}}
 const c={console,Map,Set,Promise,FormData:Fields,location:{origin:'http://fictional.test'},document:{getElementById:id=>nodes.get(id),addEventListener(){},querySelectorAll:()=>[]},window:{open(){return blockPopup?null:(win=popup());}},
  FileReader:class{readAsDataURL(){this.result='data:image/png;base64,FICTIONAL';this.onload();}},Image:class{decode(){return decodeFails?Promise.reject(Error('bad image')):Promise.resolve();}},fetch:async()=>{if(pendingAsset)await pendingAsset;return {ok:true,blob:async()=>({})};},writes,messages};
-vm.createContext(c);for(const n of ['i18n.js','printing.js','report-print.js'])vm.runInContext(read(n),c);
+vm.createContext(c);for(const n of ['i18n.js','s12-layout.js','printing.js','report-print.js'])vm.runInContext(read(n),c);
 const run=s=>vm.runInContext(s,c);c.nodes=nodes;
 run(`let state={revision:'r1',settings:{},cards:[{id:'c1',number:'101',name:'PRINT <invented>',front_revision:true}]},page='Distrikter',year=2027;const esc=v=>I18n.escape(v),ui=(key,p)=>I18n.label(key,p),el=id=>nodes.get(id),card=id=>state.cards.find(c=>c.id===id),cmp=(a,b)=>a.localeCompare(b);
 function openDialog(html,language){openDialog.generation=(openDialog.generation||0)+1;nodes.set('dialog',{innerHTML:html,lang:language});}openDialog.generation=1;
@@ -33,6 +33,23 @@ const form=(remember=true)=>{const f={dataset:{id:'c1',side:'front',ids:'["c1"]'
  c.window.open=()=>win=popup();
  // Report navigation during an awaited map must preserve the newer page and period.
  let releaseMap;c.mapWait=new Promise(r=>releaseMap=r);run("ReportMap.printable=async()=>mapWait");const jobReport=run('printReport()');await run('printReport()');run("page='Forside';Workspace.reportPeriod='rolling';ReportMap.map={}");releaseMap('<svg>fictional</svg>');await assert.rejects(jobReport,/Printgrundlaget er ændret/);assert.equal(run('Workspace.reportPeriod'),'rolling');assert.equal(win.closed,true);assert.equal(run('printReport.busy'),false);
+ // A print session captures exactly the selected period and only renders its map.
+ // The isolated DOM fixture must supply the report period dropdown explicitly.
+ nodes.set('reportPrintPeriod',{value:'service',isConnected:true});
+ const reportPicker=nodes.get('reportPrintPeriod');c.reportModeCalls=[];c.reportDocumentCalls=[];
+ run("page='Rapporter';ReportMap.printable=async()=>{reportModeCalls.push(Workspace.reportPeriod);return '<svg>fictional</svg>'};reportPrintDocument=(maps,selected)=>{reportDocumentCalls.push({selected,keys:Object.keys(maps)});return '<p>FICTIONAL REPORT</p>'};inlineReportAssets=async value=>value");
+ for(const selectedPeriod of ['calendar','service','rolling','all']){
+  reportPicker.value=selectedPeriod;c.reportModeCalls.length=0;c.reportDocumentCalls.length=0;run("Workspace.reportPeriod='service'");
+  c.window.open=()=>{win=popup();return win;};
+  await run('printReport()');
+  const wanted=selectedPeriod==='all'?['calendar','service','rolling']:[selectedPeriod];
+  assert.deepEqual(c.reportModeCalls,wanted);
+  assert.equal(c.reportDocumentCalls[0].selected,selectedPeriod);
+  assert.deepEqual(Array.from(c.reportDocumentCalls[0].keys),wanted);
+  assert.equal(run('Workspace.reportPeriod'),'service');
+  assert.equal(run('printReport.busy'),false);
+ }
+ reportPicker.value='service';
  // Missing report images fail closed after the document is assembled.
  run("page='Rapporter';Workspace.reportPeriod='service';ReportMap.printable=async()=>'<svg>fictional</svg>';reportPrintDocument=()=>'<p>FICTIONAL REPORT</p>';inlineReportAssets=async s=>s");
  c.window.open=()=>{win=popup();win.document.querySelectorAll=()=>[{getAttribute:()=>'/corrupt.jpg'}];return win;};decodeFails=true;await run('printReport()');assert.equal(win.controls.printReport.disabled,true);assert.match(win.controls.printAssetError.textContent,/Print images could not load/);assert.equal(run('Workspace.reportPeriod'),'service');

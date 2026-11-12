@@ -1,25 +1,11 @@
-# LTM 1.12.19-beta.4 · Dine åbne opgaver på forsiden
+# LTM 1.12.19-beta.6 · Egen tekst ved siden af DAR
 
-Denne beta tilføjer en personlig opgavebesked på forsiden og retter den fejlede testkørsel fra udviklingsversionen. Stable 1.12.19 er uændret.
+På et kort med DAR-adresser åbner du **Rediger kort → Vejliste og adressetyper → Rediger forsidens vejlinjer**. Skriv eventuelt egen tekst til vejnavnet, husnumrene eller begge dele. Efter **Gem forsidetekst** åbner kortets opdaterede forside.
 
-## Nyt
+Forsiden viser fx **Eksempelvej 2–8 (lige) – Indgang fra gården – Port B**. Den samme vejlinje bruges i forhåndsvisning, print og PNG. Tidligere gemt fritekst vises som et supplement. Du kan fjerne den ved at tømme feltet og gemme.
 
-- **Dine egne opgaver ved velkomsten.** Når du er logget ind med adgang til Opgaver, viser forsiden kun antallet af **dine egne åbne, aktive opgaver**. Beskeden skjules automatisk, når der ikke er nogen.
-- **Se mine opgaver.** Knappen åbner opgavelisten med **Mine opgaver** og **Åbne opgaver** valgt. Den starter med en opdateret visning.
-- **Automatisk opdatering.** Når andre ændrer en opgaves ansvarshavende eller markerer den udført, opdateres beskeden ved den eksisterende statuskontrol (normalt inden for 30 sekunder), uden at du behøver genindlæse.
-- **Korrekte rettigheder.** Uden adgang til opgaver vises intet antal. Andre brugeres opgaver, udførte eller ignorerede opgaver og ugentlige opgaver, der først er aktuelle senere, tælles ikke med.
-- **Eksisterende opgavelister bevaret.** Ældre opfølgningsposter vises fortsat i de almindelige lister, så nyt personligt filter ikke ændrer gammel funktionalitet.
+Se [betavejledningen](BETA.md) og [ændringsloggen](CHANGELOG.md).
 
-Den forrige beta 1.12.19-beta.3's rettelse af vejledende kortantal og øvrige forbedringer fra beta.2 er også med.
+## English
 
-## Test med fiktive konti
-
-1. Log ind som en fiktiv bruger med rettigheden **Se opgaver**, og tildel brugeren én opgave. Kontrollér beskeden **Du er ansvarlig for 1 åben opgave**.
-2. Tildel en anden bruger en opgave. Den skal ikke påvirke dit tal.
-3. Vælg **Se mine opgaver**; kontrollér at kun dine egne aktuelle opgaver vises.
-4. Afslut opgaven, eller fjern ansvarshavende i en anden session. Kontrollér, at tallet ændrer sig eller forsvinder senest ved næste statuskontrol.
-5. Gentag på telefon og computer og med en konto uden rettigheden **Se opgaver**.
-
-**Home Assistant Beta** har fortsat eget login, egen datamappe og port 8788. Tag privat backup før opdateringen. Stable påvirkes ikke; pakken indeholder ingen brugerdata.
-
-Læs [betavejledningen](BETA.md) for installation og [changeloggen](CHANGELOG.md) for den samlede ændringsliste.
+Open **Edit card → Road list and address types → Edit front-side street lines** to add optional text for the street name and house numbers. The card front keeps the DAR line and appends your text. Previously saved text is retained as a supplement. See the [English changelog](CHANGELOG.en.md).

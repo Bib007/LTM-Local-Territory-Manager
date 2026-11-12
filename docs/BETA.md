@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Stable 1.12.20 indeholder nu de godkendte forbedringer fra Beta 1.12.19-beta.4. Betakanalen er fortsat en separat testinstallation; Beta 1.12.19-beta.4 indeholder personlige åbne opgaver på forsiden, forbedret IB-udskrivning, søgning efter eksisterende kort til mappen, sortering efter gennemgang og vejledende kortantal efter rolle. Fremover afprøves nye ændringer på Beta først. Betaer samler flere sammenhængende forbedringer, så nye funktioner kan prøves løbende. Den stabile udgave installeres fortsat fra den almindelige repositoryadresse. Beta erstatter ikke automatisk den stabile app.
+Beta 1.12.19-beta.6 lader dig tilføje egen tekst til DAR-vejlinjen på kortets forside. Åbn **Rediger kort → Vejliste og adressetyper → Rediger forsidens vejlinjer**. Du kan udfylde ét eller begge fritekstfelter. Den oprindelige DAR-vejlinje vises først. Tidligere gemt fritekst følger med som et supplement.
 
 ## Installer betakanalen én gang
 
@@ -35,6 +35,6 @@ HA understøtter en grengiven repositoryadresse: [officiel vejledning](https://c
 
 ## Beta på Mac, Windows eller Linux
 
-Hent Beta-versionens DMG eller Setup.exe direkte fra GitHub. Mac-programmet hedder **LTM Beta.app**; Windows-installationen hedder **LTM Beta** og har egen programmappe. Begge bruger **Distrikt-beta** som datamappe, separat fra Stable. Ingen separat Python er nødvendig for disse installationsfiler.
+Når din Beta-udgivelse tilbyder en DMG eller Setup.exe, kan du hente installationsfilen direkte fra GitHub. Den samlede ZIP til Beta findes under udgivelsens filer. Mac-programmet hedder **LTM Beta.app**; Windows-installationen hedder **LTM Beta** og har egen programmappe. Begge bruger **Distrikt-beta** som datamappe, separat fra Stable. Ingen separat Python er nødvendig for disse installationsfiler.
 
 Til Linux eller privat server bruges fortsat den samlede LTM-v…zip og [Python-startguiden](SELF-HOSTING.md). Porten er 8788 og data/login holdes adskilt. Opdatér altid den samme kanal; gendan eller flyt kun rigtige data efter en bevidst beslutning og egen backup.

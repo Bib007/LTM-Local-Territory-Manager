@@ -65,6 +65,57 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await p.waitForFunction(({id,wording})=>state.ib.some(i=>i.card_id===id&&i.date_text===wording&&i.date===''),{id:fixture.cards[index],wording});
    }
    const text=await p.evaluate(id=>backHTML(card(id)),fixture.cards[index]);assert.ok(text.includes('marts 2024')&&text.includes('2024'));
+   // DAR text and both free-text supplements share the same S-12 print line.
+   const id=fixture.cards[index];
+   await p.evaluate(id=>{closeDialog();detail(id);},id);
+   await p.locator('[data-action=edit-card]').click();
+   const beforeLabels=await p.evaluate(id=>JSON.stringify(card(id).geo_addresses),id);
+   await p.locator('#cardForm [data-action=front-labels]').click();
+   const form=p.locator('#frontLabelsForm'),row=form.locator('.frontLabelRow').first();
+   const street=row.locator('[data-key=road]'),numbers=row.locator('[data-key=numbers]');
+   assert.match(await row.innerText(),/DAR · Fictional road/);
+   assert.equal(await street.inputValue(),'');
+   assert.equal(await numbers.inputValue(),'');
+   await street.fill('Side entrance');
+   await numbers.fill('Gate B');
+   await form.locator('button.primary').click();
+   const front=p.locator('#dialog .cardPreview .streets');
+   await front.waitFor();
+   assert.match(await front.innerText(),/Fictional road .* – Side entrance – Gate B/);
+   const printed=await p.evaluate(id=>printDocument([card(id)],'front',{...defaultPrintProfile('front'),mode:'full',form_language:I18n.language()}),id);
+   assert.match(printed,/Fictional road .* – Side entrance – Gate B/);
+   const image=await p.evaluate(async id=>{
+    const raster=MapExport.raster;
+    let labels;
+    MapExport.raster=svg=>{
+     labels=[...new DOMParser().parseFromString(svg,'image/svg+xml').querySelectorAll('text')].map(n=>n.textContent);
+     return raster.call(MapExport,svg);
+    };
+    try{
+     const blob=await printFrontImage(card(id),{profile:{form_language:I18n.language()}});
+     return {type:blob.type,labels:labels.join(' ')};
+    }finally{MapExport.raster=raster;}
+   },id);
+   assert.equal(image.type,'image/png');
+   assert.match(image.labels,/Fictional road .* – Side entrance – Gate B/);
+   assert.equal(await p.evaluate(id=>JSON.stringify(card(id).geo_addresses),id),beforeLabels);
+   await p.reload();
+   await p.waitForFunction(id=>state?.cards?.some(c=>c.id===id&&c.front_addresses?.[0]?.extra_numbers==='Gate B'),id);
+   await p.evaluate(id=>detail(id),id);
+   await p.locator('#dialog [data-action=front-labels]').click();
+   assert.equal(await street.inputValue(),'Side entrance');
+   assert.equal(await numbers.inputValue(),'Gate B');
+   await street.fill('');
+   await form.locator('button.primary').click();
+   await front.waitFor();
+   assert.match(await front.innerText(),/Fictional road .* – Gate B/);
+   assert.doesNotMatch(await front.innerText(),/Side entrance/);
+   await p.locator('#dialog [data-action=front-labels]').click();
+   await row.locator('[data-front-reset]').click();
+   await form.locator('button.primary').click();
+   await front.waitFor();
+   assert.match(await front.innerText(),/Fictional road/);
+   assert.doesNotMatch(await front.innerText(),/Gate B/);
    assert.deepEqual(errors,[]);await context.close();
   }
   console.log(JSON.stringify({ok:true,real_server:true,languages:['en','da'],widths:[390,1440],preview_without_card_write:true,one_confirmed_save:true,manual_excel_front_and_back_without_dar:true,explicit_later_link:true,manual_year_and_month_year_preserved:true}));

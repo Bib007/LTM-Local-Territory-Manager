@@ -93,3 +93,65 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
  .boundaryReport p{margin:0 0 2mm}
  #summaryPrint{display:none}
 }
+
+/* DAR street lines share the same responsive form grid as other editors. */
+.frontLabelRow{margin:1rem 0;padding:1rem;border:1px solid var(--border,#cbd5df);border-radius:8px;min-width:0}
+.frontLabelRow .twocol>*{min-width:0}
+.frontLabelRow [data-front-label-field]{display:flex;flex-direction:column;gap:.35rem;min-width:0}
+.frontLabelRow p{margin:0;overflow-wrap:anywhere}
+.frontLabelRow input{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.frontLabelRow [data-front-reset]{margin-top:.75rem}
+/* Google Drive steps: an indeterminate spinner only while a step is actually running. */
+.shareProgress{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:.93em}
+.shareProgress:empty{display:none}
+.shareActivityLine{display:inline-flex;align-items:center;gap:8px}
+.shareActivityError{display:block;margin-top:6px;overflow-wrap:anywhere}
+.shareProgress button{margin:8px 0 0}
+.shareSpinner{display:inline-block;width:1em;height:1em;vertical-align:middle;border:2px solid var(--line);border-top-color:var(--link);border-radius:50%;animation:shareRotate .85s linear infinite}
+@keyframes shareRotate{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.shareSpinner{animation:none;border-style:dashed}}
+/* The original S-13 SVG is a full A4 page, not a 300 × 150 inline SVG.
+   Scale its viewBox into the available screen width, including narrow phones. */
+@media screen{
+ .report.s13Original{width:100%;max-width:210mm;margin-inline:auto;padding:0;overflow:hidden}
+ .report.s13Original svg{display:block;width:100%;height:auto;max-width:100%;aspect-ratio:595.276 / 841.89;background:white}
+}
+.reportMapFailure{margin:12px 0;padding:12px;border:1px solid #b88a54;border-radius:6px;color:#2c475b;background:#fff7e8}
+.reportMapFailure p{margin:0 0 10px}
+.reportMapFailure .actions{margin-top:8px}
+.reportMapFailure button{color:#fff}
+.reportDistrictMap .reportMapSnapshot svg{height:100%;max-height:900px;object-fit:contain}
+@media(max-width:750px){.reportMapFailure .actions button{flex:1 1 100%}}
+/* Authorized publisher register: separate totals and independently wrapped group sections. */
+.publisherOverview{min-width:0}
+.publisherStats{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.publisherStat{flex:1 1 150px;max-width:250px;padding:15px 18px;background:var(--surface);border:1px solid var(--line);border-radius:7px}
+.publisherStat small{display:block;margin-bottom:5px}
+.publisherStat strong{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.publisherToolbar{align-items:stretch}
+.publisherToolbar input{flex:1 1 190px;min-width:0}
+.publisherToolbar select{flex:0 1 230px;min-width:0}
+.publisherGroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));align-items:start;gap:16px;margin-bottom:18px}
+.publisherGroup{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.publisherGroupHeading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.publisherGroupHeading h2{margin:0;min-width:0;overflow-wrap:anywhere}
+.publisherGroupCount{flex:none;color:var(--muted);font-size:12px}
+.publisherItems{display:grid;gap:10px}
+.publisherItem{border:1px solid var(--line);border-radius:6px;padding:13px;min-width:0}
+.publisherItemHeading{display:flex;justify-content:space-between;align-items:start;gap:12px;min-width:0}
+.publisherItemHeading>div{min-width:0;overflow-wrap:anywhere}
+.publisherItemHeading small{display:block;line-height:1.5;margin-top:4px}
+.publisherItemHeading .publisherGuidance{flex:none}
+.publisherItemLoans{padding:10px 0 5px;min-width:0;overflow-wrap:anywhere}
+.publisherItemLoans small{display:block;margin-bottom:5px}
+.publisherItemLoans button{padding:6px 8px;font-size:12px;margin:0 5px 5px 0}
+.publisherItemActions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.publisherItemActions button{flex:1 1 auto;font-size:12px;min-height:40px;white-space:normal}
+@media(max-width:600px){
+ .publisherStat{max-width:none;flex-basis:calc(50% - 6px);padding:12px}
+ .publisherGroup{padding:12px}
+ .publisherToolbar input,.publisherToolbar select{flex:1 1 100%;width:100%}
+ .publisherToolbar button{flex:1 1 auto}
+ .publisherGroupHeading{align-items:start}
+ .publisherItemHeading{flex-wrap:wrap}
+}
