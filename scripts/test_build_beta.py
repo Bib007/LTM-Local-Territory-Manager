@@ -18,8 +18,11 @@ class BetaBuildTests(unittest.TestCase):
         self.add('distrikt/run.sh','#!/bin/sh\nset -euo pipefail\npython app/server.py --port 8787 --data-dir /data/distrikt\n')
         self.add('distrikt/app/index.html','<title>Local Territory Manager – JW</title><body><b>LTM</b>')
         self.changelog=self.fixture.changelog.replace('9.9.0','9.9.0-beta.1')
+        self.english_changelog=self.fixture.english_changelog.replace('9.9.0','9.9.0-beta.1')
         self.add('docs/CHANGELOG.md',self.changelog)
         self.add('distrikt/CHANGELOG.md',self.changelog)
+        self.add('docs/CHANGELOG.en.md',self.english_changelog)
+        self.add('distrikt/CHANGELOG.en.md',self.english_changelog)
         self.add('docs/BETA.md','# Fiktiv betavejledning\n')
     def tearDown(self):self.fixture.tearDown()
     def build(self,name):
@@ -54,8 +57,15 @@ class BetaBuildTests(unittest.TestCase):
             raw=archive.read('distrikt/CHANGELOG.md')
             self.assertEqual(raw,self.changelog.encode())
             self.assertIn(b'## 9.8.0',raw)
+            self.assertEqual(archive.read('distrikt/CHANGELOG.en.md'),self.english_changelog.encode())
             manifest=archive.read('SHA256SUMS.txt').decode()
             self.assertIn(hashlib.sha256(raw).hexdigest()+'  distrikt/CHANGELOG.md\n',manifest)
+
+    def test_beta_rejects_untranslated_new_version(self):
+        english=self.english_changelog.replace('## 9.9.0-beta.1', '## 9.9.0-beta.2',1)
+        for path in ('docs/CHANGELOG.en.md','distrikt/CHANGELOG.en.md'):
+            self.add(path,english)
+        with self.assertRaisesRegex(ValueError,'Danish and English changelog versions differ'):self.build('untranslated')
 
     def test_beta_rejects_stale_changelog(self):
         self.add('distrikt/CHANGELOG.md','# Fictional old beta changes\n')
