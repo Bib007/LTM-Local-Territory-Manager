@@ -9,7 +9,7 @@ let win;
 class Fields{constructor(f){this.fields=f.fields;}has(k){return this.fields.some(([key])=>key===k);}[Symbol.iterator](){return this.fields[Symbol.iterator]();}}
 const c={console,Map,Set,Promise,FormData:Fields,location:{origin:'http://fictional.test'},document:{getElementById:id=>nodes.get(id),addEventListener(){},querySelectorAll:()=>[]},window:{open(){return blockPopup?null:(win=popup());}},
  FileReader:class{readAsDataURL(){this.result='data:image/png;base64,FICTIONAL';this.onload();}},Image:class{decode(){return decodeFails?Promise.reject(Error('bad image')):Promise.resolve();}},fetch:async()=>{if(pendingAsset)await pendingAsset;return {ok:true,blob:async()=>({})};},writes,messages};
-vm.createContext(c);for(const n of ['i18n.js','printing.js','report-print.js'])vm.runInContext(read(n),c);
+vm.createContext(c);for(const n of ['i18n.js','s12-layout.js','printing.js','report-print.js'])vm.runInContext(read(n),c);
 const run=s=>vm.runInContext(s,c);c.nodes=nodes;
 run(`let state={revision:'r1',settings:{},cards:[{id:'c1',number:'101',name:'PRINT <invented>',front_revision:true}]},page='Distrikter',year=2027;const esc=v=>I18n.escape(v),ui=(key,p)=>I18n.label(key,p),el=id=>nodes.get(id),card=id=>state.cards.find(c=>c.id===id),cmp=(a,b)=>a.localeCompare(b);
 function openDialog(html,language){openDialog.generation=(openDialog.generation||0)+1;nodes.set('dialog',{innerHTML:html,lang:language});}openDialog.generation=1;

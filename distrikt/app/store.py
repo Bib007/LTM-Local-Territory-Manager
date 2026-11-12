@@ -672,8 +672,29 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 raise ValueError('Retning og kortmål stemmer ikke overens.')
             form_language=profile.get('form_language')
             if form_language is not None and form_language not in ('da','en'):raise ValueError('Vælg dansk eller engelsk formular.')
+            # The installation's settings are local to its congregation. Keep separate
+            # placement presets for the Danish and English S-12 source forms.
+            layout=profile.get('s12_layout',{}) if side=='front' else {}
+            if not isinstance(layout,dict) or set(layout)-{'da','en'}:
+                raise ValueError('Ugyldig S-12-skabelon.')
+            checked={}
+            for language,positions in layout.items():
+                if not isinstance(positions,dict) or set(positions)!={'title','number','streets','qr'}:
+                    raise ValueError('Kontrollér S-12-felterne.')
+                checked[language]={}
+                for field,offset in positions.items():
+                    if not isinstance(offset,dict) or set(offset)!={'x','y','scale'}:
+                        raise ValueError('Kontrollér S-12-positionerne.')
+                    values={}
+                    for key,low,high in (('x',-2,2),('y',-2,2),('scale',1,1) if field=='qr' else ('scale',0.95,1.05)):
+                        value=offset.get(key)
+                        if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not low<=value<=high:
+                            raise ValueError('S-12-offset skal være højst 2 mm; tekstskala 95–105 %. QR-størrelse fastholdes.')
+                        values[key]=float(value)
+                    checked[language][field]=values
             profile = {key: profile[key] for key in ('orientation', 'paper', 'mode', 'width', 'height', 'x', 'y')}
             if form_language is not None:profile['form_language']=form_language
+            if side=='front' and checked:profile['s12_layout']=checked
             config = dict(self.require('settings', 'config'))
             profiles = dict(config.get('print_profiles') or {})
             profiles[side] = profile
