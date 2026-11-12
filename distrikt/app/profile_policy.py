@@ -86,7 +86,7 @@ GROUPS={
  ('history.view','history.edit'):'visit.save history.cleanup',
   ('cards.view','loans.view','loans.manage','publishers.view','history.view','history.edit'):'history.grid.add history.grid.edit',
  ('cards.view','ib.view','ib.edit'):'ib.save setup.ib.inspect setup.ib.preview setup.ib.apply',
- ('settings.manage',):'settings.save print.profile.save area.save area.delete area.numbering.preview area.numbering.save filter.save filter.delete setup.onboarding.save setup.onboarding.task setup.defaults',
+ ('settings.manage',):'settings.save print.profile.save split.suggestion.ignore split.suggestion.restore area.save area.delete area.numbering.preview area.numbering.save filter.save filter.delete setup.onboarding.save setup.onboarding.task setup.defaults',
  ('settings.manage','geo.view','geo.edit','connections.manage'):'address.task.configure',
  ('backup.export',):'backup.record backup.snooze',
  ('cards.view','cards.edit','geo.view'):'setup.card-import.inspect setup.card-import.preview setup.card-import.apply',
@@ -157,7 +157,7 @@ FIELDS={
 }
 MODULE_RIGHT={'cards':'cards.view','archived_cards':'cards.view','publishers':'publishers.view',
               'loans':'loans.view','ib':'ib.view','notes':'notes.view','completions':'history.view','visits':'history.view'}
-CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
+CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
@@ -173,6 +173,12 @@ def state_for(raw,user):
         if 'users.manage' not in p:note.pop('assignee_id',None)
         if 'geo.view' not in p:note.pop('followup_key',None)
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}
+    # Show viewers only the non-sensitive threshold and opaque suppression keys,
+    # never an administrator's free-text reason.
+    if 'settings.manage' not in p and {'cards.view','geo.view','loans.view'}<=p:
+        result['settings']['split_visit_limit']=raw['settings'].get('split_visit_limit',50)
+        ignored=raw['settings'].get('split_suggestion_ignored') or {}
+        result['settings']['split_suggestion_ignored']={k:{'fingerprint':v.get('fingerprint')} for k,v in ignored.items() if isinstance(v,dict)}
     # Non-managers who see assignments need the same advisory counts as admins,
     # without receiving unrelated administration or personal settings.
     if 'settings.manage' not in p and 'publishers.view' in p:
