@@ -62,7 +62,19 @@ function paginateIBSheets(doc){
    function nextPage(){
     pageNo++;
     currentSheet=pageNo===1?original:original.cloneNode(true);
-    if(pageNo>1){lastSheet.after(currentSheet);added.push(currentSheet);}
+    if(pageNo>1){
+     // A4 output wraps each physical card in its own paper page. Preserve
+     // that wrapper for IB continuation sheets as well as the initial sheet.
+     const wrapper=original.parentElement?.classList.contains('paperPage')?original.parentElement.cloneNode(false):null;
+     if(wrapper){
+      wrapper.append(currentSheet);
+      lastSheet.parentElement.after(wrapper);
+      added.push(wrapper);
+     }else{
+      lastSheet.after(currentSheet);
+      added.push(currentSheet);
+     }
+    }
     lastSheet=currentSheet;
     currentSheet.dataset.page=String(pageNo);
     const panel=currentSheet.querySelector('.ibPreview');
