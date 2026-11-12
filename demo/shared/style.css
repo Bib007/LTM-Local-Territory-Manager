@@ -110,3 +110,17 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .shareSpinner{display:inline-block;width:1em;height:1em;vertical-align:middle;border:2px solid var(--line);border-top-color:var(--link);border-radius:50%;animation:shareRotate .85s linear infinite}
 @keyframes shareRotate{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.shareSpinner{animation:none;border-style:dashed}}
+/* The original S-13 SVG is a full A4 page, not a 300 × 150 inline SVG.
+   Scale its viewBox into the available screen width, including narrow phones. */
+@media screen{
+ .report.s13Original{width:100%;max-width:210mm;margin-inline:auto;padding:0;overflow:hidden}
+ .report.s13Original svg{display:block;width:100%;height:auto;max-width:100%;aspect-ratio:595.276 / 841.89;background:white}
+}
+.reportMapFailure{margin:12px 0;padding:12px;border:1px solid #b88a54;border-radius:6px;color:#2c475b;background:#fff7e8}
+.reportMapFailure p{margin:0 0 10px}
+.reportMapFailure .actions{margin-top:8px}
+.reportMapFailure button{color:#fff}
+.reportDistrictMap .reportMapSnapshot svg{height:100%;max-height:900px;object-fit:contain}
+@media(max-width:750px){.reportMapFailure .actions button{flex:1 1 100%}}
+
+

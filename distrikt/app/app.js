@@ -557,6 +557,8 @@ case 'undo-point':mapDraft.pop();render();break;
 case 'cancel-outline':editMap=false;mapDraft=[];render();break;
 case 'save-outline':{const origin=page,generation=openDialog.generation,targetCard=mapCard,draft=mapDraft,stamp=JSON.stringify(mapDraft);await mutate('map.outline',{card_id:mapCard,points:mapDraft},{close:false,message:'Distriktsgrænsen er gemt'});if(page===origin&&generation===openDialog.generation&&mapCard===targetCard&&mapDraft===draft&&JSON.stringify(mapDraft)===stamp){editMap=false;mapDraft=[];render();}break;}
 case 'print-report':await printReport();break;
+ case 'retry-report-map':ReportMap.retry();break;
+ case 'report-without-map':await printReport({withoutBackground:true});break;
 case 'print-ib-overview':await printIBOverview(ibOverviewRows());break;
 case 's13':await download('/api/export/s13?year='+year+'&language='+I18n.language(),'S-13-'+yearLabel(year).replace('/','-')+'.pdf');break;
 case 'profile-mode':configurePrintMode(d.side);break;
