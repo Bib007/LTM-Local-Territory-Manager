@@ -3,6 +3,7 @@
 const I18n={
  current:'en',
  english:{
+  "besøg":"visits",
   "Nulstil uafklarede overstyringer til DAR":"Reset unresolved overrides to DAR",
   "Brug DAR-data":"Use DAR data",
   "Brug egen tekst":"Use custom text",
