@@ -7,6 +7,7 @@ import json
 import posixpath
 import re
 import zipfile
+import check_changelog
 
 ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'distrikt'
@@ -14,7 +15,7 @@ REQUIRED=('S-12-E.pdf','S-13-E.pdf','S-12-E-source.png','S-13-E-background.jpg',
 PDF_DEPENDENCIES=('pypdf-6.21.4.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log','.tmp')
 BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json','profiles.json','profiles.tmp'}
-ROOT_DOCS=('homeassistant/ltm-status.yaml','repository.yaml','README.md','README.da.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
+ROOT_DOCS=('homeassistant/ltm-status.yaml','repository.yaml','README.md','README.da.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/CHANGELOG.en.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png','dashboard-en.jpg','cards-en.jpg','report-en.jpg')
 
@@ -52,20 +53,21 @@ def files():
     for p in sorted(SRC.iterdir()):
         if p.is_file() and p.suffix in ('.cmd','.command','.sh','.md') and p.name!='run.sh':
             result['Distrikt-lokal/'+p.name]=(p.read_bytes(),0o755 if p.suffix in ('.command','.sh') else 0o644)
-    for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md','icon.png','logo.png'):
+    for n in ('Dockerfile','config.yaml','run.sh','DOCS.md','README.md','CHANGELOG.md','CHANGELOG.en.md','icon.png','logo.png'):
         p=SRC/n;result['Home-Assistant/distrikt/'+n]=(p.read_bytes(),0o755 if n=='run.sh' else 0o644)
     for n in ROOT_DOCS:
         p=ROOT/n
         if not p.is_file():raise ValueError('Missing release document: '+n)
         result[n]=(p.read_bytes(),0o644)
-    # HA reads its app-folder changelog; docs/ holds the matching project copy.
-    # Reject drift before either the portable or beta package can be published.
-    changelog=result['docs/CHANGELOG.md'][0]
-    if result['Home-Assistant/distrikt/CHANGELOG.md'][0]!=changelog:
-        raise ValueError('Project and HA changelogs differ. Sync distrikt/CHANGELOG.md from docs/CHANGELOG.md.')
-    newest=re.search(r'^##[ \t]+([^\s]+)',changelog.decode('utf-8'),re.M)
-    if not newest or newest.group(1)!=version():
-        raise ValueError('Changelog must list the current version first.')
+    # HA shows the Danish changelog. Both languages and both HA copies must
+    # contain the same complete version sequence before any package is built.
+    check_changelog.validate(
+        result['docs/CHANGELOG.md'][0],
+        result['docs/CHANGELOG.en.md'][0],
+        result['Home-Assistant/distrikt/CHANGELOG.md'][0],
+        result['Home-Assistant/distrikt/CHANGELOG.en.md'][0],
+        version(),
+    )
     for n in BRAND_FILES:
         p=ROOT/'assets'/'brand'/n
         if not p.is_file() or p.is_symlink():raise ValueError('Missing/unsafe brand asset: '+n)

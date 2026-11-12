@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Require synchronized Danish/English changelogs
+        run: python scripts/check_changelog.py
       - name: Fictional package privacy and reproducibility checks
         run: python scripts/test_build_release.py
       - name: Real archive startup and checksums
