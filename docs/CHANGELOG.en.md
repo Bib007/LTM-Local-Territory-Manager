@@ -2,6 +2,22 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.5 · 2026-11-12
+
+- **Publishers:** Show accurate totals and filtered counts, group by service group and require confirmation for safe deletion while preserving permissions and assignment history.
+- **Completions and history:** Improve history overview and safely edit known dates without overwriting original records.
+- **KTM visits:** Clearly instruct users to choose Tuesday in the KTM week without removing historical notes elsewhere.
+- **Mobile and basemaps:** Preview S-13 directly on phones/tablets and retry OpenStreetMap or generate reports without a basemap on error or timeout.
+- **Bulk folder actions:** Place multiple explicitly selected territory cards into the folder with conflict checks, authorization, confirmation and consistent status.
+- **Territory identifiers:** Separate public and internal territory numbers while preserving stable technical card IDs and linked data through validated renumbering.
+- **Report printing:** Explicitly select calendar year, service year, rolling 12 months or all three, preserving the monthly timeline and last KTM visit highlight.
+- **Follow-ups:** Reversibly dismiss individual follow-ups with an audit history, reactivation and access control without hiding critical errors.
+- **Google Drive:** Show real card-generation and upload stages, prevent duplicate work and allow safe retries with renewed preview approval.
+- **DAR front labels:** Override road and house-number display labels without modifying authoritative DAR addresses, maintaining consistent print and export layouts.
+- **S-12 layout:** Make small bounded template-specific text and QR position adjustments with reset, preserving QR readability and A4/IB continuation pages.
+- **Split suggestions:** Configure a local maximum number of visits per card and dismiss or restore individual proposals without automatic redistribution.
+- Run synthetic security, access control, PDF, printing, responsive, desktop and backup regression tests. This is **Beta**; Stable is unchanged.
+
 ## 1.12.19-beta.4 · 2026-11-09
 
 - Show the authenticated user's own currently actionable tasks next to the personal home welcome, with a shortcut opening the Open / Mine task filters.

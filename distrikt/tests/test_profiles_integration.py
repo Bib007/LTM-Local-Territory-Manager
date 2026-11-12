@@ -81,6 +81,39 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_bulk_folder_two_authenticated_users_and_permission_denial(self):
+        """Two different accounts race on one fictional card; only one changes it."""
+        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'loans.manage'])
+        admin_base = self.state(self.admin)
+        guest_base = self.state(guest)
+        ready = threading.Barrier(2)
+        payload = {'ids': [self.card], 'in_folder': True,
+                   'expected_in_folder': False}
+
+        def change(session, base):
+            ready.wait(timeout=5)
+            return self.change(session, base, 'folder.set_many', payload)['result']
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(change, self.admin, admin_base)
+            second = pool.submit(change, guest, guest_base)
+            outcomes = [first.result(), second.result()]
+        self.assertEqual(sorted(item['count'] for item in outcomes), [0, 1])
+        self.assertTrue(self.store.get('cards', self.card)['in_folder'])
+        self.assertEqual(sum(len(item['skipped']) for item in outcomes), 1)
+
+        # Reuse the fictional account after revoking manage; reader() creates a
+        # same-named role and user and cannot be called twice in this fixture.
+        self.value('/api/profiles/roles/save', {
+            'id': guest_role, 'name': 'Fiktiv rolle',
+            'permissions': ['cards.view', 'loans.view']
+        }, self.admin)
+        without_manage = guest
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(without_manage, self.state(without_manage),
+                        'folder.set_many', payload)
+        self.assertEqual(error.exception.code, 403)
+
     def test_activity_and_recovery_name_the_authenticated_actor(self):
         before=self.state(self.admin)
         changed=self.change(self.admin,before,'delete',{'module':'notes','id':self.note})
@@ -92,6 +125,39 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(recovered['batch'],event['batches'][0])
         self.assertNotIn('Opdigtet privat opgave',str(event))
 
+    def test_reversible_overlap_followup_is_authorized_audited_and_concurrent_safe(self):
+        second_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
+        key=json.dumps(['checks','overlap',*sorted([self.card,second_card])],separators=(',',':'))
+        reader,role,_=self.reader(['cards.view','geo.view'])
+        stale_admin=self.state(self.admin)
+        read_state=self.state(reader)
+        self.assertEqual(read_state['followup_ignores'],[])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(reader,read_state,'followup.ignore',{'key':key,'ignored':True,'expected_token':''})
+        self.assertEqual(denied.exception.code,403)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle',
+                   'permissions':['cards.view','geo.view','geo.edit']},self.admin)
+        enabled=self.state(reader)
+        saved=self.change(reader,enabled,'followup.ignore',{'key':key,'ignored':True,
+                          'expected_token':'','_actor_name':'Forfalsket'})['state']
+        record=saved['followup_ignores'][0]
+        self.assertTrue(record['ignored'])
+        self.assertEqual(record['history'][0]['actor_name'],'Fiktiv bruger')
+        self.assertNotIn('Forfalsket',str(record))
+        with self.assertRaises(urllib.error.HTTPError) as stale:
+            self.change(self.admin,stale_admin,'followup.ignore',{'key':key,'ignored':True,'expected_token':''})
+        self.assertIn(stale.exception.code,(400,409))
+        self.assertEqual(len(self.state(reader)['followup_ignores'][0]['history']),1)
+        fresh_admin=self.state(self.admin)
+        restored=self.change(self.admin,fresh_admin,'followup.ignore',
+                             {'key':key,'ignored':False,'expected_token':record['token']})['state']
+        events=restored['followup_ignores'][0]['history']
+        self.assertEqual([event['ignored'] for event in events],[True,False])
+        self.assertEqual([event['actor_name'] for event in events],['Fiktiv bruger','Fiktiv admin'])
+        self.assertTrue(all(event['at'] for event in events))
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle',
+                   'permissions':['cards.view']},self.admin)
+        self.assertEqual(self.state(reader)['followup_ignores'],[])
     def test_boundary_report_respects_report_geo_and_ib_permissions(self):
         self.store.mutate('geo.main.save',{'points':[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]})
         self.store.mutate('geo.manual',{'road':'Fiktiv vej','number':'1','postcode':'9999','lng':10,'lat':55})

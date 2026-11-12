@@ -12,8 +12,10 @@ from pathlib import Path
 from geo_store import GeoStore
 from admin_store import AdminStore
 from workflow_store import WorkflowStore
+from followup_store import FollowupStore
 from setup_store import SetupStore
 from ui_errors import UIError
+from territory_numbers import TerritoryNumbering, internal_code
 
 MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkyndere',
            'loans': 'udleveringer', 'completions': 'gennemgange', 'ib': 'ib',
@@ -47,7 +49,17 @@ def clean_text(value, maxlen=100, required=False):
         raise ValueError('Udfyld det krævede felt.')
     return value
 
-class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
+def split_fingerprint(card, limit):
+    """Bind a suggestion to the current estimated visits, membership and limit."""
+    rows=card.get('addresses') or []
+    if not rows or any(not isinstance(row,dict) or row.get('count_unknown') or type(row.get('count')) is not int or row['count']<0 for row in rows):
+        return None
+    total=sum(row['count'] for row in rows)
+    if total<=limit:return None
+    return json.dumps([card['id'],card['number'],total,limit,sorted(card.get('address_ids') or [])],ensure_ascii=False,separators=(',',':'))
+
+
+class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,FollowupStore):
     def __init__(self, root):
         self.geo_generation=0
         self.workflow_init()
@@ -191,6 +203,8 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         context=self.print_context() if context is None else context
         fields=('id','number','name','area_id','addresses','geo_addresses','address_ids','temporary','geo_polygon') if side=='front' else ('id','number')
         content={k:c.get(k) for k in fields}
+        if side=='front' and c.get('front_line_overrides'):
+            content['front_line_overrides']=c['front_line_overrides']
         if side=='back':content['ib']=context['ib'].get(c['id'],[])
         else:
             content['area_name']=context['areas'].get(c.get('area_id'),'')
@@ -211,15 +225,22 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             from geography import front_summaries
             maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
             for c in result['cards']:
+                c.setdefault('internal_number','')  # Old cards remain valid.
                 for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side,print_context)
             histories=self.loan_history_tokens(result['cards'],result['loans'])
             result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
             front_summaries(result['cards'])
+            from front_labels import token as front_labels_token
+            for c in result['cards']:c['front_labels_token']=front_labels_token(c)
             result['settings'] = self.get('settings', 'config')
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
-            result['areas'] = [x for x in self.all('settings') if x['id'] != 'config' and not x.get('entity')]
+            settings_rows=self.all('settings')
+            result['areas'] = [x for x in settings_rows if x['id'] != 'config' and not x.get('entity')]
+            number_batches=sorted((x for x in settings_rows if x.get('entity')=='territory-numbering-batch' and not x.get('undone_at')),key=lambda x:x.get('created',''),reverse=True)
+            result['numbering_last_batch']=({'id':number_batches[0]['id'],'count':len(number_batches[0]['changes'])} if number_batches else None)
+            result['followup_ignores'] = [x for x in settings_rows if x.get('entity') == 'followup_ignore']
             result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
             from redistribution import planning_date
             for c in result['cards']:
@@ -294,6 +315,11 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self._tracking={}
             try:
                 if review:data=review.prepare(self,action,data)
+                if action == 'followup.ignore':
+                    # Identity is trusted only from the authenticated profile session.
+                    # Client-supplied actor fields are never accepted.
+                    data = {**data, '_actor_id':review.actor if review else None,
+                            '_actor_name':getattr(review,'actor_name','') if review else ''}
                 result = self._mutate(action, data)
                 self.onboarding_after_write(action,data)
                 touched=self._tracking
@@ -312,7 +338,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.alias(module)+'.records WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
-                reversible=action in ('card.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','note.save','note.resolve','note.complete','note.task','completion.record','visit.save','ib.save','revision.approve','revision.approve_many')
+                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -321,6 +347,11 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
         return result
 
     def _mutate(self, action, data, *, geographic=False):
+        if action.startswith('history.grid.'):
+            from history_grid import mutate_grid
+            return mutate_grid(self, action, data)
+        if action == 'followup.ignore':return self.followup_mutate(data)
+        if action.startswith(('card.numbering.', 'area.numbering.')):return self.numbering_mutate(action,data)
         if action.startswith('setup.'):return self.setup_mutate(action,data)
         if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete'):
             return self.workflow_mutate(action,data)
@@ -328,6 +359,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             return self.admin_mutate(action,data)
         if isinstance(action,str) and (action.startswith('geo.') or action.startswith('ignore.')):
             return self.geo_mutate(action,data)
+        if action == 'card.front_labels.save':
+            from front_labels import save
+            return save(self,data)
         if action == 'card.color':
             card = self.require('cards', data['card_id'])
             color = data.get('map_color')
@@ -346,7 +380,10 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             reserved = self.all('cards') + self.all('cards', deleted=True)
             if any(c['number'].casefold() == number.casefold() and c['id'] != card['id'] for c in reserved):
                 raise ValueError('Kortnummeret findes allerede (evt. i 48-timers gendannelse).')
-            card.update(number=number, name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
+            internal=internal_code(data.get('internal_number',card.get('internal_number','')))
+            if any(c.get('internal_number','').casefold()==internal.casefold() and c['id']!=card['id'] for c in reserved) and internal:
+                raise ValueError('Det interne nummer findes allerede (evt. i 48-timers gendannelse).')
+            card.update(number=number, internal_number=internal, name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
                         kind=data.get('kind', 'Ukendt'), temporary=bool(data.get('temporary', True)))
             color = data.get('map_color', card.get('map_color', '#477596'))
             if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
@@ -482,6 +519,27 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             self.put('loans', loan)
             if note:self.put('notes',{'id':new_id(),'card_id':c['id'],'loan_id':loan['id'],'date':day,'text':note,'created':now(),'resolved':False})
             return {'id': loan['id']}
+        if action == 'folder.set_many':
+            # One locked transaction, but each card is validated through the same
+            # domain operation as a single move. A stale/issued card cannot block
+            # the other explicitly selected cards.
+            ids = data.get('ids')
+            if (not isinstance(ids, list) or not 1 <= len(ids) <= 500
+                    or any(not isinstance(i, str) or not i or len(i) > 100 for i in ids)
+                    or len(set(ids)) != len(ids)
+                    or data.get('in_folder') is not True
+                    or data.get('expected_in_folder') is not False):
+                raise ValueError('Vælg 1–500 forskellige kort, der skal lægges i mappen.')
+            updated, skipped = [], []
+            for ident in ids:
+                try:
+                    self._mutate('folder.set', {'ids': [ident],
+                        'in_folder': True, 'expected_in_folder': False})
+                except (ValueError, KeyError) as error:
+                    skipped.append({'id': ident, 'reason': str(error)})
+                else:
+                    updated.append(ident)
+            return {'count': len(updated), 'updated': updated, 'skipped': skipped}
         if action == 'folder.set':
             ids = data.get('ids', [])
             if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids) or len(ids) != len(set(ids)):
@@ -537,6 +595,26 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             batch, stamp = new_id(), now()
             self.mark_deleted('settings', ident, batch, stamp)
             return {'batch': batch}
+        if action in ('split.suggestion.ignore','split.suggestion.restore'):
+            config=dict(self.require('settings','config'))
+            ignored=dict(config.get('split_suggestion_ignored') or {})
+            ident=data.get('card_id')
+            if not isinstance(ident,str) or not ident or len(ident)>100:
+                raise ValueError('Vælg et gyldigt distriktskort.')
+            if action=='split.suggestion.ignore':
+                c=self.require('cards',ident)
+                limit=config.get('split_visit_limit',50)
+                fingerprint=split_fingerprint(c,limit)
+                if not fingerprint or data.get('fingerprint')!=fingerprint:
+                    raise ValueError('Opdelingsforslaget er ændret. Opdater listen først.')
+                reason=clean_text(data.get('reason'),300,True)
+                ignored[ident]={'fingerprint':fingerprint,'reason':reason,'at':now()}
+            else:
+                if ident not in ignored:raise ValueError('Forslaget er allerede gendannet.')
+                ignored.pop(ident)
+            config['split_suggestion_ignored']=ignored
+            self.put('settings',config)
+            return {}
         if action == 'settings.save':
             c = dict(self.require('settings', 'config'))
             minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
@@ -546,6 +624,9 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 rural = min(rural, minimum)
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
                 raise ValueError('Kontrollér minimum og antal landkort.')
+            limit=data.get('split_visit_limit',c.get('split_visit_limit',50))
+            if type(limit) is not int or not 1<=limit<=1000:
+                raise ValueError('Grænsen for besøg pr. kort skal være 1–1.000.')
             # Local suggestions only: never used to reject loan.issue / loan.finish.
             defaults = DEFAULT_PUBLISHER_CARD_GUIDANCE
             limits = data.get('publisher_card_guidance', c.get('publisher_card_guidance', defaults))
@@ -555,7 +636,7 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Kontrollér de vejledende kortantal (0–100).')
             c.update(congregation=clean_text(data.get('congregation'), 100), folder_minimum=minimum,
                 rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')),
-                publisher_card_guidance=dict(limits))
+                publisher_card_guidance=dict(limits), split_visit_limit=limit)
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)
@@ -591,8 +672,29 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
                 raise ValueError('Retning og kortmål stemmer ikke overens.')
             form_language=profile.get('form_language')
             if form_language is not None and form_language not in ('da','en'):raise ValueError('Vælg dansk eller engelsk formular.')
+            # The installation's settings are local to its congregation. Keep separate
+            # placement presets for the Danish and English S-12 source forms.
+            layout=profile.get('s12_layout',{}) if side=='front' else {}
+            if not isinstance(layout,dict) or set(layout)-{'da','en'}:
+                raise ValueError('Ugyldig S-12-skabelon.')
+            checked={}
+            for language,positions in layout.items():
+                if not isinstance(positions,dict) or set(positions)!={'title','number','streets','qr'}:
+                    raise ValueError('Kontrollér S-12-felterne.')
+                checked[language]={}
+                for field,offset in positions.items():
+                    if not isinstance(offset,dict) or set(offset)!={'x','y','scale'}:
+                        raise ValueError('Kontrollér S-12-positionerne.')
+                    values={}
+                    for key,low,high in (('x',-2,2),('y',-2,2),('scale',1,1) if field=='qr' else ('scale',0.95,1.05)):
+                        value=offset.get(key)
+                        if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not low<=value<=high:
+                            raise ValueError('S-12-offset skal være højst 2 mm; tekstskala 95–105 %. QR-størrelse fastholdes.')
+                        values[key]=float(value)
+                    checked[language][field]=values
             profile = {key: profile[key] for key in ('orientation', 'paper', 'mode', 'width', 'height', 'x', 'y')}
             if form_language is not None:profile['form_language']=form_language
+            if side=='front' and checked:profile['s12_layout']=checked
             config = dict(self.require('settings', 'config'))
             profiles = dict(config.get('print_profiles') or {})
             profiles[side] = profile
@@ -604,8 +706,15 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             old = self.get('visits', data.get('id')) if data.get('id') else None
             if data.get('id') and not old:
                 raise ValueError('Posten er ændret eller slettet. Opdater siden.')
-            item = dict(old or {'id': new_id()})
-            item.update(date=day, note=clean_text(data.get('note'), 200))
+            # Existing non-Tuesday dates remain readable and can be saved unchanged.
+            # New dates represent the Tuesday in the CO visit week.
+            if (not old or day != old['date']) and date.fromisoformat(day).weekday() != 1:
+                raise UIError('Vælg tirsdagen i KTM-ugen')
+            item = dict(old or {'id': new_id(), 'note': ''})
+            item['date'] = day
+            # Omitted note means untouched, not cleared: preserve all historic remarks.
+            if 'note' in data:
+                item['note'] = clean_text(data['note'], 200)
             self.put('visits', item)
             return {'id': item['id']}
         if action == 'ib.save':
@@ -717,9 +826,24 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             return {}
         if action == 'delete':
             module = data.get('module')
-            if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes'):
+            if module not in ('cards', 'ib', 'visits', 'loans', 'completions', 'ignored', 'notes', 'publishers'):
                 raise ValueError('Denne post kan ikke slettes her.')
             item = self.require(module, data['id'])
+            if module == 'publishers':
+                # Require the exact observed person, not an ID from an out-of-date dialog.
+                expected = data.get('expected')
+                fields = ('name', 'group', 'group_role', 'pioneer')
+                if (data.get('confirmation') != 'SLET FORKYNDER'
+                        or not isinstance(expected, dict)
+                        or set(expected) != set(fields)):
+                    raise ValueError('Bekræft sletningen af forkynderen igen.')
+                if any(item.get(key, '' if key != 'pioneer' else False) != expected[key] for key in fields):
+                    raise ValueError('Forkynderen er ændret. Opdater og kontrollér før sletning.')
+                # Both current and recoverable assignments retain the person ID.
+                # Never orphan S-13 allocations, returns or old reports.
+                if any(loan.get('publisher_id') == item['id']
+                       for loan in self.all('loans') + self.all('loans', deleted=True)):
+                    raise ValueError('Forkynderen har udleveringer eller historik og kan ikke slettes. Behold forkynderen for at bevare historikken.')
             if module == 'loans':
                 if 'history_token' in data:
                     c=self.require('cards',item['card_id'])
@@ -794,6 +918,15 @@ class Store(SetupStore,WorkflowStore,AdminStore,GeoStore):
             if not entries:
                 raise ValueError('Gendannelsesperioden er udløbet.')
             for module, item in entries:
+                if module == 'publishers':
+                    from card_import import norm
+                    for other in self.all('publishers'):
+                        if other['id'] == item['id']:continue
+                        if other['name'].casefold() == item['name'].casefold():
+                            raise ValueError('Navnet findes allerede. Ret den eksisterende forkynder før gendannelse.')
+                        if (item.get('group_role') and item.get('group_role') == other.get('group_role')
+                                and norm(item.get('group')) == norm(other.get('group'))):
+                            raise ValueError('Der er flere med samme gruppefunktion i tjenestegruppen. Ret valget før gemning.')
                 if module=='cards':
                     from geo_store import address_key
                     keys={address_key(a) for a in item.get('geo_addresses',[])};ids=set(item.get('address_ids',[]))

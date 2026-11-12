@@ -5,6 +5,7 @@ import json
 import struct
 import sys
 import tempfile
+import threading
 import unittest
 import zlib
 from pathlib import Path
@@ -402,6 +403,66 @@ class SharingTests(unittest.TestCase):
             with self.subTest(revision=revision),self.assertRaises(ValueError):
                 self.p.enqueue({'card_id':self.c,'fingerprint':self.p.prepare(self.c)['fingerprint'],'png':self.url,'render_revision':revision})
         self.assertIsNone(self.row())
+
+    def test_publish_request_id_is_idempotent_before_and_after_google_upload(self):
+        recipe=self.p.prepare(self.c)
+        payload={'render_revision':6,'card_id':self.c,'fingerprint':recipe['fingerprint'],
+                 'png':self.url,'request_id':'ltm-fictional-click-12345'}
+        self.assertEqual(self.p.enqueue(payload)['status'],'queued')
+        original_generation=self.row()['generation']
+        repeat=self.p.enqueue(payload)
+        self.assertTrue(repeat['already_queued'])
+        self.assertEqual(self.row()['generation'],original_generation)
+        self.assertEqual(len(self.p.drive.uploads),0)
+        self.p.process_one()
+        self.assertEqual(len(self.p.drive.uploads),1)
+        self.assertEqual(self.row()['status'],'published')
+        repeat=self.p.enqueue(payload)
+        self.assertTrue(repeat['already_queued'])
+        self.assertEqual(repeat['status'],'published')
+        self.assertEqual(self.row()['generation'],original_generation)
+        self.p.process_one()
+        self.assertEqual(len(self.p.drive.uploads),1)
+        with self.assertRaisesRegex(ValueError,'upload-id'):
+            self.p.enqueue({**payload,'request_id':'short'})
+
+    def test_real_upload_activity_only_while_drive_call_is_blocked(self):
+        self.enqueue()
+        self.assertFalse(self.p.status()['cards'][0]['upload_active'])
+        entered=threading.Event();release=threading.Event()
+        original=self.p.drive.upload
+        def blocked(data,file_id=None):
+            entered.set()
+            if not release.wait(5):raise AssertionError('Fictional upload timed out')
+            return original(data,file_id)
+        with patch.object(self.p.drive,'upload',side_effect=blocked):
+            worker=threading.Thread(target=self.p.process_one,daemon=True)
+            worker.start()
+            try:
+                self.assertTrue(entered.wait(5),'Real fake upload did not start')
+                self.assertTrue(self.p.status()['cards'][0]['upload_active'])
+                self.assertEqual(self.row()['status'],'queued')
+            finally:
+                release.set();worker.join(timeout=5)
+        self.assertFalse(worker.is_alive())
+        self.assertFalse(self.p.status()['cards'][0]['upload_active'])
+        self.assertEqual(self.row()['status'],'published')
+        self.assertEqual(len(self.p.drive.uploads),1)
+
+    def test_interrupted_upload_is_not_shown_as_active_and_retry_succeeds(self):
+        self.enqueue();self.p.drive.fail=True
+        self.p.process_one()
+        row=self.p.status()['cards'][0]
+        self.assertEqual(row['status'],'retry')
+        self.assertFalse(row['upload_active'])
+        self.assertIn('netfejl',row['error'])
+        self.p.retry(self.c)
+        self.assertFalse(self.p.status()['cards'][0]['upload_active'])
+        self.p.drive.fail=False
+        self.p.process_one()
+        self.assertEqual(self.row()['status'],'published')
+        self.assertFalse(self.p.status()['cards'][0]['upload_active'])
+        self.assertEqual(len(self.p.drive.uploads),1)
 
     def test_legacy_migration_does_not_bypass_address_changes(self):
         self.enqueue();self.p.process_one()

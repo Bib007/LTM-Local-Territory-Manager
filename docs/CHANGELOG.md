@@ -2,6 +2,22 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.5 · 2026-11-12
+
+- **Forkyndere:** Vis korrekte totaler og filtrerede optællinger, gruppér efter menighedsgruppe og kræv bekræftelse før sikker sletning. Bevar rettigheder og historiske udleveringer.
+- **Gennemgange og historik:** Giv en mere overskuelig historikvisning med kontrolleret redigering af kendte datoer og bevar oprindelige registreringer.
+- **KTM-besøg:** Vis tydeligt »Vælg tirsdagen i KTM-ugen«, uden at slette tidligere bemærkninger andre steder.
+- **Mobil og kortgrundlag:** Vis S-13 direkte på telefon/tablet og giv mulighed for at prøve OpenStreetMap igen eller generere rapporten uden baggrundskort ved fejl og timeout.
+- **Massehandling:** Læg flere specifikt udvalgte distriktskort i mappen med konfliktkontrol, rettigheder, bekræftelse og korrekt status.
+- **Distriktsnumre:** Adskil offentligt og internt distriktnummer, og bevar kortets tekniske ID, adresse- og udleveringsrelationer ved kontrolleret omnummerering.
+- **Rapportprint:** Vælg kalenderår, tjenesteår, seneste 12 måneder eller alle tre bevidst; bevar månedstidslinjen og markeringen »Sidste KTM besøg«.
+- **Opfølgninger:** Tilføj reversibelt »Se bort fra« med historik, genaktivering og adgangskontrol uden at skjule kritiske fejl.
+- **Google Drive:** Vis faktiske trin ved kortgenerering og upload, undgå dobbeltbehandling, og tillad sikker genprøve med fornyet forhåndsgodkendelse.
+- **DAR-forsidetekst:** Overstyr vej- og husnummeretiketter manuelt uden at ændre de originale DAR-adresser, og bevar ens udtryk på kort og eksport.
+- **S-12-layout:** Justér små, begrænsede tekst- og QR-positioner pr. skabelon med nulstilling; bevar læsbar QR og korrekt A4/IB-fortsættelse.
+- **Opdelingsforslag:** Indstil lokalt maksimum for besøg pr. kort, og ignorer eller genaktivér konkrete forslag uden automatisk omfordeling.
+- Kør syntetiske sikkerheds-, adgangs-, PDF-, print-, responsiv-, platform- og backup-regressionstests. Dette er **Beta**; Stable ændres ikke.
+
 ## 1.12.19-beta.4 · 2026-11-09
 
 - Vis brugerens egne aktuelle, åbne opgaver ved den personlige velkomst, og giv en genvej til filtrene **Åbne** og **Mine opgaver**.
