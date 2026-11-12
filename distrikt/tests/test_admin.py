@@ -94,7 +94,7 @@ class AdminTests(unittest.TestCase):
         after=self.s.state()
         for module in ('loans','ib','publishers','completions'):self.assertEqual(before[module],after[module])
         for c in before['cards']:
-            expected={k:v for k,v in dict(c,kind='Land').items() if k not in ('front_print_token','back_print_token')};self.assertEqual(expected,self.s.get('cards',c['id']))
+            expected={k:v for k,v in dict(c,kind='Land').items() if k not in ('front_print_token','back_print_token','front_labels_token')};self.assertEqual(expected,self.s.get('cards',c['id']))
         self.assertEqual(self.s.active_loan(a)['id'],l)
     def test_bulk_stale_preview_rejected(self):
         c=self.card();data={'ids':[c],'kind':'By'};preview=self.s.mutate('card.bulk.edit.preview',data)

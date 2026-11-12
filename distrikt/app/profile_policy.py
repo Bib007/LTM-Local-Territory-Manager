@@ -73,7 +73,7 @@ def route(permissions,path,post=False):
     require(permissions,(POST if post else GET).get(path))
 
 GROUPS={
- ('cards.view','cards.edit'):'card.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit card.numbering.preview card.numbering.apply card.numbering.undo.preview card.numbering.undo revision.approve revision.approve_many',
+ ('cards.view','cards.edit'):'card.save card.front_labels.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit card.numbering.preview card.numbering.apply card.numbering.undo.preview card.numbering.undo revision.approve revision.approve_many',
  ('cards.view','geo.view','geo.edit','cards.edit'):'geo.assign geo.boundary geo.preview map.save map.outline card.restructure.preview card.restructure.apply',
  ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune geo.main.download.save geo.main.download.tile geo.main.import.preview ignore.save address.change.review',
  ('cards.view','geo.view','geo.edit'):'followup.ignore',
@@ -145,7 +145,7 @@ def mutation(user,action,data,store):
     if (action=='revision.approve' and data.get('side')=='back') or (action=='revision.approve_many' and isinstance(data.get('entries'),list) and any(isinstance(e,dict) and e.get('side')=='back' for e in data['entries'])):require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))
 
-CARD_FIELDS=set('id number internal_number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
+CARD_FIELDS=set('id number internal_number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
  'publishers':{'id','name','group','group_role','pioneer'},
@@ -163,6 +163,9 @@ def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]} for row in raw[module]] if right in p else []
+    if 'cards.edit' not in p:
+        for card in result['cards']+result['archived_cards']:
+            card.pop('front_labels_token',None)
     if 'geo.view' not in p:
         for card in result['cards']+result['archived_cards']:
             for field,key in (('planning_reference','membership'),('interim_transfer','address_ids')):
