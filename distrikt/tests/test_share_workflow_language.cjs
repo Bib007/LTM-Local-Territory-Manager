@@ -20,10 +20,33 @@ const contract=html=>(html.match(/(?:data-share|data-id|href|download|id)="[^"]*
  let release;c.pending=new Promise(r=>release=r);run("DistrictMap.map={};DistrictMap.id='c1';api=()=>pending");let pending=run("ShareUI.prepare('c1')");run("openDialog('<form>NEWER DRAFT</form>')");release({json:async()=>c.recipe});await pending;assert.match(get('dialog').innerHTML,/NEWER DRAFT/);assert.equal(run('ShareUI.pending'),null);
  // Positive preview: exact public recipe, revision and approval gate; unapproved does nothing.
  run("DistrictMap.map={};DistrictMap.id='c1';api=async()=>({json:async()=>recipe})");await run("ShareUI.prepare('c1')");assert.match(get('dialog').innerHTML,/Publish card 101/);assert.doesNotMatch(get('dialog').innerHTML,/PRIVATE_/);get('shareApproved').checked=false;run('api=async(url,data)=>{writes.push({url,data});return {json:async()=>shareFixture}}');await run('ShareUI.publish()');assert.equal(writes.length,0);
+
+ // Fictional slow rendering: do not post an upload until the new preview is complete and approved.
+ let renderRelease;c.renderWait=new Promise(r=>renderRelease=r);c.originalRender=run('MapExport.blob');
+ run('MapExport.blob=async()=>renderWait');get('shareHouseNumbers').checked=false;
+ let rendering=run('ShareUI.updateHouseNumbers(false)');assert.equal(run('ShareUI.activity.phase'),'generating');assert.equal(get('shareHouseNumbers').disabled,true);
+ get('shareApproved').checked=true;await run('ShareUI.publish()');assert.equal(writes.length,0,'A click cannot upload while generating');
+ await run('ShareUI.updateHouseNumbers(true)');assert.equal(get('shareHouseNumbers').checked,true,'Overlapping toggle restores the saved choice');
+ renderRelease({});await rendering;assert.equal(run('ShareUI.pending.showHouseNumbers'),false);assert.equal(run('ShareUI.activity.phase'),'complete');assert.equal(get('shareApproved').checked,false);
+ // A failed regeneration preserves the previous PNG and offers one retry.
+ const beforePNG=run('ShareUI.pending.png'),beforeId=run('ShareUI.pending.request_id');
+ run('MapExport.blob=async()=>{throw Error("Fictional render failure")}');get('shareHouseNumbers').checked=true;
+ await assert.rejects(run('ShareUI.updateHouseNumbers(true)'),/Fictional render failure/);
+ assert.equal(run('ShareUI.pending.png'),beforePNG);assert.equal(run('ShareUI.pending.request_id'),beforeId);
+ assert.equal(run('ShareUI.activity.retry'),'house');assert.equal(get('shareHouseNumbers').checked,false);
+ run('MapExport.blob=async()=>({})');await run('ShareUI.retryHouseNumbers()');
+ assert.equal(run('ShareUI.pending.showHouseNumbers'),true);assert.equal(run('ShareUI.activity.phase'),'complete');
+ assert.notEqual(run('ShareUI.pending.request_id'),beforeId);run('MapExport.blob=originalRender');
+ // Only a reported active worker may display "uploading"; queueing is not upload progress.
+ run('ShareUI.progress("queued","c1",{watchUpload:true})');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"queued",upload_active:false}])');assert.equal(run('ShareUI.activity.phase'),'queued');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"queued",upload_active:true}])');assert.equal(run('ShareUI.activity.phase'),'uploading');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"retry",upload_active:false}])');assert.equal(run('ShareUI.activity.phase'),'queued');
+ run('ShareUI.observeUpload([{card_id:"c1",status:"ready",upload_active:false,outdated:false}])');assert.equal(run('ShareUI.activity.phase'),'complete');
  // A changed data revision requires a new preview before sending any write.
  get('shareApproved').checked=true;run('state.revision="changed"');await assert.rejects(run('ShareUI.publish()'),/new preview/);assert.equal(writes.length,0);run('state.revision="fictional-r1"');
  // Deduplicate publish and preserve a newer dialog/navigation after the accepted write.
- let publishRelease;c.publishPending=new Promise(r=>publishRelease=r);run("api=async(url,data)=>{if(url==='/api/share/publish'){writes.push({url,data});return publishPending;}return {json:async()=>shareFixture};}");pending=run('ShareUI.publish()');await run('ShareUI.publish()');assert.equal(writes.length,1);assert.deepEqual(Object.keys(writes[0].data).sort(),['card_id','fingerprint','png','render_revision']);run("openDialog('<form>NEWER EDIT</form>');page='Distrikter'");publishRelease({});await pending;assert.equal(run('page'),'Distrikter');assert.match(get('dialog').innerHTML,/NEWER EDIT/);assert.equal(run('ShareUI.publishing'),false);
+ let publishRelease;c.publishPending=new Promise(r=>publishRelease=r);run("api=async(url,data)=>{if(url==='/api/share/publish'){writes.push({url,data});return publishPending;}return {json:async()=>shareFixture};}");pending=run('ShareUI.publish()');await run('ShareUI.publish()');assert.equal(writes.length,1);assert.deepEqual(Object.keys(writes[0].data).sort(),['card_id','fingerprint','png','render_revision','request_id']);run("openDialog('<form>NEWER EDIT</form>');page='Distrikter'");publishRelease({});await pending;assert.equal(run('page'),'Distrikter');assert.match(get('dialog').innerHTML,/NEWER EDIT/);assert.equal(run('ShareUI.publishing'),false);
  // Late QR retrieval also respects newer modals.
  run("page='Indstillinger';api=async(url)=>url==='/api/share/status'?{json:async()=>shareFixture}:pending");c.pending=new Promise(r=>release=r);pending=run("ShareUI.qr('c1')");await new Promise(r=>setImmediate(r));run("openDialog('<form>NEWER QR DRAFT</form>')");release({text:async()=>'<svg/>'});await pending;assert.match(get('dialog').innerHTML,/NEWER QR DRAFT/);
  // An abandoned connection file is not sent; malformed syntax never echoes file bytes.
@@ -32,14 +55,14 @@ const contract=html=>(html.match(/(?:data-share|data-id|href|download|id)="[^"]*
  // Explicit disconnect/withdraw cancellations never send a write.
  c.window.confirm=()=>false;const beforeCancel=writes.length;await run("ShareUI.handle('withdraw','c1')");await run("ShareUI.handle('disconnect')");assert.equal(writes.length,beforeCancel);
  // The actual approved publish handler sends identical public-only bytes/keys on both languages.
- const approved={};for(const language of ['da','en']){run(`I18n.set('${language}');page='Indstillinger';state.revision='fictional-r1';DistrictMap.map={};DistrictMap.id='c1';api=async(url,data)=>{writes.push({url,data});return {json:async()=>url==='/api/share/prepare'?recipe:shareFixture};}`);await run("ShareUI.prepare('c1')");get('shareApproved').checked=true;const start=writes.length;await run('ShareUI.publish()');approved[language]=JSON.parse(JSON.stringify(writes.slice(start).find(w=>w.url==='/api/share/publish').data));}assert.deepEqual(approved.en,approved.da);
+ const approved={};for(const language of ['da','en']){run(`I18n.set('${language}');page='Indstillinger';state.revision='fictional-r1';DistrictMap.map={};DistrictMap.id='c1';api=async(url,data)=>{writes.push({url,data});return {json:async()=>url==='/api/share/prepare'?recipe:shareFixture};}`);await run("ShareUI.prepare('c1')");get('shareApproved').checked=true;const start=writes.length;await run('ShareUI.publish()');approved[language]=JSON.parse(JSON.stringify(writes.slice(start).find(w=>w.url==='/api/share/publish').data));}assert.match(approved.en.request_id,/^ltm-[a-z0-9-]{12,}$/);assert.match(approved.da.request_id,/^ltm-[a-z0-9-]{12,}$/);const stripRequestId=({request_id,...rest})=>rest;assert.deepEqual(stripRequestId(approved.en),stripRequestId(approved.da));
  // Dated previews use exactly the server-rendered PNG and explicit date-update approval.
  c.recipe={...c.recipe,render_revision:7,date_updates:true,date_fingerprint:'FICTIONAL_DATES'};const dated={};
  for(const language of ['da','en']){
   run(`I18n.set('${language}');page='Indstillinger';state.revision='fictional-r1';DistrictMap.map={};DistrictMap.id='c1';api=async(url,data)=>{writes.push({url,data});return {json:async()=>url==='/api/share/prepare'?recipe:url==='/api/share/date-preview'?{png:'data:image/png;base64,SERVER_DATED_IMAGE',date_fingerprint:recipe.date_fingerprint}:shareFixture};}`);
   await run("ShareUI.prepare('c1')");assert.match(get('dialog').innerHTML,/SERVER_DATED_IMAGE/);get('shareApproved').checked=true;const start=writes.length;await run('ShareUI.publish()');dated[language]=JSON.parse(JSON.stringify(writes.slice(start).find(w=>w.url==='/api/share/publish').data));
  }
- assert.deepEqual(dated.en,dated.da);assert.equal(dated.en.date_updates,true);assert.equal(dated.en.date_fingerprint,'FICTIONAL_DATES');assert.equal(dated.en.png,'data:image/png;base64,SERVER_DATED_IMAGE');
+ assert.match(dated.en.request_id,/^ltm-[a-z0-9-]{12,}$/);assert.deepEqual(stripRequestId(dated.en),stripRequestId(dated.da));assert.equal(dated.en.date_updates,true);assert.equal(dated.en.date_fingerprint,'FICTIONAL_DATES');assert.equal(dated.en.png,'data:image/png;base64,SERVER_DATED_IMAGE');
  let dateRelease;c.datePending=new Promise(r=>dateRelease=r);run("DistrictMap.map={};DistrictMap.id='c1';api=async(url)=>url==='/api/share/prepare'?{json:async()=>recipe}:datePending");
  const datedPending=run("ShareUI.prepare('c1')");await new Promise(r=>setImmediate(r));run("openDialog('<form>NEWER DATE DRAFT</form>')");dateRelease({json:async()=>({png:'OLD DATE PREVIEW'})});await datedPending;assert.match(get('dialog').innerHTML,/NEWER DATE DRAFT/);assert.equal(run('ShareUI.pending'),null);
  c.good={size:26,text:async()=>'{"fictional_fixture":true}'};run('api=async(url,data)=>{writes.push({url,data});return {json:async()=>shareFixture}}');await run('ShareUI.connectFile(good,input)');assert.deepEqual(JSON.parse(JSON.stringify(writes.findLast(w=>w.url==='/api/share/connect').data)),{fictional_fixture:true});assert.equal(get('driveConnection').value,'');
