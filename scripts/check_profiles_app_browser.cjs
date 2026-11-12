@@ -272,7 +272,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await deleteButton.click();
   assert.ok((await admin.locator('#dialog').innerText()).includes('Slet forkynder?'));
   assert.ok((await admin.locator('#dialog').innerText()).includes('Fiktiv Gruppe B'));
-  await admin.locator('#dialog [data-action=close]').click();
+  await admin.locator('#dialog [data-action=close]').last().click();
   assert.equal(await admin.evaluate(()=>state.publishers.length),2,'Cancelling must not delete anything');
   await deleteButton.click();
   await admin.locator('#dialog [data-action=confirm-delete][data-module=publishers]').click();
