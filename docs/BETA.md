@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Stable 1.12.19 er uændret. Beta 1.12.19-beta.5 samler tolv nye funktioner: grupperede forkyndere med bekræftet sletning, gennemgangshistorik, KTM-besøg, S-13 på mobil, massehandling på distriktskort, separate interne/offentlige numre, rapportperioder, reversible opfølgninger, Google Drive-uploadstatus, manuelle DAR-forsidetekster, S-12-layout og opdelingsforslag. Tidligere Beta-forbedringer er bevaret. Beta afprøves særskilt fra Stable, som fortsat installeres fra den almindelige repositoryadresse.
+Stable 1.12.20 er uændret. Beta 1.12.19-beta.5 samler tolv nye funktioner: grupperede forkyndere med bekræftet sletning, gennemgangshistorik, KTM-besøg, S-13 på mobil, massehandling på distriktskort, separate interne/offentlige numre, rapportperioder, reversible opfølgninger, Google Drive-uploadstatus, manuelle DAR-forsidetekster, S-12-layout og opdelingsforslag. Tidligere Beta-forbedringer er bevaret. Beta afprøves særskilt fra Stable, som fortsat installeres fra den almindelige repositoryadresse.
 
 ## Installer betakanalen én gang
 

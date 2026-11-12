@@ -1,6 +1,6 @@
 # LTM 1.12.19-beta.5 · 12 nye funktioner i samme Beta
 
-Denne beta samler de tolv udviklingsopgaver fra PR #41–#52 og deres fælles integrationstests. Tidligere Beta-forbedringer er bevaret. **Stable 1.12.19 er uændret.**
+Denne beta samler de tolv udviklingsopgaver fra PR #41–#52 og deres fælles integrationstests. Tidligere Beta-forbedringer er bevaret. **Stable 1.12.20 er uændret.**
 
 ## Nyt i denne beta
 
