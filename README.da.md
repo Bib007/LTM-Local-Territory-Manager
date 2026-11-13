@@ -9,7 +9,7 @@
 
 LTM er et gratis, uofficielt værktøj til distriktsarbejdet i Jehovas Vidners menigheder. Se, hvilke kort der er ude, find et ledigt kort, og registrer en aflevering samme sted. Du kan begynde med de papirkort, du allerede har, og tilføje adresser og korttegning senere.
 
-**[Prøv demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](docs/INSTALL.md) · [Idéer og feedback](https://tally.so/r/KpY0ZV)**
+**[Prøv demoen](https://bib007.github.io/LTM-Local-Territory-Manager/) · [Kom i gang](docs/INSTALL.md) · [Idéer og feedback](https://localterritorymanager.netlify.app/da/feedback/)**
 
 Demoen åbner uden installation eller konto og viser opdigtede eksempler.
 
@@ -87,7 +87,7 @@ Dansk er hovedsproget. Du kan vælge engelsk i appen, men enkelte tekster og de 
 
 ## Har du en idé eller fundet en fejl?
 
-Brug [Idéer og feedback](https://tally.so/r/KpY0ZV). Du behøver ingen konto eller e-mailadresse, og du kan vedhæfte billeder. Send kun opdigtede eksempler, uden rigtige personoplysninger, IB, sikkerhedskopier eller adgangskoder. Det, du selv indsender, gemmes hos Tally.
+Brug [Idéer og feedback](https://localterritorymanager.netlify.app/da/feedback/). Du behøver ingen konto eller e-mailadresse, og du kan vedhæfte billeder. Send kun opdigtede eksempler, uden rigtige personoplysninger, IB, sikkerhedskopier eller adgangskoder.
 
 ## Om projektet
 

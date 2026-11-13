@@ -1,9 +1,8 @@
-# LTM release policy
+# LTM
 
-Develop and test future changes on `develop` / Beta first. Stable (`main`) is the tested baseline; do not use Stable as the normal test channel.
+- Brug `develop` til udvikling og Beta. `main` er Stable, og `beta` genereres af Beta-udgivelsen.
+- Test med midlertidige mapper og fiktive data. Åbn aldrig en rigtig brugers data til test.
+- Udgiv fra den kontrollerede commit. Genbrug ikke eksisterende udgivelsesfiler. Bevar separate Stable- og Beta-installationer, login og data.
+- Udgivelse af den separate Mac-server kræver dens egen fysiske prøve på Apple Silicon med LAN/VPN og genstart.
 
-The owner authorized the consolidated 1.12.19 Stable and matching 1.12.19-beta.1 release on 8 November 2026 and confirmed physical Mac/Windows installation and data preservation. Keep Stable/Beta folders, login cookies and native installer identities separate.
-
-Keep generated release assets immutable. Publish from the exact checked commit only after its required checks pass. Mac-server remains gated on its separate physical Apple Silicon LAN/VPN/restart test; desktop approval does not satisfy that test.
-
-Never read or modify a real user's territory data to run tests; use temporary fictional fixtures.
+Se [bidragsvejledningen](.github/CONTRIBUTING.md) for de aktuelle testkommandoer og [udgivelsessporene](docs/RELEASE-TRACKS.md) for pakker.
