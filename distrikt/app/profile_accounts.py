@@ -17,10 +17,18 @@ from contextlib import contextmanager
 from access import write_private
 from profile_features import GuideAccounts,DASHBOARD_LEGACY,REPORT_LEGACY
 
-PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.manage',
+SPLIT_PERMISSIONS = {
+    'loans.manage': {'folder.manage', 'loans.issue', 'loans.return'},
+    'publishers.manage': {'publishers.delete'},
+    'cards.edit': {'print.approve', 'cards.front_text'},
+    'history.edit': {'history.cleanup'},
+}
+LEGACY_PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.manage',
     'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view',
     'notes.view','notes.edit','publishers.view','loans.view','history.edit',
     'geo.view','geo.edit','backup.export','backup.restore','backup.notify','connections.manage','sharing.manage','dashboard.view','reports.view'))
+PERMISSIONS=LEGACY_PERMISSIONS.union(*SPLIT_PERMISSIONS.values())
+PERMISSION_SCHEMA=4
 SESSION_LIFETIME=12*60*60
 ONLINE_WINDOW=90
 KDF_ITERATIONS=600000
@@ -47,14 +55,14 @@ class ProfileAccounts(GuideAccounts):
     def __init__(self,root,clock=time.monotonic,*,load=True):
         self.root=Path(root);self.path=self.root/'profiles.json';self.clock=clock
         self.lock=threading.RLock();self.sessions={};self.attempts={};self.account_attempts={};self.generation=0
-        self.data=json.loads(self.path.read_text(encoding='utf-8')) if load and self.path.exists() else {'users':{},'roles':{}}
-        if self.data['users'] and self.data.get('permission_schema')!=3:self._write(self._copy())
+        self.data=json.loads(self.path.read_text(encoding='utf-8')) if load and self.path.exists() else {'users':{},'roles':{},'permission_schema':PERMISSION_SCHEMA}
+        if self.data['users'] and self.data.get('permission_schema')!=PERMISSION_SCHEMA:self._write(self._copy())
 
     def _write(self,data):
         if 'permission_schema' not in data:
             # Upgrade once: only prior full administrators keep all rights.
             # The marker preserves an administrator's later opt-out on restart.
-            previous=PERMISSIONS-{'backup.notify','dashboard.view','reports.view'}
+            previous=LEGACY_PERMISSIONS-{'backup.notify','dashboard.view','reports.view'}
             for role in data['roles'].values():
                 if previous<=set(role['permissions']):role['permissions']=sorted(set(role['permissions'])|{'backup.notify'})
             data['permission_schema']=2
@@ -78,6 +86,22 @@ class ProfileAccounts(GuideAccounts):
                     compatibility[extra]=ident
                 user['roles'].append(compatibility[extra])
             data['permission_schema']=3
+        if data.get('permission_schema')==3:
+            def upgrade(permissions):
+                rights=set(permissions)
+                for previous, added in SPLIT_PERMISSIONS.items():
+                    if previous in rights:
+                        rights.update(added)
+                return sorted(rights)
+            for role in data['roles'].values():
+                role['permissions']=upgrade(role['permissions'])
+            for review in data.get('reviews', []):
+                if review.get('field')=='permissions':
+                    for version in ('base', 'saved', 'incoming'):
+                        value=review[version]
+                        if value['present'] and isinstance(value['value'], list):
+                            value['value']=upgrade(value['value'])
+            data['permission_schema']=PERMISSION_SCHEMA
         self.root.mkdir(mode=0o700,parents=True,exist_ok=True)
         os.chmod(self.root,0o700)
         write_private(self.path,data)

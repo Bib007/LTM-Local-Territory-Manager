@@ -30,7 +30,7 @@ class SecurityBoundaryTests(unittest.TestCase):
         with self.assertRaises(PermissionError):mutation(user,'card.save',{'number':'F1','initial_completed':'2025-01-01'},self.source)
         user['permissions']={'history.view','history.edit'}
         with self.assertRaises(PermissionError):mutation(user,'history.cleanup',{},self.source)
-        user['permissions'].update(('loans.view','loans.manage'))
+        user['permissions'].update(('loans.view','loans.manage','history.cleanup'))
         mutation(user,'history.cleanup',{},self.source)
         with self.source.transaction():
             self.source.put('loans',{'id':'fictional-loan','assigned':'2025-01-01'})

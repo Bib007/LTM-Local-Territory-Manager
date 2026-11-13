@@ -2,7 +2,7 @@
 // Front-only DAR label controls. This module intentionally never edits geo_addresses.
 const FrontLabelsUI={
  canEdit(c){
-  return !!c?.front_labels_token&&c.front_addresses?.some(row=>row.source_ids?.length)&&ProfilesUI.has('cards.view','cards.edit');
+  return !!c?.front_labels_token&&c.front_addresses?.some(row=>row.source_ids?.length)&&ProfilesUI.canAction('card.front_labels.save');
  },
  button(c){
   return this.canEdit(c)?`<button type="button" data-action="front-labels" data-id="${esc(c.id)}">${ui('Rediger forsidens vejlinjer')}</button>`:'';
@@ -61,7 +61,7 @@ document.addEventListener('submit',async event=>{
  if(form.id!=='frontLabelsForm')return;
  event.preventDefault();
  if(form.dataset.saving==='yes'||!form.reportValidity())return;
- if(!ProfilesUI.has('cards.view','cards.edit'))return;
+ if(!ProfilesUI.canAction('card.front_labels.save'))return;
  form.dataset.saving='yes';
  const generation=openDialog.generation,id=form.dataset.id;
  try{

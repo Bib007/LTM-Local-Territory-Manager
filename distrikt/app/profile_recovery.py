@@ -5,7 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
-from profile_accounts import ProfileAccounts,PERMISSIONS,_name
+from profile_accounts import ProfileAccounts,PERMISSIONS,PERMISSION_SCHEMA,_name
 from access import write_private
 from profile_features import guide_valid
 
@@ -13,7 +13,7 @@ MAX_ACCOUNT_BACKUP=16*1024*1024
 
 def validated(data):
     if not isinstance(data,dict) or set(data)-{'reviews','permission_schema'}!={'users','roles'}:raise ValueError('Ugyldig kontobackup.')
-    if 'permission_schema' in data and (type(data['permission_schema']) is not int or data['permission_schema'] not in (2,3)):raise ValueError('Ukendt rettighedsformat.')
+    if 'permission_schema' in data and (type(data['permission_schema']) is not int or data['permission_schema'] not in (2,3,PERMISSION_SCHEMA)):raise ValueError('Ukendt rettighedsformat.')
     if 'reviews' in data:
         reviews=data['reviews']
         if not isinstance(reviews,list) or len(reviews)>5000:raise ValueError('Ugyldige kontorettelser.')
@@ -22,7 +22,7 @@ def validated(data):
             if row.get('module') not in ('users','roles') or row.get('field') not in ('name','roles','disabled','credential','permissions') or type(row.get('resolved')) is not bool:raise ValueError('Ugyldig kontorettelse.')
             for key in ('base','saved','incoming'):
                 if not isinstance(row.get(key),dict) or set(row[key])!={'present','value'} or type(row[key]['present']) is not bool:raise ValueError('Ugyldig kontorettelse.')
-    if not all(isinstance(data[k],dict) and 0<len(data[k])<=(1003 if k=='roles' and data.get('permission_schema')==3 else 1000) for k in ('users','roles')):raise ValueError('Ugyldig kontobackup.')
+    if not all(isinstance(data[k],dict) and 0<len(data[k])<=(1003 if k=='roles' and data.get('permission_schema') in (3,PERMISSION_SCHEMA) else 1000) for k in ('users','roles')):raise ValueError('Ugyldig kontobackup.')
     names=set()
     for ident,role in data['roles'].items():
         if not isinstance(ident,str) or not re.fullmatch(r'role-[a-f0-9]{32}',ident):raise ValueError('Ugyldig rolle.')

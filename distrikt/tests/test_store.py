@@ -66,10 +66,10 @@ class StorageTests(unittest.TestCase):
 
     def test_folder_selection_requires_loan_management_permission(self):
         required = ACTIONS['folder.set']
-        self.assertEqual(required, frozenset({'cards.view', 'loans.view', 'loans.manage'}))
+        self.assertEqual(required, frozenset({'cards.view', 'loans.view', 'folder.manage'}))
         with self.assertRaises(PermissionError):
             require({'cards.view', 'loans.view'}, required)
-        require({'cards.view', 'loans.view', 'loans.manage'}, required)
+        require({'cards.view', 'loans.view', 'folder.manage'}, required)
 
     def test_specific_existing_card_stays_the_same_record(self):
         target = self.make_card('F-42')

@@ -19,6 +19,8 @@ Roles combine when an account has more than one. Managing users does not automat
 
 The role panel groups permissions and describes dependencies. Ordinary updates migrate older role combinations conservatively, using visible compatibility roles where necessary to preserve former overview/report access. Review those visible grants, then change them deliberately if you want a different policy. Later choices are preserved.
 
+Under **Settings → Users and roles**, you can grant folder moves, issuing cards, returning cards, editing front-side street lines, approving printed sides, deleting publishers and cleaning up old history separately. A return can be granted without granting the right to record a completion or add a note. Older roles receive the matching permissions once. Later changes to those permissions are preserved when LTM restarts.
+
 ## Personal introduction and release news
 
 A personal guide follows the account's current permissions. It does not change the installation's common setup plan. A user administrator can preview the selected account's permitted guide and schedule it for that account's **next successful login**. A currently open session does not consume that next-login request.
