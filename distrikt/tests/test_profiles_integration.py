@@ -81,9 +81,35 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_return_only_role_cannot_issue_move_or_record_completion(self):
+        publisher=self.store.mutate('publisher.save',{'name':'Fiktiv person'})['id']
+        day=self.state(self.admin)['today']
+        loan=self.store.mutate('loan.issue',{'card_id':self.card,'publisher_id':publisher,'date':day,'initial':True})['id']
+        guest,role,_=self.reader(['cards.view','loans.view','loans.return','publishers.view'])
+        for action,data in (
+            ('loan.issue',{'card_id':self.card,'publisher_id':publisher,'date':day}),
+            ('folder.set',{'ids':[self.card],'in_folder':True}),
+            ('loan.finish',{'id':loan,'date':day,'complete':True}),
+            ('loan.finish',{'id':loan,'date':day,'note':'Fiktiv note'}),
+        ):
+            with self.subTest(action=action,data=data), self.assertRaises(urllib.error.HTTPError) as failure:
+                self.change(guest,self.state(guest),action,data)
+            self.assertEqual(failure.exception.code,403)
+        self.change(guest,self.state(guest),'loan.finish',{'id':loan,'date':day})
+        self.assertEqual(self.store.require('loans',loan)['returned'],day)
+        self.assertTrue(self.state(guest)['undo_available'])
+        self.change(guest,self.state(guest),'workflow.undo',{})
+        self.assertIsNone(self.store.require('loans',loan)['returned'])
+        self.change(guest,self.state(guest),'loan.finish',{'id':loan,'date':day})
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view','loans.view']},self.admin)
+        self.assertFalse(self.state(guest)['undo_available'])
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.change(guest,self.state(guest),'workflow.undo',{})
+        self.assertEqual(failure.exception.code,403)
+
     def test_bulk_folder_two_authenticated_users_and_permission_denial(self):
         """Two different accounts race on one fictional card; only one changes it."""
-        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'loans.manage'])
+        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'folder.manage'])
         admin_base = self.state(self.admin)
         guest_base = self.state(guest)
         ready = threading.Barrier(2)
@@ -373,7 +399,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def test_loan_manager_can_select_existing_name_but_cannot_create_publishers(self):
         publisher=self.store.mutate('publisher.save',{'name':'Fiktiv Forkynder'})['id']
         second_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
-        reader,_,_=self.reader(['cards.view','loans.view','loans.manage','publishers.view'])
+        reader,_,_=self.reader(['cards.view','loans.view','loans.issue','publishers.view'])
         base=self.state(reader)
         data={'card_id':self.card,'publisher_name':'  FIKTIV FORKYNDER  ','date':base['today'],'initial':True}
         self.change(reader,base,'loan.issue',data)

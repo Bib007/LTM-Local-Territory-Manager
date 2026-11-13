@@ -339,7 +339,16 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.alias(module)+'.records WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
                 reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','revision.approve','revision.approve_many')
-                candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
+                undo_context = {}
+                if changed and reversible:
+                    undo_context = {key: bool(data[key]) for key in ('complete', 'note', 'assignee_id', 'initial_completed', 'id') if key in data}
+                    if action=='revision.approve':
+                        undo_context['side']=data.get('side')
+                    if action=='revision.approve_many':
+                        undo_context['entries']=[{'side': entry['side']} for entry in data['entries']]
+                    if action=='loan.issue':
+                        undo_context['created_publisher']=any(module=='publishers' and previous is None for (module,_),previous in touched.items())
+                candidate={'rows':touched,'action':action,'context':undo_context,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
             candidate['revision']=self.revision;self._undo=candidate

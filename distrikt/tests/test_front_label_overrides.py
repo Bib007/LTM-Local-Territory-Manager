@@ -133,10 +133,10 @@ class FrontLabelOverrideTests(unittest.TestCase):
                 'rows':[{'source_ids':['dar:fictional-UNRELATED'],'road':'X','numbers':None}]})
         self.assertEqual(self.store.require('cards',self.ident),original)
 
-    def test_permission_must_allow_card_edit(self):
+    def test_permission_must_allow_front_text(self):
         required=ACTIONS['card.front_labels.save']
         with self.assertRaises(PermissionError):require({'cards.view'},required)
-        require({'cards.view','cards.edit'},required)
+        require({'cards.view','cards.front_text'},required)
 
     def test_backup_readable_export_and_public_fingerprint(self):
         before=fingerprint(self.store,self.store.require('cards',self.ident))

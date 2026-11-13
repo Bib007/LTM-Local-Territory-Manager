@@ -73,6 +73,9 @@ class PrintApprovalTests(unittest.TestCase):
         self.assertTrue(self.s.require('cards',self.ids[0])['front_revision'])
     def test_permissions_require_ib_visibility_only_for_backs(self):
         user={'id':'fictional','permissions':{'cards.view','cards.edit'}}
+        with self.assertRaises(PermissionError):
+            mutation(user,'revision.approve_many',{'entries':self.entries(('front',))},self.s)
+        user['permissions']={'cards.view','print.approve'}
         mutation(user,'revision.approve_many',{'entries':self.entries(('front',))},self.s)
         with self.assertRaises(PermissionError):mutation(user,'revision.approve_many',{'entries':self.entries(('back',))},self.s)
         user['permissions'].add('ib.view');mutation(user,'revision.approve_many',{'entries':self.entries()},self.s)

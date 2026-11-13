@@ -4,14 +4,13 @@ Managing users never implies permission to read territory or personal data.
 All checks run under the accounts lock, before the Store lock is acquired.
 """
 from copy import deepcopy
-import json
-from profile_accounts import PERMISSIONS
+from profile_accounts import PERMISSIONS, SPLIT_PERMISSIONS
 from profile_features import summaries
 
 READ_ALL=frozenset(('cards.view','publishers.view','loans.view','ib.view','notes.view',
                     'history.view','geo.view','activity.view','settings.manage'))
 WRITE_ALL=frozenset(('cards.edit','publishers.manage','loans.manage','ib.edit','notes.edit',
-                     'history.edit','geo.edit','settings.manage'))
+                     'history.edit','geo.edit','settings.manage')).union(*SPLIT_PERMISSIONS.values())
 
 GET={
  '/api/state':(), '/api/profiles/guide':(), '/api/profiles/session':(), '/api/profiles/conflicts':(),
@@ -73,17 +72,22 @@ def route(permissions,path,post=False):
     require(permissions,(POST if post else GET).get(path))
 
 GROUPS={
- ('cards.view','cards.edit'):'card.save card.front_labels.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit card.numbering.preview card.numbering.apply card.numbering.undo.preview card.numbering.undo revision.approve revision.approve_many',
+ ('cards.view','cards.edit'):'card.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit card.numbering.preview card.numbering.apply card.numbering.undo.preview card.numbering.undo',
  ('cards.view','geo.view','geo.edit','cards.edit'):'geo.assign geo.boundary geo.preview map.save map.outline card.restructure.preview card.restructure.apply',
  ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune geo.main.download.save geo.main.download.tile geo.main.import.preview ignore.save address.change.review',
  ('cards.view','geo.view','geo.edit'):'followup.ignore',
  ('connections.manage',):'geo.token',
- ('cards.view','loans.view','loans.manage'):'folder.set folder.set_many loan.issue loan.finish',
+ ('cards.view','loans.view','folder.manage'):'folder.set folder.set_many',
+ ('cards.view','loans.view','publishers.view','loans.issue'):'loan.issue',
+ ('cards.view','loans.view','loans.return'):'loan.finish',
+ ('cards.view','cards.front_text'):'card.front_labels.save',
+ ('cards.view','print.approve'):'revision.approve revision.approve_many',
  ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct',
  ('publishers.view','publishers.manage'):'publisher.save setup.publisher-import.preview setup.publisher-import.apply',
  ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete',
  ('cards.view','history.view','history.edit'):'completion.record',
- ('history.view','history.edit'):'visit.save history.cleanup',
+ ('history.view','history.edit'):'visit.save',
+ ('history.view','history.cleanup','loans.view','loans.manage'):'history.cleanup',
   ('cards.view','loans.view','loans.manage','publishers.view','history.view','history.edit'):'history.grid.add history.grid.edit',
  ('cards.view','ib.view','ib.edit'):'ib.save setup.ib.inspect setup.ib.preview setup.ib.apply',
  ('settings.manage',):'settings.save print.profile.save split.suggestion.ignore split.suggestion.restore area.save area.delete area.numbering.preview area.numbering.save filter.save filter.delete setup.onboarding.save setup.onboarding.task setup.defaults',
@@ -98,7 +102,7 @@ ACTIONS.update({'card.restructure.preview':CASCADE,'card.restructure.apply':CASC
 DELETE={'cards':CASCADE,'ib':{'cards.view','ib.view','ib.edit'},
         'notes':{'notes.view','notes.edit'},'visits':{'history.view','history.edit'},
         'loans':{'cards.view','history.view','publishers.view','loans.view','loans.manage'},'completions':{'history.view','history.edit'},
-        'publishers':{'publishers.view','publishers.manage','loans.view'},
+        'publishers':{'publishers.view','publishers.delete','loans.view'},
         'ignored':{'geo.view','geo.edit'}}
 
 def mutation(user,action,data,store):
@@ -108,24 +112,21 @@ def mutation(user,action,data,store):
     if action=='workflow.undo':
         entry=store._undo or {}
         if entry.get('actor_id')!=user['id']:raise PermissionError('Fortryd findes kun for din egen seneste handling.')
-        needed=ACTIONS.get(entry.get('action'))
-        if needed is not None:
-            needed=set(needed)
-            extra={'cards':{'cards.view','cards.edit'},'notes':{'notes.view','notes.edit'},
-                   'publishers':{'publishers.view','publishers.manage'},'loans':{'loans.view','loans.manage'},
-                   'ib':{'ib.view','ib.edit'},'completions':{'history.view','history.edit'},
-                   'visits':{'history.view','history.edit'},'settings':{'settings.manage'}}
-            for (module,ident),previous in entry.get('rows',{}).items():
-                needed.update(extra.get(module,READ_ALL|WRITE_ALL))
-                if module=='notes' and (json.loads(previous[1]) if previous else {}).get('assignee_id')!=(store.get('notes',ident) or {}).get('assignee_id'):
-                    needed.add('users.manage')
+        original=entry.get('action')
+        context=entry.get('context',{})
+        if original not in ACTIONS:
+            raise PermissionError('Fortryd er ikke tilgængelig.')
+        if context.get('created_publisher'):
+            require(user['permissions'],('publishers.manage',))
+        if original!='loan.issue':
+            mutation(user,original,context,store)
+        needed=ACTIONS[original]
     require(user['permissions'],needed)
     if action=='note.save' and 'assignee_id' in data:
         require(user['permissions'],('users.manage',))
     # Authorize the secondary modules changed by composite operations too.
     if action=='card.save' and data.get('initial_completed') and not data.get('id'):
         require(user['permissions'],('history.view','history.edit'))
-    if action=='history.cleanup':require(user['permissions'],('loans.view','loans.manage'))
     if action in ('loan.correct.preview','loan.correct'):
         loan=store.get('loans',data.get('id'))
         if loan and data.get('assigned')!=loan.get('assigned') and any(e.get('loan_id')==loan['id'] for e in store.all('completions')):
@@ -136,7 +137,6 @@ def mutation(user,action,data,store):
             require(user['permissions'],('settings.manage',))
     # A write that creates a publisher or note also needs that module's right.
     if action=='loan.issue':
-        require(user['permissions'],('publishers.view',))
         if not data.get('publisher_id'):
             from store import clean_text
             name=clean_text(data.get('publisher_name'),100,True)
@@ -164,7 +164,7 @@ def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]} for row in raw[module]] if right in p else []
-    if 'cards.edit' not in p:
+    if 'cards.front_text' not in p:
         for card in result['cards']+result['archived_cards']:
             card.pop('front_labels_token',None)
     if 'geo.view' not in p:

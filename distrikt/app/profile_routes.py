@@ -87,7 +87,17 @@ class ProfileRuntime:
             self.bases.limit_session(token)
             result['profile']['snapshot']=self.bases.create(token,'workspace','workspace',capture(self.server.store,modules))
             result['profile']['conflicts']=len(self.workspace.conflicts(token))+(len(self.accounts.reviews(token)) if 'users.manage' in user['permissions'] else 0)
-            result['undo_available']=bool(raw['undo_available'] and (self.server.store._undo or {}).get('actor_id')==user['id'])
+            from profile_policy import ACTIONS
+            if ACTIONS['history.cleanup']<=permissions:
+                result['history_cleanup_cutoff']=self.server.store.history_cutoff()
+            result['undo_available']=False
+            if raw['undo_available']:
+                try:
+                    mutation(user,'workflow.undo',{},self.server.store)
+                except PermissionError:
+                    pass
+                else:
+                    result['undo_available']=True
             return result
 
     def mutate(self,token,user,action,data,snapshot):
