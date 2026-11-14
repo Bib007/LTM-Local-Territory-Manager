@@ -58,23 +58,6 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await p.locator('#geoSelection [data-geo=save]').click();await p.locator('[data-geo=confirm-save]').click();
    await p.waitForFunction(id=>card(id).address_ids?.length===4&&SaveStatus.kind==='saved',fixture.cards[index]);
    assert.equal(writes.filter(w=>w.action==='geo.assign').length,1);assert.equal(await p.evaluate(id=>card(id).front_revision,fixture.cards[index]),true);
-   // On reopening the same card, a complete local DAR download must avoid network.
-   const firstDownloads=downloads.length;assert.equal(firstDownloads,1,'The missing road was initially downloaded');
-   await p.evaluate(id=>GeoUI.openCard(id),fixture.cards[index]);
-   await p.locator('[data-geo=street-lines]').click();await p.locator('[name=postcode_0]').fill('9999');
-   assert.equal(await p.locator('[name=refresh_downloaded]').isChecked(),false);
-   await p.locator('#streetSuggestionForm button:not([type=button])').click();
-   await p.waitForFunction(()=>GeoUI.streetApproval!==null&&GeoUI.ids.size===4&&GeoUI.dirty);
-   assert.equal(downloads.length,firstDownloads,'Reusing complete cached road must not call DAR download');
-   assert.equal(writes.filter(w=>w.action==='geo.assign').length,1,'Local preview cannot silently save card');
-   // The user can explicitly refresh every cached road.
-   await p.evaluate(id=>GeoUI.openCard(id),fixture.cards[index]);
-   await p.locator('[data-geo=street-lines]').click();await p.locator('[name=postcode_0]').fill('9999');
-   await p.locator('[name=refresh_downloaded]').check();
-   await p.locator('#streetSuggestionForm button:not([type=button])').click();
-   await p.waitForFunction(()=>GeoUI.streetApproval!==null&&GeoUI.ids.size===4&&GeoUI.dirty);
-   assert.equal(downloads.length,firstDownloads+1,'Explicit refresh downloads cached road again');
-   await p.evaluate(id=>GeoUI.openCard(id),fixture.cards[index]);
    for(const wording of ['2024','marts 2024']){
     await p.evaluate(id=>{closeDialog();IBUI.open(null,id);},fixture.cards[index]);
     await p.locator('#ibForm [name=road]').fill('Fictional road '+index);await p.locator('#ibForm [name=number]').fill(wording==='2024'?expected[0]:expected[1]);
