@@ -343,8 +343,8 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if data.get('action') in ('setup.preview','setup.adjust.preview','setup.apply'):
                     raise UIError('Automatisk kortinddeling er sat på pause. Brug korteditoren til at oprette kort.')
                 with self.server.address_schedule.lock:
-                    if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.')
-                    if data.get('action') in ('geo.main.prune','geo.main.save') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
+                    if data.get('action') in ('geo.main.prune','geo.main.save','address.change.outside.reject') and self.server.address_schedule.busy():raise ValueError('Vent på den automatiske adressekontrol før grænsen ændres eller adresser ryddes op.')
+                    if data.get('action') in ('geo.main.prune','geo.main.save','address.change.outside.reject') and self.server.downloads.status().get('status')=='running':raise ValueError('Sæt hentningen på pause før grænsen gemmes eller adresser ryddes op.')
                     with self.server.store.lock:
                         generation=getattr(self.server.store,'geo_generation',0)
                         editor_snapshot=None

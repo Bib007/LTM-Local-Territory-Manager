@@ -5,7 +5,7 @@ import re
 import time
 import uuid
 from datetime import date, timedelta
-from geography import enclosing_outline, street_rows
+from geography import enclosing_outline, street_rows, point_in_polygon, valid_coordinate
 from admin_store import signature
 
 
@@ -66,6 +66,57 @@ class WorkflowStore:
             if recipient:
                 entry.update(recipient_id=recipient['id'], recipient=recipient['name'])
         item['task_history'] = [*(item.get('task_history') or []), entry]
+
+
+    def address_outside_review(self):
+        """Read-only preview: only unambiguously outside pending DAR changes.
+
+        Coordinates on the saved boundary count as inside. A moved address
+        that used to be inside (or has uncertain coordinates) requires a
+        person to review it; never silently dismiss that change.
+        """
+        boundary=self.main_boundary()
+        if not boundary:raise ValueError('Gem den samlede distriktsgrænse før du afviser adresseændringer.')
+        polygon=boundary['points']
+        west=min(p[0] for p in polygon);east=max(p[0] for p in polygon)
+        south=min(p[1] for p in polygon);north=max(p[1] for p in polygon)
+        def location(row):
+            if not isinstance(row,dict):return None
+            try:return valid_coordinate([row['lng'],row['lat']])
+            except (ValueError,KeyError,TypeError,OverflowError):return None
+        def within(row):
+            point=location(row)
+            if point is None:return None
+            x,y=point
+            return west<=x<=east and south<=y<=north and point_in_polygon(point,polygon)
+        changes=sorted((r for r in self.all('geo') if r.get('entity')=='address_change'),key=lambda r:r['id'])
+        ids=[];examples=[];uncertain=0;protected=0
+        for entry in changes:
+            if entry.get('kind') not in ('new','changed','retired'):
+                uncertain+=1;continue
+            after=entry.get('after')
+            if not isinstance(after,dict):
+                uncertain+=1;continue
+            outside=within(after)
+            if outside is None:
+                uncertain+=1;continue
+            if outside:continue
+            before=entry.get('before')
+            if before is not None:
+                old_inside=within(before)
+                if old_inside is None:
+                    uncertain+=1;continue
+                if old_inside:
+                    protected+=1;continue
+            elif entry.get('kind')!='new':
+                uncertain+=1;continue
+            ids.append(entry['id'])
+            if len(examples)<30:
+                label=after.get('label') or ' '.join(str(after.get(k) or '').strip() for k in ('road','number','postcode')).strip()
+                examples.append({'id':entry['id'],'label':str(label)[:240],'kind':entry['kind']})
+        fingerprint=signature([boundary,[(r['id'],r.get('kind'),r.get('before'),r.get('after')) for r in changes]])
+        return {'count':len(ids),'ids':ids,'examples':examples,'protected':protected,'uncertain':uncertain,
+                'remaining':len(changes)-len(ids),'expected':fingerprint}
 
     def workflow_mutate(self,action,data):
         from store import clean_text, now
@@ -137,6 +188,21 @@ class WorkflowStore:
             n=self.require('notes',data.get('id'))
             if n.get('entity')=='activity':raise ValueError('Vælg en opgave.')
             n['task']=True;n['resolved']=False;self.put('notes',n);return {'id':n['id']}
+        if action in ('address.change.outside.preview','address.change.outside.reject'):
+            preview=self.address_outside_review()
+            if action.endswith('.preview'):
+                return {k:v for k,v in preview.items() if k!='ids'}
+            if data.get('confirm')!='AFVIS UDENFOR':
+                raise ValueError('Skriv AFVIS UDENFOR for at bekræfte.')
+            if not preview['expected'] or data.get('expected')!=preview['expected']:
+                raise ValueError('Distriktsgrænsen eller adresseændringerne er ændret. Vis en ny forhåndsvisning.')
+            if not preview['count']:
+                raise ValueError('Ingen sikre adresseændringer uden for den samlede grænse at afvise.')
+            self._dirty_modules.add('geo')
+            for ident in preview['ids']:
+                self.workflow_track('geo',ident)
+                self.db.execute('DELETE FROM geo.records WHERE id=?',(ident,))
+            return {'count':preview['count'],'remaining':preview['remaining']}
         if action=='address.change.review':
             self._dirty_modules.add('geo')
             pending=self.require('geo',data.get('id'))
@@ -147,6 +213,7 @@ class WorkflowStore:
                 if current!=pending.get('before'):raise ValueError('Adressen er ændret. Genindlæs kontrollen.')
                 self.put('geo',after)
                 self.db.execute('UPDATE geo.records SET deleted_at=NULL,batch=NULL WHERE id=?',(after['id'],))
+            self.workflow_track('geo',pending['id'])
             self.db.execute('DELETE FROM geo.records WHERE id=?',(pending['id'],));return {}
         raise ValueError('Ukendt arbejdsgang.')
 
