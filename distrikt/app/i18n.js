@@ -207,6 +207,7 @@ const I18n={
   "Adressegrundlaget er ændret. Hent et nyt vejlinjeforslag.":"The address data has changed. Request a new street-line suggestion.",
   "Foreslå DAR-adresser fra vejlisten":"Suggest DAR addresses from street lines",
   "DAR-adresseforslag stoppede ved kort {card}, vej \"{road}\", postnummer {postcode}, husnumre fra vejlisten: {numbers}. Årsag: {reason}. Kontrollér vejnavn og postnummer. Husnumrene er fra vejlisten; DAR har ikke udpeget et bestemt fejlagtigt husnummer.":"DAR address suggestion stopped on card {card}, street \"{road}\", postcode {postcode}, numbers from the street list: {numbers}. Reason: {reason}. Check the street name and postcode. These are ranges from the street list; DAR has not identified a specific incorrect house number.",
+  "Hele vejen":"Entire street",
   "Bekræft postnummeret for hver vejlinje. Hele vejen hentes fra DAR, og nummerintervallet bruges til et forslag. Kontrollér alle adresser og den foreslåede grænse før Gem. Kortet ændres ikke ved hentning.":"Confirm each street-line postcode. Download the complete street from DAR and use the number range for a suggestion. Review every address and the proposed boundary before saving. Downloading does not change the card.",
   "Nummerinterval":"Number range",
   "Hent og foreslå adresser":"Download and suggest addresses",
