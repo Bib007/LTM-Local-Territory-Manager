@@ -23,15 +23,21 @@ const FrontLabelsUI={
    ${c.front_label_unmatched?`<p class="notice warning">${ui('Tidligere overstyringer er bevaret, men nogle kan ikke knyttes entydigt til de nye DAR-vejlinjer. Kontrollér dem i eksporten.')}</p>`:''}
    <form id="frontLabelsForm" data-id="${esc(id)}" data-token="${esc(c.front_labels_token)}">
    ${rows.map((row,i)=>`<fieldset class="frontLabelRow" data-source-ids="${esc(JSON.stringify(row.source_ids))}"><legend>${ui('Vejlinje')} ${i+1}</legend>
+    <label>${ui('Visning af husnumre på forsiden')}</label>
+    <select data-front-number-style aria-label="${ui('Visning af husnumre på forsiden')}">
+     <option value="exact" ${row.number_style!=='range'?'selected':''}>${ui('Vis de valgte numre')}</option>
+     <option value="range" ${row.number_style==='range'?'selected':''} ${!row.short_numbers?'disabled':''}>${ui('Vis fra første til sidste')}${row.short_numbers?' · '+esc(row.short_numbers):''}</option>
+    </select>
+    <p class="hint">${ui('Intervallet forkorter kun teksten. Mellemliggende husnumre bliver ikke tilføjet til distriktet.')}</p>
     <div class="twocol">${field(row,'road','Egen tekst til vejnavn',120)}${field(row,'numbers','Egen tekst til husnumre',100)}</div>
-    <button type="button" data-front-reset>${ui('Ryd egen tekst på linjen')}</button></fieldset>`).join('')}
+    <button type="button" data-front-reset>${ui('Nulstil vejlinjens visning og egen tekst')}</button></fieldset>`).join('')}
    ${c.front_label_unmatched?`<label class="check"><input type="checkbox" name="clear_unmatched"> ${ui('Nulstil uafklarede overstyringer til DAR')}</label>`:''}
    <p class="hint">${ui('Kontrollér kortets forhåndsvisning. For lange vejlinjer blokerer print og billedeksport.')}</p>
    ${formEnd('Gem forsidetekst')}</form>`,I18n.language());
  },
  collect(form){
   return [...form.querySelectorAll('.frontLabelRow')].map(row=>{
-   const values={source_ids:JSON.parse(row.dataset.sourceIds)};
+   const values={source_ids:JSON.parse(row.dataset.sourceIds),number_style:row.querySelector('[data-front-number-style]').value};
    for(const input of row.querySelectorAll('[data-front-label-text]')){
     values[input.dataset.key]=input.value.trim()?input.value:null;
    }
@@ -44,9 +50,11 @@ document.addEventListener('click',async event=>{
  if(!target)return;
  event.preventDefault();
  if(target.hasAttribute('data-front-reset')){
-  for(const input of target.closest('.frontLabelRow').querySelectorAll('[data-front-label-text]')){
+  const row=target.closest('.frontLabelRow');
+  for(const input of row.querySelectorAll('[data-front-label-text]')){
    input.value='';
   }
+  row.querySelector('[data-front-number-style]').value='exact';
   return;
  }
  if(el('cardForm')){

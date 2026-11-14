@@ -516,7 +516,7 @@ function frontRows(c,english=false){
  }
  const streets=new Map(),parity=/\s*\((lige|ulige|even|odd)\)$/i;
  const numbered=source.map(a=>{
-  const numbers=compactAddressNumbers(a.numbers),marker=numbers.match(parity);
+  const numbers=compactAddressNumbers(a.number_style==='range'&&a.short_numbers?a.short_numbers:a.numbers),marker=numbers.match(parity);
   const side=marker?(['ulige','odd'].includes(marker[1].toLowerCase())?'odd':'even'):'';
   const row={...a,numbers,side,interval:marker?numbers.slice(0,marker.index):numbers};
   if(side){
