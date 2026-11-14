@@ -9,11 +9,12 @@ const StreetSuggestions={
  async start(form){
   if(this.pending||GeoUI.busy||!form.reportValidity())return;
   const c=card(GeoUI.target),target=GeoUI.target,session=GeoUI.session,stamp=GeoUI.draftStamp(false);
+  const generation=openDialog.generation;
   const postcodes=c.addresses.map((r,i)=>form.elements['postcode_'+i].value);
   const plan=await GeoUI.preview({mode:'street_lines',postcodes,planning_only:true});
-  if(target!==GeoUI.target||session!==GeoUI.session||stamp!==GeoUI.draftStamp(false)||!el('dialog').open)return;
+  if(generation!==openDialog.generation||target!==GeoUI.target||session!==GeoUI.session||stamp!==GeoUI.draftStamp(false)||!el('dialog').open)return;
   if(!GeoUI.canLeave())return;
-  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads:plan.roads.slice()};
+  this.pending={target,session,stamp,generation,postcodes,source_expected:plan.source_expected,roads:plan.roads.slice()};
   closeDialog();await this.next();
  },
  async next(){
@@ -22,15 +23,36 @@ const StreetSuggestions={
   const road=p.roads.shift();
   if(road){await GeoUI.download('road',{...road,include_osm:false});return;}
   const result=await GeoUI.preview({mode:'street_lines',postcodes:p.postcodes,source_expected:p.source_expected});
-  if(this.pending!==p||p.stamp!==GeoUI.draftStamp(false)){this.pending=null;return;}
+  if(this.pending!==p)return;
   this.pending=null;
-  if(result.conflicts.length||result.ignored.length||result.retired.length)throw Error(I18n.text('Forslaget rammer optagne, fravalgte eller nedlagte adresser. Gennemgå kortkontrollen før du fortsætter.'));
+  if(p.stamp!==GeoUI.draftStamp(false)||p.generation!==openDialog.generation||el('dialog').open)return;
+  const status=el('geoDownloadStatus');if(status)status.hidden=true;
+  if(result.conflicts.length||result.ignored.length||result.retired.length){
+   this.showConflicts(result);
+   return;
+  }
   GeoUI.ids=new Set(result.addresses.map(a=>a.id));GeoUI.polygon=result.outline;GeoUI.mode='choose';GeoUI.dirty=true;
   GeoUI.streetApproval={street_expected:result.street_expected,source_expected:result.source_expected,postcodes:p.postcodes};
   GeoUI.setNotice('DAR-forslaget er klar. Sammenlign adresser og besøgstal med vejlisten, ret grænsen og vælg Gem for at ændre kortet.');
-  const status=el('geoDownloadStatus');if(status)status.hidden=true;
   render();
   if(GeoUI.map&&result.addresses.length)GeoUI.map.fitBounds(result.addresses.map(a=>[a.lat,a.lng]),{padding:[40,40],maxZoom:18,animate:false});
+ },
+ showConflicts(result){
+  const owners=new Map(result.conflicts.map(conflict=>[conflict.id,conflict]));
+  const ignored=new Set(result.ignored),retired=new Set(result.retired);
+  const rows=[];
+  for(const address of result.addresses){
+   const owner=owners.get(address.id),reasons=[];
+   if(owner)reasons.push(ui(owner.deleted?'Reserveret af kort {number} i gendannelse':'Ligger allerede på kort {number}',{number:owner.card_number}));
+   if(ignored.has(address.id))reasons.push(ui('Markeret Se bort fra'));
+   if(retired.has(address.id))reasons.push(ui('Nedlagt hos DAR'));
+   if(reasons.length)rows.push(`<li><strong>${esc(address.label)}</strong><br>${reasons.join(' · ')}</li>`);
+  }
+  openDialog(`<h2>${ui('Adresser, der stopper DAR-forslaget')}</h2>
+   <p>${ui('Kortet er ikke ændret. Se nedenfor, hvorfor hver adresse er blokeret.')}</p>
+   <ul>${rows.join('')}</ul>
+   <p class="hint">${ui('Gå tilbage til kortet, og brug Vælg huse til at vælge de adresser, der skal med. Kontrollér kortnummeret, før du flytter en adresse fra et andet kort.')}</p>
+   <div class="actions"><button type="button" class="primary" data-action="close">${ui('Tilbage til kortet')}</button></div>`,I18n.language());
  },
  async afterJob(job){if(job.status!=='done'||job.kind!=='road'){this.pending=null;return;}await this.next();}
 };
