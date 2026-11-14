@@ -75,7 +75,7 @@ tagged.push({dataset:{ui:'Kort',uiParams:'broken-json'},textContent:''});assert.
  assert.match(get('dialog').innerHTML,/value="4" selected data-ui="Fredag"/);assert.match(get('dialog').innerHTML,/Completion history/);assert.match(get('dialog').innerHTML,/Scheduled/);
  await run("Workspace.handle('resolve',{id:'n',due:'2026-10-16'})");assert.match(run("el('dialog').innerHTML"),/complete-task/);
  run(`state=${original}`);
- run("I18n.set('en');Workspace.taskFilter='all'");assert.match(run('Workspace.tasks()'),/complete a task and optionally reply/);assert.match(run('Workspace.tasks()'),/data-ui-title="Markér udført"/);assert.match(run('Workspace.tasks()'),/aria-pressed="false"/);
+ run("I18n.set('en');Workspace.taskFilter='all'");assert.match(run('Workspace.tasks()'),/complete a task and optionally send a reply/);assert.match(run('Workspace.tasks()'),/data-ui-title="Marker udført eller svar"/);assert.match(run('Workspace.tasks()'),/Mark done or reply/);assert.match(run('Workspace.tasks()'),/aria-pressed="false"/);
  // Legacy non-task records are shown immediately, and completed records never inflate alerts.
  vm.runInContext(read('navigation.js'),c);
  run(`state.notes.push({id:'old',text:'Fiktiv gammel <opfølgning>',card_id:'folder',task:false,resolved:false,date:'2026-10-01'},

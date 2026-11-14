@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.10 fjerner igen den lokale genbrugsoptimering i **Foreslå DAR-adresser fra vejlisten**. Funktionen henter nu alle bekræftede veje på ny fra DAR, som før beta.9. De øvrige beta-funktioner er uændrede.
+Beta 1.12.19-beta.11 gør det tydeligere at afslutte opgaver: En knap med flueben og teksten **Marker udført eller svar** erstatter den lille cirkel. Klik åbner fortsat svarfeltet og kræver den normale godkendelse af udførelsen. Udførte opgaver har en særskilt **Genåbn**-knap. DAR-adresseforslag fungerer som før beta.9.
 
 ## Installer betakanalen én gang
 
