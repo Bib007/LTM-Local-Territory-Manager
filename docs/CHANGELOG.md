@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.11 · 2026-11-14
+
+- **Opgaver og svar:** Erstat den lille runde knap med en synlig knap med flueben og teksten »Marker udført eller svar«. Gør afslutning og valgfrit svar let at finde på computer, tablet og mobil.
+- Brug en særskilt »Genåbn«-knap for afsluttede opgaver, og vis »Ikke forfalden« for opgaver, der endnu ikke kan afsluttes. Knappen åbner stadig den eksisterende svar-/bekræftelsesdialog og ændrer ikke opgaven, før brugeren gemmer.
+- Bevar opgavehistorik, rettigheder, gentagelser og eksisterende kortdata. Udvid browsertesten med dansk mobilknap, engelske tilstande og svar-flow.
+
 ## 1.12.19-beta.10 · 2026-11-14
 
 - **DAR-adresser fra vejliste:** Fjern genbrugsoptimeringen fra beta.9 efter brugerfeedback om manglende hastighedsforbedring. Genindfør den oprindelige funktion, der henter alle bekræftede veje på ny fra DAR, før adresser foreslås.
