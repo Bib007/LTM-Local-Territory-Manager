@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.22 · 2026-11-14
+
+- **Tasks:** Attach up to five PNG or JPEG images. View them in the task list and on the linked card. Images are stored locally and included in regular backups.
+- **Do-not-call:** Review the whole card's Danish Address Register (DAR) suggestions in one table. Unambiguous changes are selected by default, and each address can be deselected.
+- **Streets on the card front:** Show odd and even ranges and their total visits on one line per street. Streets with only one side keep the odd or even label.
+
 ## 1.12.21 · 2026-11-12
 
 - **Stable promotion of Beta 1.12.19-beta.6:** Combine the beta.5 and beta.6 improvements into a new Stable version, retaining the verified beta application code with separate Stable version metadata.

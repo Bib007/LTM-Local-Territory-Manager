@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.22 · 2026-11-14
+
+- **Opgaver:** Vedhæft op til fem PNG- eller JPEG-billeder. Se dem i opgavelisten og på det tilknyttede kort. Billederne gemmes lokalt og følger med i den almindelige sikkerhedskopi.
+- **IB:** Gennemgå DAR-forslag for hele kortet i en tabel. Alle entydige ændringer er valgt på forhånd, og hver adresse kan fravælges.
+- **Vejlinjer på kortets forside:** Saml lige og ulige numre for samme vej på én linje, og læg besøgsantallet sammen. Veje med kun lige eller ulige adresser beholder deres mærkning.
+
 ## 1.12.21 · 2026-11-12
 
 - **Samlet Stable efter Beta 1.12.19-beta.6:** Saml forbedringerne fra beta.5 og beta.6 i en ny Stable-udgave, med samme programkode som den kontrollerede beta samt særskilt Stable-version.

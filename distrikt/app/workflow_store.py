@@ -34,7 +34,7 @@ class WorkflowStore:
 
     def workflow_track(self,module,ident):
         if self._tracking is not None and (module,ident) not in self._tracking:
-            row=self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.alias(module)+'.records WHERE id=?',(ident,)).fetchone()
+            row=self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.record_table(module)+' WHERE id=?',(ident,)).fetchone()
             self._tracking[module,ident]=tuple(row) if row else None
 
     def activity(self,limit=200):
@@ -92,8 +92,8 @@ class WorkflowStore:
             for (module,ident),row in entry['rows'].items():
                 self._dirty_modules.add(module)
                 self.workflow_track(module,ident)
-                self.db.execute('DELETE FROM '+self.alias(module)+'.records WHERE id=?',(ident,))
-                if row:self.db.execute('INSERT INTO '+self.alias(module)+'.records(id,payload,deleted_at,batch) VALUES(?,?,?,?)',row)
+                self.db.execute('DELETE FROM '+self.record_table(module)+' WHERE id=?',(ident,))
+                if row:self.db.execute('INSERT INTO '+self.record_table(module)+'(id,payload,deleted_at,batch) VALUES(?,?,?,?)',row)
             return {'undone':entry['action']}
         if action in ('card.restructure.preview','card.restructure.apply'):
             return self.restructure(action,data)

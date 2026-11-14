@@ -188,7 +188,7 @@ def front_summaries(cards):
                     intervals.append(label(start,end));start=n
                 end=n
             intervals.append(label(start,end))
-            rows.append({'road':road,'numbers':' & '.join(intervals)+f" ({'ulige' if parity else 'lige'})",'count':sum(a.get('count',1) for a in units),'type':'Hus',
+            rows.append({'road':road,'postcode':post,'numbers':' & '.join(intervals)+f" ({'ulige' if parity else 'lige'})",'count':sum(a.get('count',1) for a in units),'type':'Hus',
                 'source_ids':sorted({str(a['id']) for a in units if a.get('id')})})
         card['front_addresses']=rows
         from front_labels import apply_overrides
