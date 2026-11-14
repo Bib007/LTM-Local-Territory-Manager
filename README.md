@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.12 viser nu præcis **hvilken vej, hvilket postnummer og hvilket husnummerinterval fra vejlisten** et DAR-forslag stoppede ved. Fejlen angiver også kortnummer og Datafordelerens årsag. Et husnummerinterval er ikke bevis for, at DAR har afvist ét bestemt husnummer. Meddelelsen bliver stående, så du kan læse den og rette vej/postnummer. Tidligere **Marker udført eller svar**-knap bevares.
+Beta 1.12.19-beta.13 indeholder knappen **Afvis alle adresser uden for distriktsgrænsen** under **Opfølgninger → Adresseændringer**. En serverberegnet forhåndsvisning kontrollerer den gemte samlede distriktsgrænse og kræver en ekstra bekræftelse. Kun afventende adresseændringer, der med sikkerhed ligger udenfor, afvises. Adresser på grænsen, usikre positioner og flytninger fra et punkt indenfor grænsen beholdes til manuel gennemgang. Kort, IB, udleveringer og eksisterende hentede adresser ændres ikke. Tidligere DAR-fejltekst og opgaveknap bevares.
 
 ## Installer betakanalen én gang
 
