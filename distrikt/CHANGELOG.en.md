@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.11 · 2026-11-14
+
+- **Tasks and replies:** Replace the ambiguous round icon with a visible checkmark button labeled “Mark done or reply”, on desktop, tablet and mobile.
+- Show a distinct “Reopen” button for completed tasks and “Not due yet” for future recurring tasks. Clicking the new button continues to open the existing optional reply/confirmation dialog; the task is not completed until the user confirms.
+- Preserve task history, permissions, recurrence and card data. Extend browser tests for the Danish mobile button, English states and reply flow.
+
 ## 1.12.19-beta.10 · 2026-11-14
 
 - **DAR street-list suggestions:** Revert beta.9's local-reuse optimization following feedback that it brought no noticeable speed improvement. Restore the original workflow that downloads every confirmed street from DAR before proposing address selection.
