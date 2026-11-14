@@ -211,6 +211,7 @@ const I18n={
   "Genbrugte {local} lokalt hentede veje; hentede {downloaded} veje fra DAR.":"Reused {local} locally downloaded streets; downloaded {downloaded} streets from DAR.",
   "Nummerinterval":"Number range",
   "Hent og foreslå adresser":"Download and suggest addresses",
+  "Foreslå adresser":"Suggest addresses",
   "Vedhæft billeder":"Attach images",
   "Åbn opgavebillede: {name}":"Open task image: {name}",
   "Fjern ved gemning":"Remove when saving",
