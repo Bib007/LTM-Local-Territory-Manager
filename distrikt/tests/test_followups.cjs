@@ -73,6 +73,7 @@ run(`state={today:'2026-10-23',cards:[
   assert.match(html,lang==='da'?/Afvis alle adresser uden for distriktsgrænsen/:/Reject all addresses outside the territory boundary/);
   assert.equal((html.match(/data-followup=/g)||[]).length,1);
  }
+ const originalApi=run('api');c.originalApi=originalApi;
  run("api=async()=>({json:async()=>({result:{count:1,expected:'boundary-token',protected:1,uncertain:2,examples:[{id:'out',kind:'new',label:'Example <outside> 17'}]}})})");
  await run("Workspace.handle('reject-outside-preview',{})");
  assert.equal(get('dialog').open,true);
@@ -97,6 +98,7 @@ run(`state={today:'2026-10-23',cards:[
  const oldPreview=run("Workspace.handle('reject-outside-preview',{})");await new Promise(r=>setImmediate(r));
  run("openDialog('<form>NEW REVIEW</form>')");finishPreview({json:async()=>({result:{count:1,expected:'outdated',protected:0,uncertain:0,examples:[]}})});await oldPreview;
  assert.match(get('dialog').innerHTML,/NEW REVIEW/);
+ run('closeDialog();api=originalApi');
  // A late geographic load cannot navigate away from a newer page or dialog.
  let release;c.pending=new Promise(r=>release=r);run("GeoUI.load=()=>pending;page='Forside'");let waiting=run("Workspace.openFollowups('checks')");await new Promise(r=>setImmediate(r));run("page='Opgaver'");release();await waiting;assert.equal(run('page'),'Opgaver');
  c.pending=new Promise(r=>release=r);run("page='Forside'");waiting=run('Workspace.openFollowups()');await new Promise(r=>setImmediate(r));run("openDialog('<form>NEWER DRAFT</form>')");release();await waiting;assert.equal(run('page'),'Forside');assert.match(get('dialog').innerHTML,/NEWER DRAFT/);
