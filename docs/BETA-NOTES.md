@@ -1,13 +1,11 @@
-# LTM 1.12.19-beta.10 · DAR-vejforslag tilbageført
+# LTM 1.12.19-beta.11 · Tydeligere afslutning og svar på opgaver
 
-**Foreslå DAR-adresser fra vejlisten** henter igen hele de bekræftede veje fra DAR hver gang, som før beta.9. Den forsøgsvis indførte lokale genbrugsoptimering og valget om at tvinge genhentning er fjernet, da gevinsten ikke var mærkbar.
+Under **Opgaver**, i opgavelisten og for ugentlige opgaver på forsiden er den lille cirkel erstattet af en tydelig knap med flueben og teksten **Marker udført eller svar**. Knappen findes sammen med opgavens øvrige handlinger, så den er nem at finde på både telefon, tablet og computer.
 
-Åbn kortet under **Tegn og vælg adresser**, vælg vejforslaget og kontrollér postnummeret for hver vejlinje. Vælg **Hent og foreslå adresser**. Hentning og forhåndsvisning gemmer ikke kortet automatisk; gennemgå fortsat valgte husnumre, eventuelle lejligheder, besøgstal og grænse, før du gemmer.
+Når du trykker på knappen, åbnes den **eksisterende** dialog. Her kan du skrive et valgfrit svar til opgavens opretter eller en note, inden opgaven markeres udført. Trykket på knappen alene afslutter ikke opgaven. Hvis opgaven allerede er udført, står der i stedet **Genåbn** med et andet symbol. Ugentlige opgaver, som endnu ikke er forfaldne, kan ikke afsluttes.
 
-Ingen andre beta-funktioner eller Stable er ændret. De tidligere beta.9-udgivelsesfiler bevares i GitHubs versionshistorik, men denne opdatering erstatter funktionen i betakanalen.
+Rettigheder, opgavehistorik, svar, tildelinger, datoer og allerede udførte opgaver ændres ikke. Adresseforslag fra DAR henter fortsat hele vejene som i beta.10. Stable er ikke ændret.
 
 ## English
 
-**Suggest DAR addresses from street lines** once again downloads every confirmed complete street from DAR before proposing selected addresses, as before beta.9. The experimental local-reuse shortcut and its force-refresh checkbox have been removed after providing no noticeable speed benefit.
-
-Continue to confirm the postcode for each street, inspect the selected units, visit totals and boundary before saving. Downloading and previewing do not change the card. Other beta features and Stable are unchanged.
+The small round task action is now a clearly labeled **✓ Mark done or reply** button on the Tasks page and the recurring task list. It still opens the existing optional reply/completion dialog; merely opening it does not finish the task. Completed tasks show a distinct **Reopen** action. Mobile and desktop layouts are adjusted without changing permissions, task assignments, completion history or unrelated Stable behavior.
