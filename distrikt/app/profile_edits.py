@@ -68,6 +68,7 @@ class ReviewedMutation:
         store.db.execute('SAVEPOINT profile_normalize')
         try:
             store._tracking=None
+            if action=='note.save':trial.pop('attachments',None)
             reverse={v:k for k,v in aliases.items()}
             store._mutate(action,{reverse.get(k,k):v for k,v in trial.items()})
             proposed=deepcopy(store.require(module,ident))

@@ -65,6 +65,30 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await p.waitForFunction(({id,wording})=>state.ib.some(i=>i.card_id===id&&i.date_text===wording&&i.date===''),{id:fixture.cards[index],wording});
    }
    const text=await p.evaluate(id=>backHTML(card(id)),fixture.cards[index]);assert.ok(text.includes('marts 2024')&&text.includes('2024'));
+   // Compare all IB rows, then keep one manual line and apply only the other.
+   const batch=await p.evaluate(async ({id,index,numbers})=>{
+    const result=[];
+    for(const number of numbers){
+     await mutate('ib.save',{card_id:id,road:'fictional Road '+index,number,date_text:'2025'});
+     result.push(state.ib.find(i=>i.card_id===id&&i.number===number).id);
+    }
+    detail(id,'IB-bagside');
+    return result;
+   },{id:fixture.cards[index],index,numbers:expected.slice(2)});
+   await p.locator('[data-ib-bulk-suggest]').click();
+   const bulk=p.locator('#ibBulkForm');
+   await bulk.waitFor();
+   assert.deepEqual(await bulk.locator('th').allTextContents(),language==='en'?['Current address','DAR suggestion']:['Nuværende adresse','DAR-forslag']);
+   assert.equal(await bulk.locator('tbody tr').count(),4);
+   assert.equal(await bulk.locator('input:checked').count(),2);
+   assert.ok(await p.evaluate(()=>{const dialog=document.querySelector('#dialog');return dialog.scrollWidth<=dialog.clientWidth+1;}));
+   await bulk.locator(`input[value="${batch[0]}"]`).uncheck();
+   assert.equal(await bulk.locator('input:checked').count(),1);
+   await bulk.locator('button.primary').click();
+   await p.locator('[data-ib-bulk-suggest]').waitFor();
+   assert.deepEqual(await p.evaluate(ids=>ids.map(id=>{const i=state.ib.find(row=>row.id===id);return [i.road,!!i.address_id,i.date_text];}),batch),
+    [['fictional Road '+index,false,'2025'],['Fictional road '+index,true,'2025']]);
+   assert.equal(writes.filter(w=>w.action==='ib.bulk.apply').length,1);
    // DAR text and both free-text supplements share the same S-12 print line.
    const id=fixture.cards[index];
    await p.evaluate(id=>{closeDialog();detail(id);},id);
@@ -82,6 +106,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    const front=p.locator('#dialog .cardPreview .streets');
    await front.waitFor();
    assert.match(await front.innerText(),/Fictional road .* – Side entrance – Gate B/);
+   const streetRows=await front.locator(':scope > div > span:first-child').allTextContents();
+   assert.equal(streetRows.length,1);
+   assert.match(streetRows[0],index===0?/1-7 \(odd\)/:/23-25 & 24-26/);
    const printed=await p.evaluate(id=>printDocument([card(id)],'front',{...defaultPrintProfile('front'),mode:'full',form_language:I18n.language()}),id);
    assert.match(printed,/Fictional road .* – Side entrance – Gate B/);
    const image=await p.evaluate(async id=>{

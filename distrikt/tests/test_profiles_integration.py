@@ -81,6 +81,32 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_task_image_read_and_write_permissions(self):
+        from test_task_images import test_png
+        import base64
+        attachment={'name':'Fiktiv.png','png':base64.b64encode(test_png()).decode()}
+        task=self.change(self.admin,self.state(self.admin),'note.save',{'text':'Fiktiv',
+            'attachments':{'add':[attachment]}})['result']['id']
+        note=next(n for n in self.state(self.admin)['notes'] if n['id']==task)
+        image=note['images'][0]['id']
+        path='/task-image.png?task='+task+'&id='+image
+        reader,role,_=self.reader(['notes.view'])
+        with self.request(path,session=reader) as response:
+            self.assertEqual(response.headers.get_content_type(),'image/png')
+            self.assertEqual(response.read(),test_png())
+        self.assertNotIn('png',note['images'][0])
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.change(reader,self.state(reader),'note.save',{'id':task,'text':'Fiktiv','attachments':{'remove':[image]}})
+        self.assertEqual(failure.exception.code,403)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view']},self.admin)
+        for session,status in ((reader,403),(None,401)):
+            with self.assertRaises(urllib.error.HTTPError) as failure:
+                self.request(path,session=session)
+            self.assertEqual(failure.exception.code,status)
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.request(path.replace(task,self.note),session=self.admin)
+        self.assertEqual(failure.exception.code,404)
+
     def test_bulk_folder_two_authenticated_users_and_permission_denial(self):
         """Two different accounts race on one fictional card; only one changes it."""
         guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'loans.manage'])
