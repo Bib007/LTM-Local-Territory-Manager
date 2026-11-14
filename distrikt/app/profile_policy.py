@@ -82,7 +82,7 @@ GROUPS={
  ('cards.view','loans.view','loans.manage'):'folder.set folder.set_many loan.issue loan.finish',
  ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct',
  ('publishers.view','publishers.manage'):'publisher.save setup.publisher-import.preview setup.publisher-import.apply',
- ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete',
+ ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete note.reply.delete',
  ('cards.view','history.view','history.edit'):'completion.record',
  ('history.view','history.edit'):'visit.save history.cleanup',
   ('cards.view','loans.view','loans.manage','publishers.view','history.view','history.edit'):'history.grid.add history.grid.edit',
@@ -173,9 +173,18 @@ def state_for(raw,user):
         for card in result['cards']+result['archived_cards']:
             for field,key in (('planning_reference','membership'),('interim_transfer','address_ids')):
                 if isinstance(card.get(field),dict):card[field].pop(key,None)
+    source_notes={note['id']:note for note in raw['notes']} if result['notes'] else {}
+    from workflow_store import task_reply_target
     for note in result['notes']:
         note['assigned']=bool(note.get('assignee_id'))
         note['assignee_self']=note.get('assignee_id')==user['id']
+        source=source_notes[note['id']]
+        assigned_by=source.get('assigned_by')
+        if assigned_by and note['assigned']:note['assigned_by_name']=assigned_by['name']
+        note['reply_target']=task_reply_target(source)
+        for completion in note.get('task_history',[]):
+            recipient=completion.pop('recipient_id',None)
+            if recipient==user['id']:completion['recipient_self']=True
         if 'users.manage' not in p:note.pop('assignee_id',None)
         if 'geo.view' not in p:note.pop('followup_key',None)
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}

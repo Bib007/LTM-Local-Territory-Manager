@@ -9,6 +9,10 @@ from geography import enclosing_outline, street_rows
 from admin_store import signature
 
 
+def task_reply_target(item):
+    return signature([item['id'],item.get('assignee_id'),item.get('assigned_by')])
+
+
 class WorkflowStore:
     def task_configure(self,item,recurrence):
         if recurrence is None:
@@ -41,6 +45,28 @@ class WorkflowStore:
         with self.lock:
             return sorted([r for r in self.all('notes') if r.get('entity')=='activity'],key=lambda r:r['at'],reverse=True)[:limit]
 
+    def record_task_completion(self, item, data, day, due=None):
+        from store import clean_text, new_id, now
+        raw = data.get('reply', '')
+        if not isinstance(raw, str):
+            from ui_errors import UIError
+            raise UIError('Skriv et gyldigt svar på opgaven.')
+        reply = clean_text(raw, 1000)
+        entry = {'id': new_id(), 'date': day, 'at': now()}
+        if due:
+            entry['due'] = due
+        if reply:
+            if 'reply_target' in data and data['reply_target']!=task_reply_target(item):
+                from ui_errors import UIError
+                raise UIError('Opgavens tildeling er ændret. Åbn opgaven igen før du svarer.')
+            entry['reply'] = reply
+            if data.get('_task_actor_name'):
+                entry['author'] = data['_task_actor_name']
+            recipient = item.get('assigned_by')
+            if recipient:
+                entry.update(recipient_id=recipient['id'], recipient=recipient['name'])
+        item['task_history'] = [*(item.get('task_history') or []), entry]
+
     def workflow_mutate(self,action,data):
         from store import clean_text, now
         if action=='note.complete':
@@ -49,10 +75,20 @@ class WorkflowStore:
             if item.get('card_id'):self.require('cards',item['card_id'])
             due=recurrence['next_due'];day=date.today()
             if data.get('due')!=due or due>day.isoformat():raise ValueError('Opgaven er ikke forfalden eller er allerede håndteret. Opdater oversigten.')
-            history=list(item.get('task_history') or []);history.append({'due':due,'date':day.isoformat(),'at':now()})
+            self.record_task_completion(item,data,day.isoformat(),due)
             delta=(recurrence['weekday']-day.weekday())%7 or 7
-            item.update(task_history=history,resolved=False,resolved_at=now(),recurrence={**recurrence,'next_due':(day+timedelta(days=delta)).isoformat()})
+            item.update(resolved=False,resolved_at=now(),recurrence={**recurrence,'next_due':(day+timedelta(days=delta)).isoformat()})
             self.put('notes',item);return {'id':item['id']}
+        if action=='note.reply.delete':
+            from ui_errors import UIError
+            item=self.require('notes',data.get('id'))
+            entry=next((h for h in item.get('task_history',[]) if h.get('id')==data.get('entry_id') and h.get('reply')),None)
+            if entry is None:
+                raise UIError('Svaret findes ikke længere.')
+            for key in ('reply','author','recipient_id','recipient'):
+                entry.pop(key,None)
+            self.put('notes',item)
+            return {'id':item['id']}
         if action=='filter.save':
             config=dict(self.require('settings','config'));views=list(config.get('saved_views',[]))
             name=clean_text(data.get('name'),60,True)

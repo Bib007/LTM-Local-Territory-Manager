@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.8 · 2026-11-14
+
+- **Opgaver:** Skriv et valgfrit svar ved afslutning. Den, der fordelte opgaven, kan finde det under Svar til mig. Slet svaret fra afslutningshistorikken, hvis det skal fjernes.
+
 ## 1.12.19-beta.7 · 2026-11-14
 
 - **Opgaver:** Vedhæft op til fem PNG- eller JPEG-billeder. Se dem i opgavelisten og på det tilknyttede kort. Billederne gemmes lokalt og følger med i den almindelige sikkerhedskopi.
