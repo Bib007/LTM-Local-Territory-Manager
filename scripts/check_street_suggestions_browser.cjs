@@ -143,6 +143,22 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await front.waitFor();
    assert.match(await front.innerText(),/Fictional road/);
    assert.doesNotMatch(await front.innerText(),/Gate B/);
+   // A missing DAR road must show exactly which requested line and range failed,
+   // without presenting any single house number as if DAR had identified it.
+   await p.evaluate(({id,language})=>{closeDialog();I18n.set(language);GeoUI.openCard(id);},{id:fixture.failed_card,language});
+   await p.locator('[data-geo=street-lines]').click();await p.locator('[name=postcode_0]').fill('9999');
+   const beforeFailedWrites=writes.filter(w=>w.action==='geo.assign').length;
+   await p.locator('#streetSuggestionForm button:not([type=button])').click();
+   await p.waitForFunction(()=>!GeoUI.busy&&!StreetSuggestions.pending&&document.querySelector('#geoDownloadStatus')?.textContent?.includes('Unlisted <Test> Way'));
+   const errorText=await p.locator('#geoDownloadStatus').innerText();
+   for(const expected of ['F-ERR','Unlisted <Test> Way','9999','11–19'])assert.ok(errorText.includes(expected),'Missing error context: '+expected);
+   assert.match(errorText,language==='da'?/Husnumrene er fra vejlisten/:/DAR has not identified a specific incorrect house number/);
+   assert.equal(await p.locator('#geoDownloadStatus').evaluate(n=>n.hidden),false,'The error remains visible');
+   assert.equal(await p.locator('#geoDownloadStatus Test').count(),0,'Escaped street name must not become an HTML element');
+   assert.equal(await p.evaluate(id=>card(id).address_ids?.length||0,fixture.failed_card),0,'Failed request cannot save card');
+   assert.equal(writes.filter(w=>w.action==='geo.assign').length,beforeFailedWrites);
+   await p.locator('[data-geo=street-lines]').click();await p.locator('[name=postcode_0]').fill('9999');
+   await p.evaluate(()=>closeDialog());
    assert.deepEqual(errors,[]);await context.close();
   }
   console.log(JSON.stringify({ok:true,real_server:true,languages:['en','da'],widths:[390,1440],preview_without_card_write:true,one_confirmed_save:true,manual_excel_front_and_back_without_dar:true,explicit_later_link:true,manual_year_and_month_year_preserved:true}));

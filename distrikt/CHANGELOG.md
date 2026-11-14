@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.12 · 2026-11-14
+
+- **DAR-adresseforslag:** Vis kortnummer, konkret vejnavn, bekræftet postnummer og de husnummerintervaller fra vejlisten, der var under behandling, når en vej ikke kan findes i DAR. Behold den oprindelige fejlårsag og gør tydeligt, at DAR ikke dermed har udpeget et bestemt fejlagtigt husnummer.
+- Behold fejlbeskeden på skærmen, indtil brugeren prøver igen eller forlader visningen. Vis tilsvarende præcis vej, postnummer og interval, hvis ingen aktive DAR-adresser matcher nummerintervallet, eller intervallet er ugyldigt.
+- Regressionstest med opdigtede vejnavne og husnumre, dansk/engelsk, sikker HTML-visning, mobil/desktop, ingen utilsigtet kortgemning. Ingen ændringer i Stable.
+
 ## 1.12.19-beta.11 · 2026-11-14
 
 - **Opgaver og svar:** Erstat den lille runde knap med en synlig knap med flueben og teksten »Marker udført eller svar«. Gør afslutning og valgfrit svar let at finde på computer, tablet og mobil.

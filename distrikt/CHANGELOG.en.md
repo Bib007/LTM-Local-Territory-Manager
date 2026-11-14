@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.12 · 2026-11-14
+
+- **DAR street suggestions:** Identify the exact card, street name, confirmed postcode and original street-list number range when a DAR road lookup fails. Retain the source error and explain that the range is not evidence DAR rejected any particular house number.
+- Keep the failure message visible for retry and report the street, postcode and range when an interval has no active DAR addresses or is invalid.
+- Add fictional-data regression coverage for Danish/English, safe HTML rendering, mobile/desktop and no unintended card saves. Stable is unchanged.
+
 ## 1.12.19-beta.11 · 2026-11-14
 
 - **Tasks and replies:** Replace the ambiguous round icon with a visible checkmark button labeled “Mark done or reply”, on desktop, tablet and mobile.
