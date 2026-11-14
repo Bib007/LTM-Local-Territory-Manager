@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.7 understøtter billeder på opgaver. Vælg **Vedhæft billeder** på en ny eller eksisterende opgave, og gem.
+Beta 1.12.19-beta.8 understøtter svar på opgaver. Vælg **Markér udført** og skriv eventuelt en besked.
 
 ## Installer betakanalen én gang
 
