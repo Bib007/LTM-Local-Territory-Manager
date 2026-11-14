@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.9 genbruger allerede fuldt downloadede DAR-veje ved **Foreslå DAR-adresser fra vejlisten**. Manglende veje hentes automatisk. Marker **Opdater alle veje fra DAR**, hvis du ønsker et nyt adresseopslag i stedet for de lokalt gemte adresser.
+Beta 1.12.19-beta.10 fjerner igen den lokale genbrugsoptimering i **Foreslå DAR-adresser fra vejlisten**. Funktionen henter nu alle bekræftede veje på ny fra DAR, som før beta.9. De øvrige beta-funktioner er uændrede.
 
 ## Installer betakanalen én gang
 
