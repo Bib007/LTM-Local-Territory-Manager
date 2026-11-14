@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.8 understøtter svar på opgaver. Vælg **Markér udført** og skriv eventuelt en besked.
+Beta 1.12.19-beta.9 genbruger allerede fuldt downloadede DAR-veje ved **Foreslå DAR-adresser fra vejlisten**. Manglende veje hentes automatisk. Marker **Opdater alle veje fra DAR**, hvis du ønsker et nyt adresseopslag i stedet for de lokalt gemte adresser.
 
 ## Installer betakanalen én gang
 
