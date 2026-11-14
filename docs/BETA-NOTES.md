@@ -1,11 +1,15 @@
-# LTM 1.12.19-beta.11 · Tydeligere afslutning og svar på opgaver
+# LTM 1.12.19-beta.12 · Præcise fejl ved DAR-adresseforslag
 
-Under **Opgaver**, i opgavelisten og for ugentlige opgaver på forsiden er den lille cirkel erstattet af en tydelig knap med flueben og teksten **Marker udført eller svar**. Knappen findes sammen med opgavens øvrige handlinger, så den er nem at finde på både telefon, tablet og computer.
+Når **Foreslå DAR-adresser fra vejlisten** ikke kan hente en vej, viser LTM nu, hvilken linje der gav fejlen: **kortnummer, vejnavn, postnummer og det eller de husnummerintervaller, du har skrevet i vejlisten**. Den oprindelige forklaring fra DAR/Datafordeleren vises som **Årsag**.
 
-Når du trykker på knappen, åbnes den **eksisterende** dialog. Her kan du skrive et valgfrit svar til opgavens opretter eller en note, inden opgaven markeres udført. Trykket på knappen alene afslutter ikke opgaven. Hvis opgaven allerede er udført, står der i stedet **Genåbn** med et andet symbol. Ugentlige opgaver, som endnu ikke er forfaldne, kan ikke afsluttes.
+Et eksempel med opdigtede oplysninger:
 
-Rettigheder, opgavehistorik, svar, tildelinger, datoer og allerede udførte opgaver ændres ikke. Adresseforslag fra DAR henter fortsat hele vejene som i beta.10. Stable er ikke ændret.
+> DAR-adresseforslag stoppede ved kort F-ERR, vej "Unlisted Test Way", postnummer 9999, husnumre fra vejlisten: 11–19. Årsag: Vejnavn og postnummer kunne ikke findes entydigt i DAR.
+
+Det er **ikke muligt at udpege ét bestemt husnummer**, når DAR endnu ikke kan finde selve vejen og postnummeret. Derfor mærkes husnumrene udtrykkeligt som brugerens **vejlistenumre**, ikke som en adresse, DAR har afvist. Fejlen bliver synlig, så du kan kontrollere stavemåde og postnummer og åbne adresseforslaget igen.
+
+Hvis hele vejen er hentet, men ingen aktive adresser findes i det valgte interval, oplyser LTM tilsvarende vej, postnummer og interval. Du kan fortsat gennemgå og godkende forslag, før kortet gemmes. Ingen afviste forslag gemmer adressevalg, IB eller andre private data på kortet. Andre beta-funktioner og Stable er uændrede.
 
 ## English
 
-The small round task action is now a clearly labeled **✓ Mark done or reply** button on the Tasks page and the recurring task list. It still opens the existing optional reply/completion dialog; merely opening it does not finish the task. Completed tasks show a distinct **Reopen** action. Mobile and desktop layouts are adjusted without changing permissions, task assignments, completion history or unrelated Stable behavior.
+DAR street-list errors now identify the **card, street name, postcode and original street-list number ranges** that were being processed, as well as the underlying cause. The ranges come from the user's street list; a failed road lookup does **not** identify one specific incorrect house number. Errors remain visible for review and retry. Missing active addresses within an interval likewise identify the failing street and range. No rejected proposal writes card data.

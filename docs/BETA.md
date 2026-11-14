@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.11 gør det tydeligere at afslutte opgaver: En knap med flueben og teksten **Marker udført eller svar** erstatter den lille cirkel. Klik åbner fortsat svarfeltet og kræver den normale godkendelse af udførelsen. Udførte opgaver har en særskilt **Genåbn**-knap. DAR-adresseforslag fungerer som før beta.9.
+Beta 1.12.19-beta.12 viser nu præcis **hvilken vej, hvilket postnummer og hvilket husnummerinterval fra vejlisten** et DAR-forslag stoppede ved. Fejlen angiver også kortnummer og Datafordelerens årsag. Et husnummerinterval er ikke bevis for, at DAR har afvist ét bestemt husnummer. Meddelelsen bliver stående, så du kan læse den og rette vej/postnummer. Tidligere **Marker udført eller svar**-knap bevares.
 
 ## Installer betakanalen én gang
 
