@@ -994,6 +994,7 @@ const I18n={
   "Slet svar":"Delete reply",
   "Svar slettet":"Reply deleted",
   "Slet svaret permanent? Opgavens afslutning bliver stående.":"Delete the reply permanently? The task completion will be kept.",
+  "Opgavens tildeling er ændret. Åbn opgaven igen før du svarer.":"The task assignment has changed. Reopen the task before replying.",
   "Skriv et gyldigt svar på opgaven.":"Enter a valid reply to the task.",
   "Opgaven er allerede udført. Opdater oversigten.":"The task is already completed. Refresh the list.",
   "Svaret findes ikke længere.":"The reply no longer exists.",

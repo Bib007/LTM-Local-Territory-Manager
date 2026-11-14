@@ -749,11 +749,19 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def test_task_reply_uses_authenticated_users_and_requires_task_edit_to_delete(self):
         editor,role,user=self.reader(['cards.view','notes.view','notes.edit'])
         self.assign_task(user)
-        self.change(editor,self.state(editor),'note.resolve',{
-            'id':self.note,'resolved':True,'reply':'Fiktivt svar',
-            '_task_actor_name':'Forkert afsender','_task_actor_id':'fake'})
         def task(session):
             return next(n for n in self.state(session)['notes'] if n['id']==self.note)
+        old_target=task(editor)['reply_target']
+        self.assign_task(None,before=user)
+        with self.assertRaises(urllib.error.HTTPError) as stale:
+            self.change(editor,self.state(editor),'note.resolve',{'id':self.note,'resolved':True,
+                'reply':'Forkert modtager','reply_target':old_target})
+        self.assertEqual(stale.exception.code,400)
+        self.assertFalse(task(editor)['resolved'])
+        self.assign_task(user)
+        self.change(editor,self.state(editor),'note.resolve',{
+            'id':self.note,'resolved':True,'reply':'Fiktivt svar','reply_target':task(editor)['reply_target'],
+            '_task_actor_name':'Forkert afsender','_task_actor_id':'fake'})
         entry=task(self.admin)['task_history'][0]
         self.assertEqual(entry['author'],'Fiktiv bruger')
         self.assertEqual(entry['recipient'],'Fiktiv admin')

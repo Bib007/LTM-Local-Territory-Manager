@@ -9,6 +9,10 @@ from geography import enclosing_outline, street_rows
 from admin_store import signature
 
 
+def task_reply_target(item):
+    return signature([item['id'],item.get('assignee_id'),item.get('assigned_by')])
+
+
 class WorkflowStore:
     def task_configure(self,item,recurrence):
         if recurrence is None:
@@ -52,6 +56,9 @@ class WorkflowStore:
         if due:
             entry['due'] = due
         if reply:
+            if 'reply_target' in data and data['reply_target']!=task_reply_target(item):
+                from ui_errors import UIError
+                raise UIError('Opgavens tildeling er ændret. Åbn opgaven igen før du svarer.')
             entry['reply'] = reply
             if data.get('_task_actor_name'):
                 entry['author'] = data['_task_actor_name']

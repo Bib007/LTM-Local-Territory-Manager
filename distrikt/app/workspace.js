@@ -153,7 +153,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  taskCompletionForm(n,due,cardOrigin=false){
   const recipient=n.assigned_by_name||n.assigned_by?.name;
   const label=recipient?ui('Svar til {name} eller tilføj en note',{name:recipient}):ui('Svar eller note · valgfri');
-  openDialog(`<h2>${ui('Markér udført')}</h2><p style="white-space:pre-wrap">${esc(n.text)}</p><form data-work-form="complete-task" data-id="${esc(n.id)}" data-due="${esc(due||'')}" data-from-card="${cardOrigin?'yes':'no'}"><label for="taskReply">${label}</label><textarea id="taskReply" name="reply" maxlength="1000"></textarea><p class="hint">${ui('Du kan lade feltet stå tomt. Et svar gemmes i opgavens afslutningshistorik.')}</p>${formEnd('Markér udført')}</form>`,I18n.language());
+  openDialog(`<h2>${ui('Markér udført')}</h2><p style="white-space:pre-wrap">${esc(n.text)}</p><form data-work-form="complete-task" data-id="${esc(n.id)}" data-due="${esc(due||'')}" data-reply-target="${esc(n.reply_target||'')}" data-from-card="${cardOrigin?'yes':'no'}"><label for="taskReply">${label}</label><textarea id="taskReply" name="reply" maxlength="1000"></textarea><p class="hint">${ui('Du kan lade feltet stå tomt. Et svar gemmes i opgavens afslutningshistorik.')}</p>${formEnd('Markér udført')}</form>`,I18n.language());
  },
  async resolveTask(id,due,cardOrigin=false){
   const n=state.notes.find(note=>note.id===id);
@@ -380,7 +380,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   case 'address-task':this.addressTaskForm();break;
   case 'runtime-test':await this.runtimeTest();break;
   case 'card-note':this.noteForm('',d.id);break;
-  case 'task-filter':this.taskFilter=d.value;render();break;case 'task-owner-filter':this.taskOwnerFilter=d.value;render();break;
+  case 'task-filter':this.taskFilter=d.value;if(d.value==='replies')this.taskOwnerFilter='all';render();break;case 'task-owner-filter':this.taskOwnerFilter=d.value;render();break;
   case 'followup-task':{const item=this.followupItems().find(r=>r.key===d.key);if(item){const task=state.notes.find(n=>n.followup_key===item.key);this.noteForm(task?.id||'',item.card?.id||'',item);}break;}case 'new-task':this.noteForm();break;case 'edit-note':this.noteForm(d.id);break;
   case 'resolve':await this.resolveTask(d.id,d.due);break;
   case 'delete-task-reply':{
@@ -432,7 +432,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    if(!n)return;
    const due=form.dataset.due;
    const generation=openDialog.generation,origin=page;
-   await mutate(due?'note.complete':'note.resolve',{id:n.id,reply:data.reply,...(due?{due}:{resolved:true})});
+   await mutate(due?'note.complete':'note.resolve',{id:n.id,reply:data.reply,...(form.dataset.replyTarget?{reply_target:form.dataset.replyTarget}:{}),...(due?{due}:{resolved:true})});
    if(form.dataset.fromCard==='yes'&&generation===openDialog.generation&&page===origin)detail(n.card_id,'Noter');
    break;
   }

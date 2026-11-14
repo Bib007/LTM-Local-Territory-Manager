@@ -173,12 +173,15 @@ def state_for(raw,user):
         for card in result['cards']+result['archived_cards']:
             for field,key in (('planning_reference','membership'),('interim_transfer','address_ids')):
                 if isinstance(card.get(field),dict):card[field].pop(key,None)
-    assigners={note['id']:note.get('assigned_by') for note in raw['notes']} if result['notes'] else {}
+    source_notes={note['id']:note for note in raw['notes']} if result['notes'] else {}
+    from workflow_store import task_reply_target
     for note in result['notes']:
         note['assigned']=bool(note.get('assignee_id'))
         note['assignee_self']=note.get('assignee_id')==user['id']
-        assigned_by=assigners.get(note['id']) if note['assigned'] else None
-        if assigned_by:note['assigned_by_name']=assigned_by['name']
+        source=source_notes[note['id']]
+        assigned_by=source.get('assigned_by')
+        if assigned_by and note['assigned']:note['assigned_by_name']=assigned_by['name']
+        note['reply_target']=task_reply_target(source)
         for completion in note.get('task_history',[]):
             recipient=completion.pop('recipient_id',None)
             if recipient==user['id']:completion['recipient_self']=True
