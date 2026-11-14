@@ -13,7 +13,7 @@ const StreetSuggestions={
   const plan=await GeoUI.preview({mode:'street_lines',postcodes,planning_only:true,refresh_downloaded:form.elements.refresh_downloaded.checked});
   if(target!==GeoUI.target||session!==GeoUI.session||stamp!==GeoUI.draftStamp(false)||!el('dialog').open)return;
   if(!GeoUI.canLeave())return;
-  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads:plan.download_roads.slice(),local_count:plan.local_roads.length,download_count:plan.download_roads.length};
+  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads:plan.download_roads.slice(),local_count:form.elements.refresh_downloaded.checked?0:plan.local_roads.length,download_count:plan.download_roads.length};
   closeDialog();await this.next();
  },
  async next(){
