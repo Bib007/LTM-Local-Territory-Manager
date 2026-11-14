@@ -212,6 +212,7 @@ const I18n={
   "Nummerinterval":"Number range",
   "Hent og foreslå adresser":"Download and suggest addresses",
   "Foreslå adresser":"Suggest addresses",
+  "Ugyldigt valg af DAR-opdatering.":"Invalid DAR refresh selection.",
   "Vedhæft billeder":"Attach images",
   "Åbn opgavebillede: {name}":"Open task image: {name}",
   "Fjern ved gemning":"Remove when saving",
