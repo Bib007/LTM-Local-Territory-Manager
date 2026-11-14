@@ -20,6 +20,7 @@ const I18n={
   "Adresseændringer uden for grænsen afvist":"Address changes outside the boundary rejected",
   "Distriktsgrænsen eller adresseændringerne er ændret. Vis en ny forhåndsvisning.":"The territory boundary or address changes have changed. Open a new preview.",
   "Ingen sikre adresseændringer uden for den samlede grænse at afvise.":"There are no confirmed outside-boundary address changes to reject.",
+  "Du har ikke rettighed til denne handling.":"You do not have permission to perform this action.",
   "Slet forkynder":"Delete publisher",
   "Forkynderen kan ikke slettes":"This publisher cannot be deleted",
   "Forkynderen har registrerede udleveringer eller historik. Behold forkynderen for at bevare rapporterne.":"This publisher has assignments or history. Keep the publisher to preserve reports.",
