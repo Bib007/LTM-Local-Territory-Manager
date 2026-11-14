@@ -1,13 +1,13 @@
-# LTM 1.12.19-beta.9 · Lokale DAR-adresser ved vejforslag
+# LTM 1.12.19-beta.10 · DAR-vejforslag tilbageført
 
-Åbn et kort med en vejliste og vælg **Tegn og vælg adresser → Foreslå DAR-adresser fra vejlisten**. Bekræft postnummeret på hver vejlinje, og vælg **Foreslå adresser**.
+**Foreslå DAR-adresser fra vejlisten** henter igen hele de bekræftede veje fra DAR hver gang, som før beta.9. Den forsøgsvis indførte lokale genbrugsoptimering og valget om at tvinge genhentning er fjernet, da gevinsten ikke var mærkbar.
 
-Hvis en vej allerede er hentet fuldstændigt lokalt, bruges de gemte DAR-adresser uden et nyt onlineopslag. Kun manglende eller ufuldstændige veje bliver hentet fra DAR. Du får besked om, hvor mange veje der blev genbrugt og hentet.
+Åbn kortet under **Tegn og vælg adresser**, vælg vejforslaget og kontrollér postnummeret for hver vejlinje. Vælg **Hent og foreslå adresser**. Hentning og forhåndsvisning gemmer ikke kortet automatisk; gennemgå fortsat valgte husnumre, eventuelle lejligheder, besøgstal og grænse, før du gemmer.
 
-Marker **Opdater alle veje fra DAR – også dem, der allerede er hentet lokalt**, hvis du bevidst vil hente nyeste offentlige adresseoplysninger for alle vejlinjer. Husk, at lokalt gemte adresser kan være ældre end DAR.
-
-Kontrollér alle husnumre, lejligheder, besøgstal og den foreslåede distriktsgrænse. Hentning og forhåndsvisning gemmer **ikke** automatisk adresser på dit distriktskort; det gør den almindelige **Gem**-bekræftelse først. Eksisterende IB, historik og udleveringer bevares.
+Ingen andre beta-funktioner eller Stable er ændret. De tidligere beta.9-udgivelsesfiler bevares i GitHubs versionshistorik, men denne opdatering erstatter funktionen i betakanalen.
 
 ## English
 
-In **Draw and select addresses → Suggest DAR addresses from street lines**, confirm the postcode for every street line and choose **Suggest addresses**. LTM reuses complete locally downloaded DAR streets, downloading only missing or incomplete streets. Select **Refresh all streets from DAR** to explicitly fetch updated records for every street instead. Previously downloaded records may be older than the live register. Check the selected address units, visit totals and proposed boundary before saving. Previewing does not change the card.
+**Suggest DAR addresses from street lines** once again downloads every confirmed complete street from DAR before proposing selected addresses, as before beta.9. The experimental local-reuse shortcut and its force-refresh checkbox have been removed after providing no noticeable speed benefit.
+
+Continue to confirm the postcode for each street, inspect the selected units, visit totals and boundary before saving. Downloading and previewing do not change the card. Other beta features and Stable are unchanged.

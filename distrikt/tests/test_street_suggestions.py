@@ -25,38 +25,6 @@ class StreetSuggestionTests(unittest.TestCase):
         self.fetch();before=deepcopy(self.s.state());preview=self.preview(source_expected=plan['source_expected'])
         self.assertEqual([a['id'] for a in preview['addresses']],['a0','a1','a2','a3']);self.assertEqual(preview['visits'],4)
         self.assertGreaterEqual(len(preview['outline']),3);self.assertEqual(self.s.state(),before)
-    def test_planning_reuses_complete_local_roads_and_refresh_is_opt_in(self):
-        before=deepcopy(self.s.state())
-        plan=self.preview(planning_only=True)
-        self.assertEqual(plan['download_roads'],plan['roads'])
-        self.assertEqual(plan['local_roads'],[])
-        self.assertEqual(self.s.state(),before)
-        self.fetch(False)  # A partial/individually imported road must not count as complete.
-        self.assertEqual(self.preview(planning_only=True)['download_roads'],plan['roads'])
-        self.fetch(True)
-        before=deepcopy(self.s.state())
-        cached=self.preview(planning_only=True)
-        self.assertEqual(cached['local_roads'],plan['roads'])
-        self.assertEqual(cached['download_roads'],[])
-        self.assertEqual(self.preview(planning_only=True,refresh_downloaded=True)['download_roads'],plan['roads'])
-        self.assertEqual(self.s.state(),before)
-        self.assertEqual([a['id'] for a in self.preview()['addresses']],['a0','a1','a2','a3'])
-        with self.assertRaisesRegex(ValueError,'DAR-opdatering'):
-            self.preview(planning_only=True,refresh_downloaded='true')
-
-    def test_planning_downloads_only_missing_roads_without_confusing_postcodes(self):
-        self.fetch()
-        c=self.s.require('cards',self.card)
-        extra=[dict(road='Other fictional road',numbers='2–4',count=2,type='Hus'),
-               dict(road='Fictional road',numbers='1–5',count=4,type='Hus')]
-        self.s.mutate('card.save',{**c,'addresses':c['addresses']+extra})
-        plan=self.s.mutate('geo.preview',{'mode':'street_lines','card_id':self.card,
-                                          'postcodes':['9999','9999','8888'],'planning_only':True})
-        self.assertEqual(plan['local_roads'],[{'road':'Fictional road','postcode':'9999'}])
-        self.assertEqual(plan['download_roads'],[{'road':'Other fictional road','postcode':'9999'},
-                                                 {'road':'Fictional road','postcode':'8888'}])
-        self.assertEqual(plan['roads'],plan['local_roads']+plan['download_roads'])
-
     def test_save_preserves_history_and_imprecise_ib_date(self):
         self.fetch();loan=self.s.mutate('loan.issue',{'card_id':self.card,'publisher_name':'Fictional person','date':'2025-01-01','initial':True})['id']
         ib=self.s.mutate('ib.save',{'card_id':self.card,'road':'Fictional road','number':'1','date_text':'marts 2024'})['id']
