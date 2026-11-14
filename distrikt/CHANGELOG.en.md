@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.14 · 2026-11-14
+
+- **Front street lines:** Add a per-line **Show selected house numbers** (default) versus **Show first–last range** option. The selected addresses 3, 7, 9, 15, 25 and 67 can appear as 3–67 on S-12 without assigning any intervening house numbers to the territory.
+- Persist only a presentation setting linked to the underlying DAR address IDs. Preserve exact membership, visits, boundaries, do-not-call entries and histories; keep existing manual labels and treat ambiguous DAR splits as unresolved.
+- Apply the same label in S-12, PDF/print, published PNG cards, backup and readable CSV. Mark the front for reprint on changes. Add synthetic bilingual regression coverage. Stable is unchanged.
+
 ## 1.12.19-beta.13 · 2026-11-14
 
 - **Address changes / Follow-ups:** Add “Reject all addresses outside the territory boundary” with a server-calculated preview, sample addresses, counts and explicit confirmation. Match each pending DAR change against the saved overall boundary polygon, not its road name.
