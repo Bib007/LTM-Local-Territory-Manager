@@ -32,10 +32,10 @@ const optionalRange={front_addresses:[
 ]};
 const ranged=JSON.parse(JSON.stringify(ctx.render(optionalRange)));
 assert.deepEqual(ranged,[
- {label:'Eksempelvej 3-67',count:6},
+ {label:'Eksempelvej 3–67',count:6},
  {label:'Eksempelvej 2 & 4 (lige)',count:2}
 ],'Short range must affect only its selected odd street line and never add visits');
-assert.equal(ctx.render(optionalRange,true)[0].label,'Eksempelvej 3-67','English forms use the same short-range display');
+assert.equal(ctx.render(optionalRange,true)[0].label,'Eksempelvej 3–67','English forms use the same short-range display');
 optionalRange.front_addresses[0].number_style='exact';
 assert.match(ctx.render(optionalRange)[0].label,/3 & 7 & 9 & 15 & 25 & 67/,'Turning off shortening restores exact selected numbers');
 const old={geo_addresses:[{road:'Eksempelvej',number:'1',count:2},{road:'Eksempelvej',number:'2',count:1}]};
