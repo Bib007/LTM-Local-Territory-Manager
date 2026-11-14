@@ -77,6 +77,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    },{id:fixture.cards[index],index,numbers:expected.slice(2)});
    await p.locator('[data-ib-bulk-suggest]').click();
    const bulk=p.locator('#ibBulkForm');
+   await bulk.waitFor();
    assert.deepEqual(await bulk.locator('th').allTextContents(),language==='en'?['Current address','DAR suggestion']:['Nuværende adresse','DAR-forslag']);
    assert.equal(await bulk.locator('tbody tr').count(),4);
    assert.equal(await bulk.locator('input:checked').count(),2);
