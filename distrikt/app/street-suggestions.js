@@ -4,16 +4,16 @@ const StreetSuggestions={
  pending:null,
  open(){
   const c=card(GeoUI.target);if(!c?.addresses?.length||GeoUI.busy)return;
-  openDialog(`<h2>${ui('Foreslå DAR-adresser fra vejlisten')}</h2><p>${ui('Bekræft postnummeret for hver vejlinje. Hele vejen hentes fra DAR, og nummerintervallet bruges til et forslag. Kontrollér alle adresser og den foreslåede grænse før Gem. Kortet ændres ikke ved hentning.')}</p><form id="streetSuggestionForm"><div class="tablewrap"><table><thead><tr><th>${ui('Vejnavn')}</th><th>${ui('Nummerinterval')}</th><th>${ui('Postnummer')}</th></tr></thead><tbody>${c.addresses.map((r,i)=>{const posts=[...new Set((c.geo_addresses||c.imported_addresses||[]).filter(a=>a.road===r.road).map(a=>a.postcode).filter(Boolean))];return `<tr><td>${esc(r.road)}</td><td>${esc(r.numbers)}</td><td><input name="postcode_${i}" aria-label="${esc(I18n.text('Postnummer')+' · '+r.road)}" required pattern="[0-9]{4}" maxlength="4" inputmode="numeric" value="${esc(posts.length===1?posts[0]:'')}"></td></tr>`;}).join('')}</tbody></table></div>${formEnd('Hent og foreslå adresser')}</form>`);
+  openDialog(`<h2>${ui('Foreslå DAR-adresser fra vejlisten')}</h2><p>${ui('Bekræft postnummeret for hver vejlinje. Fuldt hentede veje bruges lokalt, og kun manglende veje hentes fra DAR. Du kan vælge at opdatere alle veje fra DAR. Kontrollér adresser og grænse før Gem; forhåndsvisningen ændrer ikke kortet.')}</p><form id="streetSuggestionForm"><label class="check"><input type="checkbox" name="refresh_downloaded"> ${ui("Opdater alle veje fra DAR – også dem, der allerede er hentet lokalt")}</label><div class="tablewrap"><table><thead><tr><th>${ui('Vejnavn')}</th><th>${ui('Nummerinterval')}</th><th>${ui('Postnummer')}</th></tr></thead><tbody>${c.addresses.map((r,i)=>{const posts=[...new Set((c.geo_addresses||c.imported_addresses||[]).filter(a=>a.road===r.road).map(a=>a.postcode).filter(Boolean))];return `<tr><td>${esc(r.road)}</td><td>${esc(r.numbers)}</td><td><input name="postcode_${i}" aria-label="${esc(I18n.text('Postnummer')+' · '+r.road)}" required pattern="[0-9]{4}" maxlength="4" inputmode="numeric" value="${esc(posts.length===1?posts[0]:'')}"></td></tr>`;}).join('')}</tbody></table></div>${formEnd('Foreslå adresser')}</form>`);
  },
  async start(form){
   if(this.pending||GeoUI.busy||!form.reportValidity())return;
   const c=card(GeoUI.target),target=GeoUI.target,session=GeoUI.session,stamp=GeoUI.draftStamp(false);
   const postcodes=c.addresses.map((r,i)=>form.elements['postcode_'+i].value);
-  const plan=await GeoUI.preview({mode:'street_lines',postcodes,planning_only:true});
+  const plan=await GeoUI.preview({mode:'street_lines',postcodes,planning_only:true,refresh_downloaded:form.elements.refresh_downloaded.checked});
   if(target!==GeoUI.target||session!==GeoUI.session||stamp!==GeoUI.draftStamp(false)||!el('dialog').open)return;
   if(!GeoUI.canLeave())return;
-  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads:plan.roads.slice()};
+  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads:plan.download_roads.slice(),local_count:form.elements.refresh_downloaded.checked?0:plan.local_roads.length,download_count:plan.download_roads.length};
   closeDialog();await this.next();
  },
  async next(){
@@ -28,6 +28,7 @@ const StreetSuggestions={
   GeoUI.ids=new Set(result.addresses.map(a=>a.id));GeoUI.polygon=result.outline;GeoUI.mode='choose';GeoUI.dirty=true;
   GeoUI.streetApproval={street_expected:result.street_expected,source_expected:result.source_expected,postcodes:p.postcodes};
   GeoUI.setNotice('DAR-forslaget er klar. Sammenlign adresser og besøgstal med vejlisten, ret grænsen og vælg Gem for at ændre kortet.');
+  toast(I18n.format('Genbrugte {local} lokalt hentede veje; hentede {downloaded} veje fra DAR.',{local:p.local_count,downloaded:p.download_count}));
   const status=el('geoDownloadStatus');if(status)status.hidden=true;
   render();
   if(GeoUI.map&&result.addresses.length)GeoUI.map.fitBounds(result.addresses.map(a=>[a.lat,a.lng]),{padding:[40,40],maxZoom:18,animate:false});

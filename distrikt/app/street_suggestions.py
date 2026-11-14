@@ -52,8 +52,22 @@ def suggest(store,data):
         if not road or len(road)>120:raise ValueError('Kontrollér vejnavnet på hver linje før adresseforslaget.')
         plans.append({'road':road,'postcode':post,'ranges':ranges(row.get('numbers'))})
     roads=list({(p['road'].casefold(),p['postcode']):{'road':p['road'],'postcode':p['postcode']} for p in plans}.values())
-    if data.get('planning_only'):return {'roads':roads,'source_expected':source,'address_ids':[]}
-    records=store.all('geo');downloads=[r.get('complete_road') for r in records if r.get('entity')=='download' and r.get('complete_road')]
+    records=store.all('geo')
+    downloads=[r.get('complete_road') for r in records if r.get('entity')=='download' and isinstance(r.get('complete_road'),dict)]
+    if data.get('planning_only'):
+        # A complete-road marker is written only for a successful full DAR road import.
+        # An individual address/area import is not evidence of a complete street.
+        # Check for actual local address records too, so a stale empty marker cannot
+        # silently produce a supposedly usable offline suggestion.
+        complete={(d.get('road','').casefold(),d.get('postcode')) for d in downloads if isinstance(d.get('road'),str)}
+        available={(a.get('road','').casefold(),a.get('postcode')) for a in records
+                   if a.get('entity')=='address' and isinstance(a.get('road'),str)}
+        local_roads=[r for r in roads if (r['road'].casefold(),r['postcode']) in complete & available]
+        refresh=data.get('refresh_downloaded',False)
+        if type(refresh) is not bool:raise ValueError('Ugyldigt valg af DAR-opdatering.')
+        download_roads=roads if refresh else [r for r in roads if r not in local_roads]
+        return {'roads':roads,'local_roads':local_roads,'download_roads':download_roads,
+                'source_expected':source,'address_ids':[]}
     selected={};evidence=[]
     for plan in plans:
         road,post=plan['road'],plan['postcode']

@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.9 · 2026-11-14
+
+- **DAR street-list suggestions:** Reuse complete streets previously downloaded locally without another source request. Fetch only missing streets automatically; a partial address import does not qualify as a complete street.
+- Offer an explicit option to refresh all streets from DAR. Report how many streets were reused versus downloaded, while retaining postcode validation, active address-range selection and the review-before-save workflow.
+- Expand fictional-data tests to cover partial and mixed downloads and responsive browser flows. This beta does not change Stable.
+
 ## 1.12.19-beta.8 · 2026-11-14
 
 - **Tasks:** Add an optional reply when completing a task. The person who assigned the task can find it under Replies to me. Delete the reply from the completion history when needed.

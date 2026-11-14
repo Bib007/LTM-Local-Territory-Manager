@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.9 · 2026-11-14
+
+- **DAR-adresser fra vejliste:** Genbrug komplette, lokalt hentede DAR-veje uden en ny forespørgsel. Hent automatisk kun manglende veje; en delvis adresseimport tæller ikke som en komplet vej.
+- Tilføj et tydeligt valg, hvis alle veje ønskes hentet på ny fra DAR. Vis hvor mange veje der blev genbrugt og hentet. Postnummer, aktive adresseintervaller og den normale godkendelse før kortgemning kontrolleres fortsat.
+- Udvid prøver med opdigtede veje, delvise downloads, blandede lokale/manglende veje og mobil-/desktop-browserforløb. Stable ændres ikke af betaudgivelsen.
+
 ## 1.12.19-beta.8 · 2026-11-14
 
 - **Opgaver:** Skriv et valgfrit svar ved afslutning. Den, der fordelte opgaven, kan finde det under Svar til mig. Slet svaret fra afslutningshistorikken, hvis det skal fjernes.
