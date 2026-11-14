@@ -1,13 +1,16 @@
-# LTM 1.12.19-beta.13 · Afvis adresseændringer uden for distriktsgrænsen
+# LTM 1.12.19-beta.14 · Valgfri forkortet husnummerlinje på distriktskortet
 
-Under **Opfølgninger → Adresseændringer** findes en ny knap: **Afvis alle adresser uden for distriktsgrænsen**. Den er tilgængelig, når menighedens samlede distriktsgrænse er gemt.
+På et geografisk distriktskort med DAR-adresser kan du under **Rediger forsidens vejlinjer** vælge visning **pr. vejlinje**:
 
-Knappen åbner en **forhåndsvisning**, der viser antallet af afventende adresseændringer, som med sikkerhed ligger uden for grænsen, en liste over de første 30 afvisninger og antal ændringer, der kræver manuel kontrol. Kun adresseændringer med brugbare koordinater, som er uden for den **præcise gemte polygon**, udvælges – ikke alle adresser på en vej. Adresser på selve grænsen regnes som indenfor.
+- **Vis de valgte numre (standard):** Bevarer den præcise nuværende oversigt over adresser og huller mellem husnumre.
+- **Vis fra første til sidste:** Viser kun laveste og højeste valgte husnummer, fx **3–67** i stedet for **3, 7, 9, 15, 25, 67**.
 
-Ændringer, hvor den tidligere adresse lå indenfor grænsen, eller hvor koordinater mangler, afvises ikke automatisk. Bekræft ved at skrive **AFVIS UDENFOR**. Ved ændret grænse eller afventende adresseændringer siden forhåndsvisningen skal du gennemføre kontrollen igen.
+Det er **udelukkende en tekstindstilling på forsidens vejlinje**. Distriktsgrænse, DAR's faktiske adresse-ID'er, besøgstal, lejligheder, IB og tilknytninger til distriktskortet ændres ikke. Mellemliggende numre regnes **ikke** som valgte, selv om intervallet står på den trykte forside.
 
-Handlingen **fjerner kun afventende adresseændringer**, ikke de allerede downloadede adresser, eksisterende kort, IB, udleveringer eller historik. Den optræder i den lokale ændringshistorik. Automatisk adressekontrol og sideløbende adressehentning blokerer den samlede afvisning, så der ikke behandles halvfærdige resultater. Funktionens rettigheder følger den almindelige kontrol af geografiske data.
+Indstillingen kan nulstilles, er uafhængig på hver vejlinje og gemmes på selve kortet med samme robuste kilde-ID-kobling som de eksisterende forsidetekster. Hvis DAR deler en linje i flere veje, flyttes valget ikke automatisk til en forkert vej. Print/PDF, S-12-forhåndsvisning, offentlig PNG, sikkerhedskopi og CSV-læsearkiv følger den valgte visning. Ved ændring markeres forsiden til genprint.
+
+Kun én faktisk valgt adresse på en linje kan ikke omdannes til et første–sidste-interval; valget er da deaktiveret. Manuelle kort uden DAR-grundlag kan allerede få et manuelt nummerinterval i deres vejlinjetekst.
 
 ## English
 
-Under **Follow-ups → Address changes**, the new **Reject all addresses outside the territory boundary** action previews a server-calculated set of pending DAR changes strictly outside the saved overall polygon. Addresses on the boundary remain in scope; unknown coordinates and moves from inside to outside remain for manual review. Type **AFVIS UDENFOR** to confirm. A stale preview is rejected. Only pending review records are dismissed; downloaded addresses, existing cards, do-not-call records, assignments and history are preserved. Stable is unchanged.
+The S-12 street-line editor now offers **Show selected house numbers** or **Show first–last range**, independently for each DAR-backed street line. A selected set such as 3, 7, 9, 15, 25 and 67 can appear as **3–67**. This is display-only: skipped numbers are not assigned to the territory. Actual address IDs, visit counts, boundaries, do-not-call entries and card history stay unchanged. The choice persists per street line through reloading, backups, print/PDF/PNG and readable exports, with existing stale-editor conflict protection. Stable remains unchanged.
