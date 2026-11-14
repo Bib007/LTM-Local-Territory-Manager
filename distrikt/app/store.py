@@ -95,6 +95,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             self.db.execute('CREATE TABLE IF NOT EXISTS ' + alias + '.records (id TEXT PRIMARY KEY, payload TEXT NOT NULL, deleted_at TEXT, batch TEXT)')
             self.db.execute('PRAGMA ' + alias + '.user_version=1')
             os.chmod(path, 0o600)
+        from task_images import create_table
+        create_table(self.db)
         self.db.commit()
         with self.transaction():
             self.migrate_tasks()
@@ -141,6 +143,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             raise ValueError('Ukendt datafil.')
         return 'main' if module == 'settings' else module
 
+    def record_table(self, module):
+        return 'notes.task_images' if module == 'task_images' else self.alias(module) + '.records'
+
     def migrate_tasks(self):
         """Keep the legacy storage/API names; promote records without changing their content.
 
@@ -161,7 +166,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         return [dict(json.loads(r['payload']), **({'_deleted_at': r['deleted_at'], '_batch': r['batch']} if deleted else {})) for r in rows]
 
     def get(self, module, ident, deleted=False):
-        row = self.db.execute('SELECT * FROM ' + self.alias(module) + '.records WHERE id=?', (ident,)).fetchone()
+        row = self.db.execute('SELECT * FROM ' + self.record_table(module) + ' WHERE id=?', (ident,)).fetchone()
         if row and (deleted or not row['deleted_at']):
             return json.loads(row['payload'])
         return None
@@ -170,7 +175,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         if module=='notes' and item.get('entity')!='activity':item=dict(item,task=True)
         self._dirty_modules.add(module)
         self.workflow_track(module,item['id'])
-        self.db.execute('INSERT INTO ' + self.alias(module) + '.records(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload', (item['id'], json.dumps(item, ensure_ascii=False)))
+        self.db.execute('INSERT INTO ' + self.record_table(module) + '(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload', (item['id'], json.dumps(item, ensure_ascii=False)))
         return item
 
     def require(self, module, ident):
@@ -258,7 +263,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
 
     def purge_expired(self):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
+        from task_images import purge_note_images
         with self.transaction():
+            purge_note_images(self, 'deleted_at<=?', cutoff)
             for m in MODULES:
                 cursor=self.db.execute('DELETE FROM ' + self.alias(m) + '.records WHERE deleted_at IS NOT NULL AND deleted_at<=?', (cutoff,))
                 if cursor.rowcount:self._dirty_modules.add(m)
@@ -324,7 +331,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 self.onboarding_after_write(action,data)
                 touched=self._tracking
                 if review:review.finish(self,dict(touched))
-                changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.alias(m)+'.records WHERE id=?',(i,)).fetchone()])
+                changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.record_table(m)+' WHERE id=?',(i,)).fetchone()])
                 if changed and not action.startswith(('geo.import','geo.postcode','geo.main.download')):
                     self._tracking=None
                     targets=set();fields=set()
@@ -337,7 +344,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                         elif current.get('card_id'):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
-                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.alias(module)+'.records WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
+                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.record_table(module)+' WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
                 reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
@@ -486,6 +493,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             item['task']=True
             item['text']=clean_text(data.get('text'),1000,True)
             if 'recurrence' in data:self.task_configure(item,data['recurrence'])
+            if 'attachments' in data:
+                from task_images import update_images
+                update_images(self,item,data['attachments'])
             self.put('notes',item);return {'id':item['id']}
         if action == 'note.resolve':
             item=self.require('notes',data.get('id'))
@@ -904,6 +914,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         if action == 'recovery.purge':
             batch=data.get('batch')
             if not isinstance(batch,str) or not batch:raise ValueError('Vælg en post fra Gendan ved fejl.')
+            from task_images import purge_note_images
+            purge_note_images(self, 'batch=?', batch)
             count=0
             for module in MODULES:
                 if module=='maps':continue

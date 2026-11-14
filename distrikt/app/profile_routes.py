@@ -136,7 +136,7 @@ class ProfileRoutes:
                     yield False;return
                 if post and path=='/api/login':
                     self.profile_login();yield False;return
-                protected=path.startswith('/api/') and path!='/api/ping' or path=='/card-qr.svg'
+                protected=path.startswith('/api/') and path!='/api/ping' or path in ('/card-qr.svg','/task-image.png')
                 if not post and not protected:handed=True;yield True;return
                 token=self.profile_token()
                 try:

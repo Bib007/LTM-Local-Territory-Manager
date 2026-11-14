@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.7 · 2026-11-14
+
+- **Tasks:** Attach up to five PNG or JPEG images. View them in the task list and on the linked card. Images are stored locally and included in regular backups.
+
 ## 1.12.19-beta.6 · 2026-11-12
 
 - **DAR on the card front:** Add optional free text for the street name and house numbers. The card front keeps the DAR line and appends your text. Previously saved text is retained as a supplement.

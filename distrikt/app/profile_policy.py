@@ -22,6 +22,7 @@ GET={
  '/api/geo/suggest':('geo.view',), '/api/map':('cards.view','geo.view'),
  '/api/storage':('settings.manage',), '/api/data-info':('settings.manage',),
  '/api/runtime/status':('settings.manage',),
+ '/task-image.png':('notes.view',),
  '/api/activity':('activity.view',), '/api/address-source/status':('connections.manage',),
  '/api/share/status':('sharing.manage','cards.view'),
  '/api/share/qr':('sharing.manage','cards.view'), '/card-qr.svg':('sharing.manage','cards.view'),
@@ -113,6 +114,7 @@ def mutation(user,action,data,store):
             needed=set(needed)
             extra={'cards':{'cards.view','cards.edit'},'notes':{'notes.view','notes.edit'},
                    'publishers':{'publishers.view','publishers.manage'},'loans':{'loans.view','loans.manage'},
+                   'task_images':{'notes.view','notes.edit'},
                    'ib':{'ib.view','ib.edit'},'completions':{'history.view','history.edit'},
                    'visits':{'history.view','history.edit'},'settings':{'settings.manage'}}
             for (module,ident),previous in entry.get('rows',{}).items():
@@ -152,7 +154,7 @@ FIELDS={
  'publishers':{'id','name','group','group_role','pioneer'},
  'loans':set('id card_id publisher_id assigned cycle_start returned initial'.split()),
  'ib':set('id card_id address_id road number date date_text postcode missing_fields'.split()),
- 'notes':set('id card_id loan_id completion_id text date created resolved resolved_at task ignored recurrence task_history assignee_id followup_key'.split()),
+ 'notes':set('id card_id loan_id completion_id text date created resolved resolved_at task ignored recurrence task_history assignee_id followup_key images'.split()),
  'completions':set('id card_id loan_id date assigned previous_completed visits visits_unknown'.split()),
  'visits':{'id','date','note'},
 }

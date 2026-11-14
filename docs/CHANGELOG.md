@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.7 · 2026-11-14
+
+- **Opgaver:** Vedhæft op til fem PNG- eller JPEG-billeder. Se dem i opgavelisten og på det tilknyttede kort. Billederne gemmes lokalt og følger med i den almindelige sikkerhedskopi.
+
 ## 1.12.19-beta.6 · 2026-11-12
 
 - **DAR på kortets forside:** Tilføj valgfri fritekst til vejnavn og husnumre. Forsiden viser DAR-vejlinjen efterfulgt af din tekst. Tidligere gemt fritekst bevares som et supplement.
