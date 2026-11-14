@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.13 · 2026-11-14
+
+- **Address changes / Follow-ups:** Add “Reject all addresses outside the territory boundary” with a server-calculated preview, sample addresses, counts and explicit confirmation. Match each pending DAR change against the saved overall boundary polygon, not its road name.
+- Retain addresses on the boundary and require manual review of changes moved from inside the boundary or with uncertain coordinates. Only pending changes are dismissed; stored DAR addresses, cards, do-not-call records, assignments and history remain unchanged.
+- Atomic confirmation validates the current boundary and pending records, prevents stale previews and concurrent address checks, and follows profile permissions. Regression tests cover fictional inside/edge/outside addresses on the same road. Stable remains unchanged.
+
 ## 1.12.19-beta.12 · 2026-11-14
 
 - **DAR street suggestions:** Identify the exact card, street name, confirmed postcode and original street-list number range when a DAR road lookup fails. Retain the source error and explain that the range is not evidence DAR rejected any particular house number.
