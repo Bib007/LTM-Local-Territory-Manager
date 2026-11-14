@@ -5,6 +5,7 @@ Available from LTM 1.12.5. This uses the existing Danish DAR download connection
 1. Open a card and choose **Draw and select addresses**.
 2. Choose **Suggest DAR addresses from street lines**. Confirm the four-digit postcode for every displayed street line. A postcode is prefilled only when the card already has one unambiguous value for that street.
 3. Choose **Download and suggest addresses**. The existing authenticated download retrieves each complete street; all apartments within the number range are included. Downloading and previewing do not modify the card.
+   If a road cannot be resolved, LTM now displays its card number, street name, confirmed postcode and street-list number range alongside the actual DAR error. These numbers are **from the street list**, not a claim that DAR rejected a particular house number. Correct the street/postcode and retry.
 4. Compare the selected units and visit total with the original street list. Inspect and adjust the proposed outline; an outline around addresses does not establish geographic continuity or physical boundaries.
 5. Choose **Save addresses on card**, review the confirmation and save. The same card number, assignments, completions and do-not-call entries are retained. The front is marked for print review.
 

@@ -133,9 +133,22 @@ const GeoUI={
       if(typeof StreetSuggestions!=='undefined'&&StreetSuggestions.pending){await StreetSuggestions.afterJob(job);return;}
       if(this.pendingRange){const range=this.pendingRange;this.pendingRange=null;if(range.stamp===this.draftStamp(false))await this.selectPreview({mode:'range',...range.data});}
       this.showJob({...job,message:this.notice,total:0});
-    }else{if(typeof StreetSuggestions!=='undefined')StreetSuggestions.pending=null;this.pendingRange=null;this.notice=job.message;this.updatePanel();}
-    if(!job.result?.warnings?.length)setTimeout(()=>{const n=el('geoDownloadStatus');if(n)n.hidden=true;},12000);
-  }catch(e){if(typeof StreetSuggestions!=='undefined')StreetSuggestions.pending=null;this.busy=false;this.pendingRange=null;this.showJob({message:e.message,status:'error'});}},
+    }else{
+      let message=job.message;
+      if(typeof StreetSuggestions!=='undefined'&&StreetSuggestions.pending&&job.kind==='road'){
+       message=StreetSuggestions.failureMessage(job.message);
+       StreetSuggestions.pending=null;
+      }else if(typeof StreetSuggestions!=='undefined')StreetSuggestions.pending=null;
+      this.pendingRange=null;this.notice=message;this.updatePanel();this.showJob({...job,message});
+    }
+    // Keep failures visible until the user retries or leaves; 12 seconds is
+    // not enough to read and locate a problem among many street lines.
+    if(job.status==='done'&&!job.result?.warnings?.length)setTimeout(()=>{const n=el('geoDownloadStatus');if(n)n.hidden=true;},12000);
+  }catch(e){
+    const message=typeof StreetSuggestions!=='undefined'&&StreetSuggestions.pending?StreetSuggestions.failureMessage(e.message):e.message;
+    if(typeof StreetSuggestions!=='undefined')StreetSuggestions.pending=null;
+    this.busy=false;this.pendingRange=null;this.notice=message;this.showJob({message,status:'error'});
+  }},
   boundsForDownload(){if(!this.map)throw Error(I18n.text('Åbn Kortopsætning, og vælg et kortudsnit først.'));return this.map.getBounds();},
   async confirmIgnore(id,reason){const stamp=this.draftStamp(false);await mutate('ignore.save',{address_id:id,reason});if(stamp!==this.draftStamp(false))return;if(this.ids.delete(id))this.dirty=true;render();},
   async handle(action,id){
