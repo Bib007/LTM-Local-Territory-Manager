@@ -5,6 +5,8 @@ This preserves the complete changelog as it stood before the Danish-default migr
 ## 1.12.19-beta.7 · 2026-11-14
 
 - **Tasks:** Attach up to five PNG or JPEG images. View them in the task list and on the linked card. Images are stored locally and included in regular backups.
+- **Do-not-call:** Review the whole card's Danish Address Register (DAR) suggestions in one table. Unambiguous changes are selected by default, and each address can be deselected.
+- **Streets on the card front:** Show odd and even ranges and their total visits on one line per street. Streets with only one side keep the odd or even label.
 
 ## 1.12.19-beta.6 · 2026-11-12
 

@@ -5,6 +5,8 @@
 ## 1.12.19-beta.7 · 2026-11-14
 
 - **Opgaver:** Vedhæft op til fem PNG- eller JPEG-billeder. Se dem i opgavelisten og på det tilknyttede kort. Billederne gemmes lokalt og følger med i den almindelige sikkerhedskopi.
+- **IB:** Gennemgå DAR-forslag for hele kortet i en tabel. Alle entydige ændringer er valgt på forhånd, og hver adresse kan fravælges.
+- **Vejlinjer på kortets forside:** Saml lige og ulige numre for samme vej på én linje, og læg besøgsantallet sammen. Veje med kun lige eller ulige adresser beholder deres mærkning.
 
 ## 1.12.19-beta.6 · 2026-11-12
 

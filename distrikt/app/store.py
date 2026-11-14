@@ -345,7 +345,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.record_table(module)+' WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
-                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','revision.approve','revision.approve_many')
+                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','ib.bulk.apply','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -353,7 +353,10 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         elif changed:self._undo=None
         return result
 
-    def _mutate(self, action, data, *, geographic=False):
+    def _mutate(self, action, data, *, geographic=False, ib_address_only=False):
+        if action in ('ib.bulk.preview', 'ib.bulk.apply'):
+            from ib_address_suggestions import mutate
+            return mutate(self, action, data)
         if action.startswith('history.grid.'):
             from history_grid import mutate_grid
             return mutate_grid(self, action, data)
@@ -728,6 +731,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             self.put('visits', item)
             return {'id': item['id']}
         if action == 'ib.save':
+            from ib_address_suggestions import address_fields, card_addresses
             c = self.require('cards', data['card_id'])
             old = self.get('ib', data.get('id')) if data.get('id') else None
             if data.get('id') and not old:
@@ -738,25 +742,25 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             payload = dict(data)
             address_id = clean_text(payload.get('address_id'), 160)
             if address_id:
-                addresses = c.get('geo_addresses') or c.get('imported_addresses') or [self.get('geo', ident) for ident in c.get('address_ids', [])]
+                addresses = card_addresses(self, c)
                 address = next((a for a in addresses if a and a.get('id') == address_id), None)
                 if not address:
                     raise ValueError('Adressen er ikke på dette distriktskort. Vælg en adresse fra kortets liste.')
-                payload['road'] = address['road']
-                payload['number'] = address['number'] + (', ' + ' '.join(str(address[k]) for k in ('floor', 'door') if address.get(k)) if address.get('floor') or address.get('door') else '')
-                payload['postcode'] = str(address.get('postcode') or '')
+                payload.update(address_fields(address))
                 if any(i['id'] != item['id'] and i['card_id'] == c['id'] and (i.get('address_id') == address_id or i['road'].casefold() == payload['road'].casefold() and i['number'].casefold() == payload['number'].casefold()) for i in self.all('ib')):
                     raise ValueError('Denne adresse er allerede registreret som IB.')
                 item['address_id'] = address_id
             elif 'address_id' in payload:
                 item.pop('address_id', None)
-            date_text=clean_text(payload.get('date_text'),60)
-            if date_text and re.fullmatch(r'\d{4}-\d{2}-\d{2}',date_text):
-                raise ValueError('Brug datofeltet til en præcis dato.')
-            item.update(road=clean_text(payload.get('road'), 120, True), number=clean_text(payload.get('number'), 80, True),
-                        date='' if date_text else valid_day(payload.get('date')))
-            if date_text:item['date_text']=date_text
-            else:item.pop('date_text',None)
+            item.update(road=clean_text(payload.get('road'), 120, True),
+                        number=clean_text(payload.get('number'), 80, True))
+            if not ib_address_only:
+                date_text=clean_text(payload.get('date_text'),60)
+                if date_text and re.fullmatch(r'\d{4}-\d{2}-\d{2}',date_text):
+                    raise ValueError('Brug datofeltet til en præcis dato.')
+                item['date'] = '' if date_text else valid_day(payload.get('date'))
+                if date_text:item['date_text']=date_text
+                else:item.pop('date_text',None)
             if 'postcode' in payload:
                 postcode=clean_text(payload.get('postcode'),4)
                 if postcode and not re.fullmatch(r'\d{4}',postcode):raise ValueError('Postnummer skal være fire cifre eller stå tomt.')

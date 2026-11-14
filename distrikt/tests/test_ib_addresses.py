@@ -42,4 +42,86 @@ class IBAddressTests(unittest.TestCase):
         ib=self.s.mutate('ib.save',{'card_id':temporary,'road':'Fysisk kortvej','number':'1A','date':date.today().isoformat()})['id']
         self.assertEqual(self.s.get('ib',ib)['number'],'1A')
 
+class IBBulkSuggestionsTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.store = Store(self.tmp.name)
+        self.addCleanup(self.store.close)
+        records = [
+            dict(id=ident, road='Prøvevej', number=number, postcode='9999', lng=10, lat=55, **unit)
+            for ident, number, unit in [
+                ('house', '1A', {}), ('other-house', '2', {}),
+                ('left', '3', {'floor': 'st', 'door': 'tv'}),
+                ('right', '3', {'floor': 'st', 'door': 'th'}),
+                ('retired', '4', {}), ('outside', '5', {}),
+            ]
+        ]
+        self.store.mutate('geo.import', {'records': records, 'source': 'DAR / Datafordeleren'})
+        self.card = self.store.mutate('geo.assign', {'number': '303', 'address_ids': [
+            'house', 'other-house', 'left', 'right', 'retired',
+        ]})['id']
+        row = self.store.get('geo', 'retired')
+        row['retired'] = True
+        with self.store.transaction():
+            self.store.put('geo', row)
+
+    def manual(self, number, **extra):
+        return self.store.mutate('ib.save', {'card_id': self.card, 'road': 'prøvevej',
+            'number': number, 'date_text': 'marts 2024', **extra})['id']
+
+    def preview(self):
+        return self.store.mutate('ib.bulk.preview', {'card_id': self.card})
+
+    def apply(self, plan, selected):
+        return self.store.mutate('ib.bulk.apply', {
+            'card_id': self.card, 'expected': plan['expected'], 'selected': selected,
+        })
+
+    def test_apply_selected_side_by_side_and_undo(self):
+        house = self.manual('1a')
+        keep = self.manual('2')
+        unit = self.manual('3, st. tv')
+        for number in ('3', '4', '5'):
+            self.manual(number)
+        for side in ('front', 'back'):
+            self.store.mutate('revision.approve', {'card_id': self.card, 'side': side})
+        revision = self.store.revision
+        plan = self.preview()
+        self.assertEqual(self.store.revision, revision)
+        selected = {row['id']: row for row in plan['rows'] if row['selectable']}
+        self.assertEqual(set(selected), {house, keep, unit})
+        self.assertEqual(selected[house]['before'], 'prøvevej 1a')
+        self.assertEqual(selected[house]['after'], 'Prøvevej 1A · 9999')
+        kept_item = self.store.get('ib', keep)
+        self.assertEqual(self.apply(plan, [house, unit]), {'count': 2})
+        linked = self.store.get('ib', unit)
+        self.assertEqual((linked['number'], linked['address_id'], linked['date_text']),
+                         ('3, st tv', 'left', 'marts 2024'))
+        self.assertEqual(self.store.get('ib', keep), kept_item)
+        self.assertTrue(self.store.get('cards', self.card)['back_revision'])
+        self.assertFalse(self.store.get('cards', self.card)['front_revision'])
+        self.store.mutate('workflow.undo', {})
+        self.assertNotIn('address_id', self.store.get('ib', unit))
+        self.assertFalse(self.store.get('cards', self.card)['back_revision'])
+
+    def test_stale_and_unapproved_rows_cannot_change_anything(self):
+        chosen = self.manual('1a')
+        unknown = self.manual('5')
+        plan = self.preview()
+        with self.assertRaisesRegex(ValueError, 'gyldigt DAR'):
+            self.apply(plan, [chosen, unknown])
+        self.manual('2')
+        with self.assertRaisesRegex(ValueError, 'ændret'):
+            self.apply(plan, [chosen])
+        self.assertNotIn('address_id', self.store.get('ib', chosen))
+
+    def test_matching_one_unit_respects_existing_registration_and_postcode(self):
+        self.store.mutate('ib.save', {'card_id': self.card, 'address_id': 'house', 'date_text': '2024'})
+        self.manual(' 1 a')
+        self.manual('2', postcode='9998')
+        self.manual('3 st tv')
+        self.manual('3, st tv')
+        self.assertFalse(any(row['selectable'] for row in self.preview()['rows']))
+
 if __name__=='__main__':unittest.main()
