@@ -36,7 +36,7 @@ from runtime_status import RuntimeStatus
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.12.19-beta.6'
+VERSION='1.12.19-beta.7'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -172,6 +172,11 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path in ('/forms/S-12-en.pdf','/forms/S-13-en.pdf'):return self.send((APP.parent/'templates'/('S-12-E.pdf' if 'S-12' in path else 'S-13-E.pdf')).read_bytes(),'application/pdf')
             if path=='/s12-template.png':return self.send((APP.parent/'templates'/'S-12-source.png').read_bytes(),'image/png')
             if path=='/s13-background.jpg':return self.send((APP.parent/'templates'/'S-13-background.jpg').read_bytes(),'image/jpeg')
+            if path=='/task-image.png':
+                from task_images import read_image
+                image=read_image(self.server.store,q.get('task',[''])[0],q.get('id',[''])[0])
+                if image is None:return self.send({'error':'Opgavebilledet findes ikke.'},status=404)
+                return self.send(image,'image/png',headers={'Cross-Origin-Resource-Policy':'same-origin'})
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
             if path.startswith('/api/') and not self.allowed(token=True):return
             if path=='/api/setup/card-template.xlsx':

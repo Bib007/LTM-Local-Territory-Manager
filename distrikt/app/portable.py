@@ -11,6 +11,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from store import MODULES
+from task_images import validate_backup
 from ui_errors import UIError
 
 MAX_ARCHIVE=100*1024*1024
@@ -23,6 +24,8 @@ def digest(store):
         h.update(module.encode())
         for row in store.db.execute('SELECT id,payload,deleted_at,batch FROM '+store.alias(module)+'.records ORDER BY id'):
             h.update(json.dumps(tuple(row),ensure_ascii=False).encode())
+    for row in store.db.execute('SELECT id,payload FROM notes.task_images ORDER BY id'):
+        h.update(json.dumps(tuple(row),ensure_ascii=False).encode())
     return h.hexdigest()
 
 def snapshot(store,version):
@@ -34,6 +37,9 @@ def snapshot(store,version):
                 db=sqlite3.connect(str(target))
                 try:
                     store.db.backup(db,name=store.alias(module))
+                    if module=='notes' and not db.execute('SELECT 1 FROM task_images LIMIT 1').fetchone():
+                        db.execute('DROP TABLE task_images')
+                        db.commit()
                     if module=='geo':
                         # Legacy custom connection values are not record-backup data.
                         db.execute('PRAGMA secure_delete=ON')
@@ -72,7 +78,10 @@ class Restores:
                                 db.execute('PRAGMA trusted_schema=OFF')
                                 if db.execute('PRAGMA user_version').fetchone()[0]!=1:raise UIError('Ukendt databaseversion: {file}',file=name)
                                 objects=db.execute("SELECT type,name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").fetchall()
-                                if objects!=[('table','records')]:raise UIError('Ugyldig databasestruktur: {file}',file=name)
+                                expected={('table','records')}
+                                has_images=module=='notes' and ('table','task_images') in objects
+                                if has_images:expected.add(('table','task_images'))
+                                if set(objects)!=expected:raise UIError('Ugyldig databasestruktur: {file}',file=name)
                                 columns=[r[1] for r in db.execute('PRAGMA table_info(records)')]
                                 if columns!=['id','payload','deleted_at','batch']:raise UIError('Ugyldigt databaseformat: {file}',file=name)
                                 if db.execute('PRAGMA quick_check').fetchone()[0]!='ok':raise UIError('Beskadiget database: {file}',file=name)
@@ -80,8 +89,14 @@ class Restores:
                                     item=json.loads(row[1])
                                     if not isinstance(item,dict) or item.get('id')!=row[0]:raise UIError('Ugyldig post i {file}',file=name)
                                     items.append(tuple(row))
+                                if has_images:
+                                    if [r[1] for r in db.execute('PRAGMA table_info(task_images)')]!=columns:
+                                        raise UIError('Ugyldigt databaseformat: {file}',file=name)
+                                    rows['task_images']=db.execute('SELECT id,payload,deleted_at,batch FROM task_images').fetchall()
                             finally:db.close()
                         rows[module]=items;counts[module]=sum(r[2] is None for r in items)
+                rows.setdefault('task_images',[])
+                validate_backup(rows['notes'], rows['task_images'])
                 settings=[json.loads(r[1]) for r in rows['settings'] if r[0]=='config' and r[2] is None]
                 if len(settings)!=1:raise ValueError('Sikkerhedskopien mangler indstillinger.')
                 cards={r[0] for r in rows['cards']};publishers={r[0] for r in rows['publishers']}
@@ -115,9 +130,9 @@ class Restores:
             with self.store.transaction():
                 self.store._dirty_modules.update(MODULES)
                 for module,rows in data['rows'].items():
-                    alias=self.store.alias(module)
-                    self.store.db.execute('DELETE FROM '+alias+'.records')
-                    self.store.db.executemany('INSERT INTO '+alias+'.records(id,payload,deleted_at,batch) VALUES(?,?,?,?)',rows)
+                    table=self.store.record_table(module)
+                    self.store.db.execute('DELETE FROM '+table)
+                    self.store.db.executemany('INSERT INTO '+table+'(id,payload,deleted_at,batch) VALUES(?,?,?,?)',rows)
                 self.store.migrate_tasks()
                 # Record restore cannot replace the destination's connection value.
                 config=self.store.get('geo','config')
@@ -152,6 +167,7 @@ class Restores:
             with self.store.transaction():
                 self.store._dirty_modules.update(MODULES)
                 for module in MODULES:self.store.db.execute('DELETE FROM '+self.store.alias(module)+'.records')
+                self.store.db.execute('DELETE FROM notes.task_images')
                 self.store.put('settings',{'id':'config','congregation':'','folder_minimum':0,
                     'rural_mode':'auto','rural_minimum':0,'require_revision':False,'schema':1})
             self.store.workflow_init()

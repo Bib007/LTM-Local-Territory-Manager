@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.6 lader dig tilføje egen tekst til DAR-vejlinjen på kortets forside. Åbn **Rediger kort → Vejliste og adressetyper → Rediger forsidens vejlinjer**. Du kan udfylde ét eller begge fritekstfelter. Den oprindelige DAR-vejlinje vises først. Tidligere gemt fritekst følger med som et supplement.
+Beta 1.12.19-beta.7 understøtter billeder på opgaver. Vælg **Vedhæft billeder** på en ny eller eksisterende opgave, og gem.
 
 ## Installer betakanalen én gang
 
