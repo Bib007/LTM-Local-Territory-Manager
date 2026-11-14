@@ -53,6 +53,15 @@ class StreetSuggestionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Hent hver'):self.preview()
         self.fetch();c=self.s.require('cards',self.card);self.s.mutate('card.save',{**c,'addresses':[{**c['addresses'][0],'numbers':'90-99'}]})
         with self.assertRaisesRegex(ValueError,'ingen aktive'):self.preview()
+    def test_failed_interval_identifies_street_postcode_and_number_range(self):
+        self.fetch();c=self.s.require('cards',self.card)
+        self.s.mutate('card.save',{**c,'addresses':[{**c['addresses'][0],'numbers':'90-99'}]})
+        with self.assertRaisesRegex(ValueError,'Fictional road.*9999.*90-99.*ingen aktive'):
+            self.preview()
+        self.s.mutate('card.save',{**c,'addresses':[{**c['addresses'][0],'numbers':'bad interval'}]})
+        with self.assertRaisesRegex(ValueError,'Fictional road.*9999.*bad interval.*nummerinterval'):
+            self.preview(planning_only=True)
+
     def test_changed_street_lines_and_changed_geo_invalidate_approval(self):
         self.fetch();p=self.preview();c=self.s.require('cards',self.card)
         self.s.mutate('card.save',{**c,'addresses':[{**c['addresses'][0],'numbers':'1-3'}]})
