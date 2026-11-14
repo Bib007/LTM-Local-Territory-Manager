@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.13 · 2026-11-14
+
+- **Adresseændringer / Opfølgninger:** Tilføj knappen »Afvis alle adresser uden for distriktsgrænsen« med forhåndsvisning af konkrete afventende adresser, antal og manuel bekræftelse. Grænsen kontrolleres på serveren ud fra den gemte samlede distriktsgrænse, aldrig ud fra fælles vejnavn.
+- Behold adresser på selve grænsen. Flytninger fra adresser indenfor grænsen og poster med manglende/usikre koordinater skal fortsat gennemgås enkeltvis. Afvisningen fjerner kun afventende ændringer og bevarer kort, IB, historik, udleveringer og hentede DAR-adresser.
+- Afvisningen er atomisk og afviser forældede forhåndsvisninger, dobbelthandlinger og samtidige adressekontroller. Funktionen er rettighedsstyret og testet med fiktive adresser på samme vej, på/uden for grænsen og ved ændring af grænsen. Stable er ikke ændret.
+
 ## 1.12.19-beta.12 · 2026-11-14
 
 - **DAR-adresseforslag:** Vis kortnummer, konkret vejnavn, bekræftet postnummer og de husnummerintervaller fra vejlisten, der var under behandling, når en vej ikke kan findes i DAR. Behold den oprindelige fejlårsag og gør tydeligt, at DAR ikke dermed har udpeget et bestemt fejlagtigt husnummer.

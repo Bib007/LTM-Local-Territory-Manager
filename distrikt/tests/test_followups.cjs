@@ -64,6 +64,41 @@ run(`state={today:'2026-10-23',cards:[
  run("state.followup_ignores[0].ignored=false;Workspace.followupFilter='checks'");
  assert.equal(run('Workspace.followupItems().length'),initial,'Reactivated overlap returns to active list and badge');
  run("state.cards[0].geo_polygon=[[11,55],[11.01,55],[11,55.01]]");assert.equal(run('Workspace.followupItems().filter(r=>r.relatedCard).length'),0);
+ // Outside-boundary action exists only in Address changes and never touches cards.
+ run("GeoUI.data.main_boundary={points:[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]};GeoUI.data.changes=[{id:'out',kind:'new',after:{label:'Example <outside> 17',lng:10.05,lat:55}}];page='Opfølgninger';Workspace.followupFilter='addresses';Workspace.followupQuery='';");
+ for(const lang of ['da','en']){
+  run(`I18n.set('${lang}')`);
+  const html=run('Workspace.followups()');
+  assert.match(html,/data-work="reject-outside-preview"/);
+  assert.match(html,lang==='da'?/Afvis alle adresser uden for distriktsgrænsen/:/Reject all addresses outside the territory boundary/);
+  assert.equal((html.match(/data-followup=/g)||[]).length,1);
+ }
+ const originalApi=run('api');c.originalApi=originalApi;
+ run("api=async()=>({json:async()=>({result:{count:1,expected:'boundary-token',protected:1,uncertain:2,examples:[{id:'out',kind:'new',label:'Example <outside> 17'}]}})})");
+ await run("Workspace.handle('reject-outside-preview',{})");
+ assert.equal(get('dialog').open,true);
+ assert.match(get('dialog').innerHTML,/Example &lt;outside&gt; 17/);
+ assert.doesNotMatch(get('dialog').innerHTML,/<outside>/);
+ assert.match(get('dialog').innerHTML,/previously located inside the boundary/);
+ assert.match(get('dialog').innerHTML,/data-work="reject-outside-apply"/);
+ const bulkBefore=writes.length;
+ await assert.rejects(run("Workspace.handle('reject-outside-apply',{})"),/AFVIS UDENFOR/);
+ assert.equal(writes.length,bulkBefore,'An unconfirmed bulk action cannot write');
+ get('outsideConfirm').value='AFVIS UDENFOR';
+ run("mutate=async(action,data)=>{writes.push({action,data});GeoUI.data.changes=[];closeDialog();};GeoUI.load=async()=>{}");
+ await run("Workspace.handle('reject-outside-apply',{})");
+ assert.deepEqual(JSON.parse(JSON.stringify(writes.at(-1))),{action:'address.change.outside.reject',data:{expected:'boundary-token',confirm:'AFVIS UDENFOR'}});
+ assert.equal(run('Workspace.outsideReview'),null);
+ assert.equal(run('GeoUI.data.changes.length'),0);
+ run("GeoUI.data.changes=[{id:'out',kind:'new',after:{label:'Example <outside> 17'}}];GeoUI.data.main_boundary=null");
+ assert.match(run("Workspace.followups()"),/data-work="reject-outside-preview" disabled/,'Missing boundary disables bulk action');
+ // A stale preview must not replace a newer dialog or navigation.
+ get('dialog').open=false;let finishPreview;c.pending=new Promise(r=>finishPreview=r);
+ run("GeoUI.data.main_boundary={points:[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]};api=()=>pending;page='Opfølgninger'");
+ const oldPreview=run("Workspace.handle('reject-outside-preview',{})");await new Promise(r=>setImmediate(r));
+ run("openDialog('<form>NEW REVIEW</form>')");finishPreview({json:async()=>({result:{count:1,expected:'outdated',protected:0,uncertain:0,examples:[]}})});await oldPreview;
+ assert.match(get('dialog').innerHTML,/NEW REVIEW/);
+ run('closeDialog();api=originalApi');
  // A late geographic load cannot navigate away from a newer page or dialog.
  let release;c.pending=new Promise(r=>release=r);run("GeoUI.load=()=>pending;page='Forside'");let waiting=run("Workspace.openFollowups('checks')");await new Promise(r=>setImmediate(r));run("page='Opgaver'");release();await waiting;assert.equal(run('page'),'Opgaver');
  c.pending=new Promise(r=>release=r);run("page='Forside'");waiting=run('Workspace.openFollowups()');await new Promise(r=>setImmediate(r));run("openDialog('<form>NEWER DRAFT</form>')");release();await waiting;assert.equal(run('page'),'Forside');assert.match(get('dialog').innerHTML,/NEWER DRAFT/);

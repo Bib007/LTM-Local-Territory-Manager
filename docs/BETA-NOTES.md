@@ -1,15 +1,13 @@
-# LTM 1.12.19-beta.12 · Præcise fejl ved DAR-adresseforslag
+# LTM 1.12.19-beta.13 · Afvis adresseændringer uden for distriktsgrænsen
 
-Når **Foreslå DAR-adresser fra vejlisten** ikke kan hente en vej, viser LTM nu, hvilken linje der gav fejlen: **kortnummer, vejnavn, postnummer og det eller de husnummerintervaller, du har skrevet i vejlisten**. Den oprindelige forklaring fra DAR/Datafordeleren vises som **Årsag**.
+Under **Opfølgninger → Adresseændringer** findes en ny knap: **Afvis alle adresser uden for distriktsgrænsen**. Den er tilgængelig, når menighedens samlede distriktsgrænse er gemt.
 
-Et eksempel med opdigtede oplysninger:
+Knappen åbner en **forhåndsvisning**, der viser antallet af afventende adresseændringer, som med sikkerhed ligger uden for grænsen, en liste over de første 30 afvisninger og antal ændringer, der kræver manuel kontrol. Kun adresseændringer med brugbare koordinater, som er uden for den **præcise gemte polygon**, udvælges – ikke alle adresser på en vej. Adresser på selve grænsen regnes som indenfor.
 
-> DAR-adresseforslag stoppede ved kort F-ERR, vej "Unlisted Test Way", postnummer 9999, husnumre fra vejlisten: 11–19. Årsag: Vejnavn og postnummer kunne ikke findes entydigt i DAR.
+Ændringer, hvor den tidligere adresse lå indenfor grænsen, eller hvor koordinater mangler, afvises ikke automatisk. Bekræft ved at skrive **AFVIS UDENFOR**. Ved ændret grænse eller afventende adresseændringer siden forhåndsvisningen skal du gennemføre kontrollen igen.
 
-Det er **ikke muligt at udpege ét bestemt husnummer**, når DAR endnu ikke kan finde selve vejen og postnummeret. Derfor mærkes husnumrene udtrykkeligt som brugerens **vejlistenumre**, ikke som en adresse, DAR har afvist. Fejlen bliver synlig, så du kan kontrollere stavemåde og postnummer og åbne adresseforslaget igen.
-
-Hvis hele vejen er hentet, men ingen aktive adresser findes i det valgte interval, oplyser LTM tilsvarende vej, postnummer og interval. Du kan fortsat gennemgå og godkende forslag, før kortet gemmes. Ingen afviste forslag gemmer adressevalg, IB eller andre private data på kortet. Andre beta-funktioner og Stable er uændrede.
+Handlingen **fjerner kun afventende adresseændringer**, ikke de allerede downloadede adresser, eksisterende kort, IB, udleveringer eller historik. Den optræder i den lokale ændringshistorik. Automatisk adressekontrol og sideløbende adressehentning blokerer den samlede afvisning, så der ikke behandles halvfærdige resultater. Funktionens rettigheder følger den almindelige kontrol af geografiske data.
 
 ## English
 
-DAR street-list errors now identify the **card, street name, postcode and original street-list number ranges** that were being processed, as well as the underlying cause. The ranges come from the user's street list; a failed road lookup does **not** identify one specific incorrect house number. Errors remain visible for review and retry. Missing active addresses within an interval likewise identify the failing street and range. No rejected proposal writes card data.
+Under **Follow-ups → Address changes**, the new **Reject all addresses outside the territory boundary** action previews a server-calculated set of pending DAR changes strictly outside the saved overall polygon. Addresses on the boundary remain in scope; unknown coordinates and moves from inside to outside remain for manual review. Type **AFVIS UDENFOR** to confirm. A stale preview is rejected. Only pending review records are dismissed; downloaded addresses, existing cards, do-not-call records, assignments and history are preserved. Stable is unchanged.
