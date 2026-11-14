@@ -3,6 +3,12 @@
 const I18n={
  current:'en',
  english:{
+  "Visning af husnumre på forsiden":"House-number display on the front",
+  "Vis de valgte numre":"Show selected house numbers",
+  "Vis fra første til sidste":"Show first–last range",
+  "Intervallet forkorter kun teksten. Mellemliggende husnumre bliver ikke tilføjet til distriktet.":"The range shortens only the display text. House numbers between the endpoints are not added to the territory.",
+  "Nulstil vejlinjens visning og egen tekst":"Reset street-line display and custom text",
+  "Vælg de valgte husnumre eller et gyldigt første–sidste-interval.":"Choose the selected house numbers or a valid first–last display range.",
   "Slet forkynder":"Delete publisher",
   "Forkynderen kan ikke slettes":"This publisher cannot be deleted",
   "Forkynderen har registrerede udleveringer eller historik. Behold forkynderen for at bevare rapporterne.":"This publisher has assignments or history. Keep the publisher to preserve reports.",
