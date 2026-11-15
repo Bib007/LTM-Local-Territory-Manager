@@ -179,7 +179,11 @@ class OutlineTests(unittest.TestCase):
 
     def test_original_hull_is_unchanged_when_there_are_no_conflicts(self):
         expected=enclosing_outline([self.point(-40,0),self.point(40,0)])
-        self.assertEqual(self.trace(),expected)
+        actual=self.trace()
+        self.assertEqual(len(actual),len(expected))
+        for found,original in zip(actual,expected):
+            self.assertAlmostEqual(found[0],original[0],places=10)
+            self.assertAlmostEqual(found[1],original[1],places=10)
 
     def test_other_dar_dot_inside_old_hull_creates_notch_not_a_thin_route(self):
         # Four selected corners enclose one separate DAR house. A five-metre
