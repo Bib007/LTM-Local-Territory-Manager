@@ -746,6 +746,36 @@ class ProfilesIntegrationTests(unittest.TestCase):
         base=self.server.profiles.workspace.begin_edit(session['token'],'notes',self.note)
         self.assertNotIn(user,json.dumps(base))
 
+    def test_task_reply_uses_authenticated_users_and_requires_task_edit_to_delete(self):
+        editor,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        self.assign_task(user)
+        def task(session):
+            return next(n for n in self.state(session)['notes'] if n['id']==self.note)
+        old_target=task(editor)['reply_target']
+        self.assign_task(None,before=user)
+        with self.assertRaises(urllib.error.HTTPError) as stale:
+            self.change(editor,self.state(editor),'note.resolve',{'id':self.note,'resolved':True,
+                'reply':'Forkert modtager','reply_target':old_target})
+        self.assertEqual(stale.exception.code,400)
+        self.assertFalse(task(editor)['resolved'])
+        self.assign_task(user)
+        self.change(editor,self.state(editor),'note.resolve',{
+            'id':self.note,'resolved':True,'reply':'Fiktivt svar','reply_target':task(editor)['reply_target'],
+            '_task_actor_name':'Forkert afsender','_task_actor_id':'fake'})
+        entry=task(self.admin)['task_history'][0]
+        self.assertEqual(entry['author'],'Fiktiv bruger')
+        self.assertEqual(entry['recipient'],'Fiktiv admin')
+        self.assertTrue(entry['recipient_self'])
+        self.assertNotIn('recipient_id',entry)
+        self.assertNotIn('recipient_self',task(editor)['task_history'][0])
+        self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',['cards.view','notes.view'],ident=role)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(editor,self.state(editor),'note.reply.delete',{'id':self.note,'entry_id':entry['id']})
+        self.assertEqual(error.exception.code,403)
+        self.change(self.admin,self.state(self.admin),'note.reply.delete',{'id':self.note,'entry_id':entry['id']})
+        self.assertTrue(task(self.admin)['resolved'])
+        self.assertNotIn('reply',task(self.admin)['task_history'][0])
+
     def test_task_ownership_directory_requires_note_access(self):
         session,role,user=self.reader(['users.manage'])
         state=self.state(session)

@@ -13,14 +13,25 @@ const StreetSuggestions={
   const plan=await GeoUI.preview({mode:'street_lines',postcodes,planning_only:true});
   if(target!==GeoUI.target||session!==GeoUI.session||stamp!==GeoUI.draftStamp(false)||!el('dialog').open)return;
   if(!GeoUI.canLeave())return;
-  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads:plan.roads.slice()};
+  // Keep the original street-list number ranges only in the local browser.
+  // A DAR road download knows a full street, not which house number caused a failure.
+  const roads=plan.roads.map(road=>({
+   ...road,
+   numbers:c.addresses.filter((line,i)=>String(line.road||'').trim().toLowerCase()===road.road.toLowerCase()&&postcodes[i]===road.postcode).map(line=>String(line.numbers||'').trim()).filter(Boolean)
+  }));
+  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads,card_number:c.number,currentRoad:null};
   closeDialog();await this.next();
  },
  async next(){
   const p=this.pending;if(!p)return;
   if(p.target!==GeoUI.target||p.session!==GeoUI.session||p.stamp!==GeoUI.draftStamp(false)){this.pending=null;return;}
   const road=p.roads.shift();
-  if(road){await GeoUI.download('road',{...road,include_osm:false});return;}
+  if(road){
+   p.currentRoad=road;
+   try{await GeoUI.download('road',{road:road.road,postcode:road.postcode,include_osm:false});}
+   catch(error){const message=this.failureMessage(error.message);this.pending=null;throw Error(message);}
+   return;
+  }
   const result=await GeoUI.preview({mode:'street_lines',postcodes:p.postcodes,source_expected:p.source_expected});
   if(this.pending!==p||p.stamp!==GeoUI.draftStamp(false)){this.pending=null;return;}
   this.pending=null;
@@ -32,6 +43,13 @@ const StreetSuggestions={
   render();
   if(GeoUI.map&&result.addresses.length)GeoUI.map.fitBounds(result.addresses.map(a=>[a.lat,a.lng]),{padding:[40,40],maxZoom:18,animate:false});
  },
- async afterJob(job){if(job.status!=='done'||job.kind!=='road'){this.pending=null;return;}await this.next();}
+ failureMessage(reason){
+  const pending=this.pending,road=pending?.currentRoad;
+  if(!road)return reason;
+  return I18n.format('DAR-adresseforslag stoppede ved kort {card}, vej "{road}", postnummer {postcode}, husnumre fra vejlisten: {numbers}. Årsag: {reason}. Kontrollér vejnavn og postnummer. Husnumrene er fra vejlisten; DAR har ikke udpeget et bestemt fejlagtigt husnummer.',{
+   card:pending.card_number,road:road.road,postcode:road.postcode,numbers:road.numbers.join(', ')||I18n.text('Hele vejen'),reason:I18n.errorText(reason)
+  });
+ },
+ async afterJob(job){if(job.status!=='done'||job.kind!=='road'){this.pending=null;return;}if(this.pending)this.pending.currentRoad=null;await this.next();}
 };
 document.addEventListener('submit',async e=>{if(e.target.id!=='streetSuggestionForm')return;e.preventDefault();const form=e.target;if(form.dataset.saving)return;form.dataset.saving='yes';try{await StreetSuggestions.start(form);}catch(error){StreetSuggestions.pending=null;toast(error);failed(error);}finally{delete form.dataset.saving;}});

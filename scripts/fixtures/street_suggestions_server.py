@@ -45,9 +45,12 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-streets-') as root:
             store.put('maps',{'id':'publication:'+card_id,'entity':'publication','card_id':card_id,'status':'ready',
                 'front_url':'https://drive.google.com/file/d/FICTIONAL_RANGE/view',
                 'file_id':'FICTIONAL_RANGE','fingerprint':fingerprint(store,card)})
+    failed_card=store.mutate('card.save',{'number':'F-ERR','addresses':[{'road':'Unlisted <Test> Way','numbers':'11–19','count':4,'type':'Hus'}]})['id']
     store.mutate('setup.onboarding.save',{'answers':{'mode':'desk','boundary':'later','cards':'numbers','ib':'later'},'tour_completed':True})
     server=Server(('127.0.0.1',0),store)
     def road(data,progress):
+        if data['road']=='Unlisted <Test> Way' and data['postcode']=='9999':
+            raise ValueError('Vejnavn og postnummer kunne ikke findes entydigt i DAR.')
         assert data['road'] in ('Fictional road 0','Fictional road 1') and data['postcode']=='9999'
         records=[dict(id=data['road']+str(n),entity='address',road=data['road'],number=str(n),postcode='9999',lng=10+n*.001,lat=55,count=1,type='Hus') for n in (range(1,8) if data['road'].endswith('0') else range(21,31))]
         result=store.mutate('geo.import',dict(records=records,source='DAR / Datafordeleren',label='Fictional test',complete_road={'road':data['road'],'postcode':'9999'}))
@@ -59,6 +62,6 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-streets-') as root:
     signal.signal(signal.SIGTERM,stop)
     fronts=[workbook(['Card','Street','Range','Visits'],['M'+str(i),'Manual road '+str(i),'hele vejen' if i==0 else '23-25 & 24-26',12]) for i in range(2)]
     backs=[workbook(['Card','Street','Number','Date'],['M'+str(i),'Manual road '+str(i),'1A' if i==0 else '23-25 & 24-26','marts 2024' if i==0 else '2024']) for i in range(2)]
-    print(json.dumps({'origin':server.origin,'cards':cards,'range_cards':range_cards,'fronts':fronts,'backs':backs,'cookie':{'name':server.profiles.cookie,'value':cookie,'url':server.origin}}),flush=True)
+    print(json.dumps({'origin':server.origin,'cards':cards,'failed_card':failed_card,'range_cards':range_cards,'fronts':fronts,'backs':backs,'cookie':{'name':server.profiles.cookie,'value':cookie,'url':server.origin}}),flush=True)
     try:server.serve_forever()
     finally:server.server_close();store.close()

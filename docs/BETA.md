@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.6 lader dig tilføje egen tekst til DAR-vejlinjen på kortets forside. Åbn **Rediger kort → Vejliste og adressetyper → Rediger forsidens vejlinjer**. Du kan udfylde ét eller begge fritekstfelter. Den oprindelige DAR-vejlinje vises først. Tidligere gemt fritekst følger med som et supplement.
+Beta 1.12.19-beta.15 giver hvert geografisk distriktskort et valgfrit **første–sidste-interval pr. vejlinje** på forsiden. Åbn kortet → **Rediger forsidens vejlinjer** → **Visning af husnumre på forsiden**, og vælg **Vis de valgte numre** eller **Vis fra første til sidste** for hver vejlinje. Eksempel: seks faktisk valgte numre 3, 7, 9, 15, 25, 67 kan vises som 3–67. Det forkorter kun S-12-teksten – det tilføjer ikke de mellemliggende adresser, påvirker ikke besøgstal/IB eller ændrer distriktsgrænsen. Valget gemmes pr. vejlinje og følger med print, PDF, PNG, backup og eksport. Beta.13's sikre afvisning af adresseændringer uden for grænsen er bevaret.
 
 ## Installer betakanalen én gang
 
