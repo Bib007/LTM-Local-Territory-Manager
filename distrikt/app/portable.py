@@ -4,6 +4,7 @@ import io
 import json
 import os
 import secrets
+import shutil
 import sqlite3
 import tempfile
 import time
@@ -14,9 +15,12 @@ from store import MODULES
 from task_images import validate_backup
 from ui_errors import UIError
 
-MAX_ARCHIVE=100*1024*1024
-MAX_EXPANDED=512*1024*1024
+MAX_ARCHIVE=512*1024*1024
+MAX_EXPANDED=1024*1024*1024
 CORE={'settings','cards','publishers','loans','completions','ib','visits','maps','geo','ignored'}
+
+def archive_limit_error():
+    return UIError('Sikkerhedskopien må højst fylde 512 MB.')
 
 def digest(store):
     h=hashlib.sha256()
@@ -30,6 +34,10 @@ def digest(store):
 
 def snapshot(store,version):
     out=io.BytesIO()
+    write_snapshot(store,version,out)
+    return out.getvalue()
+
+def write_snapshot(store,version,out):
     with store.lock, tempfile.TemporaryDirectory() as temp:
         with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
             for module,name in MODULES.items():
@@ -51,14 +59,15 @@ def snapshot(store,version):
                 z.write(target,target.name)
             z.writestr('manifest.json',json.dumps({'format':'distrikt-backup','schema':1,'version':version,'created':datetime.now(timezone.utc).isoformat(),'databases':list(MODULES.values())}))
             z.writestr('LAES-MIG.txt','Privat sikkerhedskopi af Distrikt. Indeholder IB og personoplysninger. Upload ikke til AI, Drive eller offentlig deling. Google-login og adgangskode følger ikke med.\n')
-    return out.getvalue()
 
 class Restores:
     def __init__(self,store,version):self.store=store;self.version=version;self.pending={}
     def preview(self,payload):
-        if not payload or len(payload)>MAX_ARCHIVE:raise ValueError('Sikkerhedskopien må højst fylde 100 MB.')
+        source=io.BytesIO(payload) if isinstance(payload,bytes) else payload
+        if not 0<source.seek(0,io.SEEK_END)<=MAX_ARCHIVE:raise archive_limit_error()
+        source.seek(0)
         try:
-            with zipfile.ZipFile(io.BytesIO(payload)) as z:
+            with zipfile.ZipFile(source) as z:
                 files=z.infolist();names=[f.filename for f in files]
                 permitted={n+'.sqlite3' for n in MODULES.values()}|{'manifest.json','LAES-MIG.txt'}
                 if len(names)!=len(set(names)) or any(n not in permitted for n in names):raise ValueError('ZIP-filen indeholder ukendte eller dublerede filer.')
@@ -72,7 +81,9 @@ class Restores:
                     for module,name in MODULES.items():
                         filename=name+'.sqlite3';items=[]
                         if filename in names:
-                            p=Path(temp)/filename;p.write_bytes(z.read(filename))
+                            p=Path(temp)/filename
+                            with z.open(filename) as entry,p.open('wb') as target:
+                                shutil.copyfileobj(entry,target,1024*1024)
                             db=sqlite3.connect(p.as_uri()+'?mode=ro&immutable=1',uri=True)
                             try:
                                 db.execute('PRAGMA trusted_schema=OFF')

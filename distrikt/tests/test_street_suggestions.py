@@ -3,10 +3,13 @@ import sys
 import tempfile
 import unittest
 from copy import deepcopy
+from math import cos, radians
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from street_suggestions import ranges, includes
+from geography import point_in_polygon, valid_polygon
+from territory_outline import meets, suggest_outline
 
 
 class StreetSuggestionTests(unittest.TestCase):
@@ -78,10 +81,90 @@ class StreetSuggestionTests(unittest.TestCase):
         self.assertEqual(p['conflicts'][0]['card_number'],'F002');before=deepcopy(self.s.state())
         with self.assertRaises(ValueError):self.save(p)
         self.assertEqual(self.s.state(),before)
+    def test_saving_a_dar_suggestion_rechecks_a_new_neighbor(self):
+        self.fetch()
+        preview=self.preview()
+        original=preview['outline']
+        self.assertEqual(preview['outline_status'],'clear')
+        neighbor=self.s.mutate('card.save',{'number':'F099','temporary':True})['id']
+        x,y=self.records[0]['lng'],self.records[0]['lat']
+        self.s.mutate('geo.boundary',{'card_id':neighbor,
+            'polygon':[[x-.0003,y+.00004],[x+.0003,y+.00004],[x+.0003,y+.001],[x-.0003,y+.001]]})
+        before=deepcopy(self.s.state())
+        with self.assertRaisesRegex(ValueError,'Grænseforslaget er ændret'):
+            self.save(preview,polygon=original,outline_expected=preview['outline_expected'])
+        self.assertEqual(self.s.state(),before)
+        fresh=self.preview()
+        self.assertEqual(fresh['outline_status'],'clear')
+        self.save(fresh,polygon=fresh['outline'],outline_expected=fresh['outline_expected'])
+        self.assertEqual(self.s.require('cards',self.card)['geo_outline_source'],'suggestion')
+
     def test_manual_year_only_date_never_invents_month_or_day(self):
         for value in ('2024','marts 2024'):
             ident=self.s.mutate('ib.save',{'card_id':self.card,'road':'Fictional road','number':value,'date':'2026-01-01','date_text':value})['id']
             item=self.s.require('ib',ident);self.assertEqual((item['date'],item['date_text']),('',value))
+
+
+class OutlineTests(unittest.TestCase):
+    scale=111320*cos(radians(55))
+
+    def point(self,x,y):
+        return [round(10+x/self.scale,7),round(55+y/111320,7)]
+
+    def rectangle(self,x0,y0,x1,y1):
+        return [self.point(x0,y0),self.point(x1,y0),self.point(x1,y1),self.point(x0,y1)]
+
+    def address(self,number,x,y,**extra):
+        lng,lat=self.point(x,y)
+        return dict(number=str(number),road='Fictional road',postcode='9999',lng=lng,lat=lat,**extra)
+
+    def setUp(self):
+        self.selected=[self.address(1,-40,0),self.address(3,40,0)]
+
+    def trace(self,others=(),buildings=(),neighbors=(),expected='clear'):
+        outline,status=suggest_outline(self.selected,[*self.selected,*others],buildings,neighbors)
+        self.assertEqual(status,expected)
+        if expected=='unavailable':
+            self.assertEqual(outline,[])
+        else:
+            self.assertEqual(valid_polygon(outline,limit=5000),outline)
+            self.assertEqual(len({tuple(p) for p in outline}),len(outline))
+            self.assertTrue(all(point_in_polygon((a['lng'],a['lat']),outline) for a in self.selected))
+        return outline
+
+    def test_wraps_a_house_between_selected_addresses(self):
+        other=self.address(2,0,0)
+        outline=self.trace(others=[other])
+        self.assertFalse(point_in_polygon(self.point(0,0),outline))
+        building=self.rectangle(-7,-9,7,9)
+        outline=self.trace(others=[other],buildings=[building])
+        self.assertFalse(meets(outline,building,0))
+        outline=self.trace(buildings=[building])
+        self.assertFalse(meets(outline,building,0))
+
+    def test_parallel_territory_keeps_three_metre_gap(self):
+        neighbor=self.rectangle(-60,8,60,50)
+        outline=self.trace(neighbors=[neighbor])
+        self.assertLessEqual(max(p[1] for p in outline),self.point(0,5)[1])
+        self.assertFalse(meets(outline,neighbor,0))
+
+    def test_short_detour_keeps_neighbor_outside(self):
+        for length in (21,100):
+            with self.subTest(length=length):
+                neighbor=self.rectangle(-10,-length,10,length)
+                outline=self.trace(neighbors=[neighbor])
+                self.assertFalse(meets(outline,neighbor,0))
+
+    def test_crossing_connects_separated_houses_through_narrow_strip(self):
+        neighbor=self.rectangle(-10,-500,10,500)
+        outline=self.trace(neighbors=[neighbor],expected='crossing')
+        self.assertTrue(meets(outline,neighbor,0))
+        self.assertTrue(point_in_polygon(self.point(0,0),outline))
+        self.assertFalse(point_in_polygon(self.point(0,5),outline))
+
+    def test_same_point_and_inside_neighbor_do_not_force_overlap(self):
+        self.trace(others=[self.address(2,-40,0)],expected='unavailable')
+        self.trace(neighbors=[self.rectangle(-50,-15,-30,15)],expected='unavailable')
 
 
 if __name__=='__main__':unittest.main()

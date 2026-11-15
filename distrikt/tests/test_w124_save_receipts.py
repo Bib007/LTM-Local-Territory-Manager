@@ -1,4 +1,5 @@
 """W124: real loopback HTTP, disposable SQLite and fictional accounts only."""
+import hashlib
 import unittest
 import urllib.error
 from unittest.mock import patch
@@ -44,6 +45,30 @@ class SaveReceiptTests(unittest.TestCase):
         self.assertEqual(result['state']['cards'][0]['name'],'Fiktiv B')
         self.assertEqual(result['state']['profile']['conflicts'],1)
 
+    def test_different_users_keep_edit_bases_and_save_different_cards(self):
+        other,_,_=fixture.ProfilesIntegrationTests.reader(self,['cards.view','cards.edit'])
+        self.store.mutate('card.save',{'number':'F202','name':'Fiktivt kort B','temporary':True})
+        a,b=self.state(self.admin),self.state(other)
+        a['profile']['snapshot']=self.fork(a)
+        b['profile']['snapshot']=self.fork(b,other)
+        bases=self.server.profiles.bases
+        now=bases.clock()
+        bases.clock=lambda:now
+        token=b['profile']['snapshot']
+        base=bases._items[token]
+        base['until']=now+1
+        self.value('/api/profiles/heartbeat',{'edit_bases':[token]},self.admin)
+        self.assertEqual(base['until'],now+1)
+        self.value('/api/profiles/heartbeat',{'edit_bases':[token]},other)
+        bases.clock=lambda:now+2
+        first=next(card for card in a['cards'] if card['id']==self.card)
+        second=next(card for card in b['cards'] if card['number']=='F202')
+        self.change(self.admin,a,'card.save',{**first,'name':'Rettet af A'})
+        result=self.change(other,b,'card.save',{**second,'name':'Rettet af B'})
+        self.assertEqual(result['state']['profile']['conflicts'],0)
+        self.assertEqual(self.store.require('cards',first['id'])['name'],'Rettet af A')
+        self.assertEqual(self.store.require('cards',second['id'])['name'],'Rettet af B')
+
     def test_post_commit_read_failure_returns_known_saved_receipt(self):
         for failure in (ValueError('Fictional snapshot full'),OSError('Fictional read failure')):
             base=self.state(self.admin)
@@ -60,7 +85,7 @@ class SaveReceiptTests(unittest.TestCase):
         items=self.server.profiles.bases._items
         oldsize=items[base['profile']['snapshot']]['size']
         self.server.profiles.bases.max_bytes=2*oldsize+1000
-        for n in range(40):self.store.mutate('card.save',{'number':'F'+str(200+n),'name':'Fiktiv ekstra '*6,'temporary':True})
+        for n in range(40):self.store.mutate('card.save',{'number':'F'+str(200+n),'name':hashlib.sha256(str(n).encode()).hexdigest(),'temporary':True})
         result=self.change(self.admin,base,'card.save',{**base['cards'][0],'name':'Fiktiv faktisk gemt'})
         self.assertTrue(result['state_unavailable'])
         self.assertEqual(self.store.require('cards',self.card)['name'],'Fiktiv faktisk gemt')
