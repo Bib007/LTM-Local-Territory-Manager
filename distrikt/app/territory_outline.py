@@ -9,6 +9,7 @@ NEIGHBOR_GAP_M = 3
 ADDRESS_GAP_M = 1
 MAX_GRID_CELLS = 250_000
 DIRECTIONS = ((1, 0), (0, 1), (-1, 0), (0, -1))
+DIAGONALS = ((1, 1), (1, -1), (-1, 1), (-1, -1))
 
 
 def bounds(points):
@@ -119,19 +120,36 @@ class OutlineGrid:
             expanded.update(frontier)
         return expanded
 
-    def connect(self, targets, blocked, penalized=frozenset()):
-        """Return a connected set, no route (None), or raise when work is bounded."""
+    def road_cells(self, segments):
+        strips = []
+        for a,b in segments:
+            dx,dy = b[0]-a[0],b[1]-a[1]
+            length = math.hypot(dx,dy)
+            if length:
+                nx,ny = -.05*dy/length,.05*dx/length
+                strips.append([(a[0]+nx,a[1]+ny),(b[0]+nx,b[1]+ny),
+                               (b[0]-nx,b[1]-ny),(a[0]-nx,a[1]-ny)])
+        return self.dilate(self.raster(strips),5)
+
+    def connect(self, targets, blocked, penalized=frozenset(), roads=frozenset()):
+        """Find short connections to the existing outline, favoring nearby named roads."""
         cells = {targets[0]}
-        previous = targets[0]
+        left,bottom,right,top = (*targets[0],*targets[0])
         budget = 3*MAX_GRID_CELLS
-        cost_crossing = self.width*self.height+1
+        cost_crossing = 21*self.width*self.height+1
+        # Keep the existing narrow orthogonal crossing when overlap is necessary.
+        directions = DIRECTIONS if penalized else DIRECTIONS+DIAGONALS
         for target in targets[1:]:
             if target in cells:
-                previous = target
                 continue
+
             def distance(cell):
-                return abs(cell[0]-previous[0])+abs(cell[1]-previous[1])
-            queue = [(distance(target),distance(target),target)]
+                dx = max(left-cell[0],0,cell[0]-right)
+                dy = max(bottom-cell[1],0,cell[1]-top)
+                return 10*max(dx,dy)+4*min(dx,dy)
+
+            h = distance(target)
+            queue = [(h,h,target)]
             parents = {target:None}
             costs = {target:0}
             while queue:
@@ -141,16 +159,27 @@ class OutlineGrid:
                 budget -= 1
                 if budget < 0:
                     raise OverflowError()
+                x,y = current
                 if current in cells:
                     while current is not None:
+                        x,y = current
                         cells.add(current)
+                        left,bottom,right,top = min(left,x),min(bottom,y),max(right,x),max(top,y)
                         current = parents[current]
                     break
-                for dx,dy in DIRECTIONS:
-                    nxt = (current[0]+dx,current[1]+dy)
+                for dx,dy in directions:
+                    nxt = (x+dx,y+dy)
                     if not self.inside(nxt) or nxt in blocked:
                         continue
-                    cost = costs[current]+(cost_crossing if nxt in penalized else 1)
+                    diagonal = dx!=0 and dy!=0
+                    if diagonal and ((x+dx,y) in blocked or (x,y+dy) in blocked):
+                        continue
+                    step_cost = 14 if diagonal else 10
+                    if roads and nxt not in roads:
+                        step_cost += step_cost//2
+                    if nxt in penalized:
+                        step_cost += cost_crossing
+                    cost = costs[current]+step_cost
                     if nxt in costs and cost >= costs[nxt]:
                         continue
                     costs[nxt],parents[nxt] = cost,current
@@ -158,7 +187,6 @@ class OutlineGrid:
                     heappush(queue,(cost+h,h,nxt))
             else:
                 return None
-            previous = target
         return cells
 
     def outline(self, cells, forbidden):
@@ -261,7 +289,7 @@ def unselected_buildings(shapes, selected, excluded):
     return [shape for i,shape in enumerate(shapes) if i not in allowed]
 
 
-def suggest_outline(selected, addresses, buildings, neighbors):
+def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
     """Use stricter obstacles first, then try a narrow crossing if they divide the search area."""
     if not selected:
         return [],'unavailable'
@@ -350,6 +378,12 @@ def suggest_outline(selected, addresses, buildings, neighbors):
     grid = OutlineGrid(area,step)
     if grid.width*grid.height > MAX_GRID_CELLS:
         return [],'unavailable'
+    road_names = {a['road'].strip().casefold() for a in selected}
+    segments = [(project(a),project(b)) for road in roads
+                if road.get('name','').strip().casefold() in road_names
+                for a,b in zip(road['points'],road['points'][1:])
+                if near_bounds(world_area,bounds((a,b)))]
+    road_cells = grid.road_cells(segments)
     cells = list(dict.fromkeys(map(grid.cell,targets)))
     hard = grid.raster(obstacles)
     raw_borders = grid.raster(neighbor_shapes)
@@ -359,7 +393,7 @@ def suggest_outline(selected, addresses, buildings, neighbors):
         # A selected house next to a border must not trigger an overlap exception.
         return [],'unavailable'
     try:
-        route = grid.connect(cells,strict)
+        route = grid.connect(cells,strict,roads=road_cells)
         if route is not None:
             # A wider ring may enclose an obstacle even though the route
             # itself passes it safely. Retry with less space beside the route.
@@ -371,7 +405,7 @@ def suggest_outline(selected, addresses, buildings, neighbors):
             return [],'unavailable'
         if step > 2.5 or not raw_borders or grid.connect(cells,hard|raw_borders) is not None:
             return [],'unavailable'
-        route = grid.connect(cells,hard,buffered)
+        route = grid.connect(cells,hard,buffered,roads=road_cells)
         if route is not None:
             # Keep the crossing one cell wide and expand only into clear space.
             for padding in (5,2,0):

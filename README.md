@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.18 giver færre knæk i DAR-grænseforslaget. Brug **Foreslå grænse** i Kortopsætning for at beregne grænsen på ny.
+Beta 1.12.19-beta.19 foretrækker forbindelser langs de gemte veje i DAR-grænseforslaget. Brug **Foreslå grænse** i Kortopsætning for at beregne grænsen på ny.
 
 ## Installer betakanalen én gang
 
