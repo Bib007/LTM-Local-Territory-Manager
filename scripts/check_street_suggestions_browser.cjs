@@ -143,6 +143,41 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await front.waitFor();
    assert.match(await front.innerText(),/Fictional road/);
    assert.doesNotMatch(await front.innerText(),/Gate B/);
+   // A real save shortens only the chosen side and keeps street grouping.
+   const sparse='range-fixture-'+index;
+   const rangeCard=await p.evaluate(async ({sparse,index})=>{
+    const numbers=['2','3','7','8','9','15','25','67'];
+    const records=numbers.map((number,i)=>({
+     id:sparse+'-'+number,entity:'address',road:'Fiktiv intervalvej '+index,number,
+     postcode:'9999',count:1,lng:10+i*.00001,lat:55+i*.00001
+    }));
+    await mutate('geo.import',{records,source:'DAR / Datafordeleren',label:'Fictional range'});
+    await mutate('geo.assign',{number:'RANGE-'+index,address_ids:records.map(a=>a.id)});
+    const c=state.cards.find(c=>c.number==='RANGE-'+index);
+    detail(c.id);
+    return {id:c.id,addresses:c.geo_addresses.map(a=>a.number).sort()};
+   },{sparse,index});
+   await p.locator('#dialog [data-action=front-labels]').click();
+   const evenStyle=form.locator('#frontNumberStyle0'),oddStyle=form.locator('#frontNumberStyle1');
+   assert.equal(await evenStyle.inputValue(),'exact');
+   assert.equal(await oddStyle.inputValue(),'exact');
+   await oddStyle.selectOption('range');
+   assert.equal(await evenStyle.inputValue(),'exact');
+   await form.locator('button.primary').click();
+   await front.waitFor();
+   assert.deepEqual(await front.locator(':scope > div > span:first-child').allTextContents(),['Fiktiv intervalvej '+index+' 3-67 & 2 & 8']);
+   const rangePrint=await p.evaluate(id=>printDocument([card(id)],'front',{...defaultPrintProfile('front'),mode:'full',form_language:I18n.language()}),rangeCard.id);
+   assert.match(rangePrint,/3-67 &amp; 2 &amp; 8/);
+   await p.reload();
+   await p.waitForFunction(id=>state?.cards?.some(c=>c.id===id&&c.front_addresses.some(row=>row.number_style==='range')),rangeCard.id);
+   assert.deepEqual(await p.evaluate(id=>card(id).geo_addresses.map(a=>a.number).sort(),rangeCard.id),rangeCard.addresses);
+   await p.evaluate(id=>detail(id),rangeCard.id);
+   await p.locator('#dialog [data-action=front-labels]').click();
+   assert.equal(await oddStyle.inputValue(),'range');
+   await oddStyle.selectOption('exact');
+   await form.locator('button.primary').click();
+   await front.waitFor();
+   assert.match(await front.innerText(),/3 & 7-9 & 15 & 25 & 67 & 2 & 8/);
    // A missing DAR road must show exactly which requested line and range failed,
    // without presenting any single house number as if DAR had identified it.
    await p.evaluate(({id,language})=>{closeDialog();I18n.set(language);GeoUI.openCard(id);},{id:fixture.failed_card,language});

@@ -23,8 +23,8 @@ const FrontLabelsUI={
    ${c.front_label_unmatched?`<p class="notice warning">${ui('Tidligere overstyringer er bevaret, men nogle kan ikke knyttes entydigt til de nye DAR-vejlinjer. Kontrollér dem i eksporten.')}</p>`:''}
    <form id="frontLabelsForm" data-id="${esc(id)}" data-token="${esc(c.front_labels_token)}">
    ${rows.map((row,i)=>`<fieldset class="frontLabelRow" data-source-ids="${esc(JSON.stringify(row.source_ids))}"><legend>${ui('Vejlinje')} ${i+1}</legend>
-    <label>${ui('Visning af husnumre på forsiden')}</label>
-    <select data-front-number-style aria-label="${ui('Visning af husnumre på forsiden')}">
+    <label for="frontNumberStyle${i}">${ui('Visning af husnumre på forsiden')}</label>
+    <select id="frontNumberStyle${i}" data-front-number-style>
      <option value="exact" ${row.number_style!=='range'?'selected':''}>${ui('Vis de valgte numre')}</option>
      <option value="range" ${row.number_style==='range'?'selected':''} ${!row.short_numbers?'disabled':''}>${ui('Vis fra første til sidste')}${row.short_numbers?' · '+esc(row.short_numbers):''}</option>
     </select>
