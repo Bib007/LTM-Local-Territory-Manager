@@ -247,174 +247,195 @@ def house_key(address):
 
 
 def unselected_buildings(shapes, selected, excluded):
-    """Associate each known entrance with its closest saved footprint."""
-    tile_size = 25
-    points = set(selected)|set(excluded)
-    excluded = set(excluded)
-    tiles = defaultdict(list)
-    for p in points:
-        tiles[(math.floor(p[0]/tile_size),math.floor(p[1]/tile_size))].append(p)
-    tx0,ty0,tx1,ty1 = bounds(tiles)
-    nearest = {}
-    blocked = set()
+    """Reserve footprints linked to an unselected address, not every mapped building.
+
+    The map can contain garages, sheds, churches and other buildings without a
+    registered entrance. They are helpful background, not territory boundaries.
+    A known unselected entrance must still protect its nearest footprint, even
+    when the selected addresses share the same physical building.
+    """
+    if not shapes or not excluded:
+        return []
     reach = 5
-    for i,shape in enumerate(shapes):
-        x0,y0,x1,y1 = bounds(shape)
-        x_tiles = range(max(tx0,math.floor((x0-reach)/tile_size)),min(tx1,math.floor((x1+reach)/tile_size))+1)
-        y_tiles = range(max(ty0,math.floor((y0-reach)/tile_size)),min(ty1,math.floor((y1+reach)/tile_size))+1)
-        if len(x_tiles)*len(y_tiles) <= len(tiles):
-            nearby = (tiles.get((x,y),()) for x in x_tiles for y in y_tiles)
-        else:
-            nearby = (bucket for (x,y),bucket in tiles.items() if x in x_tiles and y in y_tiles)
-        for bucket in nearby:
-            for p in bucket:
-                if not (x0-reach<=p[0]<=x1+reach and y0-reach<=p[1]<=y1+reach):
-                    continue
-                inside = point_in_polygon(p,shape)
-                if inside and p in excluded:
-                    blocked.add(i)
-                distance = 0 if inside else min(point_segment_distance(p,a,b) for a,b in edges(shape))
-                if distance>reach:
-                    continue
-                old = nearest.get(p)
-                if old is None or distance<old[0]-1e-6:
-                    nearest[p] = (distance,{i})
-                elif abs(distance-old[0])<=1e-6:
-                    old[1].add(i)
-    for p in excluded:
-        if p in nearest:
-            blocked.update(nearest[p][1])
-    # A tied entrance is ambiguous. Only allow a footprint associated unambiguously.
-    allowed = {next(iter(nearest[p][1])) for p in selected if p in nearest and len(nearest[p][1])==1}-blocked
-    return [shape for i,shape in enumerate(shapes) if i not in allowed]
+    tile_size = 25
+    tiles = defaultdict(list)
+    for point in set(excluded):
+        tiles[(math.floor(point[0]/tile_size), math.floor(point[1]/tile_size))].append(point)
+    nearest = {}
+    for i, shape in enumerate(shapes):
+        x0, y0, x1, y1 = bounds(shape)
+        for x in range(math.floor((x0-reach)/tile_size), math.floor((x1+reach)/tile_size)+1):
+            for y in range(math.floor((y0-reach)/tile_size), math.floor((y1+reach)/tile_size)+1):
+                for point in tiles.get((x,y), ()):
+                    if not (x0-reach <= point[0] <= x1+reach and
+                            y0-reach <= point[1] <= y1+reach):
+                        continue
+                    distance = 0 if point_in_polygon(point, shape) else min(
+                        point_segment_distance(point, a, b) for a, b in edges(shape))
+                    if distance > reach:
+                        continue
+                    old = nearest.get(point)
+                    if old is None or distance < old[0]-1e-6:
+                        nearest[point] = (distance, {i})
+                    elif abs(distance-old[0]) <= 1e-6:
+                        old[1].add(i)
+    protected = {i for _, matches in nearest.values() for i in matches}
+    return [shape for i, shape in enumerate(shapes) if i in protected]
 
 
 def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
-    """Use stricter obstacles first, then try a narrow crossing if they divide the search area."""
+    """Draw a generous territory around the selected homes, not a thin route.
+
+    1. Prefer a broad, clean silhouette with few corners, like a hand-drawn map.
+    2. If that would include an unselected home or another territory, grow a
+       connected outline around safe paths and simplify its perimeter.
+    3. Buildings with no known unselected address and ordinary map background
+       are *not* barriers. An unavoidable neighboring-territory crossing is
+       explicitly flagged, never silently treated as clear.
+
+    A proposal is display-only until the caller rechecks it at save time.
+    """
     if not selected:
-        return [],'unavailable'
-    chosen = sorted({(a['lng'],a['lat']) for a in selected})
-    lng,lat = chosen[0]
+        return [], 'unavailable'
+
+    chosen = sorted({(a['lng'], a['lat']) for a in selected})
+    lng, lat = chosen[0]
     scale = 111320*math.cos(math.radians(lat))
 
     def project(point):
-        return ((point[0]-lng)*scale,(point[1]-lat)*111320)
+        return ((point[0]-lng)*scale, (point[1]-lat)*111320)
 
     def unproject(point):
-        return [lng+point[0]/scale,lat+point[1]/111320]
+        return [lng+point[0]/scale, lat+point[1]/111320]
 
-    targets = sorted(set(map(project,chosen)))
-    x0,y0,x1,y1 = bounds(targets)
-    margin = min(180,max(60,max(x1-x0,y1-y0)*.30))
-    area = (x0-margin-.37,y0-margin-.61,x1+margin,y1+margin)
-    # Include the ends of nearby borders when they fit in the local search,
-    # so a detour around an ordinary adjacent area wins over a crossing.
-    extent = (x0-240,y0-240,x1+240,y1+240)
+    targets = sorted(set(map(project, chosen)))
+    x0, y0, x1, y1 = bounds(targets)
+    margin = min(240, max(85, max(x1-x0, y1-y0)*.32))
+    area = (x0-margin-.37, y0-margin-.61, x1+margin, y1+margin)
+    # Allow a detour around the end of a nearby neighbor instead of crossing it.
+    extent = (x0-280, y0-280, x1+280, y1+280)
     for neighbor in neighbors:
         box = bounds(neighbor)
-        corner0,corner1 = box[:2],box[2:]
-        box = (*project(corner0),*project(corner1))
+        box = (*project(box[:2]), *project(box[2:]))
         fits = box[0]>extent[0] and box[1]>extent[1] and box[2]<extent[2] and box[3]<extent[3]
-        if fits and near_bounds((x0,y0,x1,y1),box,12):
-            area = (min(area[0],box[0]-10),min(area[1],box[1]-10),max(area[2],box[2]+10),max(area[3],box[3]+10))
-    step = max(.75,math.sqrt((area[2]-area[0])*(area[3]-area[1])/(MAX_GRID_CELLS*.85)))
-    # The last grid cells can extend past the requested area. Include the data
-    # beside them too, so rounding the grid cannot hide nearby obstacles.
+        if fits and near_bounds((x0,y0,x1,y1),box,16):
+            area = (min(area[0],box[0]-12),min(area[1],box[1]-12),
+                    max(area[2],box[2]+12),max(area[3],box[3]+12))
+
+    step = max(.75, math.sqrt((area[2]-area[0])*(area[3]-area[1])/(MAX_GRID_CELLS*.85)))
     extra = step+NEIGHBOR_GAP_M+5
     world_area = bounds([unproject((area[0]-extra,area[1]-extra)),
                          unproject((area[2]+extra,area[3]+extra))])
-    houses = {house_key(a) for a in selected}
+    chosen_houses = {house_key(a) for a in selected}
     other = [project((a['lng'],a['lat'])) for a in addresses
-             if not a.get('retired') and house_key(a) not in houses
+             if not a.get('retired') and house_key(a) not in chosen_houses
              and near_bounds(world_area,(a['lng'],a['lat'],a['lng'],a['lat']))]
-    neighbor_shapes = [list(map(project,p)) for p in neighbors if near_bounds(world_area,bounds(p))]
+    neighbor_shapes = [list(map(project,p)) for p in neighbors
+                       if near_bounds(world_area,bounds(p))]
+    footprints = [list(map(project,p)) for p in buildings
+                  if near_bounds(world_area,bounds(p))]
     obstacles = [square(p,ADDRESS_GAP_M) for p in other]
-    footprints = [list(map(project,building)) for building in buildings if near_bounds(world_area,bounds(building))]
-    obstacles.extend(unselected_buildings(footprints,targets,other))
+    obstacles.extend(unselected_buildings(footprints, targets, other))
     obstacle_boxes = [(p,bounds(p)) for p in obstacles]
+    neighbor_boxes = [(p,bounds(p)) for p in neighbor_shapes]
 
     def checked(ring, gap):
+        if not ring or len(ring)<3:
+            return []
         try:
             polygon = valid_polygon([unproject(p) for p in ring],limit=5000)
         except ValueError:
             return []
-        ring = list(map(project,polygon))
-        box = bounds(ring)
-        if any(not point_in_polygon(p,ring) for p in targets) or any(near_bounds(box,b) and meets(ring,p,0) for p,b in obstacle_boxes):
+        projected = list(map(project,polygon))
+        box = bounds(projected)
+        if any(not point_in_polygon(p,projected) for p in targets):
             return []
-        if gap is not None and any(meets(ring,p,gap) for p in neighbor_shapes):
+        if any(near_bounds(box,b) and meets(projected,p,0)
+               for p,b in obstacle_boxes):
+            return []
+        if gap is not None and any(near_bounds(box,b,gap) and meets(projected,p,gap)
+                                   for p,b in neighbor_boxes):
             return []
         return polygon
 
-    neighbor_boxes = [(p,bounds(p)) for p in neighbor_shapes]
-
-    def can_shortcut(patch):
-        # The chord changes only this patch. Keep the original bends wherever
-        # the change would affect a selected house or enter reserved space.
+    def safe_shortcut(patch):
+        """Only replace a contour bend if its triangular sweep is empty."""
         box = bounds(patch)
-        return (not any(near_bounds(box,(*p,*p)) and point_in_polygon(p,patch) for p in targets)
-                and not any(near_bounds(box,b) and meets(patch,p,0) for p,b in obstacle_boxes)
-                and not any(near_bounds(box,b,NEIGHBOR_GAP_M) and meets(patch,p,NEIGHBOR_GAP_M)
+        return (not any(near_bounds(box,(*p,*p)) and point_in_polygon(p,patch)
+                        for p in targets)
+                and not any(near_bounds(box,b) and meets(patch,p,0)
+                            for p,b in obstacle_boxes)
+                and not any(near_bounds(box,b,NEIGHBOR_GAP_M) and
+                            meets(patch,p,NEIGHBOR_GAP_M)
                             for p,b in neighbor_boxes))
 
     def smooth(ring, gap):
-        for tolerance in (8,3):
-            reduced = simplify_ring(ring,can_shortcut,tolerance)
-            if len(reduced) < len(ring):
-                polygon = checked(reduced,gap)
-                if polygon:
-                    return polygon
+        if not ring:
+            return []
+        for tolerance in (16,8,3):
+            simplified = simplify_ring(ring,safe_shortcut,tolerance)
+            if len(simplified)<len(ring):
+                result = checked(simplified,gap)
+                if result:
+                    return result
         return checked(ring,gap)
 
-    try:
-        hull = enclosing_outline([list(p) for p in chosen])
-    except ValueError:
-        hull = []
-    if hull:
-        clear = checked([project(p) for p in hull],NEIGHBOR_GAP_M)
-        if clear:
-            return clear,'clear'
+    # Unlike the old five-metre corridor, start with generous whole-area
+    # proposals. Dense streets naturally select a smaller band; sparse rural
+    # areas retain a comfortable outline instead of hugging every entrance.
+    for padding in (48,36,26,18,12):
+        try:
+            envelope = enclosing_outline([list(p) for p in chosen],padding_m=padding)
+        except ValueError:
+            continue
+        result = checked([project(p) for p in envelope],NEIGHBOR_GAP_M)
+        if result:
+            return result,'clear'
 
+    # When a broad envelope would include another home, connect the chosen
+    # entrances inside safe space. Widen that connected shape aggressively,
+    # but roll back to smaller widths if doing so encloses a protected address.
     grid = OutlineGrid(area,step)
     if grid.width*grid.height > MAX_GRID_CELLS:
         return [],'unavailable'
-    road_names = {a['road'].strip().casefold() for a in selected}
+    names = {a['road'].strip().casefold() for a in selected}
     segments = [(project(a),project(b)) for road in roads
-                if road.get('name','').strip().casefold() in road_names
+                if road.get('name','').strip().casefold() in names
                 for a,b in zip(road['points'],road['points'][1:])
                 if near_bounds(world_area,bounds((a,b)))]
     road_cells = grid.road_cells(segments)
-    cells = list(dict.fromkeys(map(grid.cell,targets)))
+    targets_cells = list(dict.fromkeys(map(grid.cell,targets)))
     hard = grid.raster(obstacles)
-    raw_borders = grid.raster(neighbor_shapes)
-    buffered = grid.dilate(raw_borders,NEIGHBOR_GAP_M)
-    strict = hard|buffered
-    if any(cell in strict for cell in cells):
-        # A selected house next to a border must not trigger an overlap exception.
+    borders = grid.raster(neighbor_shapes)
+    neighbor_buffer = grid.dilate(borders,NEIGHBOR_GAP_M)
+    forbidden = hard | neighbor_buffer
+    if any(cell in forbidden for cell in targets_cells):
         return [],'unavailable'
+
     try:
-        route = grid.connect(cells,strict,roads=road_cells)
+        route = grid.connect(targets_cells,forbidden,roads=road_cells)
         if route is not None:
-            # A wider ring may enclose an obstacle even though the route
-            # itself passes it safely. Retry with less space beside the route.
-            for padding in (5,2,0):
-                area_cells = grid.expand(route,strict,padding)
-                polygon = smooth(grid.outline(area_cells,strict),NEIGHBOR_GAP_M)
-                if polygon:
-                    return polygon,'clear'
+            for padding in (36,26,18,12,8,4,0):
+                grown = grid.expand(route,forbidden,padding)
+                result = smooth(grid.outline(grown,forbidden),NEIGHBOR_GAP_M)
+                if result:
+                    return result,'clear'
             return [],'unavailable'
-        if step > 2.5 or not raw_borders or grid.connect(cells,hard|raw_borders) is not None:
+
+        # The user still gets a visible warning when an existing neighboring
+        # polygon truly cuts their selected addresses into separate pieces.
+        # Never hide a crossing behind a "clear" label.
+        if step>2.5 or not borders or grid.connect(targets_cells,hard|borders) is not None:
             return [],'unavailable'
-        route = grid.connect(cells,hard,buffered,roads=road_cells)
+        route = grid.connect(targets_cells,hard,neighbor_buffer,roads=road_cells)
         if route is not None:
-            # Keep the crossing one cell wide and expand only into clear space.
-            for padding in (5,2,0):
-                area_cells = grid.expand(route,strict,padding)
-                polygon = smooth(grid.outline(area_cells,hard|(buffered-route)),None)
-                if polygon:
-                    ring = list(map(project,polygon))
+            for padding in (18,10,5,0):
+                grown = grid.expand(route,forbidden,padding)
+                result = smooth(grid.outline(grown,hard|(neighbor_buffer-route)),None)
+                if result:
+                    ring = list(map(project,result))
                     if any(meets(ring,p,0) for p in neighbor_shapes):
-                        return polygon,'crossing'
+                        return result,'crossing'
     except OverflowError:
         pass
     return [],'unavailable'

@@ -142,7 +142,40 @@ class OutlineTests(unittest.TestCase):
         self.assertLessEqual(len(outline),14)
         self.assertTrue(any(a[0]!=b[0] and a[1]!=b[1] for a,b in zip(outline,outline[1:]+outline[:1])))
         outline=self.trace(buildings=[building])
+        self.assertTrue(meets(outline,building,0),
+                        'A footprint without another address must not pinch the territory')
+
+    def test_open_rural_space_is_a_generous_simple_polygon(self):
+        # Fictional sparse group, like a hand-drawn rural boundary.
+        self.selected=[self.address(1,-110,0),self.address(3,-30,50),
+                       self.address(5,60,15),self.address(7,115,-30)]
+        harmless=[self.rectangle(-80,-12,-65,12),
+                  self.rectangle(2,0,15,10),
+                  self.rectangle(70,20,85,32)]
+        outline=self.trace(buildings=harmless)
+        width=(max(p[1] for p in outline)-min(p[1] for p in outline))*111320
+        self.assertGreater(width,130,'Unobstructed land should not turn into a thin corridor')
+        self.assertLessEqual(len(outline),16,'The proposed boundary should have long simple edges')
+        self.assertTrue(any(meets(outline,shape,0) for shape in harmless),
+                        'Empty buildings are not arbitrary hard obstacles')
+
+    def test_dense_street_is_safe_but_not_just_five_metres_wide(self):
+        self.selected=[self.address(n,x,0) for n,x in ((1,-45),(3,-15),(5,15),(7,45))]
+        # Houses on the other side of the street protect that side only.
+        outsiders=[self.address(n,x,28) for n,x in ((2,-45),(4,-15),(6,15),(8,45))]
+        neutral=self.rectangle(-20,-8,20,9)
+        outline=self.trace(others=outsiders,buildings=[neutral])
+        low=min(p[1] for p in outline)
+        self.assertLess(low,self.point(0,-20)[1])
+        self.assertFalse(any(point_in_polygon((a['lng'],a['lat']),outline) for a in outsiders))
+        self.assertLessEqual(len(outline),24)
+
+    def test_known_unselected_house_remains_protected_inside_footprint(self):
+        other=self.address(2,0,0)
+        building=self.rectangle(-9,-9,9,9)
+        outline=self.trace(others=[other],buildings=[building])
         self.assertFalse(meets(outline,building,0))
+        self.assertFalse(point_in_polygon(self.point(0,0),outline))
 
     def test_parallel_territory_keeps_three_metre_gap(self):
         neighbor=self.rectangle(-60,8,60,50)
