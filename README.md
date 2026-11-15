@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.20 bevarer **(lige)** og **(ulige)** ved forkortede husnummerintervaller på S-12. Brug **Rediger forsidens vejlinjer** → **Vis fra første til sidste** for at se markeringerne i live-forhåndsvisningen, print, PDF og delte kort. Beta.19's vejfølgende DAR-grænseforslag er fortsat med.
+Beta 1.12.19-beta.21 indfører en ny, mere rummelig DAR-grænsealgoritme. **Foreslå grænse** forsøger først et enkelt, bredt distrikt og indsnævrer kun dér, hvor andre adresser eller nabodistrikter kræver det. Veje og bygninger uden kendte uvedkommende adresser er ikke i sig selv forhindringer. Kontrollér stadig grænsen på kortet inden gemning. Beta.20's `(lige)`/`(ulige)`-rettelse er bevaret.
 
 ## Installer betakanalen én gang
 
