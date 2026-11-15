@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.15 · 2026-11-15
+
+- **Territory cards:** See the card front change as soon as you select a house-number range. **Save and show card** opens the saved front, and previously shared PDFs get a shortcut to update them.
+
 ## 1.12.19-beta.14 · 2026-11-14
 
 - **Front street lines:** Add a per-line **Show selected house numbers** (default) versus **Show first–last range** option. The selected addresses 3, 7, 9, 15, 25 and 67 can appear as 3–67 on S-12 without assigning any intervening house numbers to the territory.
