@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.15 · 2026-11-15
+
+- **Distriktskort:** Se virkningen på selve forsiden, så snart du vælger et husnummerinterval. **Gem og fremvis kort** åbner den gemte forside, og tidligere delte PDF’er får en genvej til at blive opdateret.
+
 ## 1.12.19-beta.14 · 2026-11-14
 
 - **Forsidens vejlinjer:** Tilføj et valg pr. geografisk vejlinje mellem **Vis de valgte numre** (standard) og **Vis fra første til sidste**. Eksempel: de valgte adresser 3, 7, 9, 15, 25, 67 kan vises på S-12 som 3–67, uden at mellemliggende husnumre bliver tilføjet til distriktet.
