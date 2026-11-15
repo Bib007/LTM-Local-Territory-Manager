@@ -1,11 +1,7 @@
-# LTM 1.12.22 · Opgavebilleder, IB og vejlinjer
+# LTM 1.12.23 · Se vejintervallet på kortet med det samme
 
-Åbn **Opgaver → Ny opgave** eller redigér en eksisterende opgave. Vælg **Vedhæft billeder**, og gem. Billederne kan åbnes fra opgaven i LTM. Brug en nyere LTM-version til at gendanne en sikkerhedskopi, der indeholder opgavebilleder.
-
-Åbn **Kort → IB-bagside → Foreslå adresser for hele kortet**. Fjern fluebenene ved adresser, du vil beholde, og gem de valgte. Forsiden samler lige og ulige husnumre for samme vej med &.
+Åbn **Rediger forsidens vejlinjer**, og vælg **Vis fra første til sidste**. Forhåndsvisningen viser fx **3–67** med det samme. Vælg **Gem og fremvis kort** for at bruge visningen på forsiden, i print og i nye eksporter. Har du allerede delt en PDF på Google Drive, kan du opdatere den fra kortet efter gemning.
 
 ## English
 
-Open **Tasks → New task** or edit an existing task. Choose **Attach images**, then save. Open the pictures from the task. Use this version or later to restore backups containing task images.
-
-Open **Card → Do-not-call side → Suggest addresses for the entire card**. Clear the boxes beside addresses you want to keep and save the remaining selection. The card front joins odd and even ranges for the same street with &.
+Open **Edit street lines on the front** and select **Show first–last range**. The preview immediately shows the result, such as **3–67**. Select **Save and show card** to use this view on the front, in print, and in new exports. If you already shared a PDF on Google Drive, update it from the card after saving.
