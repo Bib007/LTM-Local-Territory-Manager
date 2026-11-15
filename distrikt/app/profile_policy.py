@@ -52,6 +52,7 @@ POST={
  '/api/export/readable/prepare':READ_ALL|{'backup.export'},
  '/api/export/readable/image':READ_ALL|{'backup.export'},
  '/api/export/readable/finish':READ_ALL|{'backup.export'},
+ '/api/export/readable/cancel':READ_ALL|{'backup.export'},
  '/api/connections/restore':('connections.manage',),
  '/api/share/connect':('connections.manage',),
  '/api/share/disconnect':('connections.manage',),

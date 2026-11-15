@@ -2,6 +2,13 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.16 · 2026-11-15
+
+- **Readable archive:** Generate cards together from local map data and export boundaries and address points as KML. Large archives are assembled on disk.
+- **Backup:** ZIP names include date and time. Use Save as in browsers with a file picker, or use browser download settings. Import supports ZIP files up to 512 MB.
+- **Territories:** Open selects the card in the list so the selection is visible when you close it.
+- **Concurrent edits:** Open editors retain their own starting point while users work on different cards.
+
 ## 1.12.19-beta.15 · 2026-11-15
 
 - **Territory cards:** See the card front change as soon as you select a house-number range. **Save and show card** opens the saved front, and previously shared PDFs get a shortcut to update them.

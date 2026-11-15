@@ -6,6 +6,8 @@ import io
 import json
 import secrets
 import struct
+import tempfile
+from xml.etree.ElementTree import Element, SubElement, tostring
 import textwrap
 import threading
 import time
@@ -17,7 +19,6 @@ from resource_paths import templates_dir
 from pdf_export import pdf_document, text, s13_pdf, allocation_rows
 from sharing import public_members, public_name, png_bytes, fingerprint, qrcode
 
-MAX_IMAGES=100*1024*1024
 
 def safe(value):
     # Keep unsupported characters identifiable; CSV always retains exact UTF-8 text.
@@ -82,22 +83,54 @@ def png_image(raw):
         previous=row
     return zlib.compress(result),width,height
 
-def image_pdf(images):
-    """One self-contained landscape A4 page per rendered public card."""
-    objects=[b'<< /Type /Catalog /Pages 2 0 R >>',b''];kids=[]
+def write_image_pdf(out, images, count):
+    """Write one landscape A4 page at a time to keep memory bounded."""
+    out.write(b'%PDF-1.4\n')
+    offsets=[]
+
+    def write(obj):
+        offsets.append(out.tell())
+        out.write(('%d 0 obj\n'%len(offsets)).encode())
+        out.write(obj)
+        out.write(b'\nendobj\n')
+
+    write(b'<< /Type /Catalog /Pages 2 0 R >>')
+    kids=' '.join('%d 0 R'%(4+3*i) for i in range(count))
+    write(('<< /Type /Pages /Kids [%s] /Count %d >>'%(kids,count)).encode())
     for raw in images:
-        packed,w,h=png_image(raw);image_id=len(objects)+1
-        objects.append(('<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns %d >> /Length %d >>\nstream\n'%(w,h,w,len(packed))).encode()+packed+b'\nendstream')
-        page_id=len(objects)+1;content_id=page_id+1;kids.append('%d 0 R'%page_id)
-        objects.append(('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 841.89 595.28] /Resources << /XObject << /Im1 %d 0 R >> >> /Contents %d 0 R >>'%(image_id,content_id)).encode())
+        packed,w,h=png_image(raw)
+        image_id=len(offsets)+1
+        write(('<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns %d >> /Length %d >>\nstream\n'%(w,h,w,len(packed))).encode()+packed+b'\nendstream')
+        write(('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 841.89 595.28] /Resources << /XObject << /Im1 %d 0 R >> >> /Contents %d 0 R >>'%(image_id,image_id+2)).encode())
         commands=b'q 780 0 0 553.091 30 21 cm /Im1 Do Q'
-        objects.append(('<< /Length %d >>\nstream\n'%len(commands)).encode()+commands+b'\nendstream')
-    objects[1]=('<< /Type /Pages /Kids [%s] /Count %d >>'%(' '.join(kids),len(kids))).encode()
-    result=bytearray(b'%PDF-1.4\n');offsets=[0]
-    for i,obj in enumerate(objects,1):offsets.append(len(result));result.extend(('%d 0 obj\n'%i).encode()+obj+b'\nendobj\n')
-    xref=len(result);result.extend(('xref\n0 %d\n0000000000 65535 f \n'%len(offsets)).encode())
-    for n in offsets[1:]:result.extend(('%010d 00000 n \n'%n).encode())
-    result.extend(('trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n'%(len(offsets),xref)).encode());return bytes(result)
+        write(('<< /Length %d >>\nstream\n'%len(commands)).encode()+commands+b'\nendstream')
+    xref=out.tell()
+    out.write(('xref\n0 %d\n0000000000 65535 f \n'%(len(offsets)+1)).encode())
+    for offset in offsets:out.write(('%010d 00000 n \n'%offset).encode())
+    out.write(('trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n'%(len(offsets)+1,xref)).encode())
+
+
+def map_kml(cards):
+    document=Element('kml',{'xmlns':'http://www.opengis.net/kml/2.2'})
+    root=SubElement(document,'Document')
+    SubElement(root,'name').text='LTM distriktskort'
+    for item in cards:
+        card=item['card']
+        folder=SubElement(root,'Folder')
+        title=card['number']+' · '+item['name'] if item['name'] else card['number']
+        SubElement(folder,'name').text=title
+        polygon=card.get('geo_polygon') or []
+        if len(polygon)>=3:
+            mark=SubElement(folder,'Placemark')
+            SubElement(mark,'name').text=title
+            ring=SubElement(SubElement(SubElement(mark,'Polygon'),'outerBoundaryIs'),'LinearRing')
+            points=[*polygon,polygon[0]] if polygon[-1]!=polygon[0] else polygon
+            SubElement(ring,'coordinates').text=' '.join(f'{lng},{lat}' for lng,lat in points)
+        for address in item['members']:
+            mark=SubElement(folder,'Placemark')
+            SubElement(mark,'name').text=' '.join(filter(None,(address['road'],address['number'])))
+            SubElement(SubElement(mark,'Point'),'coordinates').text=f"{address['lng']},{address['lat']}"
+    return tostring(document,encoding='utf-8',xml_declaration=True)
 
 
 def tables(state,geo):
@@ -166,12 +199,22 @@ class ReadableExport:
             for c in state['cards']+state.get('archived_cards',[]):
                 members=public_members(view,c)
                 if c.get('geo_polygon') or members:cards.append({'card':{k:c.get(k) for k in ('id','number','geo_polygon','map_color')},'members':members,'name':public_name(view,c)+(' · Arkiveret' if c.get('archived') else '')})
-            self.job={'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'front_images':{},'size':0,'until':time.monotonic()+3600}
+            self.clear()
+            self.job={'temp':tempfile.TemporaryDirectory(prefix='ltm-readable-'),'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'front_images':{},'until':time.monotonic()+3600}
             return {**{k:self.job[k] for k in ('token','revision','cards')},'fronts':[c['id'] for c in state['cards']+state.get('archived_cards',[])]}
+    def clear(self):
+        if self.job:
+            job,self.job=self.job,None
+            job['temp'].cleanup()
+    def cancel(self,token):
+        with self.lock:
+            if self.job and secrets.compare_digest(str(token),self.job['token']):self.clear()
+            return {'ok':True}
     def require(self,token):
         job=self.job
-        if not job or not secrets.compare_digest(str(token),job['token']) or time.monotonic()>job['until']:raise ValueError('Eksporten er udløbet. Start igen.')
-        if self.store.revision!=job['revision']:self.job=None;raise ValueError('Data er ændret. Start eksporten igen for at få én samlet version.')
+        if job and time.monotonic()>job['until']:self.clear();job=None
+        if not job or not secrets.compare_digest(str(token),job['token']):raise ValueError('Eksporten er udløbet. Start igen.')
+        if self.store.revision!=job['revision']:self.clear();raise ValueError('Data er ændret. Start eksporten igen for at få én samlet version.')
         return job
     def image(self,data):
         with self.lock,self.store.lock:
@@ -180,30 +223,49 @@ class ReadableExport:
             allowed={c['id'] for c in job['state']['cards']+job['state'].get('archived_cards',[])} if front else {c['card']['id'] for c in job['cards']}
             if ident not in allowed:raise ValueError('Ukendt eksportkort.')
             images=job['front_images'] if front else job['images']
-            raw=png_bytes(data.get('png'));old=images.get(ident,b'');size=job['size']-len(old)+len(raw)
-            if size>MAX_IMAGES:raise ValueError('Kortbillederne fylder mere end 100 MB. Eksporten er stoppet.')
-            images[ident]=raw;job['size']=size;return {'ok':True}
-    def finish(self,token):
+            raw=png_bytes(data.get('png'))
+            target=images.get(ident) or Path(job['temp'].name)/(secrets.token_hex(16)+'.png')
+            target.write_bytes(raw)
+            images[ident]=target
+            return {'ok':True}
+    def finish(self,token,out):
         with self.lock:
             job=self.require(token)
             if len(job['images'])!=len(job['cards']):raise ValueError('Ikke alle digitale kort er dannet. Ingen eksportpakke er hentet.')
             state=job['state'];files=tables(state,job['geo']);cards=state['cards']+state.get('archived_cards',[]);refs={c['id']:c['number'] for c in cards}
             if len(job['front_images'])!=len(cards):raise ValueError('Ikke alle forsider er dannet. Ingen eksportpakke er hentet.')
-            files['PDF/01-alle-forsider.pdf']=image_pdf([job['front_images'][c['id']] for c in cards]) if cards else text_pdf('Forsider',[])
+            image_groups=[('PDF/01-alle-forsider.pdf','Forsider',[job['front_images'][c['id']] for c in cards]),
+                ('PDF/03-alle-digitale-kort.pdf','Digitale kort',[job['images'][c['card']['id']] for c in job['cards']])]
             files['PDF/02-alle-IB-bagsider.pdf']=text_pdf('IB-bagsider',[(str(c['number']),[str(r.get('road',''))+' '+str(r.get('number',''))+' · '+str(r.get('date_text') or r.get('date','')) for r in state['ib'] if r['card_id']==c['id']]) for c in cards])
-            files['PDF/03-alle-digitale-kort.pdf']=image_pdf([job['images'][c['card']['id']] for c in job['cards']]) if job['cards'] else text_pdf('Digitale kort',[])
             files['PDF/04-alle-opgaver.pdf']=text_pdf('Alle opgaver',[(('Kort '+refs.get(r.get('card_id'),'')+' · ' if r.get('card_id') else '')+('Udført' if r.get('resolved') else 'Åben'),[r.get('text',''),'Oprettet: '+str(r.get('created','')),'Gentagelse: '+json.dumps(r.get('recurrence'),ensure_ascii=False),'Historik: '+json.dumps(r.get('task_history',[]),ensure_ascii=False)]) for r in state['notes']])
             days=[state['today']]
             for kind,keys in [('cards',('last_completed',)),('archived_cards',('last_completed',)),('loans',('assigned','cycle_start','returned')),('completions',('date','previous_completed'))]:
                 days.extend(r.get(k) for r in state.get(kind,[]) for k in keys if r.get(k))
             years=sorted({date.fromisoformat(d).year+(date.fromisoformat(d).month>=9) for d in days})
             for year in range(min(years),max(years)+1):files['S-13/S-13-%d-%d.pdf'%(year-1,year)]=s13_pdf(state,year)
-            files['LAES-MIG.txt']=('LTM · lokalt læsearkiv\n\nIndeholder private navne, udlån, IB og opgaver. Opbevar pakken privat.\nPDF: aktive og arkiverede kort, hvor data findes. Forsider på original blank formular, IB pr. kort, digitale kort med indlejret OpenStreetMap samt alle opgaver. Store tekstmængder fortsætter på næste side. Kort uden geografi findes i forsider/CSV, ikke som opdigtede digitale kort.\nS-13: hvert tjenesteår fra ældste gemte dato til nyeste; aktive og arkiverede kort indgår.\nCSV: UTF-8 med semikolon. Præcise adresser bevares; ældre vejlinjer er mærket som vejlinjer. Ingen intervaller opfindes. Tekst der kan opfattes som regnearksformler får en indledende apostrof. CSV bevarer Unicode; tegn udenfor PDF-fontens tegnsæt angives med U+kode i læse-PDF.\nIngen adgangskoder, API-nøgler, forbindelsesfiler, sessionsnøgler eller rå indstillinger er medtaget. Pakken erstatter ikke LTM-sikkerhedskopien og kan ikke gendannes som en backup. Eksporten godkender ikke genprint og ændrer ikke Google-adgang.\n').encode('utf-8')
-            files['SHA256SUMS.txt']=''.join(hashlib.sha256(v).hexdigest()+'  '+k+'\n' for k,v in sorted(files.items())).encode()
-            out=io.BytesIO()
+            files['LAES-MIG.txt']=('LTM · lokalt læsearkiv\n\nIndeholder private navne, udlån, IB og opgaver. Opbevar pakken privat.\nPDF: aktive og arkiverede kort, hvor data findes. Forsider på original blank formular, IB pr. kort, digitale kort med gemte grænser og adressepunkter samt alle opgaver. Store tekstmængder fortsætter på næste side. Kort uden geografi findes i forsider/CSV, ikke som opdigtede digitale kort.\nKML: gemte geografiske kortgrænser og adressepunkter.\nS-13: hvert tjenesteår fra ældste gemte dato til nyeste; aktive og arkiverede kort indgår.\nCSV: UTF-8 med semikolon. Præcise adresser bevares; ældre vejlinjer er mærket som vejlinjer. Ingen intervaller opfindes. Tekst der kan opfattes som regnearksformler får en indledende apostrof. CSV bevarer Unicode; tegn udenfor PDF-fontens tegnsæt angives med U+kode i læse-PDF.\nIngen adgangskoder, API-nøgler, forbindelsesfiler, sessionsnøgler eller rå indstillinger er medtaget. Pakken erstatter ikke LTM-sikkerhedskopien og kan ikke gendannes som en backup. Eksporten godkender ikke genprint og ændrer ikke Google-adgang.\n').encode('utf-8')
+            files['KML/distriktskort.kml']=map_kml(job['cards'])
+            checksums={}
             with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as archive:
-                for name,raw in sorted(files.items()):archive.writestr(name,raw)
+                for name,raw in sorted(files.items()):
+                    archive.writestr(name,raw)
+                    checksums[name]=hashlib.sha256(raw).hexdigest()
+                for name,title,images in image_groups:
+                    if not images:
+                        raw=text_pdf(title,[])
+                        archive.writestr(name,raw)
+                        checksums[name]=hashlib.sha256(raw).hexdigest()
+                        continue
+                    with tempfile.TemporaryFile() as pdf:
+                        write_image_pdf(pdf,(path.read_bytes() for path in images),len(images))
+                        pdf.seek(0)
+                        digest=hashlib.sha256()
+                        with archive.open(name,'w',force_zip64=True) as entry:
+                            for chunk in iter(lambda:pdf.read(1024*1024),b''):
+                                digest.update(chunk)
+                                entry.write(chunk)
+                        checksums[name]=digest.hexdigest()
+                archive.writestr('SHA256SUMS.txt',''.join(value+'  '+name+'\n' for name,value in sorted(checksums.items())))
             with self.store.lock:
                 self.require(token)
-                self.job=None
-            return out.getvalue()
+                self.clear()
