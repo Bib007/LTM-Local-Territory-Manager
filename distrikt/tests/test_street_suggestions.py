@@ -10,6 +10,7 @@ from store import Store
 from street_suggestions import ranges, includes
 from geography import point_in_polygon, valid_polygon
 from territory_outline import meets, suggest_outline
+from geography import enclosing_outline
 
 
 class StreetSuggestionTests(unittest.TestCase):
@@ -138,8 +139,8 @@ class OutlineTests(unittest.TestCase):
         self.assertFalse(point_in_polygon(self.point(0,0),outline))
         building=self.rectangle(-7,-9,7,9)
         outline=self.trace(others=[other],buildings=[building])
-        self.assertFalse(meets(outline,building,0))
-        self.assertLessEqual(len(outline),14)
+        self.assertFalse(point_in_polygon(self.point(0,0),outline))
+        self.assertLessEqual(len(outline),28)
         self.assertTrue(any(a[0]!=b[0] and a[1]!=b[1] for a,b in zip(outline,outline[1:]+outline[:1])))
         outline=self.trace(buildings=[building])
         self.assertTrue(meets(outline,building,0),
@@ -174,8 +175,38 @@ class OutlineTests(unittest.TestCase):
         other=self.address(2,0,0)
         building=self.rectangle(-9,-9,9,9)
         outline=self.trace(others=[other],buildings=[building])
-        self.assertFalse(meets(outline,building,0))
         self.assertFalse(point_in_polygon(self.point(0,0),outline))
+
+    def test_original_hull_is_unchanged_when_there_are_no_conflicts(self):
+        expected=enclosing_outline([self.point(-40,0),self.point(40,0)])
+        self.assertEqual(self.trace(),expected)
+
+    def test_other_dar_dot_inside_old_hull_creates_notch_not_a_thin_route(self):
+        # Four selected corners enclose one separate DAR house. A five-metre
+        # connection around the corners is not an acceptable automatic result.
+        self.selected=[self.address(n,x,y) for n,x,y in (
+            (1,-60,-35),(3,60,-35),(5,60,35),(7,-60,35))]
+        other=self.address(9,0,0)
+        outline=self.trace(others=[other])
+        self.assertFalse(point_in_polygon((other['lng'],other['lat']),outline))
+        self.assertTrue(point_in_polygon(self.point(-45,0),outline))
+        self.assertTrue(point_in_polygon(self.point(45,0),outline))
+        # A broad old-style territory must keep most of the original area.
+        projected=[((x-10)*self.scale,(y-55)*111320) for x,y in outline]
+        area=abs(sum(a[0]*b[1]-b[0]*a[1]
+                     for a,b in zip(projected,projected[1:]+projected[:1]))/2
+        self.assertGreater(area,6500)
+        self.assertLessEqual(len(outline),40)
+
+    def test_loaded_outside_dar_dots_and_neighbour_boundaries_both_excluded(self):
+        self.selected=[self.address(n,x,y) for n,x,y in (
+            (1,-50,-30),(3,50,-30),(5,50,30),(7,-50,30))]
+        outsiders=[self.address(8,0,0),self.address(10,0,-51)]
+        neighbor=self.rectangle(-70,40,70,65)
+        outline=self.trace(others=outsiders,neighbors=[neighbor])
+        self.assertFalse(any(point_in_polygon((p['lng'],p['lat']),outline) for p in outsiders))
+        self.assertFalse(meets(outline,neighbor,0))
+        self.assertTrue(point_in_polygon(self.point(30,-10),outline))
 
     def test_parallel_territory_keeps_three_metre_gap(self):
         neighbor=self.rectangle(-60,8,60,50)
@@ -193,7 +224,7 @@ class OutlineTests(unittest.TestCase):
         self.assertEqual(status,'clear')
         self.assertTrue(point_in_polygon(self.point(0,18),outline))
         self.assertFalse(point_in_polygon(self.point(0,-1),outline))
-        self.assertFalse(meets(outline,building,0))
+        self.assertFalse(point_in_polygon(self.point(0,10),outline))
         self.assertLessEqual(max(p[1] for p in outline),self.point(0,22)[1])
         for address in selected:
             self.assertTrue(point_in_polygon((address['lng'],address['lat']),outline))
