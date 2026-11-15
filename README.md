@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.19 foretrækker forbindelser langs de gemte veje i DAR-grænseforslaget. Brug **Foreslå grænse** i Kortopsætning for at beregne grænsen på ny.
+Beta 1.12.19-beta.20 bevarer **(lige)** og **(ulige)** ved forkortede husnummerintervaller på S-12. Brug **Rediger forsidens vejlinjer** → **Vis fra første til sidste** for at se markeringerne i live-forhåndsvisningen, print, PDF og delte kort. Beta.19's vejfølgende DAR-grænseforslag er fortsat med.
 
 ## Installer betakanalen én gang
 
