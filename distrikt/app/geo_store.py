@@ -261,7 +261,8 @@ class GeoStore(MainBoundaryStore):
             neighbors=[c['geo_polygon'] for c in reserved if c['id']!=data.get('card_id')
                        and not c.get('archived') and len(c.get('geo_polygon') or [])>=3]
             buildings=[r['points'] for r in records if r.get('entity')=='building' and len(r.get('points') or [])>=3]
-            outline,status=suggest_outline(eligible,all_addresses,buildings,neighbors)
+            roads=[r for r in records if r.get('entity')=='road' and len(r.get('points') or [])>=2]
+            outline,status=suggest_outline(eligible,all_addresses,buildings,neighbors,roads)
             result.update(outline=outline,outline_status=status,
                           outline_expected=signature([sorted(a['id'] for a in eligible),outline,status]))
         else:

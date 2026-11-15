@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.19 · 2026-11-15
+
+- **DAR-grænser:** Forbindelser mellem de valgte huse søger mod den gemte vej, når der er plads. Grænseforslaget kan forbinde husene skråt og holder afstand til øvrige huse og nabogrænser.
+
 ## 1.12.19-beta.18 · 2026-11-15
 
 - **DAR-grænser:** Grænseforslaget erstatter små trappetrin med længere linjer, hvor der er plads. Det beholder knæk ved huse og nabogrænser, når det kræves for at respektere adressevalget og afstanden.

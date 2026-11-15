@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.19 · 2026-11-15
+
+- **DAR boundaries:** Connections between selected houses favor the saved road when there is room. Suggestions can connect houses diagonally and keep clearance from other houses and neighboring boundaries.
+
 ## 1.12.19-beta.18 · 2026-11-15
 
 - **DAR boundaries:** Suggestions replace small steps with longer lines where space allows. They keep corners where needed to preserve address selection and clearance from neighboring boundaries.

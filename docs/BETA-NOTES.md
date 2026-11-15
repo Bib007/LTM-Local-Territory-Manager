@@ -1,7 +1,7 @@
-# LTM 1.12.19-beta.18 · Glattere DAR-grænser
+# LTM 1.12.19-beta.19 · DAR-grænser tættere på vejen
 
-- **DAR-grænser:** Grænseforslaget erstatter små trappetrin med længere linjer, hvor der er plads. Det beholder knæk ved huse og nabogrænser, når det kræves for at respektere adressevalget og afstanden.
+- **DAR-grænser:** Forbindelser mellem de valgte huse søger mod den gemte vej, når der er plads. Grænseforslaget kan forbinde husene skråt og holder afstand til øvrige huse og nabogrænser.
 
 ## English
 
-- **DAR boundaries:** Suggestions replace small steps with longer lines where space allows. They keep corners where needed to preserve address selection and clearance from neighboring boundaries.
+- **DAR boundaries:** Connections between selected houses favor the saved road when there is room. Suggestions can connect houses diagonally and keep clearance from other houses and neighboring boundaries.

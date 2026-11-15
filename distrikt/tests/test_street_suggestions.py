@@ -150,6 +150,21 @@ class OutlineTests(unittest.TestCase):
         self.assertLessEqual(max(p[1] for p in outline),self.point(0,5)[1])
         self.assertFalse(meets(outline,neighbor,0))
 
+    def test_connection_uses_the_named_road_and_stays_clear_of_the_neighbor(self):
+        selected=[self.address(1,-40,7),self.address(3,40,7)]
+        addresses=[*selected,self.address(2,0,10)]
+        building=self.rectangle(-12,1,12,15)
+        neighbor=self.rectangle(-55,25,55,45)
+        road={'name':'Fictional road','points':[self.point(-55,18),self.point(55,18)]}
+        outline,status=suggest_outline(selected,addresses,[building],[neighbor],[road])
+        self.assertEqual(status,'clear')
+        self.assertTrue(point_in_polygon(self.point(0,18),outline))
+        self.assertFalse(point_in_polygon(self.point(0,-1),outline))
+        self.assertFalse(meets(outline,building,0))
+        self.assertLessEqual(max(p[1] for p in outline),self.point(0,22)[1])
+        for address in selected:
+            self.assertTrue(point_in_polygon((address['lng'],address['lat']),outline))
+
     def test_short_detour_keeps_neighbor_outside(self):
         for length in (21,100):
             with self.subTest(length=length):
