@@ -19,7 +19,7 @@ SAVE={
 }
 REVIEW_FIELDS={
  'cards':set('number internal_number name area_id kind temporary map_color addresses geo_polygon address_ids geo_addresses imported_addresses polygon in_folder last_completed front_revision back_revision'.split()),
- 'publishers':{'name','group','group_role','pioneer'},'notes':{'text','card_id','recurrence','resolved','task_history'},
+ 'publishers':{'name','group','group_role','pioneer'},'notes':{'text','card_id','recurrence','resolved'},
  'ib':{'address_id','road','number','date','date_text','postcode'},
  'visits':{'date','note'},'loans':{'assigned','cycle_start','returned','publisher_id'},
  'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision publisher_card_guidance name print_profiles saved_views'.split()),

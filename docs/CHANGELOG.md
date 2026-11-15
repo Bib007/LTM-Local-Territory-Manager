@@ -2,6 +2,13 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.24 · 2026-11-15
+
+- **Adresseændringer:** Brug **Afvis alle adresser uden for distriktsgrænsen** til at gennemgå og afvise de afventende DAR-adresser, der ligger uden for den gemte grænse. Adresser på grænsen samt usikre flytninger gennemgås fortsat enkeltvis.
+- **Opgaver:** Brug **Marker udført eller svar** til at afslutte en opgave med en valgfri note eller et svar. Den, der fordelte opgaven, kan finde svaret under **Svar til mig**. Svaret kan slettes fra opgavehistorikken.
+- **DAR-forslag:** Fejl i vejlisten viser nu kortnummer, vejnavn, postnummer og det interval, der blev slået op.
+- **S-12:** Vælg visningen af lige og ulige husnumre hver for sig, og se ændringen straks. Det gemte interval bruges i print og eksport. Delte PDF’er kan opdateres fra kortet.
+
 ## 1.12.23 · 2026-11-15
 
 - **S-12-forsiden:** Vælg et kort første–sidste-interval for hver DAR-vejlinje. Se ændringen straks i forhåndsvisningen, og gem den til print og eksport. Lige og ulige sider kan vælges hver for sig.
@@ -28,6 +35,55 @@
 - Vælg allerede eksisterende kort til den daglige mappe uden dubletter; sortér distriktskort efter længst tid siden gennemgang uden at miste filtrene.
 - Forbedr IB-bagsidens udskrivning i originalstørrelse med korrekt sideopdeling, og bevar historiske opgavelister og profilrettigheder.
 - Hold Stable og Home Assistant Beta adskilt med egne data og porte. Versionsnummer og afprøvede Stable-pakker opdateres særskilt.
+
+## 1.12.19-beta.15 · 2026-11-15
+
+- **Distriktskort:** Se virkningen på selve forsiden, så snart du vælger et husnummerinterval. **Gem og fremvis kort** åbner den gemte forside, og tidligere delte PDF’er får en genvej til at blive opdateret.
+
+## 1.12.19-beta.14 · 2026-11-14
+
+- **Forsidens vejlinjer:** Tilføj et valg pr. geografisk vejlinje mellem **Vis de valgte numre** (standard) og **Vis fra første til sidste**. Eksempel: de valgte adresser 3, 7, 9, 15, 25, 67 kan vises på S-12 som 3–67, uden at mellemliggende husnumre bliver tilføjet til distriktet.
+- Valget gemmes kun som visning, knyttet til vejlinjens DAR-adresse-ID'er. Besøgstal, udvalgte adresser, geografiske grænser, IB og historik er uændrede. Eksisterende manuelle tilføjelser til vejlinjer bevares, og en uafklaret DAR-opdeling overskriver ikke indstillingen.
+- Samme tekst anvendes i S-12, PDF/print, offentlige PNG-kort, backup og CSV-læsearkiv. Ændring kræver genprint. Danske/engelske regressionstests med fiktive vejnumre og uændret adresseudvalg. Stable er urørt.
+
+## 1.12.19-beta.13 · 2026-11-14
+
+- **Adresseændringer / Opfølgninger:** Tilføj knappen »Afvis alle adresser uden for distriktsgrænsen« med forhåndsvisning af konkrete afventende adresser, antal og manuel bekræftelse. Grænsen kontrolleres på serveren ud fra den gemte samlede distriktsgrænse, aldrig ud fra fælles vejnavn.
+- Behold adresser på selve grænsen. Flytninger fra adresser indenfor grænsen og poster med manglende/usikre koordinater skal fortsat gennemgås enkeltvis. Afvisningen fjerner kun afventende ændringer og bevarer kort, IB, historik, udleveringer og hentede DAR-adresser.
+- Afvisningen er atomisk og afviser forældede forhåndsvisninger, dobbelthandlinger og samtidige adressekontroller. Funktionen er rettighedsstyret og testet med fiktive adresser på samme vej, på/uden for grænsen og ved ændring af grænsen. Stable er ikke ændret.
+
+## 1.12.19-beta.12 · 2026-11-14
+
+- **DAR-adresseforslag:** Vis kortnummer, konkret vejnavn, bekræftet postnummer og de husnummerintervaller fra vejlisten, der var under behandling, når en vej ikke kan findes i DAR. Behold den oprindelige fejlårsag og gør tydeligt, at DAR ikke dermed har udpeget et bestemt fejlagtigt husnummer.
+- Behold fejlbeskeden på skærmen, indtil brugeren prøver igen eller forlader visningen. Vis tilsvarende præcis vej, postnummer og interval, hvis ingen aktive DAR-adresser matcher nummerintervallet, eller intervallet er ugyldigt.
+- Regressionstest med opdigtede vejnavne og husnumre, dansk/engelsk, sikker HTML-visning, mobil/desktop, ingen utilsigtet kortgemning. Ingen ændringer i Stable.
+
+## 1.12.19-beta.11 · 2026-11-14
+
+- **Opgaver og svar:** Erstat den lille runde knap med en synlig knap med flueben og teksten »Marker udført eller svar«. Gør afslutning og valgfrit svar let at finde på computer, tablet og mobil.
+- Brug en særskilt »Genåbn«-knap for afsluttede opgaver, og vis »Ikke forfalden« for opgaver, der endnu ikke kan afsluttes. Knappen åbner stadig den eksisterende svar-/bekræftelsesdialog og ændrer ikke opgaven, før brugeren gemmer.
+- Bevar opgavehistorik, rettigheder, gentagelser og eksisterende kortdata. Udvid browsertesten med dansk mobilknap, engelske tilstande og svar-flow.
+
+## 1.12.19-beta.10 · 2026-11-14
+
+- **DAR-adresser fra vejliste:** Fjern genbrugsoptimeringen fra beta.9 efter brugerfeedback om manglende hastighedsforbedring. Genindfør den oprindelige funktion, der henter alle bekræftede veje på ny fra DAR, før adresser foreslås.
+- Fjern afkrydsning for genhentning, lokal optællingsbesked og tilhørende cachekode. Bevar normal forhåndsvisning, konfliktkontrol og eksplicit godkendelse før kortgemning. Øvrige betaændringer og Stable påvirkes ikke.
+
+## 1.12.19-beta.9 · 2026-11-14
+
+- **DAR-adresser fra vejliste:** Genbrug komplette, lokalt hentede DAR-veje uden en ny forespørgsel. Hent automatisk kun manglende veje; en delvis adresseimport tæller ikke som en komplet vej.
+- Tilføj et tydeligt valg, hvis alle veje ønskes hentet på ny fra DAR. Vis hvor mange veje der blev genbrugt og hentet. Postnummer, aktive adresseintervaller og den normale godkendelse før kortgemning kontrolleres fortsat.
+- Udvid prøver med opdigtede veje, delvise downloads, blandede lokale/manglende veje og mobil-/desktop-browserforløb. Stable ændres ikke af betaudgivelsen.
+
+## 1.12.19-beta.8 · 2026-11-14
+
+- **Opgaver:** Skriv et valgfrit svar ved afslutning. Den, der fordelte opgaven, kan finde det under Svar til mig. Slet svaret fra afslutningshistorikken, hvis det skal fjernes.
+
+## 1.12.19-beta.7 · 2026-11-14
+
+- **Opgaver:** Vedhæft op til fem PNG- eller JPEG-billeder. Se dem i opgavelisten og på det tilknyttede kort. Billederne gemmes lokalt og følger med i den almindelige sikkerhedskopi.
+- **IB:** Gennemgå DAR-forslag for hele kortet i en tabel. Alle entydige ændringer er valgt på forhånd, og hver adresse kan fravælges.
+- **Vejlinjer på kortets forside:** Saml lige og ulige numre for samme vej på én linje, og læg besøgsantallet sammen. Veje med kun lige eller ulige adresser beholder deres mærkning.
 
 ## 1.12.19-beta.6 · 2026-11-12
 

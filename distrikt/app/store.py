@@ -327,6 +327,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     # Client-supplied actor fields are never accepted.
                     data = {**data, '_actor_id':review.actor if review else None,
                             '_actor_name':getattr(review,'actor_name','') if review else ''}
+                if action in ('note.save','note.resolve','note.complete'):
+                    data={**data,'_task_actor_id':review.actor if review else None,
+                          '_task_actor_name':getattr(review,'actor_name','') if review else ''}
                 result = self._mutate(action, data)
                 self.onboarding_after_write(action,data)
                 touched=self._tracking
@@ -363,7 +366,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         if action == 'followup.ignore':return self.followup_mutate(data)
         if action.startswith(('card.numbering.', 'area.numbering.')):return self.numbering_mutate(action,data)
         if action.startswith('setup.'):return self.setup_mutate(action,data)
-        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete'):
+        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete','note.reply.delete'):
             return self.workflow_mutate(action,data)
         if action in ('card.bulk.preview','card.bulk.create','card.bulk.edit.preview','card.bulk.edit','loan.correct.preview','loan.correct'):
             return self.admin_mutate(action,data)
@@ -481,6 +484,10 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     raise ValueError('Vælg en aktiv bruger som ansvarshavende.')
                 if 'assignee_before' not in data or data['assignee_before']!=item.get('assignee_id'):
                     raise ValueError('Den ansvarshavende er ændret. Opdater oversigten, og vælg igen.')
+                if owner!=item.get('assignee_id'):
+                    item.pop('assigned_by',None)
+                    if owner and data.get('_task_actor_id'):
+                        item['assigned_by']={'id':data['_task_actor_id'],'name':data['_task_actor_name']}
                 item['assignee_id']=owner
             if 'followup_key' in data:
                 key=data['followup_key']
@@ -506,6 +513,10 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             if item.get('recurrence'):raise ValueError('Vælg en tilbagevendende opgave og markér den aktuelle forekomst udført.')
             if item.get('card_id'):self.require('cards',item['card_id'])
             if type(data.get('resolved'))!=bool:raise ValueError('Ugyldig opgavestatus.')
+            if 'reply' in data and (not data['resolved'] or item.get('resolved')):
+                raise UIError('Opgaven er allerede udført. Opdater oversigten.')
+            if data['resolved'] and not item.get('resolved'):
+                self.record_task_completion(item,data,today())
             item.update(resolved=data['resolved'],resolved_at=now() if data['resolved'] else None)
             self.put('notes',item);return {'id':item['id']}
         if action == 'loan.finish':

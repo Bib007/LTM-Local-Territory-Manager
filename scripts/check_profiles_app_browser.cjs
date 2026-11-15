@@ -338,6 +338,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.ok(!(await mobileTasks.locator('#app').innerText()).includes('Fiktiv administrationsopgave'));
   assert.equal(await mobileTasks.locator('.taskRow').count(),1);
   await mobileTasks.locator('.taskRow [data-work="resolve"]').click();
+  await mobileTasks.locator('[data-work-form=complete-task] button.primary').click();
   await mobileTasks.waitForFunction(()=>state.notes.find(n=>n.text==='Fiktiv mobilopgave')?.resolved===true);
   await mobileTasks.evaluate(()=>{page='Forside';render();});
   assert.equal(await mobileTasks.locator('.welcomeTasksNotice').count(),0,'Completed tasks vanish immediately without reload');

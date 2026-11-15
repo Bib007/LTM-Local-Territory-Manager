@@ -71,6 +71,37 @@ class RecurringTaskTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.store.mutate('note.save',{'id':ident,'text':'Fiktiv','recurrence':invalid})
         self.assertTrue(self.item(ident)['resolved'])
 
+    def test_reply_and_permanent_removal_preserve_recurrence_and_history(self):
+        ident=self.create()
+        result=self.store.mutate('note.complete',{'id':ident,'due':'2026-10-19','reply':' Ja, udført. '})
+        self.assertEqual(result['id'],ident)
+        saved=self.item(ident)
+        entry=saved['task_history'][0]
+        self.assertEqual(entry['reply'],'Ja, udført.')
+        self.store.mutate('note.reply.delete',{'id':ident,'entry_id':entry['id']})
+        self.assertEqual(self.item(ident)['task_history'],[{k:v for k,v in entry.items() if k!='reply'}])
+        self.assertEqual(self.item(ident)['recurrence'],saved['recurrence'])
+        self.assertFalse(self.store.state()['undo_available'])
+        restores=Restores(self.store,'fictional-test')
+        payload=snapshot(self.store,'fictional-test')
+        restores.apply(restores.preview(payload)['token'])
+        self.assertNotIn('reply',self.item(ident)['task_history'][0])
+
+    def test_ordinary_completion_rejects_duplicate_reply_and_keeps_history_on_reopen(self):
+        ident=self.store.mutate('note.save',{'text':'Fiktiv opgave'})['id']
+        with self.assertRaises(ValueError):
+            self.store.mutate('note.resolve',{'id':ident,'resolved':True,'reply':{'text':'Forkert'}})
+        self.assertFalse(self.item(ident)['resolved'])
+        self.store.mutate('note.resolve',{'id':ident,'resolved':True,'reply':'God idé'})
+        with self.assertRaisesRegex(ValueError,'allerede udført'):
+            self.store.mutate('note.resolve',{'id':ident,'resolved':True,'reply':'Dublet'})
+        self.store.mutate('note.resolve',{'id':ident,'resolved':False})
+        self.store.mutate('note.resolve',{'id':ident,'resolved':True,'reply':''})
+        history=self.item(ident)['task_history']
+        self.assertEqual(len(history),2)
+        self.assertEqual(history[0]['reply'],'God idé')
+        self.assertNotIn('reply',history[1])
+
     def test_backup_restart_and_restore_preserve_exact_schedule_and_history(self):
         ident=self.create();self.complete(ident,'2026-10-19');expected=copy.deepcopy(self.item(ident))
         payload=snapshot(self.store,'fictional-test');self.store.close();self.store=Store(self.temp.name)

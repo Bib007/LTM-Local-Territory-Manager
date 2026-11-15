@@ -2,6 +2,13 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.24 · 2026-11-15
+
+- **Address changes:** Use **Reject all addresses outside the territory boundary** to review and reject pending DAR addresses outside the saved boundary. Addresses on the boundary and uncertain moves still get individual review.
+- **Tasks:** Use **Mark done or reply** to complete a task with an optional note or reply. The person who assigned it can find the reply under **Replies to me**. Replies can be deleted from task history.
+- **DAR suggestions:** Street-list errors now show the card number, street name, postcode and requested range.
+- **S-12:** Choose how to display odd and even house numbers separately and preview the result immediately. Saved ranges appear in print and exports. Update shared PDFs from the card.
+
 ## 1.12.23 · 2026-11-15
 
 - **S-12 card front:** Show a shorter first–last range for each DAR street line. Preview the change immediately and save it for print and export. Odd and even sides can be set independently.
@@ -28,6 +35,55 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - Select existing cards into the daily-use folder without duplicating cards; sort territory cards by longest time since completion while preserving filters.
 - Improve original-size IB-card back pagination and protect historic task listings and profile access.
 - Keep Stable and Home Assistant Beta separately installed, with separate data and ports. Update release version and tested stable artifacts.
+
+## 1.12.19-beta.15 · 2026-11-15
+
+- **Territory cards:** See the card front change as soon as you select a house-number range. **Save and show card** opens the saved front, and previously shared PDFs get a shortcut to update them.
+
+## 1.12.19-beta.14 · 2026-11-14
+
+- **Front street lines:** Add a per-line **Show selected house numbers** (default) versus **Show first–last range** option. The selected addresses 3, 7, 9, 15, 25 and 67 can appear as 3–67 on S-12 without assigning any intervening house numbers to the territory.
+- Persist only a presentation setting linked to the underlying DAR address IDs. Preserve exact membership, visits, boundaries, do-not-call entries and histories; keep existing manual labels and treat ambiguous DAR splits as unresolved.
+- Apply the same label in S-12, PDF/print, published PNG cards, backup and readable CSV. Mark the front for reprint on changes. Add synthetic bilingual regression coverage. Stable is unchanged.
+
+## 1.12.19-beta.13 · 2026-11-14
+
+- **Address changes / Follow-ups:** Add “Reject all addresses outside the territory boundary” with a server-calculated preview, sample addresses, counts and explicit confirmation. Match each pending DAR change against the saved overall boundary polygon, not its road name.
+- Retain addresses on the boundary and require manual review of changes moved from inside the boundary or with uncertain coordinates. Only pending changes are dismissed; stored DAR addresses, cards, do-not-call records, assignments and history remain unchanged.
+- Atomic confirmation validates the current boundary and pending records, prevents stale previews and concurrent address checks, and follows profile permissions. Regression tests cover fictional inside/edge/outside addresses on the same road. Stable remains unchanged.
+
+## 1.12.19-beta.12 · 2026-11-14
+
+- **DAR street suggestions:** Identify the exact card, street name, confirmed postcode and original street-list number range when a DAR road lookup fails. Retain the source error and explain that the range is not evidence DAR rejected any particular house number.
+- Keep the failure message visible for retry and report the street, postcode and range when an interval has no active DAR addresses or is invalid.
+- Add fictional-data regression coverage for Danish/English, safe HTML rendering, mobile/desktop and no unintended card saves. Stable is unchanged.
+
+## 1.12.19-beta.11 · 2026-11-14
+
+- **Tasks and replies:** Replace the ambiguous round icon with a visible checkmark button labeled “Mark done or reply”, on desktop, tablet and mobile.
+- Show a distinct “Reopen” button for completed tasks and “Not due yet” for future recurring tasks. Clicking the new button continues to open the existing optional reply/confirmation dialog; the task is not completed until the user confirms.
+- Preserve task history, permissions, recurrence and card data. Extend browser tests for the Danish mobile button, English states and reply flow.
+
+## 1.12.19-beta.10 · 2026-11-14
+
+- **DAR street-list suggestions:** Revert beta.9's local-reuse optimization following feedback that it brought no noticeable speed improvement. Restore the original workflow that downloads every confirmed street from DAR before proposing address selection.
+- Remove the refresh checkbox, local reuse count and related cache logic. Keep preview, conflict checks and explicit approval before saving the card. Other beta features and Stable remain unchanged.
+
+## 1.12.19-beta.9 · 2026-11-14
+
+- **DAR street-list suggestions:** Reuse complete streets previously downloaded locally without another source request. Fetch only missing streets automatically; a partial address import does not qualify as a complete street.
+- Offer an explicit option to refresh all streets from DAR. Report how many streets were reused versus downloaded, while retaining postcode validation, active address-range selection and the review-before-save workflow.
+- Expand fictional-data tests to cover partial and mixed downloads and responsive browser flows. This beta does not change Stable.
+
+## 1.12.19-beta.8 · 2026-11-14
+
+- **Tasks:** Add an optional reply when completing a task. The person who assigned the task can find it under Replies to me. Delete the reply from the completion history when needed.
+
+## 1.12.19-beta.7 · 2026-11-14
+
+- **Tasks:** Attach up to five PNG or JPEG images. View them in the task list and on the linked card. Images are stored locally and included in regular backups.
+- **Do-not-call:** Review the whole card's Danish Address Register (DAR) suggestions in one table. Unambiguous changes are selected by default, and each address can be deselected.
+- **Streets on the card front:** Show odd and even ranges and their total visits on one line per street. Streets with only one side keep the odd or even label.
 
 ## 1.12.19-beta.6 · 2026-11-12
 
