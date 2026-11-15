@@ -1,6 +1,6 @@
 """Suggest one connected territory outline from local addresses and obstacles."""
 import math
-from collections import defaultdict
+from collections import defaultdict, deque
 from heapq import heappop, heappush
 
 from geography import enclosing_outline, point_in_polygon, valid_polygon
@@ -283,6 +283,130 @@ def unselected_buildings(shapes, selected, excluded):
     return [shape for i, shape in enumerate(shapes) if i in protected]
 
 
+
+def carve_original_envelope(grid, filled, forbidden, target_cells):
+    """Keep the old convex outline and open small *local* cuts for excluded dots.
+
+    The previous fallbacks discarded a broad envelope as soon as it contained
+    any non-selected address. They then grew a strip along the shortest route
+    between houses, causing narrow, unnatural territories. Here we keep the
+    original filled outline and connect every forbidden interior island to the
+    outside with a small notch. We never remove a selected address or allow a
+    forbidden cell back in. If a valid single polygon is impossible, the caller
+    can use its explicitly constrained fallback instead.
+    """
+    region = filled - forbidden
+    targets = set(target_cells)
+    if not targets <= region:
+        return []
+
+    # Discover the outside of the old polygon; only enclosed forbidden islands
+    # need a cut. A hole cannot be stored in the current single-ring format.
+    outside = set()
+    queue = deque()
+    for x in range(grid.width):
+        for node in ((x, 0), (x, grid.height-1)):
+            if node not in region and node not in outside:
+                outside.add(node)
+                queue.append(node)
+    for y in range(grid.height):
+        for node in ((0, y), (grid.width-1, y)):
+            if node not in region and node not in outside:
+                outside.add(node)
+                queue.append(node)
+    while queue:
+        x, y = queue.popleft()
+        for dx, dy in DIRECTIONS:
+            node = (x+dx, y+dy)
+            if grid.inside(node) and node not in region and node not in outside:
+                outside.add(node)
+                queue.append(node)
+
+    holes = {(x,y) for y in range(grid.height) for x in range(grid.width)
+             if (x,y) not in region and (x,y) not in outside}
+    if not holes:
+        return grid.outline(region, forbidden)
+
+    # A few metres of clearance around chosen entrances stop a notch splitting
+    # a selected household from the polygon.
+    protected = grid.dilate(targets, 3)
+    components = 0
+    while holes:
+        components += 1
+        if components > 300:
+            return []
+        seed = holes.pop()
+        island = {seed}
+        pending = [seed]
+        while pending:
+            x, y = pending.pop()
+            for dx,dy in DIRECTIONS:
+                node = (x+dx,y+dy)
+                if node in holes:
+                    holes.remove(node)
+                    island.add(node)
+                    pending.append(node)
+
+        # Test straight outward cuts on all four sides of the island. This
+        # produces a handful of meaningful corners rather than an A* corridor.
+        extremes = (
+            (sorted(island,key=lambda p:(p[0],p[1]))[:8],(-1,0)),
+            (sorted(island,key=lambda p:(-p[0],p[1]))[:8],(1,0)),
+            (sorted(island,key=lambda p:(p[1],p[0]))[:8],(0,-1)),
+            (sorted(island,key=lambda p:(-p[1],p[0]))[:8],(0,1)),
+        )
+        choices = []
+        for starts,direction in extremes:
+            dx,dy = direction
+            for start in starts:
+                x,y = start
+                path = []
+                # At most one continuous straight opening to the exterior.
+                while grid.inside((x,y)) and (x,y) not in outside:
+                    node = (x,y)
+                    if node in region:
+                        path.append(node)
+                    x,y = x+dx,y+dy
+                if not grid.inside((x,y)) or len(path)>160 or not path:
+                    continue
+                if any(cell in protected for cell in path):
+                    continue
+                choices.append((len(path),len(path),start,direction,path))
+
+        if not choices:
+            return []
+        choices.sort(key=lambda entry:entry[:4])
+        chosen = choices[0][4]
+        # A one-cell notch can touch itself diagonally; use a second cell
+        # where safe so the resulting perimeter is an ordinary simple ring.
+        dx,dy = choices[0][3]
+        cut = set(chosen)
+        for x,y in chosen:
+            for neighbor in ((x+dy,y+dx),):
+                if neighbor in region and neighbor not in protected:
+                    cut.add(neighbor)
+        region.difference_update(cut)
+        outside.update(island)
+        outside.update(cut)
+
+    # Delete disconnected slack areas, but never a selected home. Otherwise
+    # the contour could silently omit a part of the actual territory.
+    if not region or targets - region:
+        return []
+    seen = {next(iter(targets))}
+    queue = deque(seen)
+    while queue:
+        x,y = queue.popleft()
+        for dx,dy in DIRECTIONS:
+            node = (x+dx,y+dy)
+            if node in region and node not in seen:
+                seen.add(node)
+                queue.append(node)
+    if not targets <= seen:
+        return []
+    return grid.outline(seen, forbidden)
+
+
 def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
     """Draw a generous territory around the selected homes, not a thin route.
 
@@ -380,21 +504,24 @@ def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
                     return result
         return checked(ring,gap)
 
-    # Unlike the old five-metre corridor, start with generous whole-area
-    # proposals. Dense streets naturally select a smaller band; sparse rural
-    # areas retain a comfortable outline instead of hugging every entrance.
-    for padding in (48,36,26,18,12):
+    # Return to the original broad convex envelope. A collision must be
+    # trimmed *locally* instead of rejecting the entire envelope and falling
+    # back to the thinnest possible connection between houses.
+    old_envelopes = []
+    for padding in (12,24):
         try:
             envelope = enclosing_outline([list(p) for p in chosen],padding_m=padding)
         except ValueError:
             continue
-        result = checked([project(p) for p in envelope],NEIGHBOR_GAP_M)
+        projected_envelope = [project(p) for p in envelope]
+        old_envelopes.append(projected_envelope)
+        result = checked(projected_envelope,NEIGHBOR_GAP_M)
         if result:
             return result,'clear'
 
-    # When a broad envelope would include another home, connect the chosen
-    # entrances inside safe space. Widen that connected shape aggressively,
-    # but roll back to smaller widths if doing so encloses a protected address.
+    # Only if there is no valid carved envelope should an address-safe route
+    # be considered. That case is a genuine geometric constraint, not a reason
+    # to squeeze every ordinary block into a ribbon.
     grid = OutlineGrid(area,step)
     if grid.width*grid.height > MAX_GRID_CELLS:
         return [],'unavailable'
@@ -411,6 +538,13 @@ def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
     forbidden = hard | neighbor_buffer
     if any(cell in forbidden for cell in targets_cells):
         return [],'unavailable'
+
+    for envelope in old_envelopes:
+        broad = grid.raster([envelope])
+        shaped = carve_original_envelope(grid,broad,forbidden,targets_cells)
+        result = smooth(shaped,NEIGHBOR_GAP_M) if shaped else []
+        if result:
+            return result,'clear'
 
     try:
         route = grid.connect(targets_cells,forbidden,roads=road_cells)
