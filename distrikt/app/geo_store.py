@@ -7,6 +7,8 @@ import uuid
 from datetime import datetime, timezone
 from geography import valid_coordinate, valid_polygon, point_in_polygon, enclosing_outline, street_rows, in_number_range
 from main_boundary import MainBoundaryStore
+from admin_store import signature
+from territory_outline import suggest_outline
 
 
 def stamp():return datetime.now(timezone.utc).isoformat(timespec='seconds')
@@ -168,12 +170,20 @@ class GeoStore(MainBoundaryStore):
                 current=suggest(self,data)
                 if current['street_expected']!=data['street_expected']:
                     raise ValueError('Adressegrundlaget er ændret. Hent et nyt vejlinjeforslag.')
-            preview=self.geo_preview(data)
+            automatic=bool(data.get('outline_expected') or data.get('street_expected') and not data.get('polygon'))
+            preview=self.geo_preview(dict(data,suggest_outline=automatic))
             if preview['conflicts']:raise ValueError('Nogle adresser findes på et andet kort eller i 48-timers gendannelse. Fjern dem fra valget først.')
             if preview['retired']:raise ValueError('Nogle adresser er ikke længere gældende hos DAR. Fjern dem fra valget først.')
             if preview['ignored']:raise ValueError('Nogle valgte adresser er markeret Se bort fra. Ophæv markeringen eller fjern dem fra valget.')
             members=preview['addresses']
             if not members:raise ValueError('Vælg mindst én adresse.')
+            polygon=data.get('polygon')
+            if automatic:
+                expected=data.get('outline_expected')
+                if expected and (expected!=preview['outline_expected'] or (polygon or [])!=preview['outline']):
+                    raise ValueError('Grænseforslaget er ændret. Vælg Foreslå grænse, og kontrollér det nye forslag.')
+                polygon=preview['outline']
+                if not polygon:raise ValueError('Der kunne ikke tegnes en sikker automatisk grænse. Tegn grænsen manuelt.')
             ident=data.get('card_id')
             if ident:c=self.require('cards',ident)
             else:
@@ -182,9 +192,8 @@ class GeoStore(MainBoundaryStore):
             rows=street_rows(members)
             self._mutate('card.save',dict(c,temporary=False,addresses=rows,map_color=data.get('map_color',c.get('map_color','#477596'))),geographic=True)
             c=self.require('cards',c['id']);c['address_ids']=[a['id'] for a in members];c['geo_addresses']=members
-            polygon=data.get('polygon')
             c['geo_polygon']=valid_polygon(polygon,limit=5000) if polygon else enclosing_outline([[a['lng'],a['lat']] for a in members])
-            c['geo_outline_source']='manual' if polygon else 'suggestion';c['geo_updated']=stamp()
+            c['geo_outline_source']='suggestion' if automatic or not polygon else 'manual';c['geo_updated']=stamp()
             if data.get('street_expected'):c['front_revision']=True
             self.put('cards',c)
             return {'id':c['id'],'count':len(members),'visits':sum(a['count'] for a in members),'rows':rows}
@@ -206,7 +215,8 @@ class GeoStore(MainBoundaryStore):
                     self.put('geo',{'id':'change:'+old['id'],'entity':'address_change','kind':'retired','before':old,'after':dict(old,retired=True),'at':stamp()})
                 elif not review:old['retired']=True;self.put('geo',old)
     def geo_preview(self,data):
-        all_addresses=[a for a in self.all('geo') if a.get('entity')=='address']
+        records=self.all('geo')
+        all_addresses=[a for a in records if a.get('entity')=='address']
         mode=data.get('mode','ids')
         if mode=='polygon':
             polygon=valid_polygon(data.get('polygon'),limit=5000)
@@ -219,7 +229,7 @@ class GeoStore(MainBoundaryStore):
             from street_suggestions import suggest
             result=suggest(self,data)
             if data.get('planning_only'):return result
-            preview=self.geo_preview({'card_id':data.get('card_id'),'address_ids':result['address_ids']})
+            preview=self.geo_preview({'card_id':data.get('card_id'),'address_ids':result['address_ids'],'suggest_outline':True})
             return dict(preview,**{k:v for k,v in result.items() if k!='address_ids'})
         elif mode=='ids':
             ids=data.get('address_ids',[])
@@ -242,4 +252,18 @@ class GeoStore(MainBoundaryStore):
             c=owners.get(a['id']) or owners.get(address_key(a))
             if c:conflicts.append({'id':a['id'],'card_number':c['number'],'deleted':bool(c.get('_deleted_at'))})
             if a['id'] in ignored or address_key(a) in ignored_keys:excluded.append(a['id'])
-        return {'addresses':selected,'conflicts':conflicts,'ignored':excluded,'retired':[a['id'] for a in selected if a.get('retired')],'visits':sum(a['count'] for a in selected),'rows':street_rows(selected),'outline':enclosing_outline([[a['lng'],a['lat']] for a in selected]) if selected else []}
+        retired=[a['id'] for a in selected if a.get('retired')]
+        result={'addresses':selected,'conflicts':conflicts,'ignored':excluded,'retired':retired,
+                'visits':sum(a['count'] for a in selected),'rows':street_rows(selected)}
+        if mode=='range' or data.get('suggest_outline') is True:
+            blocked={c['id'] for c in conflicts}|set(excluded)|set(retired)
+            eligible=[a for a in selected if a['id'] not in blocked]
+            neighbors=[c['geo_polygon'] for c in reserved if c['id']!=data.get('card_id')
+                       and not c.get('archived') and len(c.get('geo_polygon') or [])>=3]
+            buildings=[r['points'] for r in records if r.get('entity')=='building' and len(r.get('points') or [])>=3]
+            outline,status=suggest_outline(eligible,all_addresses,buildings,neighbors)
+            result.update(outline=outline,outline_status=status,
+                          outline_expected=signature([sorted(a['id'] for a in eligible),outline,status]))
+        else:
+            result['outline']=enclosing_outline([[a['lng'],a['lat']] for a in selected]) if selected else []
+        return result

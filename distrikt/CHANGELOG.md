@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.25 · 2026-11-15
+
+- **DAR-forslag:** Den automatiske grænse holder andre kendte huse og lokalt gemte bygninger uden for kortet.
+- **Nabokort:** Forslaget søger en omvej med mindst tre meters afstand til nabogrænser. En smal krydsning vises med en besked, når kortudsnittet kræver den for at forbinde de valgte huse.
+- **Korteditor:** Brug **Foreslå grænse** til at beregne en ny grænse for adressevalget. Et forslag kontrolleres igen ved gemning. Hvis der ikke er en sikker grænse, kan den tegnes i hånden.
+
 ## 1.12.24 · 2026-11-15
 
 - **Adresseændringer:** Brug **Afvis alle adresser uden for distriktsgrænsen** til at gennemgå og afvise de afventende DAR-adresser, der ligger uden for den gemte grænse. Adresser på grænsen samt usikre flytninger gennemgås fortsat enkeltvis.

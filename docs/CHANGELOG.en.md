@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.25 · 2026-11-15
+
+- **DAR suggestions:** The automatic boundary keeps other known houses and locally saved buildings outside the territory.
+- **Neighboring territories:** The suggestion looks for a detour at least three meters from shared boundaries. It shows a warning if the selected houses require a narrow crossing within the local map area.
+- **Map editor:** Use **Suggest boundary** to recalculate the boundary for the selected addresses. The suggestion is checked again on save. If a safe suggestion is unavailable, draw the boundary by hand.
+
 ## 1.12.24 · 2026-11-15
 
 - **Address changes:** Use **Reject all addresses outside the territory boundary** to review and reject pending DAR addresses outside the saved boundary. Addresses on the boundary and uncertain moves still get individual review.
