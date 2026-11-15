@@ -1,6 +1,6 @@
 """Suggest one connected territory outline from local addresses and obstacles."""
 import math
-from collections import defaultdict, deque
+from collections import deque
 from heapq import heappop, heappush
 
 from geography import enclosing_outline, point_in_polygon, valid_polygon
@@ -246,44 +246,6 @@ def house_key(address):
     return (address['postcode'],address['road'].casefold(),address['number'].upper())
 
 
-def unselected_buildings(shapes, selected, excluded):
-    """Reserve footprints linked to an unselected address, not every mapped building.
-
-    The map can contain garages, sheds, churches and other buildings without a
-    registered entrance. They are helpful background, not territory boundaries.
-    A known unselected entrance must still protect its nearest footprint, even
-    when the selected addresses share the same physical building.
-    """
-    if not shapes or not excluded:
-        return []
-    reach = 5
-    tile_size = 25
-    tiles = defaultdict(list)
-    for point in set(excluded):
-        tiles[(math.floor(point[0]/tile_size), math.floor(point[1]/tile_size))].append(point)
-    nearest = {}
-    for i, shape in enumerate(shapes):
-        x0, y0, x1, y1 = bounds(shape)
-        for x in range(math.floor((x0-reach)/tile_size), math.floor((x1+reach)/tile_size)+1):
-            for y in range(math.floor((y0-reach)/tile_size), math.floor((y1+reach)/tile_size)+1):
-                for point in tiles.get((x,y), ()):
-                    if not (x0-reach <= point[0] <= x1+reach and
-                            y0-reach <= point[1] <= y1+reach):
-                        continue
-                    distance = 0 if point_in_polygon(point, shape) else min(
-                        point_segment_distance(point, a, b) for a, b in edges(shape))
-                    if distance > reach:
-                        continue
-                    old = nearest.get(point)
-                    if old is None or distance < old[0]-1e-6:
-                        nearest[point] = (distance, {i})
-                    elif abs(distance-old[0]) <= 1e-6:
-                        old[1].add(i)
-    protected = {i for _, matches in nearest.values() for i in matches}
-    return [shape for i, shape in enumerate(shapes) if i in protected]
-
-
-
 def carve_original_envelope(grid, filled, forbidden, target_cells):
     """Keep the old convex outline and open small *local* cuts for excluded dots.
 
@@ -456,10 +418,11 @@ def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
              and near_bounds(world_area,(a['lng'],a['lat'],a['lng'],a['lat']))]
     neighbor_shapes = [list(map(project,p)) for p in neighbors
                        if near_bounds(world_area,bounds(p))]
-    footprints = [list(map(project,p)) for p in buildings
-                  if near_bounds(world_area,bounds(p))]
+    # A building footprint is not an address assignment. The user selected
+    # individual DAR entrances; only other loaded address *points* and already
+    # assigned territory polygons are protected. Sheds and unselected buildings
+    # are neutral cartography and may lie inside a proposed outline.
     obstacles = [square(p,ADDRESS_GAP_M) for p in other]
-    obstacles.extend(unselected_buildings(footprints, targets, other))
     obstacle_boxes = [(p,bounds(p)) for p in obstacles]
     neighbor_boxes = [(p,bounds(p)) for p in neighbor_shapes]
 
