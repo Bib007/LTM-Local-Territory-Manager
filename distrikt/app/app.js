@@ -517,8 +517,9 @@ function frontRows(c,english=false){
  const streets=new Map(),parity=/\s*\((lige|ulige|even|odd)\)$/i;
  const numbered=source.map(a=>{
   const numbers=compactAddressNumbers(a.numbers),marker=numbers.match(parity);
+  const shortRange=a.number_style==='range'&&a.short_numbers?compactAddressNumbers(a.short_numbers):'';
   const side=marker?(['ulige','odd'].includes(marker[1].toLowerCase())?'odd':'even'):'';
-  const row={...a,numbers,side,interval:marker?numbers.slice(0,marker.index):numbers};
+  const row={...a,numbers,side,shortRange,interval:shortRange||(marker?numbers.slice(0,marker.index):numbers)};
   if(side){
    const key=JSON.stringify([a.road.trim().toLowerCase(),a.postcode||'']);
    if(!streets.has(key))streets.set(key,{odd:[],even:[]});
@@ -539,7 +540,7 @@ function frontRows(c,english=false){
     ...(sides.some(row=>row.count_unknown)?{count_unknown:true}:{})});
    continue;
   }
-  const numbers=a.side?a.interval+' ('+(english?a.side:(a.side==='odd'?'ulige':'lige'))+')':a.numbers;
+  const numbers=a.shortRange||(a.side?a.interval+' ('+(english?a.side:(a.side==='odd'?'ulige':'lige'))+')':a.numbers);
   rows.push({label:[a.road+' '+numbers,a.extra_road,a.extra_numbers].filter(Boolean).join(' – '),count:a.count,
    ...(a.count_unknown?{count_unknown:true}:{})});
  }

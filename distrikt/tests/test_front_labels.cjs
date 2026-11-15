@@ -26,13 +26,25 @@ assert.deepEqual(JSON.parse(JSON.stringify(ctx.render(both))),[
  {label:'Testvej 1–5 (ulige)',count:3},
 ]);
 assert.equal(ctx.render(both,true)[1].label,'Fiktivsti 1–23 (odd)');
+const optionalRange={front_addresses:[
+ {road:'Eksempelvej',postcode:'9999',numbers:'3 & 7 & 9 & 15 & 25 & 67 (ulige)',short_numbers:'3–67',number_style:'range',count:6},
+ {road:'Eksempelvej',postcode:'9999',numbers:'2 & 4 (lige)',number_style:'exact',count:2}
+]};
+const ranged=JSON.parse(JSON.stringify(ctx.render(optionalRange)));
+assert.deepEqual(ranged,[
+ {label:'Eksempelvej 3–67 & 2 & 4',count:8}
+],'The range and the opposite side share a line, with all original visits counted');
+assert.equal(ctx.render(optionalRange,true)[0].label,'Eksempelvej 3–67 & 2 & 4','English forms use the same short-range display');
+assert.equal(ctx.render({front_addresses:optionalRange.front_addresses.slice(0,1)})[0].label,'Eksempelvej 3–67');
+optionalRange.front_addresses[0].number_style='exact';
+assert.match(ctx.render(optionalRange)[0].label,/3 & 7 & 9 & 15 & 25 & 67/,'Turning off shortening restores exact selected numbers');
 const old={geo_addresses:[{road:'Eksempelvej',number:'1',count:2},{road:'Eksempelvej',number:'2',count:1}]};
 assert.equal(ctx.render(old)[0].label,'Eksempelvej 1 & 2');
 const manual={addresses:[{road:'Eksempelvej',numbers:'1–23 (ulige)',count:0,count_unknown:true},{road:'Eksempelvej',numbers:'2–24 (lige)',count:12}]};
 assert.equal(ctx.render(manual)[0].count_unknown,true);
 assert.equal(ctx.render(manual)[0].label,'Eksempelvej 1–23 & 2–24');
 const ui=read('front-label-ui.js');
-for(const label of ['Egen tekst til vejnavn','Egen tekst til husnumre','Ryd egen tekst på linjen','card.front_labels.save']){
+for(const label of ['Egen tekst til vejnavn','Egen tekst til husnumre','Visning af husnumre på forsiden','Vis fra første til sidste','data-front-number-style','Intervallet forkorter kun teksten','card.front_labels.save']){
  assert.ok(ui.includes(label),label);
 }
 assert.ok(read('index.html').includes('/front-label-ui.js'));

@@ -30,14 +30,26 @@ def _match(rows, overrides):
 
 
 def apply_overrides(card, rows):
-    """Attach free text to transient front rows alongside their original DAR values."""
+    """Add per-line display choices without changing selected DAR memberships."""
+    from geography import number_key
     saved=card.get('front_line_overrides') or []
     if not isinstance(saved,list):saved=[]
     matched,pending=_match(rows,saved)
+    members={str(a.get('id')):a for a in card.get('geo_addresses',[]) if isinstance(a,dict) and a.get('id')}
     for j,row in enumerate(rows):
         item=saved[matched[j]] if j in matched else {}
         row['extra_road']=item.get('road') or ''
         row['extra_numbers']=item.get('numbers') or ''
+        values={str(members[ident]['number']).strip().upper() for ident in row.get('source_ids',[])
+                if ident in members and members[ident].get('number')}
+        try:
+            ordered=sorted(values,key=number_key)
+            short=(ordered[0]+'–'+ordered[-1]) if len(ordered)>1 else ''
+        except (ValueError,TypeError):
+            short=''
+        row['short_numbers']=short
+        row['number_style']='range' if item.get('number_style')=='range' and short else 'exact'
+        row['display_numbers']=short if row['number_style']=='range' else row['numbers']
     card['front_label_unmatched']=len(pending)
 
 
@@ -78,11 +90,15 @@ def save(store,data):
             raise ValueError('DAR-adresserne er ændret. Genåbn redigeringen.')
         road=_custom(entry.get('road'),120)
         numbers=_custom(entry.get('numbers'),100)
+        style=entry.get('number_style','exact')
+        if style not in ('exact','range') or style=='range' and not source.get('short_numbers'):
+            raise ValueError('Vælg de valgte husnumre eller et gyldigt første–sidste-interval.')
         if road and numbers and len(road)+len(numbers)>180:
             raise ValueError('Den samlede vejlinje er for lang.')
-        if road or numbers:
+        if road or numbers or style=='range':
             updated.append({'source_ids':source['source_ids'],'dar_road':source['road'],
-                'dar_numbers':source['numbers'],'road':road,'numbers':numbers})
+                'dar_numbers':source['numbers'],'road':road,'numbers':numbers,
+                **({'number_style':'range'} if style=='range' else {})})
     # Preserve unresolved deliberate edits across DAR sync/split/merge.
     updated.extend(pending)
     if updated!=previous:
