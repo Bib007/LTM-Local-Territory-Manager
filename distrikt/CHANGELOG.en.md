@@ -2,6 +2,11 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.21 · 2026-11-15
+
+- **Rebuilt DAR outline suggestions:** Prefer spacious, simple polygons instead of thin paths. Rural proposals receive wider straight-edged envelopes; dense urban proposals adapt to selected entrances.
+- **Relevant obstacles only:** Buildings without known unselected entrances, roads, grass and other map background no longer automatically constrict the territory. Unselected addresses and linked footprints remain excluded; neighboring territories retain their clearance or an explicit unavoidable-crossing warning. Review proposals before saving.
+
 ## 1.12.19-beta.20 · 2026-11-15
 
 - **S-12 / house numbers:** **Show first–last range** now preserves the (odd) and (even) labels for each selected side. Combined road lines display both labels whenever a range is shortened. Preview, print, PDF, shared cards and readable exports retain the distinction; address membership and visit totals remain unchanged.

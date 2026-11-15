@@ -2,6 +2,11 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.21 · 2026-11-15
+
+- **Ny DAR-grænsealgoritme:** Foreslå grænse tegner nu rummelige, enkle distrikter i stedet for tynde korridorer. I åbne områder forsøger den brede, lige linjeforløb; ved tæt bebyggelse tilpasses grænsen til de valgte adresser.
+- **Relevante hindringer:** Tomme bygninger, veje, græsarealer og andet kortgrundlag spærrer ikke længere automatisk for grænsen. Kendte adresser uden for valget og tilhørende bygninger holdes fortsat ude, og nabodistrikter får fortsat afstand eller synlig advarsel ved uundgåelig krydsning. Kontrollér altid forslaget før gemning.
+
 ## 1.12.19-beta.20 · 2026-11-15
 
 - **S-12 / husnumre:** Valget **Vis fra første til sidste** bevarer nu (lige) og (ulige) for den pågældende husnummerside. På blandede veje vises begge markeringer ved forkortede intervaller, så det tydeligt fremgår hvilke numre der hører til hver side. Forhåndsvisning, print, PDF, delte kort og læsearkiv anvender samme oplysning; de faktiske adresser og besøgstal ændres ikke.
