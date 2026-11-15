@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.23 · 2026-11-15
+
+- **S-12 card front:** Show a shorter first–last range for each DAR street line. Preview the change immediately and save it for print and export. Odd and even sides can be set independently.
+
 ## 1.12.22 · 2026-11-14
 
 - **Tasks:** Attach up to five PNG or JPEG images. View them in the task list and on the linked card. Images are stored locally and included in regular backups.
