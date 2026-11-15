@@ -49,7 +49,11 @@ def apply_overrides(card, rows):
             short=''
         row['short_numbers']=short
         row['number_style']='range' if item.get('number_style')=='range' and short else 'exact'
-        row['display_numbers']=short if row['number_style']=='range' else row['numbers']
+        if row['number_style']=='range':
+            parity='ulige' if number_key(ordered[0])[0]%2 else 'lige'
+            row['display_numbers']=f'{short} ({parity})'
+        else:
+            row['display_numbers']=row['numbers']
     card['front_label_unmatched']=len(pending)
 
 

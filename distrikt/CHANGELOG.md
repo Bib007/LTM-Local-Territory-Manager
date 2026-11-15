@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.20 · 2026-11-15
+
+- **S-12 / husnumre:** Valget **Vis fra første til sidste** bevarer nu (lige) og (ulige) for den pågældende husnummerside. På blandede veje vises begge markeringer ved forkortede intervaller, så det tydeligt fremgår hvilke numre der hører til hver side. Forhåndsvisning, print, PDF, delte kort og læsearkiv anvender samme oplysning; de faktiske adresser og besøgstal ændres ikke.
+
 ## 1.12.19-beta.19 · 2026-11-15
 
 - **DAR-grænser:** Forbindelser mellem de valgte huse søger mod den gemte vej, når der er plads. Grænseforslaget kan forbinde husene skråt og holder afstand til øvrige huse og nabogrænser.

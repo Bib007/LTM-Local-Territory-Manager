@@ -1,7 +1,9 @@
-# LTM 1.12.19-beta.19 · DAR-grænser tættere på vejen
+# LTM 1.12.19-beta.20 · Lige/ulige på forkortede vejlinjer
 
-- **DAR-grænser:** Forbindelser mellem de valgte huse søger mod den gemte vej, når der er plads. Grænseforslaget kan forbinde husene skråt og holder afstand til øvrige huse og nabogrænser.
+- **S-12:** Når en vejlinje bruger **Vis fra første til sidste**, bliver **(lige)** og **(ulige)** stående ved de rette nummerintervaller. Dette gælder både forhåndsvisning, print/PDF, delte kort og eksport. Gennemgange og adressevalg ændres ikke.
+- Beta.19's forbedringer af DAR-grænseforslag langs vejene er bevaret.
 
 ## English
 
-- **DAR boundaries:** Connections between selected houses favor the saved road when there is room. Suggestions can connect houses diagonally and keep clearance from other houses and neighboring boundaries.
+- **S-12:** Shortened first–last house-number ranges now retain **(even)** and **(odd)** on each applicable side, including preview, print/PDF, shared cards and exports. Selected addresses and visits remain unchanged.
+- Beta.19's road-following DAR boundary improvements remain included.

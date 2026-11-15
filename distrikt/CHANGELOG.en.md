@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.20 · 2026-11-15
+
+- **S-12 / house numbers:** **Show first–last range** now preserves the (odd) and (even) labels for each selected side. Combined road lines display both labels whenever a range is shortened. Preview, print, PDF, shared cards and readable exports retain the distinction; address membership and visit totals remain unchanged.
+
 ## 1.12.19-beta.19 · 2026-11-15
 
 - **DAR boundaries:** Connections between selected houses favor the saved road when there is room. Suggestions can connect houses diagonally and keep clearance from other houses and neighboring boundaries.

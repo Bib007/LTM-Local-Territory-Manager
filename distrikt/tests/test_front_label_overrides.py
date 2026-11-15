@@ -90,7 +90,7 @@ class FrontLabelOverrideTests(unittest.TestCase):
         now=self.view();row=now['front_addresses'][0]
         self.assertEqual(row['numbers'],before['front_addresses'][0]['numbers'])
         self.assertEqual(row['number_style'],'range')
-        self.assertEqual(row['display_numbers'],'3–67')
+        self.assertEqual(row['display_numbers'],'3–67 (ulige)')
         self.assertEqual(row['count'],6)
         self.assertEqual(self.store.require('cards',self.ident)['geo_addresses'],raw)
         self.assertEqual(self.store.require('cards',self.ident)['address_ids'],[a['id'] for a in members])
@@ -98,11 +98,11 @@ class FrontLabelOverrideTests(unittest.TestCase):
         self.assertTrue(self.store.require('cards',self.ident)['front_revision'])
         self.assertNotEqual(fp,fingerprint(self.store,self.store.require('cards',self.ident)))
         recipe=Publications(self.store).prepare(self.ident)
-        self.assertEqual(recipe['card']['front_addresses'][0]['display_numbers'],'3–67')
+        self.assertEqual(recipe['card']['front_addresses'][0]['display_numbers'],'3–67 (ulige)')
         exported=tables(self.store.state(),self.store.all('geo'))['CSV/forsidetekster.csv'].decode('utf-8-sig')
         self.assertIn('3–67',exported)
         self.store.close();self.store=Store(Path(self.tmp.name)/'source')
-        self.assertEqual(self.view()['front_addresses'][0]['display_numbers'],'3–67')
+        self.assertEqual(self.view()['front_addresses'][0]['display_numbers'],'3–67 (ulige)')
         # Opt back into exact DAR text without rewriting selected addresses.
         second=self.view();line=second['front_addresses'][0]
         self.store.mutate('card.front_labels.save',{'card_id':self.ident,'expected_token':second['front_labels_token'],
@@ -111,6 +111,24 @@ class FrontLabelOverrideTests(unittest.TestCase):
         self.assertEqual(self.view()['front_addresses'][0]['numbers'],before['front_addresses'][0]['numbers'])
         self.assertEqual(self.store.require('cards',self.ident)['front_line_overrides'],[])
         self.assertEqual(self.store.require('cards',self.ident)['geo_addresses'],raw)
+
+    def test_even_only_range_keeps_parity_in_exports(self):
+        members=[address('a','Fiktiv lige vej','2'),address('b','Fiktiv lige vej','8'),
+                 address('c','Fiktiv lige vej','14')]
+        self.replace_members(members)
+        before=self.view();row=before['front_addresses'][0]
+        self.assertEqual(row['numbers'],'2 & 8 & 14 (lige)')
+        self.assertEqual(row['short_numbers'],'2–14')
+        self.store.mutate('card.front_labels.save',{'card_id':self.ident,'expected_token':before['front_labels_token'],
+            'rows':[{'source_ids':row['source_ids'],'road':None,'numbers':None,'number_style':'range'}]})
+        updated=self.view()['front_addresses'][0]
+        self.assertEqual(updated['display_numbers'],'2–14 (lige)')
+        self.assertEqual(updated['count'],3)
+        self.assertEqual(Publications(self.store).prepare(self.ident)['card']['front_addresses'][0]['display_numbers'],
+                         '2–14 (lige)')
+        exported=tables(self.store.state(),self.store.all('geo'))['CSV/forsidetekster.csv'].decode('utf-8-sig')
+        self.assertIn('2–14 (lige)',exported)
+        self.assertEqual(self.store.require('cards',self.ident)['address_ids'],[a['id'] for a in members])
 
     def test_range_is_per_source_line_and_follows_selected_extremes(self):
         members=[address('a','First fictional street','3'),
@@ -123,12 +141,12 @@ class FrontLabelOverrideTests(unittest.TestCase):
                'number_style':'range' if r['road']=='First fictional street' else 'exact'} for r in before['front_addresses']]
         self.store.mutate('card.front_labels.save',{'card_id':self.ident,'expected_token':before['front_labels_token'],'rows':rows})
         selected=self.view()['front_addresses']
-        self.assertEqual(next(r for r in selected if r['road']=='First fictional street')['display_numbers'],'3–7')
+        self.assertEqual(next(r for r in selected if r['road']=='First fictional street')['display_numbers'],'3–7 (ulige)')
         unchanged=next(r for r in selected if r['road']=='Other fictional street')
         self.assertEqual(unchanged['number_style'],'exact')
         self.assertNotEqual(unchanged['display_numbers'],'2–6')
         self.replace_members([dict(a,number='19') if a['id']==members[1]['id'] else a for a in members])
-        self.assertEqual(next(r for r in self.view()['front_addresses'] if r['road']=='First fictional street')['display_numbers'],'3–19')
+        self.assertEqual(next(r for r in self.view()['front_addresses'] if r['road']=='First fictional street')['display_numbers'],'3–19 (ulige)')
 
     def test_reject_unavailable_range_and_invalid_style_without_writes(self):
         self.replace_members([address('single','One-house fictional street','3')])
