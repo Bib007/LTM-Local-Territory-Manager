@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.16 giver en samlet læsearkiveksport med KML, tidsstemplede sikkerhedskopier og synligt kortvalg efter **Åbn**. Se [udgivelsesnoterne](BETA-NOTES.md) for alle ændringer.
+Beta 1.12.19-beta.18 giver færre knæk i DAR-grænseforslaget. Brug **Foreslå grænse** i Kortopsætning for at beregne grænsen på ny.
 
 ## Installer betakanalen én gang
 
