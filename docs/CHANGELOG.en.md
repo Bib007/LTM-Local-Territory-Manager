@@ -2,6 +2,11 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.22 · 2026-11-15
+
+- **DAR – restored classic envelope:** Start with the original broad convex outline around the selected addresses. When another locally loaded DAR address or an existing neighboring territory intersects the area, carve a local notch instead of replacing the whole outline with a narrow connecting path.
+- **Precise restrictions:** Only other known active loaded address points and neighboring territory polygons constrain the result. Roads, map backgrounds and buildings without separate relevant address assignments do not automatically constrict the proposal. Unavoidable crossings still require explicit review; saved polygons are never silently redrawn.
+
 ## 1.12.19-beta.21 · 2026-11-15
 
 - **Rebuilt DAR outline suggestions:** Prefer spacious, simple polygons instead of thin paths. Rural proposals receive wider straight-edged envelopes; dense urban proposals adapt to selected entrances.
