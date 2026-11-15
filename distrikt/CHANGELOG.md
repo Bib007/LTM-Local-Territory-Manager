@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.14 · 2026-11-14
+
+- **Forsidens vejlinjer:** Tilføj et valg pr. geografisk vejlinje mellem **Vis de valgte numre** (standard) og **Vis fra første til sidste**. Eksempel: de valgte adresser 3, 7, 9, 15, 25, 67 kan vises på S-12 som 3–67, uden at mellemliggende husnumre bliver tilføjet til distriktet.
+- Valget gemmes kun som visning, knyttet til vejlinjens DAR-adresse-ID'er. Besøgstal, udvalgte adresser, geografiske grænser, IB og historik er uændrede. Eksisterende manuelle tilføjelser til vejlinjer bevares, og en uafklaret DAR-opdeling overskriver ikke indstillingen.
+- Samme tekst anvendes i S-12, PDF/print, offentlige PNG-kort, backup og CSV-læsearkiv. Ændring kræver genprint. Danske/engelske regressionstests med fiktive vejnumre og uændret adresseudvalg. Stable er urørt.
+
 ## 1.12.19-beta.13 · 2026-11-14
 
 - **Adresseændringer / Opfølgninger:** Tilføj knappen »Afvis alle adresser uden for distriktsgrænsen« med forhåndsvisning af konkrete afventende adresser, antal og manuel bekræftelse. Grænsen kontrolleres på serveren ud fra den gemte samlede distriktsgrænse, aldrig ud fra fælles vejnavn.
