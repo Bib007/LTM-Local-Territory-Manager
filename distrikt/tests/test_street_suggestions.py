@@ -198,7 +198,7 @@ class OutlineTests(unittest.TestCase):
         # A broad old-style territory must keep most of the original area.
         projected=[((x-10)*self.scale,(y-55)*111320) for x,y in outline]
         area=abs(sum(a[0]*b[1]-b[0]*a[1]
-                     for a,b in zip(projected,projected[1:]+projected[:1]))/2
+                     for a,b in zip(projected,projected[1:]+projected[:1]))/2)
         self.assertGreater(area,6500)
         self.assertLessEqual(len(outline),40)
 
