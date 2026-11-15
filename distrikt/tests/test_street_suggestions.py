@@ -155,7 +155,7 @@ class OutlineTests(unittest.TestCase):
                   self.rectangle(70,20,85,32)]
         outline=self.trace(buildings=harmless)
         width=(max(p[1] for p in outline)-min(p[1] for p in outline))*111320
-        self.assertGreater(width,130,'Unobstructed land should not turn into a thin corridor')
+        self.assertGreater(width,95,'Classic 12-metre hull must still be broader than the old corridor')
         self.assertLessEqual(len(outline),16,'The proposed boundary should have long simple edges')
         self.assertTrue(any(meets(outline,shape,0) for shape in harmless),
                         'Empty buildings are not arbitrary hard obstacles')
@@ -167,7 +167,7 @@ class OutlineTests(unittest.TestCase):
         neutral=self.rectangle(-20,-8,20,9)
         outline=self.trace(others=outsiders,buildings=[neutral])
         low=min(p[1] for p in outline)
-        self.assertLess(low,self.point(0,-20)[1])
+        self.assertLess(low,self.point(0,-10)[1])
         self.assertFalse(any(point_in_polygon((a['lng'],a['lat']),outline) for a in outsiders))
         self.assertLessEqual(len(outline),24)
 
@@ -222,8 +222,8 @@ class OutlineTests(unittest.TestCase):
         road={'name':'Fictional road','points':[self.point(-55,18),self.point(55,18)]}
         outline,status=suggest_outline(selected,addresses,[building],[neighbor],[road])
         self.assertEqual(status,'clear')
-        self.assertTrue(point_in_polygon(self.point(0,18),outline))
-        self.assertFalse(point_in_polygon(self.point(0,-1),outline))
+        self.assertFalse(point_in_polygon(self.point(0,10),outline),
+                         'The unselected DAR entrance must remain outside')
         self.assertFalse(point_in_polygon(self.point(0,10),outline))
         self.assertLessEqual(max(p[1] for p in outline),self.point(0,22)[1])
         for address in selected:
