@@ -2,6 +2,31 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.20 · 2026-11-15
+
+- **S-12 / house numbers:** **Show first–last range** now preserves the (odd) and (even) labels for each selected side. Combined road lines display both labels whenever a range is shortened. Preview, print, PDF, shared cards and readable exports retain the distinction; address membership and visit totals remain unchanged.
+
+## 1.12.19-beta.19 · 2026-11-15
+
+- **DAR boundaries:** Connections between selected houses favor the saved road when there is room. Suggestions can connect houses diagonally and keep clearance from other houses and neighboring boundaries.
+
+## 1.12.19-beta.18 · 2026-11-15
+
+- **DAR boundaries:** Suggestions replace small steps with longer lines where space allows. They keep corners where needed to preserve address selection and clearance from neighboring boundaries.
+
+## 1.12.19-beta.17 · 2026-11-15
+
+- **DAR suggestions:** The automatic boundary keeps other known houses and locally saved buildings outside the territory.
+- **Neighboring territories:** The suggestion looks for a detour at least three meters from shared boundaries. It shows a warning if the selected houses require a narrow crossing within the local map area.
+- **Map editor:** Use **Suggest boundary** to recalculate the boundary for the selected addresses. The suggestion is checked again on save. If a safe suggestion is unavailable, draw the boundary by hand.
+
+## 1.12.19-beta.16 · 2026-11-15
+
+- **Readable archive:** Generate cards together from local map data and export boundaries and address points as KML. Large archives are assembled on disk.
+- **Backup:** ZIP names include date and time. Use Save as in browsers with a file picker, or use browser download settings. Import supports ZIP files up to 512 MB.
+- **Territories:** Open selects the card in the list so the selection is visible when you close it.
+- **Concurrent edits:** Open editors retain their own starting point while users work on different cards.
+
 ## 1.12.19-beta.15 · 2026-11-15
 
 - **Territory cards:** See the card front change as soon as you select a house-number range. **Save and show card** opens the saved front, and previously shared PDFs get a shortcut to update them.

@@ -120,6 +120,15 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert.equal(await page.locator('.territorySortControls').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;}),true,'Sort control fits desktop/mobile');
  const listed=()=>page.locator('.cardRow[data-card-row]').evaluateAll(nodes=>nodes.map(n=>n.dataset.cardRow));
  assert.deepEqual(await listed(),['folder','blocked','box','one','two','three']);
+ for(const id of ['one','box']){
+  const row=page.locator(`[data-card-row=${id}]`);
+  await activate(row.locator('[data-action=detail]'));
+  await activate(page.locator('.dialogClose'));
+  assert.equal(await row.getAttribute('aria-selected'),'true');
+  if(!touch)assert.equal(await row.locator('[data-action=detail]').evaluate(button=>document.activeElement===button),true);
+  assert.deepEqual(await page.locator('.cardRow.selected').evaluateAll(rows=>rows.map(n=>n.dataset.cardRow)),[id]);
+ }
+
  await page.locator('#territorySort').selectOption('oldest');
  assert.deepEqual(await listed(),['blocked','one','box','two','three','folder'],'Unknown completions first, then oldest');
  await page.locator('#areaFilter').selectOption('a');
@@ -186,7 +195,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  await page.locator('[data-action=backup-snooze]').click();await page.waitForFunction(()=>!document.getElementById('backupReminder'));assert.equal(writes.length,beforeBackup+1);assert.equal(writes.at(-1).action,'backup.snooze');
  await page.reload();await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');assert.equal(await page.locator('#backupReminder').count(),0);
  state.today='2026-10-18';await page.reload();await page.locator('#backupReminder').waitFor();await page.locator('#navigationLanguage').selectOption('en');assert.match(await page.locator('#backupReminder').innerText(),/private backup/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
- const downloadEvent=page.waitForEvent('download');await page.locator('#backupReminder [data-action=backup]').click();const downloaded=await downloadEvent;assert.match(downloaded.suggestedFilename(),/2026-10-18.*zip/);await page.waitForFunction(()=>!document.getElementById('backupReminder'));
+ const downloadEvent=page.waitForEvent('download');await page.locator('#backupReminder [data-action=backup]').click();const downloaded=await downloadEvent;assert.match(downloaded.suggestedFilename(),/Distrikt-sikkerhedskopi-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-\d{3}\.zip/);await page.waitForFunction(()=>!document.getElementById('backupReminder'));
  assert.deepEqual(writes.slice(-2).map(w=>w.data.status),['created','download_started']);assert.equal(writes.at(-1).data.id,writes.at(-2).data.id);
  await page.evaluate(()=>{page='Indstillinger';Navigation.settingsSection='data';render();});await page.locator('#backupHistory > summary').click();assert.match(await page.locator('#backupHistory').innerText(),/Browser download started/);assert.doesNotMatch(await page.locator('#backupHistory').innerText(),/File write confirmed/);assert.deepEqual(errors,[]);
  await page.evaluate(()=>{page='Opgaver';Workspace.taskFilter='open';render();});await page.locator('[data-work=new-task]').click();await page.locator('[data-work-form=note] [name=text]').fill('Fiktiv ugentlig <opgave>');await page.locator('[name=repeat_weekday]').selectOption('6');await page.locator('#navigationLanguage').selectOption('da');assert.equal(await page.locator('[name=repeat_weekday]').inputValue(),'6');assert.equal(await page.locator('[data-work-form=note] [name=text]').inputValue(),'Fiktiv ugentlig <opgave>');await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('[name=repeat_weekday] option:checked').innerText(),'Sunday');await page.locator('[data-work-form=note] button.primary').click();await page.waitForFunction(()=>!document.getElementById('dialog').open);

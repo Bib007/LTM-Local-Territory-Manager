@@ -1,7 +1,9 @@
-# LTM 1.12.19-beta.15 · Se vejintervallet på kortet med det samme
+# LTM 1.12.19-beta.20 · Lige/ulige på forkortede vejlinjer
 
-Åbn **Rediger forsidens vejlinjer**, og vælg **Vis fra første til sidste**. Forhåndsvisningen viser fx **3–67** med det samme. Vælg **Gem og fremvis kort** for at bruge visningen på forsiden, i print og i nye eksporter. Har du allerede delt en PDF på Google Drive, kan du opdatere den fra kortet efter gemning.
+- **S-12:** Når en vejlinje bruger **Vis fra første til sidste**, bliver **(lige)** og **(ulige)** stående ved de rette nummerintervaller. Dette gælder både forhåndsvisning, print/PDF, delte kort og eksport. Gennemgange og adressevalg ændres ikke.
+- Beta.19's forbedringer af DAR-grænseforslag langs vejene er bevaret.
 
 ## English
 
-Open **Edit street lines on the front** and select **Show first–last range**. The preview immediately shows the result, such as **3–67**. Select **Save and show card** to use this view on the front, in print, and in new exports. If you already shared a PDF on Google Drive, update it from the card after saving.
+- **S-12:** Shortened first–last house-number ranges now retain **(even)** and **(odd)** on each applicable side, including preview, print/PDF, shared cards and exports. Selected addresses and visits remain unchanged.
+- Beta.19's road-following DAR boundary improvements remain included.

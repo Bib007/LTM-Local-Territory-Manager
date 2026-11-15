@@ -239,6 +239,7 @@ class ProfileRoutes:
             self.send(self.server.accounts.guide_progress(token,data.get('run_id'),data.get('request_id'),data.get('step_id')));return True
         if path=='/api/profiles/heartbeat':
             self.server.accounts.heartbeat(token)
+            runtime.bases.keep_workspace_alive(token,data.get('edit_bases'))
             status={'ok':True,'permissions':sorted(self.profile_user['permissions']),'auth_revision':self.server.accounts.generation,
                     'conflicts':len(runtime.workspace.conflicts(token))+(len(self.server.accounts.reviews(token)) if 'users.manage' in self.profile_user['permissions'] else 0)}
             if 'notes.view' in self.profile_user['permissions']:

@@ -2,6 +2,31 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.20 · 2026-11-15
+
+- **S-12 / husnumre:** Valget **Vis fra første til sidste** bevarer nu (lige) og (ulige) for den pågældende husnummerside. På blandede veje vises begge markeringer ved forkortede intervaller, så det tydeligt fremgår hvilke numre der hører til hver side. Forhåndsvisning, print, PDF, delte kort og læsearkiv anvender samme oplysning; de faktiske adresser og besøgstal ændres ikke.
+
+## 1.12.19-beta.19 · 2026-11-15
+
+- **DAR-grænser:** Forbindelser mellem de valgte huse søger mod den gemte vej, når der er plads. Grænseforslaget kan forbinde husene skråt og holder afstand til øvrige huse og nabogrænser.
+
+## 1.12.19-beta.18 · 2026-11-15
+
+- **DAR-grænser:** Grænseforslaget erstatter små trappetrin med længere linjer, hvor der er plads. Det beholder knæk ved huse og nabogrænser, når det kræves for at respektere adressevalget og afstanden.
+
+## 1.12.19-beta.17 · 2026-11-15
+
+- **DAR-forslag:** Den automatiske grænse holder andre kendte huse og lokalt gemte bygninger uden for kortet.
+- **Nabokort:** Forslaget søger en omvej med mindst tre meters afstand til nabogrænser. En smal krydsning vises med en besked, når kortudsnittet kræver den for at forbinde de valgte huse.
+- **Korteditor:** Brug **Foreslå grænse** til at beregne en ny grænse for adressevalget. Et forslag kontrolleres igen ved gemning. Hvis der ikke er en sikker grænse, kan den tegnes i hånden.
+
+## 1.12.19-beta.16 · 2026-11-15
+
+- **Læsearkiv:** Dan kortene samlet ud fra lokale kortdata, og få kortgrænser og adressepunkter i KML. Store arkiver pakkes på disk.
+- **Sikkerhedskopi:** ZIP-navnet indeholder dato og klokkeslæt. Vælg Gem som i browsere med filvælger, eller brug browserens downloadindstillinger. Import understøtter ZIP-filer op til 512 MB.
+- **Distrikter:** Åbn markerer kortet på listen, så markeringen passer, når du lukker kortet.
+- **Samtidige rettelser:** Åbne redigeringer bevarer deres eget grundlag, mens brugerne arbejder på forskellige kort.
+
 ## 1.12.19-beta.15 · 2026-11-15
 
 - **Distriktskort:** Se virkningen på selve forsiden, så snart du vælger et husnummerinterval. **Gem og fremvis kort** åbner den gemte forside, og tidligere delte PDF’er får en genvej til at blive opdateret.

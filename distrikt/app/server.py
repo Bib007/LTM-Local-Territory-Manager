@@ -6,6 +6,8 @@ import json
 import os
 import secrets
 import signal
+import shutil
+import tempfile
 import subprocess
 import sys
 import threading
@@ -23,7 +25,7 @@ from pdf_export import s13_pdf
 from readable_export import ReadableExport
 from geodata import Downloads
 from access import Access, LOGIN, private_client, write_private
-from portable import Restores, snapshot, MAX_ARCHIVE
+from portable import Restores, write_snapshot, archive_limit_error, MAX_ARCHIVE
 from sharing import Publications
 from address_source import Datafordeler
 from address_schedule import AddressSchedule
@@ -36,7 +38,7 @@ from runtime_status import RuntimeStatus
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.12.19-beta.15'
+VERSION='1.12.19-beta.20'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -46,6 +48,8 @@ class Server(ThreadingHTTPServer):
     def server_close(self):
         if hasattr(self,'runtime_status'):self.runtime_status.close()
         if hasattr(self,'photo_ocr'):self.photo_ocr.close()
+        if hasattr(self,'readable'):
+            with self.readable.lock:self.readable.clear()
         super().server_close()
     def server_bind(self):
         # All listeners bind an explicit IP. Reverse DNS is unnecessary and can
@@ -106,21 +110,44 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
     def log_message(self,*args):
         # Names, addresses and history must not appear in logs.
         pass
-    def send(self,data,kind='application/json',status=200,headers=None):
-        if not isinstance(data,bytes):data=json.dumps(data,ensure_ascii=False).encode('utf8')
+    def send(self,data,kind='application/json',status=200,headers=None,*,size=None):
+        stream=size is not None
+        if not stream and not isinstance(data,bytes):data=json.dumps(data,ensure_ascii=False).encode('utf8')
         headers=dict(headers or {})
-        if len(data)>16384 and any(v.strip().split(';')[0]=='gzip' and not __import__('re').search(r'q=0(?:\.0*)?\s*$',v) for v in self.headers.get('Accept-Encoding','').split(',')):
+        if not stream and len(data)>16384 and any(v.strip().split(';')[0]=='gzip' and not __import__('re').search(r'q=0(?:\.0*)?\s*$',v) for v in self.headers.get('Accept-Encoding','').split(',')):
             data=__import__('gzip').compress(data,compresslevel=4);headers['Content-Encoding']='gzip';headers['Vary']='Accept-Encoding'
         self.send_response(status)
         self.send_header('Content-Type',kind+('; charset=utf-8' if kind in ('text/html','text/css','text/javascript','application/json') else ''))
-        self.send_header('Content-Length',str(len(data)))
+        self.send_header('Content-Length',str(size if stream else len(data)))
         self.send_header('Cache-Control','no-store')
         if getattr(self,'profile_user',None):self.send_header('X-LTM-Authorization',str(self.server.accounts.generation))
         for key,value in (headers or {}).items():self.send_header(key,value)
         self.send_header('X-Content-Type-Options','nosniff')
         self.send_header('Referrer-Policy','strict-origin-when-cross-origin')
         self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
-        self.end_headers();self.wfile.write(data)
+        self.end_headers()
+        if stream:shutil.copyfileobj(data,self.wfile,1024*1024)
+        else:self.wfile.write(data)
+    def archive_response(self,filename,generate):
+        archive=tempfile.TemporaryFile()
+        try:
+            generate(archive)
+            size=archive.tell()
+            archive.seek(0)
+        except BaseException:
+            archive.close()
+            raise
+        self.pending_archive=archive,filename,size
+
+    def send_pending_archive(self):
+        response=getattr(self,'pending_archive',None)
+        if response:
+            self.pending_archive=None
+            archive,filename,size=response
+            with archive:
+                try:self.send(archive,'application/zip',headers={'Content-Disposition':f'attachment; filename="{filename}"'},size=size)
+                except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
+
     def allowed(self,token=False,public=False):
         host=self.headers.get('Host','').lower()
         if host not in self.server.hosts:
@@ -142,6 +169,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
     def do_GET(self):
         with self.profile_scope() as permitted:
             if permitted:self._get()
+        self.send_pending_archive()
     def _get(self):
         parsed=urlsplit(self.path);path=parsed.path;q=parse_qs(parsed.query)
         public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/api/ping')
@@ -212,7 +240,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 year=int(q.get('year',['0'])[0])
                 if not 2000<=year<=2200:raise ValueError('Ugyldigt tjenesteår.')
                 return self.send(s13_pdf(self.server.store.state(),year,q.get('language',['da'])[0]),'application/pdf')
-            if path=='/api/export/backup':return self.send(snapshot(self.server.store,VERSION),'application/zip',headers={'Content-Disposition':'attachment; filename="Distrikt-sikkerhedskopi.zip"'})
+            if path=='/api/export/backup':return self.archive_response('Distrikt-sikkerhedskopi.zip',lambda out:write_snapshot(self.server.store,VERSION,out))
             if path=='/api/address-source/status':return self.send(self.server.address_source.status())
             if path=='/api/connections/backup':return self.send(export_connections(self.server),headers={'Cache-Control':'no-store'})
             if path=='/api/connections/drive':
@@ -235,19 +263,38 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
     def do_POST(self):
         # Never hold global account authority while waiting on a caller's body.
         if not self.allowed(public=True):return
+        restore=self.path=='/api/restore/preview'
+        if restore and not self.allowed(token=True):return
+        upload=None
         try:
-            length=int(self.headers.get('Content-Length',0))
-            limit=4095 if self.path=='/api/login' else MAX_ARCHIVE if self.path=='/api/restore/preview' else 16000000
-            if not 0<length<=limit:raise ValueError()
-            self.connection.settimeout(15)
-            payload=self.rfile.read(length)
-            if len(payload)!=length:raise ValueError()
-            self.rfile=io.BytesIO(payload)
-        except (ValueError,OSError):
-            self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
-        with self.profile_scope(post=True) as permitted:
-            if permitted:self._post()
-    def _post(self):
+            try:
+                length=int(self.headers.get('Content-Length',0))
+                limit=4095 if self.path=='/api/login' else MAX_ARCHIVE if restore else 16000000
+                if not 0<length<=limit:
+                    if restore:return self.send(error_payload(archive_limit_error()),status=413)
+                    raise ValueError()
+                self.connection.settimeout(15)
+                if restore:
+                    upload=tempfile.TemporaryFile()
+                    remaining=length
+                    while remaining:
+                        chunk=self.rfile.read(min(1024*1024,remaining))
+                        if not chunk:raise ValueError()
+                        upload.write(chunk)
+                        remaining-=len(chunk)
+                    upload.seek(0)
+                else:
+                    payload=self.rfile.read(length)
+                    if len(payload)!=length:raise ValueError()
+                    self.rfile=io.BytesIO(payload)
+            except (ValueError,OSError):
+                self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
+            with self.profile_scope(post=True) as permitted:
+                if permitted:self._post(restore_upload=upload)
+            self.send_pending_archive()
+        finally:
+            if upload:upload.close()
+    def _post(self,restore_upload=None):
         if self.path=='/api/login':
             if not self.allowed(public=True):return
             try:
@@ -262,9 +309,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         if self.path=='/api/restore/preview':
             try:
                 if self.headers.get('Content-Type')!='application/zip':raise ValueError('Vælg en ZIP-sikkerhedskopi.')
-                length=int(self.headers.get('Content-Length',0))
-                if not 0<length<=MAX_ARCHIVE:raise ValueError('Sikkerhedskopien må højst fylde 100 MB.')
-                return self.send(self.server.restores.preview(self.rfile.read(length)))
+                return self.send(self.server.restores.preview(restore_upload))
             except ValueError as error:return self.send(error_payload(error),status=400)
         if self.headers.get('Content-Type','').split(';')[0]!='application/json':return self.send({'error':'Ugyldigt format.'},status=415)
         try:
@@ -277,8 +322,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))
             if self.path=='/api/photo/cancel':return self.send(self.server.photo_ocr.cancel(data.get('id')))
             if self.path=='/api/export/readable/prepare':return self.send(self.server.readable.prepare())
+            if self.path=='/api/export/readable/cancel':return self.send(self.server.readable.cancel(data.get('token')))
             if self.path=='/api/export/readable/image':return self.send(self.server.readable.image(data))
-            if self.path=='/api/export/readable/finish':return self.send(self.server.readable.finish(data.get('token')),'application/zip',headers={'Content-Disposition':'attachment; filename="LTM-laesearkiv.zip"'})
+            if self.path=='/api/export/readable/finish':return self.archive_response('LTM-laesearkiv.zip',lambda out:self.server.readable.finish(data.get('token'),out))
             if self.path=='/api/logout':
                 if self.server.profiles.enabled:
                     token=self.profile_token();self.server.profiles.bases.revoke_session(token);self.server.accounts.logout(token)
