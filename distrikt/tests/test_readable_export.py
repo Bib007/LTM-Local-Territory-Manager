@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
-from readable_export import ReadableExport,csv_file,png_image,image_pdf
+from readable_export import ReadableExport,csv_file,png_image,write_image_pdf
 
 def png():
     def chunk(kind,raw):return struct.pack('>I',len(raw))+kind+raw+struct.pack('>I',zlib.crc32(kind+raw)&0xffffffff)
@@ -28,17 +28,26 @@ class ReadableExportTests(unittest.TestCase):
             self.store.put('ib',{'id':'i','card_id':'c','address_id':'ib','road':'Eksempelvej','number':'9 2 tv','date':'2024-01-01'})
         self.export=ReadableExport(self.store)
         self.raw_front=png()
-    def tearDown(self):self.store.close();self.tmp.cleanup()
+    def tearDown(self):self.export.clear();self.store.close();self.tmp.cleanup()
+    def finish(self,token):
+        out=io.BytesIO();self.export.finish(token,out);return out.getvalue()
     def test_complete_private_zip_allowlists_and_exact_addresses(self):
         revision=self.store.revision;job=self.export.prepare();self.assertEqual(len(job['cards']),1)
         self.assertEqual([a['id'] for a in job['cards'][0]['members']],['one','ib']);self.assertTrue(job['cards'][0]['members'][1]['saved_point']);self.assertEqual(job['cards'][0]['members'][1]['number'],'9');self.assertNotIn('floor',job['cards'][0]['members'][1])
         self.assertNotIn('ib',job['cards'][0]['card']);self.assertNotIn('notes',job)
         self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
         for ident in job['fronts']:self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
-        raw=self.export.finish(job['token']);self.assertEqual(self.store.revision,revision)
+        raw=self.finish(job['token']);self.assertEqual(self.store.revision,revision)
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             names=z.namelist();self.assertEqual(len([n for n in names if n.startswith('PDF/')]),4)
             self.assertIn('S-13/S-13-2022-2023.pdf',names);self.assertIn('CSV/omraader.csv',names)
+            from xml.etree import ElementTree
+            kml=ElementTree.fromstring(z.read('KML/distriktskort.kml'))
+            ns={'k':'http://www.opengis.net/kml/2.2'}
+            ring=kml.find('.//k:LinearRing/k:coordinates',ns).text.split()
+            self.assertEqual(ring[0],ring[-1])
+            self.assertEqual(len(kml.findall('.//k:Point',ns)),2)
+            self.assertNotIn(b'Fiktiv Forkynder',z.read('KML/distriktskort.kml'))
             addresses=z.read('CSV/adresser.csv').decode('utf-8-sig');self.assertIn(';1;2;tv;9999;',addresses);self.assertIn(';9;2;tv;9999;',addresses);self.assertNotIn('1–9',addresses)
             self.assertIn("'=Fiktiv opgave",z.read('CSV/opgaver.csv').decode('utf-8-sig'))
             self.assertIn('😀',z.read('CSV/opgaver.csv').decode());self.assertIn(b'U+1F600',z.read('PDF/04-alle-opgaver.pdf'))
@@ -50,26 +59,26 @@ class ReadableExportTests(unittest.TestCase):
                 digest,n=row.split('  ',1);self.assertEqual(hashlib.sha256(z.read(n)).hexdigest(),digest)
     def test_token_revision_completeness_and_replacement(self):
         first=self.export.prepare();second=self.export.prepare()
-        with self.assertRaises(ValueError):self.export.finish(first['token'])
-        with self.assertRaisesRegex(ValueError,'Ikke alle'):self.export.finish(second['token'])
+        with self.assertRaises(ValueError):self.finish(first['token'])
+        with self.assertRaisesRegex(ValueError,'Ikke alle'):self.finish(second['token'])
         with self.assertRaises(ValueError):self.export.image({'token':second['token'],'card_id':'foreign','png':''})
         with self.store.transaction():self.store.put('notes',{'id':'new','task':True,'text':'Fiktiv'})
-        with self.assertRaisesRegex(ValueError,'Data er ændret'):self.export.finish(second['token'])
+        with self.assertRaisesRegex(ValueError,'Data er ændret'):self.finish(second['token'])
     def test_data_changed_during_pdf_generation_stops_download(self):
         job=self.export.prepare();self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
         for ident in job['fronts']:self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
-        def change(_images):
+        def change(out,images,count):
             with self.store.transaction():self.store.put('notes',{'id':'during-export','task':True,'text':'Fiktiv nyere opgave'})
-            return b'%PDF-FICTIONAL'
-        with patch('readable_export.image_pdf',side_effect=change):
-            with self.assertRaisesRegex(ValueError,'Data er ændret'):self.export.finish(job['token'])
+            out.write(b'%PDF-FICTIONAL')
+        with patch('readable_export.write_image_pdf',side_effect=change):
+            with self.assertRaisesRegex(ValueError,'Data er ændret'):self.finish(job['token'])
         self.assertIsNotNone(self.store.get('notes','during-export'))
 
     def test_missing_canonical_front_blocks_finish(self):
         job=self.export.prepare()
         self.assertEqual(job['fronts'],['c','arch'])
         self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
-        with self.assertRaisesRegex(ValueError,'Ikke alle forsider'):self.export.finish(job['token'])
+        with self.assertRaisesRegex(ValueError,'Ikke alle forsider'):self.finish(job['token'])
 
     def test_prepare_reads_geography_once_for_many_cards(self):
         with self.store.transaction():
@@ -110,6 +119,6 @@ class ReadableExportTests(unittest.TestCase):
 
     def test_rgb_pdf_has_embedded_image_and_valid_page(self):
         raw=png();packed,w,h=png_image(raw);self.assertEqual((w,h),(2200,1560));self.assertEqual(len(zlib.decompress(packed)),1560*(1+2200*3))
-        value=image_pdf([raw]);self.assertIn(b'/Count 1',value);self.assertIn(b'/Predictor 15',value);self.assertTrue(value.startswith(b'%PDF-'))
+        out=io.BytesIO();write_image_pdf(out,[raw],1);value=out.getvalue();self.assertIn(b'/Count 1',value);self.assertIn(b'/Predictor 15',value);self.assertTrue(value.startswith(b'%PDF-'))
 
 if __name__=='__main__':unittest.main()

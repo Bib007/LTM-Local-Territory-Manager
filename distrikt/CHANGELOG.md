@@ -8,6 +8,11 @@
 - **Nabokort:** Forslaget søger en omvej med mindst tre meters afstand til nabogrænser. En smal krydsning vises med en besked, når kortudsnittet kræver den for at forbinde de valgte huse.
 - **Korteditor:** Brug **Foreslå grænse** til at beregne en ny grænse for adressevalget. Et forslag kontrolleres igen ved gemning. Hvis der ikke er en sikker grænse, kan den tegnes i hånden.
 
+- **Læsearkiv:** Dan kortene samlet ud fra lokale kortdata, og få kortgrænser og adressepunkter i KML. Store arkiver pakkes på disk.
+- **Sikkerhedskopi:** ZIP-navnet indeholder dato og klokkeslæt. Vælg Gem som i browsere med filvælger, eller brug browserens downloadindstillinger. Import understøtter ZIP-filer op til 512 MB.
+- **Distrikter:** Åbn markerer kortet på listen, så markeringen passer, når du lukker kortet.
+- **Samtidige rettelser:** Åbne redigeringer bevarer deres eget grundlag, mens brugerne arbejder på forskellige kort.
+
 ## 1.12.24 · 2026-11-15
 
 - **Adresseændringer:** Brug **Afvis alle adresser uden for distriktsgrænsen** til at gennemgå og afvise de afventende DAR-adresser, der ligger uden for den gemte grænse. Adresser på grænsen samt usikre flytninger gennemgås fortsat enkeltvis.

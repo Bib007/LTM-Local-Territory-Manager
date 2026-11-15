@@ -8,6 +8,11 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - **Neighboring territories:** The suggestion looks for a detour at least three meters from shared boundaries. It shows a warning if the selected houses require a narrow crossing within the local map area.
 - **Map editor:** Use **Suggest boundary** to recalculate the boundary for the selected addresses. The suggestion is checked again on save. If a safe suggestion is unavailable, draw the boundary by hand.
 
+- **Readable archive:** Generate cards together from local map data and export boundaries and address points as KML. Large archives are assembled on disk.
+- **Backup:** ZIP names include date and time. Use Save as in browsers with a file picker, or use browser download settings. Import supports ZIP files up to 512 MB.
+- **Territories:** Open selects the card in the list so the selection is visible when you close it.
+- **Concurrent edits:** Open editors retain their own starting point while users work on different cards.
+
 ## 1.12.24 · 2026-11-15
 
 - **Address changes:** Use **Reject all addresses outside the territory boundary** to review and reject pending DAR addresses outside the saved boundary. Addresses on the boundary and uncertain moves still get individual review.

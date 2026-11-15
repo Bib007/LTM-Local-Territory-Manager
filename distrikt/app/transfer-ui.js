@@ -17,7 +17,7 @@ const TransferUI={previewGeneration:0,writeBusy:false,
  }catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);if(this.current(context))I18n.errorContent(errorNode,error);else toast(error);}finally{button.disabled=false;this.writeBusy=false;}},
  html(){return `<div class="notice"><b>${ui('Flyt mellem HA, Mac og Windows')}</b><p>${ui('Hent en samlet sikkerhedskopi fra det nuværende system. Stop arbejdet dér, og importer filen på den nye installation. Brug derefter kun den nye installation som hovedsystem.')}</p><label>${ui('Importer sikkerhedskopi')} <input id="backupImport" type="file" accept=".zip,application/zip"></label><p class="hint">${ui('Du får en forhåndsvisning før import. Alle lokale registreringer erstattes samlet; de nuværende data sikkerhedskopieres først. Google-login og serverens adgangskode skal sættes op igen på den nye installation.')}</p><div id="transferProgress" role="status"></div></div>`;},
  async preview(file){
-  if(!file)return;if(file.size>100*1024*1024)throw Error(I18n.text('Sikkerhedskopien må højst fylde 100 MB.'));
+  if(!file)return;if(file.size>512*1024*1024)throw Error(I18n.text('Sikkerhedskopien må højst fylde 512 MB.'));
   const generation=++this.previewGeneration,dialogGeneration=openDialog.generation,progress=el('transferProgress');
   if(progress){progress.dataset.ui='Kontrollerer sikkerhedskopien…';progress.textContent=I18n.text(progress.dataset.ui);}
   try{

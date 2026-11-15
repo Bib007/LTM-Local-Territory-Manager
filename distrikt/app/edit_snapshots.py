@@ -1,10 +1,10 @@
 """Session-bound, bounded in-memory bases for concurrent editing."""
-from copy import deepcopy
 import secrets
 import threading
 import time
 from contextlib import contextmanager
 import json
+import zlib
 
 
 class EditSnapshots:
@@ -29,12 +29,13 @@ class EditSnapshots:
         with self._lock:
             now = self.clock()
             self._expire(now)
-            size=len(json.dumps(record,ensure_ascii=False).encode('utf-8'))
+            packed=zlib.compress(json.dumps(record,ensure_ascii=False,separators=(',',':')).encode(),level=1)
+            size=len(packed)
             if len(self._items) >= self.capacity or sum(i['size'] for i in self._items.values())+size>self.max_bytes:
                 raise ValueError('Too many active edit snapshots')
             token = secrets.token_urlsafe(32)
             self._items[token] = {'session':session, 'module':module, 'id':ident,
-                                  'record':deepcopy(record), 'until':now+self.ttl, 'busy':False,'size':size,'protected':protected}
+                                  'record':packed, 'until':now+self.ttl, 'busy':False,'size':size,'protected':protected}
             return token
 
     def fork(self, token, session):
@@ -48,9 +49,19 @@ class EditSnapshots:
             item=self._items.get(token)
             if not item or item['busy'] or (item['session'],item['module'],item['id'])!=(session,'workspace','workspace'):
                 raise ValueError('Edit snapshot is unavailable')
-            copied=self.create(session,'workspace','workspace',item['record'],protected=True)
+            copied=self.create(session,'workspace','workspace',json.loads(zlib.decompress(item['record'])),protected=True)
             self._items[copied]['until']=item['until']
             return copied
+
+    def keep_workspace_alive(self,session,tokens):
+        if not isinstance(tokens,list):return
+        with self._lock:
+            now=self.clock()
+            self._expire(now)
+            for token in tokens[:3]:
+                item=self._items.get(token) if isinstance(token,str) else None
+                if item and (item['session'],item['module'],item['id'])==(session,'workspace','workspace'):
+                    item['until']=now+self.ttl
 
     def is_protected(self, token, session):
         with self._lock:
@@ -79,7 +90,7 @@ class EditSnapshots:
             if not item or item['busy'] or (item['session'],item['module'],item['id']) != (session,module,ident):
                 raise ValueError('Edit snapshot is unavailable')
             item['busy'] = True
-            record = deepcopy(item['record'])
+            record = json.loads(zlib.decompress(item['record']))
         try:
             yield record
         except BaseException:
