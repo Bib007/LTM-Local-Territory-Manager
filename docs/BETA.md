@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.22 gendanner det oprindelige brede DAR-omrids og laver kun lokale indhak ved andre aktive indlæste DAR-adresser eller eksisterende distriktsgrænser. Bygninger uden relevant adresse hindrer ikke tegningen. **Gemte grænser ændres ikke automatisk:** Brug Foreslå grænse igen på hvert kort, og kontrollér omridset før Gem.
+Beta 1.12.19-beta.23 tegner et sammenhængende areal omkring de valgte huse. Andre indlæste adresseprikker holdes ude, og nabogrænser undgås, hvor der kan findes et sikkert forslag. **Gemte grænser ændres først, når du gemmer et nyt forslag.** Åbn Kortopsætning, vælg Foreslå grænse og kontrollér resultatet før Gem.
 
 ## Installer betakanalen én gang
 

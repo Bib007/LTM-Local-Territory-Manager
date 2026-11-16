@@ -4,12 +4,13 @@ import tempfile
 import unittest
 from copy import deepcopy
 from math import cos, radians
+from random import Random
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from street_suggestions import ranges, includes
 from geography import point_in_polygon, valid_polygon
-from territory_outline import meets, suggest_outline
+from territory_outline import meets, simple_ring, suggest_outline
 from geography import enclosing_outline
 
 
@@ -122,14 +123,14 @@ class OutlineTests(unittest.TestCase):
     def setUp(self):
         self.selected=[self.address(1,-40,0),self.address(3,40,0)]
 
-    def trace(self,others=(),buildings=(),neighbors=(),expected='clear'):
-        outline,status=suggest_outline(self.selected,[*self.selected,*others],buildings,neighbors)
+    def trace(self,others=(),neighbors=(),expected='clear'):
+        outline,status=suggest_outline(self.selected,[*self.selected,*others],neighbors)
         self.assertEqual(status,expected)
         if expected=='unavailable':
             self.assertEqual(outline,[])
         else:
             self.assertEqual(valid_polygon(outline,limit=5000),outline)
-            self.assertEqual(len({tuple(p) for p in outline}),len(outline))
+            self.assertTrue(simple_ring([tuple(p) for p in outline]))
             self.assertTrue(all(point_in_polygon((a['lng'],a['lat']),outline) for a in self.selected))
         return outline
 
@@ -137,13 +138,10 @@ class OutlineTests(unittest.TestCase):
         other=self.address(2,0,0)
         outline=self.trace(others=[other])
         self.assertFalse(point_in_polygon(self.point(0,0),outline))
-        building=self.rectangle(-7,-9,7,9)
-        outline=self.trace(others=[other],buildings=[building])
-        self.assertFalse(point_in_polygon(self.point(0,0),outline))
         self.assertLessEqual(len(outline),28)
         self.assertTrue(any(a[0]!=b[0] and a[1]!=b[1] for a,b in zip(outline,outline[1:]+outline[:1])))
-        outline=self.trace(buildings=[building])
-        self.assertTrue(meets(outline,building,0),
+        outline=self.trace()
+        self.assertTrue(meets(outline,self.rectangle(-7,-9,7,9),0),
                         'A footprint without another address must not pinch the territory')
 
     def test_open_rural_space_is_a_generous_simple_polygon(self):
@@ -153,7 +151,7 @@ class OutlineTests(unittest.TestCase):
         harmless=[self.rectangle(-80,-12,-65,12),
                   self.rectangle(2,0,15,10),
                   self.rectangle(70,20,85,32)]
-        outline=self.trace(buildings=harmless)
+        outline=self.trace()
         width=(max(p[1] for p in outline)-min(p[1] for p in outline))*111320
         self.assertGreater(width,95,'Classic 12-metre hull must still be broader than the old corridor')
         self.assertLessEqual(len(outline),16,'The proposed boundary should have long simple edges')
@@ -164,18 +162,11 @@ class OutlineTests(unittest.TestCase):
         self.selected=[self.address(n,x,0) for n,x in ((1,-45),(3,-15),(5,15),(7,45))]
         # Houses on the other side of the street protect that side only.
         outsiders=[self.address(n,x,28) for n,x in ((2,-45),(4,-15),(6,15),(8,45))]
-        neutral=self.rectangle(-20,-8,20,9)
-        outline=self.trace(others=outsiders,buildings=[neutral])
+        outline=self.trace(others=outsiders)
         low=min(p[1] for p in outline)
         self.assertLess(low,self.point(0,-10)[1])
         self.assertFalse(any(point_in_polygon((a['lng'],a['lat']),outline) for a in outsiders))
         self.assertLessEqual(len(outline),24)
-
-    def test_known_unselected_house_remains_protected_inside_footprint(self):
-        other=self.address(2,0,0)
-        building=self.rectangle(-9,-9,9,9)
-        outline=self.trace(others=[other],buildings=[building])
-        self.assertFalse(point_in_polygon(self.point(0,0),outline))
 
     def test_original_hull_is_unchanged_when_there_are_no_conflicts(self):
         expected=enclosing_outline([self.point(-40,0),self.point(40,0)])
@@ -218,13 +209,11 @@ class OutlineTests(unittest.TestCase):
         self.assertLessEqual(max(p[1] for p in outline),self.point(0,5)[1])
         self.assertFalse(meets(outline,neighbor,0))
 
-    def test_connection_uses_the_named_road_and_stays_clear_of_the_neighbor(self):
+    def test_envelope_stays_clear_of_the_neighbor(self):
         selected=[self.address(1,-40,7),self.address(3,40,7)]
         addresses=[*selected,self.address(2,0,10)]
-        building=self.rectangle(-12,1,12,15)
         neighbor=self.rectangle(-55,25,55,45)
-        road={'name':'Fictional road','points':[self.point(-55,18),self.point(55,18)]}
-        outline,status=suggest_outline(selected,addresses,[building],[neighbor],[road])
+        outline,status=suggest_outline(selected,addresses,[neighbor])
         self.assertEqual(status,'clear')
         self.assertFalse(point_in_polygon(self.point(0,10),outline),
                          'The unselected DAR entrance must remain outside')
@@ -240,16 +229,68 @@ class OutlineTests(unittest.TestCase):
                 outline=self.trace(neighbors=[neighbor])
                 self.assertFalse(meets(outline,neighbor,0))
 
-    def test_crossing_connects_separated_houses_through_narrow_strip(self):
-        neighbor=self.rectangle(-10,-500,10,500)
+    def test_bounded_search_cannot_prove_crossing_is_necessary(self):
+        self.trace(neighbors=[self.rectangle(-10,-500,10,500)],expected='unavailable')
+
+    def test_selected_entrance_inside_neighbor_requires_a_warning(self):
+        neighbor=self.rectangle(-50,-15,-30,15)
         outline=self.trace(neighbors=[neighbor],expected='crossing')
         self.assertTrue(meets(outline,neighbor,0))
-        self.assertTrue(point_in_polygon(self.point(0,0),outline))
-        self.assertFalse(point_in_polygon(self.point(0,5),outline))
 
-    def test_same_point_and_inside_neighbor_do_not_force_overlap(self):
+    def test_distinct_addresses_at_same_point_make_a_proposal_impossible(self):
         self.trace(others=[self.address(2,-40,0)],expected='unavailable')
-        self.trace(neighbors=[self.rectangle(-50,-15,-30,15)],expected='unavailable')
+
+    def test_other_entrance_of_same_house_remains_outside(self):
+        other=self.address(1,-34,0)
+        outline=self.trace(others=[other])
+        self.assertFalse(point_in_polygon((other['lng'],other['lat']),outline))
+
+    def test_multicluster_regression_keeps_a_filled_area(self):
+        selected, others = multicluster_addresses()
+        self.selected = selected
+        outline = self.trace(others=others)
+        self.assertFalse(any(point_in_polygon((a['lng'], a['lat']), outline) for a in others))
+        projected = [((x-10)*self.scale, (y-55)*111320) for x,y in outline]
+        area = abs(sum(x*v-u*y for (x,y),(u,v) in zip(projected,projected[1:]+projected[:1]))/2)
+        # Beta .22 returns its skinny fallback (~22,000 m²) for this arrangement.
+        self.assertGreater(area, 50_000)
+        self.assertLess(len(outline), 130)
+        self.selected.reverse()
+        self.assertEqual(self.trace(others=list(reversed(others))), outline)
+
+
+def multicluster_addresses():
+    """Fictional house groups patterned on the screenshot, with a synthetic origin and scale."""
+    selected_pixels = [
+        (30, 510), (45, 494), (66, 499), (88, 500), (298, 472), (358, 450),
+        (406, 347), (420, 335), (425, 310), (426, 291), (415, 260), (433, 243),
+        (435, 220), (436, 201), (430, 161), (448, 110), (483, 104), (530, 102),
+        (576, 108), (565, 151), (555, 193), (504, 160), (501, 194), (492, 224),
+        (480, 258), (548, 234), (494, 298), (564, 334), (583, 346), (634, 312),
+        (466, 440), (813, 204), (853, 248), (870, 168), (906, 247), (1026, 199),
+    ]
+    other_pixels = [
+        (168, 454), (220, 521), (277, 445), (299, 396), (346, 389), (354, 352),
+        (394, 474), (382, 515), (438, 519), (498, 387), (511, 402), (543, 365),
+        (506, 472), (556, 450), (562, 489), (613, 462), (647, 517), (542, 277),
+        (600, 266), (612, 230), (629, 194), (631, 158), (632, 120), (645, 92),
+        (657, 246), (675, 203), (707, 151), (725, 209), (751, 192), (766, 164),
+        (783, 124), (840, 130), (866, 110), (928, 180), (933, 143), (374, 200),
+        (370, 171), (372, 145), (376, 120), (378, 95), (394, 63), (410, 31),
+        (456, 30), (486, 46), (520, 40), (554, 44), (588, 43), (646, 54),
+        (686, 57), (680, 95), (736, 468), (862, 428), (1033, 342), (316, 332),
+        (288, 285), (332, 205), (298, 205), (330, 149), (302, 147), (341, 92),
+    ]
+
+    rng = Random(3)
+
+    def addresses(points, offset):
+        return [dict(number=str(n+offset), road='Fictional road', postcode='9999',
+                     lng=round(round(10+x*.55/64000,7)+rng.uniform(-.00012,.00012),7),
+                     lat=round(round(55-y*.55/111320,7)+rng.uniform(-.00006,.00006),7))
+                for n,(x,y) in enumerate(points)]
+
+    return addresses(selected_pixels, 0), addresses(other_pixels, 100)
 
 
 if __name__=='__main__':unittest.main()

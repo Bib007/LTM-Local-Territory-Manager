@@ -81,6 +81,33 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_dar_suggestion_requires_edit_rights_and_preview_preserves_data(self):
+        from test_street_suggestions import multicluster_addresses
+        selected, others = multicluster_addresses()
+        records = [dict(a, id=f'fictional-{i}', entity='address', count=1, type='Hus')
+                   for i,a in enumerate(selected+others)]
+        self.store.mutate('geo.import', {'records':records, 'source':'DAR / Datafordeleren'})
+        ids = [a['id'] for a in records[:len(selected)]]
+        reader, role, _ = self.reader(['cards.view','geo.view'])
+        data = {'card_id':self.card, 'address_ids':ids, 'suggest_outline':True}
+        before = self.store.state()
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.change(reader, self.state(reader), 'geo.preview', data)
+        self.assertEqual(failure.exception.code, 403)
+        self.value('/api/profiles/roles/save', {'id':role, 'name':'Fiktiv rolle',
+                   'permissions':['cards.view','geo.view','cards.edit','geo.edit']}, self.admin)
+        preview = self.change(reader, self.state(reader), 'geo.preview', data)['result']
+        self.assertEqual(preview['outline_status'], 'clear')
+        self.assertEqual(before, self.store.state())
+        self.assertEqual(len(preview['addresses']), len(ids))
+        self.change(reader, self.state(reader), 'geo.assign', {**data,
+                    'polygon':preview['outline'], 'outline_expected':preview['outline_expected']})
+        card = self.store.require('cards', self.card)
+        self.assertEqual(card['geo_polygon'], preview['outline'])
+        self.assertEqual(card['geo_outline_source'], 'suggestion')
+        self.assertEqual(card['address_ids'], ids)
+        self.assertEqual(before['notes'], self.store.state()['notes'])
+
     def test_task_image_read_and_write_permissions(self):
         from test_task_images import test_png
         import base64
