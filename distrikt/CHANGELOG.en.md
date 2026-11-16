@@ -2,6 +2,11 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.28 · 2026-11-16
+
+- **Roles:** Administrators can set a fixed Danish or English language and restrict a role to Home, check-in and check-out, and publishers.
+- **Follow-ups:** Users with access to geographic card data can see cards without a geographic boundary even when the system was set up for daily lending.
+
 ## 1.12.19-beta.27 · 2026-11-16
 
 - **DAR boundaries:** If the desired clearance cannot be applied around the whole outline, Suggest boundary tries moving individual edges away from unselected address markers. Every adjustment is checked against selected addresses and neighboring boundaries.
