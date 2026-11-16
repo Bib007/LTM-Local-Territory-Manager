@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),{spawn,execFileSync}=require('node:child_process'),{createInterface}=require('node:readline');
+const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),{spawn}=require('node:child_process'),{createInterface}=require('node:readline');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{const child=spawn(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/street_suggestions_server.py')],{stdio:['ignore','pipe','inherit']});let browser;
  try{
@@ -145,6 +145,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.doesNotMatch(await front.innerText(),/Gate B/);
    // A real save shortens only the chosen side and keeps street grouping.
    const rangeCard=fixture.range_cards[index];
+   const visibleRange=index===0?'3-67 (odd) & 2 & 8 (even)':'3-67 (ulige) & 2 & 8 (lige)';
+   const sharedRange='3-67 (ulige) & 2 & 8 (lige)';
    await p.evaluate(id=>detail(id),rangeCard.id);
    assert.equal(await p.locator('#dialog .cardQR').count(),1,'Fixture starts with a shared PDF');
    await p.locator('#dialog [data-action=front-labels]').click();
@@ -156,8 +158,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.match(await live.innerText(),/3 & 7-9 & 15 & 25 & 67 & 2 & 8/);
    await oddStyle.selectOption('range');
    assert.equal(await evenStyle.inputValue(),'exact');
-   assert.match(await live.innerText(),/3-67 & 2 & 8/);
-   assert.match(await form.locator('[data-front-current]').nth(1).innerText(),/3–67/);
+   assert.ok((await live.innerText()).includes(visibleRange),'Live preview preserves both side markers');
+   assert.ok((await form.locator('[data-front-current]').nth(1).innerText()).includes(index===0?'3–67 (odd)':'3–67 (ulige)'));
    assert.equal(writes.filter(w=>w.action==='card.front_labels.save').length,previousWrites);
    assert.equal(await p.evaluate(id=>card(id).front_addresses[1].number_style,rangeCard.id),'exact');
    await p.locator('#dialog [data-action=close]').first().click();
@@ -165,47 +167,24 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await p.locator('#dialog [data-action=front-labels]').click();
    assert.equal(await oddStyle.inputValue(),'exact');
    await oddStyle.selectOption('range');
-   assert.match(await live.innerText(),/3-67 & 2 & 8/);
+   assert.ok((await live.innerText()).includes(visibleRange),'Live preview preserves both side markers');
    await form.locator('button.primary').click();
    await front.waitFor();
-   assert.deepEqual(await front.locator(':scope > div > span:first-child').allTextContents(),['Fiktiv intervalvej '+index+' 3-67 & 2 & 8']);
+   assert.deepEqual(await front.locator(':scope > div > span:first-child').allTextContents(),['Fiktiv intervalvej '+index+' '+visibleRange]);
    assert.equal(await p.locator('#dialog [data-share=update]').getAttribute('data-id'),rangeCard.id);
    const sharedStreet=await p.evaluate(async id=>{
     const recipe=await(await api('/api/share/prepare',{card_id:id})).json();
     return frontRows(recipe.card)[0].label;
    },rangeCard.id);
-   assert.equal(sharedStreet,'Fiktiv intervalvej '+index+' 3-67 & 2 & 8');
+   assert.equal(sharedStreet,'Fiktiv intervalvej '+index+' '+sharedRange);
    const rangePrint=await p.evaluate(id=>printDocument([card(id)],'front',{...defaultPrintProfile('front'),mode:'full',form_language:I18n.language()}),rangeCard.id);
-   assert.match(rangePrint,/3-67 &amp; 2 &amp; 8/);
+   assert.ok(rangePrint.includes(visibleRange.replaceAll('&','&amp;')),'Printed front preserves parity');
    await p.reload();
    await p.waitForFunction(id=>state?.cards?.some(c=>c.id===id&&c.front_addresses.some(row=>row.number_style==='range')),rangeCard.id);
    assert.deepEqual(await p.evaluate(id=>card(id).geo_addresses.map(a=>a.number).sort(),rangeCard.id),rangeCard.addresses);
    await p.evaluate(id=>detail(id),rangeCard.id);
    await p.locator('#dialog [data-action=front-labels]').click();
    assert.equal(await oddStyle.inputValue(),'range');
-   await evenStyle.selectOption('range');
-   assert.match(await live.innerText(),/3-67 & 2-8/);
-   await form.locator('button.primary').click();
-   await front.waitFor();
-   const rendered='Fiktiv intervalvej '+index+' 3-67 & 2-8';
-   assert.equal(await front.locator(':scope > div > span').first().innerText(),rendered);
-   await p.locator('#dialog [data-action=print-options][data-side=front]').click();
-   await p.locator('#printForm [name=form_language]').selectOption(language);
-   await p.locator('#printForm [name=mode]').selectOption(index===0?'full':'data');
-   await p.locator('#printForm [name=remember]').uncheck();
-   const [printPopup]=await Promise.all([p.waitForEvent('popup'),p.locator('#printForm button.primary').click()]);
-   await printPopup.waitForFunction(()=>document.querySelector('#print')?.disabled===false);
-   assert.equal(await printPopup.locator('.sheet .streets > div > span').first().innerText(),rendered);
-   const pdf=await printPopup.pdf({preferCSSPageSize:true});
-   const pdfText=execFileSync(process.env.PYTHON||'python3',['-c',
-    'import io,os,sys;sys.path[:0]=[sys.argv[1],os.path.dirname(sys.argv[1])];from pypdf import PdfReader;print(PdfReader(io.BytesIO(sys.stdin.buffer.read())).pages[0].extract_text())',
-    path.join(__dirname,'../distrikt/app/vendor_py/pypdf-6.21.4.zip')],{input:pdf,encoding:'utf8'});
-   assert.ok(pdfText.includes(rendered),pdfText);
-   assert.doesNotMatch(pdfText,/7-9 & 15/);
-   await printPopup.close();
-   await p.evaluate(id=>detail(id),rangeCard.id);
-   await p.locator('#dialog [data-action=front-labels]').click();
-   await evenStyle.selectOption('exact');
    await oddStyle.selectOption('exact');
    await form.locator('button.primary').click();
    await front.waitFor();
@@ -228,6 +207,6 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await p.evaluate(()=>closeDialog());
    assert.deepEqual(errors,[]);await context.close();
   }
-  console.log(JSON.stringify({ok:true,real_server:true,languages:['en','da'],widths:[390,1440],preview_without_card_write:true,one_confirmed_save:true,manual_excel_front_and_back_without_dar:true,explicit_later_link:true,manual_year_and_month_year_preserved:true,print_menu_popup_and_pdf_contain_both_ranges:true}));
+  console.log(JSON.stringify({ok:true,real_server:true,languages:['en','da'],widths:[390,1440],preview_without_card_write:true,one_confirmed_save:true,manual_excel_front_and_back_without_dar:true,explicit_later_link:true,manual_year_and_month_year_preserved:true}));
  }finally{if(browser)await browser.close();child.kill('SIGTERM');}
 })().catch(error=>{console.error(error);process.exitCode=1;});

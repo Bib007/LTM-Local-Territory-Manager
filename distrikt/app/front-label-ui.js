@@ -1,6 +1,12 @@
 'use strict';
 // Front-only DAR label controls. This module intentionally never edits geo_addresses.
 const FrontLabelsUI={
+ rangeDisplay(row){
+  const match=String(row.numbers||'').match(/\s*\((lige|ulige|even|odd)\)$/i);
+  if(!match)return row.short_numbers||'';
+  const side=['ulige','odd'].includes(match[1].toLowerCase())?'odd':'even';
+  return `${row.short_numbers} (${I18n.language()==='en'?side:(side==='odd'?'ulige':'lige')})`;
+ },
  canEdit(c){
   return !!c?.front_labels_token&&c.front_addresses?.some(row=>row.source_ids?.length)&&ProfilesUI.has('cards.view','cards.edit');
  },
@@ -28,7 +34,7 @@ const FrontLabelsUI={
     <label for="frontNumberStyle${i}">${ui('Visning af husnumre på forsiden')}</label>
     <select id="frontNumberStyle${i}" data-front-number-style>
      <option value="exact" ${row.number_style!=='range'?'selected':''}>${ui('Vis de valgte numre')}</option>
-     <option value="range" ${row.number_style==='range'?'selected':''} ${!row.short_numbers?'disabled':''}>${ui('Vis fra første til sidste')}${row.short_numbers?' · '+esc(row.short_numbers):''}</option>
+     <option value="range" ${row.number_style==='range'?'selected':''} ${!row.short_numbers?'disabled':''}>${ui('Vis fra første til sidste')}${row.short_numbers?' · '+esc(this.rangeDisplay(row)):''}</option>
     </select>
     <p class="hint" data-front-current aria-live="polite">${ui('Husnumre i denne vejlinje: {numbers}',{numbers:row.display_numbers||row.numbers})}</p>
     <p class="hint">${ui('Intervallet forkorter kun teksten. Mellemliggende husnumre bliver ikke tilføjet til distriktet.')}</p>
@@ -55,7 +61,7 @@ const FrontLabelsUI={
   const fields=[...form.querySelectorAll('[data-front-current]')];
   rows.filter(row=>row.source_ids?.length).forEach((row,index)=>{
    I18n.content(fields[index],'Husnumre i denne vejlinje: {numbers}',{
-    numbers:row.number_style==='range'?row.short_numbers:row.numbers
+    numbers:row.number_style==='range'?this.rangeDisplay(row):row.numbers
    });
   });
   fitFrontCard(front);

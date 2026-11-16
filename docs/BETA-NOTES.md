@@ -1,7 +1,11 @@
-# LTM 1.12.19-beta.15 · Se vejintervallet på kortet med det samme
+# LTM 1.12.19-beta.27 · Lokal afstand til DAR-adresser
 
-Åbn **Rediger forsidens vejlinjer**, og vælg **Vis fra første til sidste**. Forhåndsvisningen viser fx **3–67** med det samme. Vælg **Gem og fremvis kort** for at bruge visningen på forsiden, i print og i nye eksporter. Har du allerede delt en PDF på Google Drive, kan du opdatere den fra kortet efter gemning.
+- **DAR-grænser:** Når det ikke er muligt at holde den ønskede afstand hele vejen rundt, forsøger Foreslå grænse at rykke enkelte kanter væk fra de fravalgte adresseprikker. Hvert snit kontrolleres mod valgte adresser og nabogrænser.
+
+Åbn Kortopsætning → Foreslå grænse, gennemgå forslaget og gem det på kortet.
 
 ## English
 
-Open **Edit street lines on the front** and select **Show first–last range**. The preview immediately shows the result, such as **3–67**. Select **Save and show card** to use this view on the front, in print, and in new exports. If you already shared a PDF on Google Drive, update it from the card after saving.
+- **DAR boundaries:** If the desired clearance cannot be applied around the whole outline, Suggest boundary tries moving individual edges away from unselected address markers. Every adjustment is checked against selected addresses and neighboring boundaries.
+
+Open Map setup → Suggest boundary, review the suggestion and save it to the card.

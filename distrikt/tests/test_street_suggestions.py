@@ -4,12 +4,14 @@ import tempfile
 import unittest
 from copy import deepcopy
 from math import cos, radians
+from random import Random
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from street_suggestions import ranges, includes
 from geography import point_in_polygon, valid_polygon
-from territory_outline import meets, suggest_outline
+from territory_outline import edges, meets, point_segment_distance, simple_ring, suggest_outline
+from geography import enclosing_outline
 
 
 class StreetSuggestionTests(unittest.TestCase):
@@ -121,14 +123,14 @@ class OutlineTests(unittest.TestCase):
     def setUp(self):
         self.selected=[self.address(1,-40,0),self.address(3,40,0)]
 
-    def trace(self,others=(),buildings=(),neighbors=(),expected='clear'):
-        outline,status=suggest_outline(self.selected,[*self.selected,*others],buildings,neighbors)
+    def trace(self,others=(),neighbors=(),expected='clear'):
+        outline,status=suggest_outline(self.selected,[*self.selected,*others],neighbors)
         self.assertEqual(status,expected)
         if expected=='unavailable':
             self.assertEqual(outline,[])
         else:
             self.assertEqual(valid_polygon(outline,limit=5000),outline)
-            self.assertEqual(len({tuple(p) for p in outline}),len(outline))
+            self.assertTrue(simple_ring([tuple(p) for p in outline]))
             self.assertTrue(all(point_in_polygon((a['lng'],a['lat']),outline) for a in self.selected))
         return outline
 
@@ -136,17 +138,89 @@ class OutlineTests(unittest.TestCase):
         other=self.address(2,0,0)
         outline=self.trace(others=[other])
         self.assertFalse(point_in_polygon(self.point(0,0),outline))
-        building=self.rectangle(-7,-9,7,9)
-        outline=self.trace(others=[other],buildings=[building])
-        self.assertFalse(meets(outline,building,0))
-        outline=self.trace(buildings=[building])
-        self.assertFalse(meets(outline,building,0))
+        self.assertLessEqual(len(outline),28)
+        self.assertTrue(any(a[0]!=b[0] and a[1]!=b[1] for a,b in zip(outline,outline[1:]+outline[:1])))
+        outline=self.trace()
+        self.assertTrue(meets(outline,self.rectangle(-7,-9,7,9),0),
+                        'A footprint without another address must not pinch the territory')
+
+    def test_open_rural_space_is_a_generous_simple_polygon(self):
+        # Fictional sparse group, like a hand-drawn rural boundary.
+        self.selected=[self.address(1,-110,0),self.address(3,-30,50),
+                       self.address(5,60,15),self.address(7,115,-30)]
+        harmless=[self.rectangle(-80,-12,-65,12),
+                  self.rectangle(2,0,15,10),
+                  self.rectangle(70,20,85,32)]
+        outline=self.trace()
+        width=(max(p[1] for p in outline)-min(p[1] for p in outline))*111320
+        self.assertGreater(width,95,'Classic 12-metre hull must still be broader than the old corridor')
+        self.assertLessEqual(len(outline),16,'The proposed boundary should have long simple edges')
+        self.assertTrue(any(meets(outline,shape,0) for shape in harmless),
+                        'Empty buildings are not arbitrary hard obstacles')
+
+    def test_dense_street_is_safe_but_not_just_five_metres_wide(self):
+        self.selected=[self.address(n,x,0) for n,x in ((1,-45),(3,-15),(5,15),(7,45))]
+        # Houses on the other side of the street protect that side only.
+        outsiders=[self.address(n,x,28) for n,x in ((2,-45),(4,-15),(6,15),(8,45))]
+        outline=self.trace(others=outsiders)
+        low=min(p[1] for p in outline)
+        self.assertLess(low,self.point(0,-10)[1])
+        self.assertFalse(any(point_in_polygon((a['lng'],a['lat']),outline) for a in outsiders))
+        self.assertLessEqual(len(outline),24)
+
+    def test_original_hull_is_unchanged_when_there_are_no_conflicts(self):
+        expected=enclosing_outline([self.point(-40,0),self.point(40,0)])
+        actual=self.trace()
+        self.assertEqual(len(actual),len(expected))
+        for found,original in zip(actual,expected):
+            self.assertAlmostEqual(found[0],original[0],places=10)
+            self.assertAlmostEqual(found[1],original[1],places=10)
+
+    def test_other_dar_dot_inside_old_hull_creates_notch_not_a_thin_route(self):
+        # Four selected corners enclose one separate DAR house. A five-metre
+        # connection around the corners is not an acceptable automatic result.
+        self.selected=[self.address(n,x,y) for n,x,y in (
+            (1,-60,-35),(3,60,-35),(5,60,35),(7,-60,35))]
+        other=self.address(9,0,0)
+        outline=self.trace(others=[other])
+        self.assertFalse(point_in_polygon((other['lng'],other['lat']),outline))
+        self.assertTrue(point_in_polygon(self.point(-45,0),outline))
+        self.assertTrue(point_in_polygon(self.point(45,0),outline))
+        # A broad old-style territory must keep most of the original area.
+        projected=[((x-10)*self.scale,(y-55)*111320) for x,y in outline]
+        area=abs(sum(a[0]*b[1]-b[0]*a[1]
+                     for a,b in zip(projected,projected[1:]+projected[:1]))/2)
+        self.assertGreater(area,6500)
+        self.assertLessEqual(len(outline),40)
+
+    def test_loaded_outside_dar_dots_and_neighbour_boundaries_both_excluded(self):
+        self.selected=[self.address(n,x,y) for n,x,y in (
+            (1,-50,-30),(3,50,-30),(5,50,30),(7,-50,30))]
+        outsiders=[self.address(8,0,0),self.address(10,0,-51)]
+        neighbor=self.rectangle(-70,40,70,65)
+        outline=self.trace(others=outsiders,neighbors=[neighbor])
+        self.assertFalse(any(point_in_polygon((p['lng'],p['lat']),outline) for p in outsiders))
+        self.assertFalse(meets(outline,neighbor,0))
+        self.assertTrue(point_in_polygon(self.point(30,-10),outline))
 
     def test_parallel_territory_keeps_three_metre_gap(self):
         neighbor=self.rectangle(-60,8,60,50)
         outline=self.trace(neighbors=[neighbor])
         self.assertLessEqual(max(p[1] for p in outline),self.point(0,5)[1])
         self.assertFalse(meets(outline,neighbor,0))
+
+    def test_envelope_stays_clear_of_the_neighbor(self):
+        selected=[self.address(1,-40,7),self.address(3,40,7)]
+        addresses=[*selected,self.address(2,0,10)]
+        neighbor=self.rectangle(-55,25,55,45)
+        outline,status=suggest_outline(selected,addresses,[neighbor])
+        self.assertEqual(status,'clear')
+        self.assertFalse(point_in_polygon(self.point(0,10),outline),
+                         'The unselected DAR entrance must remain outside')
+        self.assertFalse(point_in_polygon(self.point(0,10),outline))
+        self.assertLessEqual(max(p[1] for p in outline),self.point(0,22)[1])
+        for address in selected:
+            self.assertTrue(point_in_polygon((address['lng'],address['lat']),outline))
 
     def test_short_detour_keeps_neighbor_outside(self):
         for length in (21,100):
@@ -155,16 +229,156 @@ class OutlineTests(unittest.TestCase):
                 outline=self.trace(neighbors=[neighbor])
                 self.assertFalse(meets(outline,neighbor,0))
 
-    def test_crossing_connects_separated_houses_through_narrow_strip(self):
-        neighbor=self.rectangle(-10,-500,10,500)
+    def test_bounded_search_cannot_prove_crossing_is_necessary(self):
+        self.trace(neighbors=[self.rectangle(-10,-500,10,500)],expected='unavailable')
+
+    def test_selected_entrance_inside_neighbor_requires_a_warning(self):
+        neighbor=self.rectangle(-50,-15,-30,15)
         outline=self.trace(neighbors=[neighbor],expected='crossing')
         self.assertTrue(meets(outline,neighbor,0))
-        self.assertTrue(point_in_polygon(self.point(0,0),outline))
-        self.assertFalse(point_in_polygon(self.point(0,5),outline))
 
-    def test_same_point_and_inside_neighbor_do_not_force_overlap(self):
+    def test_distinct_addresses_at_same_point_make_a_proposal_impossible(self):
         self.trace(others=[self.address(2,-40,0)],expected='unavailable')
-        self.trace(neighbors=[self.rectangle(-50,-15,-30,15)],expected='unavailable')
+
+    def test_other_entrance_of_same_house_remains_outside(self):
+        other=self.address(1,-34,0)
+        outline=self.trace(others=[other])
+        self.assertFalse(point_in_polygon((other['lng'],other['lat']),outline))
+
+    def test_two_districts_can_both_leave_room_along_the_same_street(self):
+        # On the classic hull, the second row is only three metres from
+        # the first boundary. That leaves no space after neighbor clearance.
+        rows = [[self.address(i+offset,x,y) for i,x in enumerate((-40,-20,0,20,40))]
+                for offset,y in ((1,0),(21,15))]
+        for first,second in (rows,rows[::-1]):
+            with self.subTest(first=first[0]['number']):
+                addresses = first+second
+                outline,status = suggest_outline(first,addresses,[])
+                self.assertEqual(status,'clear')
+                def metres(lng,lat):
+                    return ((lng-10)*self.scale,(lat-55)*111320)
+
+                ring = [metres(*point) for point in outline]
+                remaining_room = min(point_segment_distance(metres(a['lng'],a['lat']),u,v)
+                                     for a in second for u,v in edges(ring))
+                self.assertGreaterEqual(remaining_room,5.99)
+                next_outline,status = suggest_outline(second,addresses,[outline])
+                self.assertEqual(status,'clear')
+                self.assertFalse(meets(outline,next_outline,0))
+                for polygon,members in ((outline,first),(next_outline,second)):
+                    self.assertTrue(all(point_in_polygon((a['lng'],a['lat']),polygon) for a in members))
+                    self.assertTrue(simple_ring([tuple(p) for p in polygon]))
+
+    def test_close_blue_address_can_use_smaller_clearance(self):
+        outsider = self.address(2,-40,4)
+        outline = self.trace(others=[outsider])
+        self.assertFalse(point_in_polygon((outsider['lng'],outsider['lat']),outline))
+
+    def test_dense_unselected_fringe_is_cut_off_as_a_group(self):
+        # Fictional streets based on the drawn correction. Selected entrances
+        # on both sides of the frame keep the original hull over the fringe.
+        selected = [
+            (35, 345), (135, 337), (118, 415), (95, 505), (70, 570), (55, 645),
+            (88, 723), (196, 732), (553, 516), (668, 444), (634, 602), (742, 602),
+            (980, 508), (1525, 550), (1680, 445),
+        ]
+        unselected = [
+            (100, 100), (220, 215), (222, 290), (192, 350), (194, 426), (188, 494),
+            (154, 568), (130, 638), (290, 302), (294, 414), (278, 514), (244, 598),
+            (380, 530), (432, 494), (420, 412), (482, 434), (498, 358), (506, 264),
+            (555, 268), (607, 366), (658, 332), (794, 224), (790, 310), (780, 392),
+            (782, 474), (876, 256), (890, 352), (866, 454), (1022, 198), (1026, 308),
+            (1052, 384), (1080, 446), (1090, 208), (1143, 358), (1140, 442), (1164, 268),
+            (1164, 210), (1336, 240), (1372, 246), (1402, 240), (1316, 352), (1306, 396),
+            (1298, 430), (1370, 410), (1404, 404), (1444, 398), (1476, 390), (1506, 390),
+            (1538, 384), (1436, 292), (1444, 326), (1456, 208), (1458, 244), (1530, 236),
+            (1524, 266), (1520, 302), (1592, 336), (1608, 298), (1620, 228), (1624, 184),
+        ]
+        def places(points, offset):
+            return [self.address(i+offset, x*.3, -y*.3) for i,(x,y) in enumerate(points)]
+
+        self.selected = places(selected, 0)
+        others = places(unselected, 100)
+        outline = self.trace(others=others)
+        self.assertFalse(any(point_in_polygon((a['lng'],a['lat']), outline) for a in others))
+        # Several empty gaps between the blue dots belonged to the old fringe.
+        for x,y in ((1250,440), (960,470)):
+            self.assertFalse(point_in_polygon(self.point(x*.3,-y*.3),outline))
+        self.assertTrue(point_in_polygon(self.point(850*.3,-580*.3),outline))
+        self.assertLess(len(outline), 35)
+
+        # Extend the fictional streets below the visible portion. These
+        # variants made beta.24 trace a separate indentation at many dots.
+        for seed in (1, 2, 8):
+            with self.subTest(seed=seed):
+                rng = Random(seed)
+                continued_street = [(x,rng.randint(595,745)) for x in range(140,1680,65)]
+                shifted = [(x+rng.randint(-15,15),y+rng.randint(-16,16)) for x,y in unselected]
+                self.selected = places(selected+continued_street,0)
+                others = places(shifted,100)
+                outline = self.trace(others=others)
+                for address in others:
+                    self.assertFalse(point_in_polygon((address['lng'],address['lat']),outline))
+                self.assertFalse(point_in_polygon(self.point(375,-132),outline))
+                if seed == 2:
+                    self.assertFalse(point_in_polygon(self.point(288,-141),outline))
+                self.assertTrue(point_in_polygon(self.point(255,-174),outline))
+                self.assertLess(len(outline),35)
+                if seed in (1,2):
+                    # A full buffer fails here. It must still be possible
+                    # to retreat along individual edges of the same shape.
+                    projected = [((x-10)*self.scale,(y-55)*111320) for x,y in outline]
+                    close = sum(any(point_segment_distance(
+                                    ((a['lng']-10)*self.scale,(a['lat']-55)*111320),p,q)<3
+                                    for p,q in edges(projected)) for a in others)
+                    self.assertLessEqual(close,4)
+
+    def test_multicluster_regression_keeps_a_filled_area(self):
+        selected, others = multicluster_addresses()
+        self.selected = selected
+        outline = self.trace(others=others)
+        self.assertFalse(any(point_in_polygon((a['lng'], a['lat']), outline) for a in others))
+        projected = [((x-10)*self.scale, (y-55)*111320) for x,y in outline]
+        area = abs(sum(x*v-u*y for (x,y),(u,v) in zip(projected,projected[1:]+projected[:1]))/2)
+        # Beta .22 returns its skinny fallback (~22,000 m²) for this arrangement.
+        self.assertGreater(area, 50_000)
+        self.assertLess(len(outline), 130)
+        self.selected.reverse()
+        self.assertEqual(self.trace(others=list(reversed(others))), outline)
+
+
+def multicluster_addresses():
+    """Fictional house groups patterned on the screenshot, with a synthetic origin and scale."""
+    selected_pixels = [
+        (30, 510), (45, 494), (66, 499), (88, 500), (298, 472), (358, 450),
+        (406, 347), (420, 335), (425, 310), (426, 291), (415, 260), (433, 243),
+        (435, 220), (436, 201), (430, 161), (448, 110), (483, 104), (530, 102),
+        (576, 108), (565, 151), (555, 193), (504, 160), (501, 194), (492, 224),
+        (480, 258), (548, 234), (494, 298), (564, 334), (583, 346), (634, 312),
+        (466, 440), (813, 204), (853, 248), (870, 168), (906, 247), (1026, 199),
+    ]
+    other_pixels = [
+        (168, 454), (220, 521), (277, 445), (299, 396), (346, 389), (354, 352),
+        (394, 474), (382, 515), (438, 519), (498, 387), (511, 402), (543, 365),
+        (506, 472), (556, 450), (562, 489), (613, 462), (647, 517), (542, 277),
+        (600, 266), (612, 230), (629, 194), (631, 158), (632, 120), (645, 92),
+        (657, 246), (675, 203), (707, 151), (725, 209), (751, 192), (766, 164),
+        (783, 124), (840, 130), (866, 110), (928, 180), (933, 143), (374, 200),
+        (370, 171), (372, 145), (376, 120), (378, 95), (394, 63), (410, 31),
+        (456, 30), (486, 46), (520, 40), (554, 44), (588, 43), (646, 54),
+        (686, 57), (680, 95), (736, 468), (862, 428), (1033, 342), (316, 332),
+        (288, 285), (332, 205), (298, 205), (330, 149), (302, 147), (341, 92),
+    ]
+
+    rng = Random(3)
+
+    def addresses(points, offset):
+        return [dict(number=str(n+offset), road='Fictional road', postcode='9999',
+                     lng=round(round(10+x*.55/64000,7)+rng.uniform(-.00012,.00012),7),
+                     lat=round(round(55-y*.55/111320,7)+rng.uniform(-.00006,.00006),7))
+                for n,(x,y) in enumerate(points)]
+
+    return addresses(selected_pixels, 0), addresses(other_pixels, 100)
 
 
 if __name__=='__main__':unittest.main()

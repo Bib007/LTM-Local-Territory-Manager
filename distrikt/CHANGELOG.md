@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.26 · 2026-11-16
+
+- **DAR-forslag:** Grænsen omslutter valgte adresser og kan skære hele klynger af fravalgte adresseprikker fra. Forslaget søger afstand til nabogrænser og fravalgte prikker. Ved tæt bebyggelse kan grænsen stadig ligge tæt på en adresse.
+- **Korteditor:** Forslaget kontrolleres ved gemning. Hvis en valgt adresse kræver overlap med et nabodistrikt, viser editoren en advarsel. Eksisterende grænser erstattes, når brugeren gemmer et nyt forslag.
+- **S-12:** Forkortede husnummerintervaller bevarer markeringen lige eller ulige.
+
 ## 1.12.25 · 2026-11-15
 
 - **DAR-forslag:** Den automatiske grænse holder andre kendte huse og lokalt gemte bygninger uden for kortet.

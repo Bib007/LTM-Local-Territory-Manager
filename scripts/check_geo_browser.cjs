@@ -11,7 +11,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
 (async()=>{
  const browser=await chromium.launch({args:['--no-sandbox'],...(process.env.LTM_CHROME?{executablePath:process.env.LTM_CHROME}:{})});try{
  for(const width of [320,390,768,1440]){
-  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],writes=[],storedState=structuredClone(state),storedGeo=structuredClone(geo);let dropCardReply=false,acceptDialogs=true,holdAdminPreview=false,releaseAdminPreview,releaseRestore,holdRestructurePreview=true,releaseRestructurePreview,releaseRestructureApply,failNextGeo=false,readableFinished=0,readableImages=0,readableFronts=0;page.on('pageerror',e=>errors.push(e.stack||e.message));page.on('dialog',dialog=>acceptDialogs?dialog.accept():dialog.dismiss());
+  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],writes=[],storedState=structuredClone(state),storedGeo=structuredClone(geo);let suggestionStatus=null,dropCardReply=false,acceptDialogs=true,holdAdminPreview=false,releaseAdminPreview,releaseRestore,holdRestructurePreview=true,releaseRestructurePreview,releaseRestructureApply,failNextGeo=false,readableFinished=0,readableImages=0,readableFronts=0;page.on('pageerror',e=>errors.push(e.stack||e.message));page.on('dialog',dialog=>acceptDialogs?dialog.accept():dialog.dismiss());
   await context.route('**/*',async route=>{const u=new URL(route.request().url());if(u.hostname==='tile.openstreetmap.org')return route.fulfill({contentType:'image/png',body:png});assert.equal(u.hostname,'ltm.test','No external requests');
    const json=data=>route.fulfill({contentType:'application/json',body:JSON.stringify(u.pathname==='/api/mutate'?{...data,revision:storedState.revision}:data)});
    if(u.pathname==='/api/state')return json(storedState);if(u.pathname==='/api/geo'){if(failNextGeo){failNextGeo=false;return route.abort('connectionreset');}return json(storedGeo);}if(u.pathname==='/api/map')return json({image:''});if(u.pathname==='/api/geo/job')return json({status:'idle'});if(u.pathname==='/api/ping')return json({ok:true});
@@ -38,6 +38,11 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     if(body.action==='card.restructure.preview'){if(holdRestructurePreview)await new Promise(resolve=>releaseRestructurePreview=resolve);return json({result:{expected:'FICTIONAL_RESTRUCTURE',numbers:['101'],moving:body.data.address_ids.length,remaining:1,warning:'Fictional restructuring review'}});}
     if(body.action==='card.restructure.apply'){assert.equal(body.data.confirm,'ÆNDR KORT');assert.equal(body.data.expected,'FICTIONAL_RESTRUCTURE');storedState.cards.push({...storedState.cards[0],id:'c2',number:body.data.number,name:body.data.name});storedState.revision+='-restructured';await new Promise(resolve=>releaseRestructureApply=resolve);return json({result:{id:'c2'}});}
     if(body.action==='setup.apply'){assert.equal(body.data.confirm,'OPRET KORT');assert.equal(Object.hasOwn(body.data,'_revision'),false);storedState.cards.push({...storedState.cards[0],id:'c3',number:body.data.cards[0].number,name:body.data.cards[0].name});storedState.revision+='-setup-created';failNextGeo=true;return json({result:{count:1}});}
+    if(body.action==='geo.preview'&&body.data.suggest_outline&&suggestionStatus){
+     assert.deepEqual(body.data.address_ids,['a1']);assert.equal(body.data.card_id,'c1');
+     return json({result:{addresses:[geo.addresses[0]],ignored:[],retired:[],conflicts:[],
+      outline:suggestionStatus==='crossing'?points:[],outline_expected:'fictional-signature',outline_status:suggestionStatus}});
+    }
     if(body.action==='geo.boundary'||body.action==='geo.main.save'){assert.equal(Object.hasOwn(body.data,'_revision'),false);storedState.revision+='-saved';if(body.action==='geo.boundary')storedState.cards[0].geo_polygon=body.data.polygon;else storedGeo.main_boundary.points=body.data.points;return json({result:{}});}
     if(body.action==='geo.main.import.preview')return json({result:{format:'KML',boundaries:[{name:'Vejnavn <fictional>',points},{name:'Other',points:points.map(([x,y])=>[x+.001,y])},{name:'Invalid',error:'Fictional error'}],skipped:1}});
     if(body.action==='setup.preview'){if(Number(body.data.target)===0)return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'Besøg pr. kort skal være mellem 1 og 1000.',ui_error:{key:'{label} skal være mellem {low} og {high}.',params:{label:'Besøg pr. kort',low:1,high:1000}}})});return json({result:{token:'FICTIONAL_PLAN',cards:[{key:'new1',number:'F101',name:'Name <fictional>',area_name:'Områdenavn <fictional>',kind:'Land',visits:2,address_ids:['a1','a2'],polygon:points}],visits:2,excluded:{},uncovered:0}});}
@@ -85,6 +90,22 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`editor-${width}.png`),fullPage:true});}
   // Accepted writes advance the real API wrapper's revision and clear only the saved draft.
   await page.evaluate(()=>GeoUI.saveBoundary());assert.equal(await page.evaluate(()=>GeoUI.dirty),false);assert.match(await page.evaluate(()=>state.revision),/-saved$/);
+  if(width===1440){
+   suggestionStatus='unavailable';
+   const oldBoundary=await page.evaluate(()=>GeoUI.polygon);
+   await page.locator('[data-geo=suggest-outline]').click();
+   await page.waitForFunction(()=>el('geoNotice').textContent.includes('could not be drawn automatically'));
+   assert.deepEqual(await page.evaluate(()=>GeoUI.polygon),oldBoundary);
+   assert.equal(await page.evaluate(()=>GeoUI.dirty),false);
+   suggestionStatus='crossing';
+   await page.locator('[data-geo=suggest-outline]').click();
+   await page.waitForFunction(()=>el('geoNotice').textContent.includes('neighboring territory'));
+   await page.locator('[data-geo=save]').click();
+   assert.match(await page.locator('#dialog .warning').innerText(),/Check the overlap/);
+   if(out)await page.locator('#dialog').screenshot({path:path.join(out,'dar-overlap-warning.png')});
+   await page.evaluate(()=>{closeDialog();GeoUI.openCard('c1');});
+   suggestionStatus=null;
+  }
   // Import with real file input, Leaflet map and options. Switching language preserves all three.
   await page.evaluate(()=>BoundaryImportUI.open(false));await page.locator('#boundaryImportFile').setInputFiles({name:'fictional.kml',mimeType:'application/vnd.google-earth.kml+xml',buffer:Buffer.from('<kml/>')});await page.locator('#boundaryImportChoice').waitFor();await page.locator('#boundaryImportChoice').selectOption('1');
   await page.evaluate(()=>{window.importMapBefore=BoundaryImportUI.map;window.fileBefore=el('boundaryImportFile');window.choiceBefore=el('boundaryImportChoice');el('boundaryImportChoice').focus();I18n.set('da');Navigation.localize();});
