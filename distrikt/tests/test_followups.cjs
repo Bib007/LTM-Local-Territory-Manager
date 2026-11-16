@@ -21,6 +21,11 @@ run(`state={today:'2026-10-23',cards:[
  assert.equal(run("Workspace.followupItems().filter(r=>r.text==='Udleveret fysisk kort · IB-bagsiden skal ajourføres').length"),1,'An assigned changed back is one reprint item, not a second check');
  assert.equal(run('new Set(Workspace.followupItems().map(r=>r.key)).size'),11);
  assert.equal(run('JSON.stringify(state)'),before,'Collecting follow-ups never writes task/card records');
+ run("state.cards[1].geo_polygon=[];state.settings.onboarding={answers:{mode:'desk'}}");
+ assert.equal(run("Workspace.followupItems().some(r=>r.text==='Mangler geografisk grænse')"),false);
+ run("state.profile={permissions:['cards.view','geo.view','settings.manage']}");
+ assert.equal(run("Workspace.followupItems().some(r=>r.text==='Mangler geografisk grænse')"),true);
+ run("state=JSON.parse("+JSON.stringify(before)+")");
  const contracts=[];
  for(const lang of ['da','en']){
   run(`I18n.set('${lang}');Workspace.followupFilter='all';Workspace.followupQuery=''`);

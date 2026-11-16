@@ -1,11 +1,11 @@
-# LTM 1.12.26 · Samlede DAR-grænser
+# LTM 1.12.27 · Udleveringsrolle og fast sprog
 
-- **DAR-forslag:** Grænsen omslutter valgte adresser og kan skære hele klynger af fravalgte adresseprikker fra. Forslaget søger afstand til nabogrænser og fravalgte prikker. Ved tæt bebyggelse kan grænsen stadig ligge tæt på en adresse.
-- **Korteditor:** Forslaget kontrolleres ved gemning. Hvis en valgt adresse kræver overlap med et nabodistrikt, viser editoren en advarsel. Eksisterende grænser erstattes, når brugeren gemmer et nyt forslag.
-- **S-12:** Forkortede husnummerintervaller bevarer markeringen lige eller ulige.
+- **Fast sprog:** En rolle kan låse appens sprog til dansk eller engelsk.
+- **Udleveringsrolle:** Begræns brugeren til Forside, Ind/udlevering og Forkyndere. Rollen kan udlevere og aflevere eksisterende kort.
+- **Opfølgninger:** Brugere med adgang til kortdata kan se kort uden geografisk grænse, også når systemet blev sat op til daglig udlevering.
 
 ## English
 
-- **DAR suggestions:** The boundary encloses selected addresses and can cut out whole clusters of unselected address markers. Suggestions seek clearance from neighboring boundaries and unselected markers. In dense streets, the boundary can still run close to an address.
-- **Map editor:** Suggestions are checked on save. The editor warns if a selected address requires overlap with a neighboring territory. Existing boundaries are replaced when the user saves a new suggestion.
-- **S-12:** Short house number ranges retain the even or odd label.
+- **Fixed language:** A role can set the app language to Danish or English.
+- **Checkout role:** Restrict the user to Home, check-in and check-out, and publishers. The role can issue and return existing cards.
+- **Follow-ups:** Users with access to geographic card data can see cards without a geographic boundary even when the system was set up for daily lending.

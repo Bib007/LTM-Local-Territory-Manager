@@ -423,6 +423,40 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.thread.join(timeout=5)
         self.assertFalse(self.thread.is_alive())
 
+    def test_desk_role_limits_an_account_with_other_roles_and_fixes_its_language(self):
+        reader, role, account = self.reader(['settings.manage','geo.view','cards.view'])
+        role_data = self.value('/api/profiles/admin',session=self.admin)['roles']
+        admin_role = next(row['id'] for row in role_data if 'users.manage' in row['permissions'])
+        desk = self.value('/api/profiles/roles/save',{'name':'Fiktiv udlevering',
+                          'permissions':[], 'desk_only':True, 'language':'da'},self.admin)['id']
+        self.value('/api/profiles/users/save',{'id':account,'name':'Fiktiv bruger',
+                   'roles':[role,admin_role,desk]},self.admin)
+        base = self.state(reader)
+        self.assertTrue(base['profile']['desk_only'])
+        self.assertEqual(base['profile']['language'],'da')
+        self.assertEqual(set(base['profile']['permissions']),
+                         {'cards.view','loans.view','loans.manage','publishers.view'})
+        self.assertEqual(self.value('/api/profiles/heartbeat',{},reader)['language'],'da')
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.value('/api/geo',session=reader)
+        self.assertEqual(forbidden.exception.code,403)
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.change(reader,base,'folder.set',{'card_id':self.card,'in_folder':True})
+        self.assertEqual(forbidden.exception.code,403)
+        publisher = self.store.mutate('publisher.save',{'name':'Fiktiv Forkynder'})['id']
+        base = self.state(reader)
+        issued = self.change(reader,base,'loan.issue',{'card_id':self.card,'publisher_id':publisher,
+                             'date':base['today'],'initial':True})
+        loan = issued['result']['id']
+        active = self.state(reader)
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.change(reader,active,'loan.finish',{'id':loan,'date':base['today'],'complete':True,'retain':True})
+        self.assertEqual(forbidden.exception.code,403)
+        self.change(reader,active,'loan.finish',{'id':loan,'date':base['today'],'complete':True})
+        self.assertFalse(self.store.active_loan(self.card))
+        backup = self.value('/api/profiles/backup',session=self.admin)
+        self.assertEqual(backup['accounts']['roles'][desk]['language'],'da')
+
     def test_loan_manager_can_select_existing_name_but_cannot_create_publishers(self):
         publisher=self.store.mutate('publisher.save',{'name':'Fiktiv Forkynder'})['id']
         second_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
