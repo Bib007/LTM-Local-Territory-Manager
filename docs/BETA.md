@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.24 kan skære et sammenhængende stykke med fravalgte adresser fra. Åbn Kortopsætning, vælg Foreslå grænse og kontrollér omridset, inden du gemmer det.
+Beta 1.12.19-beta.25 vurderer fravalgte adresseklynger og deres mellemrum samlet. Åbn Kortopsætning, vælg Foreslå grænse og kontrollér omridset, inden du gemmer det.
 
 ## Installer betakanalen én gang
 
