@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.21 indfører en ny, mere rummelig DAR-grænsealgoritme. **Foreslå grænse** forsøger først et enkelt, bredt distrikt og indsnævrer kun dér, hvor andre adresser eller nabodistrikter kræver det. Veje og bygninger uden kendte uvedkommende adresser er ikke i sig selv forhindringer. Kontrollér stadig grænsen på kortet inden gemning. Beta.20's `(lige)`/`(ulige)`-rettelse er bevaret.
+Beta 1.12.19-beta.22 gendanner det oprindelige brede DAR-omrids og laver kun lokale indhak ved andre aktive indlæste DAR-adresser eller eksisterende distriktsgrænser. Bygninger uden relevant adresse hindrer ikke tegningen. **Gemte grænser ændres ikke automatisk:** Brug Foreslå grænse igen på hvert kort, og kontrollér omridset før Gem.
 
 ## Installer betakanalen én gang
 
