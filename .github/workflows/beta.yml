@@ -16,7 +16,7 @@ jobs:
     uses: ./.github/workflows/ha-status.yml
   checks:
     if: github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -80,7 +80,7 @@ jobs:
       - run: python -m unittest discover -s scripts -p test_build_beta.py -v
   python-compatibility:
     if: github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

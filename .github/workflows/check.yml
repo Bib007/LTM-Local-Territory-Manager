@@ -30,7 +30,7 @@ jobs:
   ha-status-blueprint:
     uses: ./.github/workflows/ha-status.yml
   python:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +45,7 @@ jobs:
       - name: Build program-only archive
         run: python scripts/build_release.py
   javascript:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       TZ: Europe/Copenhagen
     steps:
