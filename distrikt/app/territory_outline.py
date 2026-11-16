@@ -1,6 +1,7 @@
 """Suggest one connected territory outline from local addresses and obstacles."""
 import math
 from collections import deque
+from heapq import nsmallest
 
 from geography import enclosing_outline, point_in_polygon, valid_polygon
 
@@ -436,7 +437,48 @@ def suggest_outline(selected, addresses, neighbors):
                if not any(near_bounds(b,(*t,*t)) and point_in_polygon(t,p) for t in targets)]
     status = 'clear' if len(avoided) == len(neighbor_boxes) else 'crossing'
     borders = grid.raster([p for p,_ in avoided])
+
+    def linked_groups(span):
+        """Rasterize links between nearby excluded dots, clear of selected entrances."""
+        buckets = {}
+        strips = []
+        midpoints = set()
+        for point in sorted(other):
+            x,y = point
+            key = (math.floor(x/span),math.floor(y/span))
+            nearby = (n for dx in (-1,0,1) for dy in (-1,0,1)
+                      for n in buckets.get((key[0]+dx,key[1]+dy),()))
+            for q in nsmallest(6,nearby,key=lambda n: math.dist(point,n)):
+                length = math.dist(point,q)
+                if not 0 < length < span:
+                    continue
+                if any(point_segment_distance(t,point,q)<8 for t in targets):
+                    continue
+                midpoints.add(((x+q[0])/2,(y+q[1])/2))
+                nx,ny = (q[1]-y)*2/length, (x-q[0])*2/length
+                strips.append([(x+nx,y+ny),(q[0]+nx,q[1]+ny),
+                               (q[0]-nx,q[1]-ny),(x-nx,y-ny)])
+            buckets.setdefault(key,[]).append(point)
+        return grid.raster(strips), midpoints
+
     grouped = grid.dilate(hard, 8) - grid.dilate(target_cells, 3)
+    linked_groups_by_span = [linked_groups(span) for span in (58,43,28)]
+    group_cells = [cells for cells,_ in linked_groups_by_span if cells]
+    between_dots = sorted(set().union(*(points for _,points in linked_groups_by_span)))
+    between_dots = between_dots[::max(1,math.ceil(len(between_dots)/500))]
+
+    def score(polygon):
+        ring = list(map(project,polygon))
+        # Prefer omitting empty spaces between nearby blue dots, then prefer
+        # a boundary with fewer corners. Every candidate already passed the
+        # address and neighboring-boundary checks.
+        enclosed = sum(point_in_polygon(p,ring) for p in between_dots)
+        return enclosed, len(polygon)
+
+    def area_of(polygon):
+        ring = list(map(project,polygon))
+        return abs(sum(cross((0,0),a,b) for a,b in edges(ring)))
+
     for gap in (NEIGHBOR_GAP_M, 0) if borders else (NEIGHBOR_GAP_M,):
         forbidden = hard | (grid.dilate(borders, gap) if gap else borders)
         if target_cells & forbidden:
@@ -455,9 +497,25 @@ def suggest_outline(selected, addresses, neighbors):
                           if 0 < cell[0] < grid.width-1 and 0 < cell[1] < grid.height-1}
             # Nearby excluded dots can share a single indentation. Keep the
             # original hard exclusions if there is too little room.
+            baseline = []
             for blockers, clearance in ((forbidden | grouped,3), (forbidden,3), (forbidden,0)):
-                ring = carve_envelope(grid, filled, blockers, target_cells, clearance)
+                baseline = smooth(carve_envelope(grid, filled, blockers, target_cells, clearance), gap, avoided)
+                if baseline:
+                    break
+
+            # A group cut may remove a fringe without expanding or hollowing
+            # out the broad territory that the existing checks accepted.
+            best = baseline
+            maximum_area = area_of(baseline) if baseline else math.inf
+            minimum_area = maximum_area*.65 if baseline else 0
+            best_score = score(best) if best else (math.inf, math.inf)
+            for cells in group_cells:
+                ring = carve_envelope(grid, filled, forbidden | cells, target_cells, 3)
                 result = smooth(ring, gap, avoided)
-                if result:
-                    return result, status
+                if result and minimum_area <= area_of(result) <= maximum_area:
+                    result_score = score(result)
+                    if result_score < best_score:
+                        best, best_score = result, result_score
+            if best:
+                return best, status
     return [], 'unavailable'

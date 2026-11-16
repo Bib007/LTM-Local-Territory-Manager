@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.25 · 2026-11-16
+
+- **DAR-grænser:** Foreslå grænse vurderer mellemrum mellem fravalgte adresseprikker samlet. Et samlet snit kan holde både klyngen og mellemrummene udenfor, mens de valgte adresser bevares indenfor.
+
 ## 1.12.19-beta.24 · 2026-11-16
 
 - **DAR-grænser:** Foreslå grænse kan skære et helt stykke med fravalgte adresser fra i ét snit. Den nye kant kontrolleres mod alle valgte husprikker, andre indlæste adresser og nabogrænser.
