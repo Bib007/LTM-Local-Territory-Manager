@@ -1,11 +1,11 @@
-# LTM 1.12.19-beta.24 · Samlede snit langs DAR-grænser
+# LTM 1.12.19-beta.25 · Samlede DAR-adresseklynger
 
-- **DAR-grænser:** Foreslå grænse kan skære et helt stykke med fravalgte adresser fra i ét snit. Den nye kant kontrolleres mod alle valgte husprikker, andre indlæste adresser og nabogrænser.
+- **DAR-grænser:** Foreslå grænse vurderer mellemrum mellem fravalgte adresseprikker samlet. Et samlet snit kan holde både klyngen og mellemrummene udenfor, mens de valgte adresser bevares indenfor.
 
 Åbn Kortopsætning → Foreslå grænse, gennemgå forslaget og gem det på kortet.
 
 ## English
 
-- **DAR boundaries:** Suggest boundary can cut off a stretch of excluded addresses with one straight edge. The new edge is checked against all selected houses, other loaded addresses and neighboring territories.
+- **DAR boundaries:** Suggest boundary checks the spaces between nearby excluded addresses as a group. A single cut can leave both the cluster and the spaces outside while keeping the selected addresses inside.
 
 Open Map setup → Suggest boundary, review the suggestion and save it to the card.

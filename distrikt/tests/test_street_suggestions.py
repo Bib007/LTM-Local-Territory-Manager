@@ -278,6 +278,24 @@ class OutlineTests(unittest.TestCase):
         self.assertTrue(point_in_polygon(self.point(850*.3,-580*.3),outline))
         self.assertLess(len(outline), 35)
 
+        # Extend the fictional streets below the visible portion. These
+        # variants made beta.24 trace a separate indentation at many dots.
+        for seed in (1, 2, 8):
+            with self.subTest(seed=seed):
+                rng = Random(seed)
+                continued_street = [(x,rng.randint(595,745)) for x in range(140,1680,65)]
+                shifted = [(x+rng.randint(-15,15),y+rng.randint(-16,16)) for x,y in unselected]
+                self.selected = places(selected+continued_street,0)
+                others = places(shifted,100)
+                outline = self.trace(others=others)
+                for address in others:
+                    self.assertFalse(point_in_polygon((address['lng'],address['lat']),outline))
+                self.assertFalse(point_in_polygon(self.point(375,-132),outline))
+                if seed == 2:
+                    self.assertFalse(point_in_polygon(self.point(288,-141),outline))
+                self.assertTrue(point_in_polygon(self.point(255,-174),outline))
+                self.assertLess(len(outline),35)
+
     def test_multicluster_regression_keeps_a_filled_area(self):
         selected, others = multicluster_addresses()
         self.selected = selected

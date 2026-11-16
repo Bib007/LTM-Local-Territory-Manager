@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.25 · 2026-11-16
+
+- **DAR boundaries:** Suggest boundary checks the spaces between nearby excluded addresses as a group. A single cut can leave both the cluster and the spaces outside while keeping the selected addresses inside.
+
 ## 1.12.19-beta.24 · 2026-11-16
 
 - **DAR boundaries:** Suggest boundary can cut off a stretch of excluded addresses with one straight edge. The new edge is checked against all selected houses, other loaded addresses and neighboring territories.
