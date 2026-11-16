@@ -10,7 +10,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from street_suggestions import ranges, includes
 from geography import point_in_polygon, valid_polygon
-from territory_outline import meets, simple_ring, suggest_outline
+from territory_outline import edges, meets, point_segment_distance, simple_ring, suggest_outline
 from geography import enclosing_outline
 
 
@@ -244,6 +244,35 @@ class OutlineTests(unittest.TestCase):
         other=self.address(1,-34,0)
         outline=self.trace(others=[other])
         self.assertFalse(point_in_polygon((other['lng'],other['lat']),outline))
+
+    def test_two_districts_can_both_leave_room_along_the_same_street(self):
+        # On the classic hull, the second row is only three metres from
+        # the first boundary. That leaves no space after neighbor clearance.
+        rows = [[self.address(i+offset,x,y) for i,x in enumerate((-40,-20,0,20,40))]
+                for offset,y in ((1,0),(21,15))]
+        for first,second in (rows,rows[::-1]):
+            with self.subTest(first=first[0]['number']):
+                addresses = first+second
+                outline,status = suggest_outline(first,addresses,[])
+                self.assertEqual(status,'clear')
+                def metres(lng,lat):
+                    return ((lng-10)*self.scale,(lat-55)*111320)
+
+                ring = [metres(*point) for point in outline]
+                remaining_room = min(point_segment_distance(metres(a['lng'],a['lat']),u,v)
+                                     for a in second for u,v in edges(ring))
+                self.assertGreaterEqual(remaining_room,5.99)
+                next_outline,status = suggest_outline(second,addresses,[outline])
+                self.assertEqual(status,'clear')
+                self.assertFalse(meets(outline,next_outline,0))
+                for polygon,members in ((outline,first),(next_outline,second)):
+                    self.assertTrue(all(point_in_polygon((a['lng'],a['lat']),polygon) for a in members))
+                    self.assertTrue(simple_ring([tuple(p) for p in polygon]))
+
+    def test_close_blue_address_can_use_smaller_clearance(self):
+        outsider = self.address(2,-40,4)
+        outline = self.trace(others=[outsider])
+        self.assertFalse(point_in_polygon((outsider['lng'],outsider['lat']),outline))
 
     def test_dense_unselected_fringe_is_cut_off_as_a_group(self):
         # Fictional streets based on the drawn correction. Selected entrances
