@@ -235,6 +235,59 @@ def trim_empty_fringe(ring, targets, chord_clear, validate):
     return accepted
 
 
+def improve_address_clearance(polygon, ring, address_radii, validate):
+    """Back off individual edges without moving closer to another address."""
+    signed_area = sum(cross((0,0),a,b) for a,b in edges(ring))
+    direction = 1 if signed_area > 0 else -1
+    area = abs(signed_area)
+    def edge_deficits(vertices):
+        misses = [0]*len(address_radii)
+        affected = []
+        for i,(a,b) in enumerate(edges(vertices)):
+            box = bounds((a,b))
+            shift = 0
+            for index,(point,radius) in enumerate(address_radii):
+                if near_bounds(box,(*point,*point),radius):
+                    miss = radius - point_segment_distance(point,a,b)
+                    if miss > 0:
+                        misses[index] = max(misses[index],miss)
+                        shift = max(shift,miss)
+            if shift > .05:
+                affected.append((shift,i))
+        return misses, sorted(affected,reverse=True)
+
+    misses, affected = edge_deficits(ring)
+    for _ in range(8):
+        for shift,i in affected[:12]:
+            j = (i+1)%len(ring)
+            a,b = ring[i],ring[j]
+            length = math.dist(a,b)
+            dx,dy = direction*(a[1]-b[1])/length, direction*(b[0]-a[0])/length
+            for amount in (shift+.08,shift/2):
+                moved = list(ring)
+                for k in (i,j):
+                    x,y = moved[k]
+                    moved[k] = (x+amount*dx,y+amount*dy)
+                adjusted, next_edges = edge_deficits(moved)
+                if (sum(misses)-sum(adjusted) < .25
+                        or any(new > old+.05 for old,new in zip(misses,adjusted))):
+                    continue
+                moved_area = abs(sum(cross((0,0),c,d) for c,d in edges(moved)))
+                if moved_area > area:
+                    continue
+                result = validate(moved)
+                if result:
+                    polygon,ring,misses,affected = result,moved,adjusted,next_edges
+                    area = moved_area
+                    break
+            else:
+                continue
+            break
+        else:
+            break
+    return polygon
+
+
 def house_key(address):
     return (address['postcode'],address['road'].casefold(),address['number'].upper())
 
@@ -369,13 +422,14 @@ def suggest_outline(selected, addresses, neighbors):
     # Leave room for a future district around an unselected entrance. Where
     # houses are close, reserve at most half the separation in each axis so
     # the neighboring marker never consumes a selected entrance's space.
-    preferred = []
+    address_radii = []
     for x,y in sorted(other):
         nearby = (max(abs(x-a),abs(y-b)) for a,b in targets
                   if abs(x-a)<2*NEIGHBOR_ADDRESS_ROOM_M and abs(y-b)<2*NEIGHBOR_ADDRESS_ROOM_M)
         radius = max(ADDRESS_GAP_M, min(NEIGHBOR_ADDRESS_ROOM_M,
                      min(nearby,default=2*NEIGHBOR_ADDRESS_ROOM_M)/2))
-        preferred.append(square((x,y),radius))
+        address_radii.append(((x,y),radius))
+    preferred = [square(point,radius) for point,radius in address_radii]
     neighbor_boxes = [(p,bounds(p)) for p in neighbor_shapes]
 
     def checked(ring, gap, avoided, obstacle_boxes):
@@ -546,5 +600,15 @@ def suggest_outline(selected, addresses, neighbors):
                     and area_of(roomy) >= area_of(ordinary)*.65
                     and score(roomy)[0] <= best_score[0]):
                 return roomy, status
-            return ordinary, status
+
+            minimum_room_area = area_of(ordinary)*.65
+
+            def validate_local_cut(ring):
+                result = checked(ring,gap,avoided,hard_boxes)
+                if result and area_of(result) >= minimum_room_area and score(result)[0] <= best_score[0]:
+                    return result
+                return []
+
+            return improve_address_clearance(ordinary, list(map(project,ordinary)),
+                                             address_radii, validate_local_cut), status
     return [], 'unavailable'

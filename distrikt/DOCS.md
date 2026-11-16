@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.26 forsøger at give fravalgte adresseprikker plads til næste nabokort. Åbn Kortopsætning, vælg Foreslå grænse og kontrollér omridset, inden du gemmer det.
+Beta 1.12.19-beta.27 forsøger at rykke enkelte kanter væk fra fravalgte adresseprikker, også når den ønskede afstand ikke kan holdes hele vejen rundt. Åbn Kortopsætning, vælg Foreslå grænse og kontrollér omridset, inden du gemmer det.
 
 ## Installer betakanalen én gang
 
