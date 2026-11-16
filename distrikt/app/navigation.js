@@ -11,7 +11,25 @@ const Navigation={
   return `<a class="navExternal" data-help-guide href="https://localterritorymanager.netlify.app/${lang}/guide/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">?</span><span class="navExternalLabel">${esc(I18n.text('Trinvis LTM-guide'))}<small>${esc(I18n.text('Se hvordan du kommer i gang og bruger LTM.'))}</small></span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
  },
  active(item){return page==='Opstart'&&item[1]==='Indstillinger'||page===item[1]||page==='Kortopsætning'&&item[1]==='Adresser';},
- html(){const followupCount=typeof GeoUI!=='undefined'&&GeoUI.loaded?Workspace.followupItems().length:null;const icons={Forside:'⌂',Udlevering:'⇄',Distrikter:'▤',Kortoversigt:'◇',Forkyndere:'♙',Opgaver:'☑',Opfølgninger:'◉',Rapporter:'▥',Adresser:'⌖',Indstillinger:'⚙',Feedback:'✎'};return this.groups.map(([name,items],i)=>`${name?`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>`:''}${name==='Hjælp'?this.guideLink():''}${items.map((item,j)=>typeof ProfilesUI!=='undefined'&&!ProfilesUI.pageAllowed(item[1])?'':`<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icons[item[1]]}</span>${esc(I18n.text(item[0]))}${item[1]==='Opfølgninger'&&followupCount!==null?`<span class="navFollowupCount" ${I18n.attribute('aria','Til opfølgning: {count}',{count:followupCount})}>${followupCount}</span>`:''}${item[1]==='Opgaver'?`<span class="navTaskCount" ${I18n.attribute('aria','{count} åbne opgaver',{count:Workspace.actionableTasks().length})}>${Workspace.actionableTasks().length}</span>`:''}</button>`).join('')}`).join('')+`<label class="languageChoice" lang="${I18n.language()}">${esc(I18n.text('Appens og guidens sprog'))}<select id="navigationLanguage"><option value="da" ${I18n.language()==='da'?'selected':''}>Dansk</option><option value="en" ${I18n.language()==='en'?'selected':''}>English</option></select><small>${esc(I18n.text('Originale printformularer og gemt brugerindhold bevarer deres sprog.'))}</small></label>`+(typeof Theme!=='undefined'?Theme.html(I18n.language()):'');},
+ html(){
+  const desk=typeof state!=='undefined'&&state?.profile?.desk_only;
+  const icons={Forside:'⌂',Udlevering:'⇄',Distrikter:'▤',Kortoversigt:'◇',Forkyndere:'♙',Opgaver:'☑',Opfølgninger:'◉',Rapporter:'▥',Adresser:'⌖',Indstillinger:'⚙'};
+  const allowed=name=>typeof ProfilesUI==='undefined'||ProfilesUI.pageAllowed(name);
+  const groups=this.groups.map(([name,items],i)=>{
+   if(name==='Hjælp')return desk?'':`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>${this.guideLink()}`;
+   const buttons=items.map((item,j)=>{
+    if(!allowed(item[1]))return '';
+    const count=item[1]==='Opfølgninger'&&typeof GeoUI!=='undefined'&&GeoUI.loaded?Workspace.followupItems().length:null;
+    const followups=count===null?'':`<span class="navFollowupCount" ${I18n.attribute('aria','Til opfølgning: {count}',{count})}>${count}</span>`;
+    const tasks=item[1]==='Opgaver'?`<span class="navTaskCount" ${I18n.attribute('aria','{count} åbne opgaver',{count:Workspace.actionableTasks().length})}>${Workspace.actionableTasks().length}</span>`:'';
+    return `<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icons[item[1]]}</span>${esc(I18n.text(desk&&item[1]==='Udlevering'?'Ind/udlevering':item[0]))}${followups}${tasks}</button>`;
+   }).join('');
+   return buttons?`${name?`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>`:''}${buttons}`:'';
+  }).join('');
+  const language=I18n.language();
+  const choice=I18n.fixedLanguage()?'':`<label class="languageChoice" lang="${language}">${esc(I18n.text('Appens og guidens sprog'))}<select id="navigationLanguage"><option value="da" ${language==='da'?'selected':''}>Dansk</option><option value="en" ${language==='en'?'selected':''}>English</option></select><small>${esc(I18n.text('Originale printformularer og gemt brugerindhold bevarer deres sprog.'))}</small></label>`;
+  return groups+choice+(!desk&&typeof Theme!=='undefined'?Theme.html(language):'');
+ },
  paintFollowupCount(){
   const button=document.querySelector('#nav [data-navigation="1:4"]');if(!button||!GeoUI.loaded)return;
   button.querySelector('.navFollowupCount')?.remove();const count=Workspace.followupItems().length;
@@ -34,7 +52,7 @@ const Navigation={
   const subtitle=document.querySelector('[data-ui-subtitle]');if(subtitle){subtitle.textContent=Workspace.subtitle(page);subtitle.lang=I18n.language();}
  },
  title(){return Workspace.title(page);},
- async go(index){const [i,j]=index.split(':').map(Number),item=this.groups[i]?.[1][j];if(!item)return;
+ async go(index){const [i,j]=index.split(':').map(Number),item=this.groups[i]?.[1][j];if(!item||(typeof ProfilesUI!=='undefined'&&!ProfilesUI.pageAllowed(item[1])))return;
   await closeRequested();if(el('dialog').open)return;
   if(page==='Kortopsætning'&&!GeoUI.canLeave())return;
   Workspace.remember();Workspace.menu(false,document.body?.classList.contains('menuOpen'));

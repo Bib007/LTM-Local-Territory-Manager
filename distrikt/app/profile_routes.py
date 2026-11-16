@@ -220,7 +220,7 @@ class ProfileRoutes:
             with runtime.bases.claim(data.get('edit_snapshot'),token,'accounts','accounts') as snapshot:
                 base=snapshot['data'][module].get(data.get('id'))
                 if data.get('id') and base is None:raise ValueError('Åbn brugeren eller rollen igen.')
-                if module=='roles':ident=self.server.accounts.save_role(token,data.get('name'),data.get('permissions'),data.get('id'),base=base)
+                if module=='roles':ident=self.server.accounts.save_role(token,data.get('name'),data.get('permissions'),data.get('id'),base=base,language=data.get('language'),desk_only=data.get('desk_only'))
                 else:ident=self.server.accounts.save_user(token,data.get('name'),data.get('roles'),data.get('id'),data.get('disabled',False),data.get('password'),base=base)
                 self.send({'id':ident});return True
         if path=='/api/profiles/guide/preview':
@@ -240,7 +240,7 @@ class ProfileRoutes:
         if path=='/api/profiles/heartbeat':
             self.server.accounts.heartbeat(token)
             runtime.bases.keep_workspace_alive(token,data.get('edit_bases'))
-            status={'ok':True,'permissions':sorted(self.profile_user['permissions']),'auth_revision':self.server.accounts.generation,
+            status={'ok':True,'language':self.profile_user['language'],'desk_only':self.profile_user['desk_only'],'permissions':sorted(self.profile_user['permissions']),'auth_revision':self.server.accounts.generation,
                     'conflicts':len(runtime.workspace.conflicts(token))+(len(self.server.accounts.reviews(token)) if 'users.manage' in self.profile_user['permissions'] else 0)}
             if 'notes.view' in self.profile_user['permissions']:
                 # Return only this account's count, never other users' task data.

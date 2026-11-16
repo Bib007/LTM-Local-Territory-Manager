@@ -21,6 +21,7 @@ PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.mana
     'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view',
     'notes.view','notes.edit','publishers.view','loans.view','history.edit',
     'geo.view','geo.edit','backup.export','backup.restore','backup.notify','connections.manage','sharing.manage','dashboard.view','reports.view'))
+DESK_PERMISSIONS=frozenset(('cards.view','loans.view','loans.manage','publishers.view'))
 SESSION_LIFETIME=12*60*60
 ONLINE_WINDOW=90
 KDF_ITERATIONS=600000
@@ -88,7 +89,10 @@ class ProfileAccounts(GuideAccounts):
 
     def _permissions(self,data,user):
         if not user or user.get('disabled'):return set()
-        return {p for ident in user['roles'] for p in data['roles'].get(ident,{}).get('permissions',[]) if p in PERMISSIONS}
+        roles = [data['roles'].get(ident,{}) for ident in user['roles']]
+        if any(role.get('desk_only') for role in roles):
+            return set(DESK_PERMISSIONS)
+        return {p for role in roles for p in role.get('permissions',[]) if p in PERMISSIONS}
 
     def _require_admin_remaining(self,data):
         if not any('users.manage' in self._permissions(data,u) for u in data['users'].values()):
@@ -125,7 +129,11 @@ class ProfileAccounts(GuideAccounts):
         with self.lock:
             session,user=self._session(token)
             session['seen']=self.clock()
-            yield {'id':user['id'],'name':user['name'],'onboarded':bool(user.get('onboarded')),'revision':self.generation,
+            roles = [self.data['roles'][ident] for ident in user['roles']]
+            languages = {role.get('language') for role in roles}
+            yield {'desk_only':any(role.get('desk_only') for role in roles),
+                   'language':next((lang for lang in ('da','en') if lang in languages),''),
+                   'id':user['id'],'name':user['name'],'onboarded':bool(user.get('onboarded')),'revision':self.generation,
                    'permissions':frozenset(self._permissions(self.data,user))}
 
     def bootstrap(self,name,password):
@@ -189,7 +197,7 @@ class ProfileAccounts(GuideAccounts):
             result=deepcopy(row)
             if module=='users':result['credential']={k:result.pop(k) for k in ('salt','hash','iterations')}
             return result
-        fields={'name','permissions'} if module=='roles' else {'name','roles','disabled','credential'}
+        fields={'name','permissions','language','desk_only'} if module=='roles' else {'name','roles','disabled','credential'}
         result=reconcile(record(base),record(old),record(proposed),fields)
         for conflict in result['conflicts']:
             reviews=data.setdefault('reviews',[])
@@ -205,7 +213,7 @@ class ProfileAccounts(GuideAccounts):
         if module=='users':merged.update(merged.pop('credential'))
         return merged
 
-    def save_role(self,token,name,permissions,ident=None,*,base=None):
+    def save_role(self,token,name,permissions,ident=None,*,base=None,language=None,desk_only=None):
         with self.lock:
             self._admin(token);name=_name(name)
             if not isinstance(permissions,list) or any(p not in PERMISSIONS for p in permissions):raise ValueError('Unknown permission')
@@ -214,7 +222,16 @@ class ProfileAccounts(GuideAccounts):
             ident=ident or 'role-'+uuid.uuid4().hex
             if ident not in data['roles'] and any(r['name'].casefold()==name.casefold() for r in data['roles'].values()):raise ValueError('Role name already exists')
             if any(r['id']!=ident and r['name'].casefold()==name.casefold() for r in data['roles'].values()):raise ValueError('Role name already exists')
+            previous = base or data['roles'].get(ident,{})
+            language = previous.get('language','') if language is None else language
+            desk_only = previous.get('desk_only',False) if desk_only is None else desk_only
+            if language not in ('','da','en') or type(desk_only) is not bool:
+                raise ValueError('Ugyldige rolleindstillinger.')
             proposed={'id':ident,'name':name,'permissions':sorted(set(permissions))}
+            if language:
+                proposed['language']=language
+            if desk_only:
+                proposed['desk_only']=True
             data['roles'][ident]=self._review_account(data,'roles',data['roles'].get(ident),proposed,base,self.authorize(token,'users.manage'))
             if any(r['id']!=ident and r['name'].casefold()==data['roles'][ident]['name'].casefold() for r in data['roles'].values()):raise ValueError('Role name already exists')
             self._require_admin_remaining(data);self._write(data);return ident

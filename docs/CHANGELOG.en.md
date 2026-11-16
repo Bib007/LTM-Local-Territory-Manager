@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.27 · 2026-11-16
+
+- **Fixed language:** A role can set the app language to Danish or English.
+- **Checkout role:** Restrict the user to Home, check-in and check-out, and publishers. The role can issue and return existing cards.
+- **Follow-ups:** Users with access to geographic card data can see cards without a geographic boundary even when the system was set up for daily lending.
+
 ## 1.12.26 · 2026-11-16
 
 - **DAR suggestions:** The boundary encloses selected addresses and can cut out whole clusters of unselected address markers. Suggestions seek clearance from neighboring boundaries and unselected markers. In dense streets, the boundary can still run close to an address.

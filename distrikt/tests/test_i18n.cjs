@@ -12,7 +12,7 @@ function environment(storedLanguage,blocked=false,initialLanguage=''){
   document:{activeElement:{id:'navigationLanguage'},addEventListener(k,f){(listeners[k]??=[]).push(f);},querySelectorAll(q){return q==='[data-ui]'?[nodes.brand]:[];},querySelector(q){return q==='[data-ui-title]'?nodes.title:q==='[data-ui-subtitle]'?nodes.subtitle:null;}},
   openDialog(html){opened.push(html);},closeDialog(){}};
  vm.createContext(context);
- for(const file of ['i18n.js','navigation.js','workspace.js','onboarding.js','welcome.js'])vm.runInContext(source(file),context);
+ for(const file of ['i18n.js','navigation.js','workspace.js','onboarding.js','welcome.js','profiles-ui.js'])vm.runInContext(source(file),context);
  return {context,nodes,listeners,stored,writes,opened,run:s=>vm.runInContext(s,context)};
 }
 assert.equal(environment().run('I18n.language()'),'en');
@@ -36,6 +36,15 @@ assert.equal(e.nodes.form,draft);assert.equal(draft.value,'UNSAVED_FICTIONAL_VAL
 assert.equal(e.nodes.navigationLanguage.focused,true);
 assert.equal(JSON.stringify(e.context.state),before);assert.equal(e.nodes.custom.textContent,'Forside');
 assert.deepEqual(e.writes,['ltm-language']);assert.equal(e.stored.get('ltm-language'),'en');
+e.run("state.profile={language:'da',permissions:[]}");
+assert.equal(e.run("I18n.set('en')"),false);
+assert.equal(e.run('I18n.language()'),'da');
+assert.doesNotMatch(e.run('Navigation.html()'),/navigationLanguage/);
+e.run("state.profile.desk_only=true");
+assert.deepEqual([...e.run('Navigation.html()').matchAll(/data-navigation="([^"]+)"/g)].map(match=>match[1]),['0:0','0:1','1:2']);
+assert.equal(e.run("ProfilesUI.pageAllowed('Indstillinger')"),false);
+e.run('delete state.profile');
+assert.equal(e.run('I18n.language()'),'en');
 assert.equal(e.run("I18n.text('Unknown fictional road')"),'Unknown fictional road');
 assert.match(e.run("I18n.errorText(new Error('Datafordeleren afviste nøglen. Kontrollér API-key på dit IT-system. En ny nøgle kan være op til 15 minutter om at blive aktiv. Ventetid er kun én mulig årsag. Prøv forbindelsen igen, når der er gået 15 minutter.'))"),/rejected the key.*15 minutes.*only one possible cause/);
 assert.equal(e.run("I18n.set('<script>')"),false);assert.equal(e.run('I18n.language()'),'en');

@@ -103,7 +103,11 @@ DELETE={'cards':CASCADE,'ib':{'cards.view','ib.view','ib.edit'},
         'publishers':{'publishers.view','publishers.manage','loans.view'},
         'ignored':{'geo.view','geo.edit'}}
 
+DESK_ACTIONS=frozenset(('loan.issue','loan.finish'))
+
 def mutation(user,action,data,store):
+    if user.get('desk_only') and (action not in DESK_ACTIONS or data.get('retain')):
+        raise PermissionError('Du har ikke rettighed til denne handling.')
     needed=ACTIONS.get(action)
     if action=='delete':needed=DELETE.get(data.get('module'))
     if action in ('restore','recovery.purge'):needed=READ_ALL|WRITE_ALL|{'backup.restore'}
@@ -145,7 +149,7 @@ def mutation(user,action,data,store):
             name=clean_text(data.get('publisher_name'),100,True)
             if not any(p['name'].casefold()==name.casefold() for p in store.all('publishers')):
                 require(user['permissions'],('publishers.manage',))
-    if action=='loan.finish' and data.get('complete'):require(user['permissions'],('history.view','history.edit'))
+    if action=='loan.finish' and data.get('complete') and not user.get('desk_only'):require(user['permissions'],('history.view','history.edit'))
     if (action=='revision.approve' and data.get('side')=='back') or (action=='revision.approve_many' and isinstance(data.get('entries'),list) and any(isinstance(e,dict) and e.get('side')=='back' for e in data['entries'])):require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))
 
@@ -167,6 +171,10 @@ def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]} for row in raw[module]] if right in p else []
+    if user.get('desk_only'):
+        for card in result['cards']+result['archived_cards']:
+            for field in ('geo_polygon','polygon','geo_addresses','address_ids','planning_reference','interim_transfer'):
+                card.pop(field,None)
     if 'cards.edit' not in p:
         for card in result['cards']+result['archived_cards']:
             card.pop('front_labels_token',None)
@@ -222,7 +230,7 @@ def state_for(raw,user):
     summary=summaries(raw) if {'dashboard.view','reports.view'}&p else None
     result['dashboard_summary']=deepcopy(summary) if 'dashboard.view' in p else None
     result['report_summary']=deepcopy(summary) if 'reports.view' in p else None
-    result['profile']={'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision'],'capabilities':capability_catalog()}
+    result['profile']={'desk_only':bool(user.get('desk_only')),'language':user.get('language',''),'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision'],'capabilities':capability_catalog()}
     return result
 
 
