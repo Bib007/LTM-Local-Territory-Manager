@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.26 · 2026-11-16
+
+- **DAR suggestions:** The boundary encloses selected addresses and can cut out whole clusters of unselected address markers. Suggestions seek clearance from neighboring boundaries and unselected markers. In dense streets, the boundary can still run close to an address.
+- **Map editor:** Suggestions are checked on save. The editor warns if a selected address requires overlap with a neighboring territory. Existing boundaries are replaced when the user saves a new suggestion.
+- **S-12:** Short house number ranges retain the even or odd label.
+
 ## 1.12.25 · 2026-11-15
 
 - **DAR suggestions:** The automatic boundary keeps other known houses and locally saved buildings outside the territory.

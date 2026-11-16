@@ -32,10 +32,19 @@ const optionalRange={front_addresses:[
 ]};
 const ranged=JSON.parse(JSON.stringify(ctx.render(optionalRange)));
 assert.deepEqual(ranged,[
- {label:'Eksempelvej 3–67 & 2 & 4',count:8}
+ {label:'Eksempelvej 3–67 (ulige) & 2 & 4 (lige)',count:8}
 ],'The range and the opposite side share a line, with all original visits counted');
-assert.equal(ctx.render(optionalRange,true)[0].label,'Eksempelvej 3–67 & 2 & 4','English forms use the same short-range display');
-assert.equal(ctx.render({front_addresses:optionalRange.front_addresses.slice(0,1)})[0].label,'Eksempelvej 3–67');
+assert.equal(ctx.render(optionalRange,true)[0].label,'Eksempelvej 3–67 (odd) & 2 & 4 (even)','English forms translate both parity markers');
+assert.equal(ctx.render({front_addresses:optionalRange.front_addresses.slice(0,1)})[0].label,'Eksempelvej 3–67 (ulige)');
+const bothRanged={front_addresses:[
+ {road:'Testvej',postcode:'9999',numbers:'1 & 9 (ulige)',short_numbers:'1–9',number_style:'range',count:2},
+ {road:'Testvej',postcode:'9999',numbers:'2 & 20 (lige)',short_numbers:'2–20',number_style:'range',count:2}
+]};
+assert.equal(ctx.render(bothRanged)[0].label,'Testvej 1–9 (ulige) & 2–20 (lige)');
+assert.equal(ctx.render(bothRanged,true)[0].label,'Testvej 1–9 (odd) & 2–20 (even)');
+const evenOnly={front_addresses:[{road:'Fiktiv lige vej',numbers:'2 & 8 & 14 (lige)',short_numbers:'2–14',number_style:'range',count:3}]};
+assert.equal(ctx.render(evenOnly)[0].label,'Fiktiv lige vej 2–14 (lige)');
+assert.equal(ctx.render(evenOnly,true)[0].label,'Fiktiv lige vej 2–14 (even)');
 optionalRange.front_addresses[0].number_style='exact';
 assert.match(ctx.render(optionalRange)[0].label,/3 & 7 & 9 & 15 & 25 & 67/,'Turning off shortening restores exact selected numbers');
 const old={geo_addresses:[{road:'Eksempelvej',number:'1',count:2},{road:'Eksempelvej',number:'2',count:1}]};

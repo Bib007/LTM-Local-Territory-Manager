@@ -525,6 +525,7 @@ function frontRows(c,english=false){
   }));
  }
  const streets=new Map(),parity=/\s*\((lige|ulige|even|odd)\)$/i;
+ const sideSuffix=side=>side?' ('+(english?side:(side==='odd'?'ulige':'lige'))+')':'';
  const numbered=source.map(a=>{
   const numbers=compactAddressNumbers(a.numbers),marker=numbers.match(parity);
   const shortRange=a.number_style==='range'&&a.short_numbers?compactAddressNumbers(a.short_numbers):'';
@@ -544,13 +545,14 @@ function frontRows(c,english=false){
   if(a.street?.odd.length&&a.street.even.length){
    merged.add(a.street);
    const sides=[...a.street.odd,...a.street.even];
-   const intervals=[...new Set(sides.map(row=>row.interval))].join(' & ');
+   const showParity=sides.some(row=>!!row.shortRange);
+   const intervals=[...new Set(sides.map(row=>row.interval+(showParity?sideSuffix(row.side):'')))].join(' & ');
    const supplements=[...new Set(sides.flatMap(row=>[row.extra_road,row.extra_numbers]).filter(Boolean))];
    rows.push({label:[a.road+' '+intervals,...supplements].join(' – '),count:sides.reduce((sum,row)=>sum+row.count,0),
     ...(sides.some(row=>row.count_unknown)?{count_unknown:true}:{})});
    continue;
   }
-  const numbers=a.shortRange||(a.side?a.interval+' ('+(english?a.side:(a.side==='odd'?'ulige':'lige'))+')':a.numbers);
+  const numbers=a.shortRange?a.shortRange+sideSuffix(a.side):(a.side?a.interval+sideSuffix(a.side):a.numbers);
   rows.push({label:[a.road+' '+numbers,a.extra_road,a.extra_numbers].filter(Boolean).join(' – '),count:a.count,
    ...(a.count_unknown?{count_unknown:true}:{})});
  }
