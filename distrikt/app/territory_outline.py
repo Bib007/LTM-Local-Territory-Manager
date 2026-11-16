@@ -1,7 +1,6 @@
 """Suggest one connected territory outline from local addresses and obstacles."""
 import math
 from collections import deque
-from heapq import heappop, heappush
 
 from geography import enclosing_outline, point_in_polygon, valid_polygon
 
@@ -9,7 +8,6 @@ NEIGHBOR_GAP_M = 3
 ADDRESS_GAP_M = 1
 MAX_GRID_CELLS = 250_000
 DIRECTIONS = ((1, 0), (0, 1), (-1, 0), (0, -1))
-DIAGONALS = ((1, 1), (1, -1), (-1, 1), (-1, -1))
 
 
 def bounds(points):
@@ -111,87 +109,10 @@ class OutlineGrid:
         expanded = {(x+dx,y) for x,y in cells for dx in range(-radius,radius+1) if 0<=x+dx<self.width}
         return {(x,y+dy) for x,y in expanded for dy in range(-radius,radius+1) if 0<=y+dy<self.height}
 
-    def expand(self, cells, forbidden, distance):
-        expanded = set(cells)
-        frontier = cells
-        for _ in range(math.ceil(distance/self.step)):
-            frontier = {(x+dx,y+dy) for x,y in frontier for dx,dy in DIRECTIONS
-                        if self.inside((x+dx,y+dy))} - forbidden - expanded
-            expanded.update(frontier)
-        return expanded
-
-    def road_cells(self, segments):
-        strips = []
-        for a,b in segments:
-            dx,dy = b[0]-a[0],b[1]-a[1]
-            length = math.hypot(dx,dy)
-            if length:
-                nx,ny = -.05*dy/length,.05*dx/length
-                strips.append([(a[0]+nx,a[1]+ny),(b[0]+nx,b[1]+ny),
-                               (b[0]-nx,b[1]-ny),(a[0]-nx,a[1]-ny)])
-        return self.dilate(self.raster(strips),5)
-
-    def connect(self, targets, blocked, penalized=frozenset(), roads=frozenset()):
-        """Find short connections to the existing outline, favoring nearby named roads."""
-        cells = {targets[0]}
-        left,bottom,right,top = (*targets[0],*targets[0])
-        budget = 3*MAX_GRID_CELLS
-        cost_crossing = 21*self.width*self.height+1
-        # Keep the existing narrow orthogonal crossing when overlap is necessary.
-        directions = DIRECTIONS if penalized else DIRECTIONS+DIAGONALS
-        for target in targets[1:]:
-            if target in cells:
-                continue
-
-            def distance(cell):
-                dx = max(left-cell[0],0,cell[0]-right)
-                dy = max(bottom-cell[1],0,cell[1]-top)
-                return 10*max(dx,dy)+4*min(dx,dy)
-
-            h = distance(target)
-            queue = [(h,h,target)]
-            parents = {target:None}
-            costs = {target:0}
-            while queue:
-                score,h,current = heappop(queue)
-                if score-h != costs[current]:
-                    continue
-                budget -= 1
-                if budget < 0:
-                    raise OverflowError()
-                x,y = current
-                if current in cells:
-                    while current is not None:
-                        x,y = current
-                        cells.add(current)
-                        left,bottom,right,top = min(left,x),min(bottom,y),max(right,x),max(top,y)
-                        current = parents[current]
-                    break
-                for dx,dy in directions:
-                    nxt = (x+dx,y+dy)
-                    if not self.inside(nxt) or nxt in blocked:
-                        continue
-                    diagonal = dx!=0 and dy!=0
-                    if diagonal and ((x+dx,y) in blocked or (x,y+dy) in blocked):
-                        continue
-                    step_cost = 14 if diagonal else 10
-                    if roads and nxt not in roads:
-                        step_cost += step_cost//2
-                    if nxt in penalized:
-                        step_cost += cost_crossing
-                    cost = costs[current]+step_cost
-                    if nxt in costs and cost >= costs[nxt]:
-                        continue
-                    costs[nxt],parents[nxt] = cost,current
-                    h = distance(nxt)
-                    heappush(queue,(cost+h,h,nxt))
-            else:
-                return None
-        return cells
-
     def outline(self, cells, forbidden):
         """Trace the outside of connected cells as a simple ring."""
-        pending = list(cells)
+        cells = set(cells)
+        pending = sorted(cells)
         while pending:
             x,y = pending.pop()
             for dx,dy in ((1,1),(1,-1),(-1,1),(-1,-1)):
@@ -207,10 +128,16 @@ class OutlineGrid:
             corners = ((x,y),(x+1,y),(x+1,y+1),(x,y+1))
             for i,(dx,dy) in enumerate(((0,-1),(1,0),(0,1),(-1,0))):
                 if (x+dx,y+dy) not in cells:
+                    if corners[i] in boundary:
+                        return []
                     boundary[corners[i]] = corners[(i+1)%4]
+        if not boundary:
+            return []
         start = min(boundary)
         ring = [start]
-        while (nxt := boundary[ring[-1]]) != start:
+        while (nxt := boundary.get(ring[-1])) != start:
+            if nxt is None:
+                return []
             ring.append(nxt)
             if len(ring)>len(boundary):
                 return []
@@ -246,141 +173,94 @@ def house_key(address):
     return (address['postcode'],address['road'].casefold(),address['number'].upper())
 
 
-def carve_original_envelope(grid, filled, forbidden, target_cells):
-    """Keep the old convex outline and open small *local* cuts for excluded dots.
+def adjacent(cell):
+    x, y = cell
+    return ((x+dx, y+dy) for dx, dy in DIRECTIONS)
 
-    The previous fallbacks discarded a broad envelope as soon as it contained
-    any non-selected address. They then grew a strip along the shortest route
-    between houses, causing narrow, unnatural territories. Here we keep the
-    original filled outline and connect every forbidden interior island to the
-    outside with a small notch. We never remove a selected address or allow a
-    forbidden cell back in. If a valid single polygon is impossible, the caller
-    can use its explicitly constrained fallback instead.
+
+def component(seed, cells):
+    seen = {seed}
+    queue = deque([seed])
+    while queue:
+        for node in adjacent(queue.popleft()):
+            if node in cells and node not in seen:
+                seen.add(node)
+                queue.append(node)
+    return seen
+
+
+def carve_envelope(grid, filled, forbidden, targets, clearance):
+    """Trace the filled area after opening interior exclusions to the outside.
+
+    A single ring cannot represent holes. Find the shortest openings through
+    the filled area, sharing cuts wherever their paths join. Protect the
+    selected entrances and discard the candidate if a cut separates them.
     """
-    region = filled - forbidden
-    targets = set(target_cells)
+    available = filled - forbidden
+    if not targets <= available:
+        return []
+    region = component(min(targets), available)
     if not targets <= region:
         return []
 
-    # Discover the outside of the old polygon; only enclosed forbidden islands
-    # need a cut. A hole cannot be stored in the current single-ring format.
-    outside = set()
-    queue = deque()
-    for x in range(grid.width):
-        for node in ((x, 0), (x, grid.height-1)):
-            if node not in region and node not in outside:
-                outside.add(node)
-                queue.append(node)
-    for y in range(grid.height):
-        for node in ((0, y), (grid.width-1, y)):
-            if node not in region and node not in outside:
-                outside.add(node)
-                queue.append(node)
-    while queue:
-        x, y = queue.popleft()
-        for dx, dy in DIRECTIONS:
-            node = (x+dx, y+dy)
-            if grid.inside(node) and node not in region and node not in outside:
-                outside.add(node)
-                queue.append(node)
-
-    holes = {(x,y) for y in range(grid.height) for x in range(grid.width)
-             if (x,y) not in region and (x,y) not in outside}
+    exterior = {(x,y) for x in range(grid.width) for y in range(grid.height)} - region
+    outside = component((0,0), exterior)
+    holes = exterior - outside
     if not holes:
         return grid.outline(region, forbidden)
 
-    # A few metres of clearance around chosen entrances stop a notch splitting
-    # a selected household from the polygon.
-    protected = grid.dilate(targets, 3)
-    components = 0
-    while holes:
-        components += 1
-        if components > 300:
-            return []
-        seed = holes.pop()
-        island = {seed}
-        pending = [seed]
-        while pending:
-            x, y = pending.pop()
-            for dx,dy in DIRECTIONS:
-                node = (x+dx,y+dy)
-                if node in holes:
-                    holes.remove(node)
-                    island.add(node)
-                    pending.append(node)
-
-        # Test straight outward cuts on all four sides of the island. This
-        # produces a handful of meaningful corners rather than an A* corridor.
-        extremes = (
-            (sorted(island,key=lambda p:(p[0],p[1]))[:8],(-1,0)),
-            (sorted(island,key=lambda p:(-p[0],p[1]))[:8],(1,0)),
-            (sorted(island,key=lambda p:(p[1],p[0]))[:8],(0,-1)),
-            (sorted(island,key=lambda p:(-p[1],p[0]))[:8],(0,1)),
-        )
-        choices = []
-        for starts,direction in extremes:
-            dx,dy = direction
-            for start in starts:
-                x,y = start
-                path = []
-                # At most one continuous straight opening to the exterior.
-                while grid.inside((x,y)) and (x,y) not in outside:
-                    node = (x,y)
-                    if node in region:
-                        path.append(node)
-                    x,y = x+dx,y+dy
-                if not grid.inside((x,y)) or len(path)>160 or not path:
-                    continue
-                if any(cell in protected for cell in path):
-                    continue
-                choices.append((len(path),len(path),start,direction,path))
-
-        if not choices:
-            return []
-        choices.sort(key=lambda entry:entry[:4])
-        chosen = choices[0][4]
-        # A one-cell notch can touch itself diagonally; use a second cell
-        # where safe so the resulting perimeter is an ordinary simple ring.
-        dx,dy = choices[0][3]
-        cut = set(chosen)
-        for x,y in chosen:
-            for neighbor in ((x+dy,y+dx),):
-                if neighbor in region and neighbor not in protected:
-                    cut.add(neighbor)
-        region.difference_update(cut)
-        outside.update(island)
-        outside.update(cut)
-
-    # Delete disconnected slack areas, but never a selected home. Otherwise
-    # the contour could silently omit a part of the actual territory.
-    if not region or targets - region:
-        return []
-    seen = {next(iter(targets))}
-    queue = deque(seen)
-    while queue:
-        x,y = queue.popleft()
-        for dx,dy in DIRECTIONS:
-            node = (x+dx,y+dy)
-            if node in region and node not in seen:
-                seen.add(node)
+    protected = grid.dilate(targets, clearance)
+    # Start with the inside edge of the exterior. This stores only potential
+    # cuts, and lets each hole find a bent opening when a straight ray is blocked.
+    roots = sorted(cell for cell in region - protected
+                   if any(node in outside for node in adjacent(cell)))
+    parents = dict.fromkeys(roots)
+    queue = deque(roots)
+    cut = set()
+    while queue and holes:
+        cell = queue.popleft()
+        for node in adjacent(cell):
+            if node in holes:
+                holes.difference_update(component(node, holes))
+                branch = cell
+                while branch is not None and branch not in cut:
+                    cut.add(branch)
+                    branch = parents[branch]
+            elif node in region and node not in protected and node not in parents:
+                parents[node] = cell
                 queue.append(node)
-    if not targets <= seen:
+    if holes:
         return []
-    return grid.outline(seen, forbidden)
+    remaining = component(min(targets), region - cut)
+    if not targets <= remaining:
+        return []
+    # A bridge at a diagonal touch may use spare envelope cells, but must
+    # never close an opening or put back an excluded address.
+    return grid.outline(remaining, forbidden | cut | (region - remaining))
 
 
-def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
-    """Draw a generous territory around the selected homes, not a thin route.
+def simple_ring(ring):
+    """Reject vertex touches and collinear overlaps as well as crossings."""
+    if len(set(ring)) != len(ring):
+        return False
+    sides = sorted((bounds((a,b)), i, a, b) for i,(a,b) in enumerate(edges(ring)))
+    active = []
+    for box,i,a,b in sides:
+        active = [side for side in active if side[0][2] >= box[0]]
+        for other,j,c,d in active:
+            if abs(i-j) in (1,len(ring)-1) or not near_bounds(box,other):
+                continue
+            if meets((a,b),(c,d),0):
+                return False
+        active.append((box,i,a,b))
+    # Adjacent edges may share a vertex, but may not fold back over it.
+    return all(cross(a,b,c) != 0 or
+               (a[0]-b[0])*(c[0]-b[0])+(a[1]-b[1])*(c[1]-b[1]) < 0
+               for a,b,c in zip(ring[-1:]+ring[:-1],ring,ring[1:]+ring[:1]))
 
-    1. Prefer a broad, clean silhouette with few corners, like a hand-drawn map.
-    2. If that would include an unselected home or another territory, grow a
-       connected outline around safe paths and simplify its perimeter.
-    3. Buildings with no known unselected address and ordinary map background
-       are *not* barriers. An unavoidable neighboring-territory crossing is
-       explicitly flagged, never silently treated as clear.
 
-    A proposal is display-only until the caller rechecks it at save time.
-    """
+def suggest_outline(selected, addresses, neighbors):
+    """Suggest a single filled, address-safe territory from the classic hull."""
     if not selected:
         return [], 'unavailable'
 
@@ -412,21 +292,18 @@ def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
     extra = step+NEIGHBOR_GAP_M+5
     world_area = bounds([unproject((area[0]-extra,area[1]-extra)),
                          unproject((area[2]+extra,area[3]+extra))])
-    chosen_houses = {house_key(a) for a in selected}
-    other = [project((a['lng'],a['lat'])) for a in addresses
-             if not a.get('retired') and house_key(a) not in chosen_houses
-             and near_bounds(world_area,(a['lng'],a['lat'],a['lng'],a['lat']))]
+    chosen_entrances = {(house_key(a), a['lng'], a['lat']) for a in selected}
+    other = {project((a['lng'], a['lat'])) for a in addresses
+             if not a.get('retired')
+             and (house_key(a), a['lng'], a['lat']) not in chosen_entrances
+             and near_bounds(world_area,(a['lng'],a['lat'],a['lng'],a['lat']))}
     neighbor_shapes = [list(map(project,p)) for p in neighbors
                        if near_bounds(world_area,bounds(p))]
-    # A building footprint is not an address assignment. The user selected
-    # individual DAR entrances; only other loaded address *points* and already
-    # assigned territory polygons are protected. Sheds and unselected buildings
-    # are neutral cartography and may lie inside a proposed outline.
-    obstacles = [square(p,ADDRESS_GAP_M) for p in other]
+    obstacles = [square(p, ADDRESS_GAP_M) for p in sorted(other)]
     obstacle_boxes = [(p,bounds(p)) for p in obstacles]
     neighbor_boxes = [(p,bounds(p)) for p in neighbor_shapes]
 
-    def checked(ring, gap):
+    def checked(ring, gap, avoided):
         if not ring or len(ring)<3:
             return []
         try:
@@ -434,105 +311,81 @@ def suggest_outline(selected, addresses, buildings, neighbors, roads=()):
         except ValueError:
             return []
         projected = list(map(project,polygon))
+        if not simple_ring(projected):
+            return []
         box = bounds(projected)
-        if any(not point_in_polygon(p,projected) for p in targets):
+        if any(not point_in_polygon(p,projected) or
+               any(point_segment_distance(p,a,b) < .01 for a,b in edges(projected))
+               for p in targets):
             return []
         if any(near_bounds(box,b) and meets(projected,p,0)
                for p,b in obstacle_boxes):
             return []
-        if gap is not None and any(near_bounds(box,b,gap) and meets(projected,p,gap)
-                                   for p,b in neighbor_boxes):
+        if any(near_bounds(box,b,gap) and meets(projected,p,gap) for p,b in avoided):
             return []
         return polygon
 
-    def safe_shortcut(patch):
-        """Only replace a contour bend if its triangular sweep is empty."""
-        box = bounds(patch)
-        return (not any(near_bounds(box,(*p,*p)) and point_in_polygon(p,patch)
-                        for p in targets)
-                and not any(near_bounds(box,b) and meets(patch,p,0)
-                            for p,b in obstacle_boxes)
-                and not any(near_bounds(box,b,NEIGHBOR_GAP_M) and
-                            meets(patch,p,NEIGHBOR_GAP_M)
-                            for p,b in neighbor_boxes))
+    def smooth(ring, gap, avoided):
+        def safe_shortcut(patch):
+            box = bounds(patch)
+            return (not any(near_bounds(box,(*p,*p)) and point_in_polygon(p,patch)
+                            for p in targets)
+                    and not any(near_bounds(box,b) and meets(patch,p,0)
+                                for p,b in obstacle_boxes)
+                    and not any(near_bounds(box,b,gap) and meets(patch,p,gap) for p,b in avoided))
 
-    def smooth(ring, gap):
         if not ring:
             return []
-        for tolerance in (16,8,3):
-            simplified = simplify_ring(ring,safe_shortcut,tolerance)
-            if len(simplified)<len(ring):
-                result = checked(simplified,gap)
-                if result:
-                    return result
-        return checked(ring,gap)
-
-    # Return to the original broad convex envelope. A collision must be
-    # trimmed *locally* instead of rejecting the entire envelope and falling
-    # back to the thinnest possible connection between houses.
-    old_envelopes = []
-    for padding in (12,24):
-        try:
-            envelope = enclosing_outline([list(p) for p in chosen],padding_m=padding)
-        except ValueError:
-            continue
-        projected_envelope = [project(p) for p in envelope]
-        old_envelopes.append(projected_envelope)
-        result = checked(projected_envelope,NEIGHBOR_GAP_M)
-        if result:
-            return result,'clear'
-
-    # Only if there is no valid carved envelope should an address-safe route
-    # be considered. That case is a genuine geometric constraint, not a reason
-    # to squeeze every ordinary block into a ribbon.
-    grid = OutlineGrid(area,step)
-    if grid.width*grid.height > MAX_GRID_CELLS:
-        return [],'unavailable'
-    names = {a['road'].strip().casefold() for a in selected}
-    segments = [(project(a),project(b)) for road in roads
-                if road.get('name','').strip().casefold() in names
-                for a,b in zip(road['points'],road['points'][1:])
-                if near_bounds(world_area,bounds((a,b)))]
-    road_cells = grid.road_cells(segments)
-    targets_cells = list(dict.fromkeys(map(grid.cell,targets)))
-    hard = grid.raster(obstacles)
-    borders = grid.raster(neighbor_shapes)
-    neighbor_buffer = grid.dilate(borders,NEIGHBOR_GAP_M)
-    forbidden = hard | neighbor_buffer
-    if any(cell in forbidden for cell in targets_cells):
-        return [],'unavailable'
-
-    for envelope in old_envelopes:
-        broad = grid.raster([envelope])
-        shaped = carve_original_envelope(grid,broad,forbidden,targets_cells)
-        result = smooth(shaped,NEIGHBOR_GAP_M) if shaped else []
-        if result:
-            return result,'clear'
+        for tolerance in (10, 6, 3):
+            result = checked(simplify_ring(ring,safe_shortcut,tolerance), gap, avoided)
+            if result:
+                return result
+        return checked(ring, gap, avoided)
 
     try:
-        route = grid.connect(targets_cells,forbidden,roads=road_cells)
-        if route is not None:
-            for padding in (36,26,18,12,8,4,0):
-                grown = grid.expand(route,forbidden,padding)
-                result = smooth(grid.outline(grown,forbidden),NEIGHBOR_GAP_M)
-                if result:
-                    return result,'clear'
-            return [],'unavailable'
+        original = [project(p) for p in enclosing_outline(chosen, padding_m=12)]
+    except ValueError:
+        return [], 'unavailable'
+    result = checked(original, NEIGHBOR_GAP_M, neighbor_boxes)
+    if result:
+        return result, 'clear'
 
-        # The user still gets a visible warning when an existing neighboring
-        # polygon truly cuts their selected addresses into separate pieces.
-        # Never hide a crossing behind a "clear" label.
-        if step>2.5 or not borders or grid.connect(targets_cells,hard|borders) is not None:
-            return [],'unavailable'
-        route = grid.connect(targets_cells,hard,neighbor_buffer,roads=road_cells)
-        if route is not None:
-            for padding in (18,10,5,0):
-                grown = grid.expand(route,forbidden,padding)
-                result = smooth(grid.outline(grown,hard|(neighbor_buffer-route)),None)
+    grid = OutlineGrid(area, step)
+    if grid.width*grid.height > MAX_GRID_CELLS:
+        return [], 'unavailable'
+    target_cells = set(map(grid.cell, targets))
+    hard = grid.raster(obstacles)
+    if target_cells & hard:
+        return [], 'unavailable'
+
+    # A selected entrance in a neighboring polygon makes some overlap
+    # unavoidable. A failed bounded search alone is no proof of that.
+    avoided = [(p,b) for p,b in neighbor_boxes
+               if not any(near_bounds(b,(*t,*t)) and point_in_polygon(t,p) for t in targets)]
+    status = 'clear' if len(avoided) == len(neighbor_boxes) else 'crossing'
+    borders = grid.raster([p for p,_ in avoided])
+    grouped = grid.dilate(hard, 8) - grid.dilate(target_cells, 3)
+    for gap in (NEIGHBOR_GAP_M, 0) if borders else (NEIGHBOR_GAP_M,):
+        forbidden = hard | (grid.dilate(borders, gap) if gap else borders)
+        if target_cells & forbidden:
+            continue
+        # Grow the filled envelope to allow a detour when clipping the first
+        # hull separates two groups. Keep an exterior frame for opening holes.
+        for padding in (12, 24, 48, 96, 192, None):
+            if padding is None:
+                filled = {(x,y) for x in range(1,grid.width-1) for y in range(1,grid.height-1)}
+            else:
+                try:
+                    envelope = enclosing_outline(chosen, padding_m=padding)
+                except ValueError:
+                    continue
+                filled = {cell for cell in grid.raster([list(map(project,envelope))])
+                          if 0 < cell[0] < grid.width-1 and 0 < cell[1] < grid.height-1}
+            # Nearby excluded dots can share a single indentation. Keep the
+            # original hard exclusions if there is too little room.
+            for blockers, clearance in ((forbidden | grouped,3), (forbidden,3), (forbidden,0)):
+                ring = carve_envelope(grid, filled, blockers, target_cells, clearance)
+                result = smooth(ring, gap, avoided)
                 if result:
-                    ring = list(map(project,result))
-                    if any(meets(ring,p,0) for p in neighbor_shapes):
-                        return result,'crossing'
-    except OverflowError:
-        pass
-    return [],'unavailable'
+                    return result, status
+    return [], 'unavailable'

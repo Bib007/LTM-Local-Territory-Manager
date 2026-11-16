@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.23 · 2026-11-16
+
+- **DAR-grænser:** Foreslå grænse former et sammenhængende areal omkring de valgte huse og skærer andre indlæste adresseprikker fra. Hvis der ikke findes et sikkert forslag, beholder korteditoren den aktuelle tegning. Forslag, der skal omslutte en valgt adresse i et nabodistrikt, viser en advarsel om overlap.
+
 ## 1.12.19-beta.22 · 2026-11-15
 
 - **DAR – tilbage til det klassiske omrids:** Grænseforslaget tager igen udgangspunkt i den oprindelige brede polygon omkring de valgte adresser. Hvis en anden indlæst DAR-adresse eller en eksisterende distriktsgrænse ligger indenfor, prøver algoritmen nu at lave et lokalt indhak i stedet for at kassere hele formen og tegne en smal rute.

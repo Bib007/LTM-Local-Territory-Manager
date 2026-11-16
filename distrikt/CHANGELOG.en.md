@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.23 · 2026-11-16
+
+- **DAR boundaries:** Suggest boundary shapes a connected area around the selected houses and cuts out other loaded address markers. If no safe suggestion can be found, the map editor keeps the current draft. A suggestion that must enclose a selected address inside a neighboring territory shows an overlap warning.
+
 ## 1.12.19-beta.22 · 2026-11-15
 
 - **DAR – restored classic envelope:** Start with the original broad convex outline around the selected addresses. When another locally loaded DAR address or an existing neighboring territory intersects the area, carve a local notch instead of replacing the whole outline with a narrow connecting path.
