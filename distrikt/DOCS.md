@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.23 tegner et sammenhængende areal omkring de valgte huse. Andre indlæste adresseprikker holdes ude, og nabogrænser undgås, hvor der kan findes et sikkert forslag. **Gemte grænser ændres først, når du gemmer et nyt forslag.** Åbn Kortopsætning, vælg Foreslå grænse og kontrollér resultatet før Gem.
+Beta 1.12.19-beta.24 kan skære et sammenhængende stykke med fravalgte adresser fra. Åbn Kortopsætning, vælg Foreslå grænse og kontrollér omridset, inden du gemmer det.
 
 ## Installer betakanalen én gang
 
