@@ -7,6 +7,7 @@ from geography import enclosing_outline, point_in_polygon, valid_polygon
 
 NEIGHBOR_GAP_M = 3
 ADDRESS_GAP_M = 1
+NEIGHBOR_ADDRESS_ROOM_M = 6
 MAX_GRID_CELLS = 250_000
 DIRECTIONS = ((1, 0), (0, 1), (-1, 0), (0, -1))
 
@@ -361,10 +362,19 @@ def suggest_outline(selected, addresses, neighbors):
     neighbor_shapes = [list(map(project,p)) for p in neighbors
                        if near_bounds(world_area,bounds(p))]
     obstacles = [square(p, ADDRESS_GAP_M) for p in sorted(other)]
-    obstacle_boxes = [(p,bounds(p)) for p in obstacles]
+    # Leave room for a future district around an unselected entrance. Where
+    # houses are close, reserve at most half the separation in each axis so
+    # the neighboring marker never consumes a selected entrance's space.
+    preferred = []
+    for x,y in sorted(other):
+        nearby = (max(abs(x-a),abs(y-b)) for a,b in targets
+                  if abs(x-a)<2*NEIGHBOR_ADDRESS_ROOM_M and abs(y-b)<2*NEIGHBOR_ADDRESS_ROOM_M)
+        radius = max(ADDRESS_GAP_M, min(NEIGHBOR_ADDRESS_ROOM_M,
+                     min(nearby,default=2*NEIGHBOR_ADDRESS_ROOM_M)/2))
+        preferred.append(square((x,y),radius))
     neighbor_boxes = [(p,bounds(p)) for p in neighbor_shapes]
 
-    def checked(ring, gap, avoided):
+    def checked(ring, gap, avoided, obstacle_boxes):
         if not ring or len(ring)<3:
             return []
         try:
@@ -386,7 +396,7 @@ def suggest_outline(selected, addresses, neighbors):
             return []
         return polygon
 
-    def smooth(ring, gap, avoided):
+    def smooth(ring, gap, avoided, obstacle_boxes):
         def safe_shortcut(patch):
             box = bounds(patch)
             return (not any(near_bounds(box,(*p,*p)) and point_in_polygon(p,patch)
@@ -404,7 +414,7 @@ def suggest_outline(selected, addresses, neighbors):
                                 for p,bounds_ in avoided))
 
         def validate(candidate):
-            return checked(candidate, gap, avoided)
+            return checked(candidate, gap, avoided, obstacle_boxes)
 
         if not ring:
             return []
@@ -419,7 +429,8 @@ def suggest_outline(selected, addresses, neighbors):
         original = [project(p) for p in enclosing_outline(chosen, padding_m=12)]
     except ValueError:
         return [], 'unavailable'
-    result = checked(original, NEIGHBOR_GAP_M, neighbor_boxes)
+    preferred_boxes = [(p,bounds(p)) for p in preferred]
+    result = checked(original, NEIGHBOR_GAP_M, neighbor_boxes, preferred_boxes)
     if result:
         return result, 'clear'
 
@@ -461,7 +472,10 @@ def suggest_outline(selected, addresses, neighbors):
             buckets.setdefault(key,[]).append(point)
         return grid.raster(strips), midpoints
 
-    grouped = grid.dilate(hard, 8) - grid.dilate(target_cells, 3)
+    reserved = grid.raster(preferred)
+    protected = grid.dilate(target_cells, 3)
+    hard_boxes = [(p,bounds(p)) for p in obstacles]
+    grouped = grid.dilate(hard, 8) - protected
     linked_groups_by_span = [linked_groups(span) for span in (58,43,28)]
     group_cells = [cells for cells,_ in linked_groups_by_span if cells]
     between_dots = sorted(set().union(*(points for _,points in linked_groups_by_span)))
@@ -480,8 +494,8 @@ def suggest_outline(selected, addresses, neighbors):
         return abs(sum(cross((0,0),a,b) for a,b in edges(ring)))
 
     for gap in (NEIGHBOR_GAP_M, 0) if borders else (NEIGHBOR_GAP_M,):
-        forbidden = hard | (grid.dilate(borders, gap) if gap else borders)
-        if target_cells & forbidden:
+        neighbor_cells = grid.dilate(borders, gap) if gap else borders
+        if target_cells & (hard | neighbor_cells):
             continue
         # Grow the filled envelope to allow a detour when clipping the first
         # hull separates two groups. Keep an exterior frame for opening holes.
@@ -495,27 +509,44 @@ def suggest_outline(selected, addresses, neighbors):
                     continue
                 filled = {cell for cell in grid.raster([list(map(project,envelope))])
                           if 0 < cell[0] < grid.width-1 and 0 < cell[1] < grid.height-1}
-            # Nearby excluded dots can share a single indentation. Keep the
-            # original hard exclusions if there is too little room.
-            baseline = []
-            for blockers, clearance in ((forbidden | grouped,3), (forbidden,3), (forbidden,0)):
-                baseline = smooth(carve_envelope(grid, filled, blockers, target_cells, clearance), gap, avoided)
-                if baseline:
-                    break
+            def outline_with(address_cells, obstacle_boxes):
+                forbidden = address_cells | neighbor_cells
+                if target_cells & forbidden:
+                    return []
+                # Nearby excluded dots can share a single indentation. Keep the
+                # original hard exclusions if there is too little room.
+                baseline = []
+                for blockers, clearance in ((forbidden | grouped,3), (forbidden,3), (forbidden,0)):
+                    baseline = smooth(carve_envelope(grid, filled, blockers, target_cells, clearance), gap, avoided, obstacle_boxes)
+                    if baseline:
+                        break
 
-            # A group cut may remove a fringe without expanding or hollowing
-            # out the broad territory that the existing checks accepted.
-            best = baseline
-            maximum_area = area_of(baseline) if baseline else math.inf
-            minimum_area = maximum_area*.65 if baseline else 0
-            best_score = score(best) if best else (math.inf, math.inf)
-            for cells in group_cells:
-                ring = carve_envelope(grid, filled, forbidden | cells, target_cells, 3)
-                result = smooth(ring, gap, avoided)
-                if result and minimum_area <= area_of(result) <= maximum_area:
-                    result_score = score(result)
-                    if result_score < best_score:
-                        best, best_score = result, result_score
-            if best:
-                return best, status
+                # A group cut may remove a fringe without expanding or hollowing
+                # out the broad territory that the existing checks accepted.
+                best = baseline
+                maximum_area = area_of(baseline) if baseline else math.inf
+                minimum_area = maximum_area*.65 if baseline else 0
+                best_score = score(best) if best else (math.inf, math.inf)
+                for cells in group_cells:
+                    ring = carve_envelope(grid, filled, forbidden | cells, target_cells, 3)
+                    result = smooth(ring, gap, avoided, obstacle_boxes)
+                    if result and minimum_area <= area_of(result) <= maximum_area:
+                        result_score = score(result)
+                        if result_score < best_score:
+                            best, best_score = result, result_score
+                return best
+
+            ordinary = outline_with(hard, hard_boxes)
+            if preferred == obstacles:
+                if ordinary:
+                    return ordinary, status
+                continue
+            roomy = outline_with(reserved, preferred_boxes)
+            if roomy and (not ordinary or (
+                    len(roomy) <= len(ordinary)+4
+                    and area_of(roomy) >= area_of(ordinary)*.65
+                    and score(roomy)[0] <= score(ordinary)[0])):
+                return roomy, status
+            if ordinary:
+                return ordinary, status
     return [], 'unavailable'

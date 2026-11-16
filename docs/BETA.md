@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.25 vurderer fravalgte adresseklynger og deres mellemrum samlet. Åbn Kortopsætning, vælg Foreslå grænse og kontrollér omridset, inden du gemmer det.
+Beta 1.12.19-beta.26 forsøger at give fravalgte adresseprikker plads til næste nabokort. Åbn Kortopsætning, vælg Foreslå grænse og kontrollér omridset, inden du gemmer det.
 
 ## Installer betakanalen én gang
 
