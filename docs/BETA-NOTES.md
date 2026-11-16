@@ -1,11 +1,9 @@
-# LTM 1.12.19-beta.27 · Lokal afstand til DAR-adresser
+# LTM 1.12.19-beta.28 · Udleveringsrolle og fast sprog
 
-- **DAR-grænser:** Når det ikke er muligt at holde den ønskede afstand hele vejen rundt, forsøger Foreslå grænse at rykke enkelte kanter væk fra de fravalgte adresseprikker. Hvert snit kontrolleres mod valgte adresser og nabogrænser.
-
-Åbn Kortopsætning → Foreslå grænse, gennemgå forslaget og gem det på kortet.
+- **Roller:** Administratoren kan låse sproget til dansk eller engelsk og vælge en udleveringsrolle med adgang til Forside, Ind/udlevering og Forkyndere.
+- **Opfølgninger:** Brugere med adgang til kortdata kan se kort uden geografisk grænse, også når systemet blev sat op til daglig udlevering.
 
 ## English
 
-- **DAR boundaries:** If the desired clearance cannot be applied around the whole outline, Suggest boundary tries moving individual edges away from unselected address markers. Every adjustment is checked against selected addresses and neighboring boundaries.
-
-Open Map setup → Suggest boundary, review the suggestion and save it to the card.
+- **Roles:** Administrators can set a fixed Danish or English language and restrict a role to Home, check-in and check-out, and publishers.
+- **Follow-ups:** Users with access to geographic card data can see cards without a geographic boundary even when the system was set up for daily lending.

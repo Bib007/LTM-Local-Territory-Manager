@@ -1909,6 +1909,13 @@ const I18n={
   "Adresseændringer":"Address changes",
   "Mangler område":"Missing area",
   "Midlertidigt kort · vejliste mangler":"Temporary card · road list missing",
+  "Ledige kort":"Available cards",
+  "Ingen ledige kort matcher.":"No available cards match.",
+  "Ind/udlevering":"Check-in and check-out",
+  "Fast sprog":"Fixed language",
+  "Brugeren vælger selv":"Let the user choose",
+  "Kun Forside, Ind/udlevering og Forkyndere":"Home, check-in/out and publishers only",
+  "Begrænsningen gælder også, hvis brugeren har andre roller.":"The restriction also applies if the user has other roles.",
   "Mangler geografisk grænse":"Missing geographical boundary",
   "Udleveret fysisk kort · IB-bagsiden skal ajourføres":"Assigned physical card · update the do-not-call back",
   "Adresse valgt på flere kort: {address}":"Address selected on multiple cards: {address}",
@@ -2737,22 +2744,24 @@ const I18n={
   "Åbn kortimport":"Open card import"
  },
  content(node,key,params={}){if(!node)return;node.dataset.ui=key;node.dataset.uiParams=JSON.stringify(params);node.textContent=this.format(key,params);node.lang=this.textLanguage(key);},
- errorInfo(error){let key=error?.uiKey||error?.message||String(error??'');if(!error?.uiKey&&this.current==='en')for(const template of Object.keys(this.english).filter(k=>k.includes('({diagnostic})'))){const escaped=template.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace('\\{diagnostic\\}','([A-Za-z0-9_ ·-]{1,200})');key=key.replace(new RegExp(escaped,'g'),(_,diagnostic)=>this.format(template,{diagnostic}));}return {key,params:error?.uiParams||{},detail:error?.uiDetail||''};},
+ errorInfo(error){let key=error?.uiKey||error?.message||String(error??'');if(!error?.uiKey&&this.language()==='en')for(const template of Object.keys(this.english).filter(k=>k.includes('({diagnostic})'))){const escaped=template.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace('\\{diagnostic\\}','([A-Za-z0-9_ ·-]{1,200})');key=key.replace(new RegExp(escaped,'g'),(_,diagnostic)=>this.format(template,{diagnostic}));}return {key,params:error?.uiParams||{},detail:error?.uiDetail||''};},
  errorText(error){const e=this.errorInfo(error);return this.format(e.key,e.params)+(e.detail?' '+e.detail:'');},
  errorHTML(error){const e=this.errorInfo(error);return this.label(e.key,e.params)+(e.detail?' <span lang="da">'+this.escape(e.detail)+'</span>':'');},
  errorContent(node,error){if(!node)return;const e=this.errorInfo(error);if(!e.detail){this.content(node,e.key,e.params);return;}if(node.dataset){delete node.dataset.ui;delete node.dataset.uiParams;}node.textContent=this.errorText(error);node.innerHTML=this.errorHTML(error);},
- language(){return this.current;},
- text(value){return this.current==='en'&&Object.prototype.hasOwnProperty.call(this.english,value)?this.english[value]:value;},
+ fixedLanguage(){return typeof state!=='undefined'?state?.profile?.language||'':'';},
+ language(){return this.fixedLanguage()||this.current;},
+ text(value){return this.language()==='en'&&Object.prototype.hasOwnProperty.call(this.english,value)?this.english[value]:value;},
  format(value,params={}){return String(this.text(value)??'').replace(/\{([a-zA-Z]+)\}/g,(match,key)=>{if(!Object.prototype.hasOwnProperty.call(params,key))return match;let param=params[key];if(key==='reason'&&value==='Række {line}, kolonne {column}: {reason}')param=this.text(param);if(key==='field'&&value==='Samme kort har forskellige oplysninger i kolonnen {field}.')param=this.text(param);if(key==='fields'&&value==='Obligatoriske felter mangler: {fields}.')param=String(param).split(', ').map(v=>this.text(v)).join(', ');const dateLabel=key==='field'&&param==='Dato'&&['{field} skal være en gyldig dato.','{field} må ikke ligge i fremtiden.'].includes(value),numberLabel=key==='label'&&['Startnummer','Områdeblok','Besøg pr. kort','Områdets startnummer'].includes(param)&&['{label} skal være et helt tal.','{label} skal være mellem {low} og {high}.'].includes(value);if(dateLabel||numberLabel)param=this.text(param);return String(param);});},
  escape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
  label(value,params={}){return `<span data-ui="${this.escape(value)}" data-ui-params="${this.escape(JSON.stringify(params))}" lang="${this.textLanguage(value)}">${this.escape(this.format(value,params))}</span>`;},
  attribute(name,value,params={}){if(!['aria','placeholder','alt','title'].includes(name))throw Error('Unsupported UI attribute');return `data-ui-${name}="${this.escape(value)}" data-ui-${name}-params="${this.escape(JSON.stringify(params))}" ${name==='aria'?'aria-label':name}="${this.escape(this.format(value,params))}"`;},
  params(node,kind=''){try{const key=kind?'ui'+kind[0].toUpperCase()+kind.slice(1)+'Params':'uiParams',value=JSON.parse(node.dataset[key]||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch{return {};}},
- textLanguage(value){return this.current==='en'&&Object.prototype.hasOwnProperty.call(this.english,value)?'en':'da';},
- set(language){if(!['da','en'].includes(language))return false;this.current=language;try{localStorage.setItem('ltm-language',language);}catch{}return true;},
+ textLanguage(value){return this.language()==='en'&&Object.prototype.hasOwnProperty.call(this.english,value)?'en':'da';},
+ set(language){if(this.fixedLanguage()||!['da','en'].includes(language))return false;this.current=language;try{localStorage.setItem('ltm-language',language);}catch{}return true;},
  applyShell(){
+  if(document.documentElement)document.documentElement.lang=this.language();
   document.querySelectorAll?.('[data-ui]').forEach(node=>{node.textContent=this.format(node.dataset.ui,this.params(node));node.lang=this.textLanguage(node.dataset.ui);});
-  document.querySelectorAll?.('[data-ui-aria]').forEach(node=>{node.setAttribute('aria-label',this.format(node.dataset.uiAria,this.params(node,'aria')));node.lang=this.current;});
+  document.querySelectorAll?.('[data-ui-aria]').forEach(node=>{node.setAttribute('aria-label',this.format(node.dataset.uiAria,this.params(node,'aria')));node.lang=this.language();});
   for(const kind of ['placeholder','alt','title'])document.querySelectorAll?.('[data-ui-'+kind+']').forEach(node=>node.setAttribute(kind,this.format(node.dataset['ui'+kind[0].toUpperCase()+kind.slice(1)],this.params(node,kind))));
  }
 };

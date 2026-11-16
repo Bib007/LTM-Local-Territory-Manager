@@ -2,6 +2,11 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.28 · 2026-11-16
+
+- **Roller:** Administratoren kan låse sproget til dansk eller engelsk og vælge en udleveringsrolle med adgang til Forside, Ind/udlevering og Forkyndere.
+- **Opfølgninger:** Brugere med adgang til kortdata kan se kort uden geografisk grænse, også når systemet blev sat op til daglig udlevering.
+
 ## 1.12.19-beta.27 · 2026-11-16
 
 - **DAR-grænser:** Når det ikke er muligt at holde den ønskede afstand hele vejen rundt, forsøger Foreslå grænse at rykke enkelte kanter væk fra de fravalgte adresseprikker. Hvert snit kontrolleres mod valgte adresser og nabogrænser.
