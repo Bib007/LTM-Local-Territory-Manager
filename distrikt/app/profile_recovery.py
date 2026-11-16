@@ -19,14 +19,15 @@ def validated(data):
         if not isinstance(reviews,list) or len(reviews)>5000:raise ValueError('Ugyldige kontorettelser.')
         for row in reviews:
             if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not re.fullmatch(r'account-review-[a-f0-9]{32}',row['id']):raise ValueError('Ugyldig kontorettelse.')
-            if row.get('module') not in ('users','roles') or row.get('field') not in ('name','roles','disabled','credential','permissions') or type(row.get('resolved')) is not bool:raise ValueError('Ugyldig kontorettelse.')
+            if row.get('module') not in ('users','roles') or row.get('field') not in ('name','roles','disabled','credential','permissions','language','desk_only') or type(row.get('resolved')) is not bool:raise ValueError('Ugyldig kontorettelse.')
             for key in ('base','saved','incoming'):
                 if not isinstance(row.get(key),dict) or set(row[key])!={'present','value'} or type(row[key]['present']) is not bool:raise ValueError('Ugyldig kontorettelse.')
     if not all(isinstance(data[k],dict) and 0<len(data[k])<=(1003 if k=='roles' and data.get('permission_schema')==3 else 1000) for k in ('users','roles')):raise ValueError('Ugyldig kontobackup.')
     names=set()
     for ident,role in data['roles'].items():
         if not isinstance(ident,str) or not re.fullmatch(r'role-[a-f0-9]{32}',ident):raise ValueError('Ugyldig rolle.')
-        if set(role)!={'id','name','permissions'} or role['id']!=ident or _name(role['name'])!=role['name']:raise ValueError('Ugyldig rolle.')
+        if set(role)-{'language','desk_only'}!={'id','name','permissions'} or role['id']!=ident or _name(role['name'])!=role['name']:raise ValueError('Ugyldig rolle.')
+        if role.get('language','') not in ('','da','en') or type(role.get('desk_only',False)) is not bool:raise ValueError('Ugyldige rolleindstillinger.')
         if role['name'].casefold() in names:raise ValueError('Dubleret rollenavn.')
         names.add(role['name'].casefold())
         if not isinstance(role['permissions'],list) or any(p not in PERMISSIONS for p in role['permissions']):raise ValueError('Ukendt rettighed.')
@@ -41,7 +42,7 @@ def validated(data):
         if type(user['disabled']) is not bool or not isinstance(user['roles'],list) or not user['roles'] or any(r not in data['roles'] for r in user['roles']):raise ValueError('Ugyldige brugerroller.')
         if not isinstance(user['salt'],str) or not re.fullmatch(r'[a-f0-9]{48}',user['salt']) or not isinstance(user['hash'],str) or not re.fullmatch(r'[a-f0-9]{64}',user['hash']):raise ValueError('Ugyldig adgangskodehash.')
         if type(user['iterations']) is not int or not 100000<=user['iterations']<=2000000:raise ValueError('Ugyldig arbejdsfaktor.')
-        admin |= not user['disabled'] and any('users.manage' in data['roles'][r]['permissions'] for r in user['roles'])
+        admin |= not user['disabled'] and not any(data['roles'][r].get('desk_only') for r in user['roles']) and any('users.manage' in data['roles'][r]['permissions'] for r in user['roles'])
     if not admin:raise ValueError('Kontobackup mangler en aktiv administrator.')
     return data
 
