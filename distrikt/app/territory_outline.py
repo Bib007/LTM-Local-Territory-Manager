@@ -169,6 +169,66 @@ def simplify_ring(ring, can_shortcut, tolerance):
     return [ring[i] for i in sorted(kept)]
 
 
+def trim_empty_fringe(ring, targets, chord_clear, validate):
+    """Cut across a long jagged edge when the piece behind it has no homes."""
+    accepted = validate(ring)
+    if not accepted or len(ring) < 8:
+        return accepted
+
+    def totals(nodes):
+        lengths, areas = [0], [0]
+        for a,b in edges(nodes):
+            lengths.append(lengths[-1]+math.dist(a,b))
+            areas.append(areas[-1]+cross((0,0),a,b))
+        return lengths, areas
+
+    _, areas = totals(ring)
+    direction = 1 if areas[-1] > 0 else -1
+    # Keep most of the broad outline even when a large empty area is available.
+    minimum_area = abs(areas[-1])*.55
+    for _ in range(6):
+        n = len(ring)
+        doubled = ring+ring
+        lengths, areas = totals(doubled)
+        budget = areas[n]*direction-minimum_area
+        stride = max(1, math.ceil(n/160))
+        candidates = []
+        for i in range(0,n,stride):
+            for span in range(5,n-2,stride):
+                j = i+span
+                a,b = doubled[i], doubled[j]
+                chord = math.dist(a,b)
+                saved = lengths[j]-lengths[i]-chord
+                if chord < 4 or saved < max(12,chord*.3):
+                    continue
+                removed = (areas[j]-areas[i]+cross((0,0),b,a))*direction
+                if not 0 < removed <= budget:
+                    continue
+                candidates.append((saved, -removed, i, j))
+
+        # Prefer the cuts that remove the most zigzag. Check the retained edge
+        # for intersections, then verify the new outline with the usual rules.
+        for _,_,i,j in sorted(candidates, reverse=True)[:1500]:
+            a,b = doubled[i], doubled[j]
+            if any(point_segment_distance(p,a,b)<3 for p in targets):
+                continue
+            if not chord_clear(a,b):
+                continue
+            box = bounds((a,b))
+            retained = doubled[j+1:i+n]
+            if any(near_bounds(box,bounds((c,d))) and meets((a,b),(c,d),0)
+                   for c,d in zip(retained,retained[1:])):
+                continue
+            candidate = doubled[j:i+n+1]
+            result = validate(candidate)
+            if result:
+                ring, accepted = candidate, result
+                break
+        else:
+            break
+    return accepted
+
+
 def house_key(address):
     return (address['postcode'],address['road'].casefold(),address['number'].upper())
 
@@ -334,13 +394,25 @@ def suggest_outline(selected, addresses, neighbors):
                                 for p,b in obstacle_boxes)
                     and not any(near_bounds(box,b,gap) and meets(patch,p,gap) for p,b in avoided))
 
+        def chord_clear(a,b):
+            span = (a,b)
+            box = bounds(span)
+            return (not any(near_bounds(box,bounds_) and meets(span,p,0)
+                            for p,bounds_ in obstacle_boxes)
+                    and not any(near_bounds(box,bounds_,gap) and meets(span,p,gap)
+                                for p,bounds_ in avoided))
+
+        def validate(candidate):
+            return checked(candidate, gap, avoided)
+
         if not ring:
             return []
         for tolerance in (10, 6, 3):
-            result = checked(simplify_ring(ring,safe_shortcut,tolerance), gap, avoided)
+            result = trim_empty_fringe(simplify_ring(ring,safe_shortcut,tolerance), targets,
+                                       chord_clear, validate)
             if result:
                 return result
-        return checked(ring, gap, avoided)
+        return trim_empty_fringe(ring, targets, chord_clear, validate)
 
     try:
         original = [project(p) for p in enclosing_outline(chosen, padding_m=12)]

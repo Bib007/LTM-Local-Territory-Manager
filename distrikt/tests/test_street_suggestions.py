@@ -245,6 +245,39 @@ class OutlineTests(unittest.TestCase):
         outline=self.trace(others=[other])
         self.assertFalse(point_in_polygon((other['lng'],other['lat']),outline))
 
+    def test_dense_unselected_fringe_is_cut_off_as_a_group(self):
+        # Fictional streets based on the drawn correction. Selected entrances
+        # on both sides of the frame keep the original hull over the fringe.
+        selected = [
+            (35, 345), (135, 337), (118, 415), (95, 505), (70, 570), (55, 645),
+            (88, 723), (196, 732), (553, 516), (668, 444), (634, 602), (742, 602),
+            (980, 508), (1525, 550), (1680, 445),
+        ]
+        unselected = [
+            (100, 100), (220, 215), (222, 290), (192, 350), (194, 426), (188, 494),
+            (154, 568), (130, 638), (290, 302), (294, 414), (278, 514), (244, 598),
+            (380, 530), (432, 494), (420, 412), (482, 434), (498, 358), (506, 264),
+            (555, 268), (607, 366), (658, 332), (794, 224), (790, 310), (780, 392),
+            (782, 474), (876, 256), (890, 352), (866, 454), (1022, 198), (1026, 308),
+            (1052, 384), (1080, 446), (1090, 208), (1143, 358), (1140, 442), (1164, 268),
+            (1164, 210), (1336, 240), (1372, 246), (1402, 240), (1316, 352), (1306, 396),
+            (1298, 430), (1370, 410), (1404, 404), (1444, 398), (1476, 390), (1506, 390),
+            (1538, 384), (1436, 292), (1444, 326), (1456, 208), (1458, 244), (1530, 236),
+            (1524, 266), (1520, 302), (1592, 336), (1608, 298), (1620, 228), (1624, 184),
+        ]
+        def places(points, offset):
+            return [self.address(i+offset, x*.3, -y*.3) for i,(x,y) in enumerate(points)]
+
+        self.selected = places(selected, 0)
+        others = places(unselected, 100)
+        outline = self.trace(others=others)
+        self.assertFalse(any(point_in_polygon((a['lng'],a['lat']), outline) for a in others))
+        # Several empty gaps between the blue dots belonged to the old fringe.
+        for x,y in ((1250,440), (960,470)):
+            self.assertFalse(point_in_polygon(self.point(x*.3,-y*.3),outline))
+        self.assertTrue(point_in_polygon(self.point(850*.3,-580*.3),outline))
+        self.assertLess(len(outline), 35)
+
     def test_multicluster_regression_keeps_a_filled_area(self):
         selected, others = multicluster_addresses()
         self.selected = selected
