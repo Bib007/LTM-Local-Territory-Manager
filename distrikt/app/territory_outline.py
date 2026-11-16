@@ -221,6 +221,10 @@ def trim_empty_fringe(ring, targets, chord_clear, validate):
             if any(near_bounds(box,bounds((c,d))) and meets((a,b),(c,d),0)
                    for c,d in zip(retained,retained[1:])):
                 continue
+            removed = doubled[i:j+1]
+            box = bounds(removed)
+            if any(near_bounds(box,(*p,*p)) and point_in_polygon(p,removed) for p in targets):
+                continue
             candidate = doubled[j:i+n+1]
             result = validate(candidate)
             if result:
@@ -382,8 +386,6 @@ def suggest_outline(selected, addresses, neighbors):
         except ValueError:
             return []
         projected = list(map(project,polygon))
-        if not simple_ring(projected):
-            return []
         box = bounds(projected)
         if any(not point_in_polygon(p,projected) or
                any(point_segment_distance(p,a,b) < .01 for a,b in edges(projected))
@@ -394,7 +396,7 @@ def suggest_outline(selected, addresses, neighbors):
             return []
         if any(near_bounds(box,b,gap) and meets(projected,p,gap) for p,b in avoided):
             return []
-        return polygon
+        return polygon if simple_ring(projected) else []
 
     def smooth(ring, gap, avoided, obstacle_boxes):
         def safe_shortcut(patch):
@@ -509,44 +511,40 @@ def suggest_outline(selected, addresses, neighbors):
                     continue
                 filled = {cell for cell in grid.raster([list(map(project,envelope))])
                           if 0 < cell[0] < grid.width-1 and 0 < cell[1] < grid.height-1}
-            def outline_with(address_cells, obstacle_boxes):
-                forbidden = address_cells | neighbor_cells
-                if target_cells & forbidden:
-                    return []
-                # Nearby excluded dots can share a single indentation. Keep the
-                # original hard exclusions if there is too little room.
-                baseline = []
-                for blockers, clearance in ((forbidden | grouped,3), (forbidden,3), (forbidden,0)):
-                    baseline = smooth(carve_envelope(grid, filled, blockers, target_cells, clearance), gap, avoided, obstacle_boxes)
-                    if baseline:
-                        break
-
-                # A group cut may remove a fringe without expanding or hollowing
-                # out the broad territory that the existing checks accepted.
-                best = baseline
-                maximum_area = area_of(baseline) if baseline else math.inf
-                minimum_area = maximum_area*.65 if baseline else 0
-                best_score = score(best) if best else (math.inf, math.inf)
-                for cells in group_cells:
-                    ring = carve_envelope(grid, filled, forbidden | cells, target_cells, 3)
-                    result = smooth(ring, gap, avoided, obstacle_boxes)
-                    if result and minimum_area <= area_of(result) <= maximum_area:
-                        result_score = score(result)
-                        if result_score < best_score:
-                            best, best_score = result, result_score
-                return best
-
-            ordinary = outline_with(hard, hard_boxes)
-            if preferred == obstacles:
+            forbidden = hard | neighbor_cells
+            # Remember which optional exclusions gave the best ordinary
+            # outline so the clearance check can reuse the same shape.
+            ordinary = []
+            chosen_cells, chosen_clearance = set(), 0
+            for cells, clearance in ((grouped,3), (set(),3), (set(),0)):
+                ring = carve_envelope(grid, filled, forbidden | cells, target_cells, clearance)
+                ordinary = smooth(ring, gap, avoided, hard_boxes)
                 if ordinary:
-                    return ordinary, status
+                    chosen_cells, chosen_clearance = cells, clearance
+                    break
+
+            maximum_area = area_of(ordinary) if ordinary else math.inf
+            minimum_area = maximum_area*.65 if ordinary else 0
+            best_score = score(ordinary) if ordinary else (math.inf, math.inf)
+            for cells in group_cells:
+                ring = carve_envelope(grid, filled, forbidden | cells, target_cells, 3)
+                result = smooth(ring, gap, avoided, hard_boxes)
+                if result and minimum_area <= area_of(result) <= maximum_area:
+                    result_score = score(result)
+                    if result_score < best_score:
+                        ordinary, best_score = result, result_score
+                        chosen_cells, chosen_clearance = cells, 3
+            if not ordinary:
                 continue
-            roomy = outline_with(reserved, preferred_boxes)
-            if roomy and (not ordinary or (
-                    len(roomy) <= len(ordinary)+4
-                    and area_of(roomy) >= area_of(ordinary)*.65
-                    and score(roomy)[0] <= score(ordinary)[0])):
-                return roomy, status
-            if ordinary:
+
+            if preferred == obstacles or checked(list(map(project, ordinary)), gap, avoided, preferred_boxes):
                 return ordinary, status
+            ring = carve_envelope(grid, filled, reserved | neighbor_cells | chosen_cells,
+                                  target_cells, chosen_clearance)
+            roomy = smooth(ring, gap, avoided, preferred_boxes)
+            if (roomy and len(roomy) <= len(ordinary)+4
+                    and area_of(roomy) >= area_of(ordinary)*.65
+                    and score(roomy)[0] <= best_score[0]):
+                return roomy, status
+            return ordinary, status
     return [], 'unavailable'
