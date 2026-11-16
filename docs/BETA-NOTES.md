@@ -1,11 +1,11 @@
-# LTM 1.12.19-beta.26 · Plads til næste distriktskort
+# LTM 1.12.19-beta.27 · Lokal afstand til DAR-adresser
 
-- **DAR-grænser:** Foreslå grænse forsøger at holde omkring seks meters afstand til fravalgte adresseprikker, så husene kan få plads på et senere nabokort. Tætliggende huse kan kræve mindre afstand.
+- **DAR-grænser:** Når det ikke er muligt at holde den ønskede afstand hele vejen rundt, forsøger Foreslå grænse at rykke enkelte kanter væk fra de fravalgte adresseprikker. Hvert snit kontrolleres mod valgte adresser og nabogrænser.
 
 Åbn Kortopsætning → Foreslå grænse, gennemgå forslaget og gem det på kortet.
 
 ## English
 
-- **DAR boundaries:** Suggest boundary aims to leave about six metres around unselected address markers so their houses have room on a future neighboring card. Closely spaced houses may need less clearance.
+- **DAR boundaries:** If the desired clearance cannot be applied around the whole outline, Suggest boundary tries moving individual edges away from unselected address markers. Every adjustment is checked against selected addresses and neighboring boundaries.
 
 Open Map setup → Suggest boundary, review the suggestion and save it to the card.

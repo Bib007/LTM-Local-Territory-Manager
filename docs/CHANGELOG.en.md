@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.27 · 2026-11-16
+
+- **DAR boundaries:** If the desired clearance cannot be applied around the whole outline, Suggest boundary tries moving individual edges away from unselected address markers. Every adjustment is checked against selected addresses and neighboring boundaries.
+
 ## 1.12.19-beta.26 · 2026-11-16
 
 - **DAR boundaries:** Suggest boundary aims to leave about six metres around unselected address markers so their houses have room on a future neighboring card. Closely spaced houses may need less clearance.

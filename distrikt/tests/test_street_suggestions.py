@@ -324,6 +324,14 @@ class OutlineTests(unittest.TestCase):
                     self.assertFalse(point_in_polygon(self.point(288,-141),outline))
                 self.assertTrue(point_in_polygon(self.point(255,-174),outline))
                 self.assertLess(len(outline),35)
+                if seed in (1,2):
+                    # A full buffer fails here. It must still be possible
+                    # to retreat along individual edges of the same shape.
+                    projected = [((x-10)*self.scale,(y-55)*111320) for x,y in outline]
+                    close = sum(any(point_segment_distance(
+                                    ((a['lng']-10)*self.scale,(a['lat']-55)*111320),p,q)<3
+                                    for p,q in edges(projected)) for a in others)
+                    self.assertLessEqual(close,4)
 
     def test_multicluster_regression_keeps_a_filled_area(self):
         selected, others = multicluster_addresses()

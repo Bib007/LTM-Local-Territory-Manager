@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.27 · 2026-11-16
+
+- **DAR-grænser:** Når det ikke er muligt at holde den ønskede afstand hele vejen rundt, forsøger Foreslå grænse at rykke enkelte kanter væk fra de fravalgte adresseprikker. Hvert snit kontrolleres mod valgte adresser og nabogrænser.
+
 ## 1.12.19-beta.26 · 2026-11-16
 
 - **DAR-grænser:** Foreslå grænse forsøger at holde omkring seks meters afstand til fravalgte adresseprikker, så husene kan få plads på et senere nabokort. Tætliggende huse kan kræve mindre afstand.
