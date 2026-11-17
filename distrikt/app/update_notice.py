@@ -132,18 +132,26 @@ class UpdateChecker:
         self.clock = clock
         self.until = -1
         self.result = None
+        self.pending = False
         self.lock = threading.Lock()
 
-    def check(self):
+    def _refresh(self):
+        try:
+            result = select_release(self.fetcher(), self.version, self.track, self.machine)
+            ttl = 3600
+        except (OSError, ValueError, TypeError, KeyError):
+            # Offline/rate-limited/invalid feed: keep the rest of LTM unaffected.
+            result, ttl = None, 300
         with self.lock:
-            now = self.clock()
-            if now < self.until:
-                return self.result
-            try:
-                self.result = select_release(self.fetcher(), self.version, self.track, self.machine)
-                self.until = now + 3600
-            except (OSError, ValueError, TypeError, KeyError):
-                # Offline, rate-limited or malformed feed: no notice, no private log.
-                self.result = None
-                self.until = now + 300
-            return self.result
+            self.result = result
+            self.until = self.clock() + ttl
+            self.pending = False
+
+    def check(self):
+        # profile_scope holds an accounts permission lock during this GET.
+        # Never perform an external network request while that lock is held.
+        with self.lock:
+            if self.clock() >= self.until and not self.pending:
+                self.pending = True
+                threading.Thread(target=self._refresh, daemon=True).start()
+            return {'checking': True} if self.pending else self.result
