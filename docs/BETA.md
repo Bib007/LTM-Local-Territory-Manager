@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.29 gør opslag og genoptegning hurtigere, når korteditoren arbejder med mange adresser. Prøv at åbne et stort kort, skift til adresseeditoren, og panorér for at se andre adresser.
+Beta 1.12.19-beta.30 tegner først adressepunkter efter tilpasning af kortudsnittet og genbruger gemmesvaret i browseren. Prøv at åbne og redigere et stort kort.
 
 ## Installer betakanalen én gang
 
