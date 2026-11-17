@@ -492,7 +492,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(base['profile']['desk_only'])
         self.assertEqual(base['profile']['language'],'da')
         self.assertEqual(set(base['profile']['permissions']),
-                         {'cards.view','loans.view','loans.manage','publishers.view'})
+                         {'cards.view','loans.view','loans.manage','publishers.view','dashboard.view'})
         self.assertEqual(self.value('/api/profiles/heartbeat',{},reader)['language'],'da')
         with self.assertRaises(urllib.error.HTTPError) as forbidden:
             self.value('/api/geo',session=reader)

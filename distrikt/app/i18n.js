@@ -2400,6 +2400,7 @@ const I18n={
   "DIT LOKALE OVERBLIK":"YOUR LOCAL OVERVIEW",
   "Tjenesteår {year}":"Service year {year}",
   "Kort, gennemgange og opfølgning — samlet ét sted.":"Cards, completions and follow-up — all in one place.",
+  "Kort og gennemgange — samlet ét sted.":"Cards and completions — all in one place.",
   "Gå til daglig brug →":"Go to the territory desk →",
   "Privat · på din egen server":"Private · on your own server",
   "Begynd med dit første kort":"Start with your first card",

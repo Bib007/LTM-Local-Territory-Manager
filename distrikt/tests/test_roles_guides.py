@@ -103,6 +103,61 @@ class RolesGuidesHTTPTests(unittest.TestCase):
         for path in ('/api/geo','/api/export/s13','/api/export/backup','/api/profiles/admin'):
             with self.assertRaises(urllib.error.HTTPError) as caught:self.request(path,self.reader)
             self.assertEqual(caught.exception.code,403)
+    def test_restricted_desk_gets_aggregate_home_without_private_modules(self):
+        desk_role=self.a.save_role(self.admin,'Fiktiv skrivebordsrolle',[],desk_only=True)
+        role=self.a.save_role(self.admin,'Fiktiv tillægsrolle',['notes.view','ib.view','reports.view'])
+        self.a.save_user(self.admin,'Fiktiv desk',[desk_role,role],password='Fiktiv-desk-4567')
+        desk=self.a.login('Fiktiv desk','Fiktiv-desk-4567','desk-test')
+        # Real HTTP state projection with invented cards, names and an IB-review.
+        today=self.store.state()['today']
+        card=self.store.mutate('card.save',{'number':'F-DESK-01','temporary':True})['id']
+        loan=self.store.mutate('loan.issue',{'card_id':card,'publisher_name':'Fiktiv returperson',
+            'date':today,'initial':True})['id']
+        self.store.mutate('ib.save',{'card_id':card,'road':'Fiktiv skjult adresse',
+            'number':'42','date':today})
+        self.store.mutate('loan.finish',{'id':loan,'date':today,'complete':False,
+            'retain':False,'revise_ib':True})
+        review=self.store.state()['ib_reviews'][0]['id']
+        active=self.store.mutate('card.save',{'number':'F-DESK-02','temporary':True})['id']
+        self.store.mutate('loan.issue',{'card_id':active,'publisher_name':'Fiktiv aktiv person',
+            'date':today,'initial':True})
+        actual=self.request('/api/state',desk)
+        expected=self.request('/api/state',self.admin)
+        self.assertEqual(actual['dashboard_summary'],expected['dashboard_summary'])
+        period=actual['dashboard_summary']['periods']['service']
+        self.assertEqual((period['territories'],period['assigned'],period['home']),(2,1,1))
+        self.assertTrue(actual['profile']['desk_only'])
+        self.assertEqual(self.a.authorize(desk,'dashboard.view'),
+                         actual['profile']['user']['id'])
+        self.assertEqual(set(actual['profile']['permissions']),
+                         {'dashboard.view','cards.view','loans.view','loans.manage','publishers.view'})
+        self.assertIsNone(actual['report_summary'])
+        for name in ('notes','ib','ib_reviews','completions','visits','followup_ignores'):
+            self.assertEqual(actual[name],[])
+        self.assertNotIn('Fiktiv hemmelig note',json.dumps(actual))
+        self.assertNotIn('Fiktiv skjult adresse',json.dumps(actual,ensure_ascii=False))
+        self.assertNotIn(review,json.dumps(actual))
+        self.assertNotIn('Fiktiv returperson',json.dumps(actual['dashboard_summary']))
+        self.assertFalse(any(s['id'] in ('tasks','reports') for s in
+                             self.request('/api/profiles/guide',desk)['steps']))
+        for path in ('/api/geo','/api/export/s13','/api/export/backup'):
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request(path,desk)
+            self.assertEqual(caught.exception.code,403)
+        for action,data in (('ib.review.resolve',{'id':review}),
+                            ('note.resolve',{'id':'fictional-id','resolved':True})):
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                self.request('/api/mutate',desk,{'action':action,'data':data})
+            self.assertEqual(caught.exception.code,403)
+        self.assertFalse(self.store.state()['ib_reviews'][0]['resolved'])
+        normal_id=self.a.save_user(self.admin,'Fiktiv anden rolle',[role],
+                                   password='Fiktiv-almindelig-456')
+        normal=self.a.login('Fiktiv anden rolle','Fiktiv-almindelig-456','other-test')
+        normal_state=self.request('/api/state',normal)
+        self.assertFalse(normal_state['profile']['desk_only'])
+        self.assertIsNone(normal_state['dashboard_summary'])
+        self.assertIsNotNone(normal_state['report_summary'])
+        self.assertNotIn('dashboard.view',normal_state['profile']['permissions'])
+
     def test_assignment_uses_users_manage_and_old_session_does_not_capture_it(self):
         self.request('/api/profiles/guide/assign',self.admin,{'user_id':self.user,'kind':'intro','expected_assignment':''})
         with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/profiles/guide/assign',self.reader,{'user_id':self.user,'kind':'intro','expected_assignment':''})
