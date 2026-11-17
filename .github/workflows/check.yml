@@ -29,6 +29,22 @@ jobs:
         run: python -m unittest discover -s scripts -p test_build_tracks.py -v
   ha-status-blueprint:
     uses: ./.github/workflows/ha-status.yml
+  save-response-benchmark:
+    # Runs only on this performance PR, not on ordinary pushes or releases.
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'perf/save-response-parse-once-97-')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Large disposable SQLite, overview, JSON, gzip and geography timings
+        run: python scripts/benchmark_geo_store.py --addresses 50000 --cards 180 --roads 2000 --buildings 6500 --history 12000 --runs 7
+      - name: Fictional 9MB JSON response parse before and after
+        run: node scripts/benchmark_save_response.cjs
   python:
     runs-on: ubuntu-24.04
     strategy:
