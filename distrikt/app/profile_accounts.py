@@ -15,13 +15,14 @@ from pathlib import Path
 from contextlib import contextmanager
 
 from access import write_private
+from remembered_sessions import RememberedSessions, REMEMBER_LIFETIME
 from profile_features import GuideAccounts,DASHBOARD_LEGACY,REPORT_LEGACY
 
 PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.manage',
     'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view',
     'notes.view','notes.edit','publishers.view','loans.view','history.edit',
     'geo.view','geo.edit','backup.export','backup.restore','backup.notify','connections.manage','sharing.manage','dashboard.view','reports.view'))
-DESK_PERMISSIONS=frozenset(('cards.view','loans.view','loans.manage','publishers.view'))
+DESK_PERMISSIONS=frozenset(('cards.view','loans.view','loans.manage','publishers.view','dashboard.view'))
 SESSION_LIFETIME=12*60*60
 ONLINE_WINDOW=90
 KDF_ITERATIONS=600000
@@ -45,8 +46,9 @@ def _credential(password):
 
 
 class ProfileAccounts(GuideAccounts):
-    def __init__(self,root,clock=time.monotonic,*,load=True):
-        self.root=Path(root);self.path=self.root/'profiles.json';self.clock=clock
+    def __init__(self,root,clock=time.monotonic,*,load=True,wall_clock=time.time):
+        self.root=Path(root);self.path=self.root/'profiles.json';self.clock=clock;self.wall_clock=wall_clock
+        self.remembered=RememberedSessions(root,'profiles-beta' if os.environ.get('LTM_CHANNEL')=='beta' else 'profiles',clock=wall_clock)
         self.lock=threading.RLock();self.sessions={};self.attempts={};self.account_attempts={};self.generation=0
         self.data=json.loads(self.path.read_text(encoding='utf-8')) if load and self.path.exists() else {'users':{},'roles':{}}
         if self.data['users'] and self.data.get('permission_schema')!=3:self._write(self._copy())
@@ -103,12 +105,28 @@ class ProfileAccounts(GuideAccounts):
             raise ValueError('Select existing roles')
         return list(dict.fromkeys(roles))
 
+    @staticmethod
+    def _credential_id(user):
+        return hashlib.sha256((user['salt']+user['hash']).encode()).hexdigest()
+
     def _session(self,token):
         session=self.sessions.get(token);now=self.clock()
         if not session or session['expires']<=now:
-            self.sessions.pop(token,None);raise PermissionError('Sign in again')
+            self.sessions.pop(token,None)
+            session=None
+            record=self.remembered.get(token)
+            user=self.data['users'].get(record['user']) if record else None
+            if (user and not user.get('disabled')
+                    and hmac.compare_digest(record['credential'],self._credential_id(user))):
+                remaining=record['until']-self.wall_clock()
+                if remaining>0:
+                    session={'user':user['id'],'expires':now+remaining,'seen':now,'remembered_credential':record['credential'],
+                             'guide_assignment':deepcopy(record.get('assignment'))}
+                    self.sessions[token]=session
+            if not session:raise PermissionError('Sign in again')
         user=self.data['users'].get(session['user'])
-        if not user or user.get('disabled'):
+        if (not user or user.get('disabled') or
+                (session.get('remembered_credential') and not hmac.compare_digest(session['remembered_credential'],self._credential_id(user)))):
             self.sessions.pop(token,None);raise PermissionError('Sign in again')
         return session,user
 
@@ -146,7 +164,8 @@ class ProfileAccounts(GuideAccounts):
             data['users'][ident]={'id':ident,'name':name,'roles':[role],'disabled':False,**cred}
             self._write(data);return ident
 
-    def login(self,name,password,client,*,_verify_only=False):
+    def login(self,name,password,client,*,remember=False,_verify_only=False):
+        if type(remember) is not bool:raise ValueError('Invalid remember option')
         with self.lock:
             if not isinstance(client,str) or not client or len(client)>100:raise ValueError('Invalid client')
             now=self.clock()
@@ -177,11 +196,15 @@ class ProfileAccounts(GuideAccounts):
             token=secrets.token_urlsafe(40)
             self.sessions={k:v for k,v in self.sessions.items() if v['expires']>now}
             if len(self.sessions)>=100:self.sessions.pop(next(iter(self.sessions)))
-            self.sessions[token]={'user':user['id'],'expires':now+SESSION_LIFETIME,'seen':now,'guide_assignment':deepcopy(user.get('intro',{}).get('assigned'))}
+            if remember:self.remembered.issue(token,user['id'],self._credential_id(user),user.get('intro',{}).get('assigned'))
+            self.sessions[token]={'user':user['id'],'expires':now+(REMEMBER_LIFETIME if remember else SESSION_LIFETIME),'seen':now,'guide_assignment':deepcopy(user.get('intro',{}).get('assigned')),
+                                  **({'remembered_credential':self._credential_id(user)} if remember else {})}
             return token
 
     def logout(self,token):
-        with self.lock:self.sessions.pop(token,None)
+        with self.lock:
+            self.remembered.revoke(token)
+            self.sessions.pop(token,None)
 
     def _admin(self,token):self.authorize(token,'users.manage')
 
@@ -253,7 +276,9 @@ class ProfileAccounts(GuideAccounts):
                 proposed.update({k:base[k] for k in ('salt','hash','iterations')})
             data['users'][ident]=self._review_account(data,'users',old,proposed,base,self.authorize(token,'users.manage'))
             if any(u['id']!=ident and u['name'].casefold()==data['users'][ident]['name'].casefold() for u in data['users'].values()):raise ValueError('Account name already exists')
-            self._require_admin_remaining(data);self._write(data)
+            self._require_admin_remaining(data)
+            if disabled or password is not None:self.remembered.revoke_user(ident)
+            self._write(data)
             if disabled or password is not None:self.sessions={k:v for k,v in self.sessions.items() if v['user']!=ident}
             return ident
 
@@ -313,5 +338,6 @@ class ProfileAccounts(GuideAccounts):
             role='role-'+uuid.uuid4().hex
             data['roles'][role]={'id':role,'name':'Gendannet administrator '+role[-8:],'permissions':sorted(PERMISSIONS)}
             data['users'][ident]={'id':ident,'name':name,'roles':[role],'disabled':False,**credential}
+            self.remembered.clear()
             self._write(data);self.sessions.clear()
             return ident

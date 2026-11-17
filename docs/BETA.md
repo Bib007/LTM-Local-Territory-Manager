@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.28 giver administratorer mulighed for at låse sproget og begrænse en rolle til Forside, Ind/udlevering og Forkyndere under Indstillinger → Brugere og roller.
+Beta 1.12.19-beta.31 samler Excel-historikimport, flervalg, forsidestatistik og ændringer til rapportkort, DAR, kortydelse og login.
 
 ## Installer betakanalen én gang
 

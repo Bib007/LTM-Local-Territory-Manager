@@ -1,5 +1,6 @@
 """Store private task images in the same transaction as their task."""
 import base64
+from workflow_store import is_ib_review
 import json
 import re
 import struct
@@ -111,7 +112,7 @@ def purge_note_images(store, predicate, value):
 def read_image(store, note_id, image_id):
     with store.lock:
         note = store.get('notes', note_id)
-        if not note or not any(image['id'] == image_id for image in note.get('images', [])):
+        if not note or is_ib_review(note) or not any(image['id'] == image_id for image in note.get('images', [])):
             return None
         image = store.get('task_images', image_id)
         if not image or image['note_id'] != note_id:

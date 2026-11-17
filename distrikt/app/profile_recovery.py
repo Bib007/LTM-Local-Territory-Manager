@@ -78,6 +78,7 @@ def restore_value(accounts,data):
         if accounts.data['users']:
             import secrets
             export_accounts(accounts,accounts.root/('accounts-before-restore-'+secrets.token_hex(8)+'.json'))
+        accounts.remembered.clear()
         accounts._write(data);accounts.sessions.clear()
 
 def main():

@@ -9,6 +9,18 @@ from geography import enclosing_outline, street_rows, point_in_polygon, valid_co
 from admin_store import signature
 
 
+IB_REVIEW_PREFIX='ib-review:'
+
+
+def is_ib_review_id(ident):
+    """Reserved ID, not mutable note text/metadata, identifies system follow-ups."""
+    return isinstance(ident,str) and ident.startswith(IB_REVIEW_PREFIX)
+
+
+def is_ib_review(item):
+    return isinstance(item,dict) and is_ib_review_id(item.get('id'))
+
+
 def task_reply_target(item):
     return signature([item['id'],item.get('assignee_id'),item.get('assigned_by')])
 
