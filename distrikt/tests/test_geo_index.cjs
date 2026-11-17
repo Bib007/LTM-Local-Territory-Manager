@@ -65,4 +65,15 @@ low=56.5;high=57.5;geo.drawLayers();assert.equal(markers.length,1);
 assert.equal(markers[0].options.fillColor,'#248e5a','selected address remains selected after pan');
 assert.equal(geo.groups().flat().length,5,'pan does not prune stored addresses');
 
+// CI smoke-runs the reproducible benchmark at a small synthetic scale.
+// Full 12k-address measurements are intentionally opt-in via the CLI.
+const {execFileSync}=require('node:child_process');
+const benchmark=JSON.parse(execFileSync(process.execPath,
+  [path.join(__dirname,'../../scripts/benchmark_geo_editor.cjs')],
+  {encoding:'utf8',timeout:60000,env:{...process.env,LTM_ADDRESSES:'400',LTM_CARDS:'20',
+    LTM_ROADS:'30',LTM_BUILDINGS:'60',LTM_REPEATS:'3'}}));
+assert.equal(benchmark.dataset.addresses,400);
+assert.equal(benchmark.before.counts.markers,benchmark.after.counts.markers);
+assert.equal(benchmark.before.counts.layers,benchmark.after.counts.layers);
+console.log('Synthetic benchmark smoke: identical address-marker and layer counts in both implementations OK.');
 console.log('Geo index: card order, legacy ownership, ignored addresses, stale fallback, revision invalidation, cached groups, viewport pan and selection OK.');
