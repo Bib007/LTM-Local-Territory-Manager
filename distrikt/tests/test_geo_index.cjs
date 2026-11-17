@@ -34,6 +34,7 @@ for(const target of ['', 'older', 'legacy', 'current', 'archived']){
       'the owner must match prior first-card precedence, excluding the current card');
   }
 }
+geo.target='';
 assert.equal(geo.owner(addresses[3]).id,'archived','server status fallback preserved');
 assert(!geo.available(addresses[2]),'ignored address not selectable');
 assert(!geo.available(addresses[0]),'other-card address not selectable');
