@@ -35,6 +35,7 @@ from ui_errors import UIError,error_payload
 from profile_accounts import ProfileAccounts
 from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
+from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
@@ -90,6 +91,7 @@ class Server(ThreadingHTTPServer):
         self.sharing=Publications(store)
         self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
         self.runtime_status=RuntimeStatus(self.address_schedule,VERSION,self.beta)
+        self.update_checker=UpdateChecker(VERSION,home_assistant=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1',server_mode=bool(access_host))
 
     def app_state(self,profile_token=None):
         """The same local overview for page reads and confirmed write responses."""
@@ -190,7 +192,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if self.server.beta and '<b>LTM</b>' in html:html=html.replace('<b>LTM</b>','<b>LTM Beta</b>').replace('<body>','<body class="betaChannel">')
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -234,6 +236,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 return self.send(self.server.app_state(self.profile_token()))
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/runtime/status':return self.send(self.server.runtime_status.status())
+            if path=='/api/update-check':return self.send(self.server.update_checker.check())
             if path=='/api/activity':return self.send({'items':self.server.profiles.authors(self.server.store.activity())})
             if path=='/api/map':
                 with self.server.store.lock:
