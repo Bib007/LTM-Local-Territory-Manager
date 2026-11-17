@@ -189,8 +189,8 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  assert(desk.includes('data-action="folder-card-picker"'));
  assert(!desk.includes('data-action="new-card"'));
  const filtered=run("folderCardPickerRows('fIkTiVt <test>')");
- assert(filtered.includes('data-id="available"')&&filtered.includes('Fiktivt &lt;test&gt;'));
- assert(!filtered.includes('data-id="folder"')&&!filtered.includes('data-id="issued"'));
+ assert(filtered.includes('data-folder-card-id="available"')&&filtered.includes('Fiktivt &lt;test&gt;'));
+ assert(!filtered.includes('data-folder-card-id="folder"')&&!filtered.includes('data-folder-card-id="issued"'));
  const all=run("folderCardPickerRows('')");
  assert.match(all,/data-folder-card-id="folder"[^>]*disabled/);
  assert.match(all,/data-folder-card-id="issued"[^>]*disabled/);
