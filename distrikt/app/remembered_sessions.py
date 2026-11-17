@@ -8,8 +8,6 @@ import json
 import time
 from pathlib import Path
 
-from access import write_private
-
 REMEMBER_LIFETIME = 7 * 24 * 60 * 60
 MAX_REMEMBERED = 100
 
@@ -50,6 +48,7 @@ class RememberedSessions:
     def _replace(self, records):
         # Commit to the private file first: a failed revoke cannot be reported
         # as a successful logout and then resurrect a session on restart.
+        from access import write_private
         write_private(self.path, records)
         self.records = records
 
