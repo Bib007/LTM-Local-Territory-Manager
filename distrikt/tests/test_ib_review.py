@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'app'))
 from profile_accounts import DESK_PERMISSIONS
-from profile_policy import mutation, state_for
+from profile_policy import mutation
 from store import Store
 
 
@@ -42,10 +42,6 @@ class IBReviewTests(unittest.TestCase):
 
     def reviews(self):
         return self.store.state()['ib_reviews']
-
-    def projected(self, user):
-        # The HTTP server supplies this marker before applying profile filtering.
-        return state_for({**self.store.state(), 'beta': True}, user)
 
     def test_yes_creates_only_one_review_and_never_edits_ib(self):
         original_ib = self.store.all('ib')
@@ -135,22 +131,37 @@ class IBReviewTests(unittest.TestCase):
                 'retain': False, 'revise_ib': True}
         mutation(desk, 'loan.finish', data, self.store)
         self.return_card(**data)
-        self.assertEqual(self.projected(desk)['ib_reviews'], [])
+        self.assertEqual(self.store.state()['notes'], [], 'The generic note list excludes system reviews')
         with self.assertRaises(PermissionError):
             mutation(desk, 'ib.review.resolve', {'id': 'ib-review:' + self.loan_id}, self.store)
 
         reader = self.user({'cards.view', 'ib.view'})
-        projection = self.projected(reader)
-        self.assertEqual(len(projection['ib_reviews']), 1)
-        self.assertEqual(projection['notes'], [], 'No private note text leaks to IB readers')
+        review_id=self.reviews()[0]['id']
         with self.assertRaises(PermissionError):
-            mutation(reader, 'ib.review.resolve', {'id': projection['ib_reviews'][0]['id']}, self.store)
+            mutation(reader, 'ib.review.resolve', {'id': review_id}, self.store)
 
         editor = self.user({'cards.view', 'ib.view', 'ib.edit'})
-        mutation(editor, 'ib.review.resolve', {'id': projection['ib_reviews'][0]['id']}, self.store)
-        self.store.mutate('ib.review.resolve', {'id': projection['ib_reviews'][0]['id']})
-        self.assertTrue(self.projected(editor)['ib_reviews'][0]['resolved'])
-        self.assertEqual(self.projected(self.user({'cards.view'}))['ib_reviews'], [])
+        mutation(editor, 'ib.review.resolve', {'id': review_id}, self.store)
+        self.store.mutate('ib.review.resolve', {'id': review_id})
+        self.assertTrue(self.reviews()[0]['resolved'])
+
+    def test_generic_note_actions_cannot_modify_reserved_review(self):
+        self.return_card()
+        review_id=self.reviews()[0]['id']
+        before=self.store.require('notes', review_id)
+        for action,data in [
+            ('note.save', {'id':review_id,'card_id':self.card_id,'text':'Fiktiv omskrivning'}),
+            ('note.resolve', {'id':review_id,'resolved':True}),
+            ('note.task', {'id':review_id}),
+            ('note.complete', {'id':review_id,'due':self.day}),
+            ('note.reply.delete', {'id':review_id,'entry_id':'fiktiv'}),
+            ('delete', {'module':'notes','id':review_id}),
+        ]:
+            with self.subTest(action=action),self.assertRaises(PermissionError):
+                self.store.mutate(action,data)
+            self.assertEqual(self.store.require('notes',review_id),before)
+        self.assertEqual(self.store.state()['notes'],[])
+        self.assertFalse(self.reviews()[0]['resolved'])
 
     def test_completion_only_accepts_system_created_ib_review(self):
         fake_note = self.store.mutate('note.save', {

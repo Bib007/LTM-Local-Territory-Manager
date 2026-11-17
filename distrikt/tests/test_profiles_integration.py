@@ -81,6 +81,63 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def create_fictional_ib_review(self):
+        from datetime import date
+        day=date.today().isoformat()
+        loan=self.change(self.admin,self.state(self.admin),'loan.issue',{
+            'card_id':self.card,'publisher_name':'Fiktiv udleveringsmodtager',
+            'date':day,'initial':True})['result']['id']
+        self.change(self.admin,self.state(self.admin),'loan.finish',{
+            'id':loan,'date':day,'complete':False,'retain':False,'revise_ib':True})
+        return 'ib-review:'+loan
+
+    def test_ib_review_is_not_a_note_and_note_editor_cannot_close_it_over_http(self):
+        review_id=self.create_fictional_ib_review()
+        editor,_,_=self.reader(['cards.view','notes.view','notes.edit'])
+        projection=self.state(editor)  # GET /api/state includes the server's beta metadata
+        self.assertEqual([n['id'] for n in projection['notes']],[self.note])
+        self.assertEqual(projection['ib_reviews'],[])
+        self.assertNotIn(review_id,json.dumps(projection))
+        self.assertEqual(self.server.profiles.workspace.overview(editor['token'])['records']['notes'][0]['id'],self.note)
+        with self.assertRaises(PermissionError):
+            self.server.profiles.workspace.begin_edit(editor['token'],'notes',review_id)
+        before=self.store.require('notes',review_id)
+        for action,data in [
+            ('note.resolve',{'id':review_id,'resolved':True}),
+            ('note.save',{'id':review_id,'card_id':self.card,'text':'Fiktiv ændring'}),
+            ('note.task',{'id':review_id}),
+            ('note.complete',{'id':review_id,'due':'2026-11-17'}),
+            ('note.reply.delete',{'id':review_id,'entry_id':'opdigtet'}),
+            ('delete',{'id':review_id,'module':'notes'}),
+        ]:
+            with self.subTest(action=action):
+                with self.assertRaises(urllib.error.HTTPError) as denied:
+                    self.change(editor,self.state(editor),action,data)
+                self.assertEqual(denied.exception.code,403)
+                self.assertEqual(self.store.require('notes',review_id),before)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(editor,self.state(editor),'ib.review.resolve',{'id':review_id})
+        self.assertEqual(denied.exception.code,403)
+        # Ordinary tasks retain their own edit and resolution semantics.
+        self.change(editor,self.state(editor),'note.resolve',{'id':self.note,'resolved':True})
+        self.assertTrue(self.store.require('notes',self.note)['resolved'])
+        self.assertFalse(self.store.require('notes',review_id)['resolved'])
+
+    def test_ib_review_editor_can_complete_over_http_without_generic_note_access(self):
+        review_id=self.create_fictional_ib_review()
+        ib_editor,_,_=self.reader(['cards.view','ib.view','ib.edit'])
+        projection=self.state(ib_editor)
+        self.assertEqual(projection['notes'],[])
+        self.assertEqual([r['id'] for r in projection['ib_reviews']],[review_id])
+        self.assertFalse(projection['ib_reviews'][0]['resolved'])
+        self.change(ib_editor,projection,'ib.review.resolve',{'id':review_id})
+        self.assertTrue(self.store.require('notes',review_id)['resolved'])
+        self.assertTrue(self.state(ib_editor)['ib_reviews'][0]['resolved'])
+        self.assertEqual(self.state(self.admin)['notes'][0]['id'],self.note)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(ib_editor,self.state(ib_editor),'ib.review.resolve',{'id':review_id})
+        self.assertEqual(denied.exception.code,400)
+
     def test_dar_suggestion_requires_edit_rights_and_preview_preserves_data(self):
         from test_street_suggestions import multicluster_addresses
         selected, others = multicluster_addresses()

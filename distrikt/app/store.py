@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from geo_store import GeoStore
 from admin_store import AdminStore
-from workflow_store import WorkflowStore
+from workflow_store import WorkflowStore, is_ib_review, is_ib_review_id
 from followup_store import FollowupStore
 from setup_store import SetupStore
 from ui_errors import UIError
@@ -246,12 +246,15 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             number_batches=sorted((x for x in settings_rows if x.get('entity')=='territory-numbering-batch' and not x.get('undone_at')),key=lambda x:x.get('created',''),reverse=True)
             result['numbering_last_batch']=({'id':number_batches[0]['id'],'count':len(number_batches[0]['changes'])} if number_batches else None)
             result['followup_ignores'] = [x for x in settings_rows if x.get('entity') == 'followup_ignore']
-            result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
-            # Backward-compatible note records; no data migration or IB changes.
+            visible_notes=[n for n in result['notes'] if n.get('entity')!='activity']
+            # Reviews from existing installations retain their original records,
+            # but are exposed exclusively through the purpose-built projection.
             result['ib_reviews']=[{'id':n['id'],'card_id':n.get('card_id'),'date':n.get('date'),
-                'resolved':bool(n.get('resolved'))} for n in result['notes']
-                if isinstance(n.get('loan_id'),str) and n.get('id')=='ib-review:'+n['loan_id']
+                'resolved':bool(n.get('resolved'))} for n in visible_notes
+                if is_ib_review(n) and isinstance(n.get('loan_id'),str)
+                and n['id']=='ib-review:'+n['loan_id']
                 and n.get('followup_key')==json.dumps(['ib-review',n['loan_id']],ensure_ascii=False,separators=(',',':'))]
+            result['notes']=[n for n in visible_notes if not is_ib_review(n)]
             from redistribution import planning_date
             for c in result['cards']:
                 if c.get('planning_reference'):c['planning_date']=planning_date(c)
@@ -362,6 +365,11 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         return result
 
     def _mutate(self, action, data, *, geographic=False, ib_address_only=False):
+        # Domain boundary also applies in shared-login mode and to direct Store calls.
+        # Never allow generic note actions to change a system IB review.
+        if (action in ('note.save','note.resolve','note.task','note.complete','note.reply.delete')
+                or (action=='delete' and data.get('module')=='notes')) and is_ib_review_id(data.get('id')):
+            raise PermissionError('Du har ikke rettighed til denne handling.')
         if action in ('ib.bulk.preview', 'ib.bulk.apply'):
             from ib_address_suggestions import mutate
             return mutate(self, action, data)

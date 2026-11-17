@@ -3,6 +3,7 @@ from copy import deepcopy
 from datetime import datetime,timezone
 import uuid
 from concurrent_edits import reconcile,_equal,_value
+from workflow_store import is_ib_review
 
 SAVE={
  'card.save':('cards',set('number internal_number name area_id kind temporary map_color addresses'.split())),
@@ -27,7 +28,8 @@ REVIEW_FIELDS={
 }
 
 def capture(store,modules=None):
-    return {'id':'workspace','records':{m:{r['id']:deepcopy(r) for r in store.all(m) if not r.get('entity')} for m in REVIEW_FIELDS if modules is None or m in modules}}
+    return {'id':'workspace','records':{m:{r['id']:deepcopy(r) for r in store.all(m)
+                   if not r.get('entity') and (m!='notes' or not is_ib_review(r))} for m in REVIEW_FIELDS if modules is None or m in modules}}
 
 class ReviewedMutation:
     def __init__(self,base,actor,on_precommit=None):
