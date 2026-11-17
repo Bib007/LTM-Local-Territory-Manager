@@ -8,7 +8,7 @@ const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,inne
 const drawn={polygons:[],tooltips:[],markers:[],leaders:[]},reset=()=>Object.values(drawn).forEach(list=>list.length=0);
 const layer=()=>({addTo(){return this;},bindTooltip(fn){drawn.tooltips.push(fn());return this;}});
 const map={getSize:()=>({x:720,y:480}),fitBounds(){},latLngToContainerPoint:p=>({x:(p[1]-10)*7200,y:(p[0]-55)*9000}),containerPointToLatLng:p=>({lng:p[0]/7200+10,lat:p[1]/9000+55})};
-const c={console,Date,Math,Number,String,Array,Object,Set,Map,JSON,Promise,
+const c={document:{addEventListener(){}},window:{addEventListener(){}},console,Date,Math,Number,String,Array,Object,Set,Map,JSON,Promise,
  state,GeoUI:{data:{main_boundary:{points:[[10,55],[10.04,55],[10.04,55.04],[10,55.04]]}}},
  location:{origin:'https://fictional.invalid'},setTimeout:fn=>{fn();return 1;},clearTimeout:()=>{},
  I18n:{language:()=> 'da',text:key=>key,attribute:(kind,value)=>kind+'="'+value+'"'},
