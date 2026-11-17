@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.29 · 2026-11-17
+
+- **Map editor:** Reuses address groups and card ownership lookups. This reduces work when opening and redrawing large maps. All addresses are still available when panning and zooming.
+
 ## 1.12.19-beta.28 · 2026-11-16
 
 - **Roles:** Administrators can set a fixed Danish or English language and restrict a role to Home, check-in and check-out, and publishers.
