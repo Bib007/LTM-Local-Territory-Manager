@@ -6,6 +6,7 @@ never written; remembered sessions use a private, channel-specific file.
 import hashlib
 import json
 import time
+from copy import deepcopy
 from pathlib import Path
 
 REMEMBER_LIFETIME = 7 * 24 * 60 * 60
@@ -52,13 +53,14 @@ class RememberedSessions:
         write_private(self.path, records)
         self.records = records
 
-    def issue(self, token, user, credential):
+    def issue(self, token, user, credential, assignment=None):
         now = self.clock()
         records = {key: value for key, value in self.records.items() if value['until'] > now}
         while len(records) >= MAX_REMEMBERED:
             del records[min(records, key=lambda key: records[key]['until'])]
         until = now + REMEMBER_LIFETIME
-        records[self._key(token)] = {'user': user, 'credential': credential, 'until': until}
+        records[self._key(token)] = {'user': user, 'credential': credential, 'until': until,
+                                     'assignment': deepcopy(assignment)}
         self._replace(records)
         return until
 
