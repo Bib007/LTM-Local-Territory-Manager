@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.29 · 2026-11-17
+
+- **Korteditor:** Genbruger adressegrupper og opslag af, hvilket distriktskort en adresse tilhører. Det reducerer arbejdet ved åbning og genoptegning af store kort. Alle adresser kan stadig ses ved panorering og zoom.
+
 ## 1.12.19-beta.28 · 2026-11-16
 
 - **Roller:** Administratoren kan låse sproget til dansk eller engelsk og vælge en udleveringsrolle med adgang til Forside, Ind/udlevering og Forkyndere.
