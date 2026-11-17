@@ -139,12 +139,15 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(denied.exception.code,400)
 
     def test_dar_suggestion_requires_edit_rights_and_preview_preserves_data(self):
-        from test_street_suggestions import multicluster_addresses
-        selected, others = multicluster_addresses()
-        records = [dict(a, id=f'fictional-{i}', entity='address', count=1, type='Hus')
-                   for i,a in enumerate(selected+others)]
+        # This HTTP test exercises authorization and preview/save, while the
+        # geometry suite exercises the costly multicluster outline cases.
+        points = [(10,55),(10.0005,55),(10,55.0005),(10.002,55.002)]
+        records = [dict(id=f'fictional-{i}', entity='address', count=1, type='Hus',
+                        road='Fiktiv vej', number=str(i+1), postcode='9999',
+                        lng=lng, lat=lat)
+                   for i,(lng,lat) in enumerate(points)]
         self.store.mutate('geo.import', {'records':records, 'source':'DAR / Datafordeleren'})
-        ids = [a['id'] for a in records[:len(selected)]]
+        ids = [a['id'] for a in records[:3]]
         reader, role, _ = self.reader(['cards.view','geo.view'])
         data = {'card_id':self.card, 'address_ids':ids, 'suggest_outline':True}
         before = self.store.state()
