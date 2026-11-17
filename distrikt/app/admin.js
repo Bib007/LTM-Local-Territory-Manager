@@ -23,10 +23,11 @@ const AdminUI={
   return `<div class="actions cardSelection"><button data-admin="all">${ui('Vælg viste kort')}</button><button data-admin="none">${ui('Fravælg alle')}</button><button data-admin="bulk" ${chosen.length?'':'disabled'}>${ui('Ændr område / type · {count} valgt',{count:chosen.length})}</button><button data-action="folder-selection" ${toFolder.length&&toFolder.length<=500&&canMove?'':'disabled'}>${ui('Læg {count} i mappen',{count:toFolder.length})}${excluded?' · '+ui('{count} springes over',{count:excluded}):''}</button>${toBox.length?`<button data-action="folder-selection-box">${ui('Flyt {count} til kassen',{count:toBox.length})}</button>`:''}</div>
   <p class="hint" role="status">${ui('{count} kort valgt på tværs af filtre',{count:chosen.length})}${chosen.length?': '+chosen.map(c=>`${esc(c.number)}${this.folderReason(c)?' ('+esc(I18n.text(this.folderReason(c)))+')':''}`).join(' · '):''}</p>`;
  },
- folderPreview(){
+ folderPreview(ids=null){
   if(this.folderConfirmBusy)return;
   if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set')){toast(I18n.text('Din rolle giver ikke adgang til denne handling.'));return;}
-  const chosen=this.selectedCards();
+  // The daily-use picker supplies its own IDs; never overwrite inventory selections.
+  const chosen=ids===null?this.selectedCards():[...new Set(ids)].map(id=>card(id)).filter(Boolean);
   const eligible=chosen.filter(c=>!this.folderReason(c)),skipped=chosen.filter(c=>this.folderReason(c)).map(c=>({id:c.id,reason:this.folderReason(c)}));
   this.folderPending={ids:eligible.map(c=>c.id),skipped,labels:Object.fromEntries(chosen.map(c=>[c.id,c.number]))};
   const row=({id,reason})=>`<li>${esc(this.folderPending.labels[id]||id)} · ${esc(I18n.text(reason))}</li>`;
