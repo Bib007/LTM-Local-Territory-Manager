@@ -103,6 +103,26 @@ class RolesGuidesHTTPTests(unittest.TestCase):
         for path in ('/api/geo','/api/export/s13','/api/export/backup','/api/profiles/admin'):
             with self.assertRaises(urllib.error.HTTPError) as caught:self.request(path,self.reader)
             self.assertEqual(caught.exception.code,403)
+    def test_restricted_desk_gets_aggregate_home_without_private_modules(self):
+        desk_role=self.a.save_role(self.admin,'Fiktiv skrivebordsrolle',[],desk_only=True)
+        role=self.a.save_role(self.admin,'Fiktiv tillægsrolle',['notes.view','ib.view','reports.view'])
+        self.a.save_user(self.admin,'Fiktiv desk',[desk_role,role],password='Fiktiv-desk-4567')
+        desk=self.a.login('Fiktiv desk','Fiktiv-desk-4567','desk-test')
+        actual=self.request('/api/state',desk)
+        expected=self.request('/api/state',self.admin)
+        self.assertEqual(actual['dashboard_summary'],expected['dashboard_summary'])
+        self.assertEqual(set(actual['profile']['permissions']),
+                         {'dashboard.view','cards.view','loans.view','loans.manage','publishers.view'})
+        self.assertIsNone(actual['report_summary'])
+        for name in ('notes','ib','ib_reviews','completions','visits','followup_ignores'):
+            self.assertEqual(actual[name],[])
+        self.assertNotIn('Fiktiv hemmelig note',json.dumps(actual))
+        self.assertFalse(any(s['id'] in ('tasks','reports') for s in
+                             self.request('/api/profiles/guide',desk)['steps']))
+        for path in ('/api/geo','/api/export/s13'):
+            with self.assertRaises(urllib.error.HTTPError) as caught:self.request(path,desk)
+            self.assertEqual(caught.exception.code,403)
+
     def test_assignment_uses_users_manage_and_old_session_does_not_capture_it(self):
         self.request('/api/profiles/guide/assign',self.admin,{'user_id':self.user,'kind':'intro','expected_assignment':''})
         with self.assertRaises(urllib.error.HTTPError) as caught:self.request('/api/profiles/guide/assign',self.reader,{'user_id':self.user,'kind':'intro','expected_assignment':''})
