@@ -113,18 +113,20 @@ class ProfileAccounts(GuideAccounts):
         session=self.sessions.get(token);now=self.clock()
         if not session or session['expires']<=now:
             self.sessions.pop(token,None)
+            session=None
             record=self.remembered.get(token)
             user=self.data['users'].get(record['user']) if record else None
             if (user and not user.get('disabled')
                     and hmac.compare_digest(record['credential'],self._credential_id(user))):
                 remaining=record['until']-self.wall_clock()
                 if remaining>0:
-                    session={'user':user['id'],'expires':now+remaining,'seen':now,
+                    session={'user':user['id'],'expires':now+remaining,'seen':now,'remembered_credential':record['credential'],
                              'guide_assignment':deepcopy(user.get('intro',{}).get('assigned'))}
                     self.sessions[token]=session
             if not session:raise PermissionError('Sign in again')
         user=self.data['users'].get(session['user'])
-        if not user or user.get('disabled'):
+        if (not user or user.get('disabled') or
+                (session.get('remembered_credential') and not hmac.compare_digest(session['remembered_credential'],self._credential_id(user)))):
             self.sessions.pop(token,None);raise PermissionError('Sign in again')
         return session,user
 
@@ -195,7 +197,8 @@ class ProfileAccounts(GuideAccounts):
             self.sessions={k:v for k,v in self.sessions.items() if v['expires']>now}
             if len(self.sessions)>=100:self.sessions.pop(next(iter(self.sessions)))
             if remember:self.remembered.issue(token,user['id'],self._credential_id(user))
-            self.sessions[token]={'user':user['id'],'expires':now+(REMEMBER_LIFETIME if remember else SESSION_LIFETIME),'seen':now,'guide_assignment':deepcopy(user.get('intro',{}).get('assigned'))}
+            self.sessions[token]={'user':user['id'],'expires':now+(REMEMBER_LIFETIME if remember else SESSION_LIFETIME),'seen':now,'guide_assignment':deepcopy(user.get('intro',{}).get('assigned')),
+                                  **({'remembered_credential':self._credential_id(user)} if remember else {})}
             return token
 
     def logout(self,token):
