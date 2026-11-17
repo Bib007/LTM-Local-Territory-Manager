@@ -51,14 +51,19 @@ const UpdateNotice = {
   node.setAttribute('aria-label',this.label('Ny LTM-version tilgængelig','New LTM version available'));
   node.hidden=false;
  },
- async check(){
+ async check(attempt=0){
   const node=document.getElementById('updateNotice');
   const token=document.querySelector('meta[name="app-token"]')?.content;
   if(!node||!token)return;
   try{
    const response=await fetch('/api/update-check',{headers:{'X-Distrikt-Token':token},credentials:'same-origin',cache:'no-store'});
    if(!response.ok)return;
-   this.paint(await response.json());
+   const result=await response.json();
+   if(result?.checking===true){
+    if(attempt<4)setTimeout(()=>this.check(attempt+1),1250);
+    return;
+   }
+   this.paint(result);
   }catch{} // Offline, timeout or invalid feed: do not interrupt normal work.
  },
 };
