@@ -29,11 +29,11 @@
 * NW's [officielle Boundary-eksempel](https://nwscheduler.com/how-to/import-territories-from-csv/) indeholder en lukket kæde af koordinatpar og henviser til eksport fra NW for en CSV-prøve. Det eksempel er ikke vores fiktive prøve.
 * TH [tilbyder en Excel-sample i selve importvisningen](https://www.territoryhelper.com/Help/LocationsImport), men den kunne ikke verificeres offentligt uden konto. Ingen udokumenterede kolonner er antaget i kode.
 * Overtures [officielle Quickstart](https://docs.overturemaps.org/getting-data/) demonstrerer geografiske GeoJSON-udtræk. Det beviser ikke en import til LTM.
-* **Egen opdigtet fixture, ikke en officiel eksportfil**: Number=17, CategoryCode=C, Suffix=A, polygon [[10,55],[10.01,55],[10.01,55.01],[10,55.01],[10,55]]. Se [tests](../../distrikt/tests/test_territory_boundary_adapter.py).
+* **Egen opdigtet fixture, ikke en officiel eksportfil**: Number=17, CategoryCode=C, Suffix=A, polygon [[10,55],[10.01,55],[10.01,55.01],[10,55.01],[10,55]]. Se distrikt/tests/test_territory_boundary_adapter.py.
 
 ## Lokal, aktivt godkendt formatadapter
 
-[scripts/territory_boundary_adapter.py](../../scripts/territory_boundary_adapter.py) behandler kun **én** grænse inden for **LTM's aktuelle danske koordinatvalidering**. International adresseimport er *ikke* tilføjet. Den genbruger den faktiske boundary_import.preview_boundary til WGS84, antal hjørner og polygonvalidering og afviser ekstra data frem for at miste oplysninger lydløst. Maks. 2 MB kildefil. KML-fritekst/navne kopieres ikke; kun offentlige, korte distrikts-ID'er fra NW kan bevares. Programmet har **ingen netværkskald**.
+scripts/territory_boundary_adapter.py behandler kun **én** grænse inden for **LTM's aktuelle danske koordinatvalidering**. International adresseimport er *ikke* tilføjet. Den genbruger den faktiske boundary_import.preview_boundary til WGS84, antal hjørner og polygonvalidering og afviser ekstra data frem for at miste oplysninger lydløst. Maks. 2 MB kildefil. KML-fritekst/navne kopieres ikke; kun offentlige, korte distrikts-ID'er fra NW kan bevares. Programmet har **ingen netværkskald**.
 
 Kør eksempelvis først en forhåndsvisning — den skriver **ingen fil**:
 
