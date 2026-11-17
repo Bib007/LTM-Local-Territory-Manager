@@ -10,7 +10,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
  if(u.pathname==='/api/state')return json(state);
  if(u.pathname==='/api/geo')return json({addresses:[],buildings:[],roads:[],info:{},status:{},changes:[{id:'fictional-change',kind:'new',at:'2026-10-21',after:{label:'Fiktiv vej 1',count:1}}]});
  if(u.pathname==='/api/geo/job')return json({status:'idle'});
- if(u.pathname==='/api/ping')return json({ok:true});
+ if(u.pathname==='/api/update-check')return json(null);if(u.pathname==='/api/ping')return json({ok:true});
  if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
  if(u.pathname==='/api/mutate'){
   const data=route.request().postDataJSON();assert.equal(data.action,'address.task.configure');assert.equal(Object.hasOwn(data.data,'_revision'),false);writes.push(data.data);

@@ -44,7 +44,7 @@ module.exports=async(browser,out)=>{
     if(u.pathname==='/api/geo')return json(geo);
     if(u.pathname==='/api/map')return json({image:''});
     if(u.pathname==='/api/geo/job')return json({status:'idle'});
-    if(u.pathname==='/api/ping')return json({ok:true});
+    if(u.pathname==='/api/update-check')return json(null);if(u.pathname==='/api/ping')return json({ok:true});
     if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:true,account:'Fictional',cards:[]});
     if(u.pathname==='/api/share/prepare'){
      const request=route.request().postDataJSON(),recipe=backend('prepare',request);

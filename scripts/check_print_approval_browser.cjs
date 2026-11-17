@@ -11,7 +11,7 @@ module.exports=async(browser,out)=>{
    const json=v=>route.fulfill({contentType:'application/json',body:JSON.stringify(v)});
    if(u.pathname==='/api/state')return json(state);
    if(u.pathname==='/api/geo')return json({addresses:[],roads:[],buildings:[],info:{},status:{},main_boundary:{points:[]}});
-   if(u.pathname==='/api/ping')return json({ok:true});
+   if(u.pathname==='/api/update-check')return json(null);if(u.pathname==='/api/ping')return json({ok:true});
    if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
    if(u.pathname.startsWith('/api/'))return json({});
    if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
