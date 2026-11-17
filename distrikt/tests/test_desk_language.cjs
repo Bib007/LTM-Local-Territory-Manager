@@ -48,8 +48,8 @@ for(const language of ['da','en']){
   assert.match(html(),new RegExp('data-retain="'+(retain?'yes':'no')+'"'));
   assert.match(html(),/min="2026-09-12" max="2026-10-16" required/);
   assert.match(html(),/name="note" maxlength="1000"/);
-  if(!retain){assert.match(html(),/option value="yes"/);assert.match(html(),/option value="no"/);}
-  else assert(!html().includes('name="complete"'));
+  if(!retain){assert.match(html(),/option value="yes"/);assert.match(html(),/option value="no"/);assert.match(html(),/name="revise_ib" required/);}
+  else {assert(!html().includes('name="complete"'));assert(!html().includes('name="revise_ib"'));}
   if(language==='en')assert.match(html(),retain?/publisher keeps the card/:/return without completion/);
   forms[language].push(contract(html()));
  }
@@ -77,8 +77,8 @@ async function submit(id,fields,dataset={},valid=true){
   run(`I18n.set('${language}')`);const start=context.calls.length;
   await submit('issueForm',[['card_id','available'],['publisher_name','Forkynder'],['date','2026-10-15']]);
   await submit('issueForm',[['card_id','stored'],['publisher_name','Forkynder'],['date','2026-08-01'],['initial','on']]);
-  await submit('finishForm',[['date','2026-10-15'],['complete','no'],['note',note]],{id:'loan',retain:'no'});
-  await submit('finishForm',[['date','2026-10-15'],['complete','yes'],['note',note]],{id:'loan',retain:'no'});
+  await submit('finishForm',[['date','2026-10-15'],['complete','no'],['revise_ib','no'],['note',note]],{id:'loan',retain:'no'});
+  await submit('finishForm',[['date','2026-10-15'],['complete','yes'],['revise_ib','yes'],['note',note]],{id:'loan',retain:'no'});
   await submit('finishForm',[['date','2026-10-15'],['note',note]],{id:'loan',retain:'yes'});
   await submit('completionForm',[['date','2026-09-20'],['note',note]],{id:'available'});
   payloads[language]=JSON.parse(JSON.stringify(context.calls.slice(start)));
@@ -86,9 +86,9 @@ async function submit(id,fields,dataset={},valid=true){
  assert.deepEqual(payloads.en.map(({action,data})=>({action,data})),payloads.da.map(({action,data})=>({action,data})));
  assert.deepEqual(payloads.en.map(x=>x.action),['loan.issue','loan.issue','loan.finish','loan.finish','loan.finish','completion.record']);
  assert.equal(payloads.en[0].data.initial,false);assert.equal(payloads.en[1].data.initial,true);
- assert.equal(payloads.en[2].data.complete,false);assert.equal(payloads.en[2].data.retain,false);
- assert.equal(payloads.en[3].data.complete,true);assert.equal(payloads.en[3].data.retain,false);
- assert.equal(payloads.en[4].data.complete,true);assert.equal(payloads.en[4].data.retain,true);
+ assert.equal(payloads.en[2].data.complete,false);assert.equal(payloads.en[2].data.retain,false);assert.equal(payloads.en[2].data.revise_ib,false);
+ assert.equal(payloads.en[3].data.complete,true);assert.equal(payloads.en[3].data.retain,false);assert.equal(payloads.en[3].data.revise_ib,true);
+ assert.equal(payloads.en[4].data.complete,true);assert.equal(payloads.en[4].data.retain,true);assert.equal(payloads.en[4].data.revise_ib,false);
  assert.equal(payloads.en[5].data.note,note);assert.equal(payloads.en[0].options.message,'Assignment saved');
  const before=context.calls.length;await submit('issueForm',[],{},false);assert.equal(context.calls.length,before);
  assert.equal(run('JSON.stringify(state)'),original);

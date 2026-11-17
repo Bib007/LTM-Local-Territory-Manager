@@ -2,6 +2,7 @@
 from copy import deepcopy
 from conflict_reviews import pending, acknowledge
 from profile_edits import REVIEW_FIELDS
+from workflow_store import is_ib_review, is_ib_review_id
 
 # Explicit fields keep new database fields private until reviewed here.
 VIEWS = {
@@ -36,7 +37,8 @@ class ProfileWorkspace:
                 if permission not in user['permissions']:continue
                 result['records'][module]=[
                     {key:deepcopy(row[key]) for key in fields if key in row}
-                    for row in self.store.all(module) if not row.get('entity')]
+                    for row in self.store.all(module)
+                    if not row.get('entity') and (module!='notes' or not is_ib_review(row))]
             return result
 
     def _review_modules(self, permissions):
@@ -47,6 +49,7 @@ class ProfileWorkspace:
             rows=pending(self.store,self._review_modules(user['permissions']))
             result=[]
             for row in rows:
+                if row.get('module')=='notes' and is_ib_review_id(row.get('record_id')):continue
                 if row.get('field') not in CONFLICT_FIELDS[row['module']]:continue
                 value={key:deepcopy(row[key]) for key in NOTICE_FIELDS if key in row}
                 current=self.store.get(row['module'],row.get('record_id')) or {}
@@ -62,7 +65,7 @@ class ProfileWorkspace:
         with self.accounts.authorized_session(token) as user, self.store.lock:
             modules={m for m in self._review_modules(user['permissions']) if EDIT[m] in user['permissions']}
             row=self.store.get('settings',ident)
-            if not row or row.get('module') not in modules or row.get('field') not in CONFLICT_FIELDS[row['module']]:
+            if not row or (row.get('module')=='notes' and is_ib_review_id(row.get('record_id'))) or row.get('module') not in modules or row.get('field') not in CONFLICT_FIELDS[row['module']]:
                 raise PermissionError('Review unavailable')
             return acknowledge(self.store,ident,modules,user['id'])
 
@@ -72,7 +75,7 @@ class ProfileWorkspace:
             if module not in EDIT or EDIT[module] not in user['permissions'] or VIEWS[module][0] not in user['permissions']:
                 raise PermissionError('Editing unavailable')
             row=self.store.require(module,ident)
-            if row.get('entity'):raise PermissionError('Editing unavailable')
+            if row.get('entity') or (module=='notes' and is_ib_review(row)):raise PermissionError('Editing unavailable')
             fields=CONFLICT_FIELDS[module]
             base={k:deepcopy(row[k]) for k in fields|{'id'} if k in row}
             snapshot=self.snapshots.create(token,module,ident,base)
