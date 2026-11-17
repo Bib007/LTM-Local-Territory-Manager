@@ -45,6 +45,8 @@ jobs:
         run: python scripts/benchmark_geo_store.py --addresses 50000 --cards 180 --roads 2000 --buildings 6500 --history 12000 --runs 7
       - name: Fictional 9MB JSON response parse before and after
         run: node scripts/benchmark_save_response.cjs
+      - name: Stubbed map editor render and localhost transfer (separate from saves)
+        run: node scripts/benchmark_geo_editor.cjs
   python:
     runs-on: ubuntu-24.04
     strategy:
