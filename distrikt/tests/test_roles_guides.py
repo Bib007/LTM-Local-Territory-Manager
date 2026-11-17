@@ -124,17 +124,39 @@ class RolesGuidesHTTPTests(unittest.TestCase):
         actual=self.request('/api/state',desk)
         expected=self.request('/api/state',self.admin)
         self.assertEqual(actual['dashboard_summary'],expected['dashboard_summary'])
+        period=actual['dashboard_summary']['periods']['service']
+        self.assertEqual((period['territories'],period['assigned'],period['home']),(2,1,1))
+        self.assertTrue(actual['profile']['desk_only'])
+        self.assertEqual(self.a.authorize(desk,'dashboard.view'),
+                         actual['profile']['user']['id'])
         self.assertEqual(set(actual['profile']['permissions']),
                          {'dashboard.view','cards.view','loans.view','loans.manage','publishers.view'})
         self.assertIsNone(actual['report_summary'])
         for name in ('notes','ib','ib_reviews','completions','visits','followup_ignores'):
             self.assertEqual(actual[name],[])
         self.assertNotIn('Fiktiv hemmelig note',json.dumps(actual))
+        self.assertNotIn('Fiktiv skjult adresse',json.dumps(actual,ensure_ascii=False))
+        self.assertNotIn(review,json.dumps(actual))
+        self.assertNotIn('Fiktiv returperson',json.dumps(actual['dashboard_summary']))
         self.assertFalse(any(s['id'] in ('tasks','reports') for s in
                              self.request('/api/profiles/guide',desk)['steps']))
-        for path in ('/api/geo','/api/export/s13'):
+        for path in ('/api/geo','/api/export/s13','/api/export/backup'):
             with self.assertRaises(urllib.error.HTTPError) as caught:self.request(path,desk)
             self.assertEqual(caught.exception.code,403)
+        for action,data in (('ib.review.resolve',{'id':review}),
+                            ('note.resolve',{'id':'fictional-id','resolved':True})):
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                self.request('/api/mutate',desk,{'action':action,'data':data})
+            self.assertEqual(caught.exception.code,403)
+        self.assertFalse(self.store.state()['ib_reviews'][0]['resolved'])
+        normal_id=self.a.save_user(self.admin,'Fiktiv anden rolle',[role],
+                                   password='Fiktiv-almindelig-456')
+        normal=self.a.login('Fiktiv anden rolle','Fiktiv-almindelig-456','other-test')
+        normal_state=self.request('/api/state',normal)
+        self.assertFalse(normal_state['profile']['desk_only'])
+        self.assertIsNone(normal_state['dashboard_summary'])
+        self.assertIsNotNone(normal_state['report_summary'])
+        self.assertNotIn('dashboard.view',normal_state['profile']['permissions'])
 
     def test_assignment_uses_users_manage_and_old_session_does_not_capture_it(self):
         self.request('/api/profiles/guide/assign',self.admin,{'user_id':self.user,'kind':'intro','expected_assignment':''})
