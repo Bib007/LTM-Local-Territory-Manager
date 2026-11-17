@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.30 tegner først adressepunkter efter tilpasning af kortudsnittet og genbruger gemmesvaret i browseren. Prøv at åbne og redigere et stort kort.
+Beta 1.12.19-beta.31 samler Excel-historikimport, flervalg, forsidestatistik og ændringer til rapportkort, DAR, kortydelse og login.
 
 ## Installer betakanalen én gang
 
