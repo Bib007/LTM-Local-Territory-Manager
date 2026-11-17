@@ -88,6 +88,8 @@ async function api(path,body){
  if(body||r.headers?.get?.('content-type')?.includes('application/json')){
   let payload;try{payload=await r.clone().json();if(body&&(!payload||typeof payload!=='object'||Array.isArray(payload)||(path==='/api/mutate'&&(typeof payload.revision!=='string'||!payload.revision))))throw Error('Invalid response');}
   catch(error){const failure=problem(writing?'Svaret på ændringen kunne ikke læses. Kontrollér de gemte data med Opdater før et nyt forsøg.':'Svaret kunne ikke læses. Prøv kontrollen igen.',writing?'uncertain':'response');if(writing)WriteGuard.mark(failure);throw failure;}
+  // Reuse the validated clone for JSON callers; keep the original response body intact.
+  r.json=async()=>{authorization();return payload;};
   if(payload.profile_snapshot&&state?.profile&&!explicitBase){if(el('dialog').open&&openDialog.generation===profileGeneration)ProfilesUI.dialogBase=payload.profile_snapshot;else state.profile.snapshot=payload.profile_snapshot;}
   if(path==='/api/mutate'&&state===previousState&&state?.revision===previousRevision)state.revision=payload.revision;
  }
