@@ -58,8 +58,8 @@ class ProfileRuntime:
             with self.accounts.authorized_session(self.token(cookie)):return True
         except PermissionError:return False
 
-    def cookie_header(self,token):
-        return self.cookie+'='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='+('43200' if token else '0')
+    def cookie_header(self,token,remember=False):
+        return self.cookie+'='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='+('604800' if token and remember else '43200' if token else '0')
 
     def authors(self,items):
         # Resolve legacy IDs only to known accounts; never guess an author.
@@ -157,8 +157,9 @@ class ProfileRoutes:
             length=int(self.headers.get('Content-Length',0))
             if not 0<length<4096:raise ValueError()
             data=json.loads(self.rfile.read(length))
-            token=self.server.accounts.login(data.get('name'),data.get('password'),self.client_address[0])
-            self.send({'ok':True},headers={'Set-Cookie':self.server.profiles.cookie_header(token)})
+            remember=data.get('remember',False)
+            token=self.server.accounts.login(data.get('name'),data.get('password'),self.client_address[0],remember=remember)
+            self.send({'ok':True},headers={'Set-Cookie':self.server.profiles.cookie_header(token,remember)})
         except (ValueError,TypeError,AttributeError,PermissionError):
             self.send({'error':'Forkert brugernavn eller adgangskode. Vent fem minutter efter gentagne forsøg.'},status=401)
 
