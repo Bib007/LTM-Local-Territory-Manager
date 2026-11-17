@@ -203,7 +203,7 @@ def wide_records(lines):
 
 def xlsx_records(data):
     """Read only the dedicated data sheet; never evaluate formulas or external links."""
-    rows = read_rows(data, sheet_name=SHEET, column_cells=True)
+    rows = read_rows(data, sheet_name=SHEET, column_cells=True, strict_sheet=True)
     header_index = next((i for i, (_, values) in enumerate(rows)
                          if [_norm(x) for x in values] == WIDE_HEADERS), None)
     if header_index is None:
