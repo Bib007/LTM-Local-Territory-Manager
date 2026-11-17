@@ -333,9 +333,14 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(!item.canIgnore||(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('followup.ignore')))return '';
   return `<button data-work="followup-ignore" data-key="${esc(item.key)}" data-value="${item.ignored?'activate':'ignore'}" data-token="${esc(item.ignoreInfo?.token||'')}">${ui(item.ignored?'Genaktivér':'Se bort fra')}</button>`;
  },
+ ibReviewControls(item){
+  if(!item.ibReview||(state.profile&&typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('ib.review.resolve')))return '';
+  const cardId=esc(item.card.id),reviewId=esc(item.ibReview.id);
+  return '<button data-work="ib-review-open" data-id="'+cardId+'">'+ibReviewLabel('Åbn IB-redigering','Open DNC editor')+'</button><button data-work="ib-review-resolve" data-id="'+reviewId+'">'+ibReviewLabel('Afslut IB-opfølgning','Complete DNC follow-up')+'</button>';
+ },
  followupRow(item){
   const c=item.card,change=item.change,label=change&&(change.after.label||[change.after.road,change.after.number].join(' '));
-  return `<article class="line followupRow" data-followup="${esc(item.key)}" data-category="${item.category}"><div>${c?`<strong>${ui('Kort')} ${esc(c.number)}</strong><small>${esc(c.name||'')}</small>`:`<strong>${esc(label)}</strong>`}<p><strong>${ui(item.text,item.params)}</strong></p>${this.taskOwner((state.notes||[]).find(n=>n.followup_key===item.key)||{})}<p class="hint"><b>${ui('Næste skridt:')}</b> ${ui(this.followupInstruction(item))}</p>${this.followupAudit(item)}${item.loan?`<small>${esc(publisherName(item.loan.publisher_id))} · ${ui('Udleveret')} ${fmt(item.loan.assigned)}</small>`:''}${change?.before?`<small>${ui('Før:')} ${esc(change.before.label)} · ${ui('{count} besøg',{count:change.before.count})}<br>${ui('Efter:')} ${esc(label)} · ${ui('{count} besøg',{count:change.after.count})}</small>`:''}</div><div class="actions">${this.followupAction(item)}${Array.isArray(state.task_users)&&ProfilesUI.has('notes.view','notes.edit','users.manage')?`<button data-work="followup-task" data-key="${esc(item.key)}">${ui((state.notes||[]).some(n=>n.followup_key===item.key)?'Åbn tilknyttet opgave':'Opret opgave med ansvarshavende')}</button>`:''}${c?`<button data-action="detail" data-id="${esc(c.id)}">${ui('Åbn kort')}</button>`:''}${item.relatedCard?`<button data-action="detail" data-id="${esc(item.relatedCard.id)}">${ui('Åbn kort {number}',{number:item.relatedCard.number})}</button>`:''}${item.side?`<button data-action="print-options" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Print forside':'Print bagside')}</button><button data-action="approve" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Godkend forside':'Godkend bagside')}</button>`:''}${change?`<button data-work="accept-address" data-id="${esc(change.id)}">${ui('Godkend')}</button><button data-work="reject-address" data-id="${esc(change.id)}">${ui('Afvis')}</button>`:''}</div></article>`;
+  return `<article class="line followupRow" data-followup="${esc(item.key)}" data-category="${item.category}"><div>${c?`<strong>${ui('Kort')} ${esc(c.number)}</strong><small>${esc(c.name||'')}</small>`:`<strong>${esc(label)}</strong>`}<p><strong>${ui(item.text,item.params)}</strong></p>${this.taskOwner((state.notes||[]).find(n=>n.followup_key===item.key)||{})}<p class="hint"><b>${ui('Næste skridt:')}</b> ${ui(this.followupInstruction(item))}</p>${this.followupAudit(item)}${item.loan?`<small>${esc(publisherName(item.loan.publisher_id))} · ${ui('Udleveret')} ${fmt(item.loan.assigned)}</small>`:''}${change?.before?`<small>${ui('Før:')} ${esc(change.before.label)} · ${ui('{count} besøg',{count:change.before.count})}<br>${ui('Efter:')} ${esc(label)} · ${ui('{count} besøg',{count:change.after.count})}</small>`:''}</div><div class="actions">${this.followupAction(item)}${this.ibReviewControls(item)}${!item.ibReview&&Array.isArray(state.task_users)&&ProfilesUI.has('notes.view','notes.edit','users.manage')?`<button data-work="followup-task" data-key="${esc(item.key)}">${ui((state.notes||[]).some(n=>n.followup_key===item.key)?'Åbn tilknyttet opgave':'Opret opgave med ansvarshavende')}</button>`:''}${c?`<button data-action="detail" data-id="${esc(c.id)}">${ui('Åbn kort')}</button>`:''}${item.relatedCard?`<button data-action="detail" data-id="${esc(item.relatedCard.id)}">${ui('Åbn kort {number}',{number:item.relatedCard.number})}</button>`:''}${item.side?`<button data-action="print-options" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Print forside':'Print bagside')}</button><button data-action="approve" data-id="${esc(c.id)}" data-side="${item.side}">${ui(item.side==='front'?'Godkend forside':'Godkend bagside')}</button>`:''}${change?`<button data-work="accept-address" data-id="${esc(change.id)}">${ui('Godkend')}</button><button data-work="reject-address" data-id="${esc(change.id)}">${ui('Afvis')}</button>`:''}</div></article>`;
  },
 
  async previewOutsideChanges(){
@@ -452,6 +457,18 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   case 'boundary':if(!GeoUI.loaded)await GeoUI.load();MainBoundaryUI.open();break;
   case 'checks':await this.openFollowups('checks');break;
   case 'followups':await this.openFollowups(d.value||'all');break;
+   case 'ib-review-open':{
+    const review=(state.ib_reviews||[]).find(r=>r.card_id===d.id&&!r.resolved);
+    if(review&&(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.canAction('ib.review.resolve')))detail(d.id,'IB-bagside');
+    break;
+   }
+   case 'ib-review-resolve':{
+    const review=(state.ib_reviews||[]).find(r=>r.id===d.id&&!r.resolved);
+    if(!review||state.profile&&typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('ib.review.resolve'))break;
+    if(!window.confirm(ibReviewLabel('Er IB på det fysiske kort gennemgået?','Has DNC on the physical card been reviewed?')))break;
+    await mutate('ib.review.resolve',{id:review.id},{close:false,message:ibReviewLabel('IB-opfølgning afsluttet','DNC follow-up completed')});
+    break;
+   }
   case 'followup-ignore':{
    if(this.followupBusy)break;
    const item=this.followupItems(true).find(r=>r.key===d.key);
