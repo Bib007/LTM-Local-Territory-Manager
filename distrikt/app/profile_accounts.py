@@ -21,7 +21,7 @@ PERMISSIONS=frozenset(('cards.view','cards.edit','loans.manage','publishers.mana
     'ib.view','ib.edit','history.view','settings.manage','users.manage','activity.view','presence.view',
     'notes.view','notes.edit','publishers.view','loans.view','history.edit',
     'geo.view','geo.edit','backup.export','backup.restore','backup.notify','connections.manage','sharing.manage','dashboard.view','reports.view'))
-DESK_PERMISSIONS=frozenset(('cards.view','loans.view','loans.manage','publishers.view'))
+DESK_PERMISSIONS=frozenset(('cards.view','loans.view','loans.manage','publishers.view','dashboard.view'))
 SESSION_LIFETIME=12*60*60
 ONLINE_WINDOW=90
 KDF_ITERATIONS=600000
