@@ -39,7 +39,7 @@ class RememberedSessions:
     def _key(token):
         if not isinstance(token, str) or not 1 <= len(token) <= 256:
             return ''
-        return hashlib.sha256(token.encode('ascii', errors='ignore')).hexdigest()
+        return hashlib.sha256(token.encode('utf-8')).hexdigest()
 
     def get(self, token):
         record = self.records.get(self._key(token))
