@@ -108,6 +108,19 @@ class RolesGuidesHTTPTests(unittest.TestCase):
         role=self.a.save_role(self.admin,'Fiktiv tillægsrolle',['notes.view','ib.view','reports.view'])
         self.a.save_user(self.admin,'Fiktiv desk',[desk_role,role],password='Fiktiv-desk-4567')
         desk=self.a.login('Fiktiv desk','Fiktiv-desk-4567','desk-test')
+        # Real HTTP state projection with invented cards, names and an IB-review.
+        today=self.store.state()['today']
+        card=self.store.mutate('card.save',{'number':'F-DESK-01','temporary':True})['id']
+        loan=self.store.mutate('loan.issue',{'card_id':card,'publisher_name':'Fiktiv returperson',
+            'date':today,'initial':True})['id']
+        self.store.mutate('ib.save',{'card_id':card,'road':'Fiktiv skjult adresse',
+            'number':'42','date':today})
+        self.store.mutate('loan.finish',{'id':loan,'date':today,'complete':False,
+            'retain':False,'revise_ib':True})
+        review=self.store.state()['ib_reviews'][0]['id']
+        active=self.store.mutate('card.save',{'number':'F-DESK-02','temporary':True})['id']
+        self.store.mutate('loan.issue',{'card_id':active,'publisher_name':'Fiktiv aktiv person',
+            'date':today,'initial':True})
         actual=self.request('/api/state',desk)
         expected=self.request('/api/state',self.admin)
         self.assertEqual(actual['dashboard_summary'],expected['dashboard_summary'])
