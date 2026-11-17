@@ -246,26 +246,33 @@ def improve_address_clearance(polygon, ring, address_radii, validate):
         for i,(a,b) in enumerate(edges(vertices)):
             box = bounds((a,b))
             shift = 0
+            nearest = None
             for index,(point,radius) in enumerate(address_radii):
                 if near_bounds(box,(*point,*point),radius):
                     miss = radius - point_segment_distance(point,a,b)
                     if miss > 0:
                         misses[index] = max(misses[index],miss)
-                        shift = max(shift,miss)
+                        if miss > shift:
+                            shift,nearest = miss,point
             if shift > .05:
-                affected.append((shift,i))
+                affected.append((shift,i,nearest))
         return misses, sorted(affected,reverse=True)
 
     misses, affected = edge_deficits(ring)
     for _ in range(8):
-        for shift,i in affected[:12]:
+        for shift,i,nearest in affected[:12]:
             j = (i+1)%len(ring)
             a,b = ring[i],ring[j]
             length = math.dist(a,b)
             dx,dy = direction*(a[1]-b[1])/length, direction*(b[0]-a[0])/length
-            for amount in (shift+.08,shift/2):
+            # Moving both ends can exclude a selected house at the opposite
+            # end of a short edge. If that fails, taper only the near corner.
+            corner = i if math.dist(nearest,a) <= math.dist(nearest,b) else j
+            trials = ((shift+.08,(i,j)), (shift/2,(i,j)),
+                      (shift+.08,(corner,)), (shift/2,(corner,)))
+            for amount,vertices in trials:
                 moved = list(ring)
-                for k in (i,j):
+                for k in vertices:
                     x,y = moved[k]
                     moved[k] = (x+amount*dx,y+amount*dy)
                 adjusted, next_edges = edge_deficits(moved)
