@@ -14,6 +14,8 @@ READ_ALL=frozenset(('cards.view','publishers.view','loans.view','ib.view','notes
 WRITE_ALL=frozenset(('cards.edit','publishers.manage','loans.manage','ib.edit','notes.edit',
                      'history.edit','geo.edit','settings.manage'))
 
+HISTORY_IMPORT_PERMISSIONS=('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','publishers.view','publishers.manage')
+
 GET={
  '/api/state':(), '/api/profiles/guide':(), '/api/profiles/session':(), '/api/profiles/conflicts':(),
  '/api/profiles/admin':('users.manage',), '/api/profiles/online':('presence.view',),
@@ -33,6 +35,7 @@ GET={
  '/api/setup/card-template.xlsx':('cards.edit',), '/api/setup/card-template.csv':('cards.edit',),
  '/api/setup/publisher-template.csv':('publishers.view','publishers.manage'),
  '/api/setup/publisher-template.xlsx':('publishers.view','publishers.manage'),
+ '/api/setup/history-template.xlsx':HISTORY_IMPORT_PERMISSIONS,
  '/api/setup/ib-template.csv':('ib.edit',),
  '/api/setup/ib-template.xlsx':('ib.edit',),
  '/api/photo/status':('ib.view','ib.edit'), '/api/photo/job':('ib.view','ib.edit'),
@@ -94,7 +97,7 @@ GROUPS={
  ('settings.manage','geo.view','geo.edit','connections.manage'):'address.task.configure',
  ('backup.export',):'backup.record backup.snooze',
  ('cards.view','cards.edit','geo.view'):'setup.card-import.inspect setup.card-import.preview setup.card-import.apply',
- ('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','publishers.view','publishers.manage'):'setup.history-import.preview setup.history-import.apply',
+ HISTORY_IMPORT_PERMISSIONS:'setup.history-import.preview setup.history-import.apply',
 }
 ACTIONS={action:frozenset(rights) for rights,actions in GROUPS.items() for action in actions.split()}
 CASCADE=frozenset(('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','ib.view','ib.edit','notes.view','notes.edit','geo.view','geo.edit'))

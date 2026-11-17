@@ -81,6 +81,26 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_history_excel_template_uses_history_import_permissions(self):
+        path = '/api/setup/history-template.xlsx'
+        rights = ['cards.view', 'cards.edit', 'loans.view', 'loans.manage',
+                  'history.view', 'history.edit', 'publishers.view', 'publishers.manage']
+        reader, role, _ = self.reader(rights[:-1])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.request(path, session=reader)
+        self.assertEqual(denied.exception.code, 403)
+
+        self.value('/api/profiles/roles/save', {
+            'id': role, 'name': 'Fiktiv rolle', 'permissions': rights,
+        }, self.admin)
+        from history_xlsx import template_xlsx
+        for session in (reader, self.admin):
+            with self.subTest(admin=session is self.admin), self.request(path, session=session) as result:
+                self.assertEqual(result.headers.get_content_type(),
+                                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                self.assertIn('LTM-historik-5-perioder.xlsx', result.headers['Content-Disposition'])
+                self.assertEqual(result.read(), template_xlsx())
+
     def create_fictional_ib_review(self):
         from datetime import date
         day=date.today().isoformat()
