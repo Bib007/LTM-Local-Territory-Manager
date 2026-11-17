@@ -20,9 +20,12 @@ def text(value,limit=120,required=False):
 def address_key(a):return tuple(str(a.get(k,'')).casefold().strip() for k in ('postcode','road','number','floor','door'))
 
 class GeoStore(MainBoundaryStore):
-    def geo_info(self):
+    def geo_info(self, rows=None):
         if self._info_cache is not None:return self._info_cache
-        rows=self.all('geo');self._info_cache={'addresses':sum(r.get('entity')=='address' for r in rows),'buildings':sum(r.get('entity')=='building' for r in rows),
+        # geo_state already decoded this immutable snapshot under the Store lock.
+        # Reusing it avoids a second full SQLite read/JSON decode on cold loads.
+        if rows is None:rows=self.all('geo')
+        self._info_cache={'addresses':sum(r.get('entity')=='address' for r in rows),'buildings':sum(r.get('entity')=='building' for r in rows),
             'roads':sum(r.get('entity')=='road' for r in rows),'dividers':sum(r.get('entity')=='divider' for r in rows),'changes':sum(r.get('entity')=='address_change' for r in rows),'downloads':[r for r in rows if r.get('entity')=='download'],
             'postcodes':[r for r in rows if r.get('entity')=='postcode_download'],
             'token_custom':bool((self.get('geo','config') or {}).get('token'))}
@@ -51,7 +54,7 @@ class GeoStore(MainBoundaryStore):
                         if w<=x<=e and s<=y<=n and point_in_polygon([x,y],poly):item['within'].append({'card_id':c['id'],'card_number':c['number']})
                 statuses[a['id']]=item
             self._geo_cache={'addresses':addresses,'status':statuses,'buildings':[r for r in rows if r.get('entity')=='building'],
-                'roads':[r for r in rows if r.get('entity')=='road'],'dividers':[r for r in rows if r.get('entity')=='divider'],'info':self.geo_info(),'main_boundary':self.main_boundary(),'main_boundary_download':self.get('geo','main-boundary-download'),
+                'roads':[r for r in rows if r.get('entity')=='road'],'dividers':[r for r in rows if r.get('entity')=='divider'],'info':self.geo_info(rows),'main_boundary':self.main_boundary(),'main_boundary_download':self.get('geo','main-boundary-download'),
                 'changes':[r for r in rows if r.get('entity')=='address_change']}
             return self._geo_cache
     def geo_mutate(self,action,data):
