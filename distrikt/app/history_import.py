@@ -50,12 +50,31 @@ def day(value):
     d,m,y=map(int,match.groups());y=y+2000 if y<100 else y
     return date(y,m,d).isoformat()
 
-def preview(store,data):
-    text=source(data);first=text.split('\n',1)[0];delimiter=';' if first.count(';')>=first.count(',') else ','
+def input_records(data):
+    """Normalize legacy CSV/S-13 and wide Excel/CSV without guessing completion."""
+    name=str(data.get('name','')).lower()
+    if name.endswith('.xlsx'):
+        from history_xlsx import xlsx_records,wide_records,WIDE_HEADERS
+        lines=xlsx_records(data)
+        return wide_records(lines),csv_text([[str(v) for v in cells] for _,cells in lines],WIDE_HEADERS)
+    text=source(data)
+    first=text.split('\n',1)[0];delimiter=';' if first.count(';')>=first.count(',') else ','
     try:raw=list(csv.reader(io.StringIO(text),delimiter=delimiter,strict=True))
     except csv.Error:raise ValueError('CSV-filen kunne ikke læses. Brug kortnummer og dato som kolonner.') from None
-    if not raw or [norm(v) for v in raw[0]] not in (HEADERS,['card','date'],FULL_HEADERS,['card','date','publisher','assigned','returned']):raise ValueError('Brug kortnummer og dato, eventuelt med forkynder, udleveret og afleveret som kolonner.')
+    if not raw:raise ValueError('Importfilen er tom.')
+    from history_xlsx import WIDE_HEADERS,wide_records
+    headers=[norm(v) for v in raw[0]]
+    if headers==WIDE_HEADERS:
+        return wide_records(list(enumerate(raw[1:],2))),text
+    if headers not in (HEADERS,['card','date'],FULL_HEADERS,['card','date','publisher','assigned','returned']):
+        raise ValueError('Brug kortnummer og dato, S-13-kolonnerne eller skabelonens fem historikperioder.')
     if len(raw)>10001:raise ValueError('Importér højst 10.000 gennemgange ad gangen.')
+    return [{'line':line,'values':values,'width':len(raw[0]),'completed':True}
+            for line,values in enumerate(raw[1:],2)],text
+
+
+def preview(store,data):
+    records,text=input_records(data)
     cards={}
     for card in store.all('cards'):cards.setdefault(norm(card['number']),[]).append(card)
     entries=store.all('completions');known={(e['card_id'],e['date']) for e in entries}
@@ -67,11 +86,16 @@ def preview(store,data):
     def parsed_day(value):
         try:return day(value)
         except (ValueError,TypeError):raise ValueError('Datoen er ugyldig.') from None
-    for line,values in enumerate(raw[1:],2):
+    for record in records:
+        line,values=record['line'],record['values']
         if not any(v.strip() for v in values):continue
-        row={'line':line,'number':values[0].strip()[:100],'date':values[1].strip()[:100] if len(values)>1 else '', 'status':'error','message':''}
+        row={'line':line,'number':values[0].strip()[:100],
+             'date':values[1].strip()[:100] if len(values)>1 else '',
+             'status':'error','message':''}
+        if record.get('period'):row['period']=record['period']
         try:
-            if len(values)!=len(raw[0]) or any(len(v)>100 for v in values):raise ValueError('Rækkens felter skal følge skabelonen og være højst 100 tegn.')
+            if record.get('error'):raise ValueError(record['error'])
+            if len(values)!=record.get('width',5) or any(len(v)>100 for v in values):raise ValueError('Rækkens felter skal følge skabelonen og være højst 100 tegn.')
             values=[v.strip() for v in values]+(['','',''] if len(values)==2 else [])
             matches=cards.get(norm(values[0]),[])
             if len(matches)!=1:raise ValueError('Kortnummeret mangler eller er ikke entydigt. Opret eller ret kortet først.')
@@ -79,7 +103,7 @@ def preview(store,data):
             if any(values[2:]):
                 if values[1]:raise ValueError('Brug enten dato for en løs gennemgang eller felterne forkynder, udleveret og afleveret.')
                 row.update(kind='loan',publisher=values[2],assigned=values[3],returned=values[4])
-                allocations.add(row,card,values[2],parsed_day(values[3]) if values[3] else None,parsed_day(values[4]) if values[4] else None)
+                allocations.add(row,card,values[2],parsed_day(values[3]) if values[3] else None,parsed_day(values[4]) if values[4] else None,completed=record.get('completed',True))
                 rows.append(row);continue
             stamp=parsed_day(values[1]);row.update(date=stamp,kind='completion')
             key=(card['id'],stamp)

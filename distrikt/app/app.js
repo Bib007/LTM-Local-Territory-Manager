@@ -2,6 +2,8 @@
 const token=document.querySelector('meta[name="app-token"]').content;
 let state=null,page='Forside',selected='',area='',status='Alle',query='',view='Liste',loanTab='Aktive',year=serviceYear(new Date().toISOString().slice(0,10)),reportTab='Rapport';
 let deskTab='Udlever',cardTab='Kort';
+// Dedicated picker selection is independent from inventory bulk selections.
+let folderCardPickerSelected=new Set();
 // Territory sorting is independent of search, area and placement filters.
 let territorySort='number';
 // Mutation acknowledgements can advance state.revision before its records are refreshed.
@@ -215,30 +217,28 @@ function details(c){
 }
 function folderPlan(){const cfg=state.settings,min=cfg.folder_minimum,eligible=c=>!loanFor(c.id)&&!(cfg.require_revision&&(c.front_revision||c.back_revision)),inside=state.cards.filter(c=>c.in_folder&&eligible(c)),available=state.cards.filter(c=>!c.in_folder&&eligible(c)).sort((a,b)=>age(b)-age(a)||cmp(a.number,b.number)),typed=state.cards.filter(c=>c.kind!=='Ukendt'),rural=cfg.rural_mode==='manual'?cfg.rural_minimum:typed.length?Math.round(min*typed.filter(c=>c.kind==='Land').length/typed.length):0,urban=min-rural,need=Math.max(0,min-inside.length),picked=[],pick=(predicate,n)=>{for(const c of available.filter(predicate)){if(n<=0)break;if(!picked.includes(c)){picked.push(c);n--;}}};pick(c=>c.kind==='Land',Math.min(need,Math.max(0,rural-inside.filter(c=>c.kind==='Land').length)));pick(c=>c.kind==='By',Math.min(need-picked.length,Math.max(0,urban-inside.filter(c=>c.kind==='By').length)));pick(()=>true,need-picked.length);return {need,picked,inside,rural,urban,typed:typed.length,shortfall:Math.max(0,need-picked.length)};}
 
- // Reuse existing cards and folder.set, never create cards from the daily-use view.
+ // Select existing cards only. Selection survives searches and is isolated from the inventory list.
  function folderCardPickerRows(search=''){
   const needle=search.trim().toLocaleLowerCase('da-DK');
   const matches=state.cards.filter(c=>[c.number,c.name,areaName(c.area_id),c.kind].join(' ').toLocaleLowerCase('da-DK').includes(needle)).sort((a,b)=>cmp(a.number,b.number));
   const shown=matches.slice(0,75);
-  return `<div class="tablewrap"><table><thead><tr><th>${ui('Kort')}</th><th>${ui('Område')}</th><th>${ui('Placering')}</th><th>${ui('Handling')}</th></tr></thead><tbody>${shown.map(c=>{
-   const issued=!!loanFor(c.id),already=!!c.in_folder,blocked=issued||already;
-   const placement=issued?'Udleveret':already?'Allerede i mappen':'Kort i kassen';
-   return `<tr><td><b>${esc(c.number)}</b>${c.name?`<small> · ${esc(c.name)}</small>`:''}</td><td>${esc(areaName(c.area_id))}</td><td>${ui(placement)}</td><td><button type="button" data-action="folder-card-choice" data-id="${esc(c.id)}" ${blocked?'disabled':''}>${ui(blocked?'Kan ikke vælges':'Vælg kort')}</button></td></tr>`;
+  return `<div class="tablewrap"><table><thead><tr><th>${ui('Vælg')}</th><th>${ui('Kort')}</th><th>${ui('Område')}</th><th>${ui('Placering')}</th></tr></thead><tbody>${shown.map(c=>{
+   const reason=AdminUI.folderReason(c),placement=loanFor(c.id)?'Udleveret':c.in_folder?'Allerede i mappen':'Kort i kassen';
+   return `<tr><td><input type="checkbox" data-folder-card-id="${esc(c.id)}" ${I18n.attribute('aria','Vælg kort {number}',{number:c.number})} ${folderCardPickerSelected.has(c.id)?'checked':''} ${reason?'disabled':''}></td><td><b>${esc(c.number)}</b>${c.name?`<small> · ${esc(c.name)}</small>`:''}</td><td>${esc(areaName(c.area_id))}</td><td>${ui(placement)}</td></tr>`;
   }).join('')||`<tr><td colspan="4">${ui('Ingen eksisterende kort matcher søgningen.')}</td></tr>`}</tbody></table></div>${matches.length>shown.length?`<p class="hint">${ui('Viser {shown} af {total} kort. Søg mere præcist.',{shown:shown.length,total:matches.length})}</p>`:''}`;
+ }
+ function folderCardPickerFooter(){
+  const chosen=[...folderCardPickerSelected].map(id=>card(id)).filter(Boolean);
+  const movable=chosen.filter(c=>!AdminUI.folderReason(c));
+  const skipped=chosen.length-movable.length;
+  const canMove=typeof ProfilesUI==='undefined'||ProfilesUI.canAction('folder.set');
+  return `<p class="hint" role="status">${ui('{count} kort valgt på tværs af filtre',{count:chosen.length})}${chosen.length?': '+chosen.map(c=>esc(c.number)+(AdminUI.folderReason(c)?' ('+esc(I18n.text(AdminUI.folderReason(c)))+')':'')).join(' · '):''}</p>${movable.length>500?`<p class="formError">${ui('Vælg højst 500 kort ad gangen.')}</p>`:''}<div class="actions"><button type="button" class="primary" data-action="folder-card-preview" ${movable.length&&movable.length<=500&&canMove?'':'disabled'}>${ui('Læg {count} i mappen',{count:movable.length})}${skipped?' · '+ui('{count} springes over',{count:skipped}):''}</button><button type="button" data-action="folder-card-clear" ${chosen.length?'':'disabled'}>${ui('Fravælg alle')}</button><button type="button" data-action="close">${ui('Annuller')}</button></div>`;
  }
  function chooseFolderCard(){
   if(page!=='Udlevering')return;
   if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set')){toast(I18n.text('Din rolle giver ikke adgang til denne handling.'));return;}
-  openDialog(`<h2>${ui('Læg specifikt kort i mappen')}</h2><p class="hint">${ui('Vælg et eksisterende kort fra kassen. Kortets historik og udleveringer ændres ikke.')}</p><label for="folderCardSearch">${ui('Søg kortnummer, navn eller område')}</label><input id="folderCardSearch" type="search" autocomplete="off" ${I18n.attribute('placeholder','Søg blandt eksisterende kort')}><div id="folderCardMatches">${folderCardPickerRows()}</div><div class="actions"><button type="button" data-action="close">${ui('Annuller')}</button></div>`,I18n.language());
- }
- function confirmFolderCard(id){
-  if(page!=='Udlevering')return;
-  if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set')){toast(I18n.text('Din rolle giver ikke adgang til denne handling.'));return;}
-  const c=card(id);
-  if(!c){toast(I18n.text('Kortet findes ikke længere.'));chooseFolderCard();return;}
-  if(loanFor(id)){toast(I18n.text('Et udlånt kort kan ikke lægges i mappen.'));chooseFolderCard();return;}
-  if(c.in_folder){toast(I18n.text('Kortet er allerede i mappen.'));chooseFolderCard();return;}
-  openDialog(`<h2>${ui('Læg specifikt kort i mappen')}</h2><p>${ui('Læg kort {number} i mappen?',{number:esc(c.number)})}</p><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><div class="actions"><button class="primary" data-action="folder-card-confirm" data-id="${esc(c.id)}">${ui('Læg i mappen')}</button><button data-action="folder-card-picker">${ui('Vælg et andet kort')}</button><button data-action="close">${ui('Annuller')}</button></div>`,I18n.language());
+  folderCardPickerSelected=new Set();
+  openDialog(`<h2>${ui('Læg specifikt kort i mappen')}</h2><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><label for="folderCardSearch">${ui('Søg kortnummer, navn eller område')}</label><input id="folderCardSearch" type="search" autocomplete="off" ${I18n.attribute('placeholder','Søg blandt eksisterende kort')}><div id="folderCardMatches">${folderCardPickerRows()}</div><div id="folderCardFooter">${folderCardPickerFooter()}</div>`,I18n.language());
  }
 
 function deskReturns(){const q=query.toLowerCase(),loans=state.loans.filter(l=>!l.returned).filter(l=>[card(l.card_id)?.number,publisherName(l.publisher_id),areaName(card(l.card_id)?.area_id)].join(' ').toLowerCase().includes(q)).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number));return `<section class="panel"><div class="tablewrap"><table><thead><tr><th>${ui('Kort')}</th><th>${ui('Forkynder')}</th><th>${ui('Udleveret')}</th><th></th></tr></thead><tbody>${loans.map(l=>`<tr><td><button class="link" data-action="detail" data-id="${l.card_id}">${ui('Kort')} ${esc(card(l.card_id)?.number)}</button></td><td>${esc(publisherName(l.publisher_id))}</td><td>${fmt(l.assigned)}</td><td><button class="primary returnAction" data-action="return" data-id="${l.id}">${ui('Aflever til kassen')}</button></td></tr>`).join('')||`<tr><td colspan="4">${ui('Ingen udleverede kort fundet.')}</td></tr>`}</tbody></table></div></section>`;}
@@ -616,7 +616,8 @@ async function backup(chooseLocation=false){
  }finally{backup.busy=false;}
 }
 document.addEventListener('input',e=>{if(e.target.id==='folderCardSearch'){const list=el('folderCardMatches');if(list)list.innerHTML=folderCardPickerRows(e.target.value);}else if(e.target.id==='settingsFolderMinimum'&&e.target.form){e.target.form.dataset.folderTouched='yes';}else if(e.target.id==='search'){query=e.target.value;addressPage=0;const p=e.target.selectionStart;render();el('search')?.focus();el('search')?.setSelectionRange(p,p);}else if(e.target.closest('#cardForm'))scheduleCardSave();});
-document.addEventListener('change',async e=>{try{if(e.target.name==='card_id'&&e.target.form?.id==='issueForm'){el('issueTaskWarning').innerHTML=taskWarning(e.target.value);}else if(e.target.id==='calendarYear'){const chosen=Number(e.target.value);if(Number.isInteger(chosen)&&chosen>=1900&&chosen<=Number(state.today.slice(0,4)))Workspace.calendarYear=chosen;render();}else if(e.target.id==='serviceYear'){year=Number(e.target.value);render();}else if(e.target.id==='addressPostcode'){addressPostcode=e.target.value;addressPage=0;render();}else if(e.target.id==='ibSort'){ibSort=e.target.value;render();}else if(e.target.id==='territorySort'){if(['number','oldest'].includes(e.target.value)){territorySort=e.target.value;render();}}else if(e.target.id==='areaFilter'){area=e.target.value;render();}else if(e.target.id==='statusFilter'){status=e.target.value;render();}else if(e.target.id==='mapCard'){mapCard=e.target.value;mapDraft=[];editMap=false;render();}else if(e.target.id==='printOrientation'){let f=e.target.form,w=f.elements.width,h=f.elements.height,a=Number(w.value),b=Number(h.value);w.value=e.target.value==='portrait'?Math.min(a,b):Math.max(a,b);h.value=e.target.value==='portrait'?Math.max(a,b):Math.min(a,b);}else if(e.target.id==='mapFile'){const fileInput=e.target,origin=page,dialogGeneration=openDialog.generation,file=e.target.files[0];if(!file)return;if(file.size>5*1024*1024)throw Error('Billedet må højst være 5 MB.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});if(page!==origin||openDialog.generation!==dialogGeneration||el('mapFile')!==fileInput||fileInput.files?.[0]!==file||fileInput.isConnected===false)return;openDialog(`<h2>Brug det nye kortbillede?</h2><p><span data-ui="Billedet lagres kun lokalt. Gamle tegnede grænser fjernes, fordi de ikke nødvendigvis passer til det nye billede.">Billedet lagres kun lokalt. Gamle tegnede grænser fjernes, fordi de ikke nødvendigvis passer til det nye billede.</span></p><div class="actions"><button id="confirmMap" class="primary">Brug billedet</button><button data-action="close">Annuller</button></div>`);el('confirmMap').addEventListener('click',async()=>{const generation=openDialog.generation,origin=page;let accepted=false;try{await mutate('map.save',{image:data,name:file.name});accepted=true;await loadMap();if(page===origin&&generation===openDialog.generation)render();}catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);toast(error);}});}else if(e.target.closest('#cardForm'))scheduleCardSave();}catch(e){toast(e);}});
+document.addEventListener('change',async e=>{try{if(e.target.dataset?.folderCardId){const id=e.target.dataset.folderCardId,c=card(id);if(e.target.checked&&c&&!AdminUI.folderReason(c)&&(typeof ProfilesUI==='undefined'||ProfilesUI.canAction('folder.set')))folderCardPickerSelected.add(id);else{folderCardPickerSelected.delete(id);e.target.checked=false;}const footer=el('folderCardFooter');if(footer)footer.innerHTML=folderCardPickerFooter();}else if(e.target.name==='card_id'&&e.target.form?.id==='issueForm'){el('issueTaskWarning').innerHTML=taskWarning(e.target.value);}else if(e.target.id==='reportMapNumbers'){Workspace.reportShowNumbers=e.target.checked;if(ReportMap.tileFailed){const node=el('reportDistrictMap');if(node)node.innerHTML=ReportMap.blankSnapshot();}ReportMap.draw();}
+else if(e.target.id==='calendarYear'){const chosen=Number(e.target.value);if(Number.isInteger(chosen)&&chosen>=1900&&chosen<=Number(state.today.slice(0,4)))Workspace.calendarYear=chosen;render();}else if(e.target.id==='serviceYear'){year=Number(e.target.value);render();}else if(e.target.id==='addressPostcode'){addressPostcode=e.target.value;addressPage=0;render();}else if(e.target.id==='ibSort'){ibSort=e.target.value;render();}else if(e.target.id==='territorySort'){if(['number','oldest'].includes(e.target.value)){territorySort=e.target.value;render();}}else if(e.target.id==='areaFilter'){area=e.target.value;render();}else if(e.target.id==='statusFilter'){status=e.target.value;render();}else if(e.target.id==='mapCard'){mapCard=e.target.value;mapDraft=[];editMap=false;render();}else if(e.target.id==='printOrientation'){let f=e.target.form,w=f.elements.width,h=f.elements.height,a=Number(w.value),b=Number(h.value);w.value=e.target.value==='portrait'?Math.min(a,b):Math.max(a,b);h.value=e.target.value==='portrait'?Math.max(a,b):Math.min(a,b);}else if(e.target.id==='mapFile'){const fileInput=e.target,origin=page,dialogGeneration=openDialog.generation,file=e.target.files[0];if(!file)return;if(file.size>5*1024*1024)throw Error('Billedet må højst være 5 MB.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});if(page!==origin||openDialog.generation!==dialogGeneration||el('mapFile')!==fileInput||fileInput.files?.[0]!==file||fileInput.isConnected===false)return;openDialog(`<h2>Brug det nye kortbillede?</h2><p><span data-ui="Billedet lagres kun lokalt. Gamle tegnede grænser fjernes, fordi de ikke nødvendigvis passer til det nye billede.">Billedet lagres kun lokalt. Gamle tegnede grænser fjernes, fordi de ikke nødvendigvis passer til det nye billede.</span></p><div class="actions"><button id="confirmMap" class="primary">Brug billedet</button><button data-action="close">Annuller</button></div>`);el('confirmMap').addEventListener('click',async()=>{const generation=openDialog.generation,origin=page;let accepted=false;try{await mutate('map.save',{image:data,name:file.name});accepted=true;await loadMap();if(page===origin&&generation===openDialog.generation)render();}catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);toast(error);}});}else if(e.target.closest('#cardForm'))scheduleCardSave();}catch(e){toast(e);}});
 async function loadMap(){const m=await(await api('/api/map')).json();mapImage=m.image||'';}
 document.addEventListener('click',async event=>{const map=event.target.closest('#localMap');if(map&&editMap){const pt=map.createSVGPoint();pt.x=event.clientX;pt.y=event.clientY;const p=pt.matrixTransform(map.getScreenCTM().inverse());mapDraft.push([Math.max(0,Math.min(1000,p.x)),Math.max(0,Math.min(700,p.y))]);render();return;}const target=event.target.closest('[data-action]');if(!target)return;event.preventDefault();const d=target.dataset;try{switch(d.action){
 case 'go':if(d.page==='Opfølgninger'){await Workspace.openFollowups();break;}if(d.page==='Adresser'){if(!GeoUI.loaded)await GeoUI.load();addressPage=0;}if(page==='Kortopsætning'&&d.page!==page&&!GeoUI.canLeave())return;if(d.page!==page){if(GeoUI.whole)GeoUI.polygon=(GeoUI.data.main_boundary?.points||[]).map(p=>p.slice());GeoUI.dirty=false;}await closeRequested();if(el('dialog').open)return;page=d.page;query='';area='';render();break;
@@ -645,14 +646,16 @@ case 'initial-loan':issue('',true);break;
 case 'return':finish(d.id,false);break;
 case 'complete':finish(d.id,true);break;
 case 'folder-card-picker':chooseFolderCard();break;
-case 'folder-card-choice':confirmFolderCard(d.id);break;
-case 'folder-card-confirm':{
- if(page!=='Udlevering'||(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set')))break;
- const chosen=card(d.id);
- if(!chosen||chosen.in_folder||loanFor(d.id)){toast(I18n.text('Kortets placering er ændret. Vælg det igen.'));chooseFolderCard();break;}
- await mutate('folder.set',{ids:[d.id],in_folder:true,expected_in_folder:false},{message:I18n.text('Kortet er lagt i mappen')});
+case 'folder-card-clear':{
+ folderCardPickerSelected.clear();
+ const list=el('folderCardMatches'),footer=el('folderCardFooter');
+ if(list)list.innerHTML=folderCardPickerRows(el('folderCardSearch')?.value||'');
+ if(footer)footer.innerHTML=folderCardPickerFooter();
  break;
 }
+case 'folder-card-preview':
+ if(page==='Udlevering')AdminUI.folderPreview([...folderCardPickerSelected]);
+ break;
 case 'folder':await mutate('folder.set',{ids:[d.id],in_folder:!card(d.id).in_folder},{close:false,message:'Kortets placering gemt'});break;
 case 'folder-selection':AdminUI.folderPreview();break;
 case 'folder-selection-box':{

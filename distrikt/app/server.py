@@ -35,10 +35,11 @@ from ui_errors import UIError,error_payload
 from profile_accounts import ProfileAccounts
 from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
+from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.12.19-beta.30'
+VERSION='1.12.19-beta.31'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -90,6 +91,7 @@ class Server(ThreadingHTTPServer):
         self.sharing=Publications(store)
         self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
         self.runtime_status=RuntimeStatus(self.address_schedule,VERSION,self.beta)
+        self.update_checker=UpdateChecker(VERSION,home_assistant=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1',server_mode=bool(access_host))
 
     def app_state(self,profile_token=None):
         """The same local overview for page reads and confirmed write responses."""
@@ -190,7 +192,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if self.server.beta and '<b>LTM</b>' in html:html=html.replace('<b>LTM</b>','<b>LTM Beta</b>').replace('<body>','<body class="betaChannel">')
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/app.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -207,6 +209,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 return self.send(image,'image/png',headers={'Cross-Origin-Resource-Policy':'same-origin'})
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
             if path.startswith('/api/') and not self.allowed(token=True):return
+            if path=='/api/setup/history-template.xlsx':
+                from history_xlsx import template_xlsx
+                return self.send(template_xlsx(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=LTM-historik-5-perioder.xlsx'})
             if path=='/api/setup/card-template.xlsx':
                 return self.send((APP/'kort-import-skabelon.xlsx').read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=LTM-kort-import-skabelon.xlsx'})
             if path=='/api/setup/card-template.csv':
@@ -231,6 +236,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 return self.send(self.server.app_state(self.profile_token()))
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/runtime/status':return self.send(self.server.runtime_status.status())
+            if path=='/api/update-check':return self.send(self.server.update_checker.check())
             if path=='/api/activity':return self.send({'items':self.server.profiles.authors(self.server.store.activity())})
             if path=='/api/map':
                 with self.server.store.lock:
@@ -302,8 +308,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if self.headers.get('Content-Type','').split(';')[0]!='application/json':raise ValueError('Ugyldigt format.')
                 length=int(self.headers.get('Content-Length',0))
                 if not 0<length<4096:raise ValueError('Ugyldigt login.')
-                data=json.loads(self.rfile.read(length));session=self.server.access.login(data.get('password'),self.client_address[0])
-                return self.send({'ok':True},headers={'Set-Cookie':self.server.access.cookie_name+'='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
+                data=json.loads(self.rfile.read(length));remember=data.get('remember',False)
+                session=self.server.access.login(data.get('password'),self.client_address[0],remember=remember)
+                return self.send({'ok':True},headers={'Set-Cookie':self.server.access.cookie_name+'='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='+('604800' if remember else '43200')})
             except (ValueError,TypeError,AttributeError):return self.send({'error':'Forkert adgangskode eller for mange forsøg. Vent fem minutter efter gentagne forsøg.'},status=401)
         if not self.allowed(token=True):return
         if self.path=='/api/restore/preview':
