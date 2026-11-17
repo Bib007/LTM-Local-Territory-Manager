@@ -15,6 +15,7 @@ from urllib.request import Request, urlopen
 REPOSITORY = 'https://github.com/Bib007/LTM-Local-Territory-Manager'
 RELEASES = REPOSITORY + '/releases'
 FEED = 'https://api.github.com/repos/Bib007/LTM-Local-Territory-Manager/releases?per_page=100'
+LATEST_STABLE = 'https://api.github.com/repos/Bib007/LTM-Local-Territory-Manager/releases/latest'
 VERSION_RE = re.compile(r'^(?:v)?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-beta\.(0|[1-9]\d*))?$')
 
 
@@ -106,9 +107,9 @@ def select_release(releases, installed, track, machine=''):
     }
 
 
-def published_releases():
+def published_releases(beta=False):
     # Fixed HTTPS endpoint; never include cookies, tokens or local application data.
-    request = Request(FEED, headers={
+    request = Request(FEED if beta else LATEST_STABLE, headers={
         'Accept': 'application/vnd.github+json',
         'User-Agent': 'LTM-read-only-release-check',
     })
@@ -118,17 +119,18 @@ def published_releases():
         raw = response.read(8000001)
     if len(raw) > 8000000:
         raise ValueError('Release feed exceeded size limit')
-    return json.loads(raw)
+    payload = json.loads(raw)
+    return payload if beta else [payload]
 
 
 class UpdateChecker:
     def __init__(self, version, *, home_assistant=False, system=None,
-                 machine=None, server_mode=False, fetcher=published_releases,
+                 machine=None, server_mode=False, fetcher=None,
                  clock=time.monotonic):
         self.version = version
         self.track = track_for(home_assistant, system, server_mode)
         self.machine = platform.machine() if machine is None else machine
-        self.fetcher = fetcher
+        self.fetcher = fetcher if fetcher is not None else (lambda: published_releases('-beta.' in version))
         self.clock = clock
         self.until = -1
         self.result = None
