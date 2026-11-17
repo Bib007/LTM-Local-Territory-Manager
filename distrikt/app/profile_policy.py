@@ -23,6 +23,7 @@ GET={
  '/api/geo/suggest':('geo.view',), '/api/map':('cards.view','geo.view'),
  '/api/storage':('settings.manage',), '/api/data-info':('settings.manage',),
  '/api/runtime/status':('settings.manage',),
+ '/api/update-check':(),
  '/task-image.png':('notes.view',),
  '/api/activity':('activity.view',), '/api/address-source/status':('connections.manage',),
  '/api/share/status':('sharing.manage','cards.view'),
