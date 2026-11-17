@@ -26,8 +26,10 @@ def personal_open_task_count(notes, today, user_id):
     No task text or other account's identifiers leave the heartbeat endpoint.
     A weekly task scheduled in the future is not open for action yet.
     """
+    from workflow_store import is_ib_review
     return sum(
         1 for note in notes
+        if not is_ib_review(note)
         if note.get('assignee_id') == user_id
         and user_id is not None
         and not note.get('resolved')

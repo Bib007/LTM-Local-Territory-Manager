@@ -163,6 +163,22 @@ class IBReviewTests(unittest.TestCase):
         self.assertEqual(self.store.state()['notes'],[])
         self.assertFalse(self.reviews()[0]['resolved'])
 
+    def test_review_is_excluded_from_legacy_task_count_and_image_reads(self):
+        import base64
+        from profile_features import personal_open_task_count
+        from task_images import read_image
+        self.return_card()
+        review_id=self.reviews()[0]['id']
+        review=self.store.require('notes',review_id)
+        review.update(assignee_id='fictional-owner',images=[{'id':'fictional-image','name':'Fiktiv.png'}])
+        with self.store.transaction():
+            self.store.put('notes',review)
+            self.store.put('task_images',{'id':'fictional-image','note_id':review_id,
+                                          'png':base64.b64encode(b'fictional bytes').decode()})
+        self.assertEqual(personal_open_task_count(self.store.all('notes'),self.day,'fictional-owner'),0)
+        self.assertIsNone(read_image(self.store,review_id,'fictional-image'))
+        self.assertEqual(self.store.state()['notes'],[])
+
     def test_completion_only_accepts_system_created_ib_review(self):
         fake_note = self.store.mutate('note.save', {
             'card_id': self.card_id, 'text': 'Fiktiv almindelig opgave',
