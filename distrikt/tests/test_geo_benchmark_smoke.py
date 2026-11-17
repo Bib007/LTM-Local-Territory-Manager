@@ -17,6 +17,15 @@ class SyntheticStoreBenchmarkSmoke(unittest.TestCase):
         self.assertGreater(report["dataset"]["geo_json_bytes"], 0)
         self.assertEqual(len(report["small_store_write_plus_refresh"]["repetitions_ms"]), 3)
         self.assertEqual(len(report["cold_geo_state"]["repetitions_ms"]), 3)
+        for kind in ("color_save_phases", "polygon_save_phases"):
+            phases = report[kind]["phases"]
+            for phase in ("sqlite_write", "full_state", "receipt_json",
+                          "receipt_gzip", "cold_geo_state", "geo_json", "geo_gzip"):
+                self.assertEqual(len(phases[phase]["repetitions_ms"]), 3)
+                self.assertGreaterEqual(phases[phase]["median_ms"], 0)
+            sizes = report[kind]["payload"]
+            self.assertLess(sizes["receipt_gzip_bytes"], sizes["receipt_json_bytes"])
+            self.assertLess(sizes["geo_gzip_bytes"], sizes["geo_json_bytes"])
 
 
 if __name__ == "__main__":
