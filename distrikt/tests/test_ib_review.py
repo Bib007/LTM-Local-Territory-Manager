@@ -43,6 +43,10 @@ class IBReviewTests(unittest.TestCase):
     def reviews(self):
         return self.store.state()['ib_reviews']
 
+    def projected(self, user):
+        # The HTTP server supplies this marker before applying profile filtering.
+        return state_for({**self.store.state(), 'beta': True}, user)
+
     def test_yes_creates_only_one_review_and_never_edits_ib(self):
         original_ib = self.store.all('ib')
         original_card = self.store.get('cards', self.card_id)
@@ -131,12 +135,12 @@ class IBReviewTests(unittest.TestCase):
                 'retain': False, 'revise_ib': True}
         mutation(desk, 'loan.finish', data, self.store)
         self.return_card(**data)
-        self.assertEqual(state_for(self.store.state(), desk)['ib_reviews'], [])
+        self.assertEqual(self.projected(desk)['ib_reviews'], [])
         with self.assertRaises(PermissionError):
             mutation(desk, 'ib.review.resolve', {'id': 'ib-review:' + self.loan_id}, self.store)
 
         reader = self.user({'cards.view', 'ib.view'})
-        projection = state_for(self.store.state(), reader)
+        projection = self.projected(reader)
         self.assertEqual(len(projection['ib_reviews']), 1)
         self.assertEqual(projection['notes'], [], 'No private note text leaks to IB readers')
         with self.assertRaises(PermissionError):
@@ -145,8 +149,8 @@ class IBReviewTests(unittest.TestCase):
         editor = self.user({'cards.view', 'ib.view', 'ib.edit'})
         mutation(editor, 'ib.review.resolve', {'id': projection['ib_reviews'][0]['id']}, self.store)
         self.store.mutate('ib.review.resolve', {'id': projection['ib_reviews'][0]['id']})
-        self.assertTrue(state_for(self.store.state(), editor)['ib_reviews'][0]['resolved'])
-        self.assertEqual(state_for(self.store.state(), self.user({'cards.view'}))['ib_reviews'], [])
+        self.assertTrue(self.projected(editor)['ib_reviews'][0]['resolved'])
+        self.assertEqual(self.projected(self.user({'cards.view'}))['ib_reviews'], [])
 
     def test_completion_only_accepts_system_created_ib_review(self):
         fake_note = self.store.mutate('note.save', {
