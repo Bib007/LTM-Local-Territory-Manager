@@ -51,7 +51,7 @@ Der spørges ikke igen, hvem der på forhånd skal have hvilke rettigheder. Admi
 | Udskriftsvisningen | Ejerens godkendelse gælder; fysisk papir må ikke kaldes prøvet |
 | Brugere/roller/rettigheder | Administratorstyring er besluttet; ingen ny forhåndsliste over personer |
 | W56-format | Separat krypteret fil med selvvalgt adgangskode er besluttet |
-| W84/W92 | Privat VPN-huskenote / automatisk Tally-version droppet; ingen appopgave eller ejersvar |
+| W92 | Automatisk Tally-version droppet; ingen appopgave eller ejersvar |
 | W28 · Codex Security | Intet ejersvar kræves nu. Codex undersøger selv værktøjsadgangen; en konkret konto-/adgangshandling skal først beskrives, hvis den faktisk bliver nødvendig. |
 
 ## Dækning og vedligeholdelse
