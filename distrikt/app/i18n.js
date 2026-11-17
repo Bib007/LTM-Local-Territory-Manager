@@ -3,6 +3,11 @@
 const I18n={
  current:'en',
  english:{
+  "Vælg en IB-opfølgning fra listen.":"Select a DNC follow-up from the list.",
+  "IB-opfølgningen er allerede afsluttet. Opdater oversigten.":"This DNC follow-up is already complete. Refresh the list.",
+  "Vælg Ja eller Nej til IB-revision.":"Choose Yes or No for DNC revision.",
+  "IB-opfølgning kan kun oprettes ved indlevering.":"A DNC follow-up can only be created when returning a territory.",
+  "Revidér IB på det fysiske distriktskort.":"Review DNC on the physical territory card.",
   "Afvis alle adresser uden for distriktsgrænsen":"Reject all addresses outside the territory boundary",
   "Afvis adresser uden for distriktsgrænsen":"Reject addresses outside the territory boundary",
   "{count} adresseændringer ligger sikkert uden for den gemte samlede distriktsgrænse.":"{count} address changes are clearly outside the saved overall territory boundary.",
