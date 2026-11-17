@@ -305,8 +305,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if self.headers.get('Content-Type','').split(';')[0]!='application/json':raise ValueError('Ugyldigt format.')
                 length=int(self.headers.get('Content-Length',0))
                 if not 0<length<4096:raise ValueError('Ugyldigt login.')
-                data=json.loads(self.rfile.read(length));session=self.server.access.login(data.get('password'),self.client_address[0])
-                return self.send({'ok':True},headers={'Set-Cookie':self.server.access.cookie_name+'='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
+                data=json.loads(self.rfile.read(length));remember=data.get('remember',False)
+                session=self.server.access.login(data.get('password'),self.client_address[0],remember=remember)
+                return self.send({'ok':True},headers={'Set-Cookie':self.server.access.cookie_name+'='+session+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='+('604800' if remember else '43200')})
             except (ValueError,TypeError,AttributeError):return self.send({'error':'Forkert adgangskode eller for mange forsøg. Vent fem minutter efter gentagne forsøg.'},status=401)
         if not self.allowed(token=True):return
         if self.path=='/api/restore/preview':
