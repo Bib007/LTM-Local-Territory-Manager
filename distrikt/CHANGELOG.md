@@ -2,6 +2,14 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.31 · 2026-11-17
+
+- **Historik:** Excel-skabelon med fem ud- og indleveringsperioder pr. kort og særskilt markering af gennemgang.
+- **Daglig brug:** Vælg flere kort til mappen, og se forsidens summer med ind- og udleveringsrollen.
+- **Rapport og DAR:** Vis eller skjul distriktsnumre i rapportkort og print. DAR kan øge afstanden til fravalgte huse omkring korte kanter.
+- **Ydelse:** Genbrug samme geodataaflæsning, når serveren opbygger et koldt kortsvar.
+- **Login og opdateringer:** Vælg at forblive logget på i op til syv dage, og få en besked om en nyere version i den samme kanal.
+
 ## 1.12.19-beta.30 · 2026-11-17
 
 - **Korteditor:** Tegner først adressepunkter, når kortudsnittet er tilpasset. Øvrige adresser vises fortsat ved panorering og zoom.

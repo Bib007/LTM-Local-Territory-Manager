@@ -2,6 +2,14 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.31 · 2026-11-17
+
+- **History:** An Excel template supports five assignment and return periods per card, with explicit completion marking.
+- **Daily desk:** Move several cards to the carry folder and view aggregate home statistics with the restricted desk role.
+- **Reports and DAR:** Show or hide territory numbers in report maps and printouts. DAR can improve clearance from excluded houses around short edges.
+- **Performance:** Reuse a single geographic data read when building a cold map response.
+- **Sign-in and updates:** Opt to stay signed in for up to seven days and see when a newer version is available in the same channel.
+
 ## 1.12.19-beta.30 · 2026-11-17
 
 - **Map editor:** Draws address markers after fitting the initial viewport. Other addresses remain visible when panning and zooming.
