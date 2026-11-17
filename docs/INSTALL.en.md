@@ -30,7 +30,7 @@ The app binds its own port, normally **8787**, with its own password. Access is 
 
 The benefit of the HA installation is that it can keep running at home while you access the same up-to-date data from your phone, iPad or computer.
 
-1. Set up a VPN server on **your own router** (for example your existing UniFi VPN), and install the corresponding VPN profile/app on the device.
+1. Set up a VPN server on **your own router** (if supported), and install the corresponding VPN profile/app on the device.
 2. Allow that VPN connection to reach the private LAN/VLAN containing the HA machine and TCP port 8787. A VPN that only changes internet location is not a connection to your home network.
 3. Away from home, turn on that VPN and open the **same private IP address** used at home: `http://YOUR_PRIVATE_IP:8787`.
 4. Sign in using LTM's own password. Use the mobile interface with the same records as at home; do not import a second database onto the phone.

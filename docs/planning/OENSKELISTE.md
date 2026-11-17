@@ -234,7 +234,7 @@ Ejerprioritet, fuld tekst: **Du bestemmer** (rettet af ejeren fra “Du bestemme
 
 **LTM vælger prioritet 1, efter den igangværende profilbeta og før næste stabile.** Fejlmelding til W73: det lokale referencebillede viser “Venter og prøver igen · hver 30. dag kl. 02:00 (serverens lokale tid)” og bevarede færdige udsnit. Billedet holdes i Google-dokumentets Bilag/lokalt; ingen privat fil offentliggøres. Koden udskyder i øjeblikket efter hver afbrudt delkørsel med mindst 15 minutter og stigende ventetid. Undersøg årsagen og indfør hurtige, begrænsede genforsøg med bevaret fremdrift; gentagne fejl, nøglefejl og reelt pres skal stadig give passende pause og forståelig status. En samlet kontrol må godt bruge op til 2–3 timer; ingen ufuldstændig hentning må tolkes som fjernede adresser, og ændringer kræver fortsat konkret godkendelse. Ingen rigtig API-nøgle eller overbelastning bruges i offentlige prøver. Registreret og undersøgt, ikke rettet eller frigivet. Den specifikke senere funktionsprøve knyttes til nr. 19 i svartabellen; ingen gentagelse af den generelle HA-/API-prøve.
 
-**94/111 afsluttet eller afklaret, 17 åbne, cirka 85 %** efter W109, ejerens afvisning af W67, den nye fejlmelding W111 og frigivelsen af W83 i verificeret beta.76. W106–W108, W110 og W111 skal med før næste stabile; W65 er fortsat åben til stabilslutkontrol. Beta.76 med profiler er verificeret udgivet fra `65ee595170b413e03186e0427447ac4c15fc99c8`. W85/OCR og W16 er på pause, W92 droppet, W84 privat. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
+**94/111 afsluttet eller afklaret, 17 åbne, cirka 85 %** efter W109, ejerens afvisning af W67, den nye fejlmelding W111 og frigivelsen af W83 i verificeret beta.76. W106–W108, W110 og W111 skal med før næste stabile; W65 er fortsat åben til stabilslutkontrol. Beta.76 med profiler er verificeret udgivet fra `65ee595170b413e03186e0427447ac4c15fc99c8`. W85/OCR og W16 er på pause, W92 droppet. Ingen ny generel HA-, Drive- eller gendannelsesprøve bestilles.
 
 ## Historik · beta.75 udgivet · 30.10.2026
 
@@ -371,7 +371,7 @@ W102 er afsluttet: Datafordeleren administreres under Indstillinger → Forbinde
 
 Validering: 488 Python-prøver (én forventet overspringning), hele JavaScript-suiten, 20 pakkeprøver og faktisk arkivstart består. Lokale browserprøver dækker sletning på samme side uden ekstra oversigts-/geodatakald, nøgleformular/genvej og tomt nøglefelt uden ekstra validering, sprog, mobil/desktop, korteditor, opstartsguide, login i begge temaer, natlig adressekontrol og demo. En ekstra virkelig HTTP-/browserprøve mod en midlertidig opdigtet installation gennemfører både permanent sletning og noteoprettelse fra svarenes oversigter uden menuskift, genindlæsning eller eksterne kald. CI på den præcise udgivelsescommit dækker også WebKit, Windows, Mac, HA og sikkerhed. Kandidatkontrollen fangede henvisninger til den gamle formularplacering: kortprøven blev opdateret, og opstartsguidens rigtige genvej blev flyttet og prøvet før udgivelse. De tidligere kandidater blev ikke udgivet.
 
-Ejerafklaring: W92 om versionsnummer i hjemmesidens feedbackformular er udgået. W84 er en privat iPhone/VPN-huskenote, ikke en appfunktion. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt og skal ikke afklares igen. Samtidighed og eventuelle konfliktvalg behandles samlet med profiler. Den generelle synkroniseringsafvisning forbliver pauset; grenoprydning er fortsat udsat.
+Ejerafklaring: W92 om versionsnummer i hjemmesidens feedbackformular er udgået. W65: Adminpanel til brugere, egne roller og rettigheder er allerede aftalt og skal ikke afklares igen. Samtidighed og eventuelle konfliktvalg behandles samlet med profiler. Den generelle synkroniseringsafvisning forbliver pauset; grenoprydning er fortsat udsat.
 
 Fremdrift efter levering og tre nye ønsker: 87/103 afsluttet/afklaret, 16 åbne, cirka 84 %. W93/W102 er afsluttet. W101 er undersøgt og forbliver åben til valg af adfærd. W103 om overlappende kortgrænser er modtaget under udgivelseskontrollen og planlagt til næste runde; W85/foto-OCR og IB-billeder er fortsat åbne. Den aktuelle oversigt går foran historiske kandidatstatusser nedenfor.
 
@@ -399,7 +399,7 @@ Beta.68 samler W98 (lyst/mørkt/følg enhed, lokal browserpræference uden serve
 
 W27: officielle DAR-/overgangssider er genkontrolleret 24.10.2026; fristen er fortsat 15.01.2027. Ejeren har allerede bekræftet fungerende HA-adressehentning. De aktive vejledninger på dansk/engelsk fjerner historiske afsnit, der stadig krævede den generelle afprøvning, og beskriver aktuelle menuer, aktivitet/antal, genoptagelse og Opfølgninger. Det er dokumentationsgennemgang, ikke et nyt opslag med ejerens nøgle eller ny bekræftelse af et bestemt geografisk område.
 
-W85/foto-OCR kræver fortsat særskilt arbejde; ingen cloud-OCR er indført. W92 er udgået efter ejerens valg; W84 er flyttet til privat huskenote. W100/grenoprydning forbliver udsat. Aktuelt 85/102 afsluttet/afklaret, 17 åbne efter to nye ønsker.
+W85/foto-OCR kræver fortsat særskilt arbejde; ingen cloud-OCR er indført. W92 er udgået efter ejerens valg. W100/grenoprydning forbliver udsat. Aktuelt 85/102 afsluttet/afklaret, 17 åbne efter to nye ønsker.
 
 Beta.67 er verificeret udgivet fra `6840b6aa16ce160a3fcc9b69d01f6e8aad005b27`, træ `d89cd8a237058f6fd081cb45fa46941dfa040a61`. HA beta release 40070456961, Checks 40070456935 og Platformskontrol 40070456898 er alle completed/success. Den offentlige HA-pakke matcher den lokale SHA256 `a4838037231b09391ee91fbce168ae241077821cb92ed4458c8cd7e45d8af24d` og har 1.187.624 bytes. Betakanalen viser 1.12.2-beta.67. Stabil er fortsat 1.12.1. Filkøen er leveret; W85 forbliver åben for fotos/OCR og IB-billedkø. [Udgivelsen](https://github.com/Bib007/LTM-Local-Territory-Manager/releases/tag/v1.12.2-beta.67).
 
@@ -426,7 +426,7 @@ W99 er afsluttet: Google-planens øverste oversigt viser konkrete åbne opgaver.
 | W103 · Overlappende distriktskortgrænser | Næste runde: konkret advarsel i Opfølgninger uden automatiske grænseændringer |
 | W85 · Kort/IB fra billeder og mange filer | Deltrin udgivet i beta.67: kø til Excel/CSV; foto/OCR/IB-billedkø fortsat åbent |
 | W101 · QR-adgang og udløb | Undersøgt i QR-ADGANG.md; valg af adfærd udestår, ingen ny deling indført |
-| W74 · Egen hosting | Planlagt undersøgelse efter stabil; W84 er privat huskenote uden for appkøen |
+| W74 · Egen hosting | Planlagt undersøgelse efter stabil |
 | W65/W83 · Adminpanel, rettigheder og første profilguide | Adminpanel til brugere og egne roller er aftalt; samtidighed behandles samlet med profiler. Generel synkroniseringsafvisning forbliver pauset |
 | W06/W08/W13/W28/W56/W58/W61/W67 | Separate sikkerheds-, rapport-, sprog- og ejerafklaringer; ingen automatisk lukning |
 | W16 · Vejnet/autokort | På pause |
@@ -481,7 +481,6 @@ Ejeren har bestilt udgivelse og bedt om, at ADS-planens relevante punkter gennem
 | Nr. | Ønske | Afgrænsning |
 | --- | --- | --- |
 | W83 | Startguide ved første login med en ny profil | Hører sammen med fremtidige profiler/flerbrugerønsker i W65. Vis en relevant introduktion, når en ny profil bruges første gang. Registreret, ikke implementeret. |
-| W84 | Privat iPhone/VPN-huskenote | Afklaret 24.10.2026: ikke en appfunktion eller åben udviklingsopgave. Huskenoten bliver i ejerens private plan. |
 | W85 | Opret distriktskort fra foto af S-12 og IB-bagside | Undersøg lokal tekstgenkendelse uden ekstern AI som førstevalg, flere bagsidelayouts, kortoprettelse og match mod eksisterende adresser. Manglende adresser markeres til gennemgang under adresseændringer. Undersøg afsluttende grænsetegning og masseupload af en mappe/flere billeder med front og bagside i kø, så mange kort kan indlæses samlet. Ejeren ønsker dette tidligt efter stabil udgivelse. Registreret, ikke implementeret. |
 | W86 | Adressehentning opdelt i mindre bidder ved anmodningsgrænsen | Ejeren ser “Udsnit 2: DAR-opslaget kræver for mange anmodninger. Vælg et mindre område.” Undersøg automatisk opdeling med bevaret fremdrift, pause/genforsøg og tydelig ufuldstændighed. Må ikke fjerne grænser eller fejlagtigt godkende ufuldstændige data. Registreret til efter stabil udgivelse, ikke rettet nu. |
 
