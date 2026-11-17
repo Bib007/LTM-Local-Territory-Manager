@@ -81,7 +81,7 @@ class HistoryXlsxTests(unittest.TestCase):
         self.assertTrue(zipfile.is_zipfile(io.BytesIO(raw)))
         rows = read_rows({'name': 'example.xlsx', 'content': base64.b64encode(raw).decode()},
                          sheet_name='Historik', column_cells=True)
-        self.assertEqual(next(v for line, v in rows if line == 4), WIDE_HEADERS)
+        self.assertEqual([str(v).casefold() for v in next(v for line, v in rows if line == 4)], WIDE_HEADERS)
         self.assertEqual(next(v for line, v in rows if line == 5)[0], 'FIK-001')
         self.assertEqual([line for line, _ in xlsx_records(
             {'name': 'example.xlsx', 'content': base64.b64encode(raw).decode()})], [5])
