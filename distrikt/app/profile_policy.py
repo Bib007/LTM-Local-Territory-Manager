@@ -87,7 +87,7 @@ GROUPS={
  ('cards.view','history.view','history.edit'):'completion.record',
  ('history.view','history.edit'):'visit.save history.cleanup',
   ('cards.view','loans.view','loans.manage','publishers.view','history.view','history.edit'):'history.grid.add history.grid.edit',
- ('cards.view','ib.view','ib.edit'):'ib.save ib.bulk.preview ib.bulk.apply setup.ib.inspect setup.ib.preview setup.ib.apply',
+ ('cards.view','ib.view','ib.edit'):'ib.save ib.bulk.preview ib.bulk.apply setup.ib.inspect setup.ib.preview setup.ib.apply ib.review.resolve',
  ('settings.manage',):'settings.save print.profile.save split.suggestion.ignore split.suggestion.restore area.save area.delete area.numbering.preview area.numbering.save filter.save filter.delete setup.onboarding.save setup.onboarding.task setup.defaults',
  ('settings.manage','geo.view','geo.edit','connections.manage'):'address.task.configure',
  ('backup.export',):'backup.record backup.snooze',
@@ -171,6 +171,9 @@ def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]} for row in raw[module]] if right in p else []
+    # Follow-up identity without exposing the full private task/notes module.
+    visible_cards={c['id'] for c in result['cards']}
+    result['ib_reviews']=[deepcopy(row) for row in raw.get('ib_reviews',[]) if row.get('card_id') in visible_cards] if {'cards.view','ib.view'}<=p and not user.get('desk_only') else []
     if user.get('desk_only'):
         for card in result['cards']+result['archived_cards']:
             for field in ('geo_polygon','polygon','geo_addresses','address_ids','planning_reference','interim_transfer'):
