@@ -29,7 +29,7 @@ const AdminUI={
   // The daily-use picker supplies its own IDs; never overwrite inventory selections.
   const chosen=ids===null?this.selectedCards():[...new Set(ids)].map(id=>card(id)).filter(Boolean);
   const eligible=chosen.filter(c=>!this.folderReason(c)),skipped=chosen.filter(c=>this.folderReason(c)).map(c=>({id:c.id,reason:this.folderReason(c)}));
-  this.folderPending={ids:eligible.map(c=>c.id),skipped,labels:Object.fromEntries(chosen.map(c=>[c.id,c.number]))};
+  this.folderPending={ids:eligible.map(c=>c.id),skipped,labels:Object.fromEntries(chosen.map(c=>[c.id,c.number])),selection:ids===null?'inventory':'picker'};
   const row=({id,reason})=>`<li>${esc(this.folderPending.labels[id]||id)} · ${esc(I18n.text(reason))}</li>`;
   openDialog(`<h2>${ui('Læg valgte kort i mappen?')}</h2><p><b>${ui('{count} kort flyttes til mappen',{count:eligible.length})}</b> · ${ui('{count} springes over',{count:skipped.length})}</p><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><h3>${ui('Kort der flyttes')}</h3><p>${eligible.map(c=>esc(c.number)).join(' · ')||ui('Ingen kort kan flyttes.')}</p>${skipped.length?`<h3>${ui('Kort der springes over')}</h3><ul>${skipped.map(row).join('')}</ul>`:''}${eligible.length>500?`<p class="formError">${ui("Vælg højst 500 kort ad gangen.")}</p>`:''}<div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary" data-admin="folder-confirm" ${eligible.length&&eligible.length<=500?'':'disabled'}>${ui('Bekræft og læg {count} i mappen',{count:eligible.length})}</button><button data-action="close">${ui('Annuller')}</button></div>`,I18n.language());
  },
@@ -43,7 +43,7 @@ const AdminUI={
    // live state refresh and uncertain-write guard.
    const result=await mutate('folder.set_many',{ids:pending.ids,in_folder:true,expected_in_folder:false},{close:false,autosave:true});
    if(!result||!Array.isArray(result.updated)||!Array.isArray(result.skipped))throw new RequestError('Svaret på ændringen kunne ikke læses. Kontrollér de gemte data med Opdater før et nyt forsøg.','response');
-   for(const id of result.updated)this.selected.delete(id);
+   if(pending.selection!=='picker')for(const id of result.updated)this.selected.delete(id);
    this.folderPending=null;
    render();
    const label=id=>esc(pending.labels[id]||card(id)?.number||I18n.text('Kortet findes ikke længere.'));
