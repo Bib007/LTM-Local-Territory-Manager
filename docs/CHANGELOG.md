@@ -2,6 +2,11 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.30 · 2026-11-17
+
+- **Korteditor:** Tegner først adressepunkter, når kortudsnittet er tilpasset. Øvrige adresser vises fortsat ved panorering og zoom.
+- **Gemning:** Browseren genbruger det allerede læste JSON-svar efter en bekræftet gemning.
+
 ## 1.12.19-beta.29 · 2026-11-17
 
 - **Korteditor:** Genbruger adressegrupper og opslag af, hvilket distriktskort en adresse tilhører. Det reducerer arbejdet ved åbning og genoptegning af store kort. Alle adresser kan stadig ses ved panorering og zoom.

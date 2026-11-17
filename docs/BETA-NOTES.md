@@ -1,9 +1,9 @@
-# LTM 1.12.19-beta.29 · Hurtigere korteditor
+# LTM 1.12.19-beta.30 · Hurtigere første korttegning og gemmesvar
 
-- **Korteditor:** Genbruger adressegrupper og opslag af, hvilket distriktskort en adresse tilhører. Det reducerer arbejdet ved åbning og genoptegning af store kort. Alle adresser kan stadig ses ved panorering og zoom.
-- **Indlevering:** Ved aflevering kan man vælge at oprette en særskilt IB-opfølgning. Brugere med IB-redigeringsret kan afslutte den fra opfølgningslisten.
+- **Korteditor:** Tegner først adressepunkter, når kortudsnittet er tilpasset. Øvrige adresser vises fortsat ved panorering og zoom.
+- **Gemning:** Browseren genbruger det allerede læste JSON-svar efter en bekræftet gemning.
 
 ## English
 
-- **Map editor:** Reuses address groups and card ownership lookups. This reduces work when opening and redrawing large maps. All addresses are still available when panning and zooming.
-- **Returns:** A return can create a separate do-not-call follow-up. Users with do-not-call edit permission can complete it from Follow-ups.
+- **Map editor:** Draws address markers after fitting the initial viewport. Other addresses remain visible when panning and zooming.
+- **Saving:** The browser reuses the JSON response it already read after a confirmed save.
