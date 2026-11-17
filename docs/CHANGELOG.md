@@ -2,6 +2,91 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.28 · 2026-11-17
+
+- **Excel-historik:** Download skabelonen med de normale importrettigheder. Den har fem ud- og indleveringsperioder pr. kort og særskilt markering af gennemgang.
+- **Daglig brug:** Læg flere kort i mappen, se forsidens summer med ind- og udleveringsrollen, og opret IB-opfølgning ved indlevering.
+- **Rapport og DAR:** Vis eller skjul distriktsnumre på rapportkort og udskrift. DAR kan øge afstanden til fravalgte huse omkring korte kanter.
+- **Ydelse:** Hurtigere første korttegning, genbrug af gemmesvaret og færre geodataaflæsninger.
+- **Login og opdateringer:** Vælg at forblive logget på i op til syv dage, og få besked om nye versioner i den samme kanal.
+
+## 1.12.19-beta.31 · 2026-11-17
+
+- **Historik:** Excel-skabelon med fem ud- og indleveringsperioder pr. kort og særskilt markering af gennemgang.
+- **Daglig brug:** Vælg flere kort til mappen, og se forsidens summer med ind- og udleveringsrollen.
+- **Rapport og DAR:** Vis eller skjul distriktsnumre i rapportkort og print. DAR kan øge afstanden til fravalgte huse omkring korte kanter.
+- **Ydelse:** Genbrug samme geodataaflæsning, når serveren opbygger et koldt kortsvar.
+- **Login og opdateringer:** Vælg at forblive logget på i op til syv dage, og få en besked om en nyere version i den samme kanal.
+
+## 1.12.19-beta.30 · 2026-11-17
+
+- **Korteditor:** Tegner først adressepunkter, når kortudsnittet er tilpasset. Øvrige adresser vises fortsat ved panorering og zoom.
+- **Gemning:** Browseren genbruger det allerede læste JSON-svar efter en bekræftet gemning.
+
+## 1.12.19-beta.29 · 2026-11-17
+
+- **Korteditor:** Genbruger adressegrupper og opslag af, hvilket distriktskort en adresse tilhører. Det reducerer arbejdet ved åbning og genoptegning af store kort. Alle adresser kan stadig ses ved panorering og zoom.
+
+## 1.12.19-beta.28 · 2026-11-16
+
+- **Roller:** Administratoren kan låse sproget til dansk eller engelsk og vælge en udleveringsrolle med adgang til Forside, Ind/udlevering og Forkyndere.
+- **Opfølgninger:** Brugere med adgang til kortdata kan se kort uden geografisk grænse, også når systemet blev sat op til daglig udlevering.
+
+## 1.12.19-beta.27 · 2026-11-16
+
+- **DAR-grænser:** Når det ikke er muligt at holde den ønskede afstand hele vejen rundt, forsøger Foreslå grænse at rykke enkelte kanter væk fra de fravalgte adresseprikker. Hvert snit kontrolleres mod valgte adresser og nabogrænser.
+
+## 1.12.19-beta.26 · 2026-11-16
+
+- **DAR-grænser:** Foreslå grænse forsøger at holde omkring seks meters afstand til fravalgte adresseprikker, så husene kan få plads på et senere nabokort. Tætliggende huse kan kræve mindre afstand.
+
+## 1.12.19-beta.25 · 2026-11-16
+
+- **DAR-grænser:** Foreslå grænse vurderer mellemrum mellem fravalgte adresseprikker samlet. Et samlet snit kan holde både klyngen og mellemrummene udenfor, mens de valgte adresser bevares indenfor.
+
+## 1.12.19-beta.24 · 2026-11-16
+
+- **DAR-grænser:** Foreslå grænse kan skære et helt stykke med fravalgte adresser fra i ét snit. Den nye kant kontrolleres mod alle valgte husprikker, andre indlæste adresser og nabogrænser.
+
+## 1.12.19-beta.23 · 2026-11-16
+
+- **DAR-grænser:** Foreslå grænse former et sammenhængende areal omkring de valgte huse og skærer andre indlæste adresseprikker fra. Hvis der ikke findes et sikkert forslag, beholder korteditoren den aktuelle tegning. Forslag, der skal omslutte en valgt adresse i et nabodistrikt, viser en advarsel om overlap.
+
+## 1.12.19-beta.22 · 2026-11-15
+
+- **DAR – tilbage til det klassiske omrids:** Grænseforslaget tager igen udgangspunkt i den oprindelige brede polygon omkring de valgte adresser. Hvis en anden indlæst DAR-adresse eller en eksisterende distriktsgrænse ligger indenfor, prøver algoritmen nu at lave et lokalt indhak i stedet for at kassere hele formen og tegne en smal rute.
+- **Præcise begrænsninger:** Kun andre kendte, aktive indlæste adresseprikker og nabodistrikters polygoner fungerer som hindringer. Vejbelægning, baggrundskort og bygningskonturer uden selvstændig adressetilknytning indskrænker ikke forslaget. Uundgåelige krydsninger markeres fortsat til manuel kontrol. Tidligere gemte grænser ændres ikke automatisk.
+
+## 1.12.19-beta.21 · 2026-11-15
+
+- **Ny DAR-grænsealgoritme:** Foreslå grænse tegner nu rummelige, enkle distrikter i stedet for tynde korridorer. I åbne områder forsøger den brede, lige linjeforløb; ved tæt bebyggelse tilpasses grænsen til de valgte adresser.
+- **Relevante hindringer:** Tomme bygninger, veje, græsarealer og andet kortgrundlag spærrer ikke længere automatisk for grænsen. Kendte adresser uden for valget og tilhørende bygninger holdes fortsat ude, og nabodistrikter får fortsat afstand eller synlig advarsel ved uundgåelig krydsning. Kontrollér altid forslaget før gemning.
+
+## 1.12.19-beta.20 · 2026-11-15
+
+- **S-12 / husnumre:** Valget **Vis fra første til sidste** bevarer nu (lige) og (ulige) for den pågældende husnummerside. På blandede veje vises begge markeringer ved forkortede intervaller, så det tydeligt fremgår hvilke numre der hører til hver side. Forhåndsvisning, print, PDF, delte kort og læsearkiv anvender samme oplysning; de faktiske adresser og besøgstal ændres ikke.
+
+## 1.12.19-beta.19 · 2026-11-15
+
+- **DAR-grænser:** Forbindelser mellem de valgte huse søger mod den gemte vej, når der er plads. Grænseforslaget kan forbinde husene skråt og holder afstand til øvrige huse og nabogrænser.
+
+## 1.12.19-beta.18 · 2026-11-15
+
+- **DAR-grænser:** Grænseforslaget erstatter små trappetrin med længere linjer, hvor der er plads. Det beholder knæk ved huse og nabogrænser, når det kræves for at respektere adressevalget og afstanden.
+
+## 1.12.19-beta.17 · 2026-11-15
+
+- **DAR-forslag:** Den automatiske grænse holder andre kendte huse og lokalt gemte bygninger uden for kortet.
+- **Nabokort:** Forslaget søger en omvej med mindst tre meters afstand til nabogrænser. En smal krydsning vises med en besked, når kortudsnittet kræver den for at forbinde de valgte huse.
+- **Korteditor:** Brug **Foreslå grænse** til at beregne en ny grænse for adressevalget. Et forslag kontrolleres igen ved gemning. Hvis der ikke er en sikker grænse, kan den tegnes i hånden.
+
+## 1.12.19-beta.16 · 2026-11-15
+
+- **Læsearkiv:** Dan kortene samlet ud fra lokale kortdata, og få kortgrænser og adressepunkter i KML. Store arkiver pakkes på disk.
+- **Sikkerhedskopi:** ZIP-navnet indeholder dato og klokkeslæt. Vælg Gem som i browsere med filvælger, eller brug browserens downloadindstillinger. Import understøtter ZIP-filer op til 512 MB.
+- **Distrikter:** Åbn markerer kortet på listen, så markeringen passer, når du lukker kortet.
+- **Samtidige rettelser:** Åbne redigeringer bevarer deres eget grundlag, mens brugerne arbejder på forskellige kort.
+
 ## 1.12.27 · 2026-11-16
 
 - **Fast sprog:** En rolle kan låse appens sprog til dansk eller engelsk.
@@ -428,7 +513,6 @@ Samler forbedringerne nedenfor og sikrer samtidig, at almindelig kortgemning ikk
 
 Fjerner den generelle afvisning af ændringer fra andre faner/enheder, indtil brugerprofiler og samtidig redigering bliver udviklet samlet. Kort kan fortsat udleveres og rettes, når Google-delingen skifter status i baggrunden. Kontrol af kort, datoer og dobbelte udleveringer er bevaret. [Læs nyheder og opdateringsråd](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/RELEASE-NOTES.md).
 
-
 ## 1.12.0 · Mere overblik over dine distriktskort
 
 En samlet opstartsguide, import af eksisterende kort og udleveringer, bedre telefon-/tabletbetjening og et tydeligere overblik i det daglige. Arbejd med adresser og kort, gem opgaver, print oversigter, og vælg selv, om du vil dele kortbilleder med QR-koder.
@@ -680,14 +764,12 @@ Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR G
 - Den fejlagtige hvide fallback er fjernet. Lokale navne, søgning, valg og udleveringspayload er uændrede.
 - Browserkontrol bruger opdigtede navne, kontrollerer høj kontrast i den normale tilstand, tastaturmarkering/valg og smal/bred visning.
 
-
 ## 1.12.0-beta.23 · Samlet opsætning og obligatorisk rundtur
 
 - Én normal opsætningsguide med introduktion til lokal drift, fælles HA-installation, backup og valgfri deling. Den parallelle detaljerede guide er samlet ind i forløbet.
 - Svar gemmes først som uafsluttet. Rundturens sidste trin afslutter opsætningen og åbner forsiden med den personlige plan; guiden genåbnes ikke. Afbrydelse kan genoptages, og tidligere fuldførte installationer bevares.
 - Sprogskift i rundturen bevarer trin og fokus. Afvist/sen afslutning og dobbeltklik håndteres uden ekstra skrivning eller lukning af nyere dialoger.
 - Kortplanen har en direkte indgang til egen Datafordeler-nøgle. Officiel REST-frist 15.01.2027 er genkontrolleret; den eksisterende GraphQL-import bevares. Egen konto er et ejertrin.
-
 
 ## 1.12.0-beta.22 · Fast punkt 8–10: print, programpakke og slutkontrol
 
@@ -697,7 +779,6 @@ Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR G
 - Komplet programpakke med de linkede vejledninger, køreplan, lokal restliste og demovejledning. Pakningen stopper ved manglende original S-12-PDF eller brudte interne vejledningslinks.
 - Printguide og slutkontrol på dansk/engelsk. Egen printer, HA/telefon/VPN, Google-/Datafordeler-konto og eventuel skærmlæser står tydeligt som ejerprøver.
 - Fiktive JavaScript-, Python-, pakke- og Chromium-prøver kontrollerer både programforløb og faktiske front-/bagside-/rapport-PDF'er ved fire skærmbredder. Main er stabil 1.11.1.
-
 
 ## 1.12.0-beta.21 · Fast punkt 7: login, tastatur og fokus
 

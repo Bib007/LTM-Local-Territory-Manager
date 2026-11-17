@@ -2,6 +2,91 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.28 · 2026-11-17
+
+- **Excel history:** Download the template with the existing import permissions. It includes five assignment and return periods per card and explicit completion marking.
+- **Daily desk:** Move several cards to the carry folder, view aggregate home statistics with the restricted desk role, and create a do-not-call follow-up on return.
+- **Reports and DAR:** Show or hide territory numbers in report maps and printouts. DAR can improve clearance from excluded houses around short edges.
+- **Performance:** Faster initial map rendering, reuse of confirmed save responses and fewer geographic data reads.
+- **Sign-in and updates:** Opt to stay signed in for up to seven days and see when a newer version is available in the same channel.
+
+## 1.12.19-beta.31 · 2026-11-17
+
+- **History:** An Excel template supports five assignment and return periods per card, with explicit completion marking.
+- **Daily desk:** Move several cards to the carry folder and view aggregate home statistics with the restricted desk role.
+- **Reports and DAR:** Show or hide territory numbers in report maps and printouts. DAR can improve clearance from excluded houses around short edges.
+- **Performance:** Reuse a single geographic data read when building a cold map response.
+- **Sign-in and updates:** Opt to stay signed in for up to seven days and see when a newer version is available in the same channel.
+
+## 1.12.19-beta.30 · 2026-11-17
+
+- **Map editor:** Draws address markers after fitting the initial viewport. Other addresses remain visible when panning and zooming.
+- **Saving:** The browser reuses the JSON response it already read after a confirmed save.
+
+## 1.12.19-beta.29 · 2026-11-17
+
+- **Map editor:** Reuses address groups and card ownership lookups. This reduces work when opening and redrawing large maps. All addresses are still available when panning and zooming.
+
+## 1.12.19-beta.28 · 2026-11-16
+
+- **Roles:** Administrators can set a fixed Danish or English language and restrict a role to Home, check-in and check-out, and publishers.
+- **Follow-ups:** Users with access to geographic card data can see cards without a geographic boundary even when the system was set up for daily lending.
+
+## 1.12.19-beta.27 · 2026-11-16
+
+- **DAR boundaries:** If the desired clearance cannot be applied around the whole outline, Suggest boundary tries moving individual edges away from unselected address markers. Every adjustment is checked against selected addresses and neighboring boundaries.
+
+## 1.12.19-beta.26 · 2026-11-16
+
+- **DAR boundaries:** Suggest boundary aims to leave about six metres around unselected address markers so their houses have room on a future neighboring card. Closely spaced houses may need less clearance.
+
+## 1.12.19-beta.25 · 2026-11-16
+
+- **DAR boundaries:** Suggest boundary checks the spaces between nearby excluded addresses as a group. A single cut can leave both the cluster and the spaces outside while keeping the selected addresses inside.
+
+## 1.12.19-beta.24 · 2026-11-16
+
+- **DAR boundaries:** Suggest boundary can cut off a stretch of excluded addresses with one straight edge. The new edge is checked against all selected houses, other loaded addresses and neighboring territories.
+
+## 1.12.19-beta.23 · 2026-11-16
+
+- **DAR boundaries:** Suggest boundary shapes a connected area around the selected houses and cuts out other loaded address markers. If no safe suggestion can be found, the map editor keeps the current draft. A suggestion that must enclose a selected address inside a neighboring territory shows an overlap warning.
+
+## 1.12.19-beta.22 · 2026-11-15
+
+- **DAR – restored classic envelope:** Start with the original broad convex outline around the selected addresses. When another locally loaded DAR address or an existing neighboring territory intersects the area, carve a local notch instead of replacing the whole outline with a narrow connecting path.
+- **Precise restrictions:** Only other known active loaded address points and neighboring territory polygons constrain the result. Roads, map backgrounds and buildings without separate relevant address assignments do not automatically constrict the proposal. Unavoidable crossings still require explicit review; saved polygons are never silently redrawn.
+
+## 1.12.19-beta.21 · 2026-11-15
+
+- **Rebuilt DAR outline suggestions:** Prefer spacious, simple polygons instead of thin paths. Rural proposals receive wider straight-edged envelopes; dense urban proposals adapt to selected entrances.
+- **Relevant obstacles only:** Buildings without known unselected entrances, roads, grass and other map background no longer automatically constrict the territory. Unselected addresses and linked footprints remain excluded; neighboring territories retain their clearance or an explicit unavoidable-crossing warning. Review proposals before saving.
+
+## 1.12.19-beta.20 · 2026-11-15
+
+- **S-12 / house numbers:** **Show first–last range** now preserves the (odd) and (even) labels for each selected side. Combined road lines display both labels whenever a range is shortened. Preview, print, PDF, shared cards and readable exports retain the distinction; address membership and visit totals remain unchanged.
+
+## 1.12.19-beta.19 · 2026-11-15
+
+- **DAR boundaries:** Connections between selected houses favor the saved road when there is room. Suggestions can connect houses diagonally and keep clearance from other houses and neighboring boundaries.
+
+## 1.12.19-beta.18 · 2026-11-15
+
+- **DAR boundaries:** Suggestions replace small steps with longer lines where space allows. They keep corners where needed to preserve address selection and clearance from neighboring boundaries.
+
+## 1.12.19-beta.17 · 2026-11-15
+
+- **DAR suggestions:** The automatic boundary keeps other known houses and locally saved buildings outside the territory.
+- **Neighboring territories:** The suggestion looks for a detour at least three meters from shared boundaries. It shows a warning if the selected houses require a narrow crossing within the local map area.
+- **Map editor:** Use **Suggest boundary** to recalculate the boundary for the selected addresses. The suggestion is checked again on save. If a safe suggestion is unavailable, draw the boundary by hand.
+
+## 1.12.19-beta.16 · 2026-11-15
+
+- **Readable archive:** Generate cards together from local map data and export boundaries and address points as KML. Large archives are assembled on disk.
+- **Backup:** ZIP names include date and time. Use Save as in browsers with a file picker, or use browser download settings. Import supports ZIP files up to 512 MB.
+- **Territories:** Open selects the card in the list so the selection is visible when you close it.
+- **Concurrent edits:** Open editors retain their own starting point while users work on different cards.
+
 ## 1.12.27 · 2026-11-16
 
 - **Fixed language:** A role can set the app language to Danish or English.
@@ -262,7 +347,6 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - Complete declared English interface-label coverage, localized task/maintenance controls and readable conflict fields; original forms and stored user content retain their language.
 - Preserve the restored home dashboard, existing roles, guides, imports and separate beta data.
 
-
 ## 1.12.3 · Restore the familiar home dashboard
 
 - Restore the original home dashboard for profile users with the relevant record permissions, including its rings, shortcuts, metrics, monthly comparison and follow-ups.
@@ -429,7 +513,6 @@ Samler forbedringerne nedenfor og sikrer samtidig, at almindelig kortgemning ikk
 ## 1.12.1 · Arbejd videre uden unødig genindlæsning
 
 Fjerner den generelle afvisning af ændringer fra andre faner/enheder, indtil brugerprofiler og samtidig redigering bliver udviklet samlet. Kort kan fortsat udleveres og rettes, når Google-delingen skifter status i baggrunden. Kontrol af kort, datoer og dobbelte udleveringer er bevaret. [Læs nyheder og opdateringsråd](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/RELEASE-NOTES.md).
-
 
 ## 1.12.0 · Mere overblik over dine distriktskort
 
@@ -682,14 +765,12 @@ Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR G
 - Den fejlagtige hvide fallback er fjernet. Lokale navne, søgning, valg og udleveringspayload er uændrede.
 - Browserkontrol bruger opdigtede navne, kontrollerer høj kontrast i den normale tilstand, tastaturmarkering/valg og smal/bred visning.
 
-
 ## 1.12.0-beta.23 · Samlet opsætning og obligatorisk rundtur
 
 - Én normal opsætningsguide med introduktion til lokal drift, fælles HA-installation, backup og valgfri deling. Den parallelle detaljerede guide er samlet ind i forløbet.
 - Svar gemmes først som uafsluttet. Rundturens sidste trin afslutter opsætningen og åbner forsiden med den personlige plan; guiden genåbnes ikke. Afbrydelse kan genoptages, og tidligere fuldførte installationer bevares.
 - Sprogskift i rundturen bevarer trin og fokus. Afvist/sen afslutning og dobbeltklik håndteres uden ekstra skrivning eller lukning af nyere dialoger.
 - Kortplanen har en direkte indgang til egen Datafordeler-nøgle. Officiel REST-frist 15.01.2027 er genkontrolleret; den eksisterende GraphQL-import bevares. Egen konto er et ejertrin.
-
 
 ## 1.12.0-beta.22 · Fast punkt 8–10: print, programpakke og slutkontrol
 
@@ -699,7 +780,6 @@ Januarfristen gælder lukningen af gammel DAR REST-adgang. API-nøgler til DAR G
 - Komplet programpakke med de linkede vejledninger, køreplan, lokal restliste og demovejledning. Pakningen stopper ved manglende original S-12-PDF eller brudte interne vejledningslinks.
 - Printguide og slutkontrol på dansk/engelsk. Egen printer, HA/telefon/VPN, Google-/Datafordeler-konto og eventuel skærmlæser står tydeligt som ejerprøver.
 - Fiktive JavaScript-, Python-, pakke- og Chromium-prøver kontrollerer både programforløb og faktiske front-/bagside-/rapport-PDF'er ved fire skærmbredder. Main er stabil 1.11.1.
-
 
 ## 1.12.0-beta.21 · Fast punkt 7: login, tastatur og fokus
 

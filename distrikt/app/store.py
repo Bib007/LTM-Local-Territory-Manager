@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from geo_store import GeoStore
 from admin_store import AdminStore
-from workflow_store import WorkflowStore
+from workflow_store import WorkflowStore, is_ib_review, is_ib_review_id
 from followup_store import FollowupStore
 from setup_store import SetupStore
 from ui_errors import UIError
@@ -246,7 +246,15 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             number_batches=sorted((x for x in settings_rows if x.get('entity')=='territory-numbering-batch' and not x.get('undone_at')),key=lambda x:x.get('created',''),reverse=True)
             result['numbering_last_batch']=({'id':number_batches[0]['id'],'count':len(number_batches[0]['changes'])} if number_batches else None)
             result['followup_ignores'] = [x for x in settings_rows if x.get('entity') == 'followup_ignore']
-            result['notes']=[n for n in result['notes'] if n.get('entity')!='activity']
+            visible_notes=[n for n in result['notes'] if n.get('entity')!='activity']
+            # Reviews from existing installations retain their original records,
+            # but are exposed exclusively through the purpose-built projection.
+            result['ib_reviews']=[{'id':n['id'],'card_id':n.get('card_id'),'date':n.get('date'),
+                'resolved':bool(n.get('resolved'))} for n in visible_notes
+                if is_ib_review(n) and isinstance(n.get('loan_id'),str)
+                and n['id']=='ib-review:'+n['loan_id']
+                and n.get('followup_key')==json.dumps(['ib-review',n['loan_id']],ensure_ascii=False,separators=(',',':'))]
+            result['notes']=[n for n in visible_notes if not is_ib_review(n)]
             from redistribution import planning_date
             for c in result['cards']:
                 if c.get('planning_reference'):c['planning_date']=planning_date(c)
@@ -357,6 +365,11 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         return result
 
     def _mutate(self, action, data, *, geographic=False, ib_address_only=False):
+        # Domain boundary also applies in shared-login mode and to direct Store calls.
+        # Never allow generic note actions to change a system IB review.
+        if (action in ('note.save','note.resolve','note.task','note.complete','note.reply.delete')
+                or (action=='delete' and data.get('module')=='notes')) and is_ib_review_id(data.get('id')):
+            raise PermissionError('Du har ikke rettighed til denne handling.')
         if action in ('ib.bulk.preview', 'ib.bulk.apply'):
             from ib_address_suggestions import mutate
             return mutate(self, action, data)
@@ -519,6 +532,18 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 self.record_task_completion(item,data,today())
             item.update(resolved=data['resolved'],resolved_at=now() if data['resolved'] else None)
             self.put('notes',item);return {'id':item['id']}
+        if action == 'ib.review.resolve':
+            item=self.require('notes',data.get('id'))
+            loan_id=item.get('loan_id')
+            if (not isinstance(loan_id,str) or item.get('id')!='ib-review:'+loan_id
+                    or item.get('followup_key')!=json.dumps(['ib-review',loan_id],ensure_ascii=False,separators=(',',':'))):
+                raise ValueError('Vælg en IB-opfølgning fra listen.')
+            if item.get('resolved'):
+                raise ValueError('IB-opfølgningen er allerede afsluttet. Opdater oversigten.')
+            self.record_task_completion(item,{},today())
+            item.update(resolved=True,resolved_at=now())
+            self.put('notes',item)
+            return {'id':item['id']}
         if action == 'loan.finish':
             loan = self.require('loans', data['id'])
             if loan.get('returned'):
@@ -530,6 +555,11 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             note=clean_text(data.get('note'),1000)
             complete = bool(data.get('complete'))
             retain = bool(data.get('retain'))
+            revise_ib=data.get('revise_ib',False)  # Older clients may omit the choice.
+            if type(revise_ib) is not bool:
+                raise ValueError('Vælg Ja eller Nej til IB-revision.')
+            if retain and revise_ib:
+                raise ValueError('IB-opfølgning kan kun oprettes ved indlevering.')
             if retain and not complete:
                 raise ValueError('En ny gennemgang kan kun starte efter en afsluttet gennemgang.')
             if complete:
@@ -542,6 +572,12 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 self.put('cards', c)
             self.put('loans', loan)
             if note:self.put('notes',{'id':new_id(),'card_id':c['id'],'loan_id':loan['id'],'date':day,'text':note,'created':now(),'resolved':False})
+            if revise_ib:
+                # Written atomically with the return; the loan ID is the deduplication key.
+                self.put('notes',{'id':'ib-review:'+loan['id'],'card_id':c['id'],
+                    'loan_id':loan['id'],'followup_key':json.dumps(['ib-review',loan['id']],ensure_ascii=False,separators=(',',':')),
+                    'date':day,'created':now(),'text':'Revidér IB på det fysiske distriktskort.',
+                    'resolved':False})
             return {'id': loan['id']}
         if action == 'folder.set_many':
             # One locked transaction, but each card is validated through the same

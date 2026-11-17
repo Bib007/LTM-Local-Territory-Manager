@@ -46,6 +46,8 @@ Tilføj forkyndere under **Forkyndere**. Brug derefter **Registrer eksisterende 
 
 Læg de kort, der faktisk medbringes, i mappen i appen. Ved udlevering vælges forkynder og dato. Ved aflevering registreres, om kortet er gennemgået, og eventuelt en opgave til senere. **Afleverede kort går til kassen**, ikke automatisk tilbage til mappen.
 
+Under **Daglig brug → Udlever → Læg specifikt kort i mappen** kan du afkrydse flere kort. Valget bevares, når du ændrer søgningen. Udleverede kort og kort, der allerede ligger i mappen, kan ikke vælges. Vælg **Læg N i mappen** nederst, kontrollér listen, og bekræft. Hvis kort i mellemtiden er flyttet eller udleveret, viser resultatet hvilke kort, der blev lagt i mappen, og hvilke der blev afvist. Kortnumre, gennemgangshistorik og udleveringer bevares.
+
 Hver registreret gennemgang tæller, også flere gennemgange af samme kort. Anslåede besøg bygger på adresser/enheder på kortet og er ikke en registrering af de enkelte husbesøg. Tjenesteåret løber fra **1. september til 31. august**.
 
 ## 5. Tilføj detaljerne

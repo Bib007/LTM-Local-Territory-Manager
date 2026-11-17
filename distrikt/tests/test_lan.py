@@ -28,7 +28,7 @@ class LANTests(unittest.TestCase):
         return (client or self.client).open(req,timeout=5)
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
     def test_sensitive_route_matrix_requires_session_and_request_token(self):
-        routes=[('/api/state',None),('/api/geo',None),('/api/storage',None),
+        routes=[('/api/update-check',None),('/api/state',None),('/api/geo',None),('/api/storage',None),
                 ('/api/activity',None),('/api/map',None),('/api/data-info',None),
                 ('/api/export/backup',None),('/api/export/s13?year=2026',None),
                 ('/api/restore/safety?name=foer-import-fake.zip',None),
@@ -56,6 +56,24 @@ class LANTests(unittest.TestCase):
         self.assertEqual(self.s.revision,before)
         self.assertFalse(self.server.address_source.status()['configured'])
         self.assertFalse(self.server.sharing.drive.connected())
+
+    def test_update_check_is_session_and_token_protected_and_read_only(self):
+        before=self.s.revision
+        fake={'version':'1.12.99','channel':'stable','platform':'home-assistant',
+              'url':'https://github.com/Bib007/LTM-Local-Territory-Manager/releases',
+              'file_available':False}
+        with patch.object(self.server.update_checker,'check',return_value=fake) as checker:
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                self.req('/api/update-check',headers={'X-Distrikt-Token':self.server.token})
+            self.assertEqual(error.exception.code,401)
+            self.login().close()
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                self.req('/api/update-check',headers={'X-Distrikt-Token':'wrong'})
+            self.assertEqual(error.exception.code,403)
+            with self.req('/api/update-check',headers={'X-Distrikt-Token':self.server.token}) as response:
+                self.assertEqual(json.load(response),fake)
+            checker.assert_called_once()
+        self.assertEqual(self.s.revision,before)
 
     def test_secrets_and_encoded_paths_are_not_served_as_static_files(self):
         self.login().close()

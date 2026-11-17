@@ -34,10 +34,51 @@ const GeoUI={
   addresses(){return this.data.addresses;},
   chosen(){return this.addresses().filter(a=>this.ids.has(a.id));},
   ignored(){return new Set((state.ignored||[]).map(i=>i.address_id));},
-  owner(a){const owner=this.data.status?.[a.id];return state.cards.find(c=>c.id!==this.target&&(c.address_ids?.includes(a.id)||c.geo_addresses?.some(old=>this.key(old)===this.key(a))))||(owner?.card_id&&owner.card_id!==this.target?{id:owner.card_id,number:owner.card_number}:null);},
+  // The card list is replaced after confirmed writes. Build the lookup once per
+  // revision instead of scanning every card for every visible address marker.
+  // Keep the original card-order precedence when legacy and ID links overlap.
+  owner(a){
+    const owner=this.data.status?.[a.id],cards=state.cards;
+    let lookup=this._ownerLookup;
+    if(!lookup||lookup.cards!==cards||lookup.revision!==state.revision){
+      const byId=new Map(),byKey=new Map();
+      for(let i=0;i<cards.length;i++){
+        const c=cards[i],entry={card:c,index:i};
+        for(const id of c.address_ids||[]){
+          if(!byId.has(id))byId.set(id,[]);
+          byId.get(id).push(entry);
+        }
+        for(const old of c.geo_addresses||[]){
+          const key=this.key(old);
+          if(!byKey.has(key))byKey.set(key,[]);
+          byKey.get(key).push(entry);
+        }
+      }
+      lookup=this._ownerLookup={cards,revision:state.revision,byId,byKey};
+    }
+    let first=null;
+    for(const match of lookup.byId.get(a.id)||[])if(match.card.id!==this.target&&(!first||match.index<first.index))first=match;
+    for(const match of lookup.byKey.get(this.key(a))||[])if(match.card.id!==this.target&&(!first||match.index<first.index))first=match;
+    return first?.card||(owner?.card_id&&owner.card_id!==this.target?{id:owner.card_id,number:owner.card_number}:null);
+  },
   key(a){return ['postcode','road','number','floor','door'].map(k=>String(a[k]||'').trim().toLowerCase()).join('|');},
-  available(a){return !a.retired&&!this.ignored().has(a.id)&&!this.owner(a);},
-  groups(){const groups=new Map();for(const a of this.addresses()){const key=[a.postcode,a.road.toLowerCase(),a.number.toUpperCase()].join('|');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(a);}return [...groups.values()];},
+  available(a,ignored=this.ignored()){return !a.retired&&!ignored.has(a.id)&&!this.owner(a);},
+  // A new /api/geo response supplies a new addresses array; pan/zoom and
+  // switching cards can reuse the same group membership without dropping any
+  // addresses outside the current viewport.
+  groups(){
+    const addresses=this.addresses(),cached=this._groupCache;
+    if(cached?.addresses===addresses&&cached.length===addresses.length)return cached.groups;
+    const grouped=new Map();
+    for(const a of addresses){
+      const key=[a.postcode,a.road.toLowerCase(),a.number.toUpperCase()].join('|');
+      if(!grouped.has(key))grouped.set(key,[]);
+      grouped.get(key).push(a);
+    }
+    const groups=[...grouped.values()];
+    this._groupCache={addresses,length:addresses.length,groups};
+    return groups;
+  },
   numberKey(value){const m=String(value).match(/^(\d+)\s*(.*)$/);return m?[Number(m[1]),m[2].toUpperCase()]:[Infinity,String(value)];},
   pointInside(p,poly){if(poly.length<3)return false;const[x,y]=p;let inside=false;for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],cross=(x-a[0])*(b[1]-a[1])-(y-a[1])*(b[0]-a[0]);if(Math.abs(cross)<1e-12&&x>=Math.min(a[0],b[0])-1e-10&&x<=Math.max(a[0],b[0])+1e-10&&y>=Math.min(a[1],b[1])-1e-10&&y<=Math.max(a[1],b[1])+1e-10)return true;if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])inside=!inside;}return inside;},
   page(){if(this.whole)return MainBoundaryUI.page();
@@ -52,8 +93,9 @@ const GeoUI={
     this.map=L.map(node,{renderer,preferCanvas:true,zoomControl:true,minZoom:8,maxZoom:21,attributionControl:true}).setView(this.view?.center||[56,10],this.view?.zoom||8);
     this.layers=L.layerGroup().addTo(this.map);this.draftLayer=L.layerGroup().addTo(this.map);
     MapBackground.attach('geographicEditor',this.map,()=>this.drawLayers(),()=>{const points=this.polygon.length?this.polygon:this.addresses().map(a=>[a.lng,a.lat]);if(points.length)this.map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[35,35],maxZoom:18,animate:false});});
-    this.drawLayers();this.drawBoundary();this.updatePanel();
+    this.drawBoundary();this.updatePanel();
     if(!this.view){let points=this.polygon.length?this.polygon:this.chosen().map(a=>[a.lng,a.lat]);if(!points.length)points=this.addresses().map(a=>[a.lng,a.lat]);if(points.length)this.map.fitBounds(points.map(p=>[p[1],p[0]]),{padding:[35,35],maxZoom:18,animate:false});}
+    this.drawLayers();
     if(this.whole)this.drawBoundary();
     this.map.on('click',e=>{this.manualPoint=e.latlng;if(this.mode==='draw'){if(this.whole&&this.polygon.length>=5000){toast(I18n.text('Højst 5.000 hjørner.'));return;}this.polygon.push([Number(e.latlng.lng.toFixed(7)),Number(e.latlng.lat.toFixed(7))]);this.dirty=true;this.drawBoundary();this.updatePanel();}});
     this.map.on('tooltipopen',()=>I18n.applyShell());
@@ -86,7 +128,7 @@ const GeoUI={
     else if(this.polygon.length)L.polyline(this.polygon.map(p=>[p[1],p[0]]),{color:this.drawColor,weight:3,interactive:false}).addTo(this.draftLayer);
     this.polygon.forEach((p,i)=>{if(this.mode==='move'){const marker=L.marker([p[1],p[0]],{draggable:true,icon:L.divIcon({className:'geoCorner',html:'',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(this.draftLayer);marker.on('dragend',()=>{const n=marker.getLatLng();this.polygon[i]=[Number(n.lng.toFixed(7)),Number(n.lat.toFixed(7))];this.dirty=true;this.drawBoundary();this.updatePanel();});}else L.circleMarker([p[1],p[0]],{radius:4,color:'#b16e10',fillOpacity:1}).addTo(this.draftLayer);});
   },
-  toggleHouse(group){const eligible=group.filter(a=>this.available(a)),all=eligible.length&&eligible.every(a=>this.ids.has(a.id));for(const a of eligible)all?this.ids.delete(a.id):this.ids.add(a.id);this.dirty=true;this.drawLayers();this.updatePanel();if(!eligible.length)toast(I18n.text('Adresserne er allerede på et andet kort eller markeret Se bort fra.'));},
+  toggleHouse(group){const ignored=this.ignored(),eligible=group.filter(a=>this.available(a,ignored)),all=eligible.length&&eligible.every(a=>this.ids.has(a.id));for(const a of eligible)all?this.ids.delete(a.id):this.ids.add(a.id);this.dirty=true;this.drawLayers();this.updatePanel();if(!eligible.length)toast(I18n.text('Adresserne er allerede på et andet kort eller markeret Se bort fra.'));},
   updatePanel(){if(this.whole){MainBoundaryUI.panel();return;}
     const node=el('geoSelection');if(!node)return;const chosen=this.chosen(),visits=chosen.reduce((n,a)=>n+a.count,0),c=card(this.target),outside=this.polygon.length>=3?chosen.filter(a=>!this.pointInside([a.lng,a.lat],this.polygon)).length:0;
     node.innerHTML=`<h2>${ui('{count} adresser valgt',{count:chosen.length})}</h2><div class="geoTotal">${visits}<small>${ui("besøg inkl. IB")}</small></div><p class="hint">${ui('{count} hjørner',{count:this.polygon.length})}${outside?' · '+ui('{count} valgte adresser uden for grænsen',{count:outside}):''} · ${ui(this.dirty?'valg endnu ikke gemt':'gemt valg / intet nyt valg')}</p><div class="actions"><button data-geo="save" class="primary" ${!chosen.length?'disabled':''}>${c?ui('Gem adresser på kort {number}',{number:c.number}):ui('Opret kort fra valget')}</button>${c?`<button data-geo="boundary" `+(this.polygon.length<3||this.outlineApproval()?'disabled':'')+`>${ui('Gem kun grænse')}</button>`:''}<button data-geo="suggest-outline" ${!chosen.length?'disabled':''}>${ui('Foreslå grænse')}</button><button data-geo="clear" ${!chosen.length?'disabled':''}>${ui("Ryd valget")}</button></div>${c?.addresses?.length?`<div class="actions"><button data-geo="street-lines">${ui('Foreslå DAR-adresser fra vejlisten')}</button></div>`:''}${c&&!c.temporary?`<div class="actions"><button data-action="print-options" data-id="${c.id}" data-side="front">${ui("Print forside")}</button><button data-action="print-options" data-id="${c.id}" data-side="back">${ui("Print IB-bagside")}</button><button data-geo="export-map-osm" data-osm-export data-id="${c.id}" ${MapBackground.mode!=='road'?'disabled':''}>${ui("Gem PNG · OpenStreetMap")}</button><button data-geo="export-map" data-id="${c.id}">${ui("Gem PNG · lokale kortdata")}</button></div>`:''}<div class="geoSelectedList">${chosen.slice().sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.floor,b.floor)).map(a=>`<div><button class="link" data-geo="focus" data-id="${esc(a.id)}">${esc(a.road)} ${esc(a.number)}${a.floor||a.door?' · '+esc([a.floor,a.door].filter(Boolean).join(' ')):''}</button><button data-geo="remove" data-id="${esc(a.id)}" ${I18n.attribute('aria',"Fravælg adresse")}>×</button></div>`).join('')||`<p class="hint">${ui("Hent en vej eller et mindre kortudsnit for at vælge huse.")}</p>`}</div>`;

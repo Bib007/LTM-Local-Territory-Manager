@@ -81,13 +81,93 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_history_excel_template_uses_history_import_permissions(self):
+        path = '/api/setup/history-template.xlsx'
+        rights = ['cards.view', 'cards.edit', 'loans.view', 'loans.manage',
+                  'history.view', 'history.edit', 'publishers.view', 'publishers.manage']
+        reader, role, _ = self.reader(rights[:-1])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.request(path, session=reader)
+        self.assertEqual(denied.exception.code, 403)
+
+        self.value('/api/profiles/roles/save', {
+            'id': role, 'name': 'Fiktiv rolle', 'permissions': rights,
+        }, self.admin)
+        from history_xlsx import template_xlsx
+        for session in (reader, self.admin):
+            with self.subTest(admin=session is self.admin), self.request(path, session=session) as result:
+                self.assertEqual(result.headers.get_content_type(),
+                                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                self.assertIn('LTM-historik-5-perioder.xlsx', result.headers['Content-Disposition'])
+                self.assertEqual(result.read(), template_xlsx())
+
+    def create_fictional_ib_review(self):
+        from datetime import date
+        day=date.today().isoformat()
+        loan=self.change(self.admin,self.state(self.admin),'loan.issue',{
+            'card_id':self.card,'publisher_name':'Fiktiv udleveringsmodtager',
+            'date':day,'initial':True})['result']['id']
+        self.change(self.admin,self.state(self.admin),'loan.finish',{
+            'id':loan,'date':day,'complete':False,'retain':False,'revise_ib':True})
+        return 'ib-review:'+loan
+
+    def test_ib_review_is_not_a_note_and_note_editor_cannot_close_it_over_http(self):
+        review_id=self.create_fictional_ib_review()
+        editor,_,_=self.reader(['cards.view','notes.view','notes.edit'])
+        projection=self.state(editor)  # GET /api/state includes the server's beta metadata
+        self.assertEqual([n['id'] for n in projection['notes']],[self.note])
+        self.assertEqual(projection['ib_reviews'],[])
+        self.assertNotIn(review_id,json.dumps(projection))
+        self.assertEqual(self.server.profiles.workspace.overview(editor['token'])['records']['notes'][0]['id'],self.note)
+        with self.assertRaises(PermissionError):
+            self.server.profiles.workspace.begin_edit(editor['token'],'notes',review_id)
+        before=self.store.require('notes',review_id)
+        for action,data in [
+            ('note.resolve',{'id':review_id,'resolved':True}),
+            ('note.save',{'id':review_id,'card_id':self.card,'text':'Fiktiv ændring'}),
+            ('note.task',{'id':review_id}),
+            ('note.complete',{'id':review_id,'due':'2026-11-17'}),
+            ('note.reply.delete',{'id':review_id,'entry_id':'opdigtet'}),
+            ('delete',{'id':review_id,'module':'notes'}),
+        ]:
+            with self.subTest(action=action):
+                with self.assertRaises(urllib.error.HTTPError) as denied:
+                    self.change(editor,self.state(editor),action,data)
+                self.assertEqual(denied.exception.code,403)
+                self.assertEqual(self.store.require('notes',review_id),before)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(editor,self.state(editor),'ib.review.resolve',{'id':review_id})
+        self.assertEqual(denied.exception.code,403)
+        # Ordinary tasks retain their own edit and resolution semantics.
+        self.change(editor,self.state(editor),'note.resolve',{'id':self.note,'resolved':True})
+        self.assertTrue(self.store.require('notes',self.note)['resolved'])
+        self.assertFalse(self.store.require('notes',review_id)['resolved'])
+
+    def test_ib_review_editor_can_complete_over_http_without_generic_note_access(self):
+        review_id=self.create_fictional_ib_review()
+        ib_editor,_,_=self.reader(['cards.view','ib.view','ib.edit'])
+        projection=self.state(ib_editor)
+        self.assertEqual(projection['notes'],[])
+        self.assertEqual([r['id'] for r in projection['ib_reviews']],[review_id])
+        self.assertFalse(projection['ib_reviews'][0]['resolved'])
+        self.change(ib_editor,projection,'ib.review.resolve',{'id':review_id})
+        self.assertTrue(self.store.require('notes',review_id)['resolved'])
+        self.assertTrue(self.state(ib_editor)['ib_reviews'][0]['resolved'])
+        self.assertEqual(self.state(self.admin)['notes'][0]['id'],self.note)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(ib_editor,self.state(ib_editor),'ib.review.resolve',{'id':review_id})
+        self.assertEqual(denied.exception.code,400)
+
     def test_dar_suggestion_requires_edit_rights_and_preview_preserves_data(self):
-        from test_street_suggestions import multicluster_addresses
-        selected, others = multicluster_addresses()
-        records = [dict(a, id=f'fictional-{i}', entity='address', count=1, type='Hus')
-                   for i,a in enumerate(selected+others)]
+        # This HTTP test exercises authorization and preview/save, while the
+        # geometry suite exercises the costly multicluster outline cases.
+        points = [(10,55),(10.0005,55),(10,55.0005),(10.002,55.002)]
+        records = [dict(id=f'fictional-{i}', entity='address', count=1, type='Hus',
+                        road='Fiktiv vej', number=str(i+1), postcode='9999',
+                        lng=lng, lat=lat)
+                   for i,(lng,lat) in enumerate(points)]
         self.store.mutate('geo.import', {'records':records, 'source':'DAR / Datafordeleren'})
-        ids = [a['id'] for a in records[:len(selected)]]
+        ids = [a['id'] for a in records[:3]]
         reader, role, _ = self.reader(['cards.view','geo.view'])
         data = {'card_id':self.card, 'address_ids':ids, 'suggest_outline':True}
         before = self.store.state()
@@ -435,7 +515,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(base['profile']['desk_only'])
         self.assertEqual(base['profile']['language'],'da')
         self.assertEqual(set(base['profile']['permissions']),
-                         {'cards.view','loans.view','loans.manage','publishers.view'})
+                         {'cards.view','loans.view','loans.manage','publishers.view','dashboard.view'})
         self.assertEqual(self.value('/api/profiles/heartbeat',{},reader)['language'],'da')
         with self.assertRaises(urllib.error.HTTPError) as forbidden:
             self.value('/api/geo',session=reader)

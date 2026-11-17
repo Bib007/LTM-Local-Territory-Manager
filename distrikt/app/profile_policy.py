@@ -6,12 +6,15 @@ All checks run under the accounts lock, before the Store lock is acquired.
 from copy import deepcopy
 import json
 from profile_accounts import PERMISSIONS
+from workflow_store import is_ib_review, is_ib_review_id
 from profile_features import summaries
 
 READ_ALL=frozenset(('cards.view','publishers.view','loans.view','ib.view','notes.view',
                     'history.view','geo.view','activity.view','settings.manage'))
 WRITE_ALL=frozenset(('cards.edit','publishers.manage','loans.manage','ib.edit','notes.edit',
                      'history.edit','geo.edit','settings.manage'))
+
+HISTORY_IMPORT_PERMISSIONS=('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','publishers.view','publishers.manage')
 
 GET={
  '/api/state':(), '/api/profiles/guide':(), '/api/profiles/session':(), '/api/profiles/conflicts':(),
@@ -22,6 +25,7 @@ GET={
  '/api/geo/suggest':('geo.view',), '/api/map':('cards.view','geo.view'),
  '/api/storage':('settings.manage',), '/api/data-info':('settings.manage',),
  '/api/runtime/status':('settings.manage',),
+ '/api/update-check':(),
  '/task-image.png':('notes.view',),
  '/api/activity':('activity.view',), '/api/address-source/status':('connections.manage',),
  '/api/share/status':('sharing.manage','cards.view'),
@@ -31,6 +35,7 @@ GET={
  '/api/setup/card-template.xlsx':('cards.edit',), '/api/setup/card-template.csv':('cards.edit',),
  '/api/setup/publisher-template.csv':('publishers.view','publishers.manage'),
  '/api/setup/publisher-template.xlsx':('publishers.view','publishers.manage'),
+ '/api/setup/history-template.xlsx':HISTORY_IMPORT_PERMISSIONS,
  '/api/setup/ib-template.csv':('ib.edit',),
  '/api/setup/ib-template.xlsx':('ib.edit',),
  '/api/photo/status':('ib.view','ib.edit'), '/api/photo/job':('ib.view','ib.edit'),
@@ -87,12 +92,12 @@ GROUPS={
  ('cards.view','history.view','history.edit'):'completion.record',
  ('history.view','history.edit'):'visit.save history.cleanup',
   ('cards.view','loans.view','loans.manage','publishers.view','history.view','history.edit'):'history.grid.add history.grid.edit',
- ('cards.view','ib.view','ib.edit'):'ib.save ib.bulk.preview ib.bulk.apply setup.ib.inspect setup.ib.preview setup.ib.apply',
+ ('cards.view','ib.view','ib.edit'):'ib.save ib.bulk.preview ib.bulk.apply setup.ib.inspect setup.ib.preview setup.ib.apply ib.review.resolve',
  ('settings.manage',):'settings.save print.profile.save split.suggestion.ignore split.suggestion.restore area.save area.delete area.numbering.preview area.numbering.save filter.save filter.delete setup.onboarding.save setup.onboarding.task setup.defaults',
  ('settings.manage','geo.view','geo.edit','connections.manage'):'address.task.configure',
  ('backup.export',):'backup.record backup.snooze',
  ('cards.view','cards.edit','geo.view'):'setup.card-import.inspect setup.card-import.preview setup.card-import.apply',
- ('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','publishers.view','publishers.manage'):'setup.history-import.preview setup.history-import.apply',
+ HISTORY_IMPORT_PERMISSIONS:'setup.history-import.preview setup.history-import.apply',
 }
 ACTIONS={action:frozenset(rights) for rights,actions in GROUPS.items() for action in actions.split()}
 CASCADE=frozenset(('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','ib.view','ib.edit','notes.view','notes.edit','geo.view','geo.edit'))
@@ -107,6 +112,11 @@ DESK_ACTIONS=frozenset(('loan.issue','loan.finish'))
 
 def mutation(user,action,data,store):
     if user.get('desk_only') and (action not in DESK_ACTIONS or data.get('retain')):
+        raise PermissionError('Du har ikke rettighed til denne handling.')
+    # A note permission never authorizes writes to a system-owned IB follow-up.
+    if ((action in ('note.save','note.resolve','note.task','note.complete','note.reply.delete')
+         or (action=='delete' and data.get('module')=='notes'))
+            and is_ib_review_id(data.get('id'))):
         raise PermissionError('Du har ikke rettighed til denne handling.')
     needed=ACTIONS.get(action)
     if action=='delete':needed=DELETE.get(data.get('module'))
@@ -123,6 +133,8 @@ def mutation(user,action,data,store):
                    'ib':{'ib.view','ib.edit'},'completions':{'history.view','history.edit'},
                    'visits':{'history.view','history.edit'},'settings':{'settings.manage'}}
             for (module,ident),previous in entry.get('rows',{}).items():
+                if module=='notes' and is_ib_review_id(ident):
+                    needed.update(('cards.view','ib.view','ib.edit'))
                 needed.update(extra.get(module,READ_ALL|WRITE_ALL))
                 if module=='notes' and (json.loads(previous[1]) if previous else {}).get('assignee_id')!=(store.get('notes',ident) or {}).get('assignee_id'):
                     needed.add('users.manage')
@@ -170,7 +182,11 @@ CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimu
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
     for module,right in MODULE_RIGHT.items():
-        result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]} for row in raw[module]] if right in p else []
+        result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]}
+                        for row in raw[module] if module!='notes' or not is_ib_review(row)] if right in p else []
+    # Follow-up identity without exposing the full private task/notes module.
+    visible_cards={c['id'] for c in result['cards']}
+    result['ib_reviews']=[deepcopy(row) for row in raw.get('ib_reviews',[]) if row.get('card_id') in visible_cards] if {'cards.view','ib.view'}<=p and not user.get('desk_only') else []
     if user.get('desk_only'):
         for card in result['cards']+result['archived_cards']:
             for field in ('geo_polygon','polygon','geo_addresses','address_ids','planning_reference','interim_transfer'):

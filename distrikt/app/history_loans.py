@@ -26,13 +26,13 @@ class LoanPreview:
                 self.known.add((loan['card_id'],loan['publisher_id'],e.get('assigned') or cycle,e['date']));cycle=e['date']
             if not loan.get('returned'):self.known.add((loan['card_id'],loan['publisher_id'],loan.get('cycle_start') or loan['assigned'],None))
 
-    def add(self,row,card,name,assigned,returned):
+    def add(self,row,card,name,assigned,returned,completed=True):
         if not name or len(name)>100 or any(ord(c)<32 for c in name) or '?' in name or '\ufffd' in name:
             raise ValueError('Ret forkyndernavnet; det mangler eller kunne ikke aflæses entydigt.')
         if not assigned:raise ValueError('Udleveringsdatoen mangler.')
         if assigned>self.today or returned and returned>self.today:raise ValueError('Datoen ligger i fremtiden.')
         if returned and returned<assigned:raise ValueError('Indlevering skal være på eller efter udlevering.')
-        row.update(publisher=name,assigned=assigned,returned=returned or '',date=returned or '',loan_state='closed' if returned else 'active')
+        row.update(publisher=name,assigned=assigned,returned=returned or '',date=returned or '',loan_state='closed' if returned else 'active',completion_requested=completed)
         if returned and returned<self.cutoff:row.update(status='outside',message='Ældre end to år; medtages ikke.');return
         matches=self.people.get(norm(name),[])
         if len(matches)>1:raise ValueError('Forkyndernavnet er ikke entydigt. Ret navnene i LTM før import.')
@@ -53,25 +53,27 @@ class LoanPreview:
         if not returned and any(not l.get('returned') for l in current):
             raise ValueError('Kortet har allerede et andet aktivt udlån.')
         completion=None
-        if returned:
+        if returned and completed:
             if (card['id'],returned) in self.recovery:raise ValueError('Gennemgangen findes i Gendan ved fejl. Gendan eller fjern den dér først.')
             matches=self.completions.get((card['id'],returned),[])
             if len(matches)>1 or (card['id'],returned) in self.claimed:raise ValueError('Flere udleveringer har samme gennemgangsdato. Ret rækken før import.')
             completion=matches[0] if matches else None
             if completion and completion.get('loan_id') and (not existing or completion['loan_id']!=existing['id']):
                 raise ValueError('Gennemgangsdatoen er knyttet til et andet udlån. Ret rækken før import.')
+        if existing and not completed:
+            row.update(status='duplicate',message='Udleveringen findes allerede; ingen gennemgang er angivet.');self.seen.add(key);return
         if not person:
             person=self.new_people.setdefault(norm(name),{'id':uuid.uuid4().hex,'name':name})
         row.update(publisher=person['name'],publisher_action='existing' if norm(name) in self.people else 'new')
         loan=existing or dict(candidate,id=uuid.uuid4().hex,publisher_id=person['id'],cycle_start=assigned,initial=True,source='history-import')
         if not existing:self.new_loans.append(loan);self.by_card.setdefault(card['id'],[]).append(loan)
-        if returned:
+        if returned and completed:
             if completion:
                 if not completion.get('loan_id'):
                     self.links.append({'id':completion['id'],'loan_id':loan['id'],'assigned':assigned})
                     row['completion_action']='link'
             else:self.events[(card['id'],returned)]={'card_id':card['id'],'date':returned,'loan_id':loan['id'],'assigned':assigned};row['completion_action']='new'
-        if returned:self.claimed.add((card['id'],returned))
+        if returned and completed:self.claimed.add((card['id'],returned))
         self.seen.add(key);row['status']='ready'
 
     def payload(self):return {'publishers':list(self.new_people.values()),'loans':self.new_loans,'links':self.links}
