@@ -136,6 +136,40 @@ class GeoStorageTests(unittest.TestCase):
         c=self.s.mutate('card.save',{'number':'120','temporary':True})['id'];self.s.close()
         for file in ('geodata.sqlite3','se_bort_fra.sqlite3'):(Path(self.tmp.name)/file).unlink()
         self.s=Store(self.tmp.name);self.assertEqual(self.s.get('cards',c)['number'],'120');self.assertEqual(len(list(Path(self.tmp.name).glob('*.sqlite3'))),11)
+    def test_cold_geo_state_reuses_rows_for_info_and_keeps_refresh_fresh(self):
+        # A cold snapshot should decode the geo table once, even when info is cold.
+        self.add([address('fictional-a','1'),address('fictional-b','3')])
+        with patch.object(self.s,'all',wraps=self.s.all) as reads:
+            cold=self.s.geo_state()
+        geo_reads=[call for call in reads.call_args_list if call.args==('geo',)]
+        self.assertEqual(len(geo_reads),1)
+        self.assertEqual(cold['info']['addresses'],2)
+        self.assertEqual(len(cold['status']),2)
+        self.assertIs(self.s.geo_state(),cold)
+
+        # A card-only edit still invalidates ownership, but not the geo info.
+        card_id=self.s.mutate('card.save',{'number':'F001','temporary':True})['id']
+        with self.s.transaction():
+            card=self.s.require('cards',card_id)
+            card['address_ids']=['fictional-a']
+            self.s.put('cards',card)
+        assigned=self.s.geo_state()
+        self.assertIsNot(assigned,cold)
+        self.assertEqual(assigned['status']['fictional-a']['card_id'],card_id)
+        self.assertEqual(assigned['info']['addresses'],2)
+
+        # Real geo writes invalidate both caches and expose new records promptly.
+        with self.s.transaction():
+            self.s.put('geo',address('fictional-c','5'))
+        updated=self.s.geo_state()
+        self.assertEqual(updated['info']['addresses'],3)
+        self.assertIn('fictional-c',updated['status'])
+        self.assertEqual(updated['status']['fictional-a']['card_id'],card_id)
+
+        # geo_info is also valid when called independently, without geo_state.
+        self.s._info_cache=None
+        self.assertEqual(self.s.geo_info()['addresses'],3)
+
     def test_token_never_appears_in_state_or_geo_response(self):
         self.s.mutate('geo.token',{'token':'SECRETTESTVALUE'})
         self.assertNotIn('SECRETTESTVALUE',json.dumps(self.s.state()));self.assertNotIn('SECRETTESTVALUE',json.dumps(self.s.geo_state()))
