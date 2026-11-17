@@ -40,6 +40,7 @@ class Access:
         if password is not None:
             if len(password)<12:raise ValueError('Vælg en adgangskode med mindst 12 tegn i HA-konfigurationen.')
             if not self.secret or not self.verify(password):
+                self.remembered.clear()
                 salt=secrets.token_hex(24)
                 self.secret={'salt':salt,'hash':self.hash(password,salt)};write_private(self.path,self.secret)
         if not self.secret:raise ValueError('LAN-adgang kræver en adgangskode. Brug DISTRIKT_PASSWORD ved første opstart.')
