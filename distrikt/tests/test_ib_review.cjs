@@ -61,6 +61,9 @@ assert.doesNotMatch(run('Workspace.followups()'), /data-work="ib-review-resolve"
 run("state.profile.permissions=['cards.view','ib.view','ib.edit']");
 run("mutate=async(action,data)=>{calls.push(JSON.parse(JSON.stringify({action,data})));state.ib_reviews[0].resolved=true;};");
 (async () => {
+  run("detail=(id,tab)=>{globalThis.openedIb={id,tab}};");
+  await run("Workspace.handle('ib-review-open',{id:'c1'})");
+  assert.deepEqual(JSON.parse(JSON.stringify(run('openedIb'))),{id:'c1',tab:'IB-bagside'});
   await run("Workspace.handle('ib-review-resolve',{id:'ib-review:l1'})");
   assert.deepEqual(calls, [{action:'ib.review.resolve',data:{id:'ib-review:l1'}}]);
   assert.equal(run('Workspace.followupItems().length'), 0, 'Completed follow-up disappears from the list');
