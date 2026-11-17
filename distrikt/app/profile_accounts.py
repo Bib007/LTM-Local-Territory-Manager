@@ -121,7 +121,7 @@ class ProfileAccounts(GuideAccounts):
                 remaining=record['until']-self.wall_clock()
                 if remaining>0:
                     session={'user':user['id'],'expires':now+remaining,'seen':now,'remembered_credential':record['credential'],
-                             'guide_assignment':deepcopy(user.get('intro',{}).get('assigned'))}
+                             'guide_assignment':deepcopy(record.get('assignment'))}
                     self.sessions[token]=session
             if not session:raise PermissionError('Sign in again')
         user=self.data['users'].get(session['user'])
@@ -196,7 +196,7 @@ class ProfileAccounts(GuideAccounts):
             token=secrets.token_urlsafe(40)
             self.sessions={k:v for k,v in self.sessions.items() if v['expires']>now}
             if len(self.sessions)>=100:self.sessions.pop(next(iter(self.sessions)))
-            if remember:self.remembered.issue(token,user['id'],self._credential_id(user))
+            if remember:self.remembered.issue(token,user['id'],self._credential_id(user),user.get('intro',{}).get('assigned'))
             self.sessions[token]={'user':user['id'],'expires':now+(REMEMBER_LIFETIME if remember else SESSION_LIFETIME),'seen':now,'guide_assignment':deepcopy(user.get('intro',{}).get('assigned')),
                                   **({'remembered_credential':self._credential_id(user)} if remember else {})}
             return token
