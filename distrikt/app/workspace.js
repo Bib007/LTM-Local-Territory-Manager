@@ -4,6 +4,7 @@
    Open scanline intervals exclude shared edges/vertices. Proper edge crossings
    catch narrow intersections between sample bands. No addresses or map service
    are needed. Cache only geometry; labels and card objects always come from state. */
+const ibReviewLabel=(da,en)=>I18n.language()==='en'?en:da;
 const BoundaryOverlap={
  epsilon:1e-10,stamp:null,pairs:[],
  ring(points){
@@ -284,7 +285,12 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(state.profile?.desk_only)return [];
   const results=[],keys=new Set(),cards=new Map((state.cards||[]).map(c=>[c.id,c])),ignoredByKey=new Map((state.followup_ignores||[]).map(r=>[r.key,r]));
   const add=(category,parts,text,extra={})=>{const key=JSON.stringify([category,...parts]);if(!keys.has(key)){keys.add(key);results.push({key,category,text,...extra});}};
-  const addresses=new Map(GeoUI.addresses().map(a=>[a.id,a])),ignored=new Set((state.ignored||[]).map(i=>i.address_id)),owners=new Map();
+  for(const review of state.ib_reviews||[]){
+   if(!review.resolved&&cards.has(review.card_id)&&(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('ib.view')))
+    add('ib-review',[review.id],ibReviewLabel('Revidér IB på det fysiske kort','Review DNC on the physical card'),{card:cards.get(review.card_id),ibReview:review});
+  }
+  if(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view')){
+   const addresses=new Map(GeoUI.addresses().map(a=>[a.id,a])),ignored=new Set((state.ignored||[]).map(i=>i.address_id)),owners=new Map();
   for(const c of cards.values())for(const id of new Set(c.address_ids||[])){if(!owners.has(id))owners.set(id,[]);owners.get(id).push(c.id);}
   for(const c of cards.values()){
    const extra={card:c};
@@ -305,9 +311,11 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   }
   for(const loan of state.loans||[])if(!loan.returned&&cards.has(loan.card_id)&&loan.cycle_start&&fourMonths(loan.cycle_start)<state.today)add('loans',[loan.id],'Udleveret over fire måneder',{card:cards.get(loan.card_id),loan});
   for(const change of GeoUI.data.changes||[])add('addresses',[change.id],({new:'Ny adresse',changed:'Ændret adresse',retired:'Udgået adresse'})[change.kind]||'Adresseændring',{change});
+  }
   return results.sort((a,b)=>cmp(a.card?.number||'',b.card?.number||'')||cmp(a.category,b.category)||cmp(a.key,b.key)).map(item=>{const ignoreInfo=ignoredByKey.get(item.key)||null;return {...item,ignoreInfo,ignored:!!ignoreInfo?.ignored,canIgnore:item.category==='checks'&&JSON.parse(item.key)[1]==='overlap'};}).filter(item=>includeIgnored||!item.ignored);
  },
  followupInstruction(item){
+  if(item.ibReview)return ibReviewLabel('Åbn IB-bagsiden og kontrollér det fysiske kort. Afslut opfølgningen, når IB er revideret. Indleveringen ændrer ikke IB.','Open the DNC back side and check the physical card. Complete the follow-up once DNC is reviewed. Returning the card does not change DNC.');
   if(item.change)return 'Kontrollér adressen og det viste besøgstal. Vælg Godkend eller Afvis. En godkendt ændring skal bagefter indarbejdes på de berørte kort.';
   if(item.loan)return 'Følg op med kortholderen. Registrér Gennemgået, hvis distriktet er gennemgået, eller Aflever, hvis kortet skal tilbage i kassen.';
   if(item.side)return item.side==='back'&&item.card&&loanFor(item.card.id)?'Aftal ajourføring med kortholderen. Print den rettede IB-bagside, og godkend først, når det fysiske kort er opdateret.':'Åbn kortet, kontrollér oplysningerne, og print den viste side. Godkend først, når det rettede kort er klar.';
@@ -362,7 +370,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   }finally{this.outsideBusy=false;}
  },
  followups(){
-  const allItems=this.followupItems(true),items=this.followupItems(),q=(this.followupQuery||'').trim().toLocaleLowerCase(),tabs=[['all','Alle'],['checks','Kortkontrol'],['reprint','Genprint'],['loans','Udleveringer'],['addresses','Adresseændringer'],['ignored','Ignorerede']],visible=(this.followupFilter==='ignored'?allItems.filter(r=>r.ignored):items).filter(r=>(this.followupFilter==='all'||this.followupFilter==='ignored'||r.category===this.followupFilter)&&[r.card?.number,r.card?.name,r.relatedCard?.number,r.relatedCard?.name,I18n.format(r.text,r.params),r.change?.after?.label,r.loan&&publisherName(r.loan.publisher_id)].join(' ').toLocaleLowerCase().includes(q));
+  const allItems=this.followupItems(true),items=this.followupItems(),q=(this.followupQuery||'').trim().toLocaleLowerCase(),tabs=[['all','Alle'],['ib-review',ibReviewLabel('Revidér IB','Review DNC')],...(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view')?[['checks','Kortkontrol'],['reprint','Genprint'],['loans','Udleveringer'],['addresses','Adresseændringer'],['ignored','Ignorerede']]:[])],visible=(this.followupFilter==='ignored'?allItems.filter(r=>r.ignored):items).filter(r=>(this.followupFilter==='all'||this.followupFilter==='ignored'||r.category===this.followupFilter)&&[r.card?.number,r.card?.name,r.relatedCard?.number,r.relatedCard?.name,I18n.format(r.text,r.params),r.change?.after?.label,r.loan&&publisherName(r.loan.publisher_id)].join(' ').toLocaleLowerCase().includes(q));
   return `<div class="tabs followupTabs">${tabs.map(([key,label])=>`<button data-work="followup-filter" data-value="${key}" class="${this.followupFilter===key?'active':''}" aria-pressed="${this.followupFilter===key}">${ui(label)} · ${key==='ignored'?allItems.filter(r=>r.ignored).length:items.filter(r=>key==='all'||r.category===key).length}</button>`).join('')}</div><div class="toolbar"><input data-work-input="followups" value="${esc(this.followupQuery||'')}" ${I18n.attribute('placeholder','Søg kort, adresse eller opfølgning')} ${I18n.attribute('aria','Søg opfølgninger')}></div><section class="panel"><p class="hint">${ui('Hvert punkt tæller for sig. Forside og bagside vises hver for sig; godkend først en side, når den er kontrolleret og printet.')}</p>${this.followupFilter==='reprint'?`<div class="actions"><button data-action="print-revisions" data-side="front" ${!items.some(r=>r.side==='front')?'disabled':''}>${ui('Print ændrede forsider')}</button><button data-action="print-revisions" data-side="back" ${!items.some(r=>r.side==='back')?'disabled':''}>${ui('Print ændrede bagsider')}</button></div>`:''}${this.followupFilter==='addresses'?'<div class="actions"><button data-work="reject-outside-preview" '+(!GeoUI.data.main_boundary||!items.some(r=>r.category==='addresses')||(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('address.change.outside.preview'))?'disabled':'')+'>'+ui('Afvis alle adresser uden for distriktsgrænsen')+'</button></div>'+(!GeoUI.data.main_boundary?'<p class="hint">'+ui('Gem den samlede distriktsgrænse før du afviser adresseændringer.')+'</p>':''):''}<p data-followup-count>${ui('Til opfølgning: {count}',{count:visible.length})}</p>${visible.slice(0,this.followupLimit).map(r=>this.followupRow(r)).join('')||empty(ui('Ingen punkter i denne visning.'))}${visible.length>this.followupLimit?`<button data-work="more-followups">${ui('Vis flere')}</button>`:''}</section><p class="hint">${ui('Kortkontrol ændrer ikke dine kort. Adresseændringer kræver særskilt godkendelse og skal derefter indarbejdes på relevante kort.')}</p><button data-work="missing">${ui('Vis adresser uden kort')}</button>`;
  },
  async openFollowups(filter='all'){
@@ -370,10 +378,10 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   await closeRequested();if(el('dialog').open)return;
   if(page==='Kortopsætning'&&!GeoUI.canLeave())return;
   const origin=page,generation=openDialog.generation;
-  await GeoUI.load();if(origin!==page||generation!==openDialog.generation||el('dialog').open)return;
+  if(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view'))await GeoUI.load();if(origin!==page||generation!==openDialog.generation||el('dialog').open)return;
   this.remember();this.followupFilter=filter;this.followupQuery='';this.followupLimit=100;GeoUI.dirty=false;page='Opfølgninger';this.menu(false);render();
  },
- followupsSummary(){const loaded=typeof GeoUI!=='undefined'&&GeoUI.loaded,items=loaded?this.followupItems():[];return `<section class="panel dashboardAttention"><span class="eyebrow">${ui('NÆSTE SKRIDT')}</span><h3>${ui('Opfølgninger')}</h3><p class="hint">${ui('Kortkontrol, genprint, langvarige udleveringer og adresseændringer samlet ét sted.')}</p>${loaded?`<p><b>${ui('Til opfølgning: {count}',{count:items.length})}</b></p>${items.slice(0,3).map(r=>`<button class="attentionCard" data-work="followups" data-value="${r.category}"><span>${r.card?`${ui('Kort')} ${esc(r.card.number)}`:esc(r.change.after.label||'')}<small>${ui(r.text,r.params)}</small></span><span aria-hidden="true">→</span></button>`).join('')}`:''}<button class="attentionLink" data-work="followups">${ui('Åbn opfølgninger →')}</button></section>`;},
+ followupsSummary(){const loaded=(typeof GeoUI!=='undefined'&&GeoUI.loaded)||!!state?.ib_reviews?.length||!!(state?.profile&&typeof ProfilesUI!=='undefined'&&!ProfilesUI.has('geo.view')),items=loaded?this.followupItems():[];return `<section class="panel dashboardAttention"><span class="eyebrow">${ui('NÆSTE SKRIDT')}</span><h3>${ui('Opfølgninger')}</h3><p class="hint">${ui('Kortkontrol, genprint, langvarige udleveringer og adresseændringer samlet ét sted.')}</p>${loaded?`<p><b>${ui('Til opfølgning: {count}',{count:items.length})}</b></p>${items.slice(0,3).map(r=>`<button class="attentionCard" data-work="followups" data-value="${r.category}"><span>${r.card?`${ui('Kort')} ${esc(r.card.number)}`:esc(r.change.after.label||'')}<small>${ui(r.text,r.params)}</small></span><span aria-hidden="true">→</span></button>`).join('')}`:''}<button class="attentionLink" data-work="followups">${ui('Åbn opfølgninger →')}</button></section>`;},
  settingsNav(){
   const tabs=[['general','Menighed og mappe'],['areas','Områder'],['printing','Print'],['connections','Forbindelser'],['import','Import'],['data','Backup og vedligeholdelse'],['sharing','Deling og QR'],...(typeof ProfilesUI!=='undefined'?[['users','Brugere og roller']]:[])].filter(([k])=>typeof ProfilesUI==='undefined'||ProfilesUI.settingsAllowed(k));
   if(!tabs.some(([k])=>k===Navigation.settingsSection))Navigation.settingsSection=tabs[0]?.[0]||'general';
