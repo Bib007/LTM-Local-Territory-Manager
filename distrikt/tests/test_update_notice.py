@@ -115,7 +115,7 @@ class UpdateSelectionTests(unittest.TestCase):
         self.assertEqual(checker.check(), {'checking': True})
         release.set()
         for _ in range(100):
-            if not checker.check().get('checking', False) if isinstance(checker.check(), dict) else True:
+            if checker.check() is None:
                 break
             threading.Event().wait(0.005)
         self.assertIsNone(checker.check())
