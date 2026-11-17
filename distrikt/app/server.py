@@ -207,6 +207,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 return self.send(image,'image/png',headers={'Cross-Origin-Resource-Policy':'same-origin'})
             if path=='/card-qr.svg':return self.send(self.server.sharing.qr(q.get('card_id',[''])[0],require_current=True),'image/svg+xml')
             if path.startswith('/api/') and not self.allowed(token=True):return
+            if path=='/api/setup/history-template.xlsx':
+                from history_xlsx import template_xlsx
+                return self.send(template_xlsx(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=LTM-historik-5-perioder.xlsx'})
             if path=='/api/setup/card-template.xlsx':
                 return self.send((APP/'kort-import-skabelon.xlsx').read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',headers={'Content-Disposition':'attachment; filename=LTM-kort-import-skabelon.xlsx'})
             if path=='/api/setup/card-template.csv':
