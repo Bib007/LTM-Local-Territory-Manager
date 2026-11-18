@@ -29,6 +29,43 @@ jobs:
         run: python -m unittest discover -s scripts -p test_build_tracks.py -v
   ha-status-blueprint:
     uses: ./.github/workflows/ha-status.yml
+  geo-cache-97-benchmark:
+    # Only this isolated PR. Baseline and candidate use their real Store code
+    # in independent processes on the SAME runner, never a user installation.
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'perf/geo-cache-field-invalidation-97-')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Compare unmodified develop baseline to candidate on fictional SQLite
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/ltm97-baseline" d6bc3102148e6e51d0450a855b3b80bab1b5fe70
+          python scripts/benchmark_geo_cache_97.py --app-dir "$RUNNER_TEMP/ltm97-baseline/distrikt/app" --addresses 50000 --cards 180 --history 12000 --roads 2000 --buildings 6500 --runs 7 > "$RUNNER_TEMP/ltm97-before.json"
+          python scripts/benchmark_geo_cache_97.py --addresses 50000 --cards 180 --history 12000 --roads 2000 --buildings 6500 --runs 7 > "$RUNNER_TEMP/ltm97-after.json"
+          python - "$RUNNER_TEMP/ltm97-before.json" "$RUNNER_TEMP/ltm97-after.json" <<'PY'
+          import json,sys
+          before,after=(json.load(open(p,encoding='utf8')) for p in sys.argv[1:])
+          for older,newer in zip(before['cases'],after['cases']):
+              assert older['scenario']==newer['scenario']
+              name=older['scenario']
+              print('Case:',name,flush=True)
+              print('  Before medians ms:',older['median_ms'],flush=True)
+              print('  After  medians ms:',newer['median_ms'],flush=True)
+              print('  Cache before/after:',older['geo_cache_reused'],newer['geo_cache_reused'],flush=True)
+              if name in ('card_color','loan_finish'):
+                  assert not any(older['geo_cache_reused'])
+                  assert all(newer['geo_cache_reused'])
+                  assert all(x==0 for x in newer['geo_generation_deltas'])
+              else:
+                  assert not any(older['geo_cache_reused']+newer['geo_cache_reused'])
+                  assert all(x==1 for x in newer['geo_generation_deltas'])
+              assert older['payload']['geo_address_count']==50000
+              assert newer['payload']['geo_address_count']==50000
+          PY
   python:
     runs-on: ubuntu-24.04
     strategy:

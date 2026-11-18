@@ -44,7 +44,8 @@ class WorkspaceTests(unittest.TestCase):
   self.assertEqual(self.s.state()['areas'],[]);self.assertEqual(self.s.state()['settings']['saved_views'][0]['name'],'Landkort')
  def test_geo_cache_reused_and_invalidated(self):
   c,records=self.geo_card();one=self.s.geo_state();two=self.s.geo_state();self.assertIs(one,two)
-  self.s.mutate('card.color',{'card_id':c,'map_color':'#112233'});self.assertIsNot(one,self.s.geo_state())
+  # Color is not an input to geo_state: keep the geographic snapshot.
+  self.s.mutate('card.color',{'card_id':c,'map_color':'#112233'});self.assertIs(one,self.s.geo_state())
  def test_new_changed_retired_addresses_need_review(self):
   c,records=self.geo_card();changed=dict(records[0],lng=10.9);new=dict(records[0],id='new-one',number='99');r=[changed,records[1],records[2],new]
   self.s.mutate('geo.import',{'records':r,'source':'DAR / Datafordeleren','label':'Opdatering','complete_road':{'road':records[0]['road'],'postcode':'9999'},'review_changes':True})
