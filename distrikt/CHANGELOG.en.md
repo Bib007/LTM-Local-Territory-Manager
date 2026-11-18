@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.29 · 2026-11-18
+
+- The history template opens normally in Microsoft Excel. The newest period is on the left, and previously completed templates can still be imported.
+- Remove corners in the editor by tapping corners in a card boundary or the whole territory boundary. Save the boundary afterward.
+- Small card edits and returns reuse loaded geographic data when geographic properties are unchanged. This reduces unnecessary loading after saves.
+
 ## 1.12.28 · 2026-11-17
 
 - **Excel history:** Download the template with the existing import permissions. It includes five assignment and return periods per card and explicit completion marking.

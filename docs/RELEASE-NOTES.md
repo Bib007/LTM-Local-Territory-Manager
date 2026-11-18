@@ -1,15 +1,11 @@
-# LTM 1.12.28 · Historik, kort og hurtigere daglig brug
+# LTM 1.12.29
 
-- **Excel-historik:** Download skabelonen med de normale importrettigheder. Den har fem ud- og indleveringsperioder pr. kort og særskilt markering af gennemgang.
-- **Daglig brug:** Læg flere kort i mappen, se forsidens summer med ind- og udleveringsrollen, og opret IB-opfølgning ved indlevering.
-- **Rapport og DAR:** Vis eller skjul distriktsnumre på rapportkort og udskrift. DAR kan øge afstanden til fravalgte huse omkring korte kanter.
-- **Ydelse:** Hurtigere første korttegning, genbrug af gemmesvaret og færre geodataaflæsninger.
-- **Login og opdateringer:** Vælg at forblive logget på i op til syv dage, og få besked om nye versioner i den samme kanal.
+- Historikskabelonen åbner normalt i Microsoft Excel. Nyeste periode står til venstre, og tidligere udfyldte skabeloner kan fortsat importeres.
+- Fjern prikker i editoren ved at trykke på de hjørner, der skal fjernes fra et korts grænse eller den samlede grænse. Gem derefter grænsen.
+- Små kortændringer og indleveringer genbruger de indlæste geodata, når de geografiske oplysninger er uændrede. Det reducerer unødvendig genindlæsning efter gemning.
 
 ## English
 
-- **Excel history:** Download the template with the existing import permissions. It includes five assignment and return periods per card and explicit completion marking.
-- **Daily desk:** Move several cards to the carry folder, view aggregate home statistics with the restricted desk role, and create a do-not-call follow-up on return.
-- **Reports and DAR:** Show or hide territory numbers in report maps and printouts. DAR can improve clearance from excluded houses around short edges.
-- **Performance:** Faster initial map rendering, reuse of confirmed save responses and fewer geographic data reads.
-- **Sign-in and updates:** Opt to stay signed in for up to seven days and see when a newer version is available in the same channel.
+- The history template opens normally in Microsoft Excel. The newest period is on the left, and previously completed templates can still be imported.
+- Remove corners in the editor by tapping corners in a card boundary or the whole territory boundary. Save the boundary afterward.
+- Small card edits and returns reuse loaded geographic data when geographic properties are unchanged. This reduces unnecessary loading after saves.

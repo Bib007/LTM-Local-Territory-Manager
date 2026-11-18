@@ -74,9 +74,11 @@ class HTTPTests(unittest.TestCase):
         self.assertFalse(note['geo_changed'])
         deleted=change('delete',{'module':'notes','id':note['result']['id']})
         self.assertFalse(deleted['geo_changed'])
-        self.assertFalse(change('restore',{'batch':deleted['result']['batch']})['geo_changed'])
+        # Restore and purge use direct SQL, bypassing tracked row writes.
+        # Fail closed: conservatively flag geo_changed even for note-only batches.
+        self.assertTrue(change('restore',{'batch':deleted['result']['batch']})['geo_changed'])
         deleted=change('delete',{'module':'notes','id':note['result']['id']})
-        self.assertFalse(change('recovery.purge',{'batch':deleted['result']['batch']})['geo_changed'])
+        self.assertTrue(change('recovery.purge',{'batch':deleted['result']['batch']})['geo_changed'])
         card=change('card.save',{'number':'F101','temporary':True})
         self.assertTrue(card['geo_changed'])
         deleted=change('delete',{'module':'cards','id':card['result']['id']})
@@ -100,7 +102,8 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(reply['state']['revision'],reply['revision'])
         self.assertEqual(reply['state'],self.server.app_state())
         self.assertEqual(reply['state']['recovery'],[])
-        self.assertFalse(reply['geo_changed'])
+        # Raw-SQL recovery.purge falls back to conservative geo invalidation.
+        self.assertTrue(reply['geo_changed'])
         self.assertNotIn('geo',reply['state'])
         for module in ('cards','areas','publishers','loans','completions','ib','ignored','notes','visits','recovery','maps'):
             self.assertIsInstance(reply['state'][module],list)
