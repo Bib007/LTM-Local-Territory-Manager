@@ -9,7 +9,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from geo_store import GeoStore
+from geo_store import GeoStore, address_key
 from admin_store import AdminStore
 from workflow_store import WorkflowStore, is_ib_review, is_ib_review_id
 from followup_store import FollowupStore
@@ -63,6 +63,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
     def __init__(self, root):
         self.geo_generation=0
         self.workflow_init()
+        self._geo_card_before=None
+        self._known_record_changes=0
         self.root = Path(root).expanduser().resolve()
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         os.chmod(self.root, 0o700)
@@ -122,13 +124,25 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         with self.lock:
             before=self.db.total_changes
             self._dirty_modules=set()
+            # Capture just the original card rows touched by this transaction.
+            # Every other SQL write is checked against the known rowcount below.
+            self._geo_card_before={}
+            self._known_record_changes=0
             self.db.execute('BEGIN IMMEDIATE')
             try:
                 yield
                 self.db.commit()
                 if self.db.total_changes!=before:
                     self.revision=uuid.uuid4().hex
-                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored'}):
+                    # Keep an immutable geo_state snapshot for non-geographic card
+                    # writes (name, color, physical folder, completion). Unknown
+                    # SQL and direct restore/undo paths must conservatively reload.
+                    changed_rows=self.db.total_changes-before
+                    geo_changed=(not self._dirty_modules
+                        or bool(self._dirty_modules.intersection({'geo','ignored'}))
+                        or changed_rows!=self._known_record_changes
+                        or not self._geo_cards_unchanged())
+                    if geo_changed:
                         self._geo_cache=None
                         self.geo_generation=getattr(self,'geo_generation',0)+1
                     if not self._dirty_modules or 'geo' in self._dirty_modules:self._info_cache=None
@@ -137,6 +151,45 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             except Exception:
                 self.db.rollback()
                 raise
+            finally:
+                self._geo_card_before=None
+                self._known_record_changes=0
+
+    @staticmethod
+    def _geo_card_signature(row):
+        # geo_state() only sees non-deleted, non-archived cards. The other
+        # card fields it reads are ID, number, explicit/legacy owners and polygon.
+        if row is None or row[2] is not None:return None
+        card=json.loads(row[1])
+        if card.get('archived'):return None
+        return (card.get('id'),card.get('number'),
+            card.get('address_ids') or [],
+            tuple(address_key(a) for a in (card.get('geo_addresses') or [])),
+            card.get('geo_polygon') or [])
+
+    def _geo_cards_unchanged(self):
+        try:
+            for ident,old in self._geo_card_before.items():
+                current=self.db.execute('SELECT id,payload,deleted_at,batch FROM cards.records WHERE id=?',(ident,)).fetchone()
+                if self._geo_card_signature(old)!=self._geo_card_signature(current):
+                    return False
+            return True
+        except Exception:
+            # A post-commit cache check must never reject a committed write.
+            return False
+
+    def _track_record_write(self,module,ident):
+        # Reuse the workflow preimage when available; also support direct
+        # Store.transaction() calls where workflow tracking is disabled.
+        self.workflow_track(module,ident)
+        if module=='cards' and self._geo_card_before is not None and ident not in self._geo_card_before:
+            key=(module,ident)
+            if self._tracking is not None and key in self._tracking:
+                old=self._tracking[key]
+            else:
+                row=self.db.execute('SELECT id,payload,deleted_at,batch FROM cards.records WHERE id=?',(ident,)).fetchone()
+                old=tuple(row) if row else None
+            self._geo_card_before[ident]=old
 
     def alias(self, module):
         if module not in MODULES:
@@ -174,8 +227,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
     def put(self, module, item):
         if module=='notes' and item.get('entity')!='activity':item=dict(item,task=True)
         self._dirty_modules.add(module)
-        self.workflow_track(module,item['id'])
-        self.db.execute('INSERT INTO ' + self.record_table(module) + '(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload', (item['id'], json.dumps(item, ensure_ascii=False)))
+        self._track_record_write(module,item['id'])
+        cursor=self.db.execute('INSERT INTO ' + self.record_table(module) + '(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload', (item['id'], json.dumps(item, ensure_ascii=False)))
+        self._known_record_changes+=cursor.rowcount
         return item
 
     def require(self, module, ident):
@@ -304,8 +358,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
 
     def mark_deleted(self, module, ident, batch, stamp):
         self._dirty_modules.add(module)
-        self.workflow_track(module,ident)
-        self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=?,batch=? WHERE id=? AND deleted_at IS NULL', (stamp, batch, ident))
+        self._track_record_write(module,ident)
+        cursor=self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=?,batch=? WHERE id=? AND deleted_at IS NULL', (stamp, batch, ident))
+        self._known_record_changes+=cursor.rowcount
 
     def create_completion(self, card, day, loan_id=None):
         loan = self.get('loans', loan_id) if loan_id else None
