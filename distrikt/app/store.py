@@ -1027,7 +1027,11 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             for module in MODULES:
                 if module=='maps':continue
                 cursor=self.db.execute('DELETE FROM '+self.alias(module)+'.records WHERE deleted_at IS NOT NULL AND batch=?',(batch,))
-                if cursor.rowcount:self._dirty_modules.add(module)
+                if cursor.rowcount:
+                    self._dirty_modules.add(module)
+                    # Explicit recovery cleanup is known for these modules.
+                    # Raw card deletion remains conservative (untracked).
+                    if module!='cards':self._known_record_changes+=cursor.rowcount
                 count+=cursor.rowcount
             if not count:raise ValueError('Posten findes ikke længere i Gendan ved fejl.')
             return {'count':count}
@@ -1078,7 +1082,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     clean.pop('delete_overlaps')
                     self.put('loans', clean)
                 self._dirty_modules.add(module)
-                self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=NULL,batch=NULL WHERE id=?', (item['id'],))
+                if module=='cards':self._track_record_write(module,item['id'])
+                cursor=self.db.execute('UPDATE ' + self.alias(module) + '.records SET deleted_at=NULL,batch=NULL WHERE id=?', (item['id'],))
+                self._known_record_changes+=cursor.rowcount
                 if module == 'settings' and item.get('restore_cards'):
                     for ident in item['restore_cards']:
                         c = self.get('cards', ident)
