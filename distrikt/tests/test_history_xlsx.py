@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from xml.etree import ElementTree
 from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -73,6 +74,17 @@ class HistoryXlsxTests(unittest.TestCase):
     def apply(self, result):
         return self.store.mutate('setup.history-import.apply',
                                  {'token': result['token'], 'confirm': 'IMPORTÉR HISTORIK'})
+
+    def test_template_worksheet_follows_openxml_element_order(self):
+        # CT_Worksheet requires autoFilter before mergeCells and validations.
+        # Excel rejects the workbook when these valid XML elements are reordered.
+        with zipfile.ZipFile(io.BytesIO(template_xlsx())) as archive:
+            sheet = ElementTree.fromstring(archive.read('xl/worksheets/sheet1.xml'))
+        names = [element.tag.rsplit('}', 1)[-1] for element in sheet]
+        self.assertEqual(names, [
+            'sheetViews', 'sheetFormatPr', 'cols', 'sheetData',
+            'autoFilter', 'mergeCells', 'dataValidations',
+        ])
 
     def test_template_is_readable_with_exact_10_dates_and_fictional_example(self):
         raw = template_xlsx()
