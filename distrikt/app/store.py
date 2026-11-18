@@ -138,15 +138,16 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     # writes (name, color, physical folder, completion). Unknown
                     # SQL and direct restore/undo paths must conservatively reload.
                     changed_rows=self.db.total_changes-before
+                    untracked=changed_rows!=self._known_record_changes
                     geo_changed=(not self._dirty_modules
                         or bool(self._dirty_modules.intersection({'geo','ignored'}))
-                        or changed_rows!=self._known_record_changes
+                        or untracked
                         or not self._geo_cards_unchanged())
                     if geo_changed:
                         self._geo_cache=None
                         self.geo_generation=getattr(self,'geo_generation',0)+1
-                    if not self._dirty_modules or 'geo' in self._dirty_modules:self._info_cache=None
-                    if not self._dirty_modules or self._dirty_modules.intersection({'geo','cards','ignored','ib'}):
+                    if not self._dirty_modules or untracked or 'geo' in self._dirty_modules:self._info_cache=None
+                    if not self._dirty_modules or untracked or self._dirty_modules.intersection({'geo','cards','ignored','ib'}):
                         self._boundary_report_cache=None
             except Exception:
                 self.db.rollback()
