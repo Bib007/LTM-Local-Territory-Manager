@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.31 samler Excel-historikimport, flervalg, forsidestatistik og ændringer til rapportkort, DAR, kortydelse og login.
+Beta 1.12.19-beta.32 retter Excel-historikskabelonen, tilføjer Fjern prikker i grænseeditoren og reducerer unødvendig geodataindlæsning ved gemning.
 
 ## Installer betakanalen én gang
 
