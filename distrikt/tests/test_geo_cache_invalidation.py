@@ -151,6 +151,16 @@ class GeoCacheTransactionTests(unittest.TestCase):
                     (row["id"], json.dumps(row)))
         self.changed(raw_geo)
         self.assertIn("fictional-extra", self.s.geo_state()["status"])
+        # Even an untracked geo SQL write mixed with a tracked note must clear
+        # ancillary geo_info(), not only the top-level geo_state cache.
+        def mixed_raw_geo():
+            with self.s.transaction():
+                self.s.put("notes", {"id": "fictional-note-2", "text": "Fiktiv"})
+                row = fictional_address("fictional-mixed-extra", "11", 9.511)
+                self.s.db.execute("INSERT INTO geo.records (id,payload) VALUES (?,?)",
+                    (row["id"], json.dumps(row)))
+        self.changed(mixed_raw_geo)
+        self.assertEqual(self.s.geo_state()["info"]["addresses"], 4)
 
     def test_rollback_does_not_invalidate_or_leak_preimages(self):
         original = self.s.geo_state()
