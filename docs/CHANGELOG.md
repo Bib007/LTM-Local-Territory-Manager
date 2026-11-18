@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.29 · 2026-11-18
+
+- Historikskabelonen åbner normalt i Microsoft Excel. Nyeste periode står til venstre, og tidligere udfyldte skabeloner kan fortsat importeres.
+- Fjern prikker i editoren ved at trykke på de hjørner, der skal fjernes fra et korts grænse eller den samlede grænse. Gem derefter grænsen.
+- Små kortændringer og indleveringer genbruger de indlæste geodata, når de geografiske oplysninger er uændrede. Det reducerer unødvendig genindlæsning efter gemning.
+
 ## 1.12.28 · 2026-11-17
 
 - **Excel-historik:** Download skabelonen med de normale importrettigheder. Den har fem ud- og indleveringsperioder pr. kort og særskilt markering af gennemgang.

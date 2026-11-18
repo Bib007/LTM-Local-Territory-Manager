@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from xml.etree import ElementTree
 from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -12,12 +13,12 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'app'))
 from store import Store
 from portable import digest
-from history_xlsx import WIDE_HEADERS, template_xlsx, _cell, xlsx_records
+from history_xlsx import WIDE_HEADERS, TEMPLATE_HEADERS, template_xlsx, _cell, xlsx_records
 from history_import import csv_text
 from card_import import read_rows
 
 
-def workbook(values, *, formula=False):
+def workbook(values, *, formula=False, legacy=False):
     """Edit only a fictional template example using standard XLSX XML."""
     source = template_xlsx()
     with zipfile.ZipFile(io.BytesIO(source)) as archive:
@@ -26,10 +27,22 @@ def workbook(values, *, formula=False):
     xml = parts[path].decode('utf-8')
     beginning = xml.index('<row r="5"')
     end = xml.index('</row>', beginning) + len('</row>')
-    cells = ''.join(_cell(i + 1, 5, value, 6) for i, value in enumerate(values))
+    headers = WIDE_HEADERS if legacy else TEMPLATE_HEADERS
+    if legacy:
+        start = xml.index('<row r="4"')
+        end_header = xml.index('</row>', start) + len('</row>')
+        xml = xml[:start] + '<row r="4">' + ''.join(
+            _cell(i + 1, 4, header.upper(), 5) for i, header in enumerate(headers)) + '</row>' + xml[end_header:]
+        beginning = xml.index('<row r="5"')
+        end = xml.index('</row>', beginning) + len('</row>')
+    displayed = [values[WIDE_HEADERS.index(header)] if WIDE_HEADERS.index(header) < len(values) else ''
+                 for header in headers]
+    cells = ''.join(_cell(i + 1, 5, value, 6) for i, value in enumerate(displayed + list(values[len(WIDE_HEADERS):])))
     if formula:
-        cells = cells.replace(_cell(3, 5, values[2], 6),
-                              '<c r="C5" s="6"><f>1+1</f><v>2</v></c>')
+        column = headers.index('udleveret 1') + 1
+        from history_xlsx import _column
+        cells = cells.replace(_cell(column, 5, values[2], 6),
+                              '<c r="%s5" s="6"><f>1+1</f><v>2</v></c>' % _column(column))
     xml = xml[:beginning] + '<row r="5" ht="26" customHeight="1">' + cells + '</row>' + xml[end:]
     parts[path] = xml.encode('utf-8')
     stream = io.BytesIO()
@@ -74,6 +87,17 @@ class HistoryXlsxTests(unittest.TestCase):
         return self.store.mutate('setup.history-import.apply',
                                  {'token': result['token'], 'confirm': 'IMPORTÉR HISTORIK'})
 
+    def test_template_worksheet_follows_openxml_element_order(self):
+        # CT_Worksheet requires autoFilter before mergeCells and validations.
+        # Excel rejects the workbook when these valid XML elements are reordered.
+        with zipfile.ZipFile(io.BytesIO(template_xlsx())) as archive:
+            sheet = ElementTree.fromstring(archive.read('xl/worksheets/sheet1.xml'))
+        names = [element.tag.rsplit('}', 1)[-1] for element in sheet]
+        self.assertEqual(names, [
+            'sheetViews', 'sheetFormatPr', 'cols', 'sheetData',
+            'autoFilter', 'mergeCells', 'dataValidations',
+        ])
+
     def test_template_is_readable_with_exact_10_dates_and_fictional_example(self):
         raw = template_xlsx()
         self.assertEqual(len([h for h in WIDE_HEADERS if h.startswith(('udleveret', 'indleveret'))]), 10)
@@ -81,10 +105,31 @@ class HistoryXlsxTests(unittest.TestCase):
         self.assertTrue(zipfile.is_zipfile(io.BytesIO(raw)))
         rows = read_rows({'name': 'example.xlsx', 'content': base64.b64encode(raw).decode()},
                          sheet_name='Historik', column_cells=True)
-        self.assertEqual([str(v).casefold() for v in next(v for line, v in rows if line == 4)], WIDE_HEADERS)
+        self.assertEqual([str(v).casefold() for v in next(v for line, v in rows if line == 4)], TEMPLATE_HEADERS)
         self.assertEqual(next(v for line, v in rows if line == 5)[0], 'FIK-001')
         self.assertEqual([line for line, _ in xlsx_records(
             {'name': 'example.xlsx', 'content': base64.b64encode(raw).decode()})], [5])
+
+    def test_newest_period_is_leftmost_and_old_templates_still_import(self):
+        raw = template_xlsx()
+        data = {'name': 'fictional.xlsx', 'content': base64.b64encode(raw).decode()}
+        displayed = read_rows(data, sheet_name='Historik', column_cells=True)
+        example = next(values for line, values in displayed if line == 5)
+        self.assertEqual(str(example[1]), 'Fiktiv E')
+        self.assertEqual(str(example[17]), 'Fiktiv A')
+        normalized = xlsx_records(data)[0][1]
+        self.assertEqual(str(normalized[1]), 'Fiktiv A')
+        self.assertEqual(str(normalized[17]), 'Fiktiv E')
+        current = self.preview_xlsx(workbook(self.pairs()))
+        legacy = self.preview_xlsx(workbook(self.pairs(), legacy=True))
+        self.assertEqual(current['errors'], 0)
+        self.assertEqual(legacy['rows'], current['rows'])
+        self.assertEqual(legacy['csv'], current['csv'])
+
+    def test_extra_data_after_five_periods_is_still_rejected(self):
+        preview = self.preview_xlsx(workbook(self.pairs() + ['unexpected extra data']))
+        self.assertEqual(preview['errors'], 1)
+        self.assertEqual(preview['loan_count'], 0)
 
     def test_five_periods_do_not_invent_three_unmarked_completions(self):
         raw = workbook(self.pairs())
