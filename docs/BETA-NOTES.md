@@ -1,17 +1,14 @@
-# LTM 1.12.19-beta.32
+# LTM 1.12.19-beta.33
 
-- Historikskabelonen åbner normalt i Microsoft Excel efter rettelse af filstrukturen.
-- Vælg Fjern prikker, og tryk på de hjørner, du vil fjerne fra et korts grænse eller den samlede distriktsgrænse. Gem derefter grænsen.
-- Små kortændringer og indleveringer genbruger de indlæste geodata, når kortets geografiske oplysninger er uændrede. Det reducerer unødvendig genindlæsning efter gemning.
+- Historikskabelonen viser den nyeste periode længst til venstre og de ældre perioder mod højre.
+- Importen læser både den nye skabelon og tidligere udfyldte skabeloner med ældste periode først.
 
 ## English
 
-- The history template opens normally in Microsoft Excel after correcting the workbook structure.
-- Choose Remove corners and tap corners to remove them from a card boundary or the whole territory boundary. Save the boundary afterward.
-- Small card edits and returns reuse loaded geographic data when geographic card properties are unchanged. This reduces unnecessary loading after saves.
+- The history template places the newest period on the left and older periods toward the right.
+- Import supports both the new template and previously completed templates with the oldest period first.
 
 ## Afprøvning
 
-- Hent en ny historikskabelon, og åbn den i Excel.
-- Fjern et hjørne fra en prøvegrænse, gem, og genåbn den.
-- Prøv at ændre kortfarve og indlevere et kort med mange indlæste adresser.
+- Hent en ny historikskabelon. Den nyeste periode står til venstre.
+- Prøv import med både en ny og en tidligere udfyldt skabelon. Kontrollér navne, datoer og gennemgang før godkendelse.
