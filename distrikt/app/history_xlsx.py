@@ -15,6 +15,11 @@ WIDE_HEADERS = ['kortnummer'] + [
     for period in range(1, 6)
     for field in ('forkynder', 'udleveret', 'indleveret', 'gennemgået')
 ]
+TEMPLATE_HEADERS = [WIDE_HEADERS[0]] + [
+    field + ' ' + str(period)
+    for period in range(5, 0, -1)
+    for field in ('forkynder', 'udleveret', 'indleveret', 'gennemgået')
+]
 
 
 def _norm(value):
@@ -44,17 +49,21 @@ def template_xlsx():
     rows.append('<row r="1" ht="38" customHeight="1">' +
                 _cell(1, 1, 'HISTORIK  /  DISTRIKTSKORT', 1) + '</row>')
     rows.append('<row r="2" ht="33" customHeight="1">' +
-                _cell(1, 2, 'Slet den fiktive eksempelrække. Ældste periode først. Dato: ÅÅÅÅ-MM-DD. '
+                _cell(1, 2, 'Slet den fiktive eksempelrække. Nyeste periode til venstre. Dato: ÅÅÅÅ-MM-DD. '
                       'Indleveret betyder IKKE automatisk gennemgået; vælg kun Ja når det er dokumenteret.', 2) + '</row>')
     group_cells = [_cell(1, 3, 'KORT', 3)]
-    for period in range(1, 6):
-        group_cells.append(_cell(2 + 4 * (period - 1), 3, 'PERIODE %s  ·  %s' %
-                                 (period, 'ÆLDST' if period == 1 else 'NYERE'), 3 if period % 2 else 4))
+    for position, period in enumerate(range(5, 0, -1)):
+        group_cells.append(_cell(2 + 4 * position, 3, 'PERIODE %s  ·  %s' %
+                                 (period, 'NYEST' if period == 5 else 'ÆLDRE'), 3 if period % 2 else 4))
     rows.append('<row r="3" ht="29" customHeight="1">' + ''.join(group_cells) + '</row>')
     rows.append('<row r="4" ht="31" customHeight="1">' + ''.join(
-        _cell(i + 1, 4, h.upper(), 5) for i, h in enumerate(WIDE_HEADERS)) + '</row>')
-    sample = ['FIK-001', 'Fiktiv A', '2026-04-03', '2026-04-20', 'Ja',
-              'Fiktiv B', '2026-06-02', '2026-06-15', 'Nej'] + [''] * 12
+        _cell(i + 1, 4, h.upper(), 5) for i, h in enumerate(TEMPLATE_HEADERS)) + '</row>')
+    sample = ['FIK-001',
+              'Fiktiv E', '2026-08-02', '2026-08-15', 'Ja',
+              'Fiktiv D', '2026-06-02', '2026-06-15', 'Nej',
+              'Fiktiv C', '2026-04-03', '2026-04-20', 'Ja',
+              'Fiktiv B', '2026-02-03', '2026-02-20', 'Nej',
+              'Fiktiv A', '2025-12-03', '2025-12-20', 'Ja']
     rows.append('<row r="5" ht="26" customHeight="1">' + ''.join(
         _cell(i + 1, 5, value, 6) for i, value in enumerate(sample)) + '</row>')
     # Styled empty rows are guides, not import records.
@@ -206,9 +215,13 @@ def xlsx_records(data):
     """Read only the dedicated data sheet; never evaluate formulas or external links."""
     rows = read_rows(data, sheet_name=SHEET, column_cells=True, strict_sheet=True)
     header_index = next((i for i, (_, values) in enumerate(rows)
-                         if [_norm(x) for x in values] == WIDE_HEADERS), None)
+                         if [_norm(x) for x in values] in (WIDE_HEADERS, TEMPLATE_HEADERS)), None)
     if header_index is None:
         raise ValueError('Brug Historik-fanen med kolonnerne kortnummer og de fem perioder fra skabelonen.')
     if header_index >= 20:
         raise ValueError('Kolonneoverskrifterne skal stå i de første 20 rækker.')
-    return rows[header_index + 1:]
+    headers = [_norm(value) for value in rows[header_index][1]]
+    columns = [headers.index(header) for header in WIDE_HEADERS]
+    return [(line, [values[index] if index < len(values) else '' for index in columns]
+                   + list(values[len(headers):]))
+            for line, values in rows[header_index + 1:]]

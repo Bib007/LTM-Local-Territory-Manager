@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.32 retter Excel-historikskabelonen, tilføjer Fjern prikker i grænseeditoren og reducerer unødvendig geodataindlæsning ved gemning.
+Beta 1.12.19-beta.33 viser den nyeste historikperiode længst til venstre i Excel-skabelonen. Tidligere udfyldte skabeloner kan fortsat importeres. Rettelserne til Excel, Fjern prikker og gemmehastighed fra beta.32 er også med.
 
 ## Installer betakanalen én gang
 

@@ -2,6 +2,11 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.33 · 2026-11-18
+
+- The history template places the newest period on the left and older periods toward the right.
+- Import supports both the new template and previously completed templates with the oldest period first.
+
 ## 1.12.19-beta.32 · 2026-11-18
 
 - The history template opens normally in Microsoft Excel after correcting the workbook structure.

@@ -2,6 +2,11 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.33 · 2026-11-18
+
+- Historikskabelonen viser den nyeste periode længst til venstre og de ældre perioder mod højre.
+- Importen læser både den nye skabelon og tidligere udfyldte skabeloner med ældste periode først.
+
 ## 1.12.19-beta.32 · 2026-11-18
 
 - Historikskabelonen åbner normalt i Microsoft Excel efter rettelse af filstrukturen.
