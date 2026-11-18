@@ -76,9 +76,10 @@ def template_xlsx():
              '<pane xSplit="1" ySplit="4" topLeftCell="B5" activePane="bottomRight" state="frozen"/>'
              '</sheetView></sheetViews><sheetFormatPr defaultRowHeight="22"/>'
              '<cols>' + cols + '</cols><sheetData>' + ''.join(rows) + '</sheetData>'
+             '<autoFilter ref="A4:U10004"/>'
              '<mergeCells count="%s">' % len(merges) +
              ''.join('<mergeCell ref="%s"/>' % ref for ref in merges) + '</mergeCells>'
-             '<autoFilter ref="A4:U10004"/><dataValidations count="5">' + validations +
+             '<dataValidations count="5">' + validations +
              '</dataValidations></worksheet>')
     # All input columns are Excel text format: leading zeroes and ISO dates survive.
     styles = ('<styleSheet xmlns="' + ns + '">'
