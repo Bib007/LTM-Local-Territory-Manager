@@ -157,3 +157,5 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 }
 
 .ibBulkTable{width:100%;table-layout:fixed;overflow-wrap:anywhere}.ibBulkTable td{vertical-align:top}.ibBulkTable label.check{margin:0;display:flex;align-items:flex-start;gap:.45em}.ibBulkTable input[type=checkbox]{flex:none}
+
+.geoCornerRemove{display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;color:#8f3029;background:#fff3f1;border:2px solid #a43d34;cursor:pointer;}

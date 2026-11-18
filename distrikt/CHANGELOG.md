@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.32 · 2026-11-18
+
+- Historikskabelonen åbner normalt i Microsoft Excel efter rettelse af filstrukturen.
+- Vælg Fjern prikker, og tryk på de hjørner, du vil fjerne fra et korts grænse eller den samlede distriktsgrænse. Gem derefter grænsen.
+- Små kortændringer og indleveringer genbruger de indlæste geodata, når kortets geografiske oplysninger er uændrede. Det reducerer unødvendig genindlæsning efter gemning.
+
 ## 1.12.19-beta.31 · 2026-11-17
 
 - **Historik:** Excel-skabelon med fem ud- og indleveringsperioder pr. kort og særskilt markering af gennemgang.
