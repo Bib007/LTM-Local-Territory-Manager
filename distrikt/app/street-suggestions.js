@@ -38,7 +38,7 @@ const StreetSuggestions={
   if(result.conflicts.length||result.ignored.length||result.retired.length)throw Error(I18n.text('Forslaget rammer optagne, fravalgte eller nedlagte adresser. Gennemgå kortkontrollen før du fortsætter.'));
   GeoUI.ids=new Set(result.addresses.map(a=>a.id));GeoUI.useSuggestedOutline(result);GeoUI.mode='choose';GeoUI.dirty=true;
   GeoUI.streetApproval={street_expected:result.street_expected,source_expected:result.source_expected,postcodes:p.postcodes};
-  GeoUI.setNotice('DAR-forslaget er klar. Sammenlign adresser og besøgstal med vejlisten, ret grænsen og vælg Gem for at ændre kortet.',{},GeoUI.outlineNotice(result));
+  GeoUI.setNotice(result.outline?.length>=3?'DAR-forslaget er klar. Sammenlign adresser og besøgstal med vejlisten, ret grænsen og vælg Gem for at ændre kortet.':'DAR-adresserne er valgt, men der mangler en grænse. Kortet er ikke ændret.',{},GeoUI.outlineNotice(result));
   const status=el('geoDownloadStatus');if(status)status.hidden=true;
   render();
   if(GeoUI.map&&result.addresses.length)GeoUI.map.fitBounds(result.addresses.map(a=>[a.lat,a.lng]),{padding:[40,40],maxZoom:18,animate:false});
