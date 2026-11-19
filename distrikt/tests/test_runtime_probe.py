@@ -65,7 +65,7 @@ class RuntimeProbeHTTPTests(unittest.TestCase):
         self.now=0;self.sent=[]
         self.bridge=RuntimeStatus(self.server.address_schedule,'fictional',enabled=True,token='fictional-HA-token',
             pressure=lambda:{'available':True,'high':False},clock=lambda:self.now,
-            transport=lambda *args:self.sent.append(args),probe=lambda:http_probe(self.server.origin,self.server.runtime_probe_key))
+            transport=lambda *args:self.sent.append(args),probe=lambda:http_probe(self.server.origin,self.server.runtime_probe_key),task_status=self.server.runtime_task_status)
 
     def tearDown(self):
         for reading in (self.bridge.sampler,self.bridge.probe):
@@ -81,6 +81,62 @@ class RuntimeProbeHTTPTests(unittest.TestCase):
             self.assertFalse(reading.thread.is_alive())
         self.bridge.publish()
         return self.sent[-1][1]
+
+    def test_parallel_publish_short_sampler_reads_never_accumulate_busy_alarm(self):
+        entered=threading.Event()
+        def ordinary_read():
+            with self.store.lock:
+                entered.set();time.sleep(.1)
+                return {'status':'idle'}
+        def overlapping_probe():
+            if not entered.wait(2):raise AssertionError('sampler never entered')
+            return http_probe(self.server.origin,self.server.runtime_probe_key)
+        self.bridge.probe.read=overlapping_probe
+        values=[]
+        with patch.object(self.server.address_schedule,'status',ordinary_read):
+            for now in (0,30,60,90,120,150):
+                self.now=now;entered.clear()
+                self.bridge.publish()
+                for reading in (self.bridge.sampler,self.bridge.probe):
+                    reading.thread.join(2)
+                    self.assertFalse(reading.thread.is_alive())
+                self.bridge.publish()
+                value=self.sent[-1][1]
+                values.append(value)
+        self.assertEqual([v['state'] for v in values],['idle']*6,values)
+        for value in values:
+            self.assertEqual(value['attributes']['http_status'],'busy')
+            self.assertEqual(value['attributes']['problem_seconds'],0,value)
+
+    def test_parallel_sampler_progress_clears_a_real_alarm_despite_busy_snapshots(self):
+        entered=threading.Event()
+        def ordinary_read():
+            with self.store.lock:
+                entered.set();time.sleep(.1)
+                return {'status':'idle'}
+        def overlapping_probe():
+            if not entered.wait(2):raise AssertionError('sampler never entered')
+            return http_probe(self.server.origin,self.server.runtime_probe_key)
+        with self.store.lock:
+            self.bridge.publish();self.bridge.probe.thread.join(2)
+            self.assertFalse(self.bridge.probe.thread.is_alive())
+            self.now=6;self.bridge.publish()
+            self.now=126;self.bridge.publish();self.bridge.probe.thread.join(2)
+            self.assertEqual(self.sent[-1][1]['state'],'unresponsive')
+        self.bridge.sampler.thread.join(2)
+        self.assertFalse(self.bridge.sampler.thread.is_alive())
+        self.bridge.probe.read=overlapping_probe
+        with patch.object(self.server.address_schedule,'status',ordinary_read):
+            self.now=156
+            self.bridge.publish()
+            for reading in (self.bridge.sampler,self.bridge.probe):
+                reading.thread.join(2)
+                self.assertFalse(reading.thread.is_alive())
+            self.bridge.publish()
+        value=self.sent[-1][1]
+        self.assertEqual(value['state'],'idle',value)
+        self.assertEqual(value['attributes']['http_status'],'busy')
+        self.assertEqual(value['attributes']['problem_seconds'],0)
 
     def request(self,headers):
         return urllib.request.urlopen(urllib.request.Request(self.server.origin+'/api/runtime/probe',headers=headers),timeout=1)
@@ -116,6 +172,14 @@ class RuntimeProbeHTTPTests(unittest.TestCase):
                     self.bridge.publish();value=self.sent[-1][1]
                     self.assertEqual(value['attributes']['diagnostic'],'runtime_busy')
                     self.assertNotEqual(value['state'],'unresponsive','Short saves do not alert')
+                    # A cached success is not a fresh completion. The blocked
+                    # sampler must independently exceed its deadline first.
+                    self.now+=6;self.bridge.publish()
+                    self.assertEqual(self.sent[-1][1]['attributes']['status_sample'],'timeout')
+                    if lock is self.store.lock:
+                        free=self.server.accounts.lock.acquire(blocking=False)
+                        self.assertTrue(free,'Monitoring must not retain Accounts while waiting for Store')
+                        if free:self.server.accounts.lock.release()
                     self.now+=120
                     started=time.monotonic();self.bridge.publish()
                     self.assertLess(time.monotonic()-started,1)
@@ -164,8 +228,8 @@ class RuntimeProbeHTTPTests(unittest.TestCase):
 
     def test_status_sampler_can_stall_while_http_and_delivery_continue(self):
         entered=threading.Event();release=threading.Event()
-        def stalled():entered.set();release.wait(3);return {'status':'idle'}
-        with patch.object(self.server.address_schedule,'status',stalled):
+        def stalled():entered.set();release.wait(3);return {'available':True,'high':False}
+        with patch.object(self.bridge,'pressure',stalled):
             try:
                 self.bridge.publish();self.assertTrue(entered.wait(1));self.bridge.probe.thread.join(1)
                 self.now=6;self.bridge.publish()

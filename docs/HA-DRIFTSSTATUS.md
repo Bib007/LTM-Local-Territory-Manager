@@ -31,6 +31,10 @@ Den eksisterende Supervisor TCP-watchdog kontrollerer kun, om porten accepterer 
 
 LTM bruger nu samme HTTP-lytter til en lille intern prøve før den normale profiladgang. Prøven forsøger data- og kontolåsene uden ventetid og læser ingen brugerdata. HTTP-prøve, intern statusmåling og aflevering til HA kører adskilt. Der findes højst én igangværende arbejder for hver måling; en fastlåst måling skaber ikke flere og flere tråde eller HTTP-forespørgsler. Afleveringen venter aldrig på disse arbejdere eller på data-/kontolåsene. En sen succes, som overskred svarfristen, tæller stadig som timeout; en ny rettidig prøve kræves til raskmelding.
 
+Et `busy`-svar er kun et øjebliksbillede. Gentagne øjebliksbilleder beviser ikke, at en lås har været optaget hele tiden; HTTP-prøven kan ramme statusmålingens egen korte datalæsning ved hvert interval. Den separate statusmåling skal derfor passere både kontolåsen og datalåsen inden for sin samlede frist. Den frigiver kontolåsen før datalæsningen, så overvågningen ikke holder én applås, mens den venter på en anden.
+
+En rettidigt gennemført statusmåling beviser fremdrift og nulstiller alarmperioden for `runtime_busy`, selv om HTTP-prøven samtidig ser en optaget lås. `http_status: busy` og diagnosen kan stadig ses som observation; `problem_seconds` er da nul, og der udløses ingen svarproblemalarm. En tidligere vellykket måling kan kun bruges indtil den igangværende målings femsekundersfrist; ved en reelt fastlåst data- eller kontolås overskrider den nye måling fristen. HTTP-timeouts, forbindelsesfejl og ugyldige svar ophæves aldrig af en vellykket intern statusmåling.
+
 | Fast diagnose i HA-attributten `diagnostic` | Hvad er faktisk observeret? |
 | --- | --- |
 | `none` | De seneste prøver gennemførte normalt. |
@@ -73,7 +77,7 @@ Ressourcegrundlaget læser kun lokale Linux-målinger; det ændrer ingen systemi
 
 ## Kontrol af HTTP-kandidaten
 
-Midlertidige fiktive SQLite-data og lokale HTTP-servere dækker blokerede HTTP-svar, langsom levering af svarindhold, afvist forbindelse, forældet/uventet svar, optagne data- og kontolåse samt en fastlåst intern statusmåling. Den uafhængige aflevering fortsætter, femsekundersfristen og to minutters vedvarende fejl afprøves med fiktivt monotont ur, kun én arbejder tillades per måling, og raskmelding kræver nye rettidige målinger. Adgang, uændret dataversion, ingen hemmeligheder i status og bevaret kørende server kontrolleres. Ingen rigtig HA eller telefon kontaktes.
+Midlertidige fiktive SQLite-data og lokale HTTP-servere dækker blokerede HTTP-svar, langsom levering af svarindhold, afvist forbindelse, forældet/uventet svar, optagne data- og kontolåse samt en fastlåst intern statusmåling. Den uafhængige aflevering fortsætter, femsekundersfristen og to minutters vedvarende fejl afprøves med fiktivt monotont ur, kun én arbejder tillades per måling, og raskmelding kræver nye rettidige målinger. Adgang, uændret dataversion, ingen hemmeligheder i status og bevaret kørende server kontrolleres. Den normale parallelle `publish()`-adfærd afprøves også direkte ved 0, 30, 60, 90, 120 og 150 sekunder: hver HTTP-prøve rammer en almindelig 0,1-sekunds datalæsning, men ingen alarm må akkumuleres. En anden parallel regression viser raskmelding fra en reel alarm, selv om proben fortsat rammer korte læsninger. Disse forløb bruger ikke den sekventielle `settled()`-hjælper. Ingen rigtig HA eller telefon kontaktes.
 
 Den eksisterende kontrol i `scripts/check_ha_status_blueprint.py` er udvidet med den nye beskedtype og alle faste diagnoser for begge kanaler. PR-CI kører Home Assistant 2026.10.4's faktiske skemaer og skabeloner samt den brede suite. Ejerens telefonlevering og en virkelig fastfrysning er fortsat ikke afprøvet.
 

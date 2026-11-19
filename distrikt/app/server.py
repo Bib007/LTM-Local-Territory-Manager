@@ -94,8 +94,15 @@ class Server(ThreadingHTTPServer):
         self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
         self.runtime_probe_key=secrets.token_urlsafe(32)
         self.runtime_status=RuntimeStatus(self.address_schedule,VERSION,self.beta,
-            probe=lambda:http_probe(self.origin,self.runtime_probe_key))
+            probe=lambda:http_probe(self.origin,self.runtime_probe_key),task_status=self.runtime_task_status)
         self.update_checker=UpdateChecker(VERSION,home_assistant=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1',server_mode=bool(access_host))
+
+    def runtime_task_status(self):
+        # Witness progress through BOTH application locks in the sampler worker.
+        # Release Accounts before reading Store: monitoring must not hold one
+        # application lock while waiting for another. Delivery takes neither.
+        with self.accounts.lock:pass
+        with self.store.lock:return self.address_schedule.status()
 
     def app_state(self,profile_token=None):
         """The same local overview for page reads and confirmed write responses."""

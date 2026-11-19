@@ -34,8 +34,9 @@ MESSAGES={
 
 class RuntimeStatus:
     def __init__(self,schedule,version,beta=False,enabled=None,token=None,
-                 pressure=resource_pressure,clock=time.monotonic,transport=supervisor_post,probe=None):
-        self.schedule=schedule;self.version=version;self.channel='beta' if beta else 'stable'
+                 pressure=resource_pressure,clock=time.monotonic,transport=supervisor_post,probe=None,task_status=None):
+        self.schedule=schedule;self.task_status=task_status or (lambda:self.schedule.status())
+        self.version=version;self.channel='beta' if beta else 'stable'
         self.entity='sensor.ltm_'+self.channel+'_drift'
         self.token=os.environ.get('SUPERVISOR_TOKEN','') if token is None else token
         requested=(os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1' and os.environ.get('DISTRIKT_HA_STATUS') in ('1','true')) if enabled is None else enabled
@@ -50,7 +51,7 @@ class RuntimeStatus:
     def sample(self):
         # Read Store-backed status before taking the bridge lock. App snapshots
         # hold Store while reading this bridge; reversing that order deadlocks HA.
-        reading=self.pressure();task=self.schedule.status()
+        reading=self.pressure();task=self.task_status()
         with self.lock:
             now=self.clock()
             self.high_since=(now if self.high_since is None else self.high_since) if reading['high'] else None
@@ -81,7 +82,12 @@ class RuntimeStatus:
                 'starting' if http=='pending' or sample_status=='pending' else 'none')
             with self.lock:
                 now=self.clock()
-                bad=diagnostic not in ('none','starting')
+                # Busy is a point observation, not evidence of continuous lock
+                # contention. A timely sampler traverses BOTH application locks
+                # and proves progress, even when the HTTP probe hits that read.
+                # Cached success grants only the Observation deadline's grace;
+                # a blocked sampler then becomes timeout independently.
+                bad=diagnostic not in ('none','starting') and not (diagnostic=='runtime_busy' and sample_status=='ok')
                 self.problem_since=(now if self.problem_since is None else self.problem_since) if bad else None
                 value=copy.deepcopy(sampled) if sampled else {'state':'unknown','attributes':{'version':self.version,'channel':self.channel}}
                 if self.problem_since is not None and now-self.problem_since>=120:value['state']='unresponsive'
