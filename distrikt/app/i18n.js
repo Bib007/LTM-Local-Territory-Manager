@@ -15,6 +15,19 @@ const I18n={
   "Nabokort {number} mangler kendte adressekoordinater. Grænsen kan ikke ændres automatisk uden at kende kortets adresser.":"Neighbouring territory {number} has unknown address coordinates. Its boundary cannot be changed automatically without knowing its addresses.",
   "Nabokort {number} kan ikke få en sikker sammenhængende grænse med alle sine adresser. Kontrollér de to kort manuelt.":"Neighbouring territory {number} cannot have a safe connected boundary containing all its addresses. Review both territories manually.",
 
+
+  "Vælg forkynder":"Select publisher",
+  "Tilbage":"Back",
+  "Sammenlæg forkyndere":"Merge publishers",
+  "Behold tjenestegruppe, gruppefunktion og pionerstatus fra":"Keep the service group, group role and pioneer status from",
+  "Udleveringer og historik samles. Tidligere navne genkendes ved senere import.":"Assignments and history are combined. Previous names are recognised in later imports.",
+  "Forkynder der skal samles med denne":"Publisher to merge into this one",
+  "Navn efter sammenlægning":"Name after merging",
+  "Kontrollér sammenlægning":"Review merge",
+  "Saml og gem":"Merge and save",
+  "Forkyndere sammenlagt":"Publishers merged",
+  "Ukendte forkyndere oprettes i gruppen Ikke i en tjenestegruppe.":"Unknown publishers are created in the group Not in a service group.",
+
   "Vælg en IB-opfølgning fra listen.":"Select a DNC follow-up from the list.",
   "IB-opfølgningen er allerede afsluttet. Opdater oversigten.":"This DNC follow-up is already complete. Refresh the list.",
   "Vælg Ja eller Nej til IB-revision.":"Choose Yes or No for DNC revision.",

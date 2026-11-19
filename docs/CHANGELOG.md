@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.35 · 2026-11-19
+
+- Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
+- To forkyndere kan sammenlægges under et valgfrit navn fra forkynderens side. Udleveringer og historik bevares, og tidligere navne genkendes ved senere import.
+- Tjenestegruppe, gruppefunktion og pionerstatus bevares fra den forkynder, sammenlægningen åbnes fra. Sammenlægningen kan fortrydes som seneste handling.
+
 ## 1.12.19-beta.34 · 2026-11-19
 
 - DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.

@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.35 · 2026-11-19
+
+- History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).
+- Merge two publishers under a chosen name from a publisher profile. Assignments and history are preserved, and previous names are recognised in later imports.
+- The service group, group role and pioneer status are retained from the publisher whose profile opens the merge. The latest merge can be undone.
+
 ## 1.12.19-beta.34 · 2026-11-19
 
 - DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.

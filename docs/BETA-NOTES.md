@@ -1,15 +1,17 @@
-# LTM 1.12.19-beta.34
+# LTM 1.12.19-beta.35
 
-- DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.
-- Mislykkede grænseforslag vises med en forklaring. Et DAR-valg uden grænse præsenteres ikke længere som et færdigt forslag. Ukendte adressekoordinater og sammenfaldende indgange forklares særskilt.
+- Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
+- To forkyndere kan sammenlægges under et valgfrit navn fra forkynderens side. Udleveringer og historik bevares, og tidligere navne genkendes ved senere import.
+- Tjenestegruppe, gruppefunktion og pionerstatus bevares fra den forkynder, sammenlægningen åbnes fra. Sammenlægningen kan fortrydes som seneste handling.
 
 ## English
 
-- DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.
-- Failed outline proposals show an explanation. A DAR selection without a boundary is no longer presented as a completed proposal. Unknown address coordinates and coincident entrances receive specific explanations.
+- History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).
+- Merge two publishers under a chosen name from a publisher profile. Assignments and history are preserved, and previous names are recognised in later imports.
+- The service group, group role and pioneer status are retained from the publisher whose profile opens the merge. The latest merge can be undone.
 
 ## Afprøvning
 
-- Prøv DAR-adresseforslag og Foreslå grænse på et fiktivt kort.
-- Hvis nabokort blokerer, vises deres foreslåede grænser med orange streger. Kontrollér dem på kortet og godkend ved Gem.
-- Annuller en sammenlagt ændring og kontrollér, at ingen kort er ændret. Kontrollér efter gemning, at begge kort har deres oprindelige adresser og historik.
+- Importér historik med et opdigtet nyt navn. Kontrollér den nye tjenestegruppe.
+- Åbn en forkynder, vælg Sammenlæg forkyndere, vælg dubletten og skriv det ønskede slutnavn. Kontrollér begge navne, før du gemmer.
+- Kontrollér udlån og historik efter sammenlægning. Prøv en senere import med et tidligere navn og den eksisterende Fortryd-handling.

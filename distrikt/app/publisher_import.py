@@ -24,8 +24,10 @@ def preview(store,data):
     if not fields or any(not f for f in fields) or len(set(fields))!=len(fields) or 'name' not in fields:
         raise ValueError('Brug gruppeskabelonens kolonner: navn, tjenestegruppe, gruppefunktion og pioner.')
     current=store.all('publishers');by_name=defaultdict(list)
-    for person in current:by_name[norm(person['name'])].append(person)
-    rows=[];seen=set();proposed={p['id']:deepcopy(p) for p in current}
+    from publisher_data import names
+    for person in current:
+        for name in names(person):by_name[norm(name)].append(person)
+    rows=[];seen=set();seen_ids=set();proposed={p['id']:deepcopy(p) for p in current}
     role_names={norm(label):key for key,label in ROLES.items()};role_names.update({key:key for key in ROLES});role_names['forkynder']=''
     for line,values in source[1:]:
         if len(rows)>=5000:raise ValueError('Gruppelisten må højst indeholde 5.000 linjer.')
@@ -39,8 +41,11 @@ def preview(store,data):
             seen.add(name);matches=by_name.get(name,[])
             if len(matches)>1:raise ValueError('Navnet matcher flere eksisterende forkyndere. Ret navnene i registeret først.')
             old=matches[0] if matches else None
+            if old:
+                if old['id'] in seen_ids:raise ValueError('Flere navne i filen tilhører samme forkynder. Behold kun én linje pr. forkynder.')
+                seen_ids.add(old['id'])
             # Omitted columns preserve existing values; a present blank clears.
-            values={'name':v['name']}
+            values={'name':old['name'] if old and name!=norm(old['name']) else v['name']}
             if 'group' in fields:values['group']=v['group']
             if 'group_role' in fields:
                 role=norm(v['group_role'])

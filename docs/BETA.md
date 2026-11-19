@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.34 retter DAR-grænseforslag, som blokeres af nabokort. Hvis nye nabogrænser kan løse problemet, vises de på kortet og kræver din godkendelse ved Gem. Adresser og historik flyttes ikke.
+Beta 1.12.19-beta.35 opretter ukendte forkyndere fra historikimport i gruppen "Ikke i en tjenestegruppe". To forkyndere kan sammenlægges under et valgfrit navn med bevaret udlån og historik. Tidligere navne genkendes ved senere import.
 
 ## Installer betakanalen én gang
 
