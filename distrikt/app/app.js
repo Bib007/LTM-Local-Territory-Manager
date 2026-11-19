@@ -548,8 +548,7 @@ function frontRows(c,english=false){
   if(a.street?.odd.length&&a.street.even.length){
    merged.add(a.street);
    const sides=[...a.street.odd,...a.street.even];
-   const showParity=sides.some(row=>!!row.shortRange);
-   const intervals=[...new Set(sides.map(row=>row.interval+(showParity?sideSuffix(row.side):'')))].join(' & ');
+   const intervals=[...new Set(sides.map(row=>row.interval))].join(' & ');
    const supplements=[...new Set(sides.flatMap(row=>[row.extra_road,row.extra_numbers]).filter(Boolean))];
    rows.push({label:[a.road+' '+intervals,...supplements].join(' – '),count:sides.reduce((sum,row)=>sum+row.count,0),
     ...(sides.some(row=>row.count_unknown)?{count_unknown:true}:{})});
