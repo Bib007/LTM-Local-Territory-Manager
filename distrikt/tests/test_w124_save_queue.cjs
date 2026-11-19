@@ -145,4 +145,19 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert.equal(f.run('EditorBases.current.base'),'fork-2');assert.equal(f.get('dialog').open,true);
   console.log('PASS a page write forks its base so another editor can open before its receipt');
  }
+ {
+  const f=fixture();let release;f.setAnswer(async()=>{await new Promise(resolve=>release=resolve);return response({error:'Fiktiv afvisning'},409);});
+  f.run("openDialog('<form>Fiktiv indlevering</form>')");const pending=f.run("mutate('loan.finish',{id:'fictional'})"),result=Promise.allSettled([pending]);await tick();
+  f.run("closeDialog();page='Indstillinger'");f.get('formError').textContent='Nyere formularfejl';release();await result;
+  assert.equal(f.get('formError').textContent,'Nyere formularfejl');assert.equal(f.run('SaveStatus.kind'),'error');
+  console.log('PASS a late rejection uses global feedback instead of another page form');
+ }
+ {
+  const f=fixture();let release;
+  f.setAnswer(async request=>{if(request.url==='/api/mutate'){await new Promise(resolve=>release=resolve);return response({revision:'r1',state:{...f.complete,revision:'r1'}});}return response({ok:true});});
+  const pending=f.run("mutate('loan.finish',{id:'fictional'},{close:false})");await tick();
+  const restore=f.run("api('/api/restore/apply',{token:'fictional-reviewed-backup'})"),backup=f.run("api('/api/export/backup')");await tick();assert.equal(f.requests.length,1);
+  release();await Promise.all([pending,restore,backup]);assert.equal(f.requests[1].url,'/api/restore/apply');assert.equal(f.requests[2].url,'/api/export/backup');
+  console.log('PASS whole-data replacement and backup export wait for earlier save confirmation');
+ }
 })().catch(error=>{console.error(error);process.exitCode=1;});

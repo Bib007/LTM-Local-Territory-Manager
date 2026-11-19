@@ -14,7 +14,7 @@ Closing/reloading the browser is still protected while writes are pending.
 | Individual/whole boundary save | The exact queued drawing may leave. | A boundary-only save does **not** cover a changed address selection: that selection retains its discard warning. Geographic saves remain mutually exclusive. |
 | Settings and ordinary nonmodal row actions | Existing navigation remains available; late mutation refreshes preserve dirty/busy page forms and geographic drafts. | Same queue; no modal behavior is relaxed for other actions. |
 | Merge/restructure, imports/setup, destructive/recovery, print approval, security/admin, sharing | Existing approval/session guards and modal workflows are retained. `confirmedWrite` joins the common queue and captures its original profile snapshot. | Their follow-up work depends on the reviewed preview, current permissions, exported file or confirmed result. They are not opted into background modal behavior. |
-| Explicit Refresh and shutdown | Wait for the current queue before reading/reviewing or stopping. | Refresh also rejects navigation, new editors/drafts or new writes appearing while it waits/reads; it cannot clear an uncertain-write guard using a pre-write read. |
+| Explicit Refresh, backup export, whole-data/connection restore, beta reset, logout and shutdown | Wait for the current queue before reading/reviewing, replacing data or stopping. | Refresh also rejects navigation, new editors/drafts or new writes appearing while it waits/reads; it cannot clear an uncertain-write guard using a pre-write read. |
 
 All `mutate` callers were examined, including the save/approval/import helpers in
 workspace, geography, profiles, setup/import, IB, printing, sharing and numbering.

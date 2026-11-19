@@ -68,6 +68,9 @@ function saving(){if(!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard
 function failed(message){if(WriteGuard.uncertain){SaveStatus.set('error','Gemning er ikke bekræftet',WriteGuard.error);return;}if(WriteGuard.needsReview){SaveStatus.set('review','Ændringen er gemt · opdatér data før næste ændring',WriteGuard.error);return;}if(WriteGuard.loginExpired||message instanceof RequestError&&message.kind==='login'){SaveStatus.set('error','Login er udløbet · log ind igen.');return;}if(message instanceof RequestError){if(!message.writing)return;if(message.kind==='base'){SaveStatus.set('review','Kladden er bevaret · kontrollér redigeringens udgangspunkt',message);return;}if(message.kind==='rejected'){SaveStatus.set('error','Ændringen blev afvist',message);return;}}SaveStatus.set('error','Gemning er ikke bekræftet',message);}
 function toast(message){I18n.errorContent(el('toast'),message);el('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el('toast').style.display='none',4500);}
 async function api(path,body){
+ // Whole-data replacement, exports and session teardown must follow accepted
+ // writes. Their existing modal/preview guards remain responsible for approval.
+ if(['/api/restore/apply','/api/beta/reset','/api/connections/restore','/api/export/backup','/api/profiles/backup','/api/logout'].includes(path)){const epoch=WriteGuard.epoch;do{await saveQueue;}while(PendingSaves.count);if(body&&path!=='/api/logout')WriteGuard.assert(epoch);}
  if(path==='/api/mutate'&&state?.profile&&!['workflow.undo','restore','recovery.purge'].includes(body?.action)&&!ProfilesUI.canAction(body?.action,body?.data))throw new RequestError('Du har ikke rettighed til denne handling.','rejected',403,'',true);
  const explicitBase=Object.prototype.hasOwnProperty.call(body||{},'profile_snapshot');
  if(path==='/api/mutate'&&state?.profile&&!explicitBase){body={...body,profile_snapshot:ProfilesUI.dialogBase||state.profile.snapshot};}
@@ -204,7 +207,8 @@ function mutate(action,data,{close=true,message='Gemt',autosave=false,synchroniz
  const epoch=WriteGuard.epoch,payload=JSON.parse(JSON.stringify(data||{})),generation=openDialog.generation,context=EditorBases.capture();
  const commandKey=JSON.stringify([generation,action,payload]);
  if(PendingSaves.commands.has(commandKey))return PendingSaves.commands.get(commandKey);
- const form=el('dialog').open?el('dialog').querySelector?.('form'):null,signature=form?FormDrafts.signature(form):null;
+ const form=el('dialog').open?el('dialog').querySelector?.('form'):null,signature=form?FormDrafts.signature(form):null,origin=page,feedback=el('formError'),savedNote=el('formSaved');
+ const ownsFeedback=()=>generation===openDialog.generation&&origin===page&&el('formError')===feedback;
  // Only self-contained ordinary saves release their modal. Preview/approval,
  // import, security, restore and print workflows retain their existing gates.
  if(['loan.issue','loan.finish','card.save','publisher.save','area.save','note.save','visit.save','ib.save','completion.record','filter.save'].includes(action))PendingSaves.releaseDialog(generation);
@@ -221,13 +225,13 @@ function mutate(action,data,{close=true,message='Gemt',autosave=false,synchroniz
   const snapshot=mutationSnapshot(result),geoChanged=(action.startsWith('geo.')||action.startsWith('ignore.')||action.startsWith('address.change.')||action.startsWith('card.restructure.')||['delete','restore','recovery.purge','workflow.undo'].includes(action))&&result?.geo_changed!==false;
   if(synchronize)await synchronize(result,snapshot);
   else{if(geoChanged)await GeoUI.load();await refresh({snapshot,preserveDrafts:true});}saved();
-  if(close&&generation===openDialog.generation&&el('dialog').open&&(!form||FormDrafts.signature(form)===signature))closeDialog();
-  const error=el('formError');if(error&&generation===openDialog.generation)error.textContent='';
+  if(close&&generation===openDialog.generation&&origin===page&&el('dialog').open&&(!form||FormDrafts.signature(form)===signature))closeDialog();
+  const error=el('formError');if(error&&ownsFeedback())error.textContent='';
   if(!autosave)toast(message);
-  const note=el('formSaved');if(note&&generation===openDialog.generation&&(!form||FormDrafts.signature(form)===signature))note.innerHTML=ui('Gemt automatisk');
+  const note=el('formSaved');if(note&&note===savedNote&&ownsFeedback()&&(!form||FormDrafts.signature(form)===signature))note.innerHTML=ui('Gemt automatisk');
   return result.result;
  });
- const tracked=work.catch(e=>{if(accepted)WriteGuard.requireRefresh(e);failed(e);const err=el('formError');if(err&&generation===openDialog.generation)I18n.errorContent(err,e);else toast(e);throw e;}).finally(()=>{PendingSaves.commands.delete(commandKey);if(context){context.pending--;EditorBases.release(context);}});
+ const tracked=work.catch(e=>{if(accepted)WriteGuard.requireRefresh(e);failed(e);const err=el('formError');if(err&&ownsFeedback())I18n.errorContent(err,e);else toast(e);throw e;}).finally(()=>{PendingSaves.commands.delete(commandKey);if(context){context.pending--;EditorBases.release(context);}});
  PendingSaves.commands.set(commandKey,tracked);return tracked;
 }
 const DialogFocus={opener:null,
