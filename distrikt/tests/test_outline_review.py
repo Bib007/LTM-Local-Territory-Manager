@@ -65,6 +65,13 @@ class OutlineReviewTests(unittest.TestCase):
         neighbor=self.s.require('cards',self.neighbor);p=self.preview()
         self.assertEqual(p['outline_status'],'clear');self.assertFalse(p['outline_changes'])
         self.save(p);self.assertEqual(self.s.require('cards',self.neighbor),neighbor)
+    def test_recorded_and_new_dar_entrances_both_stay_inside_neighbor(self):
+        with self.s.transaction():self.s.put('geo',self.address('2',0,110))
+        p=self.preview();self.assertEqual(p['outline_status'],'neighbors')
+        polygon=p['outline_changes'][0]['polygon']
+        self.assertTrue(point_in_polygon(self.point(0,70),polygon))
+        self.assertTrue(point_in_polygon(self.point(0,110),polygon))
+
     def test_same_coordinate_is_not_misreported_as_neighbor_block(self):
         with self.s.transaction():self.s.put('geo',self.address('9',-40,0))
         p=self.preview();self.assertEqual(p['outline_status'],'unavailable');self.assertIn('samme koordinat',p['outline_reason'])

@@ -1,5 +1,4 @@
 """Read-only proposals for boundaries that require explicit neighbour approval."""
-from geography import point_in_polygon
 from territory_outline import suggest_outline, meets
 from admin_store import signature
 
@@ -23,15 +22,16 @@ def propose(selected, addresses, cards, target_id, outline, status):
             fixed=[c['geo_polygon'] for c in neighbors if c not in blocking]
             lookup={a['id']:a for a in addresses}
             for c in blocking:
-                members={a['id']:a for a in c.get('geo_addresses',[])}
-                members.update({ident:lookup[ident] for ident in c.get('address_ids',[]) if ident in lookup})
-                missing=set(c.get('address_ids',[]))-members.keys()
+                # Retain recorded entrances as well as newer DAR coordinates.
+                # Pending address changes must not silently put an old marker outside.
+                known=[*c.get('geo_addresses',[]),*(lookup[ident] for ident in c.get('address_ids',[]) if ident in lookup)]
+                members=list({(a['id'],a['lng'],a['lat']):a for a in known}.values())
+                missing=set(c.get('address_ids',[]))-{a['id'] for a in members}
                 if not members or missing:
                     reason='Nabokort {number} mangler kendte adressekoordinater. Grænsen kan ikke ændres automatisk uden at kende kortets adresser.'
                     break
                 # Keep every owned entrance, including legacy/retired ones. No assignments move.
-                all_points={a['id']:a for a in addresses};all_points.update(members)
-                revised,revised_status=suggest_outline(list(members.values()),list(all_points.values()),[candidate,*fixed])
+                revised,revised_status=suggest_outline(members,[*addresses,*members],[candidate,*fixed])
                 if not revised or revised_status!='clear' or meets(revised,candidate,0):
                     reason='Nabokort {number} kan ikke få en sikker sammenhængende grænse med alle sine adresser. Kontrollér de to kort manuelt.'
                     break
