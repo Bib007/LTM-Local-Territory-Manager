@@ -16,7 +16,6 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.evaluate(()=>api('/api/profiles/activate',{name:'Fiktiv admin',password:'Fiktiv-password-123',confirmation:'AKTIVÉR PROFILER'}));
    await page.reload();await page.locator('#loginName').fill('Fiktiv admin');await page.locator('#loginPassword').fill('Fiktiv-password-123');await page.locator('#loginForm button').click();
    await page.waitForFunction(()=>typeof state!=='undefined'&&state?.profile&&SaveStatus.kind==='saved');
-   await page.locator('[data-profile=welcome-done]').click();
    await page.waitForFunction(()=>PersonalGuide.data!==null);
    const later=page.locator('[data-personal-guide=later]');if(await later.count())await later.click();
   }
@@ -41,10 +40,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.locator('[data-action=publisher-merge-apply]').waitFor();
   assert.match(await page.locator('#dialog').innerText(),/Gruppefunktion: Assistent[\s\S]*Pioner: Nej/);
   // A concurrent save after preview must reject the command without absorbing anyone.
-  await page.evaluate(id=>api('/api/mutate',{action:'publisher.save',data:{id,name:'Fiktiv aktuel kilde'}}),ids.b);
+  await page.evaluate(async id=>{
+   // A different editor owns its own base; do not consume the open dialog's base.
+   const fresh=await(await api('/api/state')).json();
+   await api('/api/mutate',{action:'publisher.save',data:{id,name:'Fiktiv aktuel kilde'},profile_snapshot:fresh.profile?.snapshot});
+  },ids.b);
   await page.locator('[data-action=publisher-merge-apply]').click();
   await page.waitForFunction(()=>SaveStatus.kind==='error');
-  assert.match(await page.locator('#dialog').innerText(),/ændret/);
+  assert.match(await page.locator('#toast').innerText(),/ændret/);
   assert.equal(await page.evaluate(()=>state.publishers.length),2);
   await page.locator('[data-action=publisher-merge]').click();
   await page.locator('#publisherMergeForm select').selectOption(ids.b);
