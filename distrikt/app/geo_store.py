@@ -173,7 +173,7 @@ class GeoStore(MainBoundaryStore):
                 current=suggest(self,data)
                 if current['street_expected']!=data['street_expected']:
                     raise ValueError('Adressegrundlaget er ændret. Hent et nyt vejlinjeforslag.')
-            automatic=bool(data.get('outline_expected') or data.get('street_expected') and not data.get('polygon'))
+            automatic=bool(data.get('outline_expected') or data.get('approve_neighbors') or data.get('street_expected') and not data.get('polygon'))
             preview=self.geo_preview(dict(data,suggest_outline=automatic))
             if preview['conflicts']:raise ValueError('Nogle adresser findes på et andet kort eller i 48-timers gendannelse. Fjern dem fra valget først.')
             if preview['retired']:raise ValueError('Nogle adresser er ikke længere gældende hos DAR. Fjern dem fra valget først.')
@@ -187,6 +187,14 @@ class GeoStore(MainBoundaryStore):
                     raise ValueError('Grænseforslaget er ændret. Vælg Foreslå grænse, og kontrollér det nye forslag.')
                 polygon=preview['outline']
                 if not polygon:raise ValueError('Der kunne ikke tegnes en sikker automatisk grænse. Tegn grænsen manuelt.')
+                changes=preview.get('outline_changes',[])
+                if changes and (not expected or data.get('approve_neighbors') is not True):
+                    raise ValueError('Godkend ændringerne af nabokortenes grænser, før du gemmer.')
+                for change in changes:
+                    neighbor=dict(self.require('cards',change['id']))
+                    neighbor['geo_polygon']=change['polygon'];neighbor['geo_outline_source']='suggestion';neighbor['geo_updated']=stamp()
+                    neighbor['front_revision']=True
+                    self.put('cards',neighbor)
             ident=data.get('card_id')
             if ident:c=self.require('cards',ident)
             else:
@@ -264,8 +272,9 @@ class GeoStore(MainBoundaryStore):
             neighbors=[c['geo_polygon'] for c in reserved if c['id']!=data.get('card_id')
                        and not c.get('archived') and len(c.get('geo_polygon') or [])>=3]
             outline,status=suggest_outline(eligible,all_addresses,neighbors)
-            result.update(outline=outline,outline_status=status,
-                          outline_expected=signature([sorted(a['id'] for a in eligible),outline,status]))
+            from outline_review import propose, expected
+            review=propose(eligible,all_addresses,reserved,data.get('card_id'),outline,status)
+            result.update(review,outline_expected=expected(eligible,all_addresses,reserved,review))
         else:
             result['outline']=enclosing_outline([[a['lng'],a['lat']] for a in selected]) if selected else []
         return result

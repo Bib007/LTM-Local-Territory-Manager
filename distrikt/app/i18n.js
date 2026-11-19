@@ -3,6 +3,18 @@
 const I18n={
  current:'en',
  english:{
+  "Forslaget kræver nye grænser på nabokort. Adresser, IB, udlån og historik flyttes ikke.":"The proposal requires new neighbouring boundaries. Addresses, DNC, assignments and history are not moved.",
+  "Jeg godkender de viste nye grænser på nabokortene":"I approve the new neighbouring boundaries shown",
+  "Forslaget kræver ændringer af nabogrænser. De nye nabogrænser vises med orange streger. Godkend dem ved Gem.":"This proposal requires neighbouring boundary changes. New neighbouring boundaries are shown with orange lines. Approve them when saving.",
+  "Ny grænse · kort {number}":"New boundary \u00b7 territory {number}",
+  "Adressevalget eller grænsen er ændret. Vælg Foreslå grænse igen.":"The address selection or boundary has changed. Choose Suggest boundary again.",
+  "Godkend ændringerne af nabokortenes grænser, før du gemmer.":"Approve the neighbouring boundary changes before saving.",
+  "DAR-adresserne er valgt, men der mangler en grænse. Kortet er ikke ændret.":"DAR addresses are selected, but a boundary is missing. The territory has not changed.",
+  "Valgte og fravalgte adresser deler samme koordinat. Kontrollér adressevalget ved denne indgang.":"Selected and excluded addresses share the same coordinate. Review the address selection at this entrance.",
+  "Der kunne ikke beregnes en sammenhængende grænse uden fravalgte adresser. Kontrollér adressevalget eller tegn grænsen manuelt.":"A connected boundary excluding unselected addresses could not be calculated. Review the selection or draw a boundary manually.",
+  "Nabokort {number} mangler kendte adressekoordinater. Grænsen kan ikke ændres automatisk uden at kende kortets adresser.":"Neighbouring territory {number} has unknown address coordinates. Its boundary cannot be changed automatically without knowing its addresses.",
+  "Nabokort {number} kan ikke få en sikker sammenhængende grænse med alle sine adresser. Kontrollér de to kort manuelt.":"Neighbouring territory {number} cannot have a safe connected boundary containing all its addresses. Review both territories manually.",
+
   "Vælg en IB-opfølgning fra listen.":"Select a DNC follow-up from the list.",
   "IB-opfølgningen er allerede afsluttet. Opdater oversigten.":"This DNC follow-up is already complete. Refresh the list.",
   "Vælg Ja eller Nej til IB-revision.":"Choose Yes or No for DNC revision.",

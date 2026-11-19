@@ -2,6 +2,11 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.34 · 2026-11-19
+
+- DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.
+- Mislykkede grænseforslag vises med en forklaring. Et DAR-valg uden grænse præsenteres ikke længere som et færdigt forslag. Ukendte adressekoordinater og sammenfaldende indgange forklares særskilt.
+
 ## 1.12.19-beta.33 · 2026-11-18
 
 - Historikskabelonen viser den nyeste periode længst til venstre og de ældre perioder mod højre.
