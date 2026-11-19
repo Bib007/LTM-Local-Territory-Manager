@@ -7,10 +7,7 @@ import time
 from datetime import datetime, timezone
 import urllib.request
 from runtime_pressure import resource_pressure
-
-
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self,req,fp,code,msg,headers,newurl):return None
+from runtime_probe import Observation,NoRedirect
 
 
 def supervisor_post(path,payload,token):
@@ -31,12 +28,13 @@ MESSAGES={
  'pressure':'Systemet har været under vedvarende ressourcepres i mindst to minutter.',
  'unknown':'LTM svarer, men ressourcemålingerne er ikke tilgængelige.',
  'stopped':'LTM er stoppet.',
+ 'unresponsive':'LTM har vedvarende problemer med HTTP-svar eller intern status. En gemning kan stadig være i gang. Ingen automatisk genstart udføres.',
 }
 
 
 class RuntimeStatus:
     def __init__(self,schedule,version,beta=False,enabled=None,token=None,
-                 pressure=resource_pressure,clock=time.monotonic,transport=supervisor_post):
+                 pressure=resource_pressure,clock=time.monotonic,transport=supervisor_post,probe=None):
         self.schedule=schedule;self.version=version;self.channel='beta' if beta else 'stable'
         self.entity='sensor.ltm_'+self.channel+'_drift'
         self.token=os.environ.get('SUPERVISOR_TOKEN','') if token is None else token
@@ -45,6 +43,9 @@ class RuntimeStatus:
         self.pressure=pressure;self.clock=clock;self.transport=transport
         self.lock=threading.RLock();self.stop=threading.Event();self.thread=None
         self.high_since=None;self.test_at=None;self.last_sent=None;self.failed=False;self.value=None
+        self.sampler=Observation(self.sample,clock)
+        self.probe=Observation(probe,clock) if probe else None
+        self.problem_since=None
 
     def sample(self):
         # Read Store-backed status before taking the bridge lock. App snapshots
@@ -58,12 +59,12 @@ class RuntimeStatus:
             state='error' if bad else 'pressure' if high else 'working' if task.get('status')=='running' else 'waiting' if task.get('enabled') and task.get('status') in ('waiting','scheduled','stopping') else 'idle' if reading['available'] else 'unknown'
             # Allowlist only. In particular never copy last_problem, source
             # messages, job identifiers, addresses, account names or file paths.
-            self.value={'state':state,'attributes':{'friendly_name':'LTM '+('Beta ' if self.channel=='beta' else '')+'drift',
+            value={'state':state,'attributes':{'friendly_name':'LTM '+('Beta ' if self.channel=='beta' else '')+'drift',
                 'icon':'mdi:heart-pulse','version':self.version,'channel':self.channel,
                 'updated_at':datetime.now(timezone.utc).isoformat(timespec='seconds'),
                 'message':MESSAGES[state],'pressure_available':reading['available'],
                 'pressure_scope':'system','pressure_window_seconds':60}}
-            return copy.deepcopy(self.value)
+            return value
 
     def status(self):
         with self.lock:return {'available':self.enabled,'entity':self.entity,'last_sent':self.last_sent,
@@ -72,7 +73,23 @@ class RuntimeStatus:
     def publish(self):
         if not self.enabled:return
         try:
-            value=self.sample()
+            sample_status,sampled=self.sampler.poll()
+            probe_status,probe_value=self.probe.poll() if self.probe else ('ok','not_configured')
+            http=probe_value if probe_status=='ok' else probe_status
+            diagnostic=('http_'+http if http in ('timeout','error','invalid_response') else
+                'runtime_busy' if http=='busy' else 'status_'+sample_status if sample_status in ('timeout','error') else
+                'starting' if http=='pending' or sample_status=='pending' else 'none')
+            with self.lock:
+                now=self.clock()
+                bad=diagnostic not in ('none','starting')
+                self.problem_since=(now if self.problem_since is None else self.problem_since) if bad else None
+                value=copy.deepcopy(sampled) if sampled else {'state':'unknown','attributes':{'version':self.version,'channel':self.channel}}
+                if self.problem_since is not None and now-self.problem_since>=120:value['state']='unresponsive'
+                value['attributes'].update(updated_at=datetime.now(timezone.utc).isoformat(timespec='seconds'),
+                    message=('Afventer første driftsmåling.' if diagnostic=='starting' else MESSAGES[value['state']]),
+                    http_status=http,status_sample=sample_status,
+                    diagnostic=diagnostic,problem_seconds=min(86400,int(now-self.problem_since)) if bad else 0)
+                self.value=copy.deepcopy(value)
             self.transport('states/'+self.entity,value,self.token)
             with self.lock:self.last_sent=value['attributes']['updated_at'];self.failed=False
         except Exception:
