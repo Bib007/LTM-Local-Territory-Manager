@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.33 viser den nyeste historikperiode længst til venstre i Excel-skabelonen. Tidligere udfyldte skabeloner kan fortsat importeres. Rettelserne til Excel, Fjern prikker og gemmehastighed fra beta.32 er også med.
+Beta 1.12.19-beta.34 retter DAR-grænseforslag, som blokeres af nabokort. Hvis nye nabogrænser kan løse problemet, vises de på kortet og kræver din godkendelse ved Gem. Adresser og historik flyttes ikke.
 
 ## Installer betakanalen én gang
 
