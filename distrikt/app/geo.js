@@ -6,8 +6,8 @@ const GeoUI={
   drawColor:'#477596',whole:false,target:'',ids:new Set(),polygon:[],mode:'choose',dirty:false,focus:[],view:null,job:null,jobTimer:null,busy:false,notice:'',rangeRoad:'',rangePost:'',pendingRange:null,
   // Capture values, not references: a late response must never replace a newer draft.
   draftStamp(includeRevision=true){const form=el('geoRangeForm'),range=form?.elements?[...form.elements].filter(e=>e.name).map(e=>[e.name,e.value,e.checked]):null;return JSON.stringify([page,this.session,this.whole,this.target,[...this.ids].sort(),this.polygon,this.drawColor,this.mode,this.dirty,includeRevision?state.revision:null,range]);},
-  async syncWrite(stamp,apply,dialogGeneration){
-    let fresh;try{[,fresh]=await Promise.all([this.load(),api('/api/state').then(r=>r.json())]);}catch(error){WriteGuard.requireRefresh(error);throw error;}
+  async syncWrite(stamp,apply,dialogGeneration,snapshot){
+    let fresh;try{[,fresh]=await Promise.all([this.load(),snapshot?Promise.resolve(snapshot):api('/api/state').then(r=>r.json())]);}catch(error){WriteGuard.requireRefresh(error);throw error;}
     // The accepted mutation advances state.revision; only compare the editor draft here.
     const unchanged=this.draftStamp(false)===stamp;state=fresh;
     if(unchanged){apply();if(page==='Kortopsætning')render();if(dialogGeneration!==undefined&&openDialog.generation===dialogGeneration)closeDialog();}
@@ -15,20 +15,21 @@ const GeoUI={
     saved();return unchanged;
   },
   async saveBoundary(whole=false){
-    if(this.saveBusy)return;this.saveBusy=true;
+    if(this.saveBusy)return;
     if(!whole&&this.outlineApproval())throw Error(I18n.text('Gem de valgte adresser sammen med den foreslåede grænse.'));
-    const stamp=this.draftStamp(false),data=whole?{points:this.polygon.map(p=>p.slice())}:{card_id:this.target,polygon:this.polygon.map(p=>p.slice())};
-    try{saving();await api('/api/mutate',{action:whole?'geo.main.save':'geo.boundary',data});
-      await this.syncWrite(stamp,()=>{this.dirty=!whole&&(this.ids.size!==new Set(card(this.target)?.address_ids||[]).size||[...this.ids].some(i=>!card(this.target)?.address_ids?.includes(i)));});
+    this.saveBusy=true;const stamp=this.draftStamp(false),data=whole?{points:this.polygon.map(p=>p.slice())}:{card_id:this.target,polygon:this.polygon.map(p=>p.slice())};
+    try{if(whole||!this.selectionDirty())this.pendingStamp=stamp;
+      await mutate(whole?'geo.main.save':'geo.boundary',data,{close:false,autosave:true,synchronize:(_result,snapshot)=>this.syncWrite(stamp,()=>{this.dirty=!whole&&this.selectionDirty();},undefined,snapshot)});
       toast(I18n.text(whole?'Samlet grænse gemt':'Grænse gemt'));
-    }finally{this.saveBusy=false;}
+    }finally{this.saveBusy=false;this.pendingStamp=null;}
   },
   setNotice(key,params={},suffix=''){this.noticeUI={key,params,suffix};this.notice=I18n.format(key,params)+(suffix?' '+I18n.text(suffix):'');this.noticeUI.value=this.notice;},
   noticeHTML(){const n=this.noticeUI;return n&&n.value===this.notice?ui(n.key,n.params)+(n.suffix?' '+ui(n.suffix):''):esc(this.notice);},
   localize(){this.areaPostcode();const hint=el('geoModeHint');if(hint)hint.innerHTML=ui(this.modeHint());const n=this.noticeUI;if(n&&n.value===this.notice)this.setNotice(n.key,n.params,n.suffix);},
   async load(){const sequence=++this.loadSequence,data=await(await api('/api/geo')).json();if(sequence!==this.loadSequence)return;this.data=data;this.loaded=true;if(typeof Navigation!=='undefined')Navigation.paintFollowupCount();},
   dispose(){if(this.map){const c=this.map.getCenter();this.view={center:[c.lat,c.lng],zoom:this.map.getZoom()};MapBackground.detach('geographicEditor');this.map.remove();this.map=null;}},
-  canLeave(){return !this.dirty||window.confirm(I18n.text(this.whole?'Den samlede grænse er ikke gemt. Vil du forlade den og kassere tegningen?':'Dit adressevalg er ikke gemt på kortet endnu. Vil du forlade det og kassere valget?'));},
+  selectionDirty(){const saved=new Set(card(this.target)?.address_ids||[]);return this.ids.size!==saved.size||[...this.ids].some(id=>!saved.has(id));},
+  canLeave(){return !this.dirty||this.pendingStamp===this.draftStamp(false)||window.confirm(I18n.text(this.whole?'Den samlede grænse er ikke gemt. Vil du forlade den og kassere tegningen?':'Dit adressevalg er ikke gemt på kortet endnu. Vil du forlade det og kassere valget?'));},
   openCard(id){if(!this.canLeave())return;this.session++;this.dispose();MapBackground.mode='road';this.whole=false;this.target=id||'';this.streetApproval=null;const c=card(id);this.drawColor=cardColor(c);this.ids=new Set(c?.address_ids||[]);this.polygon=(c?.geo_polygon||[]).map(p=>p.slice());this.mode='choose';this.focus=[];this.manualPoint=null;this.dirty=false;this.notice='';this.view=null;page='Kortopsætning';query='';render();},
   async resumeJob(){const job=await(await api('/api/geo/job')).json();if(job.status==='running'){this.job=job.id;this.busy=true;this.showJob(job);this.poll();}},
   addresses(){return this.data.addresses;},
@@ -203,10 +204,10 @@ const GeoUI={
       if(stamp!==this.draftStamp()||dialogGeneration!==openDialog.generation||(dialogWasOpen&&!el('dialog').open))throw Error(I18n.text('Valget er ændret. Kontrollér det og gem igen.'));
       if(preview.retired?.length)throw Error(I18n.text('Nogle adresser er nedlagt hos DAR. Fjern dem fra valget først.'));
       if(preview.conflicts.length||preview.ignored.length)throw Error(I18n.text('Nogle valgte adresser er allerede brugt eller markeret Se bort fra. Ret valget først.'));
-      const writeStamp=this.draftStamp(false);saving();const response=await(await api('/api/mutate',{action:'geo.assign',data})).json();
-      await this.syncWrite(writeStamp,()=>{this.target=response.result.id;const c=card(this.target);this.ids=new Set(c.address_ids);this.polygon=c.geo_polygon.map(p=>p.slice());this.dirty=false;this.streetApproval=null;this.suggestedOutline=null;this.setNotice('Adresser, vejliste og grænse er gemt. Kortets udlånshistorik er bevaret.');},dialogGeneration);
+      const writeStamp=this.draftStamp(false);this.pendingStamp=writeStamp;PendingSaves.releaseDialog(dialogGeneration);
+      await mutate('geo.assign',data,{close:false,autosave:true,synchronize:(response,snapshot)=>this.syncWrite(writeStamp,()=>{this.target=response.result.id;const c=card(this.target);this.ids=new Set(c.address_ids);this.polygon=c.geo_polygon.map(p=>p.slice());this.dirty=false;this.streetApproval=null;this.suggestedOutline=null;this.setNotice('Adresser, vejliste og grænse er gemt. Kortets udlånshistorik er bevaret.');},dialogGeneration,snapshot)});
       toast(I18n.text('Kort gemt · forsiden kan nu printes'));
-    }finally{this.saveBusy=false;}
+    }finally{this.saveBusy=false;this.pendingStamp=null;}
   },
   postcodeList(){return (this.data.info?.postcodes||[]).map(p=>{const done=p.roads.filter(r=>r.status==='done').length,missing=p.roads.filter(r=>r.status!=='done'),sourceDay=p.snapshot?.slice(0,10),old=sourceDay&&dayDiff(state.today,sourceDay)>=30;return `<div class="postcodeSaved"><div class="between"><span><b>${esc(p.postcode)} ${esc(p.name)}</b><br><small>${ui('{done} / {total} veje hentet · kildedato {date}',{done,total:p.roads.length,date:fmt(sourceDay||p.updated_at?.slice(0,10))})}</small>${old?`<br><span class="badge warning">${ui("Kortdata er mindst 30 dage gamle")}</span>`:''}</span><div class="actions"><button type="button" data-geo="resume-postcode" data-id="${esc(p.postcode)}" ${this.busy?'disabled':''}>${ui(missing.length?'Fortsæt / genprøv':'Vis adresser')}</button>${!missing.length?`<button type="button" data-geo="refresh-postcode" data-id="${esc(p.postcode)}" ${this.busy?'disabled':''}>${ui("Opdater postnummer")}</button>`:''}</div></div>${missing.length?`<details><summary>${ui('{count} veje mangler',{count:missing.length})}</summary><div class="postcodeErrors">${missing.map(r=>`<p>${esc(r.road)}<small>${r.error?esc(r.error):ui('Afventer hentning')}</small></p>`).join('')}</div></details>`:''}</div>`;}).join('');},
   areaSource(configured){const f=el('geoAreaForm');if(!f?.elements?.addresses)return;delete f.dataset.sourceError;f.dataset.areaAddressSource=configured?'graphql':'legacy';f.elements.addresses.disabled=false;this.areaPostcode();},

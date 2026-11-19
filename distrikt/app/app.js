@@ -63,7 +63,7 @@ const WriteGuard={uncertain:false,needsReview:false,loginExpired:false,error:nul
  requireRefresh(error){this.needsReview=true;this.error=error;this.epoch++;clearTimeout(autosaveTimer);failed(error);},
  reviewed(){this.uncertain=false;this.needsReview=false;this.loginExpired=false;this.error=null;this.epoch++;}
 };
-function saved(message='Alle ændringer er gemt'){if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired){failed(WriteGuard.error);return;}SaveStatus.set('saved',message);}
+function saved(message='Alle ændringer er gemt'){if(PendingSaves.count){saving();return;}if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired){failed(WriteGuard.error);return;}SaveStatus.set('saved',message);}
 function saving(){if(!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)SaveStatus.set('saving','Gemmer…');}
 function failed(message){if(WriteGuard.uncertain){SaveStatus.set('error','Gemning er ikke bekræftet',WriteGuard.error);return;}if(WriteGuard.needsReview){SaveStatus.set('review','Ændringen er gemt · opdatér data før næste ændring',WriteGuard.error);return;}if(WriteGuard.loginExpired||message instanceof RequestError&&message.kind==='login'){SaveStatus.set('error','Login er udløbet · log ind igen.');return;}if(message instanceof RequestError){if(!message.writing)return;if(message.kind==='base'){SaveStatus.set('review','Kladden er bevaret · kontrollér redigeringens udgangspunkt',message);return;}if(message.kind==='rejected'){SaveStatus.set('error','Ændringen blev afvist',message);return;}}SaveStatus.set('error','Gemning er ikke bekræftet',message);}
 function toast(message){I18n.errorContent(el('toast'),message);el('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el('toast').style.display='none',4500);}
@@ -98,11 +98,35 @@ async function api(path,body){
  authorization();return r;
  }finally{if(timer!==null)clearTimeout(timer);}
 }
+// Keep navigation independent of ordered writes. A queued payload is owned by its
+// original editor; neither navigation nor a later page read may rebase it.
+const PendingSaves={count:0,sequence:0,commands:new Map(),
+ enqueue(run){
+  this.count++;this.sequence++;saving();
+  let completed=false;
+  const work=saveQueue.then(run).then(result=>{completed=true;return result;});
+  const settled=work.finally(()=>{this.count--;if(completed&&!this.count)saved();});
+  saveQueue=settled.catch(()=>{});return settled;
+ },
+ releaseDialog(generation){
+  const dialog=el('dialog');if(!dialog.open||generation!==openDialog.generation||typeof dialog.show!=='function')return;
+  // Preserve the live form and its edit base, but release the modal top layer so
+  // navigation remains reachable. Opening another editor restores modal behavior.
+  dialog.close();dialog.show();dialog.style.position='fixed';dialog.style.inset='0';dialog.dataset.backgroundSave='yes';
+ },
+ protectPage(){
+  return (page==='Kortopsætning'&&GeoUI.dirty)||[...(el('app')?.querySelectorAll?.('form')||[])].some(form=>form.dataset.saving==='yes'||form.dataset.busy==='yes'||FormDrafts.forms.has(form)&&!FormDrafts.unchanged(form));
+ }
+};
 async function confirmedWrite(path,body,after=async response=>response.json()){
+ if(path==='/api/mutate'&&state?.profile&&!Object.prototype.hasOwnProperty.call(body||{},'profile_snapshot'))body={...body,profile_snapshot:ProfilesUI.dialogBase||state.profile.snapshot};
+ body=body?JSON.parse(JSON.stringify(body)):body;
+ const epoch=WriteGuard.epoch;return PendingSaves.enqueue(async()=>{WriteGuard.assert(epoch);
  let accepted=false;try{saving();const response=await api(path,body);accepted=true;const result=await after(response);if(result===false){const error=new RequestError('En nyere redigering er åbnet. Opdater igen, når du er færdig.','response');WriteGuard.requireRefresh(error);toast(error);}else saved();return result;}
  catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);throw error;}
+ });
 }
-async function refresh({guard,beforeRender,snapshot}={}){const fresh=snapshot??await(await api('/api/state')).json();if(guard&&!guard())return false;state=fresh;historyRevision=fresh.revision;if(!selected&&state.cards.length)selected=state.cards[0].id;if(beforeRender)beforeRender();render();return true;}
+async function refresh({guard,beforeRender,snapshot,preserveDrafts=false}={}){const fresh=snapshot??await(await api('/api/state')).json();if(guard&&!guard())return false;state=fresh;historyRevision=fresh.revision;if(!selected&&state.cards.length)selected=state.cards[0].id;if(beforeRender)beforeRender();if(!preserveDrafts||!PendingSaves.protectPage())render();return true;}
 function mutationSnapshot(result){
  if(result.state_unavailable===true)throw new RequestError('Ændringen er gemt, men oversigten kunne ikke hentes. Brug Opdater før næste ændring.','response');
  if(!Object.prototype.hasOwnProperty.call(result,'state'))return undefined; // Older servers still use a page read.
@@ -164,30 +188,37 @@ const FormDrafts={forms:new WeakMap(),
   }
  },
  unchanged(form){const entry=this.forms.get(form),confirmFolder=form.id==='settingsForm'&&form.dataset.folderTouched==='yes'&&!state.settings.folder_minimum_configured;return !!entry&&!entry.pending&&!confirmFolder&&entry.confirmed===this.signature(form);},
- idle(){if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)failed(WriteGuard.error);else{SaveStatus.set('unchanged','Ingen nye ændringer');const error=el('formError');if(error)error.textContent='';}}
+ idle(){if(PendingSaves.count){saving();return;}if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)failed(WriteGuard.error);else{SaveStatus.set('unchanged','Ingen nye ændringer');const error=el('formError');if(error)error.textContent='';}}
 };
-function mutate(action,data,{close=true,message='Gemt',autosave=false}={}){
+function mutate(action,data,{close=true,message='Gemt',autosave=false,synchronize}={}){
  const epoch=WriteGuard.epoch,payload=JSON.parse(JSON.stringify(data||{})),generation=openDialog.generation,context=EditorBases.capture();
+ const commandKey=JSON.stringify([generation,action,payload]);
+ if(PendingSaves.commands.has(commandKey))return PendingSaves.commands.get(commandKey);
+ const form=el('dialog').open?el('dialog').querySelector?.('form'):null,signature=form?FormDrafts.signature(form):null;
+ // Only self-contained ordinary saves release their modal. Preview/approval,
+ // import, security, restore and print workflows retain their existing gates.
+ if(['loan.issue','loan.finish','card.save','publisher.save','area.save','note.save','visit.save','ib.save','completion.record','filter.save'].includes(action))PendingSaves.releaseDialog(generation);
  if(context)context.pending++;
  let accepted=false;
- const work=saveQueue.then(async()=>{
+ const work=PendingSaves.enqueue(async()=>{
   WriteGuard.assert(epoch);
   if(context){await context.ready;if(context.error){const error=context.error;throw new RequestError(error.uiKey||'Redigeringens udgangspunkt kunne ikke hentes. Behold kladden og åbn redigeringen igen.','base',error.status||0,error.uiDetail||'',true);}}
   saving();
   const body={action,data:payload,include_state:true,...(context?{profile_snapshot:context.base}:{})};
   const response=await api('/api/mutate',body);accepted=true;
   const result=await response.json();EditorBases.accepted(context,result.profile_snapshot);
-  SaveStatus.set('saved','Ændringen er gemt · opdaterer oversigten…');
+  SaveStatus.set('saving','Ændringen er gemt · opdaterer oversigten…');
   const snapshot=mutationSnapshot(result),geoChanged=(action.startsWith('geo.')||action.startsWith('ignore.')||action.startsWith('address.change.')||action.startsWith('card.restructure.')||['delete','restore','recovery.purge','workflow.undo'].includes(action))&&result?.geo_changed!==false;
-  if(geoChanged)await GeoUI.load();await refresh({snapshot});saved();
-  if(close&&generation===openDialog.generation)closeDialog();
+  if(synchronize)await synchronize(result,snapshot);
+  else{if(geoChanged)await GeoUI.load();await refresh({snapshot,preserveDrafts:true});}saved();
+  if(close&&generation===openDialog.generation&&el('dialog').open&&(!form||FormDrafts.signature(form)===signature))closeDialog();
   const error=el('formError');if(error&&generation===openDialog.generation)error.textContent='';
   if(!autosave)toast(message);
-  const note=el('formSaved');if(note&&generation===openDialog.generation)note.innerHTML=ui('Gemt automatisk');
+  const note=el('formSaved');if(note&&generation===openDialog.generation&&(!form||FormDrafts.signature(form)===signature))note.innerHTML=ui('Gemt automatisk');
   return result.result;
  });
- saveQueue=work.catch(()=>{});
- return work.catch(e=>{if(accepted)WriteGuard.requireRefresh(e);failed(e);const err=el('formError');if(err&&generation===openDialog.generation)I18n.errorContent(err,e);else toast(e);throw e;}).finally(()=>{if(context){context.pending--;EditorBases.release(context);}});
+ const tracked=work.catch(e=>{if(accepted)WriteGuard.requireRefresh(e);failed(e);const err=el('formError');if(err&&generation===openDialog.generation)I18n.errorContent(err,e);else toast(e);throw e;}).finally(()=>{PendingSaves.commands.delete(commandKey);if(context){context.pending--;EditorBases.release(context);}});
+ PendingSaves.commands.set(commandKey,tracked);return tracked;
 }
 const DialogFocus={opener:null,
  capture(dialog){const active=document.activeElement;if(dialog.open&&dialog.contains?.(active))return;if(active&&active!==document.body){let selector='';if(typeof CSS!=='undefined'&&active.dataset){const attributes=['action','work','id','geo','main','cardImport','historyImport','share'].filter(k=>active.dataset[k]!==undefined);if(attributes.length)selector=attributes.map(k=>'[data-'+k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())+'="'+CSS.escape(active.dataset[k])+'"]').join('');}this.opener={node:active,id:active.id,selector};}else this.opener=null;},
@@ -195,11 +226,11 @@ const DialogFocus={opener:null,
   let index=0;for(const input of dialog.querySelectorAll?.('input:not([type=hidden]),select,textarea')||[]){if(input.labels?.length)continue;const label=input.previousElementSibling;if(label?.tagName==='LABEL'&&!label.htmlFor){if(!input.id)input.id='ltmDialogField-'+openDialog.generation+'-'+index++;label.htmlFor=input.id;}}
  },
  focus(dialog){const field=dialog.querySelector?.('[autofocus]:not(:disabled):not([type=hidden])')||dialog.querySelector?.('input:not([type=hidden]):not(:disabled),select:not(:disabled),textarea:not(:disabled)');const target=field||dialog.querySelector?.('[data-action=close]');target?.focus?.({preventScroll:true});},
- keydown(event,dialog){if(event.key!=='Tab'||event.defaultPrevented||!dialog.open)return;const fields=[...dialog.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=true]')].filter(node=>node.tabIndex>=0&&!node.matches(':disabled')&&!node.hidden&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');const first=fields[0],last=fields.at(-1),active=document.activeElement;if(!first){event.preventDefault();dialog.focus();return;}if(event.shiftKey&&(active===first||!dialog.contains(active))){event.preventDefault();last.focus({preventScroll:true});}else if(!event.shiftKey&&(active===last||!dialog.contains(active))){event.preventDefault();first.focus({preventScroll:true});}},
+ keydown(event,dialog){if(event.key!=='Tab'||event.defaultPrevented||!dialog.open||dialog.dataset.backgroundSave==='yes')return;const fields=[...dialog.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=true]')].filter(node=>node.tabIndex>=0&&!node.matches(':disabled')&&!node.hidden&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');const first=fields[0],last=fields.at(-1),active=document.activeElement;if(!first){event.preventDefault();dialog.focus();return;}if(event.shiftKey&&(active===first||!dialog.contains(active))){event.preventDefault();last.focus({preventScroll:true});}else if(!event.shiftKey&&(active===last||!dialog.contains(active))){event.preventDefault();first.focus({preventScroll:true});}},
  restore(dialog){const saved=this.opener;this.opener=null;if(!saved)return;const target=saved.node?.isConnected?saved.node:(saved.id?document.getElementById(saved.id):null)||(saved.selector?document.querySelector(saved.selector):null);if(target&&target.isConnected!==false&&!dialog.contains?.(target))target.focus?.({preventScroll:true});}
 };
-function openDialog(html,language='da'){const dialog=el('dialog');DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
-function closeDialog(){EditorBases.close();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase='';const dialog=el('dialog');frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.close();DialogFocus.restore(dialog);}
+function openDialog(html,language='da'){const dialog=el('dialog');if(dialog.dataset.backgroundSave==='yes'){dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;}DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
+function closeDialog(){EditorBases.close();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase='';const dialog=el('dialog');frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;DialogFocus.restore(dialog);}
 function empty(message){return `<div class="empty">${message}</div>`;}
 function searchText(c){return [c.number,c.internal_number,c.name,areaName(c.area_id),c.kind,...(c.addresses||[]).flatMap(a=>[a.road,a.numbers,a.type])].join(' ').toLowerCase();}
 function matches(c){return (!query||searchText(c).includes(query.toLowerCase()))&&(!area||c.area_id===area);}
@@ -435,7 +466,7 @@ async function saveCard(close){
  }catch{return false;}
 }
 function scheduleCardSave(){const f=el('cardForm');if(!f?.dataset.id)return;if(FormDrafts.unchanged(f)){clearTimeout(autosaveTimer);dialogDirty=false;FormDrafts.idle();const note=el('formSaved');if(note)note.innerHTML=ui('Ingen nye ændringer');return;}dialogDirty=true;editGeneration++;const note=el('formSaved');clearTimeout(autosaveTimer);if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired){if(note)note.innerHTML=ui(WriteGuard.loginExpired?'Automatisk gemning er sat på pause. Log ind igen.':'Automatisk gemning er sat på pause. Kontrollér data med Opdater.');return;}if(note)note.innerHTML=ui('Venter på at gemme…');autosaveTimer=setTimeout(()=>{if(f.checkValidity())saveCard(false);else if(note)note.innerHTML=ui('Udfyld felterne for at gemme ændringerne.');},700);}
-async function closeRequested(){if((WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)&&el('dialog').open){const key=WriteGuard.uncertain?'Gemningen er usikker. Luk redigeringen uden at sende igen? Felterne lukkes; kontrollér derefter de gemte data med Opdater.':WriteGuard.needsReview?'Den seneste ændring er gemt, men data er ikke opdateret. Luk redigeringen uden at sende igen, og brug Opdater?':'Login er udløbet. Luk redigeringen uden at sende igen? Log ind igen og kontrollér data.';if(el('dialog').querySelector?.('form')&&!window.confirm(I18n.text(key)))return;dialogDirty=false;closeDialog();return;}while(el('cardForm')?.dataset.id&&dialogDirty){if(!await saveCard(false))return;}closeDialog();}
+async function closeRequested(){if((WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)&&el('dialog').open){const key=WriteGuard.uncertain?'Gemningen er usikker. Luk redigeringen uden at sende igen? Felterne lukkes; kontrollér derefter de gemte data med Opdater.':WriteGuard.needsReview?'Den seneste ændring er gemt, men data er ikke opdateret. Luk redigeringen uden at sende igen, og brug Opdater?':'Login er udløbet. Luk redigeringen uden at sende igen? Log ind igen og kontrollér data.';if(el('dialog').querySelector?.('form')&&!window.confirm(I18n.text(key)))return;dialogDirty=false;closeDialog();return;}if(el('cardForm')?.dataset.id&&dialogDirty){const form=el('cardForm');if(!form.reportValidity())return;saveCard(false);dialogDirty=false;}closeDialog();}
 function taskCard(id){return [...(state.cards||[]),...(state.archived_cards||[])].find(c=>c.id===id);}
 function openCardTasks(id){return (state.notes||[]).filter(n=>n.entity!=='activity'&&n.card_id===id&&!n.resolved&&(!n.recurrence||n.recurrence.next_due<=state.today));}
 function taskBadge(id){const count=openCardTasks(id).length;return count?`<span class="badge taskAlert">⚠ ${ui('{count} åbne opgaver',{count})}</span>`:'';}
@@ -744,7 +775,7 @@ case 'completionForm':await mutate('completion.record',{card_id:form.dataset.id,
 }if(form.id!=='cardForm'&&confirmedSignature!==null)FormDrafts.forms.get(form).confirmed=confirmedSignature;}catch(e){const err=el('formError');if(err&&generation===openDialog.generation&&page===origin&&form.isConnected!==false)I18n.errorContent(err,e);else toast(e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
 el('dialog').addEventListener('keydown',e=>DialogFocus.keydown(e,el('dialog')));
 el('dialog').addEventListener('cancel',e=>{e.preventDefault();closeRequested();});
-window.addEventListener('beforeunload',e=>{if(dialogDirty){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(dialogDirty||PendingSaves.count){e.preventDefault();e.returnValue='';}});
 (async()=>{try{await refresh();year=serviceYear(state.today);if(typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view'))await GeoUI.resumeJob();render();saved();Workspace.boot();if(typeof ProfilesUI!=='undefined')ProfilesUI.boot();if(typeof Welcome!=='undefined'&&!state.profile)Welcome.auto();}catch(e){SaveStatus.set('error','Den lokale app kunne ikke åbnes',e.message);el('app').innerHTML=`<section class="panel startupError"><span class="eyebrow">LTM</span><h1>${ui('Den lokale app kunne ikke åbnes')}</h1><p lang="da">${esc(e.message)}</p><p class="hint">${ui('Kontrollér, at appen er startet på computeren eller i Home Assistant. Kontrollér også Wi-Fi eller VPN.')}</p><button class="primary" data-work="reload-app">${ui('Prøv at åbne igen')}</button></section>`;}})();
 
 document.addEventListener('click',event=>{const close=event.target.closest('[data-save-explanation-close]');if(close){const details=close.closest('details');details?.removeAttribute('open');details?.querySelector('summary')?.focus();}});

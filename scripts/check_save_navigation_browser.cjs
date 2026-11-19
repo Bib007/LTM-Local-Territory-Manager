@@ -1,0 +1,98 @@
+'use strict';
+// Real disposable server, fictional records, and held HTTP receipts. No user data.
+const assert=require('node:assert/strict'),path=require('node:path'),{spawn}=require('node:child_process'),{createInterface}=require('node:readline');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
+(async()=>{
+ for(const profiles of [false,true]){
+  const child=spawn(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/profiles_server.py')],{stdio:['ignore','pipe','inherit']});let browser;
+  try{
+   const fixture=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Fixture timeout')),15000);createInterface({input:child.stdout}).once('line',line=>{clearTimeout(timer);resolve(JSON.parse(line));});});
+   browser=await chromium.launch({args:['--no-sandbox'],...(process.env.LTM_CHROME?{executablePath:process.env.LTM_CHROME}:{})});
+   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],writes=[];let hold;
+   const holdNext=(action,mode='success')=>{assert.ok(!hold);hold={action,mode,arrived:deferred(),release:deferred()};return hold;};
+   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.dismiss());
+   await page.addInitScript(()=>localStorage.setItem('ltm-language','da'));
+   await page.route('**/*',async route=>{
+    const request=route.request(),url=new URL(request.url());
+    if(url.origin!==fixture.origin){assert.equal(url.hostname,'tile.openstreetmap.org');return route.abort();}
+    const body=request.method()==='POST'&&url.pathname==='/api/mutate'?request.postDataJSON():null;
+    if(body)writes.push(body);
+    if(body&&hold?.action===body.action){
+     const gate=hold;hold=null;
+     // Success/lost responses reach the real server first. Rejection does not.
+     const response=gate.mode==='reject'?null:await route.fetch();gate.arrived.resolve();await gate.release.promise;
+     if(gate.mode==='reject')return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Fiktiv afvisning'})});
+     if(gate.mode==='lost')return route.abort('connectionreset');
+     if(gate.mode==='invalid')return route.fulfill({status:200,contentType:'application/json',body:'{}'});
+     return route.fulfill({response});
+    }
+    return route.continue();
+   });
+   await page.goto(fixture.origin);await page.waitForFunction(()=>typeof state!=='undefined'&&state&&SaveStatus.kind==='saved');
+   if(profiles){
+    await page.evaluate(()=>api('/api/profiles/activate',{name:'Fiktiv admin',password:'Fiktiv-password-123',confirmation:'AKTIVÉR PROFILER'}));
+    await page.reload();await page.locator('#loginName').fill('Fiktiv admin');await page.locator('#loginPassword').fill('Fiktiv-password-123');await page.locator('#loginForm button').click();
+    await page.waitForFunction(()=>typeof state!=='undefined'&&state?.profile&&SaveStatus.kind==='saved');await page.waitForFunction(()=>PersonalGuide.data!==null);
+    if(await page.locator('[data-personal-guide=later]').count())await page.locator('[data-personal-guide=later]').click();
+   }
+   const ids=await page.evaluate(async()=>{
+    const person=await mutate('publisher.save',{name:'Fiktiv person',group:'Fiktiv gruppe'});
+    const loan=await mutate('loan.issue',{card_id:state.cards[0].id,publisher_id:person.id,date:state.today,initial:true});
+    await mutate('geo.manual',{road:'Fiktivvej',number:'1',postcode:'9999',lng:10.002,lat:55.002,count:1});
+    await mutate('geo.manual',{road:'Fiktivvej',number:'2',postcode:'9999',lng:10.003,lat:55.003,count:1});
+    return {card:state.cards[0].id,person:person.id,loan:loan.id,addresses:GeoUI.addresses().map(a=>a.id)};
+   });
+   // The modal releases on submit; navigation uses real clickable navigation.
+   let gate=holdNext('loan.finish');await page.evaluate(id=>finish(id,false),ids.loan);
+   await page.locator('#finishForm select[name=revise_ib]').selectOption('no');await page.locator('#finishForm button.primary').click();await gate.arrived.promise;
+   assert.equal(await page.evaluate(()=>SaveStatus.kind),'saving');assert.equal(await page.locator('#dialog').evaluate(n=>n.matches(':modal')),false);
+   await page.locator('#finishForm').evaluate(f=>f.requestSubmit());assert.equal(writes.filter(w=>w.action==='loan.finish').length,1);
+   await page.locator('[data-navigation="1:2"]').click();await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Ny fiktiv kladde');
+   const generation=await page.evaluate(()=>openDialog.generation);gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='saved');
+   assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Ny fiktiv kladde');assert.equal(await page.evaluate(()=>openDialog.generation),generation);assert.equal(await page.locator('#dialog').evaluate(n=>n.matches(':modal')),true);
+   assert.equal(await page.evaluate(id=>!!state.loans.find(l=>l.id===id).returned,ids.loan),true);await page.locator('#dialog .dialogClose').click();
+   // Autosave captures the latest edit on navigation, without waiting for receipt 1.
+   gate=holdNext('card.save');await page.evaluate(id=>editCard(id),ids.card);await page.locator('#cardForm input[name=name]').fill('Fiktiv første');
+   await page.evaluate(()=>{void saveCard(false);});await gate.arrived.promise;
+   await page.locator('#cardForm input[name=name]').fill('Fiktiv nyeste');await page.locator('[data-navigation="1:2"]').click();
+   assert.equal(await page.evaluate(()=>page),'Forkyndere');assert.equal(await page.evaluate(()=>PendingSaves.count),2);gate.release.resolve();
+   await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(await page.evaluate(id=>card(id).name,ids.card),'Fiktiv nyeste');
+   // A late receipt must not replace a page-level settings draft or its base.
+   gate=holdNext('card.save');await page.evaluate(id=>{void mutate('card.save',{id,name:'Fiktiv baggrund'},{close:false});},ids.card);await gate.arrived.promise;
+   await page.locator('[data-navigation="2:2"]').click();await page.locator('#settingsForm input[name=congregation]').fill('Fiktiv NY KLADDE');
+   const settingsBase=await page.evaluate(()=>EditorBases.page?.base);gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0);
+   assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(await page.evaluate(()=>EditorBases.page?.base),settingsBase);
+   // Geo preview gates stay intact; only an enqueued geographic write can leave.
+   await page.evaluate(id=>{GeoUI.dirty=false;GeoUI.openCard(id);GeoUI.ids=new Set(GeoUI.addresses().map(a=>a.id));GeoUI.polygon=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];GeoUI.dirty=true;GeoUI.drawLayers();GeoUI.updatePanel();},ids.card);
+   gate=holdNext('geo.assign');await page.evaluate(()=>{void GeoUI.save();});await gate.arrived.promise;
+   assert.equal(await page.evaluate(()=>GeoUI.canLeave()),true);await page.locator('[data-navigation="1:0"]').click();assert.equal(await page.evaluate(()=>page),'Distrikter');
+   await page.evaluate(id=>{GeoUI.openCard(id);GeoUI.ids=new Set([GeoUI.addresses()[0].id]);GeoUI.dirty=true;},ids.card);
+   const geoStamp=await page.evaluate(()=>GeoUI.draftStamp(false));gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0&&!GeoUI.saveBusy);
+   assert.equal(await page.evaluate(()=>GeoUI.draftStamp(false)),geoStamp);assert.equal(await page.evaluate(()=>GeoUI.dirty),true);assert.equal(await page.evaluate(id=>card(id).address_ids.length,ids.card),2);
+   // Unsubmitted new geographic edits still need the discard decision (dismissed).
+   assert.equal(await page.evaluate(()=>GeoUI.canLeave()),false);await page.evaluate(()=>{GeoUI.dirty=false;page='Forkyndere';render();});
+   // A real independently owned profile edit still conflicts with a stale form.
+   if(profiles){
+    await page.evaluate(id=>editPublisher(id),ids.person);await page.evaluate(()=>EditorBases.current.ready);
+    await page.evaluate(async id=>{const fresh=await(await api('/api/state')).json();await api('/api/mutate',{action:'publisher.save',data:{id,name:'Fiktiv ekstern ændring'},profile_snapshot:fresh.profile.snapshot});},ids.person);
+    await page.locator('#publisherForm input[name=name]').fill('Fiktiv gammel base');await page.locator('#publisherForm button.primary').click();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='error');
+    assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Fiktiv gammel base');await page.locator('#dialog .dialogClose').click();
+    await page.evaluate(()=>Workspace.handle('refresh',{}));
+   }
+   for(const mode of ['reject','lost','invalid']){
+    gate=holdNext('publisher.save',mode);await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Fiktiv '+mode);await page.locator('#publisherForm button.primary').click();await gate.arrived.promise;
+    await page.locator('[data-navigation="1:0"]').click();await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Bevar ny fiktiv kladde');
+    gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='error');
+    assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Bevar ny fiktiv kladde');
+    assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode!=='reject');
+    if(mode!=='reject'){
+     const count=writes.length;await page.locator('#publisherForm button.primary').click();await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(writes.length,count,'Uncertain writes cannot replay');
+    }
+    // Dismiss the explicit discard warning, then refresh after closing deliberately.
+    await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));
+   }
+   assert.deepEqual(errors,[]);console.log('PASS delayed return, duplicate submit, navigation, newest autosave, settings/geo drafts, stale profile conflict, rejection/lost/invalid receipts ('+(profiles?'profiles':'shared login')+')');
+  }finally{if(browser)await browser.close();child.kill();}
+ }
+})().catch(e=>{console.error(e);process.exitCode=1;});

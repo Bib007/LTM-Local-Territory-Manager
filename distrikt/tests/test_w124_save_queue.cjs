@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8');
 function fixture(){
- const nodes=new Map(),requests=[];const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',dataset:{},style:{},open:false,querySelector(){return null;},querySelectorAll(){return [];},showModal(){this.open=true;},close(){this.open=false;},addEventListener(){}});return nodes.get(id);};
+ const nodes=new Map(),requests=[];const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',dataset:{},style:{},open:false,querySelector(){return null;},querySelectorAll(){return [];},showModal(){this.open=true;},show(){this.open=true;},close(){this.open=false;},addEventListener(){}});return nodes.get(id);};
  const complete={revision:'r0',today:'2026-11-01',cards:[],areas:[],notes:[],publishers:[],loans:[],completions:[],ib:[],ignored:[],visits:[],recovery:[],maps:[],settings:{},profile:{snapshot:'page-base'}};
  let answer;
  const c={console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,WeakMap,frontResizeObserver:null,DistrictMap:{dispose(){}},ProfilesUI:{dialogBase:'',dialog(){},afterRender(){},canAction:()=>true},
@@ -68,5 +68,47 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   assert.equal(f.run('dialogDirty'),false);assert.equal(writes,3);
   console.log('PASS unchanged card skips write and concurrent identical saves coalesce');
   console.log('PASS edits during in-flight save remain dirty until their own confirmation');
+ }
+ {
+  const f=fixture();let release,write=0;
+  f.run('state.profile=null');
+  f.setAnswer(async request=>{write++;await new Promise(resolve=>release=resolve);return response({revision:'r'+write,state:{...f.complete,profile:null,revision:'r'+write}});});
+  f.run("openDialog('<form>Fiktiv aflevering</form>')");
+  const first=f.run("mutate('loan.finish',{id:'fictional-loan'})");await tick();
+  const duplicate=f.run("mutate('loan.finish',{id:'fictional-loan'})");
+  assert.equal(first,duplicate);assert.equal(write,1);assert.equal(f.get('dialog').dataset.backgroundSave,'yes');
+  f.run("saved();FormDrafts.idle()");assert.equal(f.run('SaveStatus.kind'),'saving');
+  const second=f.run("mutate('area.save',{name:'Fiktivt område'},{close:false})");
+  release();await first;await tick();assert.equal(f.run('PendingSaves.count'),1);assert.equal(f.run('SaveStatus.kind'),'saving');
+  release();await second;assert.equal(f.run('PendingSaves.count'),0);assert.equal(f.run('SaveStatus.kind'),'saved');
+  console.log('PASS duplicate commands coalesce and progress remains pending until the whole queue settles');
+ }
+ {
+  const f=fixture();let release,writes=0;
+  f.run('state.profile=null');
+  f.setAnswer(async()=>{writes++;await new Promise(resolve=>release=resolve);return response({revision:'committed',state_unavailable:true});});
+  const first=f.run("mutate('card.save',{id:'fictional'})");
+  const second=f.run("mutate('card.save',{id:'fictional',name:'later'})");
+  const results=Promise.allSettled([first,second]);await tick();release();await results;
+  assert.equal(writes,1);assert.equal(f.run('WriteGuard.needsReview'),true);
+  console.log('PASS an accepted but unreadable receipt blocks already queued dependent commands');
+ }
+ {
+  const f=fixture();let release,renders=0;
+  f.run('state.profile=null');f.c.countRender=()=>renders++;f.run('render=countRender');
+  f.setAnswer(async()=>{await new Promise(resolve=>release=resolve);return response({revision:'r1',state:{...f.complete,revision:'r1',profile:null}});});
+  const pending=f.run("mutate('loan.finish',{id:'fictional'},{close:false})");await tick();
+  const input={name:'congregation',type:'text',value:'Fiktiv start'},form={id:'settingsForm',dataset:{},querySelectorAll:()=>[input]};
+  f.c.settings=form;f.get('app').querySelectorAll=()=>[form];
+  f.run("page='Indstillinger';FormDrafts.forms.set(settings,{confirmed:FormDrafts.signature(settings),pending:null})");input.value='Fiktiv nyere kladde';
+  release();await pending;assert.equal(renders,0);assert.equal(input.value,'Fiktiv nyere kladde');assert.equal(f.run('state.revision'),'r1');
+  console.log('PASS state acknowledgement preserves a newer page form without repainting it');
+ }
+ {
+  const f=fixture();f.run("state.profile=null;page='Kortopsætning';GeoUI.target='fictional';GeoUI.ids=new Set(['new-address']);GeoUI.dirty=true;window.confirm=()=>false");
+  assert.equal(f.run('GeoUI.canLeave()'),false);
+  f.run('GeoUI.pendingStamp=GeoUI.draftStamp(false)');assert.equal(f.run('GeoUI.canLeave()'),true);
+  f.run("GeoUI.ids.add('newer-draft')");assert.equal(f.run('GeoUI.canLeave()'),false);
+  console.log('PASS only the exact enqueued geographic draft may leave without discarding newer edits');
  }
 })().catch(error=>{console.error(error);process.exitCode=1;});
