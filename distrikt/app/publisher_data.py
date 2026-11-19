@@ -97,7 +97,8 @@ def merge(store, data, *, preview=False):
     loans = [loan for loan in store.all('loans') + store.all('loans', deleted=True)
              if loan.get('publisher_id') in (target_id, source_id)]
     expected = signature([target, source, person, sorted(loans, key=lambda loan: loan['id'])])
-    result = {'id': target_id, 'name': person['name'], 'group': person.get('group', ''),
+    result = {'id': target_id, 'name': person['name'], 'target_name': target['name'],
+              'source_name': source['name'], 'group': person.get('group', ''),
               'group_role': person.get('group_role', ''), 'pioneer': person.get('pioneer', False),
               'expected': expected, 'loans': sum(loan['publisher_id'] == source_id for loan in loans)}
     if preview:

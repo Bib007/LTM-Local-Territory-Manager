@@ -10,6 +10,7 @@ from store import Store
 from profile_policy import mutation
 from history_import import csv_text,FULL_HEADERS
 from portable import digest
+from profile_edits import ReviewedMutation,capture
 
 class PublisherMergeTests(unittest.TestCase):
     def setUp(self):
@@ -85,5 +86,90 @@ class PublisherMergeTests(unittest.TestCase):
         p=next(p for p in self.s.all('publishers') if p['name']=='Ny fiktiv import')
         self.assertEqual(p['group'],'Ikke i en tjenestegruppe')
         self.assertEqual(self.s.active_loan(other)['publisher_id'],p['id'])
+
+    def test_group_import_matches_whitespace_aliases_once_and_keeps_aliases(self):
+        self.s.mutate('publisher.save',{'id':self.b,'name':'Fiktiv  Person'})
+        self.request['name']='Fiktiv Person'
+        self.merge()
+        aliases=self.s.require('publishers',self.a)['aliases']
+        for name in ('Fiktiv Person','Fiktiv  Person'):
+            plan=self.s.mutate('setup.publisher-import.preview',{'name':'fiction.csv',
+                'content':'navn;tjenestegruppe\n'+name+';Fiktiv ny gruppe'})
+            self.assertEqual((plan['invalid'],plan['new'],plan['errors']),(0,0,[]))
+            self.s.mutate('setup.publisher-import.apply',{'token':plan['token'],'confirm':'IMPORTÉR GRUPPER'})
+            person=self.s.require('publishers',self.a)
+            self.assertEqual((person['name'],person['aliases']),('Fiktiv Person',aliases))
+        plan=self.s.mutate('setup.publisher-import.preview',{'name':'fiction.csv',
+            'content':'navn\nFiktiv Person\nFiktiv  Person'})
+        self.assertEqual(plan['invalid'],1)
+
+    def test_chained_aliases_reused_by_both_imports_without_renaming(self):
+        self.merge()
+        other=self.s.mutate('publisher.save',{'name':'Fiktiv tredje'})['id']
+        request={'target_id':self.a,'source_id':other,'name':'Fiktiv endelig'}
+        preview=self.s.mutate('publisher.merge.preview',request)
+        self.s.mutate('publisher.merge',{**request,'expected':preview['expected']})
+        aliases=self.s.require('publishers',self.a)['aliases']
+        self.assertEqual(set(aliases),{'Fiktiv Person','fiktiv p','Fiktiv Person Samlet','Fiktiv tredje'})
+        for index,name in enumerate(aliases):
+            number='ALIAS-'+str(index)
+            card=self.s.mutate('card.save',{'number':number,'temporary':True})['id']
+            plan=self.s.mutate('setup.history-import.preview',{'name':'fiction.csv',
+                'content':csv_text([[number,'',name,self.day,'']],FULL_HEADERS)})
+            self.assertEqual((plan['publisher_count'],plan['loan_count'],plan['errors']),(0,1,0))
+            self.s.mutate('setup.history-import.apply',{'token':plan['token'],'confirm':'IMPORTÉR HISTORIK'})
+            self.assertEqual(self.s.active_loan(card)['publisher_id'],self.a)
+        plan=self.s.mutate('setup.publisher-import.preview',{'name':'fiction.csv',
+            'content':'navn;tjenestegruppe\nfiktiv p;Fiktiv ny gruppe'})
+        self.assertEqual((plan['new'],plan['update'],plan['invalid']),(0,1,0))
+        self.s.mutate('setup.publisher-import.apply',{'token':plan['token'],'confirm':'IMPORTÉR GRUPPER'})
+        person=self.s.require('publishers',self.a)
+        self.assertEqual((person['name'],person['aliases']),('Fiktiv endelig',aliases))
+        self.assertEqual(len(self.s.all('publishers')),1)
+
+    def test_all_loan_states_and_completions_survive_merge_and_undo(self):
+        for index in range(2):
+            card=self.s.mutate('card.save',{'number':'CLOSED-'+str(index),'temporary':True})['id']
+            loan=self.s.mutate('loan.issue',{'card_id':card,'publisher_id':self.b,'date':self.day,'initial':True})['id']
+            self.s.mutate('loan.finish',{'id':loan,'date':date.today().isoformat(),'complete':True})
+            if index:self.s.mutate('delete',{'module':'loans','id':loan,'history_revision':self.s.revision})
+        before={m:[self.s.all(m),self.s.all(m,deleted=True)] for m in ('publishers','loans','completions')}
+        self.merge()
+        self.assertTrue(all(l['publisher_id']==self.a for l in self.s.all('loans')+self.s.all('loans',deleted=True)))
+        self.assertEqual([self.s.all('completions'),self.s.all('completions',deleted=True)],before['completions'])
+        self.s.mutate('workflow.undo',{})
+        for module,rows in before.items():
+            for deleted,expected in enumerate(rows):
+                self.assertEqual(sorted(self.s.all(module,deleted=bool(deleted)),key=lambda r:r['id']),sorted(expected,key=lambda r:r['id']))
+
+    def test_loan_change_and_recovery_invalidate_preview(self):
+        preview=self.preview()
+        batch=self.s.mutate('delete',{'module':'loans','id':self.loan,'history_revision':self.s.revision,'location':'box'})
+        before=digest(self.s)
+        with self.assertRaisesRegex(ValueError,'ændret'):
+            self.s.mutate('publisher.merge',{**self.request,'expected':preview['expected']})
+        self.assertEqual(digest(self.s),before)
+        preview=self.preview();self.s.mutate('restore',batch);before=digest(self.s)
+        with self.assertRaisesRegex(ValueError,'ændret'):
+            self.s.mutate('publisher.merge',{**self.request,'expected':preview['expected']})
+        self.assertEqual(digest(self.s),before)
+
+    def test_profile_precommit_failure_restores_source_and_every_reference(self):
+        preview=self.preview();before=digest(self.s);revision=self.s.revision
+        undo=self.s._undo
+        def fail(observed):raise OSError('Fiktiv profilfejl')
+        review=ReviewedMutation(capture(self.s),'fictional',fail)
+        with self.assertRaisesRegex(OSError,'Fiktiv profilfejl'):
+            self.s.mutate('publisher.merge',{**self.request,'expected':preview['expected']},review=review)
+        self.assertEqual((digest(self.s),self.s.revision),(before,revision))
+        self.assertIs(self.s._undo,undo)
+
+    def test_preview_uses_current_names_and_retains_only_first_group_attributes(self):
+        self.s.mutate('publisher.save',{'id':self.a,'name':'Fiktiv aktuel','group':'Fiktiv gruppe','group_role':'assistant','pioneer':False})
+        self.s.mutate('publisher.save',{'id':self.b,'name':'Fiktiv anden','group':'Anden gruppe','group_role':'overseer','pioneer':True})
+        preview=self.preview()
+        self.assertEqual((preview['target_name'],preview['source_name']),('Fiktiv aktuel','Fiktiv anden'))
+        self.merge();person=self.s.require('publishers',self.a)
+        self.assertEqual((person['group'],person['group_role'],person['pioneer']),('Fiktiv gruppe','assistant',False))
 
 if __name__=='__main__':unittest.main()

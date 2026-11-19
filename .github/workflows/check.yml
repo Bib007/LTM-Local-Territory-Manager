@@ -118,6 +118,8 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_ib_print_browser.cjs
       - name: Unified setup and required tour browser workflows
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_onboarding_browser.cjs
+      - name: Publisher merge with preserved history
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_publisher_merge_browser.cjs
       - name: Offline daily use and publisher returns
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_desk_browser.cjs
       - name: Touch phone and tablet daily workflows in Chromium

@@ -26,7 +26,9 @@ def preview(store,data):
     current=store.all('publishers');by_name=defaultdict(list)
     from publisher_data import names
     for person in current:
-        for name in names(person):by_name[norm(name)].append(person)
+        # Several retained spellings may share the importer's whitespace key.
+        # Ambiguity means different identities, not two names of one person.
+        for name in {norm(name) for name in names(person)}:by_name[name].append(person)
     rows=[];seen=set();seen_ids=set();proposed={p['id']:deepcopy(p) for p in current}
     role_names={norm(label):key for key,label in ROLES.items()};role_names.update({key:key for key in ROLES});role_names['forkynder']=''
     for line,values in source[1:]:
@@ -45,7 +47,7 @@ def preview(store,data):
                 if old['id'] in seen_ids:raise ValueError('Flere navne i filen tilhører samme forkynder. Behold kun én linje pr. forkynder.')
                 seen_ids.add(old['id'])
             # Omitted columns preserve existing values; a present blank clears.
-            values={'name':old['name'] if old and name!=norm(old['name']) else v['name']}
+            values={'name':old['name'] if old and v['name'].casefold()!=old['name'].casefold() else v['name']}
             if 'group' in fields:values['group']=v['group']
             if 'group_role' in fields:
                 role=norm(v['group_role'])
