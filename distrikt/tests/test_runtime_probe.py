@@ -74,8 +74,11 @@ class RuntimeProbeHTTPTests(unittest.TestCase):
         self.store.close();self.temp.cleanup()
 
     def settled(self):
-        self.bridge.publish()
-        for reading in (self.bridge.sampler,self.bridge.probe):reading.thread.join(1)
+        # Establish a quiet recovery observation, rather than racing the probe
+        # against the sampler's own brief Store read (legitimately 'busy').
+        for reading in (self.bridge.sampler,self.bridge.probe):
+            reading.poll();reading.thread.join(2)
+            self.assertFalse(reading.thread.is_alive())
         self.bridge.publish()
         return self.sent[-1][1]
 
