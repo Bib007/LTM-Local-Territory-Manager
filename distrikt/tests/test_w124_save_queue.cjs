@@ -111,4 +111,16 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   f.run("GeoUI.ids.add('newer-draft')");assert.equal(f.run('GeoUI.canLeave()'),false);
   console.log('PASS only the exact enqueued geographic draft may leave without discarding newer edits');
  }
+ {
+  const f=fixture();let release;const writes=[];
+  f.run('state.profile=null');
+  f.setAnswer(async request=>{writes.push(request.body);await new Promise(resolve=>release=resolve);return response({revision:'r1',state:{...f.complete,revision:'r1',profile:null}});});
+  const input={name:'name',type:'text',value:'Fiktiv gammel'},form=f.get('cardForm');form.dataset.id='fictional';form.reportValidity=()=>true;form.querySelectorAll=()=>[input];f.c.input=input;f.c.form=form;
+  f.run("openDialog('<form>Fiktivt kort</form>');FormDrafts.forms.set(form,{confirmed:FormDrafts.signature(form),pending:null});cardFormData=()=>({id:'fictional',name:input.value})");
+  input.value='Fiktiv første';const first=f.run('saveCard(false)');await tick();
+  input.value='Fiktiv nyere';f.run("dialogDirty=true;openDialog('<form>Ny fiktiv redigering</form>')");
+  release();await first;await tick();assert.equal(writes[1].data.name,'Fiktiv nyere');
+  release();await f.run('saveQueue');assert.match(f.get('dialog').innerHTML,/Ny fiktiv redigering/);assert.equal(f.get('dialog').open,true);
+  console.log('PASS opening another editor captures the latest background card autosave');
+ }
 })().catch(error=>{console.error(error);process.exitCode=1;});

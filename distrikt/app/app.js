@@ -120,13 +120,21 @@ const PendingSaves={count:0,sequence:0,commands:new Map(),
  }
 };
 async function confirmedWrite(path,body,after=async response=>response.json()){
- if(path==='/api/mutate'&&state?.profile&&!Object.prototype.hasOwnProperty.call(body||{},'profile_snapshot'))body={...body,profile_snapshot:ProfilesUI.dialogBase||state.profile.snapshot};
+ const pinned=path==='/api/mutate'&&state?.profile&&!Object.prototype.hasOwnProperty.call(body||{},'profile_snapshot'),context=pinned&&typeof EditorBases!=='undefined'?EditorBases.capture():null;
+ if(pinned)body={...body,profile_snapshot:ProfilesUI.dialogBase||state.profile.snapshot};
  body=body?JSON.parse(JSON.stringify(body)):body;
- const epoch=WriteGuard.epoch;return PendingSaves.enqueue(async()=>{WriteGuard.assert(epoch);
- let accepted=false;try{saving();const response=await api(path,body);accepted=true;const result=await after(response);if(result===false){const error=new RequestError('En nyere redigering er åbnet. Opdater igen, når du er færdig.','response');WriteGuard.requireRefresh(error);toast(error);}else saved();return result;}
- catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);throw error;}
- });
+ if(context)context.pending++;
+ const epoch=WriteGuard.epoch;return PendingSaves.enqueue(async()=>{
+  let accepted=false;try{
+   WriteGuard.assert(epoch);
+   if(context){await context.ready;if(context.error)throw context.error;body.profile_snapshot=context.base;}
+   saving();const response=await api(path,body);accepted=true;
+   if(context)EditorBases.accepted(context,(await response.json()).profile_snapshot);
+   const result=await after(response);if(result===false){const error=new RequestError('En nyere redigering er åbnet. Opdater igen, når du er færdig.','response');WriteGuard.requireRefresh(error);toast(error);}else saved();return result;
+  }catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);throw error;}
+ }).finally(()=>{if(context){context.pending--;EditorBases.release(context);}});
 }
+
 async function refresh({guard,beforeRender,snapshot,preserveDrafts=false}={}){const fresh=snapshot??await(await api('/api/state')).json();if(guard&&!guard())return false;state=fresh;historyRevision=fresh.revision;if(!selected&&state.cards.length)selected=state.cards[0].id;if(beforeRender)beforeRender();if(!preserveDrafts||!PendingSaves.protectPage())render();return true;}
 function mutationSnapshot(result){
  if(result.state_unavailable===true)throw new RequestError('Ændringen er gemt, men oversigten kunne ikke hentes. Brug Opdater før næste ændring.','response');
@@ -171,10 +179,10 @@ const EditorBases={current:null,page:null,pageState:null,pageSnapshot:null,
  },
  close(){const context=this.current;if(!context)return;this.current=null;context.closed=true;this.release(context);},
  release(context){
-  if(!context.closed||context.pending||context.error||context.released===context.base)return;
+  if(!context.closed||context.pending||context.error||context.released===context.base||context.base===state?.profile?.snapshot)return;
   // A fork still being prepared owns its source until it completes.
   if(!context.ready)return;
-  context.ready.then(()=>{if(context.pending||context.error||context.released===context.base)return;context.released=context.base;api('/api/profiles/edit-base/release',{snapshot:context.base}).catch(()=>{});});
+  context.ready.then(()=>{if(context.pending||context.error||context.released===context.base||context.base===state?.profile?.snapshot)return;context.released=context.base;api('/api/profiles/edit-base/release',{snapshot:context.base}).catch(()=>{});});
  },
  accepted(context,snapshot){if(!context||!snapshot)return;context.base=snapshot;if(this.current===context)ProfilesUI.dialogBase=snapshot;}
 };
@@ -230,7 +238,7 @@ const DialogFocus={opener:null,
  keydown(event,dialog){if(event.key!=='Tab'||event.defaultPrevented||!dialog.open||dialog.dataset.backgroundSave==='yes')return;const fields=[...dialog.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=true]')].filter(node=>node.tabIndex>=0&&!node.matches(':disabled')&&!node.hidden&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');const first=fields[0],last=fields.at(-1),active=document.activeElement;if(!first){event.preventDefault();dialog.focus();return;}if(event.shiftKey&&(active===first||!dialog.contains(active))){event.preventDefault();last.focus({preventScroll:true});}else if(!event.shiftKey&&(active===last||!dialog.contains(active))){event.preventDefault();first.focus({preventScroll:true});}},
  restore(dialog){const saved=this.opener;this.opener=null;if(!saved)return;const target=saved.node?.isConnected?saved.node:(saved.id?document.getElementById(saved.id):null)||(saved.selector?document.querySelector(saved.selector):null);if(target&&target.isConnected!==false&&!dialog.contains?.(target))target.focus?.({preventScroll:true});}
 };
-function openDialog(html,language='da'){const dialog=el('dialog');if(dialog.dataset.backgroundSave==='yes'){dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;}DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
+function openDialog(html,language='da'){const dialog=el('dialog');if(dialog.dataset.backgroundSave==='yes'&&el('cardForm')?.dataset.id&&dialogDirty){if(!el('cardForm').reportValidity())return;saveCard(false);dialogDirty=false;}if(dialog.dataset.backgroundSave==='yes'){dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;}DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
 function closeDialog(){EditorBases.close();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase='';const dialog=el('dialog');frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;DialogFocus.restore(dialog);}
 function empty(message){return `<div class="empty">${message}</div>`;}
 function searchText(c){return [c.number,c.internal_number,c.name,areaName(c.area_id),c.kind,...(c.addresses||[]).flatMap(a=>[a.road,a.numbers,a.type])].join(' ').toLowerCase();}

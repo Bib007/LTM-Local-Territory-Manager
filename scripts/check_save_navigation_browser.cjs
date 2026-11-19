@@ -10,6 +10,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    const fixture=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Fixture timeout')),15000);createInterface({input:child.stdout}).once('line',line=>{clearTimeout(timer);resolve(JSON.parse(line));});});
    browser=await chromium.launch({args:['--no-sandbox'],...(process.env.LTM_CHROME?{executablePath:process.env.LTM_CHROME}:{})});
    const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],writes=[];let hold;
+   const waitForReceipt=async gate=>{let timer;try{await Promise.race([gate.arrived.promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('No '+gate.action+' receipt: '+errors.join('; '))),10000);})]);}finally{clearTimeout(timer);}};
    const holdNext=(action,mode='success')=>{assert.ok(!hold);hold={action,mode,arrived:deferred(),release:deferred()};return hold;};
    page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.dismiss());
    await page.addInitScript(()=>localStorage.setItem('ltm-language','da'));
@@ -45,7 +46,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    });
    // The modal releases on submit; navigation uses real clickable navigation.
    let gate=holdNext('loan.finish');await page.evaluate(id=>finish(id,false),ids.loan);
-   await page.locator('#finishForm select[name=revise_ib]').selectOption('no');await page.locator('#finishForm button.primary').click();await gate.arrived.promise;
+   await page.locator('#finishForm select[name=revise_ib]').selectOption('no');await page.locator('#finishForm button.primary').click();await waitForReceipt(gate);
    assert.equal(await page.evaluate(()=>SaveStatus.kind),'saving');assert.equal(await page.locator('#dialog').evaluate(n=>n.matches(':modal')),false);
    await page.locator('#finishForm').evaluate(f=>f.requestSubmit());assert.equal(writes.filter(w=>w.action==='loan.finish').length,1);
    await page.locator('[data-navigation="1:2"]').click();await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Ny fiktiv kladde');
@@ -54,18 +55,18 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    assert.equal(await page.evaluate(id=>!!state.loans.find(l=>l.id===id).returned,ids.loan),true);await page.locator('#dialog .dialogClose').click();
    // Autosave captures the latest edit on navigation, without waiting for receipt 1.
    gate=holdNext('card.save');await page.evaluate(id=>editCard(id),ids.card);await page.locator('#cardForm input[name=name]').fill('Fiktiv første');
-   await page.evaluate(()=>{void saveCard(false);});await gate.arrived.promise;
+   await page.evaluate(()=>{void saveCard(false);});await waitForReceipt(gate);
    await page.locator('#cardForm input[name=name]').fill('Fiktiv nyeste');await page.locator('[data-navigation="1:2"]').click();
    assert.equal(await page.evaluate(()=>page),'Forkyndere');assert.equal(await page.evaluate(()=>PendingSaves.count),2);gate.release.resolve();
    await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(await page.evaluate(id=>card(id).name,ids.card),'Fiktiv nyeste');
    // A late receipt must not replace a page-level settings draft or its base.
-   gate=holdNext('card.save');await page.evaluate(id=>{void mutate('card.save',{id,name:'Fiktiv baggrund'},{close:false});},ids.card);await gate.arrived.promise;
+   gate=holdNext('card.save');await page.evaluate(id=>{void mutate('card.save',{id,name:'Fiktiv baggrund'},{close:false});},ids.card);await waitForReceipt(gate);
    await page.locator('[data-navigation="2:2"]').click();await page.locator('#settingsForm input[name=congregation]').fill('Fiktiv NY KLADDE');
    const settingsBase=await page.evaluate(()=>EditorBases.page?.base);gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0);
    assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(await page.evaluate(()=>EditorBases.page?.base),settingsBase);
    // Geo preview gates stay intact; only an enqueued geographic write can leave.
    await page.evaluate(id=>{GeoUI.dirty=false;GeoUI.openCard(id);GeoUI.ids=new Set(GeoUI.addresses().map(a=>a.id));GeoUI.polygon=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];GeoUI.dirty=true;GeoUI.drawLayers();GeoUI.updatePanel();},ids.card);
-   gate=holdNext('geo.assign');await page.evaluate(()=>{void GeoUI.save();});await gate.arrived.promise;
+   gate=holdNext('geo.assign');await page.evaluate(()=>{void GeoUI.save();});await waitForReceipt(gate);
    assert.equal(await page.evaluate(()=>GeoUI.canLeave()),true);await page.locator('[data-navigation="1:0"]').click();assert.equal(await page.evaluate(()=>page),'Distrikter');
    await page.evaluate(id=>{GeoUI.openCard(id);GeoUI.ids=new Set([GeoUI.addresses()[0].id]);GeoUI.dirty=true;},ids.card);
    const geoStamp=await page.evaluate(()=>GeoUI.draftStamp(false));gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0&&!GeoUI.saveBusy);
@@ -81,7 +82,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     await page.evaluate(()=>Workspace.handle('refresh',{}));
    }
    for(const mode of ['reject','lost','invalid']){
-    gate=holdNext('publisher.save',mode);await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Fiktiv '+mode);await page.locator('#publisherForm button.primary').click();await gate.arrived.promise;
+    gate=holdNext('publisher.save',mode);await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Fiktiv '+mode);await page.locator('#publisherForm button.primary').click();await waitForReceipt(gate);
     await page.locator('[data-navigation="1:0"]').click();await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Bevar ny fiktiv kladde');
     gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='error');
     assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Bevar ny fiktiv kladde');

@@ -12,6 +12,7 @@ const GeoUI={
     const unchanged=this.draftStamp(false)===stamp;state=fresh;
     if(unchanged){apply();if(page==='Kortopsætning')render();if(dialogGeneration!==undefined&&openDialog.generation===dialogGeneration)closeDialog();}
     else if(page==='Kortopsætning'){this.drawLayers();this.drawBoundary();this.updatePanel();}
+    else if(!PendingSaves.protectPage())render();
     saved();return unchanged;
   },
   async saveBoundary(whole=false){

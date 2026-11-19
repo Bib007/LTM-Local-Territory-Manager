@@ -90,6 +90,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Install isolated browser test tool
+        run: |
+          npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
+          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
+          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
+      - name: Navigation during delayed saves and uncertain receipts
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_save_navigation_browser.cjs
       - name: All synthetic JavaScript contracts
         run: for testfile in distrikt/tests/test_*.cjs; do node "$testfile" || exit 1; done
       - name: Fictional demo and shared product design
@@ -99,13 +106,6 @@ jobs:
           node demo/test_model.cjs
           node demo/test_ui.cjs
           python scripts/build_demo.py
-      - name: Install isolated browser test tool
-        run: |
-          npm install --prefix "$RUNNER_TEMP/ltm-browser" --no-audit --no-fund --ignore-scripts playwright@1.56.1
-          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps chromium --only-shell
-          node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
-      - name: Navigation during delayed saves and uncertain receipts
-        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_save_navigation_browser.cjs
       - name: Light appearance and preserved local drafts
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_THEME=light node scripts/check_desk_browser.cjs
       - name: Light touch appearance in WebKit
