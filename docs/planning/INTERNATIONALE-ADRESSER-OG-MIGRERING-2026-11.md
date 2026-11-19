@@ -13,6 +13,30 @@
 
 [OSMF's offentlige Nominatim-politik](https://operations.osmfoundation.org/policies/nominatim/) forbyder personlige/fortrolige data og bl.a. autocomplete og systematisk scraping. **Ingen personoplysninger til OSM.** Denne PR læser kun lokale filer; ingen søgning, upload, eksternt kortopslag eller adresseimport til produktion.
 
+## W128 · Præciseret funktionskrav for international adressehentning (19. november 2026)
+
+**Ejerbeslutning:** International adressehentning skal fungere **ligesom DAR i Danmark**. Målet er at tegne en distriktsgrænse i LTM og vælge **Hent adresser**, hvorefter programmet henter **alle tilgængelige, individuelt registrerede adresser inden for området**. En løsning med kun søgning efter enkeltadresser eller manuel CSV-import opfylder ikke kravet.
+
+### Krav til den fremtidige løsning
+
+- Hent adressepunkter ud fra en geografisk grænse, om nødvendigt gennem mindre afgrænsede udsnit; filtrér præcist efter den tegnede polygon lokalt. Ingen adresser uden for distriktet må blive valgt automatisk.
+- Understøt alle tilgængelige husnumre og selvstændigt registrerede enheder/lejligheder som særskilte besøg, hvor kilden leverer disse. Undgå dobbeltoptælling og dubletter på tværs af sider, kilder og genhentninger.
+- Bevar DAR-oplevelsens status, sideopdeling, kontrol af fuldstændige svar, pause/fortsæt, sikre checkpoints, fejlhåndtering og gennemgang før gemning. Afbrudt eller ufuldstændig hentning må ikke fremstilles som komplet eller slette eksisterende adresser.
+- Skeln mellem **en teknisk gennemført hentning** og **faktisk adresseregistreringsdækning**: ingen udenlandsk kilde må påstås at indeholde alle virkelige adresser. Vis kilde, tidspunkt, omfang, eventuelle datamangler og advarsler. Bevar mulighed for manuel supplering.
+- Lav en kildeuafhængig adressemodel med landekode, landespecifikt postnummer, vejnavn, husnummer, enhed/lejlighed, WGS84-koordinater, stabil kildeidentitet og kildeproveniens. Danske krav om firecifret postnummer og danske koordinat-/nummerformater må ikke blokere udlandet.
+- Bevar eksisterende kort, adressevalg, IB, forkyndere, udlån, historik og backup uændret ved kildevalg eller genhentning. Ændringer kræver tydelig forhåndsvisning og godkendelse.
+- Indfør en udskiftelig kildeadapter pr. land/udbyder. Dansk DAR/Adressevælger skal fortsætte som hidtil og bestå regressionstest; international udvidelse må ikke ødelægge de danske flows.
+- Kontakt kun eksterne kilder med de nødvendige offentlige geografiske parametre; send aldrig IB, forkyndere, udlån eller andre private menighedsdata.
+
+### Udbydere, der skal vurderes – endnu ikke besluttet eller implementeret
+
+1. **USA først:** Undersøg den officielle [National Address Database (NAD)](https://www.transportation.gov/gis/national-address-database) for reelle geografiske områdeudtræk, koordinater, fler-enhedsadresser, tilgængelig adgang, sideopdeling, aktualitet og dokumenteret dækning. Bekræft praktisk egnethed med fiktive testområder, før den vælges.
+2. **International fælles kilde:** Undersøg [Overture Maps Addresses](https://docs.overturemaps.org/guides/addresses/) for geografiske batchudtræk, formatkonvertering, licens, kildeproveniens, opdateringsfrekvens og datakvalitet på tværs af lande.
+3. **Alternative/supplerende kilder:** Vurder [OpenAddresses](https://openaddresses.io/) og OpenStreetMap/Geofabrik efter deres respektive dæknings- og licensvilkår. OSM-kortfliser og den offentlige Nominatim-tjeneste er **ikke** en løsning til systematisk hentning af alle adresser.
+4. Overvej officielle landespecifikke registre, hvis de giver bedre eller mere pålidelige komplette udtræk end en global kilde.
+
+**Status og afgrænsning:** Dette er en præcisering af W128's ønskede produktfunktion og en liste over udbydere, der skal undersøges — **ikke en påstand om verificeret komplet dækning, færdigt API-valg eller implementeret international adressehentning**. PR #116's afgrænsede offline grænsekonverter er et separat eksperiment og løser ikke dette krav. Ingen kode, credentials eller release ændres ved denne note.
+
 ## Førsteparternes dokumenterede migreringsformater
 
 | Retning | Dokumenteret af platformen | Afgrænsning |
