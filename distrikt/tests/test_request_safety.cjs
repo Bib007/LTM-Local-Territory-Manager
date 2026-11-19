@@ -36,11 +36,11 @@ const reset=()=>run("WriteGuard.reviewed();state=JSON.parse(JSON.stringify(fixtu
   assert.equal(requests.length,before+1);assert.equal(run('state.revision'),'purged');assert.equal(run('WriteGuard.uncertain'),false);assert.equal(run('WriteGuard.needsReview'),true);
  }
  reset();
- // An older server's slow overview does not mislabel a confirmed write as still saving.
+ // An older server's receipt is acknowledged while the queue still synchronizes its overview.
  let releaseOverview;
  answer=async request=>request.url==='/api/mutate'?response({result:{count:1},revision:'legacy-confirmed',geo_changed:false}):new Promise(resolve=>releaseOverview=resolve);
  const slowOverview=run("mutate('recovery.purge',{batch:'fictional-task-batch'},{close:false})");
- await new Promise(resolve=>setImmediate(resolve));assert.equal(run('SaveStatus.kind'),'saved');assert.equal(run('state.revision'),'legacy-confirmed');
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(run('SaveStatus.kind'),'saving');assert.match(run('SaveStatus.message'),/gemt.*opdaterer/);assert.equal(run('state.revision'),'legacy-confirmed');
  releaseOverview(response({...fixture,revision:'legacy-confirmed'}));await slowOverview;assert.equal(run('SaveStatus.kind'),'saved');
  answer=async request=>response(request.url==='/api/state'?{...fixture,revision:'r1'}:{result:{count:1},revision:'saved-delete',geo_changed:false});
  await run("mutate('recovery.purge',{batch:'fictional-task-batch'},{close:false})");
@@ -79,6 +79,11 @@ const reset=()=>run("WriteGuard.reviewed();state=JSON.parse(JSON.stringify(fixtu
  confirmChoice=true;await run('closeRequested()');assert.equal(get('dialog').open,false);assert.equal(requests.length,beforeClose);
  // An old manual refresh must not discard a newer edit or release the guard.
  let releaseReview;answer=()=>new Promise(resolve=>releaseReview=resolve);const staleReview=run("Workspace.handle('refresh',{})");await new Promise(resolve=>setImmediate(resolve));run("openDialog('<form>NEWER REVIEW DRAFT</form>')");releaseReview(response({...fixture,revision:'ignored-old-read'}));await staleReview;assert.equal(run('WriteGuard.uncertain'),true);assert.equal(run('state.revision'),'r1');assert.match(get('dialog').innerHTML,/NEWER REVIEW DRAFT/);await run('closeRequested()');
+ // A newer page-form edit during refresh also retains the uncertainty guard.
+ const field={name:'congregation',type:'text',value:'Fiktiv original'},pageForm={id:'settingsForm',querySelectorAll:()=>[field]};
+ get('app').querySelectorAll=()=>[pageForm];
+ const pageReview=run("Workspace.handle('refresh',{})");await new Promise(resolve=>setImmediate(resolve));field.value='Fiktiv nyere kladde';releaseReview(response({...fixture,revision:'ignored-page-read'}));await pageReview;
+ assert.equal(run('WriteGuard.uncertain'),true);assert.equal(run('state.revision'),'r1');assert.equal(field.value,'Fiktiv nyere kladde');get('app').querySelectorAll=()=>[];
  // Only an explicit fresh snapshot releases the guard; it is still labelled for review.
  answer=async request=>response(request.url==='/api/state'?{...fixture,revision:'r2',notes:[{id:'server-note',text:'FIRST INVENTED NOTE'}]}:{ok:true});
  const beforeReview=requests.length;await run("Workspace.handle('refresh',{})");assert.equal(requests.slice(beforeReview).filter(r=>r.body).length,0);assert.equal(run('WriteGuard.uncertain'),false);assert.equal(run('state.revision'),'r2');assert.equal(run('SaveStatus.kind'),'review');

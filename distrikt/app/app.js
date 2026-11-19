@@ -114,6 +114,7 @@ const PendingSaves={count:0,sequence:0,commands:new Map(),
   // navigation remains reachable. Opening another editor restores modal behavior.
   dialog.close();dialog.show();dialog.style.position='fixed';dialog.style.inset='0';dialog.dataset.backgroundSave='yes';
  },
+ pageStamp(){return JSON.stringify([...(el('app')?.querySelectorAll?.('form')||[])].map(form=>[form.id,FormDrafts.signature(form)]));},
  protectPage(){
   return (page==='Kortopsætning'&&GeoUI.dirty)||[...(el('app')?.querySelectorAll?.('form')||[])].some(form=>form.dataset.saving==='yes'||form.dataset.busy==='yes'||FormDrafts.forms.has(form)&&!FormDrafts.unchanged(form));
  }
