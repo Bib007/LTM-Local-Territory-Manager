@@ -165,7 +165,7 @@ const EditorBases={current:null,page:null,pageState:null,pageSnapshot:null,
  },
  attach(form){
   if(!state?.profile||this.page?.form===form)return;
-  if(this.page?.form){this.page.closed=true;this.release(this.page);}
+  if(this.page){this.page.closed=true;this.release(this.page);}
   this.page={base:state.profile.snapshot,form,pending:0,closed:false,error:null};this.pageState=state;this.pageSnapshot=state.profile.snapshot;this.prepare(this.page);
  },
  retireDetached(){if(this.page?.form&&this.page.form.isConnected===false){this.page.closed=true;this.release(this.page);this.page=null;}},
@@ -174,11 +174,12 @@ const EditorBases={current:null,page:null,pageState:null,pageSnapshot:null,
   this.retireDetached();
   if(el('dialog').open&&this.current)return this.current;
   if(this.page?.form)return this.page;
-  if(!this.page||this.pageState!==state||this.pageSnapshot!==state.profile.snapshot){this.page={base:state.profile.snapshot,pending:0,closed:false,error:null};this.pageState=state;this.pageSnapshot=state.profile.snapshot;}
+  if(!this.page||this.pageState!==state||this.pageSnapshot!==state.profile.snapshot){if(this.page){this.page.closed=true;this.release(this.page);}this.page={base:state.profile.snapshot,pending:0,closed:false,error:null};this.pageState=state;this.pageSnapshot=state.profile.snapshot;this.prepare(this.page);}
   return this.page;
  },
  close(){const context=this.current;if(!context)return;this.current=null;context.closed=true;this.release(context);},
  release(context){
+  // A setup callback may hand its successor to the page; keep that shared lease.
   if(!context.closed||context.pending||context.error||context.released===context.base||context.base===state?.profile?.snapshot)return;
   // A fork still being prepared owns its source until it completes.
   if(!context.ready)return;

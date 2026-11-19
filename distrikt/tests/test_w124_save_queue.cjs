@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const read=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8');
 function fixture(){
  const nodes=new Map(),requests=[];const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',dataset:{},style:{},open:false,querySelector(){return null;},querySelectorAll(){return [];},showModal(){this.open=true;},show(){this.open=true;},close(){this.open=false;},addEventListener(){}});return nodes.get(id);};
- const complete={revision:'r0',today:'2026-11-01',cards:[],areas:[],notes:[],publishers:[],loans:[],completions:[],ib:[],ignored:[],visits:[],recovery:[],maps:[],settings:{},profile:{snapshot:'page-base'}};
+ const complete={revision:'r0',today:'2026-11-01',cards:[],areas:[],notes:[],publishers:[],loans:[],completions:[],ib:[],ignored:[],visits:[],recovery:[],maps:[],settings:{},profile:null};
  let answer;
  const c={console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,WeakMap,frontResizeObserver:null,DistrictMap:{dispose(){}},ProfilesUI:{dialogBase:'',dialog(){},afterRender(){},canAction:()=>true},
   setTimeout:()=>0,clearTimeout(){},window:{addEventListener(){},confirm:()=>true},document:{getElementById:get,querySelector:()=>({content:'FICTIONAL'}),querySelectorAll:()=>[],addEventListener(){}},
@@ -19,7 +19,7 @@ const response=(data,status=200)=>({ok:status<400,status,json:async()=>data,clon
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 (async()=>{
  {
-  const f=fixture();let fork=0,release;const writes=[];
+  const f=fixture();let fork=0,release;const writes=[];f.complete.profile={snapshot:'page-base'};f.run("state.profile={snapshot:'page-base'}");
   f.setAnswer(async request=>{
    if(request.url==='/api/profiles/edit-base')return response({snapshot:'editor-'+(++fork)});
    if(request.url==='/api/profiles/edit-base/release')return response({ok:true});
@@ -122,5 +122,27 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   release();await first;await tick();assert.equal(writes[1].data.name,'Fiktiv nyere');
   release();await f.run('saveQueue');assert.match(f.get('dialog').innerHTML,/Ny fiktiv redigering/);assert.equal(f.get('dialog').open,true);
   console.log('PASS opening another editor captures the latest background card autosave');
+ }
+ {
+  const f=fixture();f.run("state.profile=null;page='Kortopsætning';openDialog('<form>Fiktivt nyt kort</form>');GeoUI.dirty=true;GeoUI.load=async()=>{};GeoUI.updatePanel=()=>{};GeoUI.drawLayers=()=>{};GeoUI.drawBoundary=()=>{};let applied=false");
+  const input={name:'number',type:'text',value:'F101'},form={querySelectorAll:()=>[input]};f.c.form=form;
+  f.run('const formContext={form,signature:FormDrafts.signature(form)},stamp=GeoUI.draftStamp(false),generation=openDialog.generation');input.value='F102';
+  const unchanged=await f.run('GeoUI.syncWrite(stamp,()=>{applied=true},generation,complete,formContext)');
+  assert.equal(unchanged,false);assert.equal(f.run('applied'),false);assert.equal(f.get('dialog').open,true);assert.equal(input.value,'F102');assert.equal(f.run('GeoUI.dirty'),true);
+  console.log('PASS a geographic receipt preserves newer fields in the same creation dialog');
+ }
+ {
+  const f=fixture();let release;const sources=[];
+  f.complete.profile={snapshot:'fictional-page'};f.run("state.profile={snapshot:'fictional-page'}");
+  f.setAnswer(async request=>{
+   if(request.url==='/api/profiles/edit-base'){sources.push(request.body.snapshot);return response({snapshot:'fork-'+sources.length});}
+   if(request.url.endsWith('/release'))return response({ok:true});
+   assert.equal(request.body.profile_snapshot,'fork-1');await new Promise(resolve=>release=resolve);return response({revision:'r1',profile_snapshot:'successor',state:{...f.complete,revision:'r1'}});
+  });
+  const pending=f.run("mutate('card.save',{id:'fictional',name:'Fiktiv baggrund'},{close:false})");await tick();
+  f.run("openDialog('<form>Ny fiktiv kladde</form>')");await f.run('EditorBases.current.ready');
+  assert.deepEqual(sources,['fictional-page','fictional-page']);assert.equal(f.run('EditorBases.current.base'),'fork-2');release();await pending;
+  assert.equal(f.run('EditorBases.current.base'),'fork-2');assert.equal(f.get('dialog').open,true);
+  console.log('PASS a page write forks its base so another editor can open before its receipt');
  }
 })().catch(error=>{console.error(error);process.exitCode=1;});

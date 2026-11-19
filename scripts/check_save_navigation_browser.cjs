@@ -60,10 +60,11 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    assert.equal(await page.evaluate(()=>page),'Forkyndere');assert.equal(await page.evaluate(()=>PendingSaves.count),2);gate.release.resolve();
    await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(await page.evaluate(id=>card(id).name,ids.card),'Fiktiv nyeste');
    // A late receipt must not replace a page-level settings draft or its base.
-   gate=holdNext('card.save');await page.evaluate(id=>{void mutate('card.save',{id,name:'Fiktiv baggrund'},{close:false});},ids.card);await waitForReceipt(gate);
+   gate=holdNext('card.save');await page.evaluate(id=>{void mutate('card.save',{...card(id),name:'Fiktiv baggrund'},{close:false});},ids.card);await waitForReceipt(gate);
    await page.locator('[data-navigation="2:2"]').click();await page.locator('#settingsForm input[name=congregation]').fill('Fiktiv NY KLADDE');
+   await page.evaluate(()=>EditorBases.page?.ready);assert.equal(await page.evaluate(()=>EditorBases.page?.error?.message||null),null);
    const settingsBase=await page.evaluate(()=>EditorBases.page?.base);gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0);
-   assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(await page.evaluate(()=>EditorBases.page?.base),settingsBase);
+   assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(await page.evaluate(()=>EditorBases.page?.base),settingsBase);assert.equal(await page.evaluate(()=>SaveStatus.kind),'saved');
    // Geo preview gates stay intact; only an enqueued geographic write can leave.
    await page.evaluate(id=>{GeoUI.dirty=false;GeoUI.openCard(id);GeoUI.ids=new Set(GeoUI.addresses().map(a=>a.id));GeoUI.polygon=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];GeoUI.dirty=true;GeoUI.drawLayers();GeoUI.updatePanel();},ids.card);
    gate=holdNext('geo.assign');await page.evaluate(()=>{void GeoUI.save();});await waitForReceipt(gate);

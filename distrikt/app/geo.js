@@ -6,10 +6,10 @@ const GeoUI={
   drawColor:'#477596',whole:false,target:'',ids:new Set(),polygon:[],mode:'choose',dirty:false,focus:[],view:null,job:null,jobTimer:null,busy:false,notice:'',rangeRoad:'',rangePost:'',pendingRange:null,
   // Capture values, not references: a late response must never replace a newer draft.
   draftStamp(includeRevision=true){const form=el('geoRangeForm'),range=form?.elements?[...form.elements].filter(e=>e.name).map(e=>[e.name,e.value,e.checked]):null;return JSON.stringify([page,this.session,this.whole,this.target,[...this.ids].sort(),this.polygon,this.drawColor,this.mode,this.dirty,includeRevision?state.revision:null,range]);},
-  async syncWrite(stamp,apply,dialogGeneration,snapshot){
+  async syncWrite(stamp,apply,dialogGeneration,snapshot,formContext){
     let fresh;try{[,fresh]=await Promise.all([this.load(),snapshot?Promise.resolve(snapshot):api('/api/state').then(r=>r.json())]);}catch(error){WriteGuard.requireRefresh(error);throw error;}
     // The accepted mutation advances state.revision; only compare the editor draft here.
-    const unchanged=this.draftStamp(false)===stamp;state=fresh;
+    const unchanged=this.draftStamp(false)===stamp&&(!formContext||dialogGeneration!==openDialog.generation||!el('dialog').open||FormDrafts.signature(formContext.form)===formContext.signature);state=fresh;
     if(unchanged){apply();if(page==='Kortopsætning')render();if(dialogGeneration!==undefined&&openDialog.generation===dialogGeneration)closeDialog();}
     else if(page==='Kortopsætning'){this.drawLayers();this.drawBoundary();this.updatePanel();}
     else if(!PendingSaves.protectPage())render();
@@ -198,15 +198,15 @@ const GeoUI={
     const approveNeighbors=this.neighborChanges().length>0;
     if(approveNeighbors&&!el('geoNeighborApproval')?.checked)throw Error(I18n.text('Godkend ændringerne af nabokortenes grænser, før du gemmer.'));
     this.saveBusy=true;
-    const stamp=this.draftStamp(),dialogGeneration=openDialog.generation,dialogWasOpen=el('dialog').open;
+    const stamp=this.draftStamp(),dialogGeneration=openDialog.generation,dialogWasOpen=el('dialog').open,form=dialogWasOpen?el('dialog').querySelector?.('form'):null,formContext=form?{form,signature:FormDrafts.signature(form)}:null;
     const data={...extra,...(approveNeighbors?{approve_neighbors:true}:{}),...(this.streetApproval||{}),outline_expected:this.outlineApproval()||undefined,map_color:this.drawColor,card_id:this.target||undefined,number,address_ids:[...this.ids],polygon:this.polygon.length?this.polygon.map(p=>p.slice()):undefined};
     try{
       const preview=await this.preview({address_ids:data.address_ids},data.card_id);
-      if(stamp!==this.draftStamp()||dialogGeneration!==openDialog.generation||(dialogWasOpen&&!el('dialog').open))throw Error(I18n.text('Valget er ændret. Kontrollér det og gem igen.'));
+      if(stamp!==this.draftStamp()||dialogGeneration!==openDialog.generation||(dialogWasOpen&&!el('dialog').open)||(formContext&&FormDrafts.signature(form)!==formContext.signature))throw Error(I18n.text('Valget er ændret. Kontrollér det og gem igen.'));
       if(preview.retired?.length)throw Error(I18n.text('Nogle adresser er nedlagt hos DAR. Fjern dem fra valget først.'));
       if(preview.conflicts.length||preview.ignored.length)throw Error(I18n.text('Nogle valgte adresser er allerede brugt eller markeret Se bort fra. Ret valget først.'));
       const writeStamp=this.draftStamp(false);this.pendingStamp=writeStamp;PendingSaves.releaseDialog(dialogGeneration);
-      await mutate('geo.assign',data,{close:false,autosave:true,synchronize:(response,snapshot)=>this.syncWrite(writeStamp,()=>{this.target=response.result.id;const c=card(this.target);this.ids=new Set(c.address_ids);this.polygon=c.geo_polygon.map(p=>p.slice());this.dirty=false;this.streetApproval=null;this.suggestedOutline=null;this.setNotice('Adresser, vejliste og grænse er gemt. Kortets udlånshistorik er bevaret.');},dialogGeneration,snapshot)});
+      await mutate('geo.assign',data,{close:false,autosave:true,synchronize:(response,snapshot)=>this.syncWrite(writeStamp,()=>{this.target=response.result.id;const c=card(this.target);this.ids=new Set(c.address_ids);this.polygon=c.geo_polygon.map(p=>p.slice());this.dirty=false;this.streetApproval=null;this.suggestedOutline=null;this.setNotice('Adresser, vejliste og grænse er gemt. Kortets udlånshistorik er bevaret.');},dialogGeneration,snapshot,formContext)});
       toast(I18n.text('Kort gemt · forsiden kan nu printes'));
     }finally{this.saveBusy=false;this.pendingStamp=null;}
   },
