@@ -2,6 +2,11 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.30 · 2026-11-19
+
+- DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.
+- Failed outline proposals show an explanation. A DAR selection without a boundary is no longer presented as a completed proposal. Unknown address coordinates and coincident entrances receive specific explanations.
+
 ## 1.12.29 · 2026-11-18
 
 - The history template opens normally in Microsoft Excel. The newest period is on the left, and previously completed templates can still be imported.

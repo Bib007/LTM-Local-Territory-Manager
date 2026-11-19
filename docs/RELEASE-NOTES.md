@@ -1,11 +1,9 @@
-# LTM 1.12.29
+# LTM 1.12.30
 
-- Historikskabelonen åbner normalt i Microsoft Excel. Nyeste periode står til venstre, og tidligere udfyldte skabeloner kan fortsat importeres.
-- Fjern prikker i editoren ved at trykke på de hjørner, der skal fjernes fra et korts grænse eller den samlede grænse. Gem derefter grænsen.
-- Små kortændringer og indleveringer genbruger de indlæste geodata, når de geografiske oplysninger er uændrede. Det reducerer unødvendig genindlæsning efter gemning.
+- DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.
+- Mislykkede grænseforslag vises med en forklaring. Et DAR-valg uden grænse præsenteres ikke længere som et færdigt forslag. Ukendte adressekoordinater og sammenfaldende indgange forklares særskilt.
 
 ## English
 
-- The history template opens normally in Microsoft Excel. The newest period is on the left, and previously completed templates can still be imported.
-- Remove corners in the editor by tapping corners in a card boundary or the whole territory boundary. Save the boundary afterward.
-- Small card edits and returns reuse loaded geographic data when geographic properties are unchanged. This reduces unnecessary loading after saves.
+- DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.
+- Failed outline proposals show an explanation. A DAR selection without a boundary is no longer presented as a completed proposal. Unknown address coordinates and coincident entrances receive specific explanations.

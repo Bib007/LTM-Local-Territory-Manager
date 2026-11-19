@@ -1,14 +1,15 @@
-# LTM 1.12.19-beta.33
+# LTM 1.12.19-beta.34
 
-- Historikskabelonen viser den nyeste periode længst til venstre og de ældre perioder mod højre.
-- Importen læser både den nye skabelon og tidligere udfyldte skabeloner med ældste periode først.
+- DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.
+- Mislykkede grænseforslag vises med en forklaring. Et DAR-valg uden grænse præsenteres ikke længere som et færdigt forslag. Ukendte adressekoordinater og sammenfaldende indgange forklares særskilt.
 
 ## English
 
-- The history template places the newest period on the left and older periods toward the right.
-- Import supports both the new template and previously completed templates with the oldest period first.
+- DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.
+- Failed outline proposals show an explanation. A DAR selection without a boundary is no longer presented as a completed proposal. Unknown address coordinates and coincident entrances receive specific explanations.
 
 ## Afprøvning
 
-- Hent en ny historikskabelon. Den nyeste periode står til venstre.
-- Prøv import med både en ny og en tidligere udfyldt skabelon. Kontrollér navne, datoer og gennemgang før godkendelse.
+- Prøv DAR-adresseforslag og Foreslå grænse på et fiktivt kort.
+- Hvis nabokort blokerer, vises deres foreslåede grænser med orange streger. Kontrollér dem på kortet og godkend ved Gem.
+- Annuller en sammenlagt ændring og kontrollér, at ingen kort er ændret. Kontrollér efter gemning, at begge kort har deres oprindelige adresser og historik.
