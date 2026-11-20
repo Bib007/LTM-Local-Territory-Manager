@@ -194,7 +194,9 @@ def fingerprint(store,c,legacy=False):
     if c.get('archived'):content['archived']=True
     return hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
-def png_bytes(value):
+def png_bytes(value,*,size=(2200,1560)):
+    if size not in ((2200,1560),(1560,2200)):raise ValueError('Ukendt PNG-størrelse.')
+    width,height=size
     if not isinstance(value,str) or not value.startswith('data:image/png;base64,'):raise ValueError('Vælg et PNG-kortbillede fra appen.')
     try:raw=base64.b64decode(value.split(',',1)[1],validate=True)
     except Exception:raise ValueError('Ugyldigt PNG-billede.') from None
@@ -207,7 +209,7 @@ def png_bytes(value):
         data=raw[pos+8:end-4]
         if zlib.crc32(kind+data)&0xffffffff!=struct.unpack('>I',raw[end-4:end])[0]:raise ValueError('Beskadiget PNG-billede.')
         if kind==b'IHDR':
-            if types or length!=13 or struct.unpack('>II',data[:8])!=(2200,1560) or data[8:] not in (b'\x08\x06\x00\x00\x00',b'\x08\x02\x00\x00\x00'):raise ValueError('Kortbilledet har et ukendt format.')
+            if types or length!=13 or struct.unpack('>II',data[:8])!=size or data[8:] not in (b'\x08\x06\x00\x00\x00',b'\x08\x02\x00\x00\x00'):raise ValueError('Kortbilledet har et ukendt format.')
             channels=4 if data[9]==6 else 3
         if kind==b'IEND' and length:raise ValueError('Ugyldigt PNG-slutpunkt.')
         if kind==b'IDAT':compressed.extend(data)
@@ -216,8 +218,8 @@ def png_bytes(value):
         if kind==b'IEND':break
     if not types or types[0]!=b'IHDR' or types[-1]!=b'IEND' or b'IDAT' not in types or pos!=len(raw):raise ValueError('Ufuldstændigt PNG-billede.')
     try:
-        dec=zlib.decompressobj();pixels=dec.decompress(compressed,2200*1560*4+1561)
-        if not dec.eof or dec.unconsumed_tail or dec.unused_data or len(pixels)!=1560*(1+2200*channels) or any(pixels[i]>4 for i in range(0,len(pixels),1+2200*channels)):raise ValueError()
+        dec=zlib.decompressobj();pixels=dec.decompress(compressed,width*height*4+height+1)
+        if not dec.eof or dec.unconsumed_tail or dec.unused_data or len(pixels)!=height*(1+width*channels) or any(pixels[i]>4 for i in range(0,len(pixels),1+width*channels)):raise ValueError()
     except Exception:raise ValueError('PNG-pixeldata er ugyldige.') from None
     return bytes(out)
 
