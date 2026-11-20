@@ -95,6 +95,14 @@ const contracts={};const initial=run('JSON.stringify(state)');
  assert.equal(get('geoDownloadStatus').hidden,true);
  run("GeoUI.showJob({status:'error',message:'Outdated check'})");
  assert.equal(get('geoDownloadStatus').hidden,true);
+ // An old failed job must also leave a newer editor notice untouched after
+ // its asynchronous HTTP response returns.
+ run("page='Kortopsætning';GeoUI.job='old-fictional-job';GeoUI.jobNoticeEpoch=GeoUI.noticeEpoch;api=async url=>({json:async()=>url.startsWith('/api/geo/job')?{status:'error',message:'Old check timed out'}:url==='/api/state'?state:GeoUI.data})");
+ const oldPoll=run('GeoUI.poll()');
+ run("GeoUI.clearStaleFeedback();GeoUI.setNotice('Newer drawing selection')");
+ await oldPoll;
+ assert.equal(run('GeoUI.notice'),run("I18n.text('Newer drawing selection')"));
+ assert.equal(get('geoDownloadStatus').hidden,true);
  // A late download acknowledgement registers its job but cannot close a newer dialog; duplicate starts stop.
  const pollActual=run('GeoUI.poll');let releaseDownload;c.pendingDownload=new Promise(r=>releaseDownload=r);run("GeoUI.busy=false;GeoUI.poll=()=>{};GeoUI.showJob=()=>{};api=()=>pendingDownload;openDialog('<form>DOWNLOAD FORM</form>')");const download=run("GeoUI.download('road',{road:'Fictional'})");await assert.rejects(run("GeoUI.download('road',{road:'Fictional'})"));run("openDialog('<form>NEWER DOWNLOAD DRAFT</form>')");releaseDownload({json:async()=>({job_id:'FICTIONAL_JOB'})});await download;assert.equal(run('GeoUI.job'),'FICTIONAL_JOB');assert.equal(get('dialog').open,true);assert.match(get('dialog').innerHTML,/NEWER DOWNLOAD DRAFT/);
  let releaseIgnore;c.pendingIgnore=new Promise(r=>releaseIgnore=r);run("mutate=()=>pendingIgnore;GeoUI.ids=new Set(['a1']);GeoUI.dirty=false");const ignored=run("GeoUI.confirmIgnore('a1','Fictional')");run("GeoUI.session++;GeoUI.ids=new Set(['a1','a2'])");releaseIgnore();await ignored;assert.equal(run('GeoUI.ids.size'),2);assert.equal(run('GeoUI.dirty'),false);
