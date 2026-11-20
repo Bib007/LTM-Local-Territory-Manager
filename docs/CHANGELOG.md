@@ -2,6 +2,10 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.33 · 2026-11-20
+
+- Gemning og autosave: Scrollpositionen i både siden og en lang redigeringsdialog bevares under baggrundsgemning; fokus og tekstmarkør bliver i det felt, der redigeres.
+
 ## 1.12.32 · 2026-11-20
 
 - Gem kort og vejliste: Bekræftelsesboksen lukkes, når den kontrollerede gemning er sat i gang; den kommer ikke tilbage under baggrundsgemningen.
