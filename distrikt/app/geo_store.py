@@ -225,6 +225,15 @@ class GeoStore(MainBoundaryStore):
                 if review and not old.get('retired'):
                     self.put('geo',{'id':'change:'+old['id'],'entity':'address_change','kind':'retired','before':old,'after':dict(old,retired=True),'at':stamp()})
                 elif not review:old['retired']=True;self.put('geo',old)
+    def geo_preview_snapshot(self):
+        # SQLite decodes private rows; retain unknown fields but exclude unrelated
+        # modules and provider configuration/credentials from the calculation.
+        with self.lock:
+            rows={name:self.all(name) for name in ('geo','cards','ignored')}
+            rows['geo']=[r for r in rows['geo'] if r.get('entity') in ('address','download')]
+            revision=self.revision
+        return GeoPreviewSnapshot(rows),revision
+
     def geo_preview(self,data):
         records=self.all('geo')
         all_addresses=[a for a in records if a.get('entity')=='address']
@@ -278,3 +287,20 @@ class GeoStore(MainBoundaryStore):
         else:
             result['outline']=enclosing_outline([[a['lng'],a['lat']] for a in selected]) if selected else []
         return result
+
+
+class GeoPreviewSnapshot:
+    """Private read-only input to the existing geometry and street-list code."""
+    geo_preview=GeoStore.geo_preview
+
+    def __init__(self,rows):
+        self.__rows=rows
+
+    def all(self,module):
+        from copy import deepcopy
+        return deepcopy(self.__rows[module])
+
+    def require(self,module,ident):
+        item=next((r for r in self.all(module) if r['id']==ident and not r.get('_deleted_at')),None)
+        if item is None:raise ValueError('Posten findes ikke længere. Opdater siden.')
+        return item
