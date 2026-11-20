@@ -215,6 +215,60 @@ async function printFrontImage(c,options={}){
  }finally{frame.remove();}
 }
 
+
+/* Export the real, browser-paginated IB print layout to portrait archive pages.
+ * Do not generate a second server-side text list: that loses the original
+ * card headers, road groups, columns and continuation pages.
+ */
+async function printBackImages(c){
+ const cfg={...defaultPrintProfile('back'),...(state.settings.print_profiles?.back||{}),mode:'full',paper:'cut',x:0,y:0};
+ const frame=document.createElement('iframe');frame.setAttribute('aria-hidden','true');
+ frame.style.cssText='position:fixed;left:-20000px;top:0;width:1200px;height:1000px;border:0;pointer-events:none';document.body.append(frame);
+ try{
+  const doc=frame.contentDocument;doc.open();doc.write(printDocument([c],'back',cfg));doc.close();
+  await doc.fonts.ready;
+  const failures=paginateIBSheets(doc);
+  if(failures.length)throw Error('IB-posterne kan ikke være på udskriftssiden: '+failures.join(', '));
+  const pages=[];
+  for(const preview of doc.querySelectorAll('.sheet.ibSheet .ibPreview')){
+   const bounds=preview.getBoundingClientRect(),parts=[];
+   if(!bounds.width||!bounds.height)throw Error('IB-bagsiden kunne ikke dannes.');
+   // The lines are read from the exact print DOM after its measured pagination.
+   for(const item of preview.querySelectorAll('.ibHead,.ibCols,.ibRow')){
+    const style=frame.contentWindow.getComputedStyle(item),thickness=parseFloat(style.borderBottomWidth);
+    if(!(thickness>0)||style.borderBottomStyle==='none')continue;
+    const r=item.getBoundingClientRect(),y=r.bottom-bounds.top-thickness/2;
+    parts.push(`<line x1="${r.left-bounds.left}" y1="${y}" x2="${r.right-bounds.left}" y2="${y}" stroke="${esc(style.borderBottomColor)}" stroke-width="${thickness}"/>`);
+   }
+   const walker=doc.createTreeWalker(preview,frame.contentWindow.NodeFilter.SHOW_TEXT),measure=document.createElement('canvas').getContext('2d');
+   if(!measure)throw Error('Browseren understøtter ikke billedeksport.');
+   while(walker.nextNode()){
+    const node=walker.currentNode,style=frame.contentWindow.getComputedStyle(node.parentElement);
+    if(style.visibility==='hidden'||style.display==='none')continue;
+    measure.font=`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const ascent=measure.measureText('Mg').fontBoundingBoxAscent;
+    if(!Number.isFinite(ascent))throw Error('Browseren understøtter ikke billedeksport.');
+    const range=doc.createRange();let line='',box=null;
+    const flush=()=>{
+     if(line.trim())parts.push(`<text x="${box.left-bounds.left}" y="${box.top-bounds.top+ascent}" font-family="${esc(style.fontFamily)}" font-size="${style.fontSize}" font-weight="${style.fontWeight}" fill="${esc(style.color)}" xml:space="preserve">${esc(line)}</text>`);
+    };
+    for(let i=0;i<node.length;i++){
+     range.setStart(node,i);range.setEnd(node,i+1);
+     const r=range.getBoundingClientRect();if(!r.width)continue;
+     if(box&&Math.abs(r.top-box.top)>.5){flush();line='';box=null;}
+     if(!box)box=r;line+=node.textContent[i];
+    }
+    flush();
+   }
+   const scale=Math.min(1472/bounds.width,2112/bounds.height),x=(1560-bounds.width*scale)/2,y=(2200-bounds.height*scale)/2;
+   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2200"><rect width="1560" height="2200" fill="white"/><g transform="translate(${x} ${y}) scale(${scale})">${parts.join('')}</g></svg>`;
+   pages.push(await MapExport.raster(svg,{width:1560,height:2200}));
+  }
+  if(!pages.length)throw Error('IB-bagsiden kunne ikke dannes.');
+  return pages;
+ }finally{frame.remove();}
+}
+
 const PrintApprovals={
  entries:new Map(),pending:null,busy:false,singleBusy:new Set(),
  async confirmSingle(id,side,button){

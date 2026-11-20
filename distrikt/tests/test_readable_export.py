@@ -6,9 +6,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
 from readable_export import ReadableExport,csv_file,png_image,write_image_pdf
 
-def png():
+def png(width=2200,height=1560):
     def chunk(kind,raw):return struct.pack('>I',len(raw))+kind+raw+struct.pack('>I',zlib.crc32(kind+raw)&0xffffffff)
-    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',2200,1560,8,2,0,0,0))+chunk(b'IDAT',zlib.compress((b'\0'+b'\xff\xff\xff'*2200)*1560))+chunk(b'IEND',b'')
+    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,height,8,2,0,0,0))+chunk(b'IDAT',zlib.compress((b'\0'+b'\xff\xff\xff'*width)*height))+chunk(b'IEND',b'')
 
 class ReadableExportTests(unittest.TestCase):
     def setUp(self):
@@ -27,7 +27,7 @@ class ReadableExportTests(unittest.TestCase):
             self.store.put('geo',{'id':'config','token':'DO_NOT_EXPORT_TOKEN'})
             self.store.put('ib',{'id':'i','card_id':'c','address_id':'ib','road':'Eksempelvej','number':'9 2 tv','date':'2024-01-01'})
         self.export=ReadableExport(self.store)
-        self.raw_front=png()
+        self.raw_front=png();self.raw_back=png(1560,2200)
     def tearDown(self):self.export.clear();self.store.close();self.tmp.cleanup()
     def finish(self,token):
         out=io.BytesIO();self.export.finish(token,out);return out.getvalue()
@@ -36,7 +36,9 @@ class ReadableExportTests(unittest.TestCase):
         self.assertEqual([a['id'] for a in job['cards'][0]['members']],['one','ib']);self.assertTrue(job['cards'][0]['members'][1]['saved_point']);self.assertEqual(job['cards'][0]['members'][1]['number'],'9');self.assertNotIn('floor',job['cards'][0]['members'][1])
         self.assertNotIn('ib',job['cards'][0]['card']);self.assertNotIn('notes',job)
         self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
-        for ident in job['fronts']:self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
+        for ident in job['fronts']:
+            self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
+            self.export.image({'token':job['token'],'card_id':ident,'side':'back','page':0,'pages':1,'png':'data:image/png;base64,'+base64.b64encode(self.raw_back).decode()})
         raw=self.finish(job['token']);self.assertEqual(self.store.revision,revision)
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             names=z.namelist();self.assertEqual(len([n for n in names if n.startswith('PDF/')]),4)
@@ -51,7 +53,11 @@ class ReadableExportTests(unittest.TestCase):
             addresses=z.read('CSV/adresser.csv').decode('utf-8-sig');self.assertIn(';1;2;tv;9999;',addresses);self.assertIn(';9;2;tv;9999;',addresses);self.assertNotIn('1–9',addresses)
             self.assertIn("'=Fiktiv opgave",z.read('CSV/opgaver.csv').decode('utf-8-sig'))
             self.assertIn('😀',z.read('CSV/opgaver.csv').decode());self.assertIn(b'U+1F600',z.read('PDF/04-alle-opgaver.pdf'))
-            self.assertIn(b'9 2 tv',z.read('PDF/02-alle-IB-bagsider.pdf'))
+            backs=z.read('PDF/02-alle-IB-bagsider.pdf')
+            self.assertIn(b'/Count 2',backs)  # active and archived card backs
+            self.assertIn(b'/MediaBox [0 0 595.28 841.89]',backs)
+            self.assertIn(b'/Predictor 15',backs)
+            self.assertIn(';9 2 tv;',z.read('CSV/ib.csv').decode('utf-8-sig'))
             for n in names:
                 value=z.read(n)
                 for secret in (b'DO_NOT_EXPORT_KEY',b'DO_NOT_EXPORT_PASSWORD',b'DO_NOT_EXPORT_TOKEN'):self.assertNotIn(secret,value)
@@ -66,8 +72,10 @@ class ReadableExportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Data er ændret'):self.finish(second['token'])
     def test_data_changed_during_pdf_generation_stops_download(self):
         job=self.export.prepare();self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
-        for ident in job['fronts']:self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
-        def change(out,images,count):
+        for ident in job['fronts']:
+            self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
+            self.export.image({'token':job['token'],'card_id':ident,'side':'back','page':0,'pages':1,'png':'data:image/png;base64,'+base64.b64encode(self.raw_back).decode()})
+        def change(out,images,count,**kwargs):
             with self.store.transaction():self.store.put('notes',{'id':'during-export','task':True,'text':'Fiktiv nyere opgave'})
             out.write(b'%PDF-FICTIONAL')
         with patch('readable_export.write_image_pdf',side_effect=change):
@@ -79,6 +87,28 @@ class ReadableExportTests(unittest.TestCase):
         self.assertEqual(job['fronts'],['c','arch'])
         self.export.image({'token':job['token'],'card_id':'c','png':'data:image/png;base64,'+base64.b64encode(png()).decode()})
         with self.assertRaisesRegex(ValueError,'Ikke alle forsider'):self.finish(job['token'])
+
+    def test_missing_back_page_and_portrait_continuation(self):
+        job=self.export.prepare()
+        encoded=lambda raw:'data:image/png;base64,'+base64.b64encode(raw).decode()
+        self.export.image({'token':job['token'],'card_id':'c','png':encoded(self.raw_front)})
+        for ident in job['fronts']:
+            self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':encoded(self.raw_front)})
+        with self.assertRaisesRegex(ValueError,'Ikke alle IB-bagsider'):self.finish(job['token'])
+        self.export.image({'token':job['token'],'card_id':'c','side':'back','page':0,'pages':2,'png':encoded(self.raw_back)})
+        self.export.image({'token':job['token'],'card_id':'arch','side':'back','page':0,'pages':1,'png':encoded(self.raw_back)})
+        with self.assertRaisesRegex(ValueError,'Ikke alle IB-bagsider'):self.finish(job['token'])
+        with self.assertRaisesRegex(ValueError,'Ugyldig IB-side'):
+            self.export.image({'token':job['token'],'card_id':'c','side':'back','page':-1,'pages':2,'png':encoded(self.raw_back)})
+        with self.assertRaisesRegex(ValueError,'IB-sideantallet'):
+            self.export.image({'token':job['token'],'card_id':'c','side':'back','page':1,'pages':3,'png':encoded(self.raw_back)})
+        with self.assertRaises(ValueError):
+            self.export.image({'token':job['token'],'card_id':'c','side':'back','page':1,'pages':2,'png':encoded(self.raw_front)})
+        self.export.image({'token':job['token'],'card_id':'c','side':'back','page':1,'pages':2,'png':encoded(self.raw_back)})
+        with zipfile.ZipFile(io.BytesIO(self.finish(job['token']))) as z:
+            raw=z.read('PDF/02-alle-IB-bagsider.pdf')
+            self.assertIn(b'/Count 3',raw)
+            self.assertEqual(raw.count(b'/MediaBox [0 0 595.28 841.89]'),3)
 
     def test_prepare_reads_geography_once_for_many_cards(self):
         with self.store.transaction():
