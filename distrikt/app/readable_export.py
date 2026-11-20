@@ -83,8 +83,8 @@ def png_image(raw):
         previous=row
     return zlib.compress(result),width,height
 
-def write_image_pdf(out, images, count):
-    """Write one landscape A4 page at a time to keep memory bounded."""
+def write_image_pdf(out, images, count, *, portrait=False):
+    """Write one A4 page at a time; IB backs use portrait, maps/fronts landscape."""
     out.write(b'%PDF-1.4\n')
     offsets=[]
 
@@ -101,8 +101,9 @@ def write_image_pdf(out, images, count):
         packed,w,h=png_image(raw)
         image_id=len(offsets)+1
         write(('<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns %d >> /Length %d >>\nstream\n'%(w,h,w,len(packed))).encode()+packed+b'\nendstream')
-        write(('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 841.89 595.28] /Resources << /XObject << /Im1 %d 0 R >> >> /Contents %d 0 R >>'%(image_id,image_id+2)).encode())
-        commands=b'q 780 0 0 553.091 30 21 cm /Im1 Do Q'
+        size='[0 0 595.28 841.89]' if portrait else '[0 0 841.89 595.28]'
+        write(('<< /Type /Page /Parent 2 0 R /MediaBox %s /Resources << /XObject << /Im1 %d 0 R >> >> /Contents %d 0 R >>'%(size,image_id,image_id+2)).encode())
+        commands=b'q 553.091 0 0 780 21 30 cm /Im1 Do Q' if portrait else b'q 780 0 0 553.091 30 21 cm /Im1 Do Q'
         write(('<< /Length %d >>\nstream\n'%len(commands)).encode()+commands+b'\nendstream')
     xref=out.tell()
     out.write(('xref\n0 %d\n0000000000 65535 f \n'%(len(offsets)+1)).encode())
@@ -200,7 +201,7 @@ class ReadableExport:
                 members=public_members(view,c)
                 if c.get('geo_polygon') or members:cards.append({'card':{k:c.get(k) for k in ('id','number','geo_polygon','map_color')},'members':members,'name':public_name(view,c)+(' · Arkiveret' if c.get('archived') else '')})
             self.clear()
-            self.job={'temp':tempfile.TemporaryDirectory(prefix='ltm-readable-'),'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'front_images':{},'until':time.monotonic()+3600}
+            self.job={'temp':tempfile.TemporaryDirectory(prefix='ltm-readable-'),'token':secrets.token_hex(24),'revision':state['revision'],'state':state,'geo':geo,'cards':cards,'images':{},'front_images':{},'back_images':{},'until':time.monotonic()+3600}
             return {**{k:self.job[k] for k in ('token','revision','cards')},'fronts':[c['id'] for c in state['cards']+state.get('archived_cards',[])]}
     def clear(self):
         if self.job:
@@ -219,14 +220,22 @@ class ReadableExport:
     def image(self,data):
         with self.lock,self.store.lock:
             job=self.require(data.get('token'));ident=data.get('card_id')
-            front=data.get('side')=='front'
-            allowed={c['id'] for c in job['state']['cards']+job['state'].get('archived_cards',[])} if front else {c['card']['id'] for c in job['cards']}
+            side=data.get('side') or 'map'
+            if side not in ('front','back','map'):raise ValueError('Ukendt eksportside.')
+            allowed={c['id'] for c in job['state']['cards']+job['state'].get('archived_cards',[])} if side in ('front','back') else {c['card']['id'] for c in job['cards']}
             if ident not in allowed:raise ValueError('Ukendt eksportkort.')
-            images=job['front_images'] if front else job['images']
-            raw=png_bytes(data.get('png'))
-            target=images.get(ident) or Path(job['temp'].name)/(secrets.token_hex(16)+'.png')
+            if side=='back':
+                page,total=data.get('page'),data.get('pages')
+                if type(page) is not int or type(total) is not int or not (1<=total<=256 and 0<=page<total):raise ValueError('Ugyldig IB-side.')
+                entry=job['back_images'].setdefault(ident,{'total':total,'images':{}})
+                if entry['total']!=total:raise ValueError('IB-sideantallet er ændret. Start eksporten igen.')
+                images=entry['images'];key=page
+            else:
+                images=job['front_images'] if side=='front' else job['images'];key=ident
+            raw=png_bytes(data.get('png'),size=(1560,2200) if side=='back' else (2200,1560))
+            target=images.get(key) or Path(job['temp'].name)/(secrets.token_hex(16)+'.png')
             target.write_bytes(raw)
-            images[ident]=target
+            images[key]=target
             return {'ok':True}
     def finish(self,token,out):
         with self.lock:
@@ -234,9 +243,13 @@ class ReadableExport:
             if len(job['images'])!=len(job['cards']):raise ValueError('Ikke alle digitale kort er dannet. Ingen eksportpakke er hentet.')
             state=job['state'];files=tables(state,job['geo']);cards=state['cards']+state.get('archived_cards',[]);refs={c['id']:c['number'] for c in cards}
             if len(job['front_images'])!=len(cards):raise ValueError('Ikke alle forsider er dannet. Ingen eksportpakke er hentet.')
-            image_groups=[('PDF/01-alle-forsider.pdf','Forsider',[job['front_images'][c['id']] for c in cards]),
-                ('PDF/03-alle-digitale-kort.pdf','Digitale kort',[job['images'][c['card']['id']] for c in job['cards']])]
-            files['PDF/02-alle-IB-bagsider.pdf']=text_pdf('IB-bagsider',[(str(c['number']),[str(r.get('road',''))+' '+str(r.get('number',''))+' · '+str(r.get('date_text') or r.get('date','')) for r in state['ib'] if r['card_id']==c['id']]) for c in cards])
+            backs=job['back_images']
+            if len(backs)!=len(cards) or any(c['id'] not in backs or len(backs[c['id']]['images'])!=backs[c['id']]['total'] for c in cards):
+                raise ValueError('Ikke alle IB-bagsider er dannet. Ingen eksportpakke er hentet.')
+            back_pages=[backs[c['id']]['images'][index] for c in cards for index in range(backs[c['id']]['total'])]
+            image_groups=[('PDF/01-alle-forsider.pdf','Forsider',[job['front_images'][c['id']] for c in cards],False),
+                ('PDF/02-alle-IB-bagsider.pdf','IB-bagsider',back_pages,True),
+                ('PDF/03-alle-digitale-kort.pdf','Digitale kort',[job['images'][c['card']['id']] for c in job['cards']],False)]
             files['PDF/04-alle-opgaver.pdf']=text_pdf('Alle opgaver',[(('Kort '+refs.get(r.get('card_id'),'')+' · ' if r.get('card_id') else '')+('Udført' if r.get('resolved') else 'Åben'),[r.get('text',''),'Oprettet: '+str(r.get('created','')),'Gentagelse: '+json.dumps(r.get('recurrence'),ensure_ascii=False),'Historik: '+json.dumps(r.get('task_history',[]),ensure_ascii=False)]) for r in state['notes']])
             days=[state['today']]
             for kind,keys in [('cards',('last_completed',)),('archived_cards',('last_completed',)),('loans',('assigned','cycle_start','returned')),('completions',('date','previous_completed'))]:
@@ -250,14 +263,15 @@ class ReadableExport:
                 for name,raw in sorted(files.items()):
                     archive.writestr(name,raw)
                     checksums[name]=hashlib.sha256(raw).hexdigest()
-                for name,title,images in image_groups:
+                for name,title,images,portrait in image_groups:
                     if not images:
                         raw=text_pdf(title,[])
                         archive.writestr(name,raw)
                         checksums[name]=hashlib.sha256(raw).hexdigest()
                         continue
                     with tempfile.TemporaryFile() as pdf:
-                        write_image_pdf(pdf,(path.read_bytes() for path in images),len(images))
+                        if portrait:write_image_pdf(pdf,(path.read_bytes() for path in images),len(images),portrait=True)
+                        else:write_image_pdf(pdf,(path.read_bytes() for path in images),len(images))
                         pdf.seek(0)
                         digest=hashlib.sha256()
                         with archive.open(name,'w',force_zip64=True) as entry:
