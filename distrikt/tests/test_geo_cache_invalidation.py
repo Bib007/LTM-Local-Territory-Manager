@@ -226,6 +226,55 @@ class GeoCacheHTTPTests(unittest.TestCase):
         with urllib.request.urlopen(request, timeout=15) as response:
             return json.load(response)
 
+    def test_preview_without_profiles_releases_locks_on_failure(self):
+        import urllib.request
+        import urllib.error
+        from unittest.mock import patch
+        self.change('geo.import',{'records':[fictional_address('f1','1',10)],'source':'Test','label':'Fiktiv'})
+        before=self.store.revision
+        entered=threading.Event();release=threading.Event()
+        def held(*args):
+            entered.set()
+            if not release.wait(5):raise RuntimeError('Preview not released')
+            raise ValueError('Fiktiv afvisning')
+        with patch('geo_store.suggest_outline',held),ThreadPoolExecutor() as pool:
+            pending=pool.submit(self.change,'geo.preview',{'address_ids':['f1'],'suggest_outline':True})
+            try:
+                self.assertTrue(entered.wait(2))
+                request=urllib.request.Request(self.server.origin+'/api/state',headers={'X-Distrikt-Token':self.server.token})
+                with urllib.request.urlopen(request,timeout=2) as response:self.assertEqual(response.status,200)
+                # Neither global lock nor a write transaction survives capture.
+                self.assertFalse(self.store.db.in_transaction)
+                with self.server.accounts.lock,self.store.lock:self.assertEqual(self.store.revision,before)
+            finally:release.set()
+            with self.assertRaises(urllib.error.HTTPError) as error:pending.result(timeout=2)
+            self.assertEqual(error.exception.code,400)
+        self.assertEqual(self.store.revision,before)
+        self.assertEqual(len(self.change('geo.preview',{'address_ids':['f1']})['result']['addresses']),1)
+
+    def test_late_preview_response_does_not_hold_global_locks(self):
+        import urllib.request
+        from http.client import RemoteDisconnected
+        from unittest.mock import patch
+        handler=self.server.RequestHandlerClass;original=handler.send
+        entered=threading.Event();release=threading.Event()
+        def delayed(request,data,*args,**kwargs):
+            if request.path=='/api/mutate' and isinstance(data,dict) and 'result' in data:
+                entered.set()
+                if not release.wait(5):raise RuntimeError('Response not released')
+                # Model a disconnected client after a late calculation.
+                raise BrokenPipeError()
+            return original(request,data,*args,**kwargs)
+        with patch.object(handler,'send',delayed),ThreadPoolExecutor() as pool:
+            pending=pool.submit(self.change,'geo.preview',{'address_ids':[]})
+            try:
+                self.assertTrue(entered.wait(2))
+                request=urllib.request.Request(self.server.origin+'/api/state',headers={'X-Distrikt-Token':self.server.token})
+                with urllib.request.urlopen(request,timeout=2) as response:self.assertEqual(response.status,200)
+            finally:release.set()
+            with self.assertRaises(RemoteDisconnected):pending.result(timeout=2)
+        self.assertEqual(self.change('geo.preview',{'address_ids':[]})['result']['addresses'],[])
+
     def test_geo_changed_receipts_follow_actual_changes(self):
         new = self.change("card.save", {"number": "F401", "temporary": True})
         self.assertTrue(new["geo_changed"])
