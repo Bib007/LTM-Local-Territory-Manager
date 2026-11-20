@@ -118,11 +118,18 @@ const PendingSaves={count:0,sequence:0,commands:new Map(),
   const focused=document.activeElement,restore=dialog.contains?.(focused)&&typeof focused.focus==='function';
   const selection=restore&&typeof focused.selectionStart==='number'&&typeof focused.selectionEnd==='number'
    ?[focused.selectionStart,focused.selectionEnd,focused.selectionDirection]:null;
-  dialog.close();dialog.show();dialog.style.position='fixed';dialog.style.inset='0';dialog.dataset.backgroundSave='yes';
+  // Native dialog.show() autofocus can scroll both the page and a long editor.
+  // Preserve both positions while releasing the modal for background writes.
+  const pageScroll=[window.scrollX,window.scrollY],dialogScroll=[dialog.scrollLeft,dialog.scrollTop];
+  dialog.close();
+  dialog.style.position='fixed';dialog.style.inset='0';dialog.dataset.backgroundSave='yes';
+  dialog.show();
   if(restore&&focused.isConnected!==false){
    focused.focus({preventScroll:true});
    if(selection&&typeof focused.setSelectionRange==='function')focused.setSelectionRange(...selection);
   }
+  dialog.scrollLeft=dialogScroll[0];dialog.scrollTop=dialogScroll[1];
+  if(typeof window.scrollTo==='function')window.scrollTo({left:pageScroll[0],top:pageScroll[1],behavior:'instant'});
  },
  pageStamp(){return JSON.stringify([...(el('app')?.querySelectorAll?.('form')||[])].map(form=>[form.id,FormDrafts.signature(form)]));},
  protectPage(){
