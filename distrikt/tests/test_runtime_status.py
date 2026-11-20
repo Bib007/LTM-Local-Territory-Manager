@@ -20,6 +20,11 @@ class RuntimeStatusTests(unittest.TestCase):
             pressure=lambda:self.reading,clock=lambda:self.now,
             transport=lambda *args:self.sent.append(args))
 
+    def publish(self):
+        self.bridge.sampler.poll()
+        self.bridge.sampler.thread.join(2)
+        self.bridge.publish()
+
     def test_sampling_does_not_lock_out_overview_while_waiting_for_store(self):
         # Reproduce the HA loop and a confirmed write holding Store at once.
         # A bounded test lock reports a regression instead of hanging the suite.
@@ -61,7 +66,7 @@ class RuntimeStatusTests(unittest.TestCase):
     def test_repeated_failures_are_visible_without_private_error_payload(self):
         self.task.update(status='waiting',retry_streak=3,retry_reason='source',last_problem='PRIVATE IB TOKEN path')
         self.assertEqual(self.bridge.sample()['state'],'waiting')
-        self.task['retry_streak']=4;self.bridge.publish()
+        self.task['retry_streak']=4;self.publish()
         self.assertEqual(self.sent[0][1]['state'],'error')
         wire=json.dumps(self.sent[0][1]);self.assertNotIn('PRIVATE',wire);self.assertNotIn('fictional-secret',wire)
         self.assertEqual(self.sent[0][0],'states/sensor.ltm_beta_drift')
@@ -73,7 +78,7 @@ class RuntimeStatusTests(unittest.TestCase):
         self.task.update(status='idle',enabled=False);self.reading.update(available=False)
         self.assertEqual(self.bridge.sample()['state'],'unknown')
         self.bridge.transport=Mock(side_effect=OSError('PRIVATE upstream path'))
-        self.bridge.publish();status=self.bridge.status()
+        self.publish();status=self.bridge.status()
         self.assertTrue(status['delivery_failed']);self.assertIsNone(status['last_sent'])
         self.assertNotIn('PRIVATE',json.dumps(status))
         self.bridge.transport=lambda *args:None;self.bridge.publish()

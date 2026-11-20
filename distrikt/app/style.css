@@ -159,3 +159,11 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .ibBulkTable{width:100%;table-layout:fixed;overflow-wrap:anywhere}.ibBulkTable td{vertical-align:top}.ibBulkTable label.check{margin:0;display:flex;align-items:flex-start;gap:.45em}.ibBulkTable input[type=checkbox]{flex:none}
 
 .geoCornerRemove{display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;color:#8f3029;background:#fff3f1;border:2px solid #a43d34;cursor:pointer;}
+
+/* Boundary actions sit directly beside their map, outside its gesture surface. */
+.geoMapColumn{min-width:0}
+.geoMapTools{margin:8px 0 0;gap:6px;padding:8px;background:var(--surface2);border:1px solid var(--line);border-radius:6px}
+.geoMapTools button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;font-size:12px;padding:8px 10px}
+.geoMapTools button svg{flex:0 0 16px;width:16px;height:16px;opacity:.8}
+.geoMapTools button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+@media(max-width:800px){.geoMapTools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.geoMapTools button{min-width:0;padding:7px 4px;overflow-wrap:anywhere;flex-direction:column;gap:4px}.geoMapColumn .geographicEditor{height:clamp(240px,48svh,450px)}}

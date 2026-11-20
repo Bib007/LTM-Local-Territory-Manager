@@ -2,11 +2,15 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
-## 1.12.19-beta.35 · 2026-11-19
+## 1.12.19-beta.35 · 2026-11-20
 
 - History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).
 - Merge two publishers under a chosen name from a publisher profile. Assignments and history are preserved, and previous names are recognised in later imports.
 - The service group, group role and pioneer status are retained from the publisher whose profile opens the merge. The latest merge can be undone.
+- Navigation can continue during returns and ordinary saves, and during geographic saves after the required checks. The ordered queue protects newer drafts and profile conflicts; completion is shown only after the write and synchronization are confirmed.
+- Editing tools sit directly below both card and whole-territory boundary maps, with text, icons and touch-friendly buttons.
+- Range display omits odd/even labels when the same street on a card contains both parities. Pure odd or even streets retain their label.
+- Home Assistant can detect persistent response problems independently of status delivery. Short internal status reads do not cause a false alarm. Reimport the updated runtime blueprint for the new notification type; existing automations are not changed automatically.
 
 ## 1.12.19-beta.34 · 2026-11-19
 

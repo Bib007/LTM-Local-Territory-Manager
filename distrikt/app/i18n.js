@@ -398,6 +398,7 @@ const I18n={
   "Ressourcemåling ikke tilgængelig":"Resource metrics unavailable",
   "Stoppet":"Stopped",
   "Afventer første måling":"Waiting for the first reading",
+  "Vedvarende svarproblemer":"Persistent response problems",
   "Status kunne ikke afleveres til Home Assistant.":"Status could not be delivered to Home Assistant.",
   "Driftsoplysning:":"Status entity:",
   "Senest afleveret {date}":"Last delivered {date}",

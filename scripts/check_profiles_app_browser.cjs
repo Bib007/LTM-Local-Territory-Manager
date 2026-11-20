@@ -64,7 +64,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await admin.locator(`#profileRoles input[value="${role}"]`).isChecked(),true);
   await admin.locator('#profileUser > button.primary').click();
   await admin.waitForFunction(()=>[...(document.querySelector('#profileUser select')?.options||[])].some(o=>o.text==='Fiktiv redaktør'));
-  const editor=await newPage(390);await login(editor,'Fiktiv redaktør','Fiktiv-password-456');assert.equal(await editor.locator('#nav [data-profile=admin]').count(),0);
+  const editor=await newPage(390);await login(editor,'Fiktiv redaktør','Fiktiv-password-456');await postponePersonalGuide(editor);assert.equal(await editor.locator('#nav [data-profile=admin]').count(),0);
   assert.ok((await editor.locator('.profileWelcome').innerText()).includes('Velkommen, Fiktiv redaktør'));
   assert.equal(await editor.locator('#backupReminder').count(),0);
   assert.equal(await editor.locator('.dashboardRing').count(),2,'Restricted profiles also retain home styling');assert.equal(await editor.locator('.reportOverview').count(),0);assert.deepEqual(await editor.evaluate(()=>state.loans),[],'Home presentation must not grant raw loan access');
