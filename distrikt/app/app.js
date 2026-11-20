@@ -129,7 +129,7 @@ const PendingSaves={count:0,sequence:0,commands:new Map(),
    if(selection&&typeof focused.setSelectionRange==='function')focused.setSelectionRange(...selection);
   }
   dialog.scrollLeft=dialogScroll[0];dialog.scrollTop=dialogScroll[1];
-  window.scrollTo({left:pageScroll[0],top:pageScroll[1],behavior:'instant'});
+  if(typeof window.scrollTo==='function')window.scrollTo({left:pageScroll[0],top:pageScroll[1],behavior:'instant'});
  },
  pageStamp(){return JSON.stringify([...(el('app')?.querySelectorAll?.('form')||[])].map(form=>[form.id,FormDrafts.signature(form)]));},
  protectPage(){
