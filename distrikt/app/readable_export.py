@@ -232,7 +232,7 @@ class ReadableExport:
                 images=entry['images'];key=page
             else:
                 images=job['front_images'] if side=='front' else job['images'];key=ident
-            raw=png_bytes(data.get('png'))
+            raw=png_bytes(data.get('png'),size=(1560,2200) if side=='back' else (2200,1560))
             target=images.get(key) or Path(job['temp'].name)/(secrets.token_hex(16)+'.png')
             target.write_bytes(raw)
             images[key]=target
