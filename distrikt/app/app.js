@@ -112,10 +112,17 @@ const PendingSaves={count:0,sequence:0,commands:new Map(),
   saveQueue=settled.catch(()=>{});return settled;
  },
  releaseDialog(generation){
-  const dialog=el('dialog');if(!dialog.open||generation!==openDialog.generation||typeof dialog.show!=='function')return;
-  // Preserve the live form and its edit base, but release the modal top layer so
-  // navigation remains reachable. Opening another editor restores modal behavior.
+  const dialog=el('dialog');if(!dialog.open||generation!==openDialog.generation||typeof dialog.show!=='function'||dialog.dataset.backgroundSave==='yes')return;
+  // Releasing the modal top layer must not move an autosaving editor's caret to
+  // its first field. The modeless dialog still allows navigation during the save.
+  const focused=document.activeElement,restore=dialog.contains?.(focused)&&typeof focused.focus==='function';
+  const selection=restore&&typeof focused.selectionStart==='number'&&typeof focused.selectionEnd==='number'
+   ?[focused.selectionStart,focused.selectionEnd,focused.selectionDirection]:null;
   dialog.close();dialog.show();dialog.style.position='fixed';dialog.style.inset='0';dialog.dataset.backgroundSave='yes';
+  if(restore&&focused.isConnected!==false){
+   focused.focus({preventScroll:true});
+   if(selection&&typeof focused.setSelectionRange==='function')focused.setSelectionRange(...selection);
+  }
  },
  pageStamp(){return JSON.stringify([...(el('app')?.querySelectorAll?.('form')||[])].map(form=>[form.id,FormDrafts.signature(form)]));},
  protectPage(){
