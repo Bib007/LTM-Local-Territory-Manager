@@ -45,6 +45,14 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-streets-') as root:
             store.put('maps',{'id':'publication:'+card_id,'entity':'publication','card_id':card_id,'status':'ready',
                 'front_url':'https://drive.google.com/file/d/FICTIONAL_RANGE/view',
                 'file_id':'FICTIONAL_RANGE','fingerprint':fingerprint(store,card)})
+    parity_cards=[]
+    for side,numbers in [('odd',['1','5','9']),('even',['2','6','10'])]:
+        records=[dict(id=f'pure-fixture-{side}-{number}',entity='address',road=f'Fiktiv {side} vej',
+                      number=number,postcode='9999',count=i+1,lng=10+i*.00001,lat=55+i*.00001)
+                 for i,number in enumerate(numbers)]
+        store.mutate('geo.import',{'records':records,'source':'DAR / Datafordeleren','label':'Fictional pure parity'})
+        card_id=store.mutate('geo.assign',{'number':f'PURE-{side}','address_ids':[a['id'] for a in records]})['id']
+        parity_cards.append({'id':card_id,'side':side,'range':numbers[0]+'-'+numbers[-1]})
     failed_card=store.mutate('card.save',{'number':'F-ERR','addresses':[{'road':'Unlisted <Test> Way','numbers':'11–19','count':4,'type':'Hus'}]})['id']
     store.mutate('setup.onboarding.save',{'answers':{'mode':'desk','boundary':'later','cards':'numbers','ib':'later'},'tour_completed':True})
     server=Server(('127.0.0.1',0),store)
@@ -62,6 +70,6 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-streets-') as root:
     signal.signal(signal.SIGTERM,stop)
     fronts=[workbook(['Card','Street','Range','Visits'],['M'+str(i),'Manual road '+str(i),'hele vejen' if i==0 else '23-25 & 24-26',12]) for i in range(2)]
     backs=[workbook(['Card','Street','Number','Date'],['M'+str(i),'Manual road '+str(i),'1A' if i==0 else '23-25 & 24-26','marts 2024' if i==0 else '2024']) for i in range(2)]
-    print(json.dumps({'origin':server.origin,'cards':cards,'failed_card':failed_card,'range_cards':range_cards,'fronts':fronts,'backs':backs,'cookie':{'name':server.profiles.cookie,'value':cookie,'url':server.origin}}),flush=True)
+    print(json.dumps({'origin':server.origin,'cards':cards,'failed_card':failed_card,'range_cards':range_cards,'parity_cards':parity_cards,'fronts':fronts,'backs':backs,'cookie':{'name':server.profiles.cookie,'value':cookie,'url':server.origin}}),flush=True)
     try:server.serve_forever()
     finally:server.server_close();store.close()

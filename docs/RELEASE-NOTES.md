@@ -1,9 +1,23 @@
-# LTM 1.12.30
+# LTM 1.12.31
 
-- DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.
-- Mislykkede grænseforslag vises med en forklaring. Et DAR-valg uden grænse præsenteres ikke længere som et færdigt forslag. Ukendte adressekoordinater og sammenfaldende indgange forklares særskilt.
+Samler alle udgivne betaændringer til og med 1.12.19-beta.35 i Stable. Den igangværende DAR-isolering til beta.36 er ikke med.
+
+- Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
+- To forkyndere kan sammenlægges under et valgfrit navn fra forkynderens side. Udleveringer og historik bevares, og tidligere navne genkendes ved senere import.
+- Tjenestegruppe, gruppefunktion og pionerstatus bevares fra den forkynder, sammenlægningen åbnes fra. Sammenlægningen kan fortrydes som seneste handling.
+- Navigation kan fortsætte under indlevering og andre almindelige gemninger samt kortgemning efter de nødvendige kontroller. Gemmekøen beskytter nyere kladder og profilkonflikter; status er først færdig, når gemning og opdatering er bekræftet.
+- Redigeringsværktøjerne står lige under både kortets grænse og den samlede grænse med tekst, ikoner og trykvenlige knapper.
+- Intervalvisning udelader (lige)/(ulige), når samme vej på kortet har begge slags husnumre. Rene lige eller ulige veje beholder mærket.
+- Home Assistant kan registrere vedvarende svarproblemer uafhængigt af statusafleveringen. Korte interne statuslæsninger udløser ikke fejlalarm. Genimportér det opdaterede driftsblueprint for den nye beskedtype; eksisterende automationer ændres ikke automatisk.
 
 ## English
 
-- DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.
-- Failed outline proposals show an explanation. A DAR selection without a boundary is no longer presented as a completed proposal. Unknown address coordinates and coincident entrances receive specific explanations.
+Promotes all released beta changes through 1.12.19-beta.35 to Stable. The DAR isolation work for beta.36 is not included.
+
+- History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).
+- Merge two publishers under a chosen name from a publisher profile. Assignments and history are preserved, and previous names are recognised in later imports.
+- The service group, group role and pioneer status are retained from the publisher whose profile opens the merge. The latest merge can be undone.
+- Navigation can continue during returns and ordinary saves, and during geographic saves after the required checks. The ordered queue protects newer drafts and profile conflicts; completion is shown only after the write and synchronization are confirmed.
+- Editing tools sit directly below both card and whole-territory boundary maps, with text, icons and touch-friendly buttons.
+- Range display omits odd/even labels when the same street on a card contains both parities. Pure odd or even streets retain their label.
+- Home Assistant can detect persistent response problems independently of status delivery. Short internal status reads do not cause a false alarm. Reimport the updated runtime blueprint for the new notification type; existing automations are not changed automatically.

@@ -105,3 +105,13 @@ assert.match(css,/\.publisherGroups\{display:grid/);
 assert.match(css,/@media\(max-width:600px\)/);
 assert.match(css,/\.publisherItemHeading\{flex-wrap:wrap\}/);
 console.log('Publisher totals, filters, alphabetical groups, move, create, delete/deactivate, empty groups, responsive rules and escaping passed.');
+
+run("I18n.set('da');state.publishers=[{id:'a',name:'Anna Fiktiv',group:'Gruppe 01'}, {id:'b',name:'Fiktiv B'}];state.loans=[];publisherProfile('a')");
+assert.match(get('dialog').innerHTML,/data-action="publisher-merge" data-id="a"/);
+run("mergePublisher('a')");
+assert.match(get('dialog').innerHTML,/id="publisherMergeForm"/);
+assert.match(get('dialog').innerHTML,/Behold tjenestegruppe, gruppefunktion og pionerstatus fra/);
+assert.match(get('dialog').innerHTML,/name="name" value="Anna Fiktiv"/);
+assert.doesNotMatch(get('dialog').innerHTML,/<option value="a"/);
+run("state.publishers[0].aliases=['gammelt alias'];publisherGroupFilter='';query='gammelt alias'");
+assert.match(run('publishersPage()'),/Anna Fiktiv/);

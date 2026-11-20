@@ -30,7 +30,7 @@ async def main():
                 schemas={'state':state.TRIGGER_STATE_SCHEMA,'template':template_trigger.TRIGGER_SCHEMA,'event':event.TRIGGER_SCHEMA}
                 config['triggers'][index]=schemas[trigger['platform']](trigger)
             action=ACTION_SCHEMA(config['actions'][0])
-            for kind in ('error','pressure','offline','recovery','test'):
+            for kind in ('error','pressure','offline','unresponsive','recovery','test'):
                 variables={**inputs,'watched':entity,'kind':kind}
                 for field in ('title','message'):
                     value=Template(action[field].template,hass)
@@ -40,6 +40,11 @@ async def main():
                 if kind=='test':
                     value=Template(action['message'].template,hass)
                     assert 'Fiktiv note {{ 7 * 7 }}' in value.async_render(variables)
+            message=Template(action['message'].template,hass)
+            for diagnosis in ('http_timeout','http_error','http_invalid_response','runtime_busy','status_timeout','status_error','PRIVATE IB TOKEN'):
+                hass.states.async_set(entity,'unresponsive',{'diagnostic':diagnosis})
+                rendered=message.async_render({**inputs,'watched':entity,'kind':'unresponsive'})
+                assert 'PRIVATE' not in rendered and 'automatisk genstart' in rendered
             heartbeat=next(t for t in config['triggers'] if t['id']=='offline')['value_template']
             heartbeat.hass=hass
             assert heartbeat.async_render({'watched':entity}) is True

@@ -1,4 +1,6 @@
-# Næste stabile LTM · under udvikling
+# Stabil kandidat 1.12.31
+
+Ejeren har 20. november 2026 bedt om at udgive alle betaændringer til og med beta.35 som Stable. Kandidaten bygger på den verificerede beta.35; beta.36-arbejdet er ikke inkluderet. Nedenstående ældre plan er bevaret som historik.
 
 Målet er de allerede udgivne betafunktioner plus brugerprofiler, administratorstyrede roller/rettigheder, samtidig redigering og konfliktgennemgang. W106 tilføjer seneste gennemgangsdato og udleveringsdato til det digitale kort; det er registreret til samme stabile udgave og endnu ikke leveret. W107 om importerede vejintervaller og gradvis overgang til geografisk kortlægning skal også med. W108 tilføjer tjenestegrupper, gruppetilsynsmand/assistent/pioner og lokal Excel-import af gruppeliste. W110 tilføjer lokal driftstatus og foreslåede notifikationer i Home Assistant. W111 retter adressekontrollens gentagne venten med begrænsede, hurtige genforsøg og bevaret fremdrift.
 

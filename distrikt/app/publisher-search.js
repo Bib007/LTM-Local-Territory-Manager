@@ -6,10 +6,10 @@ const PublisherSearch={
  matches(records,query){
   const q=this.normalize(query),tokens=q.split(' ').filter(Boolean);
   const rank=name=>name===q?0:name.startsWith(q)?1:tokens.every(t=>name.split(/[\s-]+/).some(w=>w.startsWith(t)))?2:3;
-  return records.filter(p=>tokens.every(t=>this.normalize(p.name).includes(t))).sort((a,b)=>rank(this.normalize(a.name))-rank(this.normalize(b.name))||a.name.localeCompare(b.name,'da',{numeric:true}));
+  return records.filter(p=>[p.name,...(p.aliases||[])].some(name=>tokens.every(t=>this.normalize(name).includes(t)))).sort((a,b)=>rank(this.normalize(a.name))-rank(this.normalize(b.name))||a.name.localeCompare(b.name,'da',{numeric:true}));
  },
  field(){return `<label for="issuePublisherName">${I18n.label('Forkynder')}</label><div class="publisherSearch"><input id="issuePublisherName" name="publisher_name" data-publisher-search role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="issuePublisherNames" aria-describedby="issuePublisherHint" ${I18n.attribute('placeholder','Find en forkynder eller skriv et nyt navn')} maxlength="100" required autocomplete="off"><div id="issuePublisherNames" class="publisherSuggestions" role="listbox" ${I18n.attribute('aria','Forkyndere')} hidden></div><p id="issuePublisherHint" class="hint publisherSearchHint" role="status" aria-live="polite">${I18n.label('Søgningen sker kun i din lokale forkynderliste.')}</p><p class="hint">${I18n.label('Et nyt navn oprettes automatisk i din lokale forkynderliste.')}</p></div>`;},
- attach(input,records,describe=null,onUpdate=null){if(!input?.closest)return;this.widgets.set(input,{records:records.map(p=>({name:p.name,summary:typeof describe==='function'?describe(p):''})),items:[],index:-1,onUpdate});},
+ attach(input,records,describe=null,onUpdate=null){if(!input?.closest)return;this.widgets.set(input,{records:records.map(p=>({name:p.name,aliases:p.aliases||[],summary:typeof describe==='function'?describe(p):''})),items:[],index:-1,onUpdate});},
  parts(input){const parent=input.closest('.publisherSearch');return {list:parent.querySelector('[role="listbox"]'),hint:parent.querySelector('.publisherSearchHint')};},
  close(input){if(!this.widgets.has(input))return;const w=this.widgets.get(input),{list}=this.parts(input);w.index=-1;list.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');},
  draw(input){

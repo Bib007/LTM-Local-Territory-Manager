@@ -1,5 +1,6 @@
 """Plan additive S-13 allocations against the same frozen local revision."""
 import uuid
+from publisher_data import names, normalized, UNGROUPED
 
 def norm(value):return str(value or '').strip().casefold()
 def overlaps(a,b):
@@ -8,8 +9,9 @@ def overlaps(a,b):
 class LoanPreview:
     def __init__(self,store,today,cutoff):
         self.today=today;self.cutoff=cutoff
-        self.people={};self.deleted_people={norm(p['name']) for p in store.all('publishers',deleted=True)}
-        for person in store.all('publishers'):self.people.setdefault(norm(person['name']),[]).append(person)
+        self.people={};self.deleted_people={norm(name) for p in store.all('publishers',deleted=True) for name in names(p)}
+        for person in store.all('publishers'):
+            for name in names(person):self.people.setdefault(norm(name),[]).append(person)
         self.existing=store.all('loans');self.by_card={};self.deleted_by_card={}
         for loan in self.existing:self.by_card.setdefault(loan['card_id'],[]).append(loan)
         for loan in store.all('loans',deleted=True):self.deleted_by_card.setdefault(loan['card_id'],[]).append(loan)
@@ -63,7 +65,7 @@ class LoanPreview:
         if existing and not completed:
             row.update(status='duplicate',message='Udleveringen findes allerede; ingen gennemgang er angivet.');self.seen.add(key);return
         if not person:
-            person=self.new_people.setdefault(norm(name),{'id':uuid.uuid4().hex,'name':name})
+            person=self.new_people.setdefault(norm(name),normalized({'name':name,'group':UNGROUPED},{'id':uuid.uuid4().hex}))
         row.update(publisher=person['name'],publisher_action='existing' if norm(name) in self.people else 'new')
         loan=existing or dict(candidate,id=uuid.uuid4().hex,publisher_id=person['id'],cycle_start=assigned,initial=True,source='history-import')
         if not existing:self.new_loans.append(loan);self.by_card.setdefault(card['id'],[]).append(loan)
