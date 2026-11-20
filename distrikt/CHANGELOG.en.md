@@ -2,6 +2,11 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.34 · 2026-11-20
+
+- Readable archive: The IB-backs PDF now uses the same measured layout as the ordinary IB print, including street groups, columns, dates and continuation pages. Missing pages fail without a partial archive.
+- Settings → Data: **Export readable archive** now sits immediately beside **Backup**.
+
 ## 1.12.33 · 2026-11-20
 
 - Saving and autosave: Preserve both page scroll and long editor scroll positions when releasing a modal for a background write, without moving the active input or text caret.
