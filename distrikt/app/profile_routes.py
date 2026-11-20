@@ -173,6 +173,10 @@ class ProfileRoutes:
             # Validate in accounts -> Store order; socket writes run unlocked.
             with self.profile_scope(post=True) as permitted:
                 if not permitted:return
+                # profile_scope alone does not validate shared server login.
+                # Repeat the same session/token check used by _post, including
+                # logout/expiry while the unlocked calculation was running.
+                if not self.allowed(token=True):return
                 if enabled!=self.server.profiles.enabled or (self.profile_user['id'] if self.profile_user else None)!=user_id:
                     raise PermissionError()
                 with self.server.store.lock:
