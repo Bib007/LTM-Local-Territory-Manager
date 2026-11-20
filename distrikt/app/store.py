@@ -412,7 +412,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.record_table(module)+' WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
-                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','ib.bulk.apply','revision.approve','revision.approve_many')
+                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','publisher.merge','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','ib.bulk.apply','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -514,6 +514,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             if data.get('initial_completed') and not old:
                 self.create_completion(card, valid_day(data['initial_completed']))
             return {'id': card['id']}
+        if action in ('publisher.merge.preview', 'publisher.merge'):
+            from publisher_data import merge
+            return merge(self, data, preview=action.endswith('.preview'))
         if action == 'publisher.save':
             from publisher_data import save
             return save(self,data)
@@ -529,7 +532,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 publisher = self.require('publishers', data['publisher_id'])
             else:
                 name = clean_text(data.get('publisher_name'), 100, True)
-                publisher = next((p for p in self.all('publishers') if p['name'].casefold() == name.casefold()), None)
+                from publisher_data import names
+                publisher = next((p for p in self.all('publishers') if any(alias.casefold() == name.casefold() for alias in names(p))), None)
                 if not publisher:
                     ident = self._mutate('publisher.save', {'name': name})['id']
                     publisher = self.require('publishers', ident)
@@ -952,9 +956,11 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 fields = ('name', 'group', 'group_role', 'pioneer')
                 if (data.get('confirmation') != 'SLET FORKYNDER'
                         or not isinstance(expected, dict)
-                        or set(expected) != set(fields)):
+                        or set(expected) not in (set(fields), set(fields)|{'aliases'})):
                     raise ValueError('Bekræft sletningen af forkynderen igen.')
                 if any(item.get(key, '' if key != 'pioneer' else False) != expected[key] for key in fields):
+                    raise ValueError('Forkynderen er ændret. Opdater og kontrollér før sletning.')
+                if item.get('aliases', []) != expected.get('aliases', []):
                     raise ValueError('Forkynderen er ændret. Opdater og kontrollér før sletning.')
                 # Both current and recoverable assignments retain the person ID.
                 # Never orphan S-13 allocations, returns or old reports.
@@ -1039,9 +1045,10 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             for module, item in entries:
                 if module == 'publishers':
                     from card_import import norm
+                    from publisher_data import names
                     for other in self.all('publishers'):
                         if other['id'] == item['id']:continue
-                        if other['name'].casefold() == item['name'].casefold():
+                        if {n.casefold() for n in names(other)} & {n.casefold() for n in names(item)}:
                             raise ValueError('Navnet findes allerede. Ret den eksisterende forkynder før gendannelse.')
                         if (item.get('group_role') and item.get('group_role') == other.get('group_role')
                                 and norm(item.get('group')) == norm(other.get('group'))):

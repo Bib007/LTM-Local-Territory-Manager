@@ -2,6 +2,20 @@
 from card_import import norm
 
 ROLES={'':'Ingen gruppefunktion','overseer':'Gruppetilsynsmand','assistant':'Assistent'}
+UNGROUPED = 'Ikke i en tjenestegruppe'
+
+
+def names(person):
+    """Current name and retained import names, once per case-insensitive key."""
+    values = [person['name']]
+    if isinstance(person.get('aliases'), list):
+        values.extend(value for value in person['aliases'] if isinstance(value, str))
+    unique = {}
+    for value in values:
+        key = value.strip().casefold()
+        if key:
+            unique.setdefault(key, value.strip())
+    return list(unique.values())
 
 
 def normalized(data,old=None):
@@ -33,21 +47,22 @@ class PublisherIndex:
         for person in people:self.add(person)
 
     def keys(self,person):
-        return person['name'].casefold(),(norm(person.get('group')),person.get('group_role'))
+        return [name.casefold() for name in names(person)],(norm(person.get('group')),person.get('group_role'))
 
     def add(self,person):
-        name,function=self.keys(person)
-        self.names.setdefault(name,set()).add(person['id'])
+        person_names,function=self.keys(person)
+        for name in person_names:self.names.setdefault(name,set()).add(person['id'])
         if function[1]:self.functions.setdefault(function,set()).add(person['id'])
 
     def remove(self,person):
-        name,function=self.keys(person)
-        self.names.get(name,set()).discard(person['id'])
+        person_names,function=self.keys(person)
+        for name in person_names:self.names.get(name,set()).discard(person['id'])
         self.functions.get(function,set()).discard(person['id'])
 
     def check(self,person):
-        name,function=self.keys(person)
-        if self.names.get(name,set())-{person['id']}:raise ValueError('Navnet findes allerede. Vælg den eksisterende forkynder.')
+        person_names,function=self.keys(person)
+        for name in person_names:
+            if self.names.get(name,set())-{person['id']}:raise ValueError('Navnet findes allerede. Vælg den eksisterende forkynder.')
         if function[1] and self.functions.get(function,set())-{person['id']}:
             raise ValueError('Der er flere med samme gruppefunktion i tjenestegruppen. Ret valget før gemning.')
 
@@ -64,3 +79,41 @@ def save(store,data):
     if old:index.remove(old)
     index.add(person)
     return {'id':person['id']}
+
+
+def merge(store, data, *, preview=False):
+    """Retain one identity and atomically redirect its duplicate's allocations."""
+    from admin_store import signature
+    target_id, source_id = data.get('target_id'), data.get('source_id')
+    if not isinstance(target_id, str) or not isinstance(source_id, str) or target_id == source_id:
+        raise ValueError('Vælg to forskellige forkyndere.')
+    target = store.require('publishers', target_id)
+    source = store.require('publishers', source_id)
+    person = normalized({'name': data.get('name')}, target)
+    retained = names(target) + names(source)
+    person['aliases'] = names({'name': person['name'], 'aliases': retained})[1:]
+    others = [p for p in store.all('publishers') if p['id'] not in (target_id, source_id)]
+    PublisherIndex(others).check(person)
+    loans = [loan for loan in store.all('loans') + store.all('loans', deleted=True)
+             if loan.get('publisher_id') in (target_id, source_id)]
+    expected = signature([target, source, person, sorted(loans, key=lambda loan: loan['id'])])
+    result = {'id': target_id, 'name': person['name'], 'target_name': target['name'],
+              'source_name': source['name'], 'group': person.get('group', ''),
+              'group_role': person.get('group_role', ''), 'pioneer': person.get('pioneer', False),
+              'expected': expected, 'loans': sum(loan['publisher_id'] == source_id for loan in loans)}
+    if preview:
+        return result
+    if data.get('expected') != expected:
+        raise ValueError('Forkyndere eller udleveringer er ændret. Kontrollér sammenlægningen igen.')
+    store.put('publishers', person)
+    for loan in loans:
+        if loan['publisher_id'] != source_id:
+            continue
+        updated = {key: value for key, value in loan.items() if key not in ('_deleted_at', '_batch')}
+        updated['publisher_id'] = target_id
+        store.put('loans', updated)
+    # The existing undo journal retains the full source row and every changed loan.
+    store.workflow_track('publishers', source_id)
+    store._dirty_modules.add('publishers')
+    store.db.execute('DELETE FROM ' + store.record_table('publishers') + ' WHERE id=?', (source_id,))
+    return result

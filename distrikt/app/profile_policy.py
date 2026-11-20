@@ -86,7 +86,7 @@ GROUPS={
  ('cards.view','geo.view','geo.edit'):'followup.ignore',
  ('connections.manage',):'geo.token',
  ('cards.view','loans.view','loans.manage'):'folder.set folder.set_many loan.issue loan.finish',
- ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct',
+ ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct publisher.merge.preview publisher.merge',
  ('publishers.view','publishers.manage'):'publisher.save setup.publisher-import.preview setup.publisher-import.apply',
  ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete note.reply.delete',
  ('cards.view','history.view','history.edit'):'completion.record',
@@ -159,7 +159,8 @@ def mutation(user,action,data,store):
         if not data.get('publisher_id'):
             from store import clean_text
             name=clean_text(data.get('publisher_name'),100,True)
-            if not any(p['name'].casefold()==name.casefold() for p in store.all('publishers')):
+            from publisher_data import names
+            if not any(alias.casefold()==name.casefold() for p in store.all('publishers') for alias in names(p)):
                 require(user['permissions'],('publishers.manage',))
     if action=='loan.finish' and data.get('complete') and not user.get('desk_only'):require(user['permissions'],('history.view','history.edit'))
     if (action=='revision.approve' and data.get('side')=='back') or (action=='revision.approve_many' and isinstance(data.get('entries'),list) and any(isinstance(e,dict) and e.get('side')=='back' for e in data['entries'])):require(user['permissions'],('ib.view',))
@@ -168,7 +169,7 @@ def mutation(user,action,data,store):
 CARD_FIELDS=set('id number internal_number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
- 'publishers':{'id','name','group','group_role','pioneer'},
+ 'publishers':{'id','name','group','group_role','pioneer','aliases'},
  'loans':set('id card_id publisher_id assigned cycle_start returned initial'.split()),
  'ib':set('id card_id address_id road number date date_text postcode missing_fields'.split()),
  'notes':set('id card_id loan_id completion_id text date created resolved resolved_at task ignored recurrence task_history assignee_id followup_key images'.split()),
