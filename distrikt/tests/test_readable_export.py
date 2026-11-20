@@ -75,7 +75,7 @@ class ReadableExportTests(unittest.TestCase):
         for ident in job['fronts']:
             self.export.image({'token':job['token'],'card_id':ident,'side':'front','png':'data:image/png;base64,'+base64.b64encode(self.raw_front).decode()})
             self.export.image({'token':job['token'],'card_id':ident,'side':'back','page':0,'pages':1,'png':'data:image/png;base64,'+base64.b64encode(self.raw_back).decode()})
-        def change(out,images,count):
+        def change(out,images,count,**kwargs):
             with self.store.transaction():self.store.put('notes',{'id':'during-export','task':True,'text':'Fiktiv nyere opgave'})
             out.write(b'%PDF-FICTIONAL')
         with patch('readable_export.write_image_pdf',side_effect=change):
