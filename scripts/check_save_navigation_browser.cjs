@@ -55,6 +55,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    assert.equal(await page.evaluate(id=>!!state.loans.find(l=>l.id===id).returned,ids.loan),true);await page.locator('#dialog .dialogClose').click();
    // Autosave captures the latest edit on navigation, without waiting for receipt 1.
    gate=holdNext('card.save');await page.evaluate(id=>editCard(id),ids.card);
+   await page.locator('#cardForm details').first().evaluate(details=>{details.open=true;});
    // Use the real manual street-line input: closing/reopening a dialog during
    // autosave used to move its caret to the district number at the top.
    await page.evaluate(()=>el('addressRows').insertAdjacentHTML('beforeend',addressRow({road:'Opdigtetvej',numbers:'1',count:1,count_unknown:false,type:'Hus'})));
