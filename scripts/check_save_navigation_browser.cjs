@@ -78,9 +78,10 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    if(profiles){
     await page.evaluate(id=>editPublisher(id),ids.person);await page.evaluate(()=>EditorBases.current.ready);
     await page.evaluate(async id=>{const fresh=await(await api('/api/state')).json();await api('/api/mutate',{action:'publisher.save',data:{id,name:'Fiktiv ekstern ændring'},profile_snapshot:fresh.profile.snapshot});},ids.person);
-    await page.locator('#publisherForm input[name=name]').fill('Fiktiv gammel base');await page.locator('#publisherForm button.primary').click();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='error');
-    assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Fiktiv gammel base');await page.locator('#dialog .dialogClose').click();
-    await page.evaluate(()=>Workspace.handle('refresh',{}));
+    await page.locator('#publisherForm input[name=name]').fill('Fiktiv gammel base');await page.locator('#publisherForm button.primary').click();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='saved');
+    const reviews=await page.evaluate(async()=>{const data=await(await api('/api/profiles/conflicts')).json();return Array.isArray(data)?data:data.rows;});
+    const conflict=reviews.find(row=>row.module==='publishers'&&row.field==='name');
+    assert.ok(conflict,'Concurrent changes must be recorded for review');assert.deepEqual([conflict.base.value,conflict.saved.value,conflict.incoming.value],['Fiktiv person','Fiktiv ekstern ændring','Fiktiv gammel base']);
    }
    for(const mode of ['reject','lost','invalid']){
     gate=holdNext('publisher.save',mode);await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Fiktiv '+mode);await page.locator('#publisherForm button.primary').click();await waitForReceipt(gate);
@@ -94,7 +95,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     // Dismiss the explicit discard warning, then refresh after closing deliberately.
     await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));
    }
-   assert.deepEqual(errors,[]);console.log('PASS delayed return, duplicate submit, navigation, newest autosave, settings/geo drafts, stale profile conflict, rejection/lost/invalid receipts ('+(profiles?'profiles':'shared login')+')');
+   assert.deepEqual(errors,[]);console.log('PASS delayed return, duplicate submit, navigation, newest autosave, settings/geo drafts, profile conflict evidence, rejection/lost/invalid receipts ('+(profiles?'profiles':'shared login')+')');
   }finally{if(browser)await browser.close();child.kill();}
  }
 })().catch(e=>{console.error(e);process.exitCode=1;});
