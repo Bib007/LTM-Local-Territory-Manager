@@ -252,12 +252,13 @@ const GeoUI={
     if(job.status==='running'){this.jobTimer=setTimeout(()=>this.poll(),1200);return;}
     this.busy=false;await this.load();if(page==='Kortopsætning'){state=await(await api('/api/state')).json();this.drawLayers();this.drawBoundary();this.updatePanel();}else await refresh();
     if(job.status==='done'){
+      const priorNotice=this.notice,priorNoticeUI=this.noticeUI;
       this.rangeRoad=job.result.road||this.rangeRoad;this.rangePost=job.result.postcode||this.rangePost;
       this.notice=job.result.note|| (job.result.road?'Adresserne er hentet. Vælg huse eller et nummerinterval.':'Kortdata gemt lokalt.');
       if(job.kind==='boundary'&&job.result.complete&&Number.isInteger(job.result.fetched_count))this.notice=I18n.format('{fetched} DAR-adresser fundet indenfor grænsen · {local} lokale aktive adresser. Kontrollér eventuelle adresseændringer.',{fetched:job.result.fetched_count,local:job.result.count});
       if(job.result.empty)this.notice=I18n.text('Ingen adresser fundet indenfor den gemte grænse. Kontrollér grænsen, og prøv en enkelt vej. En kontrolleret forbindelse er ikke en bekræftet adressehentning.');
       if(job.result.warnings?.length&&!job.result.empty)this.notice+=' '+job.result.warnings.length+' udsnit/opslag mangler. Se fejl og fortsæt under '+(job.kind==='boundary'?'Samlet distriktsgrænse.':'Kortdata.');
-      if(this.jobNoticeEpoch!==this.noticeEpoch){this.notice='';this.noticeUI=null;}
+      if(this.jobNoticeEpoch!==this.noticeEpoch){this.notice=priorNotice;this.noticeUI=priorNoticeUI;}
       if(page==='Kortopsætning')this.updatePanel();else render();
       if(job.result.bbox&&this.map){const[w,s,e,n]=job.result.bbox;this.map.fitBounds([[s,w],[n,e]],{padding:[30,30],maxZoom:18});}
       if(typeof StreetSuggestions!=='undefined'&&StreetSuggestions.pending){await StreetSuggestions.afterJob(job);return;}
@@ -269,7 +270,7 @@ const GeoUI={
        message=StreetSuggestions.failureMessage(job.message);
        StreetSuggestions.pending=null;
       }else if(typeof StreetSuggestions!=='undefined')StreetSuggestions.pending=null;
-      this.pendingRange=null;this.notice=this.jobNoticeEpoch===this.noticeEpoch?message:'';if(!this.notice)this.noticeUI=null;this.updatePanel();this.showJob({...job,message});
+      this.pendingRange=null;if(this.jobNoticeEpoch===this.noticeEpoch){this.notice=message;this.noticeUI=null;}this.updatePanel();this.showJob({...job,message});
     }
     // Keep failures visible until the user retries or leaves; 12 seconds is
     // not enough to read and locate a problem among many street lines.
@@ -277,7 +278,7 @@ const GeoUI={
   }catch(e){
     const message=typeof StreetSuggestions!=='undefined'&&StreetSuggestions.pending?StreetSuggestions.failureMessage(e.message):e.message;
     if(typeof StreetSuggestions!=='undefined')StreetSuggestions.pending=null;
-    this.busy=false;this.pendingRange=null;this.notice=this.jobNoticeEpoch===this.noticeEpoch?message:'';if(!this.notice)this.noticeUI=null;this.showJob({message,status:'error'});
+    this.busy=false;this.pendingRange=null;if(this.jobNoticeEpoch===this.noticeEpoch){this.notice=message;this.noticeUI=null;}this.showJob({message,status:'error'});
   }},
   boundsForDownload(){if(!this.map)throw Error(I18n.text('Åbn Kortopsætning, og vælg et kortudsnit først.'));return this.map.getBounds();},
   async confirmIgnore(id,reason){const stamp=this.draftStamp(false);await mutate('ignore.save',{address_id:id,reason});if(stamp!==this.draftStamp(false))return;if(this.ids.delete(id))this.dirty=true;render();},
