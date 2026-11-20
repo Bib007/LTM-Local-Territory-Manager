@@ -20,6 +20,11 @@ const ReadableExportUI={busy:false,
     const blob=await printFrontImage(front);current();
     const png=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});current();
     await this.request('image',{token:job.token,card_id:id,side:'front',png},controller.signal);current();
+    const backs=await printBackImages(front);current();
+    for(let page=0;page<backs.length;page++){
+     const backPng=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(backs[page]);});current();
+     await this.request('image',{token:job.token,card_id:id,side:'back',page,pages:backs.length,png:backPng},controller.signal);current();
+    }
    }
    for(let i=0;i<job.cards.length;i++){
     const item=job.cards[i],card={...item.card,name:item.name};message('Danner kort {index} af {total}…',{index:i+1,total:job.cards.length});
