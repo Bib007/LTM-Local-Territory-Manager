@@ -130,6 +130,34 @@ class FrontLabelOverrideTests(unittest.TestCase):
         self.assertIn('2–14 (lige)',exported)
         self.assertEqual(self.store.require('cards',self.ident)['address_ids'],[a['id'] for a in members])
 
+    def test_mixed_ranges_omit_parity_without_changing_saved_data(self):
+        for numbers in (['1','9','2','10'], ['1A','9B','2A','10B'], ['1','2']):
+            with self.subTest(numbers=numbers):
+                self.replace_members([address(str(i),'Fiktivvej',n,i+1) for i,n in enumerate(numbers)])
+                before=self.view()
+                raw=self.store.get('cards',self.ident)
+                rows=[{'source_ids':r['source_ids'],'road':None,'numbers':None,
+                       'number_style':'range' if r['short_numbers'] else 'exact'}
+                      for r in before['front_addresses']]
+                self.store.mutate('card.front_labels.save',{'card_id':self.ident,
+                    'expected_token':before['front_labels_token'],'rows':rows})
+                now=self.view()
+                for original,row in zip(before['front_addresses'],now['front_addresses']):
+                    self.assertEqual(row['numbers'],original['numbers'])
+                    self.assertEqual(row['count'],original['count'])
+                    if row['number_style']=='range':
+                        self.assertEqual(row['display_numbers'],row['short_numbers'])
+                saved=self.store.get('cards',self.ident)
+                for field in ('geo_addresses','address_ids','addresses'):
+                    self.assertEqual(saved[field],raw[field])
+                overrides=saved['front_line_overrides']
+                self.store.close();self.store=Store(Path(self.tmp.name)/'source')
+                self.assertEqual(self.store.get('cards',self.ident)['front_line_overrides'],overrides)
+                self.assertEqual(self.view()['front_addresses'],now['front_addresses'])
+                public=Publications(self.store).prepare(self.ident)['card']['front_addresses']
+                self.assertEqual([r['display_numbers'] for r in public],
+                                 [r['display_numbers'] for r in now['front_addresses']])
+
     def test_range_is_per_source_line_and_follows_selected_extremes(self):
         members=[address('a','First fictional street','3'),
                  address('b','First fictional street','7'),

@@ -5,6 +5,7 @@ import io
 import json
 import os
 import secrets
+import hmac
 import signal
 import shutil
 import tempfile
@@ -35,11 +36,12 @@ from ui_errors import UIError,error_payload
 from profile_accounts import ProfileAccounts
 from profile_routes import ProfileRoutes,ProfileRuntime,profile_error
 from runtime_status import RuntimeStatus
+from runtime_probe import http_probe
 from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.12.19-beta.34'
+VERSION='1.12.19-beta.35'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -90,8 +92,17 @@ class Server(ThreadingHTTPServer):
         self.restores=Restores(store,VERSION)
         self.sharing=Publications(store)
         self.address_schedule=AddressSchedule(store,self.downloads,available=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1')
-        self.runtime_status=RuntimeStatus(self.address_schedule,VERSION,self.beta)
+        self.runtime_probe_key=secrets.token_urlsafe(32)
+        self.runtime_status=RuntimeStatus(self.address_schedule,VERSION,self.beta,
+            probe=lambda:http_probe(self.origin,self.runtime_probe_key),task_status=self.runtime_task_status)
         self.update_checker=UpdateChecker(VERSION,home_assistant=os.environ.get('DISTRIKT_HOME_ASSISTANT')=='1',server_mode=bool(access_host))
+
+    def runtime_task_status(self):
+        # Witness progress through BOTH application locks in the sampler worker.
+        # Release Accounts before reading Store: monitoring must not hold one
+        # application lock while waiting for another. Delivery takes neither.
+        with self.accounts.lock:pass
+        with self.store.lock:return self.address_schedule.status()
 
     def app_state(self,profile_token=None):
         """The same local overview for page reads and confirmed write responses."""
@@ -169,9 +180,33 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             self.send({'error':'Genindlæs appen, og prøv igen.'},status=403);return False
         return True
     def do_GET(self):
+        # This machine-only route must precede profile_scope (accounts lock).
+        # It never waits for Store/accounts, reads data, or permits mutations.
+        if urlsplit(self.path).path=='/api/runtime/probe':
+            return self.runtime_probe()
         with self.profile_scope() as permitted:
             if permitted:self._get()
         self.send_pending_archive()
+    def runtime_probe(self):
+        if (self.client_address[0]!='127.0.0.1'
+                or self.headers.get('Host','').lower() not in self.server.hosts
+                or self.headers.get('Origin')
+                or not hmac.compare_digest(self.headers.get('X-LTM-Probe-Key','').encode('utf8'),self.server.runtime_probe_key.encode())):
+            return self.send({'error':'Adgang afvist.'},status=403)
+        challenge=self.headers.get('X-LTM-Probe-Challenge','')
+        if len(challenge)!=32 or any(c not in '0123456789abcdef' for c in challenge):
+            return self.send({'error':'Ugyldig prøve.'},status=400)
+        acquired=[]
+        try:
+            for lock in (self.server.accounts.lock,self.server.store.lock):
+                if not lock.acquire(blocking=False):break
+                acquired.append(lock)
+            status='ok' if len(acquired)==2 else 'busy'
+        finally:
+            for lock in reversed(acquired):lock.release()
+        try:self.send({'status':status,'challenge':challenge})
+        except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
+
     def _get(self):
         parsed=urlsplit(self.path);path=parsed.path;q=parse_qs(parsed.query)
         public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/api/ping')

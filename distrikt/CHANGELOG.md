@@ -2,6 +2,16 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.35 · 2026-11-20
+
+- Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
+- To forkyndere kan sammenlægges under et valgfrit navn fra forkynderens side. Udleveringer og historik bevares, og tidligere navne genkendes ved senere import.
+- Tjenestegruppe, gruppefunktion og pionerstatus bevares fra den forkynder, sammenlægningen åbnes fra. Sammenlægningen kan fortrydes som seneste handling.
+- Navigation kan fortsætte under indlevering og andre almindelige gemninger samt kortgemning efter de nødvendige kontroller. Gemmekøen beskytter nyere kladder og profilkonflikter; status er først færdig, når gemning og opdatering er bekræftet.
+- Redigeringsværktøjerne står lige under både kortets grænse og den samlede grænse med tekst, ikoner og trykvenlige knapper.
+- Intervalvisning udelader (lige)/(ulige), når samme vej på kortet har begge slags husnumre. Rene lige eller ulige veje beholder mærket.
+- Home Assistant kan registrere vedvarende svarproblemer uafhængigt af statusafleveringen. Korte interne statuslæsninger udløser ikke fejlalarm. Genimportér det opdaterede driftsblueprint for den nye beskedtype; eksisterende automationer ændres ikke automatisk.
+
 ## 1.12.19-beta.34 · 2026-11-19
 
 - DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.

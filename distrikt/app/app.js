@@ -63,11 +63,14 @@ const WriteGuard={uncertain:false,needsReview:false,loginExpired:false,error:nul
  requireRefresh(error){this.needsReview=true;this.error=error;this.epoch++;clearTimeout(autosaveTimer);failed(error);},
  reviewed(){this.uncertain=false;this.needsReview=false;this.loginExpired=false;this.error=null;this.epoch++;}
 };
-function saved(message='Alle ændringer er gemt'){if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired){failed(WriteGuard.error);return;}SaveStatus.set('saved',message);}
+function saved(message='Alle ændringer er gemt'){if(PendingSaves.count){saving();return;}if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired){failed(WriteGuard.error);return;}SaveStatus.set('saved',message);}
 function saving(){if(!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)SaveStatus.set('saving','Gemmer…');}
 function failed(message){if(WriteGuard.uncertain){SaveStatus.set('error','Gemning er ikke bekræftet',WriteGuard.error);return;}if(WriteGuard.needsReview){SaveStatus.set('review','Ændringen er gemt · opdatér data før næste ændring',WriteGuard.error);return;}if(WriteGuard.loginExpired||message instanceof RequestError&&message.kind==='login'){SaveStatus.set('error','Login er udløbet · log ind igen.');return;}if(message instanceof RequestError){if(!message.writing)return;if(message.kind==='base'){SaveStatus.set('review','Kladden er bevaret · kontrollér redigeringens udgangspunkt',message);return;}if(message.kind==='rejected'){SaveStatus.set('error','Ændringen blev afvist',message);return;}}SaveStatus.set('error','Gemning er ikke bekræftet',message);}
 function toast(message){I18n.errorContent(el('toast'),message);el('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el('toast').style.display='none',4500);}
 async function api(path,body){
+ // Whole-data replacement, exports and session teardown must follow accepted
+ // writes. Their existing modal/preview guards remain responsible for approval.
+ if(['/api/restore/apply','/api/beta/reset','/api/connections/restore','/api/export/backup','/api/profiles/backup','/api/logout'].includes(path)){const epoch=WriteGuard.epoch;do{await saveQueue;}while(PendingSaves.count);if(body&&path!=='/api/logout')WriteGuard.assert(epoch);}
  if(path==='/api/mutate'&&state?.profile&&!['workflow.undo','restore','recovery.purge'].includes(body?.action)&&!ProfilesUI.canAction(body?.action,body?.data))throw new RequestError('Du har ikke rettighed til denne handling.','rejected',403,'',true);
  const explicitBase=Object.prototype.hasOwnProperty.call(body||{},'profile_snapshot');
  if(path==='/api/mutate'&&state?.profile&&!explicitBase){body={...body,profile_snapshot:ProfilesUI.dialogBase||state.profile.snapshot};}
@@ -75,7 +78,7 @@ async function api(path,body){
  const problem=(key,kind,status=0,detail='')=>new RequestError(key,kind,status,detail,writing);
  const controller=typeof AbortController==='function'?new AbortController():null,timer=controller?setTimeout(()=>controller.abort(),writing?60000:30000):null;
  try{
- const previousState=state,previousRevision=state?.revision,profileGeneration=openDialog.generation;
+ const previousState=state,previousRevision=state?.revision,profileGeneration=openDialog.generation,profileContext=path==='/api/mutate'&&state?.profile&&!explicitBase&&typeof EditorBases!=='undefined'?(el('dialog').open?EditorBases.current:EditorBases.page):null;
  let r;try{r=await fetch(path,{method:body?'POST':'GET',headers:{'X-Distrikt-Token':token,...(body?{'Content-Type':'application/json'}:{})},...(controller?{signal:controller.signal}:{}),...(body?{body:JSON.stringify(body)}:{})});}
  catch(error){if(error?.name==='AbortError'){const failure=problem(writing?'Ændringen tog for lang tid at bekræfte. Genindlæs data og kontrollér før du prøver igen.':'Kontrollen tog for lang tid. Forbindelsen er ikke nødvendigvis afbrudt. Prøv et mindre område eller prøv igen.',writing?'uncertain':'timeout');if(writing)WriteGuard.mark(failure);throw failure;}Workspace.connectionChanged('offline');const failure=problem(writing?'Forbindelsen blev afbrudt. Ændringen kan være nået frem; genindlæs data og kontrollér før du prøver igen.':'Ingen forbindelse til appen. Kontrollér Wi-Fi / VPN.',writing?'uncertain':'connection');if(writing)WriteGuard.mark(failure);throw failure;}
  const authorization=()=>{if(typeof ProfilesUI==='undefined')return;const raw=r.headers?.get?.('X-LTM-Authorization');if(raw===null||raw===undefined)return;const revision=Number(raw);if(!Number.isSafeInteger(revision)||revision<0)return;if(revision<ProfilesUI.authVersion){const stale=problem('Dine rettigheder er ændret. Opdater oversigten før du fortsætter.','response');if(writing)WriteGuard.requireRefresh(stale);throw stale;}ProfilesUI.authVersion=revision;};
@@ -92,17 +95,50 @@ async function api(path,body){
   catch(error){const failure=problem(writing?'Svaret på ændringen kunne ikke læses. Kontrollér de gemte data med Opdater før et nyt forsøg.':'Svaret kunne ikke læses. Prøv kontrollen igen.',writing?'uncertain':'response');if(writing)WriteGuard.mark(failure);throw failure;}
   // Reuse the validated clone for JSON callers; keep the original response body intact.
   r.json=async()=>{authorization();return payload;};
-  if(payload.profile_snapshot&&state?.profile&&!explicitBase){if(el('dialog').open&&openDialog.generation===profileGeneration)ProfilesUI.dialogBase=payload.profile_snapshot;else state.profile.snapshot=payload.profile_snapshot;}
+  if(payload.profile_snapshot&&state?.profile&&!explicitBase){if(profileContext?.base===body.profile_snapshot){EditorBases.accepted(profileContext,payload.profile_snapshot);EditorBases.release(profileContext);}if(el('dialog').open&&openDialog.generation===profileGeneration)ProfilesUI.dialogBase=payload.profile_snapshot;else if(openDialog.generation===profileGeneration&&state===previousState)state.profile.snapshot=payload.profile_snapshot;}
   if(path==='/api/mutate'&&state===previousState&&state?.revision===previousRevision)state.revision=payload.revision;
  }
  authorization();return r;
  }finally{if(timer!==null)clearTimeout(timer);}
 }
+// Keep navigation independent of ordered writes. A queued payload is owned by its
+// original editor; neither navigation nor a later page read may rebase it.
+const PendingSaves={count:0,sequence:0,commands:new Map(),
+ enqueue(run){
+  this.count++;this.sequence++;saving();
+  let completed=false;
+  const work=saveQueue.then(run).then(result=>{completed=true;return result;});
+  const settled=work.finally(()=>{this.count--;if(completed&&!this.count)saved();});
+  saveQueue=settled.catch(()=>{});return settled;
+ },
+ releaseDialog(generation){
+  const dialog=el('dialog');if(!dialog.open||generation!==openDialog.generation||typeof dialog.show!=='function')return;
+  // Preserve the live form and its edit base, but release the modal top layer so
+  // navigation remains reachable. Opening another editor restores modal behavior.
+  dialog.close();dialog.show();dialog.style.position='fixed';dialog.style.inset='0';dialog.dataset.backgroundSave='yes';
+ },
+ pageStamp(){return JSON.stringify([...(el('app')?.querySelectorAll?.('form')||[])].map(form=>[form.id,FormDrafts.signature(form)]));},
+ protectPage(){
+  return (page==='Kortopsætning'&&GeoUI.dirty)||[...(el('app')?.querySelectorAll?.('form')||[])].some(form=>form.dataset.saving==='yes'||form.dataset.busy==='yes'||FormDrafts.forms.has(form)&&!FormDrafts.unchanged(form));
+ }
+};
 async function confirmedWrite(path,body,after=async response=>response.json()){
- let accepted=false;try{saving();const response=await api(path,body);accepted=true;const result=await after(response);if(result===false){const error=new RequestError('En nyere redigering er åbnet. Opdater igen, når du er færdig.','response');WriteGuard.requireRefresh(error);toast(error);}else saved();return result;}
- catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);throw error;}
+ const pinned=path==='/api/mutate'&&state?.profile&&!Object.prototype.hasOwnProperty.call(body||{},'profile_snapshot'),context=pinned&&typeof EditorBases!=='undefined'?EditorBases.capture():null;
+ if(pinned)body={...body,profile_snapshot:ProfilesUI.dialogBase||state.profile.snapshot};
+ body=body?JSON.parse(JSON.stringify(body)):body;
+ if(context)context.pending++;
+ const epoch=WriteGuard.epoch;return PendingSaves.enqueue(async()=>{
+  let accepted=false;try{
+   WriteGuard.assert(epoch);
+   if(context){await context.ready;if(context.error)throw context.error;body.profile_snapshot=context.base;}
+   saving();const response=await api(path,body);accepted=true;
+   if(context)EditorBases.accepted(context,(await response.json()).profile_snapshot);
+   const result=await after(response);if(result===false){const error=new RequestError('En nyere redigering er åbnet. Opdater igen, når du er færdig.','response');WriteGuard.requireRefresh(error);toast(error);}else saved();return result;
+  }catch(error){if(accepted)WriteGuard.requireRefresh(error);failed(error);throw error;}
+ }).finally(()=>{if(context){context.pending--;EditorBases.release(context);}});
 }
-async function refresh({guard,beforeRender,snapshot}={}){const fresh=snapshot??await(await api('/api/state')).json();if(guard&&!guard())return false;state=fresh;historyRevision=fresh.revision;if(!selected&&state.cards.length)selected=state.cards[0].id;if(beforeRender)beforeRender();render();return true;}
+
+async function refresh({guard,beforeRender,snapshot,preserveDrafts=false}={}){const fresh=snapshot??await(await api('/api/state')).json();if(guard&&!guard())return false;state=fresh;historyRevision=fresh.revision;if(!selected&&state.cards.length)selected=state.cards[0].id;if(beforeRender)beforeRender();if(!preserveDrafts||!PendingSaves.protectPage())render();return true;}
 function mutationSnapshot(result){
  if(result.state_unavailable===true)throw new RequestError('Ændringen er gemt, men oversigten kunne ikke hentes. Brug Opdater før næste ændring.','response');
  if(!Object.prototype.hasOwnProperty.call(result,'state'))return undefined; // Older servers still use a page read.
@@ -132,7 +168,7 @@ const EditorBases={current:null,page:null,pageState:null,pageSnapshot:null,
  },
  attach(form){
   if(!state?.profile||this.page?.form===form)return;
-  if(this.page?.form){this.page.closed=true;this.release(this.page);}
+  if(this.page){this.page.closed=true;this.release(this.page);}
   this.page={base:state.profile.snapshot,form,pending:0,closed:false,error:null};this.pageState=state;this.pageSnapshot=state.profile.snapshot;this.prepare(this.page);
  },
  retireDetached(){if(this.page?.form&&this.page.form.isConnected===false){this.page.closed=true;this.release(this.page);this.page=null;}},
@@ -141,15 +177,16 @@ const EditorBases={current:null,page:null,pageState:null,pageSnapshot:null,
   this.retireDetached();
   if(el('dialog').open&&this.current)return this.current;
   if(this.page?.form)return this.page;
-  if(!this.page||this.pageState!==state||this.pageSnapshot!==state.profile.snapshot){this.page={base:state.profile.snapshot,pending:0,closed:false,error:null};this.pageState=state;this.pageSnapshot=state.profile.snapshot;}
+  if(!this.page||this.pageState!==state||this.pageSnapshot!==state.profile.snapshot){if(this.page){this.page.closed=true;this.release(this.page);}this.page={base:state.profile.snapshot,pending:0,closed:false,error:null};this.pageState=state;this.pageSnapshot=state.profile.snapshot;this.prepare(this.page);}
   return this.page;
  },
  close(){const context=this.current;if(!context)return;this.current=null;context.closed=true;this.release(context);},
  release(context){
-  if(!context.closed||context.pending||context.error||context.released===context.base)return;
+  // A setup callback may hand its successor to the page; keep that shared lease.
+  if(!context.closed||context.pending||context.error||context.released===context.base||context.base===state?.profile?.snapshot)return;
   // A fork still being prepared owns its source until it completes.
   if(!context.ready)return;
-  context.ready.then(()=>{if(context.pending||context.error||context.released===context.base)return;context.released=context.base;api('/api/profiles/edit-base/release',{snapshot:context.base}).catch(()=>{});});
+  context.ready.then(()=>{if(context.pending||context.error||context.released===context.base||context.base===state?.profile?.snapshot)return;context.released=context.base;api('/api/profiles/edit-base/release',{snapshot:context.base}).catch(()=>{});});
  },
  accepted(context,snapshot){if(!context||!snapshot)return;context.base=snapshot;if(this.current===context)ProfilesUI.dialogBase=snapshot;}
 };
@@ -164,30 +201,38 @@ const FormDrafts={forms:new WeakMap(),
   }
  },
  unchanged(form){const entry=this.forms.get(form),confirmFolder=form.id==='settingsForm'&&form.dataset.folderTouched==='yes'&&!state.settings.folder_minimum_configured;return !!entry&&!entry.pending&&!confirmFolder&&entry.confirmed===this.signature(form);},
- idle(){if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)failed(WriteGuard.error);else{SaveStatus.set('unchanged','Ingen nye ændringer');const error=el('formError');if(error)error.textContent='';}}
+ idle(){if(PendingSaves.count){saving();return;}if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)failed(WriteGuard.error);else{SaveStatus.set('unchanged','Ingen nye ændringer');const error=el('formError');if(error)error.textContent='';}}
 };
-function mutate(action,data,{close=true,message='Gemt',autosave=false}={}){
+function mutate(action,data,{close=true,message='Gemt',autosave=false,synchronize}={}){
  const epoch=WriteGuard.epoch,payload=JSON.parse(JSON.stringify(data||{})),generation=openDialog.generation,context=EditorBases.capture();
+ const commandKey=JSON.stringify([generation,action,payload]);
+ if(PendingSaves.commands.has(commandKey))return PendingSaves.commands.get(commandKey);
+ const form=el('dialog').open?el('dialog').querySelector?.('form'):null,signature=form?FormDrafts.signature(form):null,origin=page,feedback=el('formError'),savedNote=el('formSaved');
+ const ownsFeedback=()=>generation===openDialog.generation&&origin===page&&el('formError')===feedback;
+ // Only self-contained ordinary saves release their modal. Preview/approval,
+ // import, security, restore and print workflows retain their existing gates.
+ if(['loan.issue','loan.finish','card.save','publisher.save','area.save','note.save','visit.save','ib.save','completion.record','filter.save'].includes(action))PendingSaves.releaseDialog(generation);
  if(context)context.pending++;
  let accepted=false;
- const work=saveQueue.then(async()=>{
+ const work=PendingSaves.enqueue(async()=>{
   WriteGuard.assert(epoch);
   if(context){await context.ready;if(context.error){const error=context.error;throw new RequestError(error.uiKey||'Redigeringens udgangspunkt kunne ikke hentes. Behold kladden og åbn redigeringen igen.','base',error.status||0,error.uiDetail||'',true);}}
   saving();
   const body={action,data:payload,include_state:true,...(context?{profile_snapshot:context.base}:{})};
   const response=await api('/api/mutate',body);accepted=true;
   const result=await response.json();EditorBases.accepted(context,result.profile_snapshot);
-  SaveStatus.set('saved','Ændringen er gemt · opdaterer oversigten…');
+  SaveStatus.set('saving','Ændringen er gemt · opdaterer oversigten…');
   const snapshot=mutationSnapshot(result),geoChanged=(action.startsWith('geo.')||action.startsWith('ignore.')||action.startsWith('address.change.')||action.startsWith('card.restructure.')||['delete','restore','recovery.purge','workflow.undo'].includes(action))&&result?.geo_changed!==false;
-  if(geoChanged)await GeoUI.load();await refresh({snapshot});saved();
-  if(close&&generation===openDialog.generation)closeDialog();
-  const error=el('formError');if(error&&generation===openDialog.generation)error.textContent='';
+  if(synchronize)await synchronize(result,snapshot);
+  else{if(geoChanged)await GeoUI.load();await refresh({snapshot,preserveDrafts:true});}saved();
+  if(close&&generation===openDialog.generation&&origin===page&&el('dialog').open&&(!form||FormDrafts.signature(form)===signature))closeDialog();
+  const error=el('formError');if(error&&ownsFeedback())error.textContent='';
   if(!autosave)toast(message);
-  const note=el('formSaved');if(note&&generation===openDialog.generation)note.innerHTML=ui('Gemt automatisk');
+  const note=el('formSaved');if(note&&note===savedNote&&ownsFeedback()&&(!form||FormDrafts.signature(form)===signature))note.innerHTML=ui('Gemt automatisk');
   return result.result;
  });
- saveQueue=work.catch(()=>{});
- return work.catch(e=>{if(accepted)WriteGuard.requireRefresh(e);failed(e);const err=el('formError');if(err&&generation===openDialog.generation)I18n.errorContent(err,e);else toast(e);throw e;}).finally(()=>{if(context){context.pending--;EditorBases.release(context);}});
+ const tracked=work.catch(e=>{if(accepted)WriteGuard.requireRefresh(e);failed(e);const err=el('formError');if(err&&ownsFeedback())I18n.errorContent(err,e);else toast(e);throw e;}).finally(()=>{PendingSaves.commands.delete(commandKey);if(context){context.pending--;EditorBases.release(context);}});
+ PendingSaves.commands.set(commandKey,tracked);return tracked;
 }
 const DialogFocus={opener:null,
  capture(dialog){const active=document.activeElement;if(dialog.open&&dialog.contains?.(active))return;if(active&&active!==document.body){let selector='';if(typeof CSS!=='undefined'&&active.dataset){const attributes=['action','work','id','geo','main','cardImport','historyImport','share'].filter(k=>active.dataset[k]!==undefined);if(attributes.length)selector=attributes.map(k=>'[data-'+k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())+'="'+CSS.escape(active.dataset[k])+'"]').join('');}this.opener={node:active,id:active.id,selector};}else this.opener=null;},
@@ -195,11 +240,11 @@ const DialogFocus={opener:null,
   let index=0;for(const input of dialog.querySelectorAll?.('input:not([type=hidden]),select,textarea')||[]){if(input.labels?.length)continue;const label=input.previousElementSibling;if(label?.tagName==='LABEL'&&!label.htmlFor){if(!input.id)input.id='ltmDialogField-'+openDialog.generation+'-'+index++;label.htmlFor=input.id;}}
  },
  focus(dialog){const field=dialog.querySelector?.('[autofocus]:not(:disabled):not([type=hidden])')||dialog.querySelector?.('input:not([type=hidden]):not(:disabled),select:not(:disabled),textarea:not(:disabled)');const target=field||dialog.querySelector?.('[data-action=close]');target?.focus?.({preventScroll:true});},
- keydown(event,dialog){if(event.key!=='Tab'||event.defaultPrevented||!dialog.open)return;const fields=[...dialog.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=true]')].filter(node=>node.tabIndex>=0&&!node.matches(':disabled')&&!node.hidden&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');const first=fields[0],last=fields.at(-1),active=document.activeElement;if(!first){event.preventDefault();dialog.focus();return;}if(event.shiftKey&&(active===first||!dialog.contains(active))){event.preventDefault();last.focus({preventScroll:true});}else if(!event.shiftKey&&(active===last||!dialog.contains(active))){event.preventDefault();first.focus({preventScroll:true});}},
+ keydown(event,dialog){if(event.key!=='Tab'||event.defaultPrevented||!dialog.open||dialog.dataset.backgroundSave==='yes')return;const fields=[...dialog.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=true]')].filter(node=>node.tabIndex>=0&&!node.matches(':disabled')&&!node.hidden&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');const first=fields[0],last=fields.at(-1),active=document.activeElement;if(!first){event.preventDefault();dialog.focus();return;}if(event.shiftKey&&(active===first||!dialog.contains(active))){event.preventDefault();last.focus({preventScroll:true});}else if(!event.shiftKey&&(active===last||!dialog.contains(active))){event.preventDefault();first.focus({preventScroll:true});}},
  restore(dialog){const saved=this.opener;this.opener=null;if(!saved)return;const target=saved.node?.isConnected?saved.node:(saved.id?document.getElementById(saved.id):null)||(saved.selector?document.querySelector(saved.selector):null);if(target&&target.isConnected!==false&&!dialog.contains?.(target))target.focus?.({preventScroll:true});}
 };
-function openDialog(html,language='da'){const dialog=el('dialog');DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
-function closeDialog(){EditorBases.close();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase='';const dialog=el('dialog');frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.close();DialogFocus.restore(dialog);}
+function openDialog(html,language='da'){const dialog=el('dialog');if(dialog.dataset.backgroundSave==='yes'&&el('cardForm')?.dataset.id&&dialogDirty){if(!el('cardForm').reportValidity())return;saveCard(false);dialogDirty=false;}if(dialog.dataset.backgroundSave==='yes'){dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;}DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
+function closeDialog(){EditorBases.close();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase='';const dialog=el('dialog');frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;DialogFocus.restore(dialog);}
 function empty(message){return `<div class="empty">${message}</div>`;}
 function searchText(c){return [c.number,c.internal_number,c.name,areaName(c.area_id),c.kind,...(c.addresses||[]).flatMap(a=>[a.road,a.numbers,a.type])].join(' ').toLowerCase();}
 function matches(c){return (!query||searchText(c).includes(query.toLowerCase()))&&(!area||c.area_id===area);}
@@ -304,7 +349,7 @@ function publisherGuidanceDisplay(p){
 function publisherIssueGuidance(name){
  const target=el('issuePublisherGuidance');if(!target)return;
  target.hidden=!name.trim();if(target.hidden)return;
- const p=state.publishers.find(p=>PublisherSearch.normalize(p.name)===PublisherSearch.normalize(name));
+ const p=state.publishers.find(p=>[p.name,...(p.aliases||[])].some(alias=>PublisherSearch.normalize(alias)===PublisherSearch.normalize(name)));
  const {current,recommended}=publisherGuidance(p);
  target.textContent=I18n.format('Aktuelt / vejledende: {current} / {recommended} kort',{current,recommended});
 }
@@ -339,7 +384,7 @@ function publishersPage(){
  if(publisherGroupFilter.startsWith('group:')&&!state.publishers.some(p=>'group:'+publisherGroupKey(p.group)===publisherGroupFilter))publisherGroupFilter='';
  const q=query.toLocaleLowerCase('da-DK').trim();
  const people=state.publishers.slice().sort((a,b)=>cmp(a.name,b.name))
-  .filter(p=>[p.name,p.group,I18n.text(publisherRoleLabels[p.group_role]||''),p.pioneer?I18n.text('Pioner'):''].join(' ').toLocaleLowerCase('da-DK').includes(q))
+  .filter(p=>[p.name,...(p.aliases||[]),p.group,I18n.text(publisherRoleLabels[p.group_role]||''),p.pioneer?I18n.text('Pioner'):''].join(' ').toLocaleLowerCase('da-DK').includes(q))
   .filter(p=>!publisherGroupFilter||(publisherGroupFilter==='__none__'?!p.group:publisherGroupFilter==='group:'+publisherGroupKey(p.group)));
  const groups=publisherOverviewGroups(people);
  const stats='<div class="publisherStats" role="status" aria-live="polite">'
@@ -357,7 +402,7 @@ function publishersPage(){
 function publisherProfile(id){
  const p=state.publishers.find(p=>p.id===id);if(!p)return;
  const active=state.loans.filter(l=>l.publisher_id===id&&!l.returned).sort((a,b)=>cmp(card(a.card_id)?.number,card(b.card_id)?.number)),history=state.loans.filter(l=>l.publisher_id===id&&l.returned).sort((a,b)=>cmp(b.assigned,a.assigned));
- openDialog(`<h2>${esc(p.name)}</h2>${publisherGroupInfo(p)}${publisherGuidanceDisplay(p)}<div class="actions"><button data-action="publisher" data-id="${esc(id)}">${ui('Rediger forkynder')}</button><button class="danger" data-action="delete" data-module="publishers" data-id="${esc(id)}">${ui('Slet forkynder')}</button></div><h3>${ui('Aktuelle kort')}</h3>${active.map(l=>`<div class="line"><span><button class="link" data-action="detail" data-id="${l.card_id}"><b>${ui('Kort')} ${esc(card(l.card_id)?.number)}</b></button><br><small>${esc(areaName(card(l.card_id)?.area_id))} · ${ui('Udleveret')} ${fmt(l.assigned)}</small></span><div><button data-action="complete" data-id="${l.id}">${ui('Gennemgået')}</button> <button data-action="return" data-id="${l.id}">${ui('Aflever')}</button></div></div>`).join('')||`<p class="hint">${ui('Ingen udleverede distriktskort.')}</p>`}<h3>${ui('Tidligere udleveringer')}</h3>${history.map(l=>`<div class="line"><span>${ui('Kort')} ${esc(card(l.card_id)?.number)}<br><small>${fmt(l.assigned)} – ${fmt(l.returned)}</small></span><button data-action="detail" data-id="${l.card_id}">${ui('Åbn kort')}</button></div>`).join('')||`<p class="hint">${ui('Ingen afsluttede udlån registreret.')}</p>`}<div class="actions"><button data-action="close">${ui('Luk')}</button></div>`,I18n.language());
+ openDialog(`<h2>${esc(p.name)}</h2>${publisherGroupInfo(p)}${publisherGuidanceDisplay(p)}<div class="actions"><button data-action="publisher" data-id="${esc(id)}">${ui('Rediger forkynder')}</button><button data-action="publisher-merge" data-id="${esc(id)}">${ui('Sammenlæg forkyndere')}</button><button class="danger" data-action="delete" data-module="publishers" data-id="${esc(id)}">${ui('Slet forkynder')}</button></div><h3>${ui('Aktuelle kort')}</h3>${active.map(l=>`<div class="line"><span><button class="link" data-action="detail" data-id="${l.card_id}"><b>${ui('Kort')} ${esc(card(l.card_id)?.number)}</b></button><br><small>${esc(areaName(card(l.card_id)?.area_id))} · ${ui('Udleveret')} ${fmt(l.assigned)}</small></span><div><button data-action="complete" data-id="${l.id}">${ui('Gennemgået')}</button> <button data-action="return" data-id="${l.id}">${ui('Aflever')}</button></div></div>`).join('')||`<p class="hint">${ui('Ingen udleverede distriktskort.')}</p>`}<h3>${ui('Tidligere udleveringer')}</h3>${history.map(l=>`<div class="line"><span>${ui('Kort')} ${esc(card(l.card_id)?.number)}<br><small>${fmt(l.assigned)} – ${fmt(l.returned)}</small></span><button data-action="detail" data-id="${l.card_id}">${ui('Åbn kort')}</button></div>`).join('')||`<p class="hint">${ui('Ingen afsluttede udlån registreret.')}</p>`}<div class="actions"><button data-action="close">${ui('Luk')}</button></div>`,I18n.language());
 }
 function yearBounds(){return [`${year-1}-09-01`,`${year}-08-31`<state.today?`${year}-08-31`:state.today];}
 function eventsInYear(){const [a,b]=page==='Rapporter'?Workspace.periodBounds():yearBounds();return state.completions.filter(e=>e.date>=a&&e.date<=b);}
@@ -435,7 +480,7 @@ async function saveCard(close){
  }catch{return false;}
 }
 function scheduleCardSave(){const f=el('cardForm');if(!f?.dataset.id)return;if(FormDrafts.unchanged(f)){clearTimeout(autosaveTimer);dialogDirty=false;FormDrafts.idle();const note=el('formSaved');if(note)note.innerHTML=ui('Ingen nye ændringer');return;}dialogDirty=true;editGeneration++;const note=el('formSaved');clearTimeout(autosaveTimer);if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired){if(note)note.innerHTML=ui(WriteGuard.loginExpired?'Automatisk gemning er sat på pause. Log ind igen.':'Automatisk gemning er sat på pause. Kontrollér data med Opdater.');return;}if(note)note.innerHTML=ui('Venter på at gemme…');autosaveTimer=setTimeout(()=>{if(f.checkValidity())saveCard(false);else if(note)note.innerHTML=ui('Udfyld felterne for at gemme ændringerne.');},700);}
-async function closeRequested(){if((WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)&&el('dialog').open){const key=WriteGuard.uncertain?'Gemningen er usikker. Luk redigeringen uden at sende igen? Felterne lukkes; kontrollér derefter de gemte data med Opdater.':WriteGuard.needsReview?'Den seneste ændring er gemt, men data er ikke opdateret. Luk redigeringen uden at sende igen, og brug Opdater?':'Login er udløbet. Luk redigeringen uden at sende igen? Log ind igen og kontrollér data.';if(el('dialog').querySelector?.('form')&&!window.confirm(I18n.text(key)))return;dialogDirty=false;closeDialog();return;}while(el('cardForm')?.dataset.id&&dialogDirty){if(!await saveCard(false))return;}closeDialog();}
+async function closeRequested(){if((WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)&&el('dialog').open){const key=WriteGuard.uncertain?'Gemningen er usikker. Luk redigeringen uden at sende igen? Felterne lukkes; kontrollér derefter de gemte data med Opdater.':WriteGuard.needsReview?'Den seneste ændring er gemt, men data er ikke opdateret. Luk redigeringen uden at sende igen, og brug Opdater?':'Login er udløbet. Luk redigeringen uden at sende igen? Log ind igen og kontrollér data.';if(el('dialog').querySelector?.('form')&&!window.confirm(I18n.text(key)))return;dialogDirty=false;closeDialog();return;}if(el('cardForm')?.dataset.id&&dialogDirty){const form=el('cardForm');if(!form.reportValidity())return;saveCard(false);dialogDirty=false;}closeDialog();}
 function taskCard(id){return [...(state.cards||[]),...(state.archived_cards||[])].find(c=>c.id===id);}
 function openCardTasks(id){return (state.notes||[]).filter(n=>n.entity!=='activity'&&n.card_id===id&&!n.resolved&&(!n.recurrence||n.recurrence.next_due<=state.today));}
 function taskBadge(id){const count=openCardTasks(id).length;return count?`<span class="badge taskAlert">⚠ ${ui('{count} åbne opgaver',{count})}</span>`:'';}
@@ -464,6 +509,20 @@ function recordCompletion(id){const c=card(id);if(!c)return;const l=loanFor(id);
 function issue(id='',initial=false){const chosen=card(id);const fromBox=!initial&&!!chosen&&!chosen.in_folder;const cards=state.cards.filter(c=>!loanFor(c.id)&&(initial||(fromBox?!c.in_folder:c.in_folder))),t=value=>esc(I18n.text(value));if(!cards.length){toast(I18n.text(initial?'Opret et ledigt kort først.':'Læg et ledigt kort i mappen først.'));return;}id=id||cards[0].id;const c=card(id);openDialog(`<h2>${initial?t('Registrer eksisterende udlån'):t(fromBox?'Udlever fra kassen':'Udlever kort')+' '+esc(c.number)}</h2><form id="issueForm" data-from-box="${fromBox}"><label>${t('Kort')}</label><select name="card_id">${cards.map(c=>`<option value="${c.id}" ${id===c.id?'selected':''}>${esc(c.number)} · ${esc(areaName(c.area_id))}</option>`).join('')}</select><div id="issueTaskWarning">${taskWarning(c.id)}</div>${PublisherSearch.field()}<p id="issuePublisherGuidance" class="hint" role="status" aria-live="polite" hidden></p><p class="hint">${ui('Kun vejledende – det er altid muligt at udlevere flere kort.')}</p><label>${t('Udleveringsdato')}</label><input name="date" type="date" value="${state.today}" max="${state.today}" required><label class="check"><input name="initial" type="checkbox" ${initial?'checked':''}> ${t('Kortet var allerede udleveret før registrering')}</label><p class="hint">${t(fromBox?'Hent kortet i kassen derhjemme, før du giver det videre.':'Brug afkrydsningen, hvis kortet allerede var udleveret.')}</p>${formEnd('Registrer udlevering')}</form>`,I18n.language());PublisherSearch.attach(el('issuePublisherName'),state.publishers,p=>publisherGuidanceText(p),publisherIssueGuidance);}
 function finish(id,retain){const l=state.loans.find(l=>l.id===id),c=card(l?.card_id);if(!l||!c)return;const t=value=>esc(I18n.text(value));openDialog(`<h2>${t(retain?'Registrer gennemgang':'Aflever kort')} ${esc(c.number)}</h2><p class="hint">${esc(publisherName(l.publisher_id))}</p><form id="finishForm" data-id="${id}" data-retain="${retain?'yes':'no'}">${retain?`<p>${t('Forkynderen beholder kortet til en ny gennemgang.')}</p>`:`<label>${t('Er hele distriktet gennemgået?')}</label><select name="complete"><option value="yes">${t('Ja · registrer gennemgang')}</option><option value="no">${t('Nej · aflever uden gennemgang')}</option></select><label>${I18n.language()==='en'?'Does the physical card’s DNC need revision?':'Skal IB på det fysiske kort revideres?'}</label><select name="revise_ib" required><option value="">${I18n.language()==='en'?'Choose Yes or No':'Vælg Ja eller Nej'}</option><option value="yes">${t('Ja')}</option><option value="no">${t('Nej')}</option></select>`}<label>${t(retain?'Gennemgangsdato':'Dato for gennemgang / aflevering')}</label><input name="date" type="date" value="${state.today}" min="${l.cycle_start}" max="${state.today}" required>${!retain?`<p class="notice">${t('Kortet registreres tilbage i kassen derhjemme. Det bliver ikke lagt i mappen.')}</p>`:''}${state.profile?.desk_only?'':returnNoteField()}${formEnd(retain?'Gem gennemgang':'Aflever til kassen')}</form>`,I18n.language());}
 function editPublisher(id){const p=state.publishers.find(p=>p.id===id);openDialog(`<h2>${ui(p?'Rediger forkynder':'Tilføj forkynder')}</h2><form id="publisherForm" data-id="${id||''}"><label>${ui('Navn')}</label><input name="name" value="${esc(p?.name||'')}" required maxlength="100"><label>${ui('Tjenestegruppe')}</label><input name="group" value="${esc(p?.group||'')}" maxlength="100" list="publisherGroups"><datalist id="publisherGroups">${[...new Set(state.publishers.map(p=>p.group).filter(Boolean))].map(g=>'<option value="'+esc(g)+'"></option>').join('')}</datalist><label>${ui('Gruppefunktion')}</label><select name="group_role">${Object.entries(publisherRoleLabels).map(([value,label])=>'<option value="'+value+'" data-ui="'+esc(label)+'" '+((p?.group_role||'')===value?'selected':'')+'>'+esc(I18n.text(label))+'</option>').join('')}</select><label class="check"><input type="checkbox" name="pioneer" ${p?.pioneer?'checked':''}> ${ui('Pioner')}</label><p class="hint">${ui('Tjenestegruppe og funktion giver ikke adgang til appen. Brugere og rettigheder styres særskilt af administratoren.')}</p>${formEnd()}</form>`,I18n.language());}
+function publisherMergeInfo(p,name=p.name){
+ return `<p>${ui('Behold tjenestegruppe, gruppefunktion og pionerstatus fra')} <strong>${esc(name)}</strong>.</p><p>${ui('Tjenestegruppe')}: ${esc(p.group||I18n.text('Ingen tjenestegruppe'))}<br>${ui('Gruppefunktion')}: ${ui(publisherRoleLabels[p.group_role]||'Ingen gruppefunktion')}<br>${ui('Pioner')}: ${ui(p.pioneer?'Ja':'Nej')}</p>`;
+}
+function mergePublisher(id){
+ const p=state.publishers.find(p=>p.id===id);if(!p)return;
+ openDialog(`<h2>${ui('Sammenlæg forkyndere')}</h2>${publisherMergeInfo(p)}<p class="hint">${ui('Udleveringer og historik samles. Tidligere navne genkendes ved senere import.')}</p><form id="publisherMergeForm"><input type="hidden" name="target_id" value="${esc(id)}"><label>${ui('Forkynder der skal samles med denne')}</label><select name="source_id" required><option value="">${ui('Vælg forkynder')}</option>${state.publishers.filter(other=>other.id!==id).sort((a,b)=>cmp(a.name,b.name)).map(other=>`<option value="${esc(other.id)}">${esc(other.name)} · ${esc(other.group||I18n.text('Ingen tjenestegruppe'))}</option>`).join('')}</select><label>${ui('Navn efter sammenlægning')}</label><input name="name" value="${esc(p.name)}" maxlength="100" required>${formEnd('Kontrollér sammenlægning')}</form>`,I18n.language());
+}
+async function previewPublisherMerge(form,fields){
+ const generation=openDialog.generation,origin=page,stamp=JSON.stringify(Object.fromEntries(new FormData(form)));
+ const response=await(await api('/api/mutate',{action:'publisher.merge.preview',data:fields})).json();
+ if(generation!==openDialog.generation||origin!==page||form.isConnected===false||stamp!==JSON.stringify(Object.fromEntries(new FormData(form))))return;
+ const result=response.result,payload={...fields,expected:result.expected};
+ openDialog(`<h2>${ui('Sammenlæg forkyndere')}</h2><p><strong>${esc(result.target_name)}</strong> + <strong>${esc(result.source_name)}</strong></p><p>${ui('Navn efter sammenlægning')}: <strong>${esc(result.name)}</strong></p>${publisherMergeInfo(result,result.target_name)}<p>${ui('Udleveringer og historik samles. Tidligere navne genkendes ved senere import.')}</p><div class="actions"><button class="primary" data-action="publisher-merge-apply" data-merge="${esc(JSON.stringify(payload))}">${ui('Saml og gem')}</button><button data-action="publisher-merge" data-id="${esc(fields.target_id)}">${ui('Tilbage')}</button><button data-action="close">${ui('Annuller')}</button></div>`,I18n.language());
+}
 function editArea(id){const a=state.areas.find(a=>a.id===id);openDialog(`<h2>${ui(a?'Rediger område':'Tilføj område')}</h2><form id="areaForm" data-id="${id||''}"><label>${ui("Områdenavn")}</label><input name="name" value="${esc(a?.name||'')}" required maxlength="80" ${I18n.attribute('placeholder','Fx Eksempelby land')}>${formEnd()}</form>${a?`<div class="actions"><button class="danger" data-action="delete-area" data-id="${a.id}">${ui("Slet området")}</button></div><p class="hint">${ui("Kortene beholdes og flyttes til “Intet område”. Området kan gendannes i 48 timer.")}</p>`:''}`,I18n.language());}
 // Store the Tuesday of the visit week; use UTC to avoid local time-zone rollovers.
 function ktmTuesday(day){return /^\d{4}-\d{2}-\d{2}$/.test(day)&&new Date(day+'T12:00:00Z').getUTCDay()===2;}
@@ -487,7 +546,7 @@ function confirmPublisherDelete(id){
   openDialog('<h2>'+ui('Forkynderen kan ikke slettes')+'</h2><p><b>'+esc(p.name)+'</b></p><p>'+ui('Forkynderen har registrerede udleveringer eller historik. Behold forkynderen for at bevare rapporterne.')+'</p><div class="actions"><button data-action="close">'+ui('Luk')+'</button></div>',I18n.language());
   return;
  }
- const expected={name:p.name,group:p.group||'',group_role:p.group_role||'',pioneer:p.pioneer===true};
+ const expected={name:p.name,group:p.group||'',group_role:p.group_role||'',pioneer:p.pioneer===true,aliases:[...(p.aliases||[])]};
  openDialog('<h2>'+ui('Slet forkynder?')+'</h2><p><b>'+esc(p.name)+'</b></p><p>'+ui('Kun forkynderen fjernes fra listen. Kort og anden historik ændres ikke.')+'</p><p class="hint">'+ui(deleteRecoveryHint)+'</p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="publishers" data-id="'+esc(id)+'" data-expected="'+esc(JSON.stringify(expected))+'">'+ui('Ja, slet forkynder')+'</button><button data-action="close">'+ui('Annuller')+'</button></div>',I18n.language());
 }
 function confirmDelete(module,id){const item=state[module]?.find(i=>i.id===id);if(!item)return;
@@ -548,8 +607,7 @@ function frontRows(c,english=false){
   if(a.street?.odd.length&&a.street.even.length){
    merged.add(a.street);
    const sides=[...a.street.odd,...a.street.even];
-   const showParity=sides.some(row=>!!row.shortRange);
-   const intervals=[...new Set(sides.map(row=>row.interval+(showParity?sideSuffix(row.side):'')))].join(' & ');
+   const intervals=[...new Set(sides.map(row=>row.interval))].join(' & ');
    const supplements=[...new Set(sides.flatMap(row=>[row.extra_road,row.extra_numbers]).filter(Boolean))];
    rows.push({label:[a.road+' '+intervals,...supplements].join(' – '),count:sides.reduce((sum,row)=>sum+row.count,0),
     ...(sides.some(row=>row.count_unknown)?{count_unknown:true}:{})});
@@ -626,6 +684,8 @@ case 'geo-card':await closeRequested();if(el('dialog').open)return;GeoUI.openCar
 case 'address-tab':if(d.tab==='Genprint'){await Workspace.openFollowups('reprint');break;}addressTab=d.tab;addressPage=0;query='';render();break;
 case 'address-page':addressPage=Number(d.page);render();break;
 case 'publisher-profile':publisherProfile(d.id);break;
+case 'publisher-merge':mergePublisher(d.id);break;
+case 'publisher-merge-apply':await mutate('publisher.merge',JSON.parse(d.merge),{message:I18n.text('Forkyndere sammenlagt')});break;
 case 'new-card':editCard();break;
 case 'edit-card':editCard(d.id);break;
 case 'select':selected=d.id;render();break;
@@ -710,10 +770,11 @@ case 'remove-address':target.closest('[data-address-row]').remove();scheduleCard
 case 'stop':openDialog(`<h2>${ui('Luk den lokale app?')}</h2><p>${ui('Alle gemte registreringer beholdes. Startfilen åbner appen igen.')}</p><div class="actions"><button data-action="confirm-stop">${ui('Luk appen')}</button><button data-action="close">${ui('Annuller')}</button></div>`);break;
 case 'confirm-stop':await saveQueue;await api('/api/shutdown',{});el('app').innerHTML=`<section class="panel"><h1>${ui('Appen er lukket')}</h1><p>${ui('Dine gemte registreringer er bevaret. Åbn appens startfil for at starte igen.')}</p></section>`;closeDialog();saved('Appen er lukket');break;
 }}catch(e){toast(e);}});
-document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','areaForm','noteForm','visitForm','ibForm','settingsForm','profileModeForm','printForm','completionForm','deleteLoanForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
+document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','publisherMergeForm','areaForm','noteForm','visitForm','ibForm','settingsForm','profileModeForm','printForm','completionForm','deleteLoanForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
 case 'cardForm':clearTimeout(autosaveTimer);await saveCard(true);break;
 case 'issueForm':await mutate('loan.issue',{card_id:fields.card_id,publisher_name:fields.publisher_name,date:fields.date,initial:fd.has('initial'),from_box:form.dataset.fromBox==='true'},{message:I18n.text('Udlevering gemt')});break;
 case 'finishForm':await mutate('loan.finish',{id:form.dataset.id,date:fields.date,complete:form.dataset.retain==='yes'||fields.complete==='yes',retain:form.dataset.retain==='yes',revise_ib:form.dataset.retain==='yes'?false:fields.revise_ib==='yes',note:fields.note},{message:I18n.text(form.dataset.retain==='yes'?'Gennemgang gemt; kortet beholdes':'Afleveret til kassen')});break;
+case 'publisherMergeForm':await previewPublisherMerge(form,fields);break;
 case 'publisherForm':await mutate('publisher.save',{id:form.dataset.id||undefined,name:fields.name,group:fields.group,group_role:fields.group_role,pioneer:fd.has('pioneer')});break;
 case 'areaForm':await mutate('area.save',{id:form.dataset.id||undefined,name:fields.name});break;
 case 'noteForm':await mutate('note.save',{id:form.dataset.id,...fields});break;
@@ -727,7 +788,7 @@ case 'completionForm':await mutate('completion.record',{card_id:form.dataset.id,
 }if(form.id!=='cardForm'&&confirmedSignature!==null)FormDrafts.forms.get(form).confirmed=confirmedSignature;}catch(e){const err=el('formError');if(err&&generation===openDialog.generation&&page===origin&&form.isConnected!==false)I18n.errorContent(err,e);else toast(e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
 el('dialog').addEventListener('keydown',e=>DialogFocus.keydown(e,el('dialog')));
 el('dialog').addEventListener('cancel',e=>{e.preventDefault();closeRequested();});
-window.addEventListener('beforeunload',e=>{if(dialogDirty){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(dialogDirty||PendingSaves.count){e.preventDefault();e.returnValue='';}});
 (async()=>{try{await refresh();year=serviceYear(state.today);if(typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view'))await GeoUI.resumeJob();render();saved();Workspace.boot();if(typeof ProfilesUI!=='undefined')ProfilesUI.boot();if(typeof Welcome!=='undefined'&&!state.profile)Welcome.auto();}catch(e){SaveStatus.set('error','Den lokale app kunne ikke åbnes',e.message);el('app').innerHTML=`<section class="panel startupError"><span class="eyebrow">LTM</span><h1>${ui('Den lokale app kunne ikke åbnes')}</h1><p lang="da">${esc(e.message)}</p><p class="hint">${ui('Kontrollér, at appen er startet på computeren eller i Home Assistant. Kontrollér også Wi-Fi eller VPN.')}</p><button class="primary" data-work="reload-app">${ui('Prøv at åbne igen')}</button></section>`;}})();
 
 document.addEventListener('click',event=>{const close=event.target.closest('[data-save-explanation-close]');if(close){const details=close.closest('details');details?.removeAttribute('open');details?.querySelector('summary')?.focus();}});

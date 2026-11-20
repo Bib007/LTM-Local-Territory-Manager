@@ -36,6 +36,14 @@ def apply_overrides(card, rows):
     if not isinstance(saved,list):saved=[]
     matched,pending=_match(rows,saved)
     members={str(a.get('id')):a for a in card.get('geo_addresses',[]) if isinstance(a,dict) and a.get('id')}
+    street_sides={}
+    for row in rows:
+        key=(row['road'].strip().casefold(),row.get('postcode') or '')
+        sides=street_sides.setdefault(key,set())
+        for ident in row.get('source_ids',[]):
+            if ident in members and members[ident].get('number'):
+                try:sides.add(number_key(members[ident]['number'])[0]%2)
+                except (ValueError,TypeError):pass
     for j,row in enumerate(rows):
         item=saved[matched[j]] if j in matched else {}
         row['extra_road']=item.get('road') or ''
@@ -51,7 +59,8 @@ def apply_overrides(card, rows):
         row['number_style']='range' if item.get('number_style')=='range' and short else 'exact'
         if row['number_style']=='range':
             parity='ulige' if number_key(ordered[0])[0]%2 else 'lige'
-            row['display_numbers']=f'{short} ({parity})'
+            mixed=len(street_sides[(row['road'].strip().casefold(),row.get('postcode') or '')])>1
+            row['display_numbers']=short if mixed else f'{short} ({parity})'
         else:
             row['display_numbers']=row['numbers']
     card['front_label_unmatched']=len(pending)
