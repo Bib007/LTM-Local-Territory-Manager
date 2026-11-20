@@ -59,7 +59,7 @@ const contracts={};const initial=run('JSON.stringify(state)');
  c.pending=new Promise(r=>release=r);run("GeoUI.preview=()=>pending;openDialog('<p>Confirm</p>')");pending=run('GeoUI.save()');run('closeDialog()');release({retired:[],conflicts:[],ignored:[]});await assert.rejects(pending,/selection has changed/);assert.equal(writes.length,0);
  // During an accepted write a newer drawing and dialog stay open; no second write is replayed.
  run("GeoUI.ids=new Set(['a1']);GeoUI.preview=async()=>({retired:[],conflicts:[],ignored:[]});openDialog('<p>Save</p>')");let assignRelease;c.assignPending=new Promise(r=>assignRelease=r);c.fresh=JSON.parse(run('JSON.stringify(state)'));run(`api=async(url,data)=>{if(data?.action==='geo.assign'){writes.push({url,data});return assignPending;}return {json:async()=>url==='/api/state'?fresh:GeoUI.data};}`);
- pending=run('GeoUI.save()');await new Promise(r=>setImmediate(r));await run('GeoUI.save()');assert.equal(writes.length,1);run("GeoUI.polygon.push([10.03,55.03]);GeoUI.dirty=true;openDialog('<form>NEWER DRAFT</form>')");assignRelease({json:async()=>({result:{id:'c1'}})});await pending;assert.equal(run('GeoUI.polygon.length'),4);assert.equal(run('GeoUI.dirty'),true);assert.match(get('dialog').innerHTML,/NEWER DRAFT/);assert.equal(writes[0].data.data.polygon.length,3);
+ pending=run('GeoUI.save()');await new Promise(r=>setImmediate(r));assert.equal(get('dialog').open,false,'the confirmation must disappear while a geo.assign receipt is pending');await run('GeoUI.save()');assert.equal(writes.length,1);run("GeoUI.polygon.push([10.03,55.03]);GeoUI.dirty=true;openDialog('<form>NEWER DRAFT</form>')");assignRelease({json:async()=>({result:{id:'c1'}})});await pending;assert.equal(run('GeoUI.polygon.length'),4);assert.equal(run('GeoUI.dirty'),true);assert.match(get('dialog').innerHTML,/NEWER DRAFT/);assert.equal(writes[0].data.data.polygon.length,3);
  // Boundary-only saves also send a copy and preserve edits made while saving.
  let boundaryRelease;c.boundaryPending=new Promise(r=>boundaryRelease=r);run(`api=async(url,data)=>{if(data?.action==='geo.boundary'){writes.push({url,data});return boundaryPending;}return {json:async()=>url==='/api/state'?fresh:GeoUI.data};}`);pending=run('GeoUI.saveBoundary()');run('GeoUI.polygon[0][0]=10.04');boundaryRelease({json:async()=>({})});await pending;assert.equal(writes.at(-1).data.data.polygon[0][0],10);assert.equal(run('GeoUI.polygon[0][0]'),10.04);assert.equal(run('GeoUI.dirty'),true);
  // Showing an address never aliases the stored polygon before explicit save.
@@ -86,6 +86,15 @@ const contracts={};const initial=run('JSON.stringify(state)');
  await run("GeoUI.save('103',{kind:'By'})");assert.equal(run('GeoUI.target'),'created');assert.equal(run('GeoUI.dirty'),false);assert.equal(run('state.revision'),'after-real-save');assert.equal(get('dialog').open,false);
  assert.equal(Object.hasOwn(realRequests.find(r=>r.body?.action==='geo.assign').body.data,'_revision'),false);
  run('GeoUI.whole=true;GeoUI.dirty=true');await run('GeoUI.saveBoundary(true)');assert.equal(run('GeoUI.dirty'),false);assert.equal(run('state.revision'),'after-real-boundary');
+ // Completed map checks are transient to the current card/drawing; a late error
+ // from the previous context must not bring the old banner back.
+ run("GeoUI.busy=false;GeoUI.notice='Outdated check';GeoUI.jobNoticeEpoch=GeoUI.noticeEpoch;GeoUI.showJob({status:'error',message:'Outdated check'})");
+ assert.equal(get('geoDownloadStatus').hidden,false);
+ run("GeoUI.clearStaleFeedback()");
+ assert.equal(run('GeoUI.notice'),'');
+ assert.equal(get('geoDownloadStatus').hidden,true);
+ run("GeoUI.showJob({status:'error',message:'Outdated check'})");
+ assert.equal(get('geoDownloadStatus').hidden,true);
  // A late download acknowledgement registers its job but cannot close a newer dialog; duplicate starts stop.
  const pollActual=run('GeoUI.poll');let releaseDownload;c.pendingDownload=new Promise(r=>releaseDownload=r);run("GeoUI.busy=false;GeoUI.poll=()=>{};GeoUI.showJob=()=>{};api=()=>pendingDownload;openDialog('<form>DOWNLOAD FORM</form>')");const download=run("GeoUI.download('road',{road:'Fictional'})");await assert.rejects(run("GeoUI.download('road',{road:'Fictional'})"));run("openDialog('<form>NEWER DOWNLOAD DRAFT</form>')");releaseDownload({json:async()=>({job_id:'FICTIONAL_JOB'})});await download;assert.equal(run('GeoUI.job'),'FICTIONAL_JOB');assert.equal(get('dialog').open,true);assert.match(get('dialog').innerHTML,/NEWER DOWNLOAD DRAFT/);
  let releaseIgnore;c.pendingIgnore=new Promise(r=>releaseIgnore=r);run("mutate=()=>pendingIgnore;GeoUI.ids=new Set(['a1']);GeoUI.dirty=false");const ignored=run("GeoUI.confirmIgnore('a1','Fictional')");run("GeoUI.session++;GeoUI.ids=new Set(['a1','a2'])");releaseIgnore();await ignored;assert.equal(run('GeoUI.ids.size'),2);assert.equal(run('GeoUI.dirty'),false);
