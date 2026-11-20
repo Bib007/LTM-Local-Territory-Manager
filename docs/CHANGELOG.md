@@ -2,6 +2,11 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.34 · 2026-11-20
+
+- Læsearkiv: PDF'en med IB-bagsider bruger nu samme opmålte layout som almindeligt IB-print, inklusive vejgrupper, kolonner, datoer og fortsættelsessider. Manglende sider stopper eksporten uden en ufuldstændig pakke.
+- Indstillinger → Data: Knappen **Eksportér læsearkiv** står direkte ved siden af **Sikkerhedskopi**.
+
 ## 1.12.33 · 2026-11-20
 
 - Gemning og autosave: Scrollpositionen i både siden og en lang redigeringsdialog bevares under baggrundsgemning; fokus og tekstmarkør bliver i det felt, der redigeres.
