@@ -78,7 +78,7 @@ async function api(path,body){
  const problem=(key,kind,status=0,detail='')=>new RequestError(key,kind,status,detail,writing);
  const controller=typeof AbortController==='function'?new AbortController():null,timer=controller?setTimeout(()=>controller.abort(),writing?60000:30000):null;
  try{
- const previousState=state,previousRevision=state?.revision,profileGeneration=openDialog.generation;
+ const previousState=state,previousRevision=state?.revision,profileGeneration=openDialog.generation,profileContext=path==='/api/mutate'&&state?.profile&&!explicitBase&&typeof EditorBases!=='undefined'?(el('dialog').open?EditorBases.current:EditorBases.page):null;
  let r;try{r=await fetch(path,{method:body?'POST':'GET',headers:{'X-Distrikt-Token':token,...(body?{'Content-Type':'application/json'}:{})},...(controller?{signal:controller.signal}:{}),...(body?{body:JSON.stringify(body)}:{})});}
  catch(error){if(error?.name==='AbortError'){const failure=problem(writing?'Ændringen tog for lang tid at bekræfte. Genindlæs data og kontrollér før du prøver igen.':'Kontrollen tog for lang tid. Forbindelsen er ikke nødvendigvis afbrudt. Prøv et mindre område eller prøv igen.',writing?'uncertain':'timeout');if(writing)WriteGuard.mark(failure);throw failure;}Workspace.connectionChanged('offline');const failure=problem(writing?'Forbindelsen blev afbrudt. Ændringen kan være nået frem; genindlæs data og kontrollér før du prøver igen.':'Ingen forbindelse til appen. Kontrollér Wi-Fi / VPN.',writing?'uncertain':'connection');if(writing)WriteGuard.mark(failure);throw failure;}
  const authorization=()=>{if(typeof ProfilesUI==='undefined')return;const raw=r.headers?.get?.('X-LTM-Authorization');if(raw===null||raw===undefined)return;const revision=Number(raw);if(!Number.isSafeInteger(revision)||revision<0)return;if(revision<ProfilesUI.authVersion){const stale=problem('Dine rettigheder er ændret. Opdater oversigten før du fortsætter.','response');if(writing)WriteGuard.requireRefresh(stale);throw stale;}ProfilesUI.authVersion=revision;};
@@ -95,7 +95,7 @@ async function api(path,body){
   catch(error){const failure=problem(writing?'Svaret på ændringen kunne ikke læses. Kontrollér de gemte data med Opdater før et nyt forsøg.':'Svaret kunne ikke læses. Prøv kontrollen igen.',writing?'uncertain':'response');if(writing)WriteGuard.mark(failure);throw failure;}
   // Reuse the validated clone for JSON callers; keep the original response body intact.
   r.json=async()=>{authorization();return payload;};
-  if(payload.profile_snapshot&&state?.profile&&!explicitBase){if(el('dialog').open&&openDialog.generation===profileGeneration)ProfilesUI.dialogBase=payload.profile_snapshot;else state.profile.snapshot=payload.profile_snapshot;}
+  if(payload.profile_snapshot&&state?.profile&&!explicitBase){if(profileContext?.base===body.profile_snapshot){EditorBases.accepted(profileContext,payload.profile_snapshot);EditorBases.release(profileContext);}if(el('dialog').open&&openDialog.generation===profileGeneration)ProfilesUI.dialogBase=payload.profile_snapshot;else if(openDialog.generation===profileGeneration&&state===previousState)state.profile.snapshot=payload.profile_snapshot;}
   if(path==='/api/mutate'&&state===previousState&&state?.revision===previousRevision)state.revision=payload.revision;
  }
  authorization();return r;

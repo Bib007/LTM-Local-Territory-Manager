@@ -160,4 +160,18 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
   release();await Promise.all([pending,restore,backup]);assert.equal(f.requests[1].url,'/api/restore/apply');assert.equal(f.requests[2].url,'/api/export/backup');
   console.log('PASS whole-data replacement and backup export wait for earlier save confirmation');
  }
+ {
+  const f=fixture(),writes=[];f.complete.profile={snapshot:'fictional-page'};f.run("state.profile={snapshot:'fictional-page'}");
+  f.setAnswer(async request=>{
+   if(request.url==='/api/profiles/edit-base')return response({snapshot:'editor-base'});
+   if(request.url.endsWith('/release'))return response({ok:true});
+   writes.push(request.body);return response({revision:'r'+writes.length,profile_snapshot:'successor-'+writes.length,result:{}});
+  });
+  f.run("openDialog('<form>Fiktiv kortimport</form>')");await f.run('EditorBases.current.ready');
+  await f.run("api('/api/mutate',{action:'setup.card-import.inspect',data:{}})");
+  assert.equal(f.run('EditorBases.current.base'),'successor-1');
+  await f.run("confirmedWrite('/api/mutate',{action:'setup.card-import.apply',data:{token:'fictional'}},async r=>r.json())");
+  assert.deepEqual(writes.map(w=>w.profile_snapshot),['editor-base','successor-1']);assert.equal(f.run('EditorBases.current.base'),'successor-2');
+  console.log('PASS direct import inspection advances the same owned edit base before queued confirmation');
+ }
 })().catch(error=>{console.error(error);process.exitCode=1;});
