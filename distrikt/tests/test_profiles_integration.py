@@ -81,6 +81,56 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_publisher_merge_profile_save_alias_assignment_and_actor_owned_undo(self):
+        from datetime import date
+        target=self.store.mutate('publisher.save',{'name':'Fiktiv mål','group':'Fiktiv gruppe','group_role':'assistant','pioneer':True})['id']
+        source=self.store.mutate('publisher.save',{'name':'Fiktiv alias'})['id']
+        loan=self.store.mutate('loan.issue',{'card_id':self.card,'publisher_id':source,'date':date.today().isoformat(),'initial':True})['id']
+        rights=['publishers.view','publishers.manage','loans.view','loans.manage','cards.view']
+        editor,role,_=self.reader(rights)
+        base=self.state(editor)
+        request={'target_id':target,'source_id':source,'name':'Fiktiv samlet'}
+        preview=self.change(editor,base,'publisher.merge.preview',request)['result']
+        merged=self.change(editor,base,'publisher.merge',{**request,'expected':preview['expected']})
+        self.assertTrue(merged['state']['undo_available'])
+        self.assertEqual(merged['state']['publishers'][0]['aliases'],['Fiktiv mål','Fiktiv alias'])
+        self.assertEqual(merged['state']['loans'][0]['publisher_id'],target)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(self.admin,self.state(self.admin),'workflow.undo',{})
+        self.assertEqual(denied.exception.code,403)
+        restored=self.change(editor,merged['state'],'workflow.undo',{})
+        self.assertEqual(len(restored['state']['publishers']),2)
+        self.assertEqual(self.store.require('loans',loan)['publisher_id'],source)
+        preview=self.change(editor,restored['state'],'publisher.merge.preview',request)['result']
+        merged=self.change(editor,restored['state'],'publisher.merge',{**request,'expected':preview['expected']})
+        # A stale profile form cannot recreate the source that was absorbed.
+        with self.assertRaises(urllib.error.HTTPError) as stale:
+            self.change(editor,base,'publisher.save',{'id':source,'name':'Fiktiv alias'})
+        self.assertEqual(stale.exception.code,400)
+        # Assignment by retained name needs no publisher-management right.
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':[r for r in rights if r!='publishers.manage']},self.admin)
+        new_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
+        result=self.change(editor,self.state(editor),'loan.issue',{'card_id':new_card,'publisher_name':'Fiktiv alias','date':date.today().isoformat(),'initial':True})
+        self.assertEqual(self.store.require('loans',result['result']['id'])['publisher_id'],target)
+        self.assertEqual(len(result['state']['publishers']),1)
+
+    def test_publisher_merge_requires_live_permissions_at_apply(self):
+        from portable import digest
+        target=self.store.mutate('publisher.save',{'name':'Fiktiv første'})['id']
+        source=self.store.mutate('publisher.save',{'name':'Fiktiv anden'})['id']
+        rights=['publishers.view','publishers.manage','loans.view','loans.manage']
+        editor,role,_=self.reader(rights)
+        request={'target_id':target,'source_id':source,'name':'Fiktiv samlet'}
+        base=self.state(editor)
+        preview=self.change(editor,base,'publisher.merge.preview',request)['result']
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights[:-1]},self.admin)
+        before=digest(self.store)
+        for action in ('publisher.merge.preview','publisher.merge'):
+            with self.subTest(action=action),self.assertRaises(urllib.error.HTTPError) as denied:
+                self.change(editor,base,action,{**request,'expected':preview['expected']})
+            self.assertEqual(denied.exception.code,403)
+        self.assertEqual(digest(self.store),before)
+
     def test_history_excel_template_uses_history_import_permissions(self):
         path = '/api/setup/history-template.xlsx'
         rights = ['cards.view', 'cards.edit', 'loans.view', 'loans.manage',

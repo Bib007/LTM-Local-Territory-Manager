@@ -145,8 +145,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.doesNotMatch(await front.innerText(),/Gate B/);
    // A real save shortens only the chosen side and keeps street grouping.
    const rangeCard=fixture.range_cards[index];
-   const visibleRange=index===0?'3-67 (odd) & 2 & 8 (even)':'3-67 (ulige) & 2 & 8 (lige)';
-   const sharedRange='3-67 (ulige) & 2 & 8 (lige)';
+   const visibleRange='3-67 & 2 & 8';
+   const sharedRange=visibleRange;
+   const sourceData=id=>p.evaluate(id=>{
+    const c=card(id);
+    return {geo:c.geo_addresses,ids:c.address_ids,addresses:c.addresses,
+     rows:c.front_addresses.map(r=>({numbers:r.numbers,count:r.count,source_ids:r.source_ids}))};
+   },id);
+   const rangeSource=await sourceData(rangeCard.id);
    await p.evaluate(id=>detail(id),rangeCard.id);
    assert.equal(await p.locator('#dialog .cardQR').count(),1,'Fixture starts with a shared PDF');
    await p.locator('#dialog [data-action=front-labels]').click();
@@ -158,7 +164,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.match(await live.innerText(),/3 & 7-9 & 15 & 25 & 67 & 2 & 8/);
    await oddStyle.selectOption('range');
    assert.equal(await evenStyle.inputValue(),'exact');
-   assert.ok((await live.innerText()).includes(visibleRange),'Live preview preserves both side markers');
+   assert.ok((await live.innerText()).includes(visibleRange),'Live preview keeps both intervals without redundant parity markers');
    assert.ok((await form.locator('[data-front-current]').nth(1).innerText()).includes(index===0?'3–67 (odd)':'3–67 (ulige)'));
    assert.equal(writes.filter(w=>w.action==='card.front_labels.save').length,previousWrites);
    assert.equal(await p.evaluate(id=>card(id).front_addresses[1].number_style,rangeCard.id),'exact');
@@ -167,10 +173,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await p.locator('#dialog [data-action=front-labels]').click();
    assert.equal(await oddStyle.inputValue(),'exact');
    await oddStyle.selectOption('range');
-   assert.ok((await live.innerText()).includes(visibleRange),'Live preview preserves both side markers');
+   assert.ok((await live.innerText()).includes(visibleRange),'Live preview keeps both intervals without redundant parity markers');
    await form.locator('button.primary').click();
    await front.waitFor();
    assert.deepEqual(await front.locator(':scope > div > span:first-child').allTextContents(),['Fiktiv intervalvej '+index+' '+visibleRange]);
+   assert.ok((await front.innerText()).includes(language==='en'?'8 visits':'8 besøg'));
+   assert.doesNotMatch(await front.innerText(),/\((odd|even|ulige|lige)\)/);
+   assert.deepEqual(await sourceData(rangeCard.id),rangeSource,'Saving a range preserves exact intervals, visits and address selection');
    assert.equal(await p.locator('#dialog [data-share=update]').getAttribute('data-id'),rangeCard.id);
    const sharedStreet=await p.evaluate(async id=>{
     const recipe=await(await api('/api/share/prepare',{card_id:id})).json();
@@ -178,17 +187,43 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    },rangeCard.id);
    assert.equal(sharedStreet,'Fiktiv intervalvej '+index+' '+sharedRange);
    const rangePrint=await p.evaluate(id=>printDocument([card(id)],'front',{...defaultPrintProfile('front'),mode:'full',form_language:I18n.language()}),rangeCard.id);
-   assert.ok(rangePrint.includes(visibleRange.replaceAll('&','&amp;')),'Printed front preserves parity');
+   assert.ok(rangePrint.includes(visibleRange.replaceAll('&','&amp;')),'Printed front keeps both intervals without redundant parity markers');
    await p.reload();
    await p.waitForFunction(id=>state?.cards?.some(c=>c.id===id&&c.front_addresses.some(row=>row.number_style==='range')),rangeCard.id);
    assert.deepEqual(await p.evaluate(id=>card(id).geo_addresses.map(a=>a.number).sort(),rangeCard.id),rangeCard.addresses);
    await p.evaluate(id=>detail(id),rangeCard.id);
    await p.locator('#dialog [data-action=front-labels]').click();
    assert.equal(await oddStyle.inputValue(),'range');
+   assert.equal(await evenStyle.inputValue(),'exact','The opposite side keeps its saved exact display');
+   assert.deepEqual(await sourceData(rangeCard.id),rangeSource,'Reload retains original intervals, visits and selected addresses');
+   assert.ok((await live.innerText()).includes(visibleRange));
    await oddStyle.selectOption('exact');
    await form.locator('button.primary').click();
    await front.waitFor();
    assert.match(await front.innerText(),/3 & 7-9 & 15 & 25 & 67 & 2 & 8/);
+   // Real saves and reloads on pure odd/even streets retain their marker in both languages.
+   for(const pure of fixture.parity_cards){
+    const original=await sourceData(pure.id);
+    const marker=language==='en'?pure.side:(pure.side==='odd'?'ulige':'lige');
+    const expected=pure.range+' ('+marker+')';
+    await p.evaluate(id=>detail(id),pure.id);
+    await p.locator('#dialog [data-action=front-labels]').click();
+    await form.locator('#frontNumberStyle0').selectOption('range');
+    assert.ok((await live.innerText()).includes(expected),'Pure street preview retains its parity marker');
+    await form.locator('button.primary').click();
+    await front.waitFor();
+    assert.ok((await front.innerText()).includes(expected));
+    assert.ok((await front.innerText()).includes(language==='en'?'6 visits':'6 besøg'));
+    const printed=await p.evaluate(id=>printDocument([card(id)],'front',{...defaultPrintProfile('front'),mode:'full',form_language:I18n.language()}),pure.id);
+    assert.ok(printed.includes(expected),'Pure street print retains its parity marker');
+    assert.deepEqual(await sourceData(pure.id),original);
+    await p.reload();
+    await p.waitForFunction(id=>state?.cards?.some(c=>c.id===id&&c.front_addresses[0].number_style==='range'),pure.id);
+    assert.deepEqual(await sourceData(pure.id),original);
+    await p.evaluate(id=>detail(id),pure.id);
+    await front.waitFor();
+    assert.ok((await front.innerText()).includes(expected),'Reload retains pure parity and range choice');
+   }
    // A missing DAR road must show exactly which requested line and range failed,
    // without presenting any single house number as if DAR had identified it.
    await p.evaluate(({id,language})=>{closeDialog();I18n.set(language);GeoUI.openCard(id);},{id:fixture.failed_card,language});
