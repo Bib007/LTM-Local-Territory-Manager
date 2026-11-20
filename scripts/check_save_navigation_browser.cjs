@@ -54,8 +54,17 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Ny fiktiv kladde');assert.equal(await page.evaluate(()=>openDialog.generation),generation);assert.equal(await page.locator('#dialog').evaluate(n=>n.matches(':modal')),true);
    assert.equal(await page.evaluate(id=>!!state.loans.find(l=>l.id===id).returned,ids.loan),true);await page.locator('#dialog .dialogClose').click();
    // Autosave captures the latest edit on navigation, without waiting for receipt 1.
-   gate=holdNext('card.save');await page.evaluate(id=>editCard(id),ids.card);await page.locator('#cardForm input[name=name]').fill('Fiktiv første');
+   gate=holdNext('card.save');await page.evaluate(id=>editCard(id),ids.card);
+   // Use the real manual street-line input: closing/reopening a dialog during
+   // autosave used to move its caret to the district number at the top.
+   await page.evaluate(()=>el('addressRows').insertAdjacentHTML('beforeend',addressRow({road:'Opdigtetvej',numbers:'1',count:1,count_unknown:false,type:'Hus'})));
+   await page.locator('#cardForm input[name=name]').fill('Fiktiv første');
+   const roadInput=page.locator('#cardForm [data-field="road"]').last();
+   await roadInput.fill('Fiktivvej under redigering');
+   const caretBefore=await roadInput.evaluate(node=>[node.selectionStart,node.selectionEnd]);
    await page.evaluate(()=>{void saveCard(false);});await waitForReceipt(gate);
+   assert.equal(await roadInput.evaluate(node=>document.activeElement===node),true,'the street-line field must retain focus during background save');
+   assert.deepEqual(await roadInput.evaluate(node=>[node.selectionStart,node.selectionEnd]),caretBefore,'autosave must preserve the text caret');
    await page.locator('#cardForm input[name=name]').fill('Fiktiv nyeste');await page.locator('[data-navigation="1:2"]').click();
    assert.equal(await page.evaluate(()=>page),'Forkyndere');assert.equal(await page.evaluate(()=>PendingSaves.count),2);gate.release.resolve();
    await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(await page.evaluate(id=>card(id).name,ids.card),'Fiktiv nyeste');
@@ -72,8 +81,19 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    await page.evaluate(id=>{GeoUI.openCard(id);GeoUI.ids=new Set([GeoUI.addresses()[0].id]);GeoUI.dirty=true;},ids.card);
    const geoStamp=await page.evaluate(()=>GeoUI.draftStamp(false));gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0&&!GeoUI.saveBusy);
    assert.equal(await page.evaluate(()=>GeoUI.draftStamp(false)),geoStamp);assert.equal(await page.evaluate(()=>GeoUI.dirty),true);assert.equal(await page.evaluate(id=>card(id).address_ids.length,ids.card),2);
+   // Outdated geo check failures disappear when starting a fresh drawing or
+   // changing the card, even if the previous request completes late.
+   await page.evaluate(()=>{GeoUI.dirty=false;GeoUI.notice='Kontrollen tog for lang tid.';GeoUI.jobNoticeEpoch=GeoUI.noticeEpoch;GeoUI.showJob({status:'error',message:GeoUI.notice});GeoUI.updatePanel();});
+   assert.equal(await page.locator('#geoDownloadStatus').isVisible(),true);
+   await page.evaluate(()=>GeoUI.handle('draw'));
+   assert.equal(await page.locator('#geoDownloadStatus').isVisible(),false);
+   assert.equal(await page.evaluate(()=>GeoUI.notice),'');
+   await page.evaluate(id=>{GeoUI.notice='Gammel kontrol';GeoUI.jobNoticeEpoch=GeoUI.noticeEpoch;GeoUI.showJob({status:'error',message:GeoUI.notice});GeoUI.dirty=false;GeoUI.openCard(id);},ids.card);
+   assert.equal(await page.locator('#geoDownloadStatus').isVisible(),false);
+   await page.evaluate(()=>{GeoUI.showJob({status:'error',message:'Forsinket gammelt svar'});});
+   assert.equal(await page.locator('#geoDownloadStatus').isVisible(),false);
    // Unsubmitted new geographic edits still need the discard decision (dismissed).
-   assert.equal(await page.evaluate(()=>GeoUI.canLeave()),false);await page.evaluate(()=>{GeoUI.dirty=false;page='Forkyndere';render();});
+   assert.equal(await page.evaluate(()=>GeoUI.canLeave()),true);await page.evaluate(()=>{GeoUI.dirty=false;page='Forkyndere';render();});
    // A real independently owned profile edit still conflicts with a stale form.
    if(profiles){
     await page.evaluate(id=>editPublisher(id),ids.person);await page.evaluate(()=>EditorBases.current.ready);
