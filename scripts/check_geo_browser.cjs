@@ -11,7 +11,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
 (async()=>{
  const browser=await chromium.launch({args:['--no-sandbox'],...(process.env.LTM_CHROME?{executablePath:process.env.LTM_CHROME}:{})});try{
  for(const width of [320,390,768,1440]){
-  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],writes=[],storedState=structuredClone(state),storedGeo=structuredClone(geo);let suggestionStatus=null,dropCardReply=false,acceptDialogs=true,holdAdminPreview=false,releaseAdminPreview,releaseRestore,holdRestructurePreview=true,releaseRestructurePreview,releaseRestructureApply,failNextGeo=false,readableFinished=0,readableImages=0,readableFronts=0;page.on('pageerror',e=>errors.push(e.stack||e.message));page.on('dialog',dialog=>acceptDialogs?dialog.accept():dialog.dismiss());
+  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],writes=[],storedState=structuredClone(state),storedGeo=structuredClone(geo);let suggestionStatus=null,dropCardReply=false,acceptDialogs=true,holdAdminPreview=false,releaseAdminPreview,releaseRestore,holdRestructurePreview=true,releaseRestructurePreview,releaseRestructureApply,failNextGeo=false,readableFinished=0,readableImages=0,readableFronts=0,readableBacks=0;page.on('pageerror',e=>errors.push(e.stack||e.message));page.on('dialog',dialog=>acceptDialogs?dialog.accept():dialog.dismiss());
   await context.route('**/*',async route=>{const u=new URL(route.request().url());if(u.hostname==='tile.openstreetmap.org')return route.fulfill({contentType:'image/png',body:png});assert.equal(u.hostname,'ltm.test','No external requests');
    const json=data=>route.fulfill({contentType:'application/json',body:JSON.stringify(u.pathname==='/api/mutate'?{...data,revision:storedState.revision}:data)});
    if(u.pathname==='/api/state')return json(storedState);if(u.pathname==='/api/geo'){if(failNextGeo){failNextGeo=false;return route.abort('connectionreset');}return json(storedGeo);}if(u.pathname==='/api/map')return json({image:''});if(u.pathname==='/api/geo/job')return json({status:'idle'});if(u.pathname==='/api/update-check')return json(null);if(u.pathname==='/api/ping')return json({ok:true});
@@ -27,9 +27,14 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
    if(u.pathname==='/api/address-source/status')return json({configured:false});
    if(u.pathname==='/api/address-source/diagnose'){assert.deepEqual(route.request().postDataJSON(),{});return json({status:'COMPLETE',probes:[{entity:'DAR_NavngivenVej',variant:'plain',status:'ACCEPTED'},{entity:'DAR_Husnummer',variant:'batch',status:'GQL-REJECTED',codes:['HC0011'],terms:['aliases','arguments','complexity','supported']}]});}
    if(u.pathname==='/api/export/readable/prepare')return json({token:'FICTIONAL_READABLE',revision:storedState.revision,fronts:['c1'],cards:[{card:{id:'c1',number:'101',geo_polygon:points,map_color:'#477596'},name:'Fiktivt eksportkort',members:[geo.addresses[0]]}]});
-   if(u.pathname==='/api/export/readable/image'){const data=route.request().postDataJSON();assert.equal(data.token,'FICTIONAL_READABLE');assert.equal(data.card_id,'c1');assert.match(data.png,/^data:image\/png;base64,/);if(data.side==='front')readableFronts++;else readableImages++;return json({ok:true});}
+   if(u.pathname==='/api/export/readable/image'){const data=route.request().postDataJSON();assert.equal(data.token,'FICTIONAL_READABLE');assert.equal(data.card_id,'c1');assert.match(data.png,/^data:image\/png;base64,/);if(data.side==='front')readableFronts++;
+    else if(data.side==='back'){
+     readableBacks++;assert.equal(data.page,0);assert.equal(data.pages,1);
+     const raw=Buffer.from(data.png.slice('data:image/png;base64,'.length),'base64');
+     assert.deepEqual([raw.readUInt32BE(16),raw.readUInt32BE(20)],[1560,2200],'IB image must keep the portrait canonical layout');
+    }else readableImages++;return json({ok:true});}
    if(u.pathname==='/api/export/readable/cancel')return json({ok:true});
-   if(u.pathname==='/api/export/readable/finish'){assert.equal(readableImages,1);readableFinished++;return route.fulfill({contentType:'application/zip',body:Buffer.from('PK-FICTIONAL-READABLE')});}
+   if(u.pathname==='/api/export/readable/finish'){assert.equal(readableImages,1);assert.equal(readableFronts,1);assert.equal(readableBacks,1);readableFinished++;return route.fulfill({contentType:'application/zip',body:Buffer.from('PK-FICTIONAL-READABLE')});}
    if(u.pathname==='/api/restore/preview')return json({token:'FICTIONAL_RESTORE',warning:'Fictional backup review',counts:{cards:1}});
    if(u.pathname==='/api/restore/apply'){const data=route.request().postDataJSON();assert.equal(data.token,'FICTIONAL_RESTORE');writes.push({action:'FAKE_RESTORE_APPLY',data});await new Promise(resolve=>releaseRestore=resolve);storedState.revision+='-restored';return json({safety_backup:'FICTIONAL-safety.zip'});}
    if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();writes.push(body);
@@ -209,6 +214,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   if(out)await page.screenshot({path:path.join(out,`report-screen-${width}.png`),fullPage:true});
   const reportPopupPromise=page.waitForEvent('popup');await page.locator('[data-action=print-report]').click();const reportPopup=await reportPopupPromise;await reportPopup.waitForFunction(()=>document.getElementById('printReport')&&!document.getElementById('printReport').disabled);assert.equal(await reportPopup.locator('.reportCover h1').innerText(),'Fiktiv menighed');assert.equal(await reportPopup.locator('.reportRing').count(),2,'Only the selected service-year rings are printed');assert.equal(await reportPopup.locator('.reportMapPage').count(),1,'Only the selected service-year map is printed');assert.equal(await reportPopup.locator('.s13Original').count(),1);assert.ok(await reportPopup.locator('.s13Original image').evaluate(n=>n.getAttribute('href').startsWith('data:')));assert.equal(await reportPopup.locator('#printReport').innerText(),'Print / save PDF');const reportPdf=await reportPopup.pdf({preferCSSPageSize:true});if(out)fs.writeFileSync(path.join(out,`report-${width}.pdf`),reportPdf);assert.equal((reportPdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length,5,'Cover, selected overview, selected map, details and original S-13');if(out)fs.writeFileSync(path.join(out,`report-${width}.pdf`),reportPdf);await reportPopup.close();assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'service');
   await page.evaluate(()=>{MapExport.blob=window.originalMapExportBlob;delete window.originalMapExportBlob;page='Indstillinger';Navigation.settingsSection='data';render();});
+  assert.equal(await page.locator('[data-action="backup"]').evaluate(node=>node.nextElementSibling?.dataset.action),'readable-export','Archive action must sit immediately next to backup');
   await page.locator('[data-action="readable-export"]').click();
   const archiveDownload=page.waitForEvent('download');await page.locator('#readableExportStart').click();
   const archiveFile=await archiveDownload;
@@ -216,7 +222,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   const readableStatus=await page.locator('#readableExportProgress').innerText();
   assert.equal(readableStatus,await page.evaluate(()=>I18n.text('Læsearkivet er sendt til browserens downloads. Kontrollér ZIP-filen.')));
   assert.match(archiveFile.suggestedFilename(),/^LTM-laesearkiv-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-\d{3}\.zip$/);
-  assert.equal(readableFinished,1);assert.equal(readableImages,1);
+  assert.equal(readableFinished,1);assert.equal(readableImages,1);assert.equal(readableFronts,1);assert.equal(readableBacks,1);
   assert.equal(await page.locator('#readableExportInclude').count(),0);
   await page.locator('#dialog .dialogClose').click();
   // Publisher suggestions remain readable in the real dark theme, with pointer and keyboard selection.
