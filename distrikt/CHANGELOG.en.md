@@ -2,6 +2,10 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.33 · 2026-11-20
+
+- Saving and autosave: Preserve both page scroll and long editor scroll positions when releasing a modal for a background write, without moving the active input or text caret.
+
 ## 1.12.32 · 2026-11-20
 
 - Save card and street list: The confirmation dialog closes once the validated write has been queued and does not reopen during background saving.

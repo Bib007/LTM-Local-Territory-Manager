@@ -63,7 +63,18 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    const roadInput=page.locator('#cardForm [data-field="road"]').last();
    await roadInput.fill('Fiktivvej under redigering');
    const caretBefore=await roadInput.evaluate(node=>[node.selectionStart,node.selectionEnd]);
+   // Releasing the modal during autosave must neither scroll the page nor
+   // reset a long card editor's internal scroll position.
+   const scrollBefore=await page.evaluate(()=>{
+    document.body.style.minHeight='2400px';
+    const dialog=el('dialog');
+    dialog.scrollTop=Math.min(160,dialog.scrollHeight-dialog.clientHeight);
+    window.scrollTo({left:0,top:0,behavior:'instant'});
+    return [window.scrollY,dialog.scrollTop];
+   });
+   assert.ok(scrollBefore[1]>0,'test requires a scrollable card editor');
    await page.evaluate(()=>{void saveCard(false);});await waitForReceipt(gate);
+   assert.deepEqual(await page.evaluate(()=>[window.scrollY,el('dialog').scrollTop]),scrollBefore,'background save must not jump either scroll position');
    assert.equal(await roadInput.evaluate(node=>document.activeElement===node),true,'the street-line field must retain focus during background save');
    assert.deepEqual(await roadInput.evaluate(node=>[node.selectionStart,node.selectionEnd]),caretBefore,'autosave must preserve the text caret');
    await page.locator('#cardForm input[name=name]').fill('Fiktiv nyeste');await page.locator('[data-navigation="1:2"]').click();
