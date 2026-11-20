@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.32 · 2026-11-20
+
+- Gem kort og vejliste: Bekræftelsesboksen lukkes, når den kontrollerede gemning er sat i gang; den kommer ikke tilbage under baggrundsgemningen.
+- Korteditor: Gamle status- og fejlbeskeder ryddes ved skift af kort, tegneværktøj eller adressevalg. Forsinkede fejl fra et tidligere valg bliver ikke vist igen.
+- Manuel vejliste: Automatisk gemning bevarer fokus og tekstmarkør i det felt, der redigeres, i stedet for at flytte indtastningen til distriktnummeret.
+
 ## 1.12.31 · 2026-11-20
 
 - Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
