@@ -380,8 +380,8 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(admin_totals['visit_points'],1)
         self.assertEqual(admin_totals['ib_total'],2)
         # Report-only access permits aggregates but never the raw card/IB data.
-        report_only,_,_=self.reader(['reports.view'])
-        report_state=self.state(report_only)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['reports.view']},self.admin)
+        report_state=self.state(reader)
         self.assertEqual(report_state['report_summary']['territory_totals']['visit_points'],1)
         self.assertNotIn('ib_total',report_state['report_summary']['territory_totals'])
         self.assertEqual(report_state['cards'],[])
