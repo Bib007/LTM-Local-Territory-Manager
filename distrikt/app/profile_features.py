@@ -42,6 +42,29 @@ def personal_open_task_count(notes, today, user_id):
     )
 
 
+def current_territory_totals(raw):
+    """Only currently listed card street rows; never unassigned geographic points.
+
+    Unknown street counts are excluded from the known subtotal and clearly
+    flagged. A temporary card without streets does not invent visit points.
+    """
+    visits=0
+    incomplete=0
+    for card in raw['cards']:
+        rows=card.get('addresses') or []
+        unknown=not bool(rows)
+        for row in rows:
+            count=row.get('count') if isinstance(row,dict) else None
+            if (not isinstance(row,dict) or row.get('count_unknown')
+                    or type(count) is not int or count<0):
+                unknown=True
+            else:
+                visits+=count
+        if unknown:incomplete+=1
+    return {'visit_points':visits,'unknown_visit_cards':incomplete,
+            'ib_total':len(raw['ib'])}
+
+
 def summaries(raw):
     """No raw identifiers/text/addresses leave this projection."""
     today=date.fromisoformat(raw['today']);y=today.year;service=y+1 if today.month>=9 else y
@@ -55,7 +78,8 @@ def summaries(raw):
         done.update(c['id'] for c in cards if a<=(c.get('last_completed') or '')<=b)
         missing=ids-done
         result[kind]={'start':a,'end':b,'completions':len(events),'territories':len(ids),'completed_territories':len(done),'missing':len(missing),'assigned':len(assigned),'home':len(ids-assigned),'missing_assigned':len(missing&assigned),'missing_home':len(missing-assigned)}
-    return {'as_of':raw['today'],'revision':raw['revision'],'periods':result}
+    return {'as_of':raw['today'],'revision':raw['revision'],'periods':result,
+            'territory_totals':current_territory_totals(raw)}
 
 
 def guide_valid(value):
