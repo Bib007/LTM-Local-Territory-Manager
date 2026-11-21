@@ -22,6 +22,8 @@ MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkynde
            'visits': 'ktm_besoeg', 'maps': 'kortbilleder', 'geo': 'geodata', 'ignored': 'se_bort_fra', 'notes': 'kortnoter'}
 ADDRESS_TYPES = ['Hus', 'Lejlighed', 'Lejlighedskompleks', 'Butik', 'Kontor', 'Virksomhed', 'Andet']
 DEFAULT_PUBLISHER_CARD_GUIDANCE = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+# Values are UI labels, never stored placement/loan state identifiers.
+LOCATION_LABEL_KEYS = frozenset(('home', 'folder', 'issued'))
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec='seconds')
@@ -542,7 +544,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     publisher = self.require('publishers', ident)
             day = valid_day(data.get('date'))
             initial = bool(data.get('initial', False))
-            if not initial and not c['in_folder'] and data.get('from_box') is not True:
+            if not initial and config.get('folder_enabled', True) is not False and not c['in_folder'] and data.get('from_box') is not True:
                 raise ValueError('Læg kortet i mappen først, eller vælg registrering af et eksisterende udlån.')
             item = {'id': new_id(), 'card_id': c['id'], 'publisher_id': publisher['id'],
                 'assigned': day, 'cycle_start': day, 'returned': None, 'initial': initial}
@@ -664,6 +666,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     updated.append(ident)
             return {'count': len(updated), 'updated': updated, 'skipped': skipped}
         if action == 'folder.set':
+            if self.require('settings', 'config').get('folder_enabled', True) is False:
+                raise ValueError('Mappen er slået fra under Menighedstilpasning.')
             ids = data.get('ids', [])
             if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids) or len(ids) != len(set(ids)):
                 raise ValueError('Ugyldig kortliste eller samme kort valgt flere gange.')
@@ -742,7 +746,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             c = dict(self.require('settings', 'config'))
             minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
             rural = int(data.get('rural_minimum', c.get('rural_minimum',0)))
-            mode = data.get('rural_mode', 'auto')
+            mode = data.get('rural_mode', c.get('rural_mode', 'auto'))
             if mode == 'auto':
                 rural = min(rural, minimum)
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
@@ -757,9 +761,21 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 type(value) is not int or not 0 <= value <= 100 for value in limits.values()
             ):
                 raise ValueError('Kontrollér de vejledende kortantal (0–100).')
-            c.update(congregation=clean_text(data.get('congregation'), 100), folder_minimum=minimum,
-                rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')),
-                publisher_card_guidance=dict(limits), split_visit_limit=limit)
+            folder_enabled = data.get('folder_enabled', c.get('folder_enabled', True))
+            if type(folder_enabled) is not bool:
+                raise ValueError('Vælg om menigheden bruger en mappe.')
+            labels = data.get('location_labels', c.get('location_labels', {}))
+            if (not isinstance(labels, dict) or set(labels) - LOCATION_LABEL_KEYS
+                    or any(not isinstance(value, str) or len(value.strip()) > 48
+                           or any(ord(char) < 32 or ord(char) == 127 for char in value)
+                           for value in labels.values())):
+                raise ValueError('Stednavne må højst være 48 tegn og må ikke indeholde kontroltegn.')
+            normalized = {key: value.strip() for key, value in labels.items() if value.strip()}
+            c.update(congregation=clean_text(data.get('congregation', c.get('congregation')), 100),
+                folder_minimum=minimum, rural_mode=mode, rural_minimum=rural,
+                require_revision=bool(data.get('require_revision', c.get('require_revision'))),
+                publisher_card_guidance=dict(limits), split_visit_limit=limit,
+                folder_enabled=folder_enabled, location_labels=normalized)
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)
