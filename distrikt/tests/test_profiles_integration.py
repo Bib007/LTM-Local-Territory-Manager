@@ -347,14 +347,15 @@ class ProfilesIntegrationTests(unittest.TestCase):
         address=self.store.geo_state()['addresses'][0]['id']
         card=self.store.mutate('geo.assign',{'number':'120','address_ids':[address]})['id']
         self.store.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':'1','address_id':address,'date':'2026-01-01'})
-        self.assertEqual(self.state(self.admin)['boundary_report'],{'visits':1,'ib':1})
+        self.store.mutate('ib.save',{'card_id':card,'road':'Manuelt registreret vej','number':'9B','date':'2026-01-01'})
+        self.assertEqual(self.state(self.admin)['boundary_report'],{'visits':1,'ib':1,'ib_total':2})
         reader,role,_=self.reader(['reports.view'])
         self.assertNotIn('boundary_report',self.state(reader))
         rights=['reports.view','cards.view','geo.view']
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights},self.admin)
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1})
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
-        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1})
+        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1,'ib_total':2})
 
     def test_role_guidance_survives_profile_settings_save_and_real_http_refresh(self):
         # Regression: before this fix the authenticated state stripped the four
