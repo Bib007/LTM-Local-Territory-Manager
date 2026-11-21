@@ -83,7 +83,7 @@ run(`for(let i=0;i<40;i++)state.cards.push({id:'c'+i,number:String(i),temporary:
 assert.equal(run('folderPlan().picked.length'),30);assert.equal(run("folderPlan().picked.filter(c=>c.kind==='Land').length"),5);assert.equal(run('folderPlan().need'),30);
 run("state.settings.rural_mode='auto'");assert.equal(run('folderPlan().rural'),6);
 run("state.loans.push({id:'l',card_id:'c0',publisher_id:'p',assigned:'2026-01-01',cycle_start:'2026-01-01',returned:null})");assert(!run("folderPlan().picked.some(c=>c.id==='c0')"));
-run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Aktuelle distrikter og udlevering')"));assert(run("reports().includes('2026/2027')"));
+run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Ikke gennemgåede distriktskort i perioden')"));assert(run("reports().includes('2026/2027')"));
 run("mapImage='data:image/png;base64,AA==';state.cards[1].polygon=[[1,1],[40,1],[40,30]]");assert(run("mapSvg(new Set(['c1'])).includes('#52aa82')"));
 assert.equal(run("fourMonths('2026-10-31')"),'2027-02-28');assert.equal(run("serviceYear('2026-08-31')"),2026);assert.equal(run("serviceYear('2026-09-01')"),2027);
 assert(run("esc('<img onerror=alert(1)>').includes('&lt;')"));assert(!run("table(state.cards).includes('onclick=')"));
