@@ -263,7 +263,7 @@ function closeDialog(){EditorBases.close();if(typeof ProfilesUI!=='undefined')Pr
 function empty(message){return `<div class="empty">${message}</div>`;}
 function searchText(c){return [c.number,c.internal_number,c.name,c.internal_name,areaName(c.area_id),c.kind,...(c.addresses||[]).flatMap(a=>[a.road,a.numbers,a.type])].join(' ').toLowerCase();}
 function matches(c){return (!query||searchText(c).includes(query.toLowerCase()))&&(!area||c.area_id===area);}
-function internalCardName(c){return c?.internal_name?`<small class="internalCardName">${ui('Internt navn')}: ${esc(c.internal_name)}</small>`:'';}
+function internalCardName(c){return c?.internal_name?`<small class="internalCardName" style="display:block;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.35;margin-top:3px">${ui('Internt navn')}: ${esc(c.internal_name)}</small>`:'';}
 function cardLocation(c){return loanFor(c.id)?'issued':folderEnabled()&&c.in_folder?'folder':'box';}
 function quickLoanAction(c){const loan=loanFor(c.id);if(loan)return `<button class="returnAction" data-action="return" data-id="${esc(loan.id)}">${ui('Aflever til kassen')}</button>`;const blocked=state.settings.require_revision&&(c.front_revision||c.back_revision);return `<button class="issueAction" data-action="issue" data-id="${esc(c.id)}" ${blocked?'disabled':''}>${ui(folderEnabled()&&c.in_folder?'Udlever kort':'Udlever fra kassen')}</button>`;}
 function table(cards,selectable=false){
@@ -285,7 +285,7 @@ function folderPlan(){const cfg=state.settings,min=folderEnabled()?cfg.folder_mi
   const shown=matches.slice(0,75);
   return `<div class="tablewrap"><table><thead><tr><th>${ui('Vælg')}</th><th>${ui('Kort')}</th><th>${ui('Område')}</th><th>${ui('Placering')}</th></tr></thead><tbody>${shown.map(c=>{
    const reason=AdminUI.folderReason(c),placement=loanFor(c.id)?'Udleveret':c.in_folder?'Allerede i mappen':'Kort i kassen';
-   return `<tr><td><input type="checkbox" data-folder-card-id="${esc(c.id)}" ${I18n.attribute('aria','Vælg kort {number}',{number:c.number})} ${folderCardPickerSelected.has(c.id)?'checked':''} ${reason?'disabled':''}></td><td><b>${esc(c.number)}</b>${c.name?`<small> · ${esc(c.name)}</small>`:''}${c.internal_name?`<small class="internalCardName">${ui('Internt navn')}: ${esc(c.internal_name)}</small>`:''}</td><td>${esc(areaName(c.area_id))}</td><td>${ui(placement)}</td></tr>`;
+   return `<tr><td><input type="checkbox" data-folder-card-id="${esc(c.id)}" ${I18n.attribute('aria','Vælg kort {number}',{number:c.number})} ${folderCardPickerSelected.has(c.id)?'checked':''} ${reason?'disabled':''}></td><td><b>${esc(c.number)}</b>${c.name?`<small> · ${esc(c.name)}</small>`:''}${c.internal_name?`<small class="internalCardName" style="display:block;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.35;margin-top:3px">${ui('Internt navn')}: ${esc(c.internal_name)}</small>`:''}</td><td>${esc(areaName(c.area_id))}</td><td>${ui(placement)}</td></tr>`;
   }).join('')||`<tr><td colspan="4">${ui('Ingen eksisterende kort matcher søgningen.')}</td></tr>`}</tbody></table></div>${matches.length>shown.length?`<p class="hint">${ui('Viser {shown} af {total} kort. Søg mere præcist.',{shown:shown.length,total:matches.length})}</p>`:''}`;
  }
  function folderCardPickerFooter(){
