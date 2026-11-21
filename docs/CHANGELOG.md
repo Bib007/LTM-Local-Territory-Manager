@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.37 · 2026-11-21
+
+- **Interne distriktskortnavne:** Hvert kort kan få et valgfrit internt navn, som vises og kan søges i administrationen, uden at erstatte det officielle navn. Lange navne ombrydes på mobil og computer.
+- **Data og privatliv:** Interne navne følger redigering, rettigheder, import, læsbar eksport og sikkerhedskopier. Eksisterende kort, udleveringer, IB og historik bevares. S-12/S-13 og offentligt delte kort viser fortsat kun de officielle oplysninger.
+- **Stable-rettelser med i Beta:** Rettelserne til gemmedialog, autosave, fokus/scroll, forældede DAR-beskeder og IB-læsearkiv med korrekt printlayout og knap ved sikkerhedskopi er også med i Beta-koden. Stable er ikke ændret af denne udgivelse.
+
 ## 1.12.19-beta.36 · 2026-11-21
 
 - **Rapportens IB-antal:** Vis alle aktive IB-registreringer, også manuelle IB-linjer uden DAR-adressetilknytning. Vis særskilt hvor mange der kan knyttes til kortlagte adresser inden for den gemte distriktsgrænse.
