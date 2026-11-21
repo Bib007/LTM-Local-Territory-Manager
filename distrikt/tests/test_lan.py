@@ -29,7 +29,7 @@ class LANTests(unittest.TestCase):
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
     def test_sensitive_route_matrix_requires_session_and_request_token(self):
         routes=[('/api/update-check',None),('/api/state',None),('/api/geo',None),('/api/storage',None),
-                ('/api/activity',None),('/api/map',None),('/api/data-info',None),
+                ('/api/activity',None),('/api/usage-statistics',None),('/api/map',None),('/api/data-info',None),
                 ('/api/export/backup',None),('/api/export/s13?year=2026',None),
                 ('/api/restore/safety?name=foer-import-fake.zip',None),
                 ('/api/address-source/status',None),('/api/share/status',None),
