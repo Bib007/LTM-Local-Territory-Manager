@@ -62,7 +62,7 @@ def current_territory_totals(raw):
                 visits+=count
         if unknown:incomplete+=1
     return {'visit_points':visits,'unknown_visit_cards':incomplete,
-            'ib_total':len(raw['ib'])}
+            'ib_total':len(raw.get('ib') or [])}
 
 
 def summaries(raw):
