@@ -6,7 +6,7 @@ const KtmReportUI={
  totals(print=false){
   const totals=state?.report_summary?.territory_totals;
   if(!totals)return '';
-  const t=label=>this.text(label,true);
+  const t=label=>this.text(label,!print);
   const fields=[['Besøgspunkter på aktuelle distriktskort',totals.visit_points]];
   if(Number.isInteger(totals.ib_total))fields.push(['IB-registreringer i alt',totals.ib_total]);
   const unknown=Number(totals.unknown_visit_cards||0);
