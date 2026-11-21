@@ -1,32 +1,18 @@
-# LTM 1.12.35
+# LTM 1.12.36
 
-Samlet Stable-opdatering af de færdige, verificerede Beta-funktioner siden Stable 1.12.34 (1.12.19-beta.36–beta.37). Eksisterende Stable-rettelser for gemning, scrollposition og IB-læsearkiv er bevaret. DAR-preview-rettelsen i den åbne PR #134 og de øvrige uafsluttede PR'er er **ikke** med.
+Denne Stable-kandidat er den direkte promovering af `1.12.36-beta.1`. Udgaven indfører fælles, automatisk versionskontrol for fremtidige Beta- og Stable-udgivelser. De brugerrettede funktioner, rettigheder og dataskema er de samme som i Stable 1.12.35, som allerede indeholder alle færdige Beta.36–37-ændringer (interne kortnavne, Menighedstilpasning og IB-forbedringer).
 
-## Nyt i Stable
+## Nyt
 
-- **Korrekte IB-tal i rapporter:** Alle aktive IB-linjer tælles, også manuelt registrerede uden kortlagt DAR-adresse. Det geografiske delantal inden for grænsen vises separat. Begge tal kræver IB-læserettighed.
-- **Godkend sikre IB-adresser samlet:** Se en forhåndsvisning af entydige DAR-match på tværs af distriktskort, og godkend dem samlet. Tvivlsomme match bliver til manuel gennemgang. Serveren genkontrollerer rettigheder og datagrundlag før den atomiske gemning, og handlingen kan fortrydes samlet. Besøgstal og eksisterende IB-datoer ændres ikke.
-- **Menighedstilpasning:** Under Indstillinger kan man selv navngive hjemme/kasse, i mappen og udleveret. Mappen kan fravælges, hvis menigheden kun bruger hjemme og ude. Gemte kortplaceringer, historik og tekniske statuskoder ændres ikke. Eksisterende vejledende kortantal og fordeling kan stadig indstilles.
-- **Interne distriktskortnavne:** Hvert kort kan få et valgfrit internt navn op til 160 tegn. Navnene kan søges og vises i administrationen og bevares ved import, læsbar eksport og backup. De vises **ikke** på officielle S-12/S-13, offentlige kort eller andre udadvendte udskrifter. Identitet, officielle numre og historik er uændrede.
+- **Én fælles version:** Beta `X.Y.Z-beta.1`, `-beta.2` osv. får samme grundversion som den senere Stable `X.Y.Z`. Fejlrettelser øger PATCH, bagudkompatible funktioner øger MINOR, og brydende ændringer øger MAJOR.
+- **Automatiske udgivelses-gates:** GitHub kontrollerer lovlig versionsrækkefølge, ubeskadigede og uforanderlige tags, at næste Beta indeholder den seneste Stable, og at Stable-programkoden er identisk med seneste udgivne Beta bortset fra versionsstrengen.
+- **Uændrede datakanaler:** Beta og Stable har stadig separate mapper, login, HA-appnavn og porte. Eksisterende brugerdata berøres ikke.
+- **Særskilt publicering:** Home Assistant, Mac-app og Windows-app/-server publiceres fortsat manuelt og hver for sig, med tests på det præcise commit. macOS-serverens fysiske Apple Silicon/LAN/VPN/genstartskrav er uændret.
 
-## Bevarede rettelser
+Denne udgave medfører ingen funktions- eller datamigrering. Den tidligere Stable 1.12.35 og alle historiske Beta-tags overskrives ikke. Åbne PR'er og andre ikke-frigivne funktioner følger ikke med.
 
-- Gem og vejliste bevarer dialogadfærd, fokus, tekstmarkør og scrollposition.
-- Forældede DAR-fejl og -statusbeskeder fjernes ved nye ændringer i korteditoren.
-- IB-bagsider i læsearkivet bruger det opmålte normale printlayout, inklusive fortsættelsessider; eksportknappen er placeret ved Sikkerhedskopi.
-- Stable-brugere beholder deres normale datamappe, login og port. Beta er fortsat en særskilt installation og opdateres ikke til Stable automatisk.
-
-## Kontrol og udgivelse
-
-Kandidaten skal bestå fælles Python-/JavaScript-/browser-/sikkerheds-/pakkeprøver på det præcise `main`-commit. Hvert Stable-spor udgives derefter særskilt fra **Stable release tracks**. Home Assistant, macOS-app, Windows-app og Windows-server kræver deres egne kontroller; macOS-server må først udgives efter dokumenteret fysisk Apple Silicon, LAN/VPN og genstartstest. Versionspakker og checksums må ikke overskrives.
+Se [versionspolitikken](VERSIONERING.md) for konkrete eksempler og den obligatoriske udgivelsesproces.
 
 ## English
 
-LTM 1.12.35 promotes all completed, released Beta features since Stable 1.12.34 (beta.36–beta.37) without including unfinished pull requests.
-
-- **Reports:** Count all active do-not-call entries, including unmapped manual entries, while separately displaying the mapped subset. Preserve access checks.
-- **Bulk address matching:** Preview and approve only safe, unique DAR matches across all cards, with validation, atomic saving and undo.
-- **Congregation customization:** Set local home/folder/issued labels, customize card guidance and optionally disable the folder workflow without modifying stored placements, history or internal status keys.
-- **Private territory names:** Add a searchable optional name to each card and preserve it through backup/import/export without changing official names, numbering or public S-12/S-13/share output.
-- Existing Stable save, scroll, DAR-feedback and readable-archive fixes remain included. Pending PR #134 and other unfinished work are excluded.
-- Each Stable release track requires its own tests and manual selection. The macOS-server physical test gate remains in force.
+This Stable candidate promotes the tested source from `1.12.36-beta.1` to `1.12.36` without changing user-facing behaviour or stored data compared with Stable 1.12.35. Versioning is now shared across channels: `X.Y.Z-beta.N` promotes to `X.Y.Z`; fixes bump PATCH, compatible features bump MINOR, and breaking changes bump MAJOR. Each release is automatically gated against reused Git tags, skipped Beta numbers, missing Stable ancestry and mismatched Beta/Stable application code. Existing immutable releases and independent Stable-track controls are preserved; the physical macOS-server testing gate remains mandatory.
