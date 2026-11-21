@@ -2,18 +2,18 @@
 /* KTM reporting: current territory visit points, all authorized IB, period coverage.
    Summary viewers receive aggregates only; raw card identifiers are never projected. */
 const KtmReportUI={
- text(label,localized){return localized?ui(label):esc(I18n.text(label));},
+ text(label,localized){return localized?ui(label):esc(label);},
  totals(print=false){
   const totals=state?.report_summary?.territory_totals;
   if(!totals)return '';
-  const t=label=>this.text(label,!print);
+  const t=label=>print?esc(I18n.text(label)):ui(label);
   const fields=[['Besøgspunkter på aktuelle distriktskort',totals.visit_points]];
   if(Number.isInteger(totals.ib_total))fields.push(['IB-registreringer i alt',totals.ib_total]);
   const unknown=Number(totals.unknown_visit_cards||0);
   const note=unknown?
    t('Besøgstallet er kun summen af kendte antal på kortene. Kort uden et kendt besøgstal er ikke medregnet:')+' '+unknown+'.':
    t('Besøgstallet er summen af registrerede besøgspunkter på de aktuelle distriktskort. Adresser uden et kort tælles ikke.');
-  return '<section class="report ktmReportTotals"><h2>'+t('Distriktstal')+'</h2><div class="metrics">'+
+  return '<section class="report boundaryReport"><h2>'+t('Distriktstal')+'</h2><div class="metrics">'+
    fields.map(([label,value])=>'<div><small>'+t(label)+'</small><strong>'+Number(value)+'</strong></div>').join('')+
    '</div><p class="hint">'+note+' '+t('IB-tallet omfatter alle aktive registreringer, også uden en DAR-adresse. Tallene beskriver den nuværende kortbestand.')+'</p></section>';
  },
