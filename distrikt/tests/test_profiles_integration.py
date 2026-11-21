@@ -375,6 +375,18 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1})
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1,'ib_total':2})
+        # The new report derives points from cards and includes every active IB.
+        admin_totals=self.state(self.admin)['report_summary']['territory_totals']
+        self.assertEqual(admin_totals['visit_points'],1)
+        self.assertEqual(admin_totals['ib_total'],2)
+        # Report-only access permits aggregates but never the raw card/IB data.
+        report_only,_,_=self.reader(['reports.view'])
+        report_state=self.state(report_only)
+        self.assertEqual(report_state['report_summary']['territory_totals']['visit_points'],1)
+        self.assertNotIn('ib_total',report_state['report_summary']['territory_totals'])
+        self.assertEqual(report_state['cards'],[])
+        self.assertEqual(report_state['ib'],[])
+
 
     def test_role_guidance_survives_profile_settings_save_and_real_http_refresh(self):
         # Regression: before this fix the authenticated state stripped the four
