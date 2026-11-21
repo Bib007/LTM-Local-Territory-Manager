@@ -75,7 +75,7 @@ class CongregationCustomizationTests(unittest.TestCase):
         self.store.mutate('settings.save',{'folder_enabled':False,
             'location_labels':{'home':'Hjemme'}, 'publisher_card_guidance':{
                 'member':2,'pioneer':4,'assistant':4,'overseer':6}})
-        raw=self.store.state()
+        raw={**self.store.state(), 'version':'0.0.0-fictional', 'beta':False}
         reader=state_for(raw,{'permissions':{'cards.view'},'id':'reader','name':'Fiktiv læser','revision':0,'onboarded':True,'desk_only':False})
         self.assertEqual(reader['settings']['folder_enabled'],False)
         self.assertEqual(reader['settings']['location_labels'],{'home':'Hjemme'})

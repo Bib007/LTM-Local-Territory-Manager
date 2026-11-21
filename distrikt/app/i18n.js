@@ -3,6 +3,9 @@
 const I18n={
  current:'en',
  english:{
+  "Mappen er slået fra under Menighedstilpasning.":"The carry folder is disabled under Congregation customization.",
+  "Vælg om menigheden bruger en mappe.":"Choose whether the congregation uses a carry folder.",
+  "Stednavne må højst være 48 tegn og må ikke indeholde kontroltegn.":"Location names must be at most 48 characters and must not contain control characters.",
   "Menighedstilpasning":"Congregation customization",
   "Tilpas betegnelser og arbejdsgange til jeres menighed. Kort, udleveringer og tidligere historik beholder deres interne data, selv når navnene ændres.":"Customize terms and workflows for your congregation. Card records, assignments and history keep their original internal data when labels change.",
   "Kortplaceringer og mappe":"Card locations and carry folder",
