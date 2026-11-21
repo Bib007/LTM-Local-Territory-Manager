@@ -151,3 +151,19 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .taskImages img{display:block;width:100%;height:112px;object-fit:contain;border-radius:6px;background:var(--surface)}
 .taskImages figcaption{overflow-wrap:anywhere;font-size:.85em}
 .taskImages .check{margin:4px 0}
+
+/* Compact KTM follow-up list remains readable on narrow screens and in PDF. */
+.ktmReportTotals .metrics{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.ktmMissing{margin:20px 0 8px}
+.ktmMissing h3{margin:0 0 6px}
+.ktmMissing .tablewrap{width:100%;max-width:100%;overflow-x:auto}
+.ktmMissing table{width:100%;table-layout:auto}
+.ktmMissing td,.ktmMissing th{font-size:12px;vertical-align:top;overflow-wrap:anywhere}
+.ktmMissing td small{display:inline;font-size:11px}
+@media print{
+ .ktmMissing{break-inside:auto}
+ .ktmMissing thead{display:table-header-group}
+ .ktmMissing tr{break-inside:avoid}
+ .ktmMissing .tablewrap{overflow:visible}
+ .ktmMissing td,.ktmMissing th{font-size:9px}
+}
