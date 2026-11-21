@@ -4,6 +4,8 @@ This preserves the complete changelog as it stood before the Danish-default migr
 
 ## 1.12.19-beta.37 · 2026-11-21
 
+- **Congregation customization:** Configure local display labels for home/box, folder and issued. Congregations can disable the carry-folder workflow without losing stored placements or history. Internal status keys and official forms are unchanged.
+- **Bulk safe do-not-call address matching:** Preview and explicitly approve unambiguous DAR matches for manual do-not-call entries across all territory cards. Ambiguous matches are skipped; authorization, atomic saving and one-step undo are preserved.
 - **Internal territory names:** Each territory card can have an optional private name for administrative display and search without replacing its official name. Long names wrap on mobile and desktop.
 - **Data and privacy:** Private names are supported by editing, permissions, imports, readable exports and backups. Existing cards, assignments, do-not-call entries and history remain intact. S-12/S-13 and publicly shared maps keep their official labels only.
 - **Stable fixes included in Beta:** The fixes for save dialogs, autosave, focus/scroll, stale DAR messages and the measured do-not-call readable-archive layout and backup-adjacent action are also included in the Beta code. This release does not modify Stable.
