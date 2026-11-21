@@ -70,7 +70,7 @@ class MainBoundaryStore:
                 ib_count+=1
 
         self._boundary_report_cache={'visits':sum(a.get('count',1) for a in inside.values()),
-                                     'ib':ib_count}
+                                     'ib':ib_count,'ib_total':len(ib_records)}
         return self._boundary_report_cache
 
     def main_boundary_preview(self):
