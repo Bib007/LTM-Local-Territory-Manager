@@ -37,7 +37,8 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    assert.match(html,/<strong>91<\/strong>/);assert.match(html,/<strong>11<\/strong>/);assert.match(html,/<strong>7<\/strong>/);
    assert.match(html,language==='en'?/manual do-not-call lines/:/manuelle linjer/);
   }
-  assert.doesNotMatch(run('(()=>{delete state.boundary_report.ib; const html=Workspace.boundaryReport(); state.boundary_report.ib=7; return html;})()'),ib);
+  const withoutMapped=run('(()=>{const data=state.boundary_report;state.boundary_report={visits:91,ib_total:11};const html=Workspace.boundaryReport();state.boundary_report=data;return html;})()');
+  assert.doesNotMatch(withoutMapped,ib);
   const old=run('(()=>{const data=state.boundary_report;state.boundary_report={visits:91,ib:7};const html=Workspace.boundaryReport();state.boundary_report=data;return html;})()');
   assert.match(old,language==='en'?/Mapped do-not-call records/:/Kortlagte IB-registreringer/);
   assert.doesNotMatch(old,allIB);
