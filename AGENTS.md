@@ -6,6 +6,8 @@ The owner authorized the consolidated 1.12.19 Stable and matching 1.12.19-beta.1
 
 Keep generated release assets immutable. Publish from the exact checked commit only after its required checks pass. Mac-server remains gated on its separate physical Apple Silicon LAN/VPN/restart test; desktop approval does not satisfy that test.
 
+Every Beta/Stable release MUST follow [docs/VERSIONERING.md](docs/VERSIONERING.md). Beta X.Y.Z-beta.N and Stable X.Y.Z share a base; publishing requires the automated policy check in scripts/version_policy.py, a unique immutable tag and verification against the latest Stable/Beta. Do not bypass the gate or publish an untested Stable hotfix directly; sync main into develop before the next Beta.
+
 Never read or modify a real user's territory data to run tests; use temporary fictional fixtures.
 
 
