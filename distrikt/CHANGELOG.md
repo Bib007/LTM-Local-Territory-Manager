@@ -2,6 +2,14 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.13.0-beta.2 · 2026-11-21
+
+- **KTM-rapportens besøgspunkter:** Rapportens øverste tal summerer nu kun kendte besøgspunkter på aktuelle distriktskort, inklusive manuelle vejlinjer. DAR-adresser uden et distriktskort tæller ikke. Kort uden fuldt kendte besøgstal oplyses særskilt, så subtotalen ikke fremstilles som fuldstændig.
+- **Ét korrekt IB-tal:** Rapporten viser én total med alle aktive IB-registreringer, også manuelle IB uden DAR-tilknytning. Den geografiske IB-deloptælling er fjernet fra KTM-rapporten, men de eksisterende geografiske data ændres ikke.
+- **Dækning og manglende distrikter:** Ét tydeligt dækningsdiagram erstatter hjemme-/udleveret-opdelingen i rapportens hovedtal. Hvert aktuelt kort uden registreret gennemgang i det valgte kalenderår, tjenesteår eller de seneste 12 måneder vises med nummer, navn, område og senest kendte gennemgangsdato – også i periodens PDF.
+- **Afgrænsning og adgang:** Gentagne gennemgange og arkiveret kort-historik tæller som hændelser, men kun aktuelle kort indgår i dækningsprocent og mangelliste. Roller med kun rapportoverblik ser samlede tal, aldrig kortlisten; samlet IB er stadig beskyttet af IB-læserettigheden. Original S-13 ændres ikke.
+- Kun rapportvisning og summer er ændret, ikke indholdet i registreringer eller databaseformat.
+
 ## 1.13.0-beta.1 · 2026-11-21
 
 - **Brugsstatistik (Beta):** Nyt, læsebaseret overblik under Indstillinger viser estimeret aktiv redigeringstid på tværs af LTM, pr. bruger og pr. måned samt antal gemte ændringer og dage med aktivitet.

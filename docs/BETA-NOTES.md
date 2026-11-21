@@ -1,29 +1,29 @@
-# LTM 1.13.0-beta.1
+# LTM 1.13.0-beta.2
 
-Dette er en Beta med ny brugsstatistik under Indstillinger. Den er adskilt fra Stable og ændrer ikke gemte distriktsdata.
+Denne Beta forbedrer **KTM-rapporten** under Rapporter og historik. Beta og Stable har fortsat adskilte data, port og login. Stable ændres ikke.
 
-## Ny funktion
+## Det nye i rapporten
 
-- Vælg Indstillinger → Brugsstatistik → Beregn statistik.
-- Se anslået samlet arbejdstid, systemets registrerede aktivitetsperioder, antal redigeringer og dage med aktivitet.
-- Se estimater pr. identificeret bruger og samlet for fælles login/ukendt bruger. Sammenlign redigeringer og tidsestimat måned for måned med brugerfilter.
-- Eksisterende aktivitetshistorik bruges automatisk. Tid fra før registreringen startede, og arbejde uden gemte ændringer, kan ikke genskabes.
+- **Besøgspunkter på aktuelle distriktskort:** Summen kommer fra de registrerede vejlinjer på de aktuelle kort, inklusive manuelle kort. Adresser, som kun findes i DAR eller inden for den samlede grænse uden at være på et kort, tæller ikke. Ukendte besøgstal markeres, så tallet ikke bliver misvisende.
+- **Én IB-total:** Alle aktive IB indgår, både med og uden DAR-adressematch. Der vises ikke længere et ekstra felt for geografisk kortlagte IB.
+- **Gennemgået / ikke gennemgået:** Én cirkelformet dækningsoversigt viser andelen af aktuelle kort, der har en registreret gennemgang i den valgte periode. Antal gennemgange tæller også gentagelser.
+- **Tydelig opfølgningsliste:** Den detaljerede rapport og PDF angiver hvert aktuelt kort, der ikke er registreret gennemgået i perioden, med kortnummer, navn, område og seneste kendte gennemgangsdato.
+- Fjernet fra KTM-hovedoversigten: unødvendig opdeling af kort i hjemme/udleveret samt ekstra geografisk IB-tal.
 
-## Vigtige begrænsninger
+## Afgrænsning
 
-- Tid tælles kun mellem to faktisk gemte redigeringer med højst 15 minutter imellem. Enkeltstående ændringer og længere pauser giver ingen minutter. Der lægges ingen gættet tid til før første eller efter sidste handling.
-- Dette er ikke serverens oppetid, et login-/tilstedeværelsesregnskab eller en præcis tidsregistrering. Tiden er et konservativt estimat ud fra hændelserne.
-- Summeret arbejdstid lægger brugernes perioder sammen; systemets aktivitetstid tæller overlappende perioder én gang.
-- Fælles login og hændelser uden sikker brugeridentitet tilskrives ikke navngivne brugere. Nogle automatiske handlinger indgår ikke i aktivitetsloggen.
-- Adgangen kræver både Administrere indstillinger og Se aktivitet. Funktionen læser lokale hændelser og gemmer eller eksporterer ingen personlige statistikdata.
+Kalenderår, tjenesteår og rullende 12 måneder følger de eksisterende periodevalg. Aktuelle kort tælles én gang; arkiverede kort er ikke med i mangellisten, men deres historiske gennemgange kan stadig indgå i antallet af afslutninger. Manglende gennemgangsdato betyder ikke nødvendigvis, at distriktet aldrig er blevet gennemgået.
 
-## Test som Beta
+Rapportroller uden kortlæserettighed ser kun summer, ikke individuelle kort. IB-total kræver IB-læserettighed. Ingen ændringer i data eller den originale S-13-PDF.
 
-1. Verificér versionen 1.13.0-beta.1 i den særskilte beta-installation (port 8788 og datamappen Distrikt-beta).
-2. Åbn Indstillinger → Brugsstatistik, og prøv Beregn statistik. Kontrollér tom historik, ældre hændelser og brugere.
-3. Opret et par fiktive kortændringer med kort tids mellemrum. Kontrollér, at statistikken stiger, men ikke tilskrives en forkert bruger.
-4. Kontrollér, at en bruger uden begge rettigheder ikke kan hente statistik, og at Stable fortsat fungerer uændret.
+## Test af beta
+
+1. Kontrollér version 1.13.0-beta.2 på den separate beta-installation, port 8788.
+2. Åbn Rapporter og historik og vælg Kalenderår, Tjenesteår og Seneste 12 måneder på skift. Kontrollér dækningsring, antal gennemgange og listen over manglende distriktskort.
+3. Kontrollér, at manuelle korts besøgspunkter og alle aktive IB indgår, men at adresser uden et kort ikke gør.
+4. Udskriv én periode og derefter alle tre. Kontrollér kortlister, områdebetegnelser, diagrammer og at den originale S-13 fortsat findes ved tjenesteår.
+5. Kontrollér, at oversigtsroller ikke kan se kortnavne eller IB uden tilladelse.
 
 ## English
 
-New read-only usage estimates in Settings, retrospectively derived from saved audit events. Work-time totals, per-user and monthly views are estimates from pairs of edits within 15 minutes, not actual presence or uptime. Shared or unidentified events stay unattributed. The endpoint requires both Manage settings and View activity; no data migration.
+KTM reporting now uses visit points actually listed on current territory cards and a single authorized total of all active do-not-call records. A coverage donut and an explicit list of cards not completed in each selected reporting period appear on screen and in PDF. Counts-only roles receive no card details. Data and original S-13 remain unchanged.
