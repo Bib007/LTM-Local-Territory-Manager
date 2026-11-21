@@ -166,7 +166,7 @@ def mutation(user,action,data,store):
     if (action=='revision.approve' and data.get('side')=='back') or (action=='revision.approve_many' and isinstance(data.get('entries'),list) and any(isinstance(e,dict) and e.get('side')=='back' for e in data['entries'])):require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))
 
-CARD_FIELDS=set('id number internal_number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
+CARD_FIELDS=set('id number internal_number internal_name name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
  'publishers':{'id','name','group','group_role','pioneer','aliases'},
