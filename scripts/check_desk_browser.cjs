@@ -94,6 +94,44 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  });
  assert.equal(writes.length,0,'Role guidance checks never write or create user data');
 
+ // Congregations with no carry folder must be able to assign every unloaned card,
+ // including legacy cards previously marked in_folder, without changing records.
+ await page.evaluate(()=>{
+  window.__congregationSettingsBefore=structuredClone(state.settings);
+  state.settings={...state.settings,folder_enabled:false,
+   location_labels:{home:'Hjemme med en usædvanlig lang betegnelse',
+                    folder:'I menighedens transportmappe',
+                    issued:'Ude ved forkynderne og deres grupper'}};
+  page='Udlevering';deskTab='Udlever';query='';render();
+ });
+ assert.equal(await page.locator('.deskCounts button').count(),2,'No folder means just home and out');
+ assert.equal(await page.locator('.folderSummary').count(),0,'Do not show replenishment when no folder exists');
+ assert.match((await page.locator('.deskCounts').innerText()),/Hjemme med en usædvanlig lang betegnelse/);
+ assert.ok(await page.locator('.deskCounts').evaluate(n=>{
+   const r=n.getBoundingClientRect();
+   return r.left>=-1&&r.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1&&
+    [...n.querySelectorAll('button')].every(b=>b.getBoundingClientRect().right<=innerWidth+1);
+ }), 'Long custom location names wrap within mobile/desktop width');
+ await page.evaluate(()=>issue('folder'));
+ assert.equal(await page.locator('#issueForm').getAttribute('data-from-box'),'true',
+              'No-folder mode can issue a legacy in-folder card from home');
+ await page.evaluate(()=>closeDialog());
+ await page.evaluate(()=>{page='Distrikter';status='Alle';render();});
+ assert.equal(await page.locator('#statusFilter option[value="Kort i mappen"]').count(),0);
+ assert.equal(await page.locator('[data-card-row="folder"]').first().getAttribute('data-location'),'box');
+ assert.ok(await page.locator('#statusFilter').evaluate(n=>n.getBoundingClientRect().right<=innerWidth+1));
+ await page.evaluate(()=>{page='Indstillinger';Navigation.settingsSection='general';render();});
+ assert.equal(await page.locator('#settingsFolderEnabled').isChecked(),false);
+ assert.equal(await page.locator('#folderWorkflowOptions').isVisible(),false);
+ assert.equal(await page.locator('[name="location_home"]').inputValue(),
+              'Hjemme med en usædvanlig lang betegnelse');
+ await page.evaluate(()=>{
+  state.settings=window.__congregationSettingsBefore;delete window.__congregationSettingsBefore;
+  page='Udlevering';Navigation.settingsSection='general';render();
+ });
+ assert.equal(writes.length,0,'Congregation-only UI test must never write real data');
+
+
  // A rejected write keeps a readable, scrollable explanation on real touch layouts.
  await page.evaluate(()=>SaveStatus.set('error','Ændringen blev afvist','Fiktiv forklaring om en afvist ændring. '.repeat(35)+'SLUT_FIKTIV_FORKLARING'));
  await activate(page.locator('.saveExplanation>summary'));
