@@ -54,7 +54,7 @@ class InternalTerritoryNameTests(unittest.TestCase):
         ident = self.create(internal_name='Fiktiv skole – område øst')
         publisher = self.store.mutate('publisher.save', {'name': 'Fiktiv person'})['id']
         loan = self.store.mutate('loan.issue', {
-            'card_id': ident, 'publisher_id': publisher, 'initial': True
+            'card_id': ident, 'publisher_id': publisher, 'initial': True, 'date': '2026-10-01'
         })['id']
         ib = self.store.mutate('ib.save', {
             'card_id': ident, 'road': 'Fiktiv vej', 'number': '7', 'date': '2026-10-01'
