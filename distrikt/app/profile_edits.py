@@ -6,12 +6,12 @@ from concurrent_edits import reconcile,_equal,_value
 from workflow_store import is_ib_review
 
 SAVE={
- 'card.save':('cards',set('number internal_number name area_id kind temporary map_color addresses'.split())),
+ 'card.save':('cards',set('number internal_number internal_name name area_id kind temporary map_color addresses'.split())),
  'publisher.save':('publishers',{'name','group','group_role','pioneer'}),
  'note.save':('notes',{'text','card_id','recurrence'}),
  'ib.save':('ib',{'address_id','road','number','date','date_text','postcode'}),
  'area.save':('settings',{'name'}),
- 'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision','publisher_card_guidance'}),
+ 'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision','publisher_card_guidance','folder_enabled','location_labels'}),
  'visit.save':('visits',{'date','note'}),
  'card.color':('cards',{'map_color'}),
  'geo.boundary':('cards',{'geo_polygon'}),
@@ -19,11 +19,11 @@ SAVE={
  'map.outline':('cards',{'polygon'}),
 }
 REVIEW_FIELDS={
- 'cards':set('number internal_number name area_id kind temporary map_color addresses geo_polygon address_ids geo_addresses imported_addresses polygon in_folder last_completed front_revision back_revision'.split()),
+ 'cards':set('number internal_number internal_name name area_id kind temporary map_color addresses geo_polygon address_ids geo_addresses imported_addresses polygon in_folder last_completed front_revision back_revision'.split()),
  'publishers':{'name','group','group_role','pioneer'},'notes':{'text','card_id','recurrence','resolved'},
  'ib':{'address_id','road','number','date','date_text','postcode'},
  'visits':{'date','note'},'loans':{'assigned','cycle_start','returned','publisher_id'},
- 'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision publisher_card_guidance name print_profiles saved_views'.split()),
+ 'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision publisher_card_guidance folder_enabled location_labels name print_profiles saved_views'.split()),
  'maps':{'image','name'},
 }
 

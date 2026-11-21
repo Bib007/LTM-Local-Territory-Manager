@@ -22,6 +22,8 @@ MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkynde
            'visits': 'ktm_besoeg', 'maps': 'kortbilleder', 'geo': 'geodata', 'ignored': 'se_bort_fra', 'notes': 'kortnoter'}
 ADDRESS_TYPES = ['Hus', 'Lejlighed', 'Lejlighedskompleks', 'Butik', 'Kontor', 'Virksomhed', 'Andet']
 DEFAULT_PUBLISHER_CARD_GUIDANCE = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+# Values are UI labels, never stored placement/loan state identifiers.
+LOCATION_LABEL_KEYS = frozenset(('home', 'folder', 'issued'))
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec='seconds')
@@ -286,6 +288,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
             for c in result['cards']:
                 c.setdefault('internal_number','')  # Old cards remain valid.
+                c.setdefault('internal_name','')  # Optional local label on legacy cards.
                 for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side,print_context)
             histories=self.loan_history_tokens(result['cards'],result['loans'])
             result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
@@ -412,7 +415,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.record_table(module)+' WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
-                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','publisher.merge','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','ib.bulk.apply','revision.approve','revision.approve_many')
+                reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','publisher.merge','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','ib.bulk.apply','ib.global.apply','revision.approve','revision.approve_many')
                 candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
@@ -428,6 +431,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             raise PermissionError('Du har ikke rettighed til denne handling.')
         if action in ('ib.bulk.preview', 'ib.bulk.apply'):
             from ib_address_suggestions import mutate
+            return mutate(self, action, data)
+        if action in ('ib.global.preview', 'ib.global.apply'):
+            from ib_global_suggestions import mutate
             return mutate(self, action, data)
         if action.startswith('history.grid.'):
             from history_grid import mutate_grid
@@ -465,7 +471,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             internal=internal_code(data.get('internal_number',card.get('internal_number','')))
             if any(c.get('internal_number','').casefold()==internal.casefold() and c['id']!=card['id'] for c in reserved) and internal:
                 raise ValueError('Det interne nummer findes allerede (evt. i 48-timers gendannelse).')
-            card.update(number=number, internal_number=internal, name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
+            card.update(number=number, internal_number=internal,
+                        internal_name=clean_text(data.get('internal_name',card.get('internal_name','')),160),
+                        name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
                         kind=data.get('kind', 'Ukendt'), temporary=bool(data.get('temporary', True)))
             color = data.get('map_color', card.get('map_color', '#477596'))
             if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
@@ -539,7 +547,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     publisher = self.require('publishers', ident)
             day = valid_day(data.get('date'))
             initial = bool(data.get('initial', False))
-            if not initial and not c['in_folder'] and data.get('from_box') is not True:
+            if not initial and config.get('folder_enabled', True) is not False and not c['in_folder'] and data.get('from_box') is not True:
                 raise ValueError('Læg kortet i mappen først, eller vælg registrering af et eksisterende udlån.')
             item = {'id': new_id(), 'card_id': c['id'], 'publisher_id': publisher['id'],
                 'assigned': day, 'cycle_start': day, 'returned': None, 'initial': initial}
@@ -661,6 +669,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     updated.append(ident)
             return {'count': len(updated), 'updated': updated, 'skipped': skipped}
         if action == 'folder.set':
+            if self.require('settings', 'config').get('folder_enabled', True) is False:
+                raise ValueError('Mappen er slået fra under Menighedstilpasning.')
             ids = data.get('ids', [])
             if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids) or len(ids) != len(set(ids)):
                 raise ValueError('Ugyldig kortliste eller samme kort valgt flere gange.')
@@ -739,7 +749,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             c = dict(self.require('settings', 'config'))
             minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
             rural = int(data.get('rural_minimum', c.get('rural_minimum',0)))
-            mode = data.get('rural_mode', 'auto')
+            mode = data.get('rural_mode', c.get('rural_mode', 'auto'))
             if mode == 'auto':
                 rural = min(rural, minimum)
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
@@ -754,9 +764,21 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 type(value) is not int or not 0 <= value <= 100 for value in limits.values()
             ):
                 raise ValueError('Kontrollér de vejledende kortantal (0–100).')
-            c.update(congregation=clean_text(data.get('congregation'), 100), folder_minimum=minimum,
-                rural_mode=mode, rural_minimum=rural, require_revision=bool(data.get('require_revision')),
-                publisher_card_guidance=dict(limits), split_visit_limit=limit)
+            folder_enabled = data.get('folder_enabled', c.get('folder_enabled', True))
+            if type(folder_enabled) is not bool:
+                raise ValueError('Vælg om menigheden bruger en mappe.')
+            labels = data.get('location_labels', c.get('location_labels', {}))
+            if (not isinstance(labels, dict) or set(labels) - LOCATION_LABEL_KEYS
+                    or any(not isinstance(value, str) or len(value.strip()) > 48
+                           or any(ord(char) < 32 or ord(char) == 127 for char in value)
+                           for value in labels.values())):
+                raise ValueError('Stednavne må højst være 48 tegn og må ikke indeholde kontroltegn.')
+            normalized = {key: value.strip() for key, value in labels.items() if value.strip()}
+            c.update(congregation=clean_text(data.get('congregation', c.get('congregation')), 100),
+                folder_minimum=minimum, rural_mode=mode, rural_minimum=rural,
+                require_revision=bool(data.get('require_revision', c.get('require_revision'))),
+                publisher_card_guidance=dict(limits), split_visit_limit=limit,
+                folder_enabled=folder_enabled, location_labels=normalized)
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)
