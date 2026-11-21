@@ -1,6 +1,26 @@
 'use strict';
 // IB suggestions never use a remote address service.
 const IBUI={
+ globalButton(){return (!state.profile||ProfilesUI.canAction('ib.global.preview'))?`<button data-ib-global-suggest>${ui('Godkend sikre IB-adresser på alle kort')}</button>`:'';},
+ async globalSuggest(button){
+  const before=state,revision=state.revision,origin=page,tab=addressTab;
+  button.disabled=true;
+  try{
+   const {result}=await(await api('/api/mutate',{action:'ib.global.preview',data:{}})).json();
+   if(!button.isConnected||state!==before||state.revision!==revision||page!==origin||addressTab!==tab)return;
+   const summary=result.cards.map(row=>`<tr><td>${esc(row.number)}</td><td>${row.matches}</td><td>${row.remaining}</td><td><button type="button" data-ib-global-review="${esc(row.card_id)}">${ui('Gennemgå kort')}</button></td></tr>`).join('');
+   openDialog(`<h2>${ui('Godkend sikre IB-adresser på alle kort')}</h2><p>${ui('Kun entydige DAR-match på det samme kort kan godkendes automatisk. Dubletter, ukendte adresser og tvivlstilfælde forbliver manuelle. Ingen registreringsdatoer eller besøgsantal ændres.')}</p><div class="metrics"><div><small>${ui('Sikre match')}</small><strong>${result.matches}</strong></div><div><small>${ui('Til manuel gennemgang')}</small><strong>${result.remaining}</strong></div></div><details><summary>${ui('Vis fordeling på distriktskort')}</summary><div class="tablewrap"><table><thead><tr><th>${ui('Kort')}</th><th>${ui('Sikre match')}</th><th>${ui('Til manuel gennemgang')}</th><th></th></tr></thead><tbody>${summary}</tbody></table></div></details>${result.matches?`<form id="ibGlobalForm" data-expected="${esc(result.expected)}" data-count="${result.matches}"><label class="check"><input type="checkbox" name="confirmed" required> ${ui('Jeg godkender kun de entydige match. Alle øvrige IB-linjer skal forblive uændrede.')}</label><div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary">${ui('Godkend {count} sikre match',{count:result.matches})}</button><button type="button" data-action="close">${ui('Annuller')}</button></div></form>`:`<p class="hint">${ui('Ingen sikre IB-match at godkende. Tvivlstilfælde kan gennemgås på hvert kort.')}</p><button data-action="close">${ui('Luk')}</button>`}`,I18n.language());
+  }catch(error){if(button.isConnected)toast(error);}
+  finally{if(button.isConnected)button.disabled=false;}
+ },
+ async globalApply(form){
+  const generation=openDialog.generation,count=Number(form.dataset.count);
+  const result=await mutate('ib.global.apply',{expected:form.dataset.expected,count,confirm:'GODKEND SIKRE IB'},{close:false,message:I18n.format('{count} sikre IB-match godkendt',{count})});
+  if(typeof ibOnlyUnlinked!=='undefined'&&page==='Adresser'&&addressTab==='IB'){ibOnlyUnlinked=true;render();}
+  if(form.isConnected&&el('dialog').open&&openDialog.generation===generation){
+   openDialog(`<h2>${ui('Sikre IB-match er godkendt')}</h2><p>${ui('{count} sikre IB-match godkendt',{count:result.count})}</p><p>${ui('{count} manuelle IB-linjer afventer fortsat gennemgang',{count:result.remaining})}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
+  }
+ },
  addresses(id){const c=card(id);if(!c)return [];return (c.geo_addresses?.length?c.geo_addresses:c.imported_addresses?.length?c.imported_addresses:GeoUI.addresses().filter(a=>c.address_ids?.includes(a.id))).slice().sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.floor,b.floor)||cmp(a.door,b.door));},
  unit(a){return a.number+(a.floor||a.door?', '+[a.floor,a.door].filter(Boolean).join(' '):'');},
  find(a,id){const clean=s=>String(s||'').toLowerCase().replace(/[\s.,]+/g,'');return state.ib.find(i=>i.card_id===id&&(i.address_id?i.address_id===a.id:RoadSearch.normalize(i.road)===RoadSearch.normalize(a.road)&&(clean(i.number)===clean(a.number)||clean(i.number)===clean(this.unit(a)))));},
@@ -44,17 +64,18 @@ document.addEventListener('input',e=>{if(e.target.id==='ibCardSearch'){el('ibCar
 document.addEventListener('change',e=>{if(e.target.id==='ibCardSelect')IBUI.open('',e.target.value,'',e.target.form.dataset.returnCard==='yes');if(e.target.id==='ibAddressPick')IBUI.pick(e.target.form,e.target.value);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-ib-pick],[data-ib-edit]');if(!b||b.disabled)return;e.preventDefault();IBUI.open(b.dataset.ibEdit||'',b.dataset.ibCard,b.dataset.ibPick||'',true);});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-ib-suggest]');if(!b||b.disabled)return;e.preventDefault();IBUI.suggest(b.dataset.ibSuggest);});
+document.addEventListener('click',e=>{const button=e.target.closest('[data-ib-global-suggest],[data-ib-global-review]');if(!button||button.disabled)return;e.preventDefault();if(button.dataset.ibGlobalReview)detail(button.dataset.ibGlobalReview,'IB-bagside');else IBUI.globalSuggest(button);});
 document.addEventListener('click',e=>{const button=e.target.closest('[data-ib-bulk-suggest],[data-ib-bulk-back]');if(!button||button.disabled)return;e.preventDefault();if(button.dataset.ibBulkBack)detail(button.dataset.ibBulkBack,'IB-bagside');else IBUI.bulkSuggest(button);});
 document.addEventListener('change',e=>{const form=e.target.form;if(form?.id==='ibBulkForm'&&!form.dataset.saving)form.querySelector('.primary').disabled=!form.querySelector('input:checked');});
 document.addEventListener('submit',async e=>{
  const form=e.target;
- if(!['ibLinkForm','ibBulkForm'].includes(form.id))return;
+ if(!['ibLinkForm','ibBulkForm','ibGlobalForm'].includes(form.id))return;
  e.preventDefault();
  const button=form.querySelector('button:not([type=button])');
  if(button.disabled||form.dataset.saving||!form.reportValidity())return;
  form.dataset.saving='yes';
  button.disabled=true;
- try{await (form.id==='ibBulkForm'?IBUI.bulkApply(form):IBUI.link(form));}
+ try{await (form.id==='ibGlobalForm'?IBUI.globalApply(form):form.id==='ibBulkForm'?IBUI.bulkApply(form):IBUI.link(form));}
  catch(error){I18n.errorContent(form.querySelector('#formError'),error);}
  finally{if(form.isConnected){delete form.dataset.saving;button.disabled=form.id==='ibBulkForm'&&!form.querySelector('input:checked');}}
 });
