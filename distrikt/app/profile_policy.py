@@ -178,7 +178,7 @@ FIELDS={
 }
 MODULE_RIGHT={'cards':'cards.view','archived_cards':'cards.view','publishers':'publishers.view',
               'loans':'loans.view','ib':'ib.view','notes':'notes.view','completions':'history.view','visits':'history.view'}
-CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
+CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance folder_enabled location_labels split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
@@ -214,6 +214,11 @@ def state_for(raw,user):
         if 'users.manage' not in p:note.pop('assignee_id',None)
         if 'geo.view' not in p:note.pop('followup_key',None)
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}
+    # Congregation-facing terms and folder workflow are visible to all card readers,
+    # including restricted desk accounts, without granting settings.manage.
+    if 'settings.manage' not in p and 'cards.view' in p:
+        result['settings']['folder_enabled']=raw['settings'].get('folder_enabled', True)
+        result['settings']['location_labels']=deepcopy(raw['settings'].get('location_labels', {}))
     # Show viewers only the non-sensitive threshold and opaque suppression keys,
     # never an administrator's free-text reason.
     if 'settings.manage' not in p and {'cards.view','geo.view','loans.view'}<=p:

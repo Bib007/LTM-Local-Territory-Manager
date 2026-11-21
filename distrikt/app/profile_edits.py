@@ -11,7 +11,7 @@ SAVE={
  'note.save':('notes',{'text','card_id','recurrence'}),
  'ib.save':('ib',{'address_id','road','number','date','date_text','postcode'}),
  'area.save':('settings',{'name'}),
- 'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision','publisher_card_guidance'}),
+ 'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision','publisher_card_guidance','folder_enabled','location_labels'}),
  'visit.save':('visits',{'date','note'}),
  'card.color':('cards',{'map_color'}),
  'geo.boundary':('cards',{'geo_polygon'}),
@@ -23,7 +23,7 @@ REVIEW_FIELDS={
  'publishers':{'name','group','group_role','pioneer'},'notes':{'text','card_id','recurrence','resolved'},
  'ib':{'address_id','road','number','date','date_text','postcode'},
  'visits':{'date','note'},'loans':{'assigned','cycle_start','returned','publisher_id'},
- 'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision publisher_card_guidance name print_profiles saved_views'.split()),
+ 'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision publisher_card_guidance folder_enabled location_labels name print_profiles saved_views'.split()),
  'maps':{'image','name'},
 }
 
