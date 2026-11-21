@@ -65,6 +65,8 @@ def validate(channel,current,stable_baseline,tags,tag_shas,head,main_synced=True
     """Fail closed on stale, reused, skipped, or wrongly based release numbers."""
     current=parse(str(current)) if not isinstance(current,Version) else current
     stable_baseline=parse(str(stable_baseline)) if not isinstance(stable_baseline,Version) else stable_baseline
+    if channel=="beta" and current.beta is None:raise ValueError("Beta must use X.Y.Z-beta.N.")
+    if channel=="stable" and current.beta is not None:raise ValueError("Stable must use X.Y.Z without -beta.")
     known=tagged_versions(tags)
     current_tag="v"+str(current)
     if current_tag in known and tag_shas.get(current_tag)!=head:
