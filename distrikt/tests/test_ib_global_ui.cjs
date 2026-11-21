@@ -11,7 +11,7 @@ function openDialog(html){dialog.open=true;dialog.innerHTML=html;openDialog.gene
 openDialog.generation=0;
 const state={revision:'fictional-revision',profile:null,cards:[],ib:[]};
 const context={console,Promise,Map,Set,Date,Array,Object,JSON,Number,String,
- state,page:'Adresser',addressTab:'IB',openDialog,
+ state,page:'Adresser',addressTab:'IB',ibOnlyUnlinked:false,render(){},openDialog,
  globalButton:{disabled:false,isConnected:true},
  globalForm:{isConnected:true,dataset:{expected:result.expected,count:String(result.matches)}},
  ui:(text,values)=>String(text).replace('{count}',values?.count??'{count}'),
@@ -43,6 +43,7 @@ const run=expr=>vm.runInContext(expr,context);
  assert.deepEqual(JSON.parse(JSON.stringify(calls[0].data)),{
   expected:result.expected,count:2,confirm:'GODKEND SIKRE IB'});
  assert.equal(calls[0].options.close,false);
+ assert.equal(context.ibOnlyUnlinked,true,'A successful global approval focuses the unresolved IB rows');
  assert.match(dialog.innerHTML,/2 sikre IB-match godkendt/);
  assert.match(dialog.innerHTML,/3 manuelle IB-linjer/);
  run('state.profile={permissions:[]};ProfilesUI={canAction:()=>false}');

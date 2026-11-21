@@ -238,6 +238,7 @@ const I18n={
   "Foreslå adresse":"Suggest address",
   "Foreslå adresser for hele kortet":"Suggest addresses for the entire card",
   "Godkend sikre IB-adresser på alle kort":"Approve safe do-not-call matches across all cards",
+  "Vis kun manuelle IB-linjer uden DAR-tilknytning":"Show only manual do-not-call lines without a DAR link",
   "Kun entydige DAR-match på det samme kort kan godkendes automatisk. Dubletter, ukendte adresser og tvivlstilfælde forbliver manuelle. Ingen registreringsdatoer eller besøgsantal ændres.":"Only unique DAR matches on the same card can be approved automatically. Duplicates, unknown addresses and ambiguities remain manual. Dates and visit counts are unchanged.",
   "Sikre match":"Safe matches",
   "Til manuel gennemgang":"For manual review",

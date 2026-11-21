@@ -16,6 +16,7 @@ const IBUI={
  async globalApply(form){
   const generation=openDialog.generation,count=Number(form.dataset.count);
   const result=await mutate('ib.global.apply',{expected:form.dataset.expected,count,confirm:'GODKEND SIKRE IB'},{close:false,message:I18n.format('{count} sikre IB-match godkendt',{count})});
+  if(typeof ibOnlyUnlinked!=='undefined'&&page==='Adresser'&&addressTab==='IB'){ibOnlyUnlinked=true;render();}
   if(form.isConnected&&el('dialog').open&&openDialog.generation===generation){
    openDialog(`<h2>${ui('Sikre IB-match er godkendt')}</h2><p>${ui('{count} sikre IB-match godkendt',{count:result.count})}</p><p>${ui('{count} manuelle IB-linjer afventer fortsat gennemgang',{count:result.remaining})}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
   }
