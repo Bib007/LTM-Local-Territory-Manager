@@ -354,7 +354,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights},self.admin)
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1})
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
-        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1})
+        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1,'ib_total':1})
 
     def test_role_guidance_survives_profile_settings_save_and_real_http_refresh(self):
         # Regression: before this fix the authenticated state stripped the four
