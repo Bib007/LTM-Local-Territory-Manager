@@ -167,3 +167,5 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .geoMapTools button svg{flex:0 0 16px;width:16px;height:16px;opacity:.8}
 .geoMapTools button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
 @media(max-width:800px){.geoMapTools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.geoMapTools button{min-width:0;padding:7px 4px;overflow-wrap:anywhere;flex-direction:column;gap:4px}.geoMapColumn .geographicEditor{height:clamp(240px,48svh,450px)}}
+/* Local-only names may be long on narrow tables and card dialogs. */
+.internalCardName{display:block;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;color:var(--muted);line-height:1.35;margin-top:3px}
