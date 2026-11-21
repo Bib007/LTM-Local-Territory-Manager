@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.36 retter IB-antallet i rapporter: alle aktive IB-registreringer tælles med, også manuelle IB-linjer, og antallet af geografisk kortlagte IB vises særskilt. Den eksisterende forkynderimport, sikre gemninger, kortværktøjer og HA-diagnostik fra beta.35 bevares. Se [betanoten](BETA-NOTES.md) for en afgrænset prøve. DAR-preview-isoleringen i PR #134 er ikke med.
+Beta 1.12.19-beta.37 samler **Menighedstilpasning**, **sikker samlet IB-adressegodkendelse**, **interne distriktskortnavne** og de seneste Stable-rettelser i én testudgave. Interne navne kan søges og vises administrativt, men fremgår ikke af S-12/S-13 eller offentligt delte kort. Beta omfatter også de allerede indarbejdede rettelser af gemning, scrollposition, gamle DAR-fejl og læsearkivets IB-layout. Se [betanoten](BETA-NOTES.md) for hele afprøvningslisten. Den ufærdige DAR-preview-isolering i PR #134 er ikke med.
 
 ## Installer betakanalen én gang
 
