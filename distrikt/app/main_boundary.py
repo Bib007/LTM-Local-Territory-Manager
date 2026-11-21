@@ -10,7 +10,7 @@ from geography import valid_polygon, point_in_polygon
 class MainBoundaryStore:
     def main_boundary(self):return self.get('geo','main-boundary')
     def boundary_report(self):
-        """Count mapped visits and IB records across the whole saved boundary."""
+        """Report mapped visits and IB, plus all active IB records including manual lines."""
         if self._boundary_report_cache is not None:
             return self._boundary_report_cache
         boundary=self.main_boundary()
