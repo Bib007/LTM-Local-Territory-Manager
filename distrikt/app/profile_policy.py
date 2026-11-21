@@ -27,7 +27,7 @@ GET={
  '/api/runtime/status':('settings.manage',),
  '/api/update-check':(),
  '/task-image.png':('notes.view',),
- '/api/activity':('activity.view',), '/api/address-source/status':('connections.manage',),
+ '/api/activity':('activity.view',), '/api/usage-statistics':('settings.manage',), '/api/address-source/status':('connections.manage',),
  '/api/share/status':('sharing.manage','cards.view'),
  '/api/share/qr':('sharing.manage','cards.view'), '/card-qr.svg':('sharing.manage','cards.view'),
  '/api/export/s13':('history.view','loans.view','publishers.view','cards.view'),
