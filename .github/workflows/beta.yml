@@ -122,6 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -133,12 +134,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Enforce one common release train and main ancestry before publication.
+          gh auth setup-git
+          git fetch --prune --tags origin
+          git fetch origin main:refs/remotes/origin/main
+          python scripts/version_policy.py verify --channel beta
           BETA_VERSION=$(python -c "import sys; sys.path.insert(0,'scripts'); import build_beta; build_beta.entries(); print(build_beta.release.version())")
           if gh release view "v$BETA_VERSION" >/dev/null 2>&1; then
             BETA_TARGET=$(gh release view "v$BETA_VERSION" --json targetCommitish --jq .targetCommitish)
             if [[ "$BETA_TARGET" != "$GITHUB_SHA" ]]; then
               echo "This beta version already exists for different code. Bump the version for the next small beta. Keeping the current HA beta unchanged."
-              exit 0
+              exit 1
             fi
           fi
           python scripts/build_release.py
