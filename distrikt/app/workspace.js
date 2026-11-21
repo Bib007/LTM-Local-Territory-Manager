@@ -82,8 +82,11 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(!totals)return '';
   const t=key=>print?esc(I18n.text(key)):ui(key);
   const metrics=[['Kortlagte besøgspunkter i alt',totals.visits]];
-  if(Number.isInteger(totals.ib))metrics.push(['Kortlagte IB-registreringer',totals.ib]);
-  return `<section class="report boundaryReport"><h2>${t('Hele distriktsgrænsen')}</h2><div class="metrics">${metrics.map(([label,value])=>`<div><small>${t(label)}</small><strong>${Number(value)}</strong></div>`).join('')}</div><p class="hint">${t('Omfatter kortlagte adresser i den gemte grænse, også adresser uden distriktskort.')}</p></section>`;
+  const hasTotal=Number.isInteger(totals.ib_total);
+  if(hasTotal)metrics.push(['IB-registreringer i alt',totals.ib_total]);
+  if(Number.isInteger(totals.ib))metrics.push([hasTotal?'Heraf kortlagt inden for grænsen':'Kortlagte IB-registreringer',totals.ib]);
+  const explanation=t('Omfatter kortlagte adresser i den gemte grænse, også adresser uden distriktskort.')+(hasTotal?' '+t('IB-totalen omfatter også manuelle linjer uden en entydig kortlagt adresse. Det kortlagte IB-tal gælder kun inden for den gemte grænse.'):'');
+  return `<section class="report boundaryReport"><h2>${t('Hele distriktsgrænsen')}</h2><div class="metrics">${metrics.map(([label,value])=>`<div><small>${t(label)}</small><strong>${Number(value)}</strong></div>`).join('')}</div><p class="hint">${explanation}</p></section>`;
  },
  reportOverview(localized=false){if(state.report_summary&&typeof ProfilesUI!=='undefined')return ProfilesUI.summaryHTML(state.report_summary,true);const t=key=>localized?ui(key):key,periods=['calendar','service','rolling'].map(mode=>{const [start,end]=this.periodBounds(mode);return `<article class="reportPeriod" data-report-period="${mode}"><h2>${this.reportTitle(mode,localized)}</h2><p class="periodDates">${fmt(start)} – ${fmt(end)}</p>${this.reportMetrics(mode,localized)}</article>`;}).join('');return `<section class="report reportOverview"><div class="eyebrow">${state.settings.congregation?esc(state.settings.congregation):t('DISTRIKT')}</div><h1>${t('Samlet rapportoversigt')}</h1><p>${t('Rapport udarbejdet den')} ${fmt(state.today)}</p><div class="reportComparison">${periods}</div><p class="hint">${this.reportExplanation(localized)}</p></section>`;},
  reports(){
