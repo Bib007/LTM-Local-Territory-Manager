@@ -1,3 +1,11 @@
+# Stable 1.12.35 · Beta.36–37 samlet udgivelseskandidat
+
+Stable 1.12.35 viderefører alle færdige og udgivne Beta-ændringer siden Stable 1.12.34: korrekte rapport-IB-tal, sikker samlet godkendelse af IB/DAR-adressematch, Menighedstilpasning med valgfri mappe og interne distriktskortnavne. De eksisterende Stable-rettelser til gemning, scroll og IB-læsearkiv bevares. Se [udgivelsesnoterne](RELEASE-NOTES.md).
+
+Uafsluttede PR'er (#134, #116, #70, #69, #66) medtages ikke. Kandidaten kræver grønne kontroller på præcis main-commit; hvert produktspor publiceres manuelt og særskilt. Mac-serveren har fortsat fysisk Apple Silicon/LAN/VPN/genstart-gate. Nedenstående er historisk planmateriale.
+
+---
+
 # Stabil kandidat 1.12.31
 
 Ejeren har 20. november 2026 bedt om at udgive alle betaændringer til og med beta.35 som Stable. Kandidaten bygger på den verificerede beta.35; beta.36-arbejdet er ikke inkluderet. Nedenstående ældre plan er bevaret som historik.
