@@ -7,6 +7,7 @@ Pure decision functions are intentionally testable without network/user data.
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 import re
 import subprocess
 import sys
@@ -21,7 +22,7 @@ class Version:
     major:int
     minor:int
     patch:int
-    beta:int|None=None
+    beta:Optional[int]=None
 
     @property
     def base(self):
