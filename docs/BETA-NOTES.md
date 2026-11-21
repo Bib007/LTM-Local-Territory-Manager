@@ -37,3 +37,5 @@ This Beta includes congregation customization (PR #144), one-step approval of sa
 8. Opret fiktive manuelle IB-linjer med sikre og tvetydige DAR-match på forskellige kort. Forhåndsvis den samlede godkendelse, kontroller at kun sikre match godkendes, og prøv Fortryd.
 
 Beta bruger fortsat særskilt datamappe, login og port 8788. Prøv altid med opdigtede data, og tag en backup før opdatering.
+
+Udgivelsespakken er fælles for denne beta.37-kildekode: kontrollér, at GitHub-prereleasen tilbyder både Home Assistant- og program-ZIP med SHA-256-kontrolsummer, og at HA-kanalen på `beta`-grenen viser samme versionsnummer.
