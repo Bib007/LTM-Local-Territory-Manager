@@ -128,6 +128,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  await page.evaluate(()=>{
   state.settings=window.__congregationSettingsBefore;delete window.__congregationSettingsBefore;
   page='Udlevering';Navigation.settingsSection='general';render();
+  window.scrollTo({top:0,left:0,behavior:'instant'});
  });
  assert.equal(writes.length,0,'Congregation-only UI test must never write real data');
 
