@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.37 · 2026-11-21
+
+- **Internal territory names:** Each territory card can have an optional private name for administrative display and search without replacing its official name. Long names wrap on mobile and desktop.
+- **Data and privacy:** Private names are supported by editing, permissions, imports, readable exports and backups. Existing cards, assignments, do-not-call entries and history remain intact. S-12/S-13 and publicly shared maps keep their official labels only.
+- **Stable fixes included in Beta:** The fixes for save dialogs, autosave, focus/scroll, stale DAR messages and the measured do-not-call readable-archive layout and backup-adjacent action are also included in the Beta code. This release does not modify Stable.
+
 ## 1.12.19-beta.36 · 2026-11-21
 
 - **Report do-not-call totals:** Show every active do-not-call entry, including manual lines without a linked DAR address. Separately show how many match mapped addresses within the saved territory boundary.
