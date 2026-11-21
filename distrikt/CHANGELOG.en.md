@@ -2,6 +2,11 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.19-beta.36 · 2026-11-21
+
+- **Report do-not-call totals:** Show every active do-not-call entry, including manual lines without a linked DAR address. Separately show how many match mapped addresses within the saved territory boundary.
+- **Access protection:** Both do-not-call totals remain protected by the IB viewing permission; existing records are unchanged.
+
 ## 1.12.19-beta.35 · 2026-11-20
 
 - History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).

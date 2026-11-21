@@ -9,6 +9,19 @@ each of these tracks at different times:
 4. Windows app
 5. Windows server
 
+## Default Beta-to-Stable scope
+
+When the owner says **"merge Beta to Stable"** without specifying exceptions, the
+release candidate must contain **all completed and verified changes released on
+Beta since the currently published Stable baseline**, not merely the latest Beta
+feature or last pull request. Review the full Beta-to-Stable difference, Beta
+release history and Danish/English changelogs; consolidate the user-facing
+Stable release notes for the whole promoted set. Explicitly document unfinished
+or deliberately excluded work; do not treat pending PRs as released Beta.
+Only a narrower explicit owner request changes this default. A successful
+merge alone is never permission to publish Stable packages. Retain the exact-
+commit checks, independent track releases and Mac-server physical test gate.
+
 No normal merge publishes anything. A maintainer must manually select one
 track from the **Stable release tracks** workflow on the exact `main` commit.
 That run requires the full common checks and only the selected track's own
