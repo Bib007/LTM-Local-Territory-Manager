@@ -17,7 +17,7 @@ from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from server import Server,stop_running
 from store import Store
-from profile_policy import GET,POST,PERMISSIONS
+from profile_policy import GET,POST,PERMISSIONS,require
 from profile_recovery import export_accounts,restore_accounts
 from portable import snapshot
 
