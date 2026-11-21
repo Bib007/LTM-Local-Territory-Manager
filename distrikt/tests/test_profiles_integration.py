@@ -17,7 +17,7 @@ from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from server import Server,stop_running
 from store import Store
-from profile_policy import GET,POST,PERMISSIONS
+from profile_policy import GET,POST,PERMISSIONS,require
 from profile_recovery import export_accounts,restore_accounts
 from portable import snapshot
 
@@ -296,6 +296,25 @@ class ProfilesIntegrationTests(unittest.TestCase):
             self.change(without_manage, self.state(without_manage),
                         'folder.set_many', payload)
         self.assertEqual(error.exception.code, 403)
+
+    def test_usage_statistics_requires_settings_permission_and_exposes_only_aggregates(self):
+        start=self.store.revision
+        admin_data=self.value('/api/usage-statistics',session=self.admin)
+        self.assertGreaterEqual(admin_data['actions'],2)
+        self.assertIn('system_minutes',admin_data)
+        self.assertIn('person_minutes',admin_data)
+        self.assertNotIn('Opdigtet privat opgave',str(admin_data))
+        self.assertNotIn('F101',str(admin_data))
+        self.assertEqual(self.store.revision,start)
+        with self.assertRaises(PermissionError):
+            require({'settings.manage'},GET['/api/usage-statistics'])
+        reader,_,_=self.reader(['activity.view'])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.value('/api/usage-statistics',session=reader)
+        self.assertEqual(denied.exception.code,403)
+        # Even an authorized profile cannot obtain the raw audit payload.
+        self.assertTrue(all('fields' not in user and 'cards' not in user
+                            for user in admin_data['users']))
 
     def test_activity_and_recovery_name_the_authenticated_actor(self):
         before=self.state(self.admin)
