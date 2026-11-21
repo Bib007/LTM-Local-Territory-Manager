@@ -124,4 +124,98 @@ class IBBulkSuggestionsTests(unittest.TestCase):
         self.manual('3, st tv')
         self.assertFalse(any(row['selectable'] for row in self.preview()['rows']))
 
+
+class IBGlobalSuggestionsTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.store = Store(self.temp.name)
+        self.addCleanup(self.store.close)
+        self.store.mutate('geo.import', {'source':'DAR / Datafordeleren','records':[
+            {'id': 'a', 'road': 'Prøvevej', 'number': '1', 'postcode': '9999',
+             'lng': 10, 'lat': 55, 'count': 1},
+            {'id': 'b', 'road': 'Prøvevej', 'number': '2', 'postcode': '9999',
+             'lng': 10, 'lat': 55, 'count': 1},
+            {'id': 'c', 'road': 'Andenvej', 'number': '4', 'postcode': '9999',
+             'lng': 10, 'lat': 55, 'count': 1},
+            {'id': 'left', 'road': 'Prøvevej', 'number': '3',
+             'floor': 'st', 'door': 'tv', 'postcode': '9999',
+             'lng': 10, 'lat': 55, 'count': 1},
+            {'id': 'right', 'road': 'Prøvevej', 'number': '3',
+             'floor': 'st', 'door': 'th', 'postcode': '9999',
+             'lng': 10, 'lat': 55, 'count': 1},
+        ]})
+        self.first = self.store.mutate('geo.assign', {
+            'number':'101', 'address_ids':['a','b','left','right']})['id']
+        self.second = self.store.mutate('geo.assign', {
+            'number':'102','address_ids':['c']})['id']
+
+    def manual(self, card_id, road, number, **extra):
+        return self.store.mutate('ib.save', {
+            'card_id': card_id, 'road': road, 'number': number,
+            'date_text':'marts 2024', **extra})['id']
+
+    def plan(self):
+        return self.store.mutate('ib.global.preview', {})
+
+    def apply(self, plan, **changes):
+        return self.store.mutate('ib.global.apply', {
+            'expected': plan['expected'], 'count': plan['matches'],
+            'confirm':'GODKEND SIKRE IB', **changes})
+
+    def test_global_approves_only_exact_unlinked_across_cards_and_can_undo(self):
+        matched_a=self.manual(self.first,'Prøvevej','1')
+        mismatched=self.manual(self.first,'Prøvevej','2',postcode='9998')
+        ambiguous=self.manual(self.first,'Prøvevej','3')
+        matched_b=self.manual(self.second,'Andenvej','4')
+        unknown=self.manual(self.second,'Andenvej','99')
+        before={id:self.store.get('ib',id) for id in
+                (matched_a,mismatched,ambiguous,matched_b,unknown)}
+        self.store.mutate('revision.approve',{'card_id':self.first,'side':'front'})
+        self.store.mutate('revision.approve',{'card_id':self.second,'side':'front'})
+        revision=self.store.revision
+        plan=self.plan()
+        self.assertEqual(self.store.revision,revision)
+        self.assertEqual((plan['matches'],plan['remaining']),(2,3))
+        self.assertEqual({row['number']:(row['matches'],row['remaining'])
+                          for row in plan['cards']},{'101':(1,2),'102':(1,1)})
+        self.assertEqual(self.apply(plan),{'count':2,'remaining':3,'cards':2})
+        self.assertEqual(self.store.get('ib',matched_a)['address_id'],'a')
+        self.assertEqual(self.store.get('ib',matched_b)['address_id'],'c')
+        for ident in (matched_a,matched_b):
+            self.assertEqual(self.store.get('ib',ident)['date_text'],'marts 2024')
+        for ident in (mismatched,ambiguous,unknown):
+            self.assertEqual(self.store.get('ib',ident),before[ident])
+        self.assertFalse(self.store.get('cards',self.first)['front_revision'])
+        self.assertFalse(self.store.get('cards',self.second)['front_revision'])
+        self.assertTrue(self.store.get('cards',self.first)['back_revision'])
+        self.assertTrue(self.store.get('cards',self.second)['back_revision'])
+        self.store.mutate('workflow.undo',{})
+        for ident,original in before.items():
+            self.assertEqual(self.store.get('ib',ident),original)
+
+    def test_stale_count_and_missing_confirmation_never_partially_update(self):
+        safe=self.manual(self.first,'Prøvevej','1')
+        plan=self.plan()
+        self.assertEqual(plan['matches'],1)
+        with self.assertRaisesRegex(ValueError,'Bekræft'):
+            self.apply(plan,confirm='')
+        with self.assertRaisesRegex(ValueError,'ændret'):
+            self.apply(plan,count=2)
+        self.manual(self.second,'Andenvej','4')
+        with self.assertRaisesRegex(ValueError,'ændret'):
+            self.apply(plan)
+        self.assertNotIn('address_id',self.store.get('ib',safe))
+        fresh=self.plan()
+        self.assertEqual(fresh['matches'],2)
+
+    def test_global_action_requires_ib_edit_permission(self):
+        from profile_policy import mutation
+        reader={'permissions':{'cards.view','ib.view'},'desk_only':False}
+        writer={'permissions':{'cards.view','ib.view','ib.edit'},'desk_only':False}
+        for action in ('ib.global.preview','ib.global.apply'):
+            with self.assertRaises(PermissionError):
+                mutation(reader,action,{},self.store)
+            mutation(writer,action,{},self.store)
+
 if __name__=='__main__':unittest.main()

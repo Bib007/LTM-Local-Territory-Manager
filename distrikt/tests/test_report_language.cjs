@@ -10,7 +10,7 @@ const c={console,Date,Intl,Number,String,Math,Map,Set,Array,Object,JSON,Promise,
 vm.createContext(c);for(const name of ['i18n.js','workspace.js','report-map.js','s13-template.js','report-print.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);
 const run=s=>vm.runInContext(s,c);
-run(`GeoUI={data:{main_boundary:{points:[]}}};state={boundary_report:{visits:91,ib:7},today:'2026-10-16',settings:{congregation:'Tjenesteår <invented> & Kort'},
+run(`GeoUI={data:{main_boundary:{points:[]}}};state={boundary_report:{visits:91,ib:7,ib_total:11},today:'2026-10-16',settings:{congregation:'Tjenesteår <invented> & Kort'},
  cards:[{id:'c1',number:'101',name:'Fiktiv',area_id:'a',addresses:[{count:6}],geo_polygon:[]},{id:'c2',number:'102',area_id:'',addresses:[{count:4}],geo_polygon:[],temporary:true}],
  archived_cards:[{id:'archived',number:'99',addresses:[{count:9}],archived:true}],areas:[{id:'a',name:'Kort <invented>'}],publishers:[{id:'p',name:'Forkynder <invented>'}],
  loans:[{id:'l',card_id:'c1',publisher_id:'p',assigned:'2026-09-01',cycle_start:'2026-09-01',returned:null}],
@@ -30,12 +30,18 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.equal((print[language].match(/class="reportRing"/g)||[]).length,6);
   const boundary=run('Workspace.boundaryReport()');
   const points=language==='en'?/Total mapped visit points/:/Kortlagte besøgspunkter i alt/;
-  const ib=language==='en'?/Mapped do-not-call records/:/Kortlagte IB-registreringer/;
+  const ib=language==='en'?/Of which mapped inside the boundary/:/Heraf kortlagt inden for grænsen/;
+  const allIB=language==='en'?/Do-not-call records in total/:/IB-registreringer i alt/;
   for(const html of [boundary,print[language]]){
-   assert.match(html,points);assert.match(html,ib);
-   assert.match(html,/<strong>91<\/strong>/);assert.match(html,/<strong>7<\/strong>/);
+   assert.match(html,points);assert.match(html,allIB);assert.match(html,ib);
+   assert.match(html,/<strong>91<\/strong>/);assert.match(html,/<strong>11<\/strong>/);assert.match(html,/<strong>7<\/strong>/);
+   assert.match(html,language==='en'?/manual do-not-call lines/:/manuelle linjer/);
   }
-  assert.doesNotMatch(run('(()=>{delete state.boundary_report.ib; const html=Workspace.boundaryReport(); state.boundary_report.ib=7; return html;})()'),ib);
+  const withoutMapped=run('(()=>{const data=state.boundary_report;state.boundary_report={visits:91,ib_total:11};const html=Workspace.boundaryReport();state.boundary_report=data;return html;})()');
+  assert.doesNotMatch(withoutMapped,ib);
+  const old=run('(()=>{const data=state.boundary_report;state.boundary_report={visits:91,ib:7};const html=Workspace.boundaryReport();state.boundary_report=data;return html;})()');
+  assert.match(old,language==='en'?/Mapped do-not-call records/:/Kortlagte IB-registreringer/);
+  assert.doesNotMatch(old,allIB);
   const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage[^"]*">([\s\S]*?)<\/section>/g),m=>m[1]);
   assert.equal(mapPages.length,3);assert.match(mapPages[0],/Kalenderår 2026/);assert.match(mapPages[0],/FIXED_CALENDAR_MAP/);assert.match(mapPages[1],/Tjenesteår 2026\/2027/);assert.match(mapPages[1],/FIXED_SERVICE_MAP/);assert.match(mapPages[2],/Seneste 12 måneder/);assert.match(mapPages[2],/FIXED_ROLLING_MAP/);assert.doesNotMatch(print[language],/data-ui|Kort til opfølgning|AKTUEL OPFØLGNING/);
   // Deliberate print choice: never include unrelated period pages.

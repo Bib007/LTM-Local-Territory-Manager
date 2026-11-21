@@ -2,6 +2,15 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.35 · 2026-11-21
+
+- **Rapporter og IB:** Rapporten tæller nu alle aktive IB-registreringer, også manuelt oprettede uden tilknyttet DAR-adresse. Antallet af kortlagte IB inden for distriktsgrænsen vises særskilt, og begge tal respekterer IB-rettighederne.
+- **Sikker samlet IB-adressegodkendelse:** Forhåndsvis og godkend i én handling de entydige DAR-adressematch for manuelle IB på alle distriktskort. Tvivlsomme match udelades; ændret grundlag afvises, og handlingen kan fortrydes samlet.
+- **Menighedstilpasning:** Vælg egne betegnelser for hjemme/kasse, mappe og udleveret, tilpas den vejledende kortfordeling, og fravælg mappen, hvis menigheden kun bruger hjemme/ude. De eksisterende placeringer og historik bevares.
+- **Interne distriktskortnavne:** Tilføj et valgfrit internt navn pr. kort, søg efter det i administrationen, og bevar det gennem import, læsbar eksport og backup. Officielle distriktsnavne og -numre, S-12/S-13 og offentlig deling ændres ikke.
+- **Tidligere Stable-rettelser bevares:** Sikker gemmedialog, fokus/scroll under autosave, oprydning i forældede DAR-fejl og det korrekt opmålte IB-læsearkiv følger fortsat med.
+- DAR-preview-isolering i åben PR #134 og øvrige uafsluttede PR'er er ikke inkluderet. macOS-server kræver stadig sin særskilte fysiske godkendelse.
+
 ## 1.12.34 · 2026-11-20
 
 - Læsearkiv: PDF'en med IB-bagsider bruger nu samme opmålte layout som almindeligt IB-print, inklusive vejgrupper, kolonner, datoer og fortsættelsessider. Manglende sider stopper eksporten uden en ufuldstændig pakke.

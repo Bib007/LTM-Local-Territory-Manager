@@ -92,7 +92,7 @@ GROUPS={
  ('cards.view','history.view','history.edit'):'completion.record',
  ('history.view','history.edit'):'visit.save history.cleanup',
   ('cards.view','loans.view','loans.manage','publishers.view','history.view','history.edit'):'history.grid.add history.grid.edit',
- ('cards.view','ib.view','ib.edit'):'ib.save ib.bulk.preview ib.bulk.apply setup.ib.inspect setup.ib.preview setup.ib.apply ib.review.resolve',
+ ('cards.view','ib.view','ib.edit'):'ib.save ib.bulk.preview ib.bulk.apply ib.global.preview ib.global.apply setup.ib.inspect setup.ib.preview setup.ib.apply ib.review.resolve',
  ('settings.manage',):'settings.save print.profile.save split.suggestion.ignore split.suggestion.restore area.save area.delete area.numbering.preview area.numbering.save filter.save filter.delete setup.onboarding.save setup.onboarding.task setup.defaults',
  ('settings.manage','geo.view','geo.edit','connections.manage'):'address.task.configure',
  ('backup.export',):'backup.record backup.snooze',
@@ -166,7 +166,7 @@ def mutation(user,action,data,store):
     if (action=='revision.approve' and data.get('side')=='back') or (action=='revision.approve_many' and isinstance(data.get('entries'),list) and any(isinstance(e,dict) and e.get('side')=='back' for e in data['entries'])):require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))
 
-CARD_FIELDS=set('id number internal_number name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
+CARD_FIELDS=set('id number internal_number internal_name name kind area_id map_color temporary in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
  'publishers':{'id','name','group','group_role','pioneer','aliases'},
@@ -178,7 +178,7 @@ FIELDS={
 }
 MODULE_RIGHT={'cards':'cards.view','archived_cards':'cards.view','publishers':'publishers.view',
               'loans':'loans.view','ib':'ib.view','notes':'notes.view','completions':'history.view','visits':'history.view'}
-CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
+CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance folder_enabled location_labels split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
@@ -214,6 +214,11 @@ def state_for(raw,user):
         if 'users.manage' not in p:note.pop('assignee_id',None)
         if 'geo.view' not in p:note.pop('followup_key',None)
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}
+    # Congregation-facing terms and folder workflow are visible to all card readers,
+    # including restricted desk accounts, without granting settings.manage.
+    if 'settings.manage' not in p and 'cards.view' in p:
+        result['settings']['folder_enabled']=raw['settings'].get('folder_enabled', True)
+        result['settings']['location_labels']=deepcopy(raw['settings'].get('location_labels', {}))
     # Show viewers only the non-sensitive threshold and opaque suppression keys,
     # never an administrator's free-text reason.
     if 'settings.manage' not in p and {'cards.view','geo.view','loans.view'}<=p:

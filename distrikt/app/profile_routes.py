@@ -76,7 +76,7 @@ class ProfileRuntime:
             if {'reports.view','cards.view','geo.view'}<=permissions:
                 totals=self.server.store.boundary_report()
                 result['boundary_report']=None if totals is None else {
-                    key:value for key,value in totals.items() if key!='ib' or 'ib.view' in permissions
+                    key:value for key,value in totals.items() if key not in ('ib','ib_total') or 'ib.view' in permissions
                 }
             if {'users.manage','notes.view'}<=user['permissions']:
                 result['task_users']=[{'id':u['id'],'name':u['name']} for u in self.accounts.data['users'].values() if not u.get('disabled')]

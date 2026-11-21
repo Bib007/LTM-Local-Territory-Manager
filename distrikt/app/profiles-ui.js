@@ -81,7 +81,7 @@ const ProfilesUI={
   document.querySelectorAll('[data-work="resolve"],[data-work="delete-task-reply"]').forEach(node=>{
    if(!this.has('notes.view','notes.edit'))node.disabled=true;
   });
-  const forms={cardForm:'card.save',publisherForm:'publisher.save',publisherMergeForm:'publisher.merge.preview',noteForm:'note.save',ibForm:'ib.save',ibLinkForm:'ib.save',ibBulkForm:'ib.bulk.apply',visitForm:'visit.save',settingsForm:'settings.save',completionForm:'completion.record'};for(const [id,op]of Object.entries(forms)){const form=el(id);if(form&&!this.canAction(op))form.querySelectorAll('button[type=submit],button.primary').forEach(n=>n.disabled=true);}
+  const forms={cardForm:'card.save',publisherForm:'publisher.save',publisherMergeForm:'publisher.merge.preview',noteForm:'note.save',ibForm:'ib.save',ibLinkForm:'ib.save',ibBulkForm:'ib.bulk.apply',ibGlobalForm:'ib.global.apply',visitForm:'visit.save',settingsForm:'settings.save',completionForm:'completion.record'};for(const [id,op]of Object.entries(forms)){const form=el(id);if(form&&!this.canAction(op))form.querySelectorAll('button[type=submit],button.primary').forEach(n=>n.disabled=true);}
   document.querySelectorAll('[data-publisher-import]').forEach(n=>{if(!this.has('publishers.manage','publishers.view'))n.disabled=true;});
   document.querySelectorAll('[data-action]').forEach(n=>{const needed=actions[n.dataset.action];if(needed&&!this.has(...needed)){n.disabled=true;n.dataset.uiTitle='Din rolle giver ikke adgang til denne handling.';n.title=I18n.text(n.dataset.uiTitle);}});
  },

@@ -2,6 +2,15 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.35 · 2026-11-21
+
+- **Reports and do-not-call totals:** Count all active do-not-call entries, including manual entries with no linked DAR address. Display the geographically mapped subset inside the territory boundary separately; both numbers respect viewing permissions.
+- **Safe bulk do-not-call address approval:** Preview and approve unambiguous DAR address matches for manual do-not-call entries across all cards in one atomic action. Ambiguous matches are excluded, stale requests are rejected and changes can be undone together.
+- **Congregation customization:** Configure local labels for home/box, folder and issued cards, adjust card guidance, and disable the carry folder for home/issued-only workflows. Existing placement records and history are preserved.
+- **Internal territory names:** Store an optional internal name per card, search for it administratively and preserve it through imports, readable exports and backups. Official names/numbers, S-12/S-13 and public sharing are unchanged.
+- **Existing Stable fixes retained:** Safe save dialogs, focus/scroll preservation during autosave, clearing stale DAR feedback and the measured do-not-call readable archive remain included.
+- Pending DAR preview isolation PR #134 and other unfinished pull requests are excluded. The macOS-server track retains its separate physical validation gate.
+
 ## 1.12.34 · 2026-11-20
 
 - Readable archive: The IB-backs PDF now uses the same measured layout as the ordinary IB print, including street groups, columns, dates and continuation pages. Missing pages fail without a partial archive.
