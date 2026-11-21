@@ -22,6 +22,7 @@ assert.match(run("I18n.label('Kort i kassen')"),/Hjemme &lt;script&gt;alert\(1\)
 assert.match(run("I18n.text('Læg i mappen')"),/I min lange transportmappe/);
 assert.equal(run("I18n.text('Kort i mappen')"),'I min lange transportmappe');
 assert.equal(run("I18n.text('Udleverede distriktskort')"),'Ude i arbejde');
+assert.equal(run("I18n.text('Udleveret')"),'Udleveret','The historical assignment-date header must not become a location label');
 assert.equal(run("I18n.text('Kort i kassen')").startsWith('Hjemme'),true);
 run("I18n.current='en'");
 assert.equal(run("I18n.text('Kort i mappen')"),'I min lange transportmappe','Custom names survive language switching');

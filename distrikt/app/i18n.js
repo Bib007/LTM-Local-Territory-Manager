@@ -2842,7 +2842,7 @@ const I18n={
   const arrow=(verb,where)=>verb+' → '+where,move=en?'Move':'Flyt',ret=en?'Return':'Aflever',from=en?'Assign from':'Udlever fra';
   const map={
    'Kort i kassen':home,'Kort i mappen':folder,'Udleverede distriktskort':issued,
-   'Udleveret':issued,'udleveret':issued,'Hjemme':home,'Hjemme nu':home,'Udleveret nu':issued,
+   'udleveret':issued,'Hjemme':home,'Hjemme nu':home,'Udleveret nu':issued,
    'Allerede i mappen':folder,
    'Aflever til kassen':arrow(ret,home),'Afleveret til kassen':arrow(en?'Returned':'Afleveret',home),
    'Flyt til kassen':arrow(move,home),'Læg i mappen':arrow(move,folder),
