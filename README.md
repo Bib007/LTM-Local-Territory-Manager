@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.35 opretter ukendte forkyndere fra historikimport i gruppen "Ikke i en tjenestegruppe". To forkyndere kan sammenlægges under et valgfrit navn med bevaret udlån og historik. Tidligere navne genkendes ved senere import. Betaen samler også navigation under sikre gemninger, kortværktøjer under kortet, enklere lige/ulige-mærkning og HA-diagnostik for vedvarende svarproblemer. Se [betanoten](BETA-NOTES.md) for prøver og genimport af HA-blueprint.
+Beta 1.12.19-beta.36 retter IB-antallet i rapporter: alle aktive IB-registreringer tælles med, også manuelle IB-linjer, og antallet af geografisk kortlagte IB vises særskilt. Den eksisterende forkynderimport, sikre gemninger, kortværktøjer og HA-diagnostik fra beta.35 bevares. Se [betanoten](BETA-NOTES.md) for en afgrænset prøve. DAR-preview-isoleringen i PR #134 er ikke med.
 
 ## Installer betakanalen én gang
 

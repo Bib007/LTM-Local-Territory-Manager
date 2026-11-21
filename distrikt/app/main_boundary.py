@@ -10,7 +10,7 @@ from geography import valid_polygon, point_in_polygon
 class MainBoundaryStore:
     def main_boundary(self):return self.get('geo','main-boundary')
     def boundary_report(self):
-        """Count mapped visits and IB records across the whole saved boundary."""
+        """Report mapped visits and IB, plus all active IB records including manual lines."""
         if self._boundary_report_cache is not None:
             return self._boundary_report_cache
         boundary=self.main_boundary()
@@ -50,8 +50,11 @@ class MainBoundaryStore:
         def normalize(value):
             return re.sub(r'[\s.,]+','',str(value or '').casefold())
 
+        # Count every active IB row for the report total, including manual lines
+        # with no unique mapped DAR address. Keep the geographic subset separate.
+        ib_records=self.all('ib')
         ib_count=0
-        for record in self.all('ib'):
+        for record in ib_records:
             key=by_id.get(record.get('address_id'))
             if not record.get('address_id'):
                 card=cards.get(record['card_id'],{})
@@ -67,7 +70,7 @@ class MainBoundaryStore:
                 ib_count+=1
 
         self._boundary_report_cache={'visits':sum(a.get('count',1) for a in inside.values()),
-                                     'ib':ib_count}
+                                     'ib':ib_count,'ib_total':len(ib_records)}
         return self._boundary_report_cache
 
     def main_boundary_preview(self):
