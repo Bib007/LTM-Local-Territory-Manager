@@ -295,7 +295,7 @@ function folderPlan(){const cfg=state.settings,min=folderEnabled()?cfg.folder_mi
   return `<p class="hint" role="status">${ui('{count} kort valgt på tværs af filtre',{count:chosen.length})}${chosen.length?': '+chosen.map(c=>esc(c.number)+(AdminUI.folderReason(c)?' ('+esc(I18n.text(AdminUI.folderReason(c)))+')':'')).join(' · '):''}</p>${movable.length>500?`<p class="formError">${ui('Vælg højst 500 kort ad gangen.')}</p>`:''}<div class="actions"><button type="button" class="primary" data-action="folder-card-preview" ${movable.length&&movable.length<=500&&canMove?'':'disabled'}>${ui('Læg {count} i mappen',{count:movable.length})}${skipped?' · '+ui('{count} springes over',{count:skipped}):''}</button><button type="button" data-action="folder-card-clear" ${chosen.length?'':'disabled'}>${ui('Fravælg alle')}</button><button type="button" data-action="close">${ui('Annuller')}</button></div>`;
  }
  function chooseFolderCard(){
-  if(page!=='Udlevering'||!folderEnabled())return;
+  if(page!=='Udlevering'||(typeof folderEnabled==='function'&&!folderEnabled()))return;
   if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set')){toast(I18n.text('Din rolle giver ikke adgang til denne handling.'));return;}
   folderCardPickerSelected=new Set();
   openDialog(`<h2>${ui('Læg specifikt kort i mappen')}</h2><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><label for="folderCardSearch">${ui('Søg kortnummer, navn eller område')}</label><input id="folderCardSearch" type="search" autocomplete="off" ${I18n.attribute('placeholder','Søg blandt eksisterende kort')}><div id="folderCardMatches">${folderCardPickerRows()}</div><div id="folderCardFooter">${folderCardPickerFooter()}</div>`,I18n.language());
