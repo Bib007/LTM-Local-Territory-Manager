@@ -746,7 +746,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             c = dict(self.require('settings', 'config'))
             minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
             rural = int(data.get('rural_minimum', c.get('rural_minimum',0)))
-            mode = data.get('rural_mode', 'auto')
+            mode = data.get('rural_mode', c.get('rural_mode', 'auto'))
             if mode == 'auto':
                 rural = min(rural, minimum)
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
