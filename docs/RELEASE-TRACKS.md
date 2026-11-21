@@ -22,6 +22,8 @@ Only a narrower explicit owner request changes this default. A successful
 merge alone is never permission to publish Stable packages. Retain the exact-
 commit checks, independent track releases and Mac-server physical test gate.
 
+After a Stable hotfix or Stable-only release, reconcile its functional fixes into `develop` and include them in the next numbered Beta update. Compare the real code, not just version strings, to avoid omitting corrections or reverting newer Beta features. Do not merge unfinished pull requests merely to fill a Beta release. The Beta release workflow and its validation remain the release gate.
+
 No normal merge publishes anything. A maintainer must manually select one
 track from the **Stable release tracks** workflow on the exact `main` commit.
 That run requires the full common checks and only the selected track's own
