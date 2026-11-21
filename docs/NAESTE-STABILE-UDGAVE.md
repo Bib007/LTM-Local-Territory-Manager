@@ -1,3 +1,9 @@
+# Stable 1.12.36 · fælles versionssystem
+
+Kandidaten promoverer den frigivne `1.12.36-beta.1` og indfører obligatoriske automatiske Beta/Stable-versionskontroller. Programmets funktioner og data er uændrede fra Stable 1.12.35. Se [versionsreglerne](VERSIONERING.md) og [udgivelsesnoterne](RELEASE-NOTES.md). Udgives manuelt spor for spor efter grøn kontrol. Mac-serverens særlige fysiske gate gælder stadig.
+
+---
+
 # Stable 1.12.35 · Beta.36–37 samlet udgivelseskandidat
 
 Stable 1.12.35 viderefører alle færdige og udgivne Beta-ændringer siden Stable 1.12.34: korrekte rapport-IB-tal, sikker samlet godkendelse af IB/DAR-adressematch, Menighedstilpasning med valgfri mappe og interne distriktskortnavne. De eksisterende Stable-rettelser til gemning, scroll og IB-læsearkiv bevares. Se [udgivelsesnoterne](RELEASE-NOTES.md).
