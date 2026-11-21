@@ -2,6 +2,11 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.19-beta.36 · 2026-11-21
+
+- **Rapportens IB-antal:** Vis alle aktive IB-registreringer, også manuelle IB-linjer uden DAR-adressetilknytning. Vis særskilt hvor mange der kan knyttes til kortlagte adresser inden for den gemte distriktsgrænse.
+- **Adgangsbeskyttelse:** Begge IB-tal følger fortsat rettigheden til at se IB, og eksisterende data ændres ikke.
+
 ## 1.12.19-beta.35 · 2026-11-20
 
 - Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
