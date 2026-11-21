@@ -2,6 +2,19 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.36 · 2026-11-21
+
+- Fælles Beta/Stable-versionssystem: En udgivet `1.12.36-beta.N` bliver `1.12.36`, når den samme kontrollerede kode promoveres. Fejlrettelser øger PATCH, bagudkompatible funktioner øger MINOR, og brydende ændringer øger MAJOR.
+- Udgivelser kontrollerer nu fortløbende betanumre, immutable Git-tags, nyeste Stable som grundlag for Beta og samme app-kode fra seneste Beta til Stable.
+- Hvert Stable-spor gennemfører automatisk versionskontrollen, før dets pakker må publiceres. Betakanalen fortsætter med eget login og data, og Mac-server kræver stadig sin fysiske prøve.
+- Ingen nye brugerrettede funktioner eller ændringer i dataskema i forhold til Stable 1.12.35.
+
+## 1.12.36-beta.1 · 2026-11-21
+
+- Beta og Stable har nu ét fælles versionsgrundlag: næste fejlrettelses-Beta hedder 1.12.36-beta.1, og dens Stable-udgave hedder 1.12.36. Nye bagudkompatible funktioner starter en minor-version, og uforenelige ændringer starter en major-version.
+- Udgivelsesworkflows validerer nu versionsrækkefølge, entydige Git-tags, seneste Stable som grundlag for Beta og samme programkode fra seneste Beta til Stable. En eksisterende Beta-genudgivelse springes over med en tydelig besked i stedet for at ændre et tidligere tag.
+- Denne overgangs-Beta indeholder de samme brugerfunktioner som Stable 1.12.35. Ingen ændringer i brugerdata, rettigheder eller driftskanal.
+
 ## 1.12.35 · 2026-11-21
 
 - **Rapporter og IB:** Rapporten tæller nu alle aktive IB-registreringer, også manuelt oprettede uden tilknyttet DAR-adresse. Antallet af kortlagte IB inden for distriktsgrænsen vises særskilt, og begge tal respekterer IB-rettighederne.
@@ -10,6 +23,19 @@
 - **Interne distriktskortnavne:** Tilføj et valgfrit internt navn pr. kort, søg efter det i administrationen, og bevar det gennem import, læsbar eksport og backup. Officielle distriktsnavne og -numre, S-12/S-13 og offentlig deling ændres ikke.
 - **Tidligere Stable-rettelser bevares:** Sikker gemmedialog, fokus/scroll under autosave, oprydning i forældede DAR-fejl og det korrekt opmålte IB-læsearkiv følger fortsat med.
 - DAR-preview-isolering i åben PR #134 og øvrige uafsluttede PR'er er ikke inkluderet. macOS-server kræver stadig sin særskilte fysiske godkendelse.
+
+## 1.12.19-beta.37 · 2026-11-21
+
+- **Menighedstilpasning:** Vælg jeres egne visningsnavne for hjemme/kasse, mappe og udleveret. En menighed kan fravælge mappen og bruge hjemme/ude uden at miste gemte placeringer eller historik. Statuskoder og officielle formularer ændres ikke.
+- **Samlet IB-adressegodkendelse:** Gennemgå sikre, entydige DAR-match for manuelle IB på alle distriktskort i én forhåndsvist og bekræftet handling. Tvivlsomme match springes over; rettigheder og samlet Fortryd bevares.
+- **Interne distriktskortnavne:** Hvert kort kan få et valgfrit internt navn, som vises og kan søges i administrationen, uden at erstatte det officielle navn. Lange navne ombrydes på mobil og computer.
+- **Data og privatliv:** Interne navne følger redigering, rettigheder, import, læsbar eksport og sikkerhedskopier. Eksisterende kort, udleveringer, IB og historik bevares. S-12/S-13 og offentligt delte kort viser fortsat kun de officielle oplysninger.
+- **Stable-rettelser med i Beta:** Rettelserne til gemmedialog, autosave, fokus/scroll, forældede DAR-beskeder og IB-læsearkiv med korrekt printlayout og knap ved sikkerhedskopi er også med i Beta-koden. Stable er ikke ændret af denne udgivelse.
+
+## 1.12.19-beta.36 · 2026-11-21
+
+- **Rapportens IB-antal:** Vis alle aktive IB-registreringer, også manuelle IB-linjer uden DAR-adressetilknytning. Vis særskilt hvor mange der kan knyttes til kortlagte adresser inden for den gemte distriktsgrænse.
+- **Adgangsbeskyttelse:** Begge IB-tal følger fortsat rettigheden til at se IB, og eksisterende data ændres ikke.
 
 ## 1.12.34 · 2026-11-20
 
