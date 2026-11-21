@@ -3,6 +3,27 @@
 const I18n={
  current:'en',
  english:{
+  "Mappen er slået fra under Menighedstilpasning.":"The carry folder is disabled under Congregation customization.",
+  "Vælg om menigheden bruger en mappe.":"Choose whether the congregation uses a carry folder.",
+  "Stednavne må højst være 48 tegn og må ikke indeholde kontroltegn.":"Location names must be at most 48 characters and must not contain control characters.",
+  "Menighedstilpasning":"Congregation customization",
+  "Tilpas betegnelser og arbejdsgange til jeres menighed. Kort, udleveringer og tidligere historik beholder deres interne data, selv når navnene ændres.":"Customize terms and workflows for your congregation. Card records, assignments and history keep their original internal data when labels change.",
+  "Kortplaceringer og mappe":"Card locations and carry folder",
+  "Vi bruger en mappe til ledige distriktskort":"We use a carry folder for available cards",
+  "Slå fra, hvis I kun bruger Hjemme og Ude. Eksisterende mappeplaceringer bevares og kan vises igen, hvis mappen aktiveres senere. Kontrollér hvor de fysiske kort ligger.":"Switch off if you only use At home and Out. Existing folder placements are preserved and will reappear if you enable the folder later. Check the physical locations of your cards.",
+  "Fordeling til mappen":"Carry-folder allocation",
+  "Egne navne på kortenes placering":"Custom names for card locations",
+  "Skriv den tekst, I bruger i menigheden. Tomme felter bruger standardnavne. Navnene vises i oversigter, filtre og handlinger, men ændrer ikke registrerede udleveringer eller printformularer.":"Enter the terms your congregation uses. Empty fields retain defaults. Names appear in lists, filters and actions, without changing assignments or standard printed forms.",
+  "Hjemme / kassen":"At home / storage box",
+  "I mappen":"In the carry folder",
+  "Ude / udleveret":"Out / assigned",
+  "Lange navne deles over flere linjer på mindre skærme. Udskrivning af kort og standardrapporter bevarer de originale betegnelser.":"Long names wrap on smaller screens. Card printouts and reports keep their original terms.",
+  "Der er ingen ledige kort at udlevere.":"There are no available cards to assign.",
+  "Kontrollér at kortet er hjemme, før du udleverer det.":"Check that the card is at home before assigning it.",
+  "Kortet registreres som hjemme efter aflevering.":"The card is recorded as at home after being returned.",
+  "{home} ledige kort hjemme · {total} kort i alt":"{home} available cards at home · {total} cards in total",
+  "Udlever og aflever kort":"Assign and return cards",
+  "Slå mappen til for at flytte kort mellem kassen og mappen.":"Enable the folder to move cards between home and the folder.",
   "Forslaget kræver nye grænser på nabokort. Adresser, IB, udlån og historik flyttes ikke.":"The proposal requires new neighbouring boundaries. Addresses, DNC, assignments and history are not moved.",
   "Jeg godkender de viste nye grænser på nabokortene":"I approve the new neighbouring boundaries shown",
   "Forslaget kræver ændringer af nabogrænser. De nye nabogrænser vises med orange streger. Godkend dem ved Gem.":"This proposal requires neighbouring boundary changes. New neighbouring boundaries are shown with orange lines. Approve them when saving.",
@@ -2808,7 +2829,43 @@ const I18n={
  errorContent(node,error){if(!node)return;const e=this.errorInfo(error);if(!e.detail){this.content(node,e.key,e.params);return;}if(node.dataset){delete node.dataset.ui;delete node.dataset.uiParams;}node.textContent=this.errorText(error);node.innerHTML=this.errorHTML(error);},
  fixedLanguage(){return typeof state!=='undefined'?state?.profile?.language||'':'';},
  language(){return this.fixedLanguage()||this.current;},
- text(value){return this.language()==='en'&&Object.prototype.hasOwnProperty.call(this.english,value)?this.english[value]:value;},
+ customLocationText(value){
+  const cfg=typeof state!=='undefined'?state?.settings:null;
+  if(!cfg)return null;
+  const labels=cfg.location_labels||{},noFolder=cfg.folder_enabled===false;
+  if(!noFolder&&!Object.values(labels).some(v=>typeof v==='string'&&v.trim()))return null;
+  const en=this.language()==='en',base=k=>en&&Object.hasOwn(this.english,k)?this.english[k]:k;
+  const label=(k,f)=>typeof labels[k]==='string'&&labels[k].trim()?labels[k].trim():f;
+  const home=label('home',noFolder?(en?'At home':'Hjemme'):base('Kort i kassen'));
+  const folder=label('folder',base('Kort i mappen'));
+  const issued=label('issued',noFolder?(en?'Out':'Ude'):base('Udleverede distriktskort'));
+  const arrow=(verb,where)=>verb+' → '+where,move=en?'Move':'Flyt',ret=en?'Return':'Aflever',from=en?'Assign from':'Udlever fra';
+  const map={
+   'Kort i kassen':home,'Kort i mappen':folder,'Udleverede distriktskort':issued,
+   'udleveret':issued,'Hjemme':home,'Hjemme nu':home,'Udleveret nu':issued,
+   'Allerede i mappen':folder,
+   'Aflever til kassen':arrow(ret,home),'Afleveret til kassen':arrow(en?'Returned':'Afleveret',home),
+   'Flyt til kassen':arrow(move,home),'Læg i mappen':arrow(move,folder),
+   'Udlever fra mappen':arrow(from,folder),'Udlever fra kassen':arrow(from,home),
+   'Læg specifikt kort i mappen':arrow(en?'Move card to':'Flyt kort til',folder),
+   'Læg {count} i mappen':arrow(move+' {count}',folder),
+   'Flyt {count} til kassen':arrow(move+' {count}',home),
+   'Bekræft og læg {count} i mappen':arrow(en?'Confirm move {count} to':'Bekræft flytning af {count} til',folder),
+   'Læg valgte kort i mappen?':arrow(en?'Move selected cards to':'Flyt valgte kort til',folder)+'?',
+   '{count} kort flyttes til mappen':'{count} '+(en?'cards':'kort')+' → '+folder,
+   'Kortene er registreret i mappen':arrow(en?'Cards moved':'Kort flyttet',folder),
+   'Kortene er lagt i mappen':arrow(en?'Cards moved':'Kort flyttet',folder),
+   'Mappen er fyldt til det valgte minimum.':(en?'Target met for ':'Minimum opfyldt for ')+folder+'.',
+   'Kassen er derhjemme. Mappen er med i rigssalen.':en?'The location names follow your congregation settings.':'Kortplaceringernes navne følger menighedens indstillinger.',
+   'Hent kortet i kassen derhjemme, før du giver det videre.':en?'Check the card at '+home+' before assigning it.':'Kontrollér kortet ved '+home+', før du udleverer det.',
+   'Kortet registreres tilbage i kassen derhjemme. Det bliver ikke lagt i mappen.':en?'The card returns to '+home+', not '+folder+'.':'Kortet registreres ved '+home+', ikke '+folder+'.',
+   '{home} hjemme · {folder} i mappen · {total} kort i alt':noFolder
+    ?(en?'{home} available at home · {total} cards in total':'{home} ledige kort hjemme · {total} kort i alt')
+    :(en?'{home} '+home+' · {folder} '+folder+' · {total} cards total':'{home} '+home+' · {folder} '+folder+' · {total} kort i alt')
+  };
+  return Object.hasOwn(map,value)?map[value]:null;
+ },
+ text(value){const custom=this.customLocationText(value);return custom!==null?custom:this.language()==='en'&&Object.prototype.hasOwnProperty.call(this.english,value)?this.english[value]:value;},
  format(value,params={}){return String(this.text(value)??'').replace(/\{([a-zA-Z]+)\}/g,(match,key)=>{if(!Object.prototype.hasOwnProperty.call(params,key))return match;let param=params[key];if(key==='reason'&&value==='Række {line}, kolonne {column}: {reason}')param=this.text(param);if(key==='field'&&value==='Samme kort har forskellige oplysninger i kolonnen {field}.')param=this.text(param);if(key==='fields'&&value==='Obligatoriske felter mangler: {fields}.')param=String(param).split(', ').map(v=>this.text(v)).join(', ');const dateLabel=key==='field'&&param==='Dato'&&['{field} skal være en gyldig dato.','{field} må ikke ligge i fremtiden.'].includes(value),numberLabel=key==='label'&&['Startnummer','Områdeblok','Besøg pr. kort','Områdets startnummer'].includes(param)&&['{label} skal være et helt tal.','{label} skal være mellem {low} og {high}.'].includes(value);if(dateLabel||numberLabel)param=this.text(param);return String(param);});},
  escape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
  label(value,params={}){return `<span data-ui="${this.escape(value)}" data-ui-params="${this.escape(JSON.stringify(params))}" lang="${this.textLanguage(value)}">${this.escape(this.format(value,params))}</span>`;},
