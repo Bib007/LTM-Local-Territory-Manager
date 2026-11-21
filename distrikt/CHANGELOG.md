@@ -4,6 +4,8 @@
 
 ## 1.12.19-beta.37 · 2026-11-21
 
+- **Menighedstilpasning:** Vælg jeres egne visningsnavne for hjemme/kasse, mappe og udleveret. En menighed kan fravælge mappen og bruge hjemme/ude uden at miste gemte placeringer eller historik. Statuskoder og officielle formularer ændres ikke.
+- **Samlet IB-adressegodkendelse:** Gennemgå sikre, entydige DAR-match for manuelle IB på alle distriktskort i én forhåndsvist og bekræftet handling. Tvivlsomme match springes over; rettigheder og samlet Fortryd bevares.
 - **Interne distriktskortnavne:** Hvert kort kan få et valgfrit internt navn, som vises og kan søges i administrationen, uden at erstatte det officielle navn. Lange navne ombrydes på mobil og computer.
 - **Data og privatliv:** Interne navne følger redigering, rettigheder, import, læsbar eksport og sikkerhedskopier. Eksisterende kort, udleveringer, IB og historik bevares. S-12/S-13 og offentligt delte kort viser fortsat kun de officielle oplysninger.
 - **Stable-rettelser med i Beta:** Rettelserne til gemmedialog, autosave, fokus/scroll, forældede DAR-beskeder og IB-læsearkiv med korrekt printlayout og knap ved sikkerhedskopi er også med i Beta-koden. Stable er ikke ændret af denne udgivelse.
