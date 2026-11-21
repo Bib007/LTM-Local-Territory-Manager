@@ -6,7 +6,7 @@
 
 - **Brugsstatistik (Beta):** Nyt, læsebaseret overblik under Indstillinger viser estimeret aktiv redigeringstid på tværs af LTM, pr. bruger og pr. måned samt antal gemte ændringer og dage med aktivitet.
 - **Historik bagud:** Beregningen genbruger eksisterende aktivitetsposter. Kun intervaller mellem to gemte ændringer inden for 15 minutter tælles. Længere pauser og enkeltstående ændringer giver ingen tidsestimat; læsning, ikke-gemte rettelser og aktivitet før loggen kan ikke rekonstrueres.
-- **Adgang og privatliv:** Kun brugere med tilladelsen Administrere indstillinger kan hente statistikken. Fælles login og historik uden pålidelig brugeridentitet holdes adskilt fra navngivne brugere. Kun summer og tidsperioder returneres, ikke rå registreringer, kort eller personoplysninger. Ingen databasemigration.
+- **Adgang og privatliv:** Kun brugere med både Administrere indstillinger og Se aktivitet kan hente statistikken. Fælles login og historik uden pålidelig brugeridentitet holdes adskilt fra navngivne brugere. Kun summer og tidsperioder returneres, ikke rå registreringer, kort eller personoplysninger. Ingen databasemigration.
 
 ## 1.12.36-beta.1 · 2026-11-21
 
