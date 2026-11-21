@@ -33,6 +33,19 @@ class MainBoundaryTests(unittest.TestCase):
             self.s.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':str(n),'address_id':ident,'date':'2026-01-01'})
         self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':2,'ib_total':4})
 
+    def test_report_includes_manual_ib_without_dar_address_match(self):
+        mapped=self.address(7)
+        card=self.s.mutate('geo.assign',{'number':'121','address_ids':[mapped]})['id']
+        temporary=self.s.mutate('card.save',{'number':'584','temporary':True})['id']
+        self.save()
+        self.s.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':'7','date':'2026-01-01'})
+        self.s.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':'88','date':'2026-01-01'})
+        self.s.mutate('ib.save',{'card_id':temporary,'road':'Manuel vej','number':'10A','date':'2026-01-01'})
+        expected={'visits':1,'ib':1,'ib_total':3}
+        self.assertEqual(self.s.boundary_report(),expected)
+        self.s.close();self.s=Store(self.tmp.name)
+        self.assertEqual(self.s.boundary_report(),expected)
+
     def test_many_points_and_restart_preserve_all_details(self):
         points=[[10+.01*math.cos(i*2*math.pi/5000),55+.01*math.sin(i*2*math.pi/5000)] for i in range(5000)]
         self.assertEqual(self.save(points)['points'],5000)
