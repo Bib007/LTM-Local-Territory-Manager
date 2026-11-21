@@ -4,6 +4,12 @@
 set -euo pipefail
 
 track="${1:?Choose one release track}"
+# Every independent Stable track checks the exact main commit, immutable tag,
+# and source parity with the corresponding released Beta before packaging.
+gh auth setup-git
+git fetch --prune --tags origin
+git fetch origin main:refs/remotes/origin/main
+python scripts/version_policy.py verify --channel stable
 python scripts/build_tracks.py --track "$track" --output dist
 version="$(python -c "import sys; sys.path.insert(0,'scripts'); import build_release; print(build_release.version())")"
 if [[ "$version" == *-* ]]; then
