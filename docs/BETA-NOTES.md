@@ -1,32 +1,24 @@
-# LTM 1.12.19-beta.35
+# LTM 1.12.36-beta.1
 
-- Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
-- To forkyndere kan sammenlægges under et valgfrit navn fra forkynderens side. Udleveringer og historik bevares, og tidligere navne genkendes ved senere import.
-- Tjenestegruppe, gruppefunktion og pionerstatus bevares fra den forkynder, sammenlægningen åbnes fra. Sammenlægningen kan fortrydes som seneste handling.
+Dette er den **første Beta i det fælles versionssystem**. Fra nu af deler Beta og Stable de første tre tal: `1.12.36-beta.1` bliver `1.12.36`, når den afprøvede kode promoveres til Stable. Ældre Beta-tags, herunder `1.12.19-beta.37`, er historik og ændres ikke.
 
-- Navigation kan fortsætte under indlevering og andre almindelige gemninger samt kortgemning efter de nødvendige kontroller. Gemmekøen beskytter nyere kladder og profilkonflikter; status er først færdig, når gemning og opdatering er bekræftet.
-- Redigeringsværktøjerne står lige under både kortets grænse og den samlede grænse med tekst, ikoner og trykvenlige knapper.
-- Intervalvisning udelader (lige)/(ulige), når samme vej på kortet har begge slags husnumre. Rene lige eller ulige veje beholder mærket.
-- Home Assistant kan registrere vedvarende svarproblemer uafhængigt af statusafleveringen. Korte interne statuslæsninger udløser ikke fejlalarm. Genimportér det opdaterede driftsblueprint for den nye beskedtype; eksisterende automationer ændres ikke automatisk.
+## Hvad ændres?
 
-## English
-
-- History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).
-- Merge two publishers under a chosen name from a publisher profile. Assignments and history are preserved, and previous names are recognised in later imports.
-- The service group, group role and pioneer status are retained from the publisher whose profile opens the merge. The latest merge can be undone.
-
-- Navigation can continue during returns and ordinary saves, and during geographic saves after the required checks. The ordered queue protects newer drafts and profile conflicts; completion is shown only after the write and synchronization are confirmed.
-- Editing tools sit directly below both card and whole-territory boundary maps, with text, icons and touch-friendly buttons.
-- Range display omits odd/even labels when the same street on a card contains both parities. Pure odd or even streets retain their label.
-- Home Assistant can detect persistent response problems independently of status delivery. Short internal status reads do not cause a false alarm. Reimport the updated runtime blueprint for the new notification type; existing automations are not changed automatically.
+- Nye releases kontrolleres automatisk mod seneste Stable, tidligere Beta-tags og den samme versionsstamme.
+- Nummerfølgen bliver fortløbende (`-beta.1`, `-beta.2` osv.). Fejlrettelser hæver PATCH, nye kompatible funktioner hæver MINOR, og brydende ændringer hæver MAJOR.
+- En ny Stable skal svare til seneste frigivne Beta-kode, med undtagelse af selve versionsstrengen. Ændringer på Stable skal med i `develop` før næste Beta.
+- Gentagne `develop`-commits med et allerede publiceret betanummer udløser ikke en ny udgivelse; der kræves et nyt nummer og grønne kontroller. Gamle Git-tags/ZIP-filer må ikke overskrives.
+- Denne Beta ændrer **ikke** appens brugerrettede funktioner eller dataskema sammenlignet med Stable 1.12.35, der allerede indeholder interne kortnavne, Menighedstilpasning, sikker samlet IB-adressegodkendelse og de rettede IB-tal.
 
 ## Afprøvning
 
-- Importér historik med et opdigtet nyt navn. Kontrollér den nye tjenestegruppe.
-- Åbn en forkynder, vælg Sammenlæg forkyndere, vælg dubletten og skriv det ønskede slutnavn. Kontrollér begge navne, før du gemmer.
-- Kontrollér udlån og historik efter sammenlægning. Prøv en senere import med et tidligere navn og den eksisterende Fortryd-handling.
+1. Kontrollér i appen, at versionsnummeret er `1.12.36-beta.1`.
+2. Kontrollér at Beta bruger eget navn, login, port **8788** og separat datamappe `Distrikt-beta`; Stable fortsætter uændret på port **8787**.
+3. Prøv kortnavn, Menighedstilpasning og IB-funktionerne med opdigtede data, og sammenlign den almindelige brugerflade med Stable 1.12.35.
+4. Kontrollér på GitHub at versionen har et nyt prerelease-tag og uforanderlige HA/program-ZIP-filer med SHA-256-kontrolsummer.
 
-- Gem en indlevering, og skift straks visning. Kontrollér gemmestatus og historik efter svaret. Åbn en ny kladde under en langsom gemning, og kontrollér, at den bliver bevaret.
-- Afprøv kortværktøjerne på mobil og desktop samt et DAR-forslag med særskilt godkendelse af nabogrænser.
-- Kontrollér intervalvisning for en blandet vej og en ren lige/ulige vej.
-- HA-diagnostik dækker serverens svar, ikke alle browser- eller LAN/VPN-fejl. Det opdaterede blueprint skal genimporteres og automationerne genindlæses efter opdatering.
+Læs [versionsreglerne](VERSIONERING.md) for hvordan kommende Beta- og Stable-udgivelser vælges. Uafsluttede PR'er, blandt andet DAR-preview-isoleringen #134, er stadig **ikke inkluderet**.
+
+## English
+
+The first Beta using one shared version train. `1.12.36-beta.1` will become Stable `1.12.36` with the same tested source. Versions are now validated for correct increments, unique immutable Git tags, latest Stable ancestry and matching Beta/Stable program code. This migration Beta adds no user-facing features or data migrations beyond Stable 1.12.35; old Beta tags remain intact. Test with fictional records and confirm Beta's isolated data, port 8788 and login.
