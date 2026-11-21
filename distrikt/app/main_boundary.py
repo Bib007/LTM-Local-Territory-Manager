@@ -50,8 +50,11 @@ class MainBoundaryStore:
         def normalize(value):
             return re.sub(r'[\s.,]+','',str(value or '').casefold())
 
+        # Count every active IB row for the report total, including manual lines
+        # with no unique mapped DAR address. Keep the geographic subset separate.
+        ib_records=self.all('ib')
         ib_count=0
-        for record in self.all('ib'):
+        for record in ib_records:
             key=by_id.get(record.get('address_id'))
             if not record.get('address_id'):
                 card=cards.get(record['card_id'],{})
