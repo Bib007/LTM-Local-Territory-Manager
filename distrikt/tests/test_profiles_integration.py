@@ -306,6 +306,8 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertNotIn('Opdigtet privat opgave',str(admin_data))
         self.assertNotIn('F101',str(admin_data))
         self.assertEqual(self.store.revision,start)
+        with self.assertRaises(PermissionError):
+            require({'settings.manage'},GET['/api/usage-statistics'])
         reader,_,_=self.reader(['activity.view'])
         with self.assertRaises(urllib.error.HTTPError) as denied:
             self.value('/api/usage-statistics',session=reader)
