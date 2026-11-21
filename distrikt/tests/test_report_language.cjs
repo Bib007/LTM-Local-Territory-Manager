@@ -10,7 +10,7 @@ const c={console,Date,Intl,Number,String,Math,Map,Set,Array,Object,JSON,Promise,
 vm.createContext(c);for(const name of ['i18n.js','workspace.js','report-map.js','s13-template.js','report-print.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);
 const run=s=>vm.runInContext(s,c);
-run(`GeoUI={data:{main_boundary:{points:[]}}};state={boundary_report:{visits:91,ib:7},today:'2026-10-16',settings:{congregation:'Tjenesteår <invented> & Kort'},
+run(`GeoUI={data:{main_boundary:{points:[]}}};state={boundary_report:{visits:91,ib:7,ib_total:11},today:'2026-10-16',settings:{congregation:'Tjenesteår <invented> & Kort'},
  cards:[{id:'c1',number:'101',name:'Fiktiv',area_id:'a',addresses:[{count:6}],geo_polygon:[]},{id:'c2',number:'102',area_id:'',addresses:[{count:4}],geo_polygon:[],temporary:true}],
  archived_cards:[{id:'archived',number:'99',addresses:[{count:9}],archived:true}],areas:[{id:'a',name:'Kort <invented>'}],publishers:[{id:'p',name:'Forkynder <invented>'}],
  loans:[{id:'l',card_id:'c1',publisher_id:'p',assigned:'2026-09-01',cycle_start:'2026-09-01',returned:null}],
