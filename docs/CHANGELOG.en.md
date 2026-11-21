@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.13.0-beta.1 · 2026-11-21
+
+- **Usage statistics (Beta):** A new read-only Settings overview provides estimated editing time for LTM overall, per user and month, plus saved edit counts and days with activity.
+- **Historical estimates:** Existing audit events support retrospective estimates. Only intervals between two saved edits within 15 minutes count; longer gaps and isolated events add no time. Reading, unsaved work and activity before logging began cannot be reconstructed.
+- **Access and privacy:** Only accounts with Manage settings permission can read statistics. Shared login and events without reliable user identity remain separate from named users. Responses contain aggregates and time ranges, never raw events, territory data or personal notes. No database migration.
+
 ## 1.12.36-beta.1 · 2026-11-21
 
 - Beta and Stable now share one version base. The next patch Beta is 1.12.36-beta.1 and promotes to Stable 1.12.36; compatible features advance MINOR and incompatible changes advance MAJOR.

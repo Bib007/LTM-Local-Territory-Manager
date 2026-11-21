@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.13.0-beta.1 · 2026-11-21
+
+- **Brugsstatistik (Beta):** Nyt, læsebaseret overblik under Indstillinger viser estimeret aktiv redigeringstid på tværs af LTM, pr. bruger og pr. måned samt antal gemte ændringer og dage med aktivitet.
+- **Historik bagud:** Beregningen genbruger eksisterende aktivitetsposter. Kun intervaller mellem to gemte ændringer inden for 15 minutter tælles. Længere pauser og enkeltstående ændringer giver ingen tidsestimat; læsning, ikke-gemte rettelser og aktivitet før loggen kan ikke rekonstrueres.
+- **Adgang og privatliv:** Kun brugere med tilladelsen Administrere indstillinger kan hente statistikken. Fælles login og historik uden pålidelig brugeridentitet holdes adskilt fra navngivne brugere. Kun summer og tidsperioder returneres, ikke rå registreringer, kort eller personoplysninger. Ingen databasemigration.
+
 ## 1.12.36-beta.1 · 2026-11-21
 
 - Beta og Stable har nu ét fælles versionsgrundlag: næste fejlrettelses-Beta hedder 1.12.36-beta.1, og dens Stable-udgave hedder 1.12.36. Nye bagudkompatible funktioner starter en minor-version, og uforenelige ændringer starter en major-version.

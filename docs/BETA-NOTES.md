@@ -1,24 +1,29 @@
-# LTM 1.12.36-beta.1
+# LTM 1.13.0-beta.1
 
-Dette er den **første Beta i det fælles versionssystem**. Fra nu af deler Beta og Stable de første tre tal: `1.12.36-beta.1` bliver `1.12.36`, når den afprøvede kode promoveres til Stable. Ældre Beta-tags, herunder `1.12.19-beta.37`, er historik og ændres ikke.
+Dette er en Beta med ny brugsstatistik under Indstillinger. Den er adskilt fra Stable og ændrer ikke gemte distriktsdata.
 
-## Hvad ændres?
+## Ny funktion
 
-- Nye releases kontrolleres automatisk mod seneste Stable, tidligere Beta-tags og den samme versionsstamme.
-- Nummerfølgen bliver fortløbende (`-beta.1`, `-beta.2` osv.). Fejlrettelser hæver PATCH, nye kompatible funktioner hæver MINOR, og brydende ændringer hæver MAJOR.
-- En ny Stable skal svare til seneste frigivne Beta-kode, med undtagelse af selve versionsstrengen. Ændringer på Stable skal med i `develop` før næste Beta.
-- Gentagne `develop`-commits med et allerede publiceret betanummer udløser ikke en ny udgivelse; der kræves et nyt nummer og grønne kontroller. Gamle Git-tags/ZIP-filer må ikke overskrives.
-- Denne Beta ændrer **ikke** appens brugerrettede funktioner eller dataskema sammenlignet med Stable 1.12.35, der allerede indeholder interne kortnavne, Menighedstilpasning, sikker samlet IB-adressegodkendelse og de rettede IB-tal.
+- Vælg Indstillinger → Brugsstatistik → Beregn statistik.
+- Se anslået samlet arbejdstid, systemets registrerede aktivitetsperioder, antal redigeringer og dage med aktivitet.
+- Se estimater pr. identificeret bruger og samlet for fælles login/ukendt bruger. Sammenlign redigeringer og tidsestimat måned for måned med brugerfilter.
+- Eksisterende aktivitetshistorik bruges automatisk. Tid fra før registreringen startede, og arbejde uden gemte ændringer, kan ikke genskabes.
 
-## Afprøvning
+## Vigtige begrænsninger
 
-1. Kontrollér i appen, at versionsnummeret er `1.12.36-beta.1`.
-2. Kontrollér at Beta bruger eget navn, login, port **8788** og separat datamappe `Distrikt-beta`; Stable fortsætter uændret på port **8787**.
-3. Prøv kortnavn, Menighedstilpasning og IB-funktionerne med opdigtede data, og sammenlign den almindelige brugerflade med Stable 1.12.35.
-4. Kontrollér på GitHub at versionen har et nyt prerelease-tag og uforanderlige HA/program-ZIP-filer med SHA-256-kontrolsummer.
+- Tid tælles kun mellem to faktisk gemte redigeringer med højst 15 minutter imellem. Enkeltstående ændringer og længere pauser giver ingen minutter. Der lægges ingen gættet tid til før første eller efter sidste handling.
+- Dette er ikke serverens oppetid, et login-/tilstedeværelsesregnskab eller en præcis tidsregistrering. Tiden er et konservativt estimat ud fra hændelserne.
+- Summeret arbejdstid lægger brugernes perioder sammen; systemets aktivitetstid tæller overlappende perioder én gang.
+- Fælles login og hændelser uden sikker brugeridentitet tilskrives ikke navngivne brugere. Nogle automatiske handlinger indgår ikke i aktivitetsloggen.
+- Adgangen kræver Administrere indstillinger. Funktionen læser lokale hændelser og gemmer eller eksporterer ingen personlige statistikdata.
 
-Læs [versionsreglerne](VERSIONERING.md) for hvordan kommende Beta- og Stable-udgivelser vælges. Uafsluttede PR'er, blandt andet DAR-preview-isoleringen #134, er stadig **ikke inkluderet**.
+## Test som Beta
+
+1. Verificér versionen 1.13.0-beta.1 i den særskilte beta-installation (port 8788 og datamappen Distrikt-beta).
+2. Åbn Indstillinger → Brugsstatistik, og prøv Beregn statistik. Kontrollér tom historik, ældre hændelser og brugere.
+3. Opret et par fiktive kortændringer med kort tids mellemrum. Kontrollér, at statistikken stiger, men ikke tilskrives en forkert bruger.
+4. Kontrollér, at en bruger uden Administrere indstillinger ikke kan hente statistik, og at Stable fortsat fungerer uændret.
 
 ## English
 
-The first Beta using one shared version train. `1.12.36-beta.1` will become Stable `1.12.36` with the same tested source. Versions are now validated for correct increments, unique immutable Git tags, latest Stable ancestry and matching Beta/Stable program code. This migration Beta adds no user-facing features or data migrations beyond Stable 1.12.35; old Beta tags remain intact. Test with fictional records and confirm Beta's isolated data, port 8788 and login.
+New read-only usage estimates in Settings, retrospectively derived from saved audit events. Work-time totals, per-user and monthly views are estimates from pairs of edits within 15 minutes, not actual presence or uptime. Shared or unidentified events stay unattributed. The endpoint requires Manage settings; no data migration.
