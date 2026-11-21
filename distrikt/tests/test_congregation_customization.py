@@ -76,11 +76,11 @@ class CongregationCustomizationTests(unittest.TestCase):
             'location_labels':{'home':'Hjemme'}, 'publisher_card_guidance':{
                 'member':2,'pioneer':4,'assistant':4,'overseer':6}})
         raw=self.store.state()
-        reader=state_for(raw,{'permissions':{'cards.view'},'id':'reader','desk_only':False})
+        reader=state_for(raw,{'permissions':{'cards.view'},'id':'reader','name':'Fiktiv læser','revision':0,'onboarded':True,'desk_only':False})
         self.assertEqual(reader['settings']['folder_enabled'],False)
         self.assertEqual(reader['settings']['location_labels'],{'home':'Hjemme'})
         self.assertNotIn('publisher_card_guidance',reader['settings'])
-        denied=state_for(raw,{'permissions':set(),'id':'denied','desk_only':False})
+        denied=state_for(raw,{'permissions':set(),'id':'denied','name':'Fiktiv uden adgang','revision':0,'onboarded':True,'desk_only':False})
         self.assertNotIn('location_labels',denied['settings'])
         self.assertNotIn('folder_enabled',denied['settings'])
 
