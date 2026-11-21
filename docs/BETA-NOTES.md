@@ -1,41 +1,24 @@
-# LTM 1.12.19-beta.37
+# LTM 1.12.36-beta.1
 
-Denne Beta samler de færdigmergede funktioner **Menighedstilpasning** (PR #144) og **samlet godkendelse af sikre IB-adresser** (PR #143), interne distriktskortnavne (PR #145) og de seneste Stable-rettelser, som allerede findes i Beta-koden. Stable ændres ikke.
+Dette er den **første Beta i det fælles versionssystem**. Fra nu af deler Beta og Stable de første tre tal: `1.12.36-beta.1` bliver `1.12.36`, når den afprøvede kode promoveres til Stable. Ældre Beta-tags, herunder `1.12.19-beta.37`, er historik og ændres ikke.
 
-- **Menighedstilpasning:** Tilpas navne for Hjemme/kasse, I mappen og Ude/udleveret under Indstillinger → Menighedstilpasning. Fravælg eventuelt mappen og arbejd med Hjemme/Ude uden at miste kortplaceringer eller historik.
-- **Samlet godkendelse af IB-adresser:** Under Kort og adresser → IB kan alle sikre, entydige DAR-adressematch på tværs af kort forhåndsvises og godkendes i én handling. Tvivlsomme match udelades, og rettigheder, versionskontrol, samlet transaktion og Fortryd er bevaret.
-- **Internt distriktskortnavn:** Tilføj et valgfrit navn (højst 160 tegn) på kortets redigeringsside. Det officielle navn og det offentlige distriktskortnummer bevares.
-- **Administration og søgning:** Find kort efter både offentligt og internt navn samt numre. Vis det interne navn særskilt i distriktsoversigt, kortoplysninger og kortvælgere, også ved lange navne.
-- **Kompatibilitet:** Tidligere kort virker uden feltet. Gemning, rettigheder, import (valgfri `internt_navn`-kolonne), læsbar eksport og backup bevarer oplysningerne. Udlån, IB og historik er stadig knyttet til det samme kort-ID.
-- **Print og deling:** Interne navne må ikke fremgå af S-12/S-13 eller offentligt delte kort.
-- **Stable-rettelser med i Beta:** Gem/vejliste-dialogen genåbnes ikke under baggrundsgemning. Fokus, tekstmarkør og scrollposition bevares ved autosave. Forældede DAR-fejl ryddes. IB-læsearkiv bruger det normale, opmålte IB-printlayout, og eksportknappen står ved siden af Sikkerhedskopi.
-- **Ikke inkluderet:** DAR-preview-isoleringen fra den åbne PR #134 og øvrige uafsluttede PR'er.
+## Hvad ændres?
 
-## English
-
-This Beta includes congregation customization (PR #144), one-step approval of safe do-not-call address matches across territory cards (PR #143), optional local-only territory names (PR #145) and the latest Stable editor and readable-archive fixes already present in the Beta code.
-
-- Configure congregation-specific home, folder and issued labels and optionally disable the carry folder without losing saved data.
-- Preview and explicitly approve only safe, unique DAR address matches for manual do-not-call entries across all cards.
-- Set an optional internal name per territory (up to 160 characters) without replacing its official name or number.
-- Search and identify cards by either name or number in administrative lists and card pickers, including responsive layouts.
-- Preserve old cards, record IDs, loans, do-not-call data, history, imports, exports and backups. The optional import column is `internt_navn`.
-- S-12/S-13 and public shares continue using official labels only.
-- Includes the Stable save-dialog, focus/scroll, stale-DAR-message and measured IB readable-archive corrections.
-- Excludes pending DAR-preview isolation PR #134 and other unfinished pull requests.
+- Nye releases kontrolleres automatisk mod seneste Stable, tidligere Beta-tags og den samme versionsstamme.
+- Nummerfølgen bliver fortløbende (`-beta.1`, `-beta.2` osv.). Fejlrettelser hæver PATCH, nye kompatible funktioner hæver MINOR, og brydende ændringer hæver MAJOR.
+- En ny Stable skal svare til seneste frigivne Beta-kode, med undtagelse af selve versionsstrengen. Ændringer på Stable skal med i `develop` før næste Beta.
+- Gentagne `develop`-commits med et allerede publiceret betanummer udløser ikke en ny udgivelse; der kræves et nyt nummer og grønne kontroller. Gamle Git-tags/ZIP-filer må ikke overskrives.
+- Denne Beta ændrer **ikke** appens brugerrettede funktioner eller dataskema sammenlignet med Stable 1.12.35, der allerede indeholder interne kortnavne, Menighedstilpasning, sikker samlet IB-adressegodkendelse og de rettede IB-tal.
 
 ## Afprøvning
 
-1. Opret et fiktivt kort med offentligt navn og langt internt navn. Rediger, ryd og gem feltet; prøv på både mobil og computer.
-2. Søg efter begge navne og numre, og vælg kortet ved udlevering, mappevalg og kortgrænser.
-3. Importér en CSV med `internt_navn` og kontrollér læsbar eksport og en backup/gendannelse på fiktive data.
-4. Kontrollér, at det interne navn **ikke** findes på udskrevet S-12/S-13 eller i offentlige kortbilleder/PDF'er.
-5. Prøv at gemme en vejliste under indtastning. Kontrollér, at dialog, fokus, tekstmarkør og scroll ikke hopper, og at gamle DAR-fejl ikke bliver hængende.
-6. Eksportér et læsearkiv med flere IB-bagsider og eventuelle fortsættelsessider. Sammenlign med almindeligt IB-print og kontrollér knappen ved Sikkerhedskopi.
+1. Kontrollér i appen, at versionsnummeret er `1.12.36-beta.1`.
+2. Kontrollér at Beta bruger eget navn, login, port **8788** og separat datamappe `Distrikt-beta`; Stable fortsætter uændret på port **8787**.
+3. Prøv kortnavn, Menighedstilpasning og IB-funktionerne med opdigtede data, og sammenlign den almindelige brugerflade med Stable 1.12.35.
+4. Kontrollér på GitHub at versionen har et nyt prerelease-tag og uforanderlige HA/program-ZIP-filer med SHA-256-kontrolsummer.
 
-7. Kontrollér Menighedstilpasning: rediger placeringsteksterne, prøv både med og uden mappe, og genaktiver mappen. Eksisterende kortplaceringer og historik skal bevares.
-8. Opret fiktive manuelle IB-linjer med sikre og tvetydige DAR-match på forskellige kort. Forhåndsvis den samlede godkendelse, kontroller at kun sikre match godkendes, og prøv Fortryd.
+Læs [versionsreglerne](VERSIONERING.md) for hvordan kommende Beta- og Stable-udgivelser vælges. Uafsluttede PR'er, blandt andet DAR-preview-isoleringen #134, er stadig **ikke inkluderet**.
 
-Beta bruger fortsat særskilt datamappe, login og port 8788. Prøv altid med opdigtede data, og tag en backup før opdatering.
+## English
 
-Udgivelsespakken er fælles for denne beta.37-kildekode: kontrollér, at GitHub-prereleasen tilbyder både Home Assistant- og program-ZIP med SHA-256-kontrolsummer, og at HA-kanalen på `beta`-grenen viser samme versionsnummer.
+The first Beta using one shared version train. `1.12.36-beta.1` will become Stable `1.12.36` with the same tested source. Versions are now validated for correct increments, unique immutable Git tags, latest Stable ancestry and matching Beta/Stable program code. This migration Beta adds no user-facing features or data migrations beyond Stable 1.12.35; old Beta tags remain intact. Test with fictional records and confirm Beta's isolated data, port 8788 and login.

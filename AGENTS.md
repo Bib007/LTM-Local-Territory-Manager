@@ -2,11 +2,11 @@
 
 Develop and test future changes on `develop` / Beta first. Stable (`main`) is the tested baseline; do not use Stable as the normal test channel.
 
-**Owner's default Beta → Stable instruction (21 November 2026):** When the owner says to merge/promote Beta into Stable without specifying a subset, include **all completed and verified Beta changes since the Stable baseline**, not just the latest Beta feature, commit or pull request. Compare the full Beta baseline and release history against `main`; do not silently cherry-pick one change. Keep unfinished/unmerged work out, identify any exclusions explicitly, and preserve all required integration, tests and publication gates. A merge alone never authorizes or performs a Stable release.
-
 The owner authorized the consolidated 1.12.19 Stable and matching 1.12.19-beta.1 release on 8 November 2026 and confirmed physical Mac/Windows installation and data preservation. Keep Stable/Beta folders, login cookies and native installer identities separate.
 
 Keep generated release assets immutable. Publish from the exact checked commit only after its required checks pass. Mac-server remains gated on its separate physical Apple Silicon LAN/VPN/restart test; desktop approval does not satisfy that test.
+
+Every Beta/Stable release MUST follow [docs/VERSIONERING.md](docs/VERSIONERING.md). Beta X.Y.Z-beta.N and Stable X.Y.Z share a base; publishing requires the automated policy check in scripts/version_policy.py, a unique immutable tag and verification against the latest Stable/Beta. Do not bypass the gate or publish an untested Stable hotfix directly; sync main into develop before the next Beta.
 
 Never read or modify a real user's territory data to run tests; use temporary fictional fixtures.
 

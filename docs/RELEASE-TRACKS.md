@@ -1,5 +1,7 @@
 # Independent release tracks
 
+**Versioning (mandatory for all releases):** [Unified Beta/Stable version policy](VERSIONERING.md). A Beta `X.Y.Z-beta.N` and its subsequent Stable `X.Y.Z` share the same base. The publishing scripts reject reused tags, mismatched released Beta source and missing Stable ancestry. Historic versions before Stable 1.12.35 are grandfathered; never rename their tags.
+
 LTM has one source tree and one version number. A version may be released to
 each of these tracks at different times:
 

@@ -2,6 +2,21 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.36-beta.1 · 2026-11-21
+
+- Beta and Stable now share one version base. The next patch Beta is 1.12.36-beta.1 and promotes to Stable 1.12.36; compatible features advance MINOR and incompatible changes advance MAJOR.
+- Release workflows validate the version sequence, immutable Git tags, latest Stable ancestry for Beta and source parity between the latest Beta and its Stable promotion. An ordinary develop push with an already released Beta version now skips publishing with an explicit notice rather than reusing a tag.
+- This migration Beta contains the same user-facing features as Stable 1.12.35 and does not change stored data, permissions or channel isolation.
+
+## 1.12.35 · 2026-11-21
+
+- **Reports and do-not-call totals:** Count all active do-not-call entries, including manual entries with no linked DAR address. Display the geographically mapped subset inside the territory boundary separately; both numbers respect viewing permissions.
+- **Safe bulk do-not-call address approval:** Preview and approve unambiguous DAR address matches for manual do-not-call entries across all cards in one atomic action. Ambiguous matches are excluded, stale requests are rejected and changes can be undone together.
+- **Congregation customization:** Configure local labels for home/box, folder and issued cards, adjust card guidance, and disable the carry folder for home/issued-only workflows. Existing placement records and history are preserved.
+- **Internal territory names:** Store an optional internal name per card, search for it administratively and preserve it through imports, readable exports and backups. Official names/numbers, S-12/S-13 and public sharing are unchanged.
+- **Existing Stable fixes retained:** Safe save dialogs, focus/scroll preservation during autosave, clearing stale DAR feedback and the measured do-not-call readable archive remain included.
+- Pending DAR preview isolation PR #134 and other unfinished pull requests are excluded. The macOS-server track retains its separate physical validation gate.
+
 ## 1.12.19-beta.37 · 2026-11-21
 
 - **Congregation customization:** Configure local display labels for home/box, folder and issued. Congregations can disable the carry-folder workflow without losing stored placements or history. Internal status keys and official forms are unchanged.
@@ -15,6 +30,31 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - **Report do-not-call totals:** Show every active do-not-call entry, including manual lines without a linked DAR address. Separately show how many match mapped addresses within the saved territory boundary.
 - **Access protection:** Both do-not-call totals remain protected by the IB viewing permission; existing records are unchanged.
 
+## 1.12.34 · 2026-11-20
+
+- Readable archive: The IB-backs PDF now uses the same measured layout as the ordinary IB print, including street groups, columns, dates and continuation pages. Missing pages fail without a partial archive.
+- Settings → Data: **Export readable archive** now sits immediately beside **Backup**.
+
+## 1.12.33 · 2026-11-20
+
+- Saving and autosave: Preserve both page scroll and long editor scroll positions when releasing a modal for a background write, without moving the active input or text caret.
+
+## 1.12.32 · 2026-11-20
+
+- Save card and street list: The confirmation dialog closes once the validated write has been queued and does not reopen during background saving.
+- Geographic editor: Old status and error messages clear on card changes, drawing-tool switches and address edits. Late failures from an earlier context do not reappear.
+- Manual street list: Autosave preserves focus and the text caret in the field being edited instead of moving typing to the territory number.
+
+## 1.12.31 · 2026-11-20
+
+- History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).
+- Merge two publishers under a chosen name from a publisher profile. Assignments and history are preserved, and previous names are recognised in later imports.
+- The service group, group role and pioneer status are retained from the publisher whose profile opens the merge. The latest merge can be undone.
+- Navigation can continue during returns and ordinary saves, and during geographic saves after the required checks. The ordered queue protects newer drafts and profile conflicts; completion is shown only after the write and synchronization are confirmed.
+- Editing tools sit directly below both card and whole-territory boundary maps, with text, icons and touch-friendly buttons.
+- Range display omits odd/even labels when the same street on a card contains both parities. Pure odd or even streets retain their label.
+- Home Assistant can detect persistent response problems independently of status delivery. Short internal status reads do not cause a false alarm. Reimport the updated runtime blueprint for the new notification type; existing automations are not changed automatically.
+
 ## 1.12.19-beta.35 · 2026-11-20
 
 - History import creates unknown publishers in the group "Ikke i en tjenestegruppe" (Not in a service group).
@@ -25,10 +65,21 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - Range display omits odd/even labels when the same street on a card contains both parities. Pure odd or even streets retain their label.
 - Home Assistant can detect persistent response problems independently of status delivery. Short internal status reads do not cause a false alarm. Reimport the updated runtime blueprint for the new notification type; existing automations are not changed automatically.
 
+## 1.12.30 · 2026-11-19
+
+- DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.
+- Failed outline proposals show an explanation. A DAR selection without a boundary is no longer presented as a completed proposal. Unknown address coordinates and coincident entrances receive specific explanations.
+
 ## 1.12.19-beta.34 · 2026-11-19
 
 - DAR outline suggestions now check whether new neighbouring boundaries can resolve a blockage. Proposed boundaries appear on the map and require explicit approval before an atomic save. Neighbouring addresses, DNC, assignments and history are preserved.
 - Failed outline proposals show an explanation. A DAR selection without a boundary is no longer presented as a completed proposal. Unknown address coordinates and coincident entrances receive specific explanations.
+
+## 1.12.29 · 2026-11-18
+
+- The history template opens normally in Microsoft Excel. The newest period is on the left, and previously completed templates can still be imported.
+- Remove corners in the editor by tapping corners in a card boundary or the whole territory boundary. Save the boundary afterward.
+- Small card edits and returns reuse loaded geographic data when geographic properties are unchanged. This reduces unnecessary loading after saves.
 
 ## 1.12.19-beta.33 · 2026-11-18
 
@@ -40,6 +91,14 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - The history template opens normally in Microsoft Excel after correcting the workbook structure.
 - Choose Remove corners and tap corners to remove them from a card boundary or the whole territory boundary. Save the boundary afterward.
 - Small card edits and returns reuse loaded geographic data when geographic card properties are unchanged. This reduces unnecessary loading after saves.
+
+## 1.12.28 · 2026-11-17
+
+- **Excel history:** Download the template with the existing import permissions. It includes five assignment and return periods per card and explicit completion marking.
+- **Daily desk:** Move several cards to the carry folder, view aggregate home statistics with the restricted desk role, and create a do-not-call follow-up on return.
+- **Reports and DAR:** Show or hide territory numbers in report maps and printouts. DAR can improve clearance from excluded houses around short edges.
+- **Performance:** Faster initial map rendering, reuse of confirmed save responses and fewer geographic data reads.
+- **Sign-in and updates:** Opt to stay signed in for up to seven days and see when a newer version is available in the same channel.
 
 ## 1.12.19-beta.31 · 2026-11-17
 
@@ -57,6 +116,18 @@ This preserves the complete changelog as it stood before the Danish-default migr
 ## 1.12.19-beta.29 · 2026-11-17
 
 - **Map editor:** Reuses address groups and card ownership lookups. This reduces work when opening and redrawing large maps. All addresses are still available when panning and zooming.
+
+## 1.12.26 · 2026-11-16
+
+- **DAR suggestions:** The boundary encloses selected addresses and can cut out whole clusters of unselected address markers. Suggestions seek clearance from neighboring boundaries and unselected markers. In dense streets, the boundary can still run close to an address.
+- **Map editor:** Suggestions are checked on save. The editor warns if a selected address requires overlap with a neighboring territory. Existing boundaries are replaced when the user saves a new suggestion.
+- **S-12:** Short house number ranges retain the even or odd label.
+
+## 1.12.27 · 2026-11-16
+
+- **Fixed language:** A role can set the app language to Danish or English.
+- **Checkout role:** Restrict the user to Home, check-in and check-out, and publishers. The role can issue and return existing cards.
+- **Follow-ups:** Users with access to geographic card data can see cards without a geographic boundary even when the system was set up for daily lending.
 
 ## 1.12.19-beta.28 · 2026-11-16
 
@@ -82,6 +153,28 @@ This preserves the complete changelog as it stood before the Danish-default migr
 ## 1.12.19-beta.23 · 2026-11-16
 
 - **DAR boundaries:** Suggest boundary shapes a connected area around the selected houses and cuts out other loaded address markers. If no safe suggestion can be found, the map editor keeps the current draft. A suggestion that must enclose a selected address inside a neighboring territory shows an overlap warning.
+
+## 1.12.23 · 2026-11-15
+
+- **S-12 card front:** Show a shorter first–last range for each DAR street line. Preview the change immediately and save it for print and export. Odd and even sides can be set independently.
+
+## 1.12.24 · 2026-11-15
+
+- **Address changes:** Use **Reject all addresses outside the territory boundary** to review and reject pending DAR addresses outside the saved boundary. Addresses on the boundary and uncertain moves still get individual review.
+- **Tasks:** Use **Mark done or reply** to complete a task with an optional note or reply. The person who assigned it can find the reply under **Replies to me**. Replies can be deleted from task history.
+- **DAR suggestions:** Street-list errors now show the card number, street name, postcode and requested range.
+- **S-12:** Choose how to display odd and even house numbers separately and preview the result immediately. Saved ranges appear in print and exports. Update shared PDFs from the card.
+
+## 1.12.25 · 2026-11-15
+
+- **DAR suggestions:** The automatic boundary keeps other known houses and locally saved buildings outside the territory.
+- **Neighboring territories:** The suggestion looks for a detour at least three meters from shared boundaries. It shows a warning if the selected houses require a narrow crossing within the local map area.
+- **Map editor:** Use **Suggest boundary** to recalculate the boundary for the selected addresses. The suggestion is checked again on save. If a safe suggestion is unavailable, draw the boundary by hand.
+
+- **Readable archive:** Generate cards together from local map data and export boundaries and address points as KML. Large archives are assembled on disk.
+- **Backup:** ZIP names include date and time. Use Save as in browsers with a file picker, or use browser download settings. Import supports ZIP files up to 512 MB.
+- **Territories:** Open selects the card in the list so the selection is visible when you close it.
+- **Concurrent edits:** Open editors retain their own starting point while users work on different cards.
 
 ## 1.12.19-beta.22 · 2026-11-15
 
@@ -121,6 +214,12 @@ This preserves the complete changelog as it stood before the Danish-default migr
 ## 1.12.19-beta.15 · 2026-11-15
 
 - **Territory cards:** See the card front change as soon as you select a house-number range. **Save and show card** opens the saved front, and previously shared PDFs get a shortcut to update them.
+
+## 1.12.22 · 2026-11-14
+
+- **Tasks:** Attach up to five PNG or JPEG images. View them in the task list and on the linked card. Images are stored locally and included in regular backups.
+- **Do-not-call:** Review the whole card's Danish Address Register (DAR) suggestions in one table. Unambiguous changes are selected by default, and each address can be deselected.
+- **Streets on the card front:** Show odd and even ranges and their total visits on one line per street. Streets with only one side keep the odd or even label.
 
 ## 1.12.19-beta.14 · 2026-11-14
 
@@ -167,6 +266,15 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - **Do-not-call:** Review the whole card's Danish Address Register (DAR) suggestions in one table. Unambiguous changes are selected by default, and each address can be deselected.
 - **Streets on the card front:** Show odd and even ranges and their total visits on one line per street. Streets with only one side keep the odd or even label.
 
+## 1.12.21 · 2026-11-12
+
+- **Stable promotion of Beta 1.12.19-beta.6:** Combine the beta.5 and beta.6 improvements into a new Stable version, retaining the verified beta application code with separate Stable version metadata.
+- **Publishers and territories:** Grouped lists and accurate totals, confirmed deletion, bulk folder actions and distinct public/internal territory numbers with persistent technical card IDs.
+- **Completions and reports:** Improved history editing, KTM visit guidance, explicit report-period choice and restored month timeline with the last KTM visit indicator.
+- **Maps, DAR and printing:** Mobile S-13 preview, OSM retry or background-free report generation, optional DAR front-line text and bounded S-12 layout adjustments.
+- **Tasks and sharing:** Reversible follow-up dismissals, accurate Google Drive upload progress and guarded retries, plus reviewed territory split suggestions.
+- Keep Stable and Beta installations, records, logins and ports separate. The macOS server track still requires independent physical validation.
+
 ## 1.12.19-beta.6 · 2026-11-12
 
 - **DAR on the card front:** Add optional free text for the street name and house numbers. The card front keeps the DAR line and appends your text. Previously saved text is retained as a supplement.
@@ -186,6 +294,14 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - **S-12 layout:** Make small bounded template-specific text and QR position adjustments with reset, preserving QR readability and A4/IB continuation pages.
 - **Split suggestions:** Configure a local maximum number of visits per card and dismiss or restore individual proposals without automatic redistribution.
 - Run synthetic security, access control, PDF, printing, responsive, desktop and backup regression tests. This is **Beta**; Stable is unchanged.
+
+## 1.12.20 · 2026-11-09
+
+- Promote the tested 1.12.19-beta.4 code to Stable: personal open-task greeting with authorized automatic refresh and shortcut to the user's filtered task list.
+- Suggested card counts by publisher role now persist and display correctly with accounts, and never restrict issuance.
+- Select existing cards into the daily-use folder without duplicating cards; sort territory cards by longest time since completion while preserving filters.
+- Improve original-size IB-card back pagination and protect historic task listings and profile access.
+- Keep Stable and Home Assistant Beta separately installed, with separate data and ports. Update release version and tested stable artifacts.
 
 ## 1.12.19-beta.4 · 2026-11-09
 

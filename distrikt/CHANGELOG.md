@@ -2,6 +2,21 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.12.36-beta.1 · 2026-11-21
+
+- Beta og Stable har nu ét fælles versionsgrundlag: næste fejlrettelses-Beta hedder 1.12.36-beta.1, og dens Stable-udgave hedder 1.12.36. Nye bagudkompatible funktioner starter en minor-version, og uforenelige ændringer starter en major-version.
+- Udgivelsesworkflows validerer nu versionsrækkefølge, entydige Git-tags, seneste Stable som grundlag for Beta og samme programkode fra seneste Beta til Stable. En eksisterende Beta-genudgivelse springes over med en tydelig besked i stedet for at ændre et tidligere tag.
+- Denne overgangs-Beta indeholder de samme brugerfunktioner som Stable 1.12.35. Ingen ændringer i brugerdata, rettigheder eller driftskanal.
+
+## 1.12.35 · 2026-11-21
+
+- **Rapporter og IB:** Rapporten tæller nu alle aktive IB-registreringer, også manuelt oprettede uden tilknyttet DAR-adresse. Antallet af kortlagte IB inden for distriktsgrænsen vises særskilt, og begge tal respekterer IB-rettighederne.
+- **Sikker samlet IB-adressegodkendelse:** Forhåndsvis og godkend i én handling de entydige DAR-adressematch for manuelle IB på alle distriktskort. Tvivlsomme match udelades; ændret grundlag afvises, og handlingen kan fortrydes samlet.
+- **Menighedstilpasning:** Vælg egne betegnelser for hjemme/kasse, mappe og udleveret, tilpas den vejledende kortfordeling, og fravælg mappen, hvis menigheden kun bruger hjemme/ude. De eksisterende placeringer og historik bevares.
+- **Interne distriktskortnavne:** Tilføj et valgfrit internt navn pr. kort, søg efter det i administrationen, og bevar det gennem import, læsbar eksport og backup. Officielle distriktsnavne og -numre, S-12/S-13 og offentlig deling ændres ikke.
+- **Tidligere Stable-rettelser bevares:** Sikker gemmedialog, fokus/scroll under autosave, oprydning i forældede DAR-fejl og det korrekt opmålte IB-læsearkiv følger fortsat med.
+- DAR-preview-isolering i åben PR #134 og øvrige uafsluttede PR'er er ikke inkluderet. macOS-server kræver stadig sin særskilte fysiske godkendelse.
+
 ## 1.12.19-beta.37 · 2026-11-21
 
 - **Menighedstilpasning:** Vælg jeres egne visningsnavne for hjemme/kasse, mappe og udleveret. En menighed kan fravælge mappen og bruge hjemme/ude uden at miste gemte placeringer eller historik. Statuskoder og officielle formularer ændres ikke.
@@ -15,6 +30,31 @@
 - **Rapportens IB-antal:** Vis alle aktive IB-registreringer, også manuelle IB-linjer uden DAR-adressetilknytning. Vis særskilt hvor mange der kan knyttes til kortlagte adresser inden for den gemte distriktsgrænse.
 - **Adgangsbeskyttelse:** Begge IB-tal følger fortsat rettigheden til at se IB, og eksisterende data ændres ikke.
 
+## 1.12.34 · 2026-11-20
+
+- Læsearkiv: PDF'en med IB-bagsider bruger nu samme opmålte layout som almindeligt IB-print, inklusive vejgrupper, kolonner, datoer og fortsættelsessider. Manglende sider stopper eksporten uden en ufuldstændig pakke.
+- Indstillinger → Data: Knappen **Eksportér læsearkiv** står direkte ved siden af **Sikkerhedskopi**.
+
+## 1.12.33 · 2026-11-20
+
+- Gemning og autosave: Scrollpositionen i både siden og en lang redigeringsdialog bevares under baggrundsgemning; fokus og tekstmarkør bliver i det felt, der redigeres.
+
+## 1.12.32 · 2026-11-20
+
+- Gem kort og vejliste: Bekræftelsesboksen lukkes, når den kontrollerede gemning er sat i gang; den kommer ikke tilbage under baggrundsgemningen.
+- Korteditor: Gamle status- og fejlbeskeder ryddes ved skift af kort, tegneværktøj eller adressevalg. Forsinkede fejl fra et tidligere valg bliver ikke vist igen.
+- Manuel vejliste: Automatisk gemning bevarer fokus og tekstmarkør i det felt, der redigeres, i stedet for at flytte indtastningen til distriktnummeret.
+
+## 1.12.31 · 2026-11-20
+
+- Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
+- To forkyndere kan sammenlægges under et valgfrit navn fra forkynderens side. Udleveringer og historik bevares, og tidligere navne genkendes ved senere import.
+- Tjenestegruppe, gruppefunktion og pionerstatus bevares fra den forkynder, sammenlægningen åbnes fra. Sammenlægningen kan fortrydes som seneste handling.
+- Navigation kan fortsætte under indlevering og andre almindelige gemninger samt kortgemning efter de nødvendige kontroller. Gemmekøen beskytter nyere kladder og profilkonflikter; status er først færdig, når gemning og opdatering er bekræftet.
+- Redigeringsværktøjerne står lige under både kortets grænse og den samlede grænse med tekst, ikoner og trykvenlige knapper.
+- Intervalvisning udelader (lige)/(ulige), når samme vej på kortet har begge slags husnumre. Rene lige eller ulige veje beholder mærket.
+- Home Assistant kan registrere vedvarende svarproblemer uafhængigt af statusafleveringen. Korte interne statuslæsninger udløser ikke fejlalarm. Genimportér det opdaterede driftsblueprint for den nye beskedtype; eksisterende automationer ændres ikke automatisk.
+
 ## 1.12.19-beta.35 · 2026-11-20
 
 - Historikimport opretter ukendte forkyndere i gruppen "Ikke i en tjenestegruppe".
@@ -25,10 +65,21 @@
 - Intervalvisning udelader (lige)/(ulige), når samme vej på kortet har begge slags husnumre. Rene lige eller ulige veje beholder mærket.
 - Home Assistant kan registrere vedvarende svarproblemer uafhængigt af statusafleveringen. Korte interne statuslæsninger udløser ikke fejlalarm. Genimportér det opdaterede driftsblueprint for den nye beskedtype; eksisterende automationer ændres ikke automatisk.
 
+## 1.12.30 · 2026-11-19
+
+- DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.
+- Mislykkede grænseforslag vises med en forklaring. Et DAR-valg uden grænse præsenteres ikke længere som et færdigt forslag. Ukendte adressekoordinater og sammenfaldende indgange forklares særskilt.
+
 ## 1.12.19-beta.34 · 2026-11-19
 
 - DAR-grænseforslag undersøger nu, om blokeringen kan løses med nye grænser på nabokort. Forslagene vises på kortet og kræver særskilt godkendelse før samlet gemning. Nabokortenes adresser, IB, udlån og historik bevares.
 - Mislykkede grænseforslag vises med en forklaring. Et DAR-valg uden grænse præsenteres ikke længere som et færdigt forslag. Ukendte adressekoordinater og sammenfaldende indgange forklares særskilt.
+
+## 1.12.29 · 2026-11-18
+
+- Historikskabelonen åbner normalt i Microsoft Excel. Nyeste periode står til venstre, og tidligere udfyldte skabeloner kan fortsat importeres.
+- Fjern prikker i editoren ved at trykke på de hjørner, der skal fjernes fra et korts grænse eller den samlede grænse. Gem derefter grænsen.
+- Små kortændringer og indleveringer genbruger de indlæste geodata, når de geografiske oplysninger er uændrede. Det reducerer unødvendig genindlæsning efter gemning.
 
 ## 1.12.19-beta.33 · 2026-11-18
 
@@ -40,6 +91,14 @@
 - Historikskabelonen åbner normalt i Microsoft Excel efter rettelse af filstrukturen.
 - Vælg Fjern prikker, og tryk på de hjørner, du vil fjerne fra et korts grænse eller den samlede distriktsgrænse. Gem derefter grænsen.
 - Små kortændringer og indleveringer genbruger de indlæste geodata, når kortets geografiske oplysninger er uændrede. Det reducerer unødvendig genindlæsning efter gemning.
+
+## 1.12.28 · 2026-11-17
+
+- **Excel-historik:** Download skabelonen med de normale importrettigheder. Den har fem ud- og indleveringsperioder pr. kort og særskilt markering af gennemgang.
+- **Daglig brug:** Læg flere kort i mappen, se forsidens summer med ind- og udleveringsrollen, og opret IB-opfølgning ved indlevering.
+- **Rapport og DAR:** Vis eller skjul distriktsnumre på rapportkort og udskrift. DAR kan øge afstanden til fravalgte huse omkring korte kanter.
+- **Ydelse:** Hurtigere første korttegning, genbrug af gemmesvaret og færre geodataaflæsninger.
+- **Login og opdateringer:** Vælg at forblive logget på i op til syv dage, og få besked om nye versioner i den samme kanal.
 
 ## 1.12.19-beta.31 · 2026-11-17
 
@@ -57,6 +116,18 @@
 ## 1.12.19-beta.29 · 2026-11-17
 
 - **Korteditor:** Genbruger adressegrupper og opslag af, hvilket distriktskort en adresse tilhører. Det reducerer arbejdet ved åbning og genoptegning af store kort. Alle adresser kan stadig ses ved panorering og zoom.
+
+## 1.12.26 · 2026-11-16
+
+- **DAR-forslag:** Grænsen omslutter valgte adresser og kan skære hele klynger af fravalgte adresseprikker fra. Forslaget søger afstand til nabogrænser og fravalgte prikker. Ved tæt bebyggelse kan grænsen stadig ligge tæt på en adresse.
+- **Korteditor:** Forslaget kontrolleres ved gemning. Hvis en valgt adresse kræver overlap med et nabodistrikt, viser editoren en advarsel. Eksisterende grænser erstattes, når brugeren gemmer et nyt forslag.
+- **S-12:** Forkortede husnummerintervaller bevarer markeringen lige eller ulige.
+
+## 1.12.27 · 2026-11-16
+
+- **Fast sprog:** En rolle kan låse appens sprog til dansk eller engelsk.
+- **Udleveringsrolle:** Begræns brugeren til Forside, Ind/udlevering og Forkyndere. Rollen kan udlevere og aflevere eksisterende kort.
+- **Opfølgninger:** Brugere med adgang til kortdata kan se kort uden geografisk grænse, også når systemet blev sat op til daglig udlevering.
 
 ## 1.12.19-beta.28 · 2026-11-16
 
@@ -82,6 +153,28 @@
 ## 1.12.19-beta.23 · 2026-11-16
 
 - **DAR-grænser:** Foreslå grænse former et sammenhængende areal omkring de valgte huse og skærer andre indlæste adresseprikker fra. Hvis der ikke findes et sikkert forslag, beholder korteditoren den aktuelle tegning. Forslag, der skal omslutte en valgt adresse i et nabodistrikt, viser en advarsel om overlap.
+
+## 1.12.23 · 2026-11-15
+
+- **S-12-forsiden:** Vælg et kort første–sidste-interval for hver DAR-vejlinje. Se ændringen straks i forhåndsvisningen, og gem den til print og eksport. Lige og ulige sider kan vælges hver for sig.
+
+## 1.12.24 · 2026-11-15
+
+- **Adresseændringer:** Brug **Afvis alle adresser uden for distriktsgrænsen** til at gennemgå og afvise de afventende DAR-adresser, der ligger uden for den gemte grænse. Adresser på grænsen samt usikre flytninger gennemgås fortsat enkeltvis.
+- **Opgaver:** Brug **Marker udført eller svar** til at afslutte en opgave med en valgfri note eller et svar. Den, der fordelte opgaven, kan finde svaret under **Svar til mig**. Svaret kan slettes fra opgavehistorikken.
+- **DAR-forslag:** Fejl i vejlisten viser nu kortnummer, vejnavn, postnummer og det interval, der blev slået op.
+- **S-12:** Vælg visningen af lige og ulige husnumre hver for sig, og se ændringen straks. Det gemte interval bruges i print og eksport. Delte PDF’er kan opdateres fra kortet.
+
+## 1.12.25 · 2026-11-15
+
+- **DAR-forslag:** Den automatiske grænse holder andre kendte huse og lokalt gemte bygninger uden for kortet.
+- **Nabokort:** Forslaget søger en omvej med mindst tre meters afstand til nabogrænser. En smal krydsning vises med en besked, når kortudsnittet kræver den for at forbinde de valgte huse.
+- **Korteditor:** Brug **Foreslå grænse** til at beregne en ny grænse for adressevalget. Et forslag kontrolleres igen ved gemning. Hvis der ikke er en sikker grænse, kan den tegnes i hånden.
+
+- **Læsearkiv:** Dan kortene samlet ud fra lokale kortdata, og få kortgrænser og adressepunkter i KML. Store arkiver pakkes på disk.
+- **Sikkerhedskopi:** ZIP-navnet indeholder dato og klokkeslæt. Vælg Gem som i browsere med filvælger, eller brug browserens downloadindstillinger. Import understøtter ZIP-filer op til 512 MB.
+- **Distrikter:** Åbn markerer kortet på listen, så markeringen passer, når du lukker kortet.
+- **Samtidige rettelser:** Åbne redigeringer bevarer deres eget grundlag, mens brugerne arbejder på forskellige kort.
 
 ## 1.12.19-beta.22 · 2026-11-15
 
@@ -121,6 +214,12 @@
 ## 1.12.19-beta.15 · 2026-11-15
 
 - **Distriktskort:** Se virkningen på selve forsiden, så snart du vælger et husnummerinterval. **Gem og fremvis kort** åbner den gemte forside, og tidligere delte PDF’er får en genvej til at blive opdateret.
+
+## 1.12.22 · 2026-11-14
+
+- **Opgaver:** Vedhæft op til fem PNG- eller JPEG-billeder. Se dem i opgavelisten og på det tilknyttede kort. Billederne gemmes lokalt og følger med i den almindelige sikkerhedskopi.
+- **IB:** Gennemgå DAR-forslag for hele kortet i en tabel. Alle entydige ændringer er valgt på forhånd, og hver adresse kan fravælges.
+- **Vejlinjer på kortets forside:** Saml lige og ulige numre for samme vej på én linje, og læg besøgsantallet sammen. Veje med kun lige eller ulige adresser beholder deres mærkning.
 
 ## 1.12.19-beta.14 · 2026-11-14
 
@@ -167,6 +266,15 @@
 - **IB:** Gennemgå DAR-forslag for hele kortet i en tabel. Alle entydige ændringer er valgt på forhånd, og hver adresse kan fravælges.
 - **Vejlinjer på kortets forside:** Saml lige og ulige numre for samme vej på én linje, og læg besøgsantallet sammen. Veje med kun lige eller ulige adresser beholder deres mærkning.
 
+## 1.12.21 · 2026-11-12
+
+- **Samlet Stable efter Beta 1.12.19-beta.6:** Saml forbedringerne fra beta.5 og beta.6 i en ny Stable-udgave, med samme programkode som den kontrollerede beta samt særskilt Stable-version.
+- **Forkyndere og kort:** Gruppedelte lister og korrekte optællinger, bekræftet sletning, massehandling til mappen og separate offentlige/interne distriktsnumre med stabile kort-ID'er.
+- **Gennemgange og rapporter:** Bedre historikredigering, vejledning til KTM-besøg, eksplicit rapportperiode og genskabt tidslinje med »Sidste KTM besøg«.
+- **Kort, DAR og print:** S-13-forhåndsvisning på mobil, OSM-genprøvning eller rapport uden baggrundskort, valgfrie DAR-forsidetekster og begrænsede S-12-layoutjusteringer.
+- **Opgaver og deling:** Reversibelt »Se bort fra« på opfølgninger, tydelig uploadstatus og sikker genprøve i Google Drive samt kontrollerede forslag til distriktsopdeling.
+- Bevar Stable og Beta som separate installationer med egne data, login og porte. Mac-server-udgivelse kræver fortsat sin særskilte fysiske godkendelse.
+
 ## 1.12.19-beta.6 · 2026-11-12
 
 - **DAR på kortets forside:** Tilføj valgfri fritekst til vejnavn og husnumre. Forsiden viser DAR-vejlinjen efterfulgt af din tekst. Tidligere gemt fritekst bevares som et supplement.
@@ -186,6 +294,14 @@
 - **S-12-layout:** Justér små, begrænsede tekst- og QR-positioner pr. skabelon med nulstilling; bevar læsbar QR og korrekt A4/IB-fortsættelse.
 - **Opdelingsforslag:** Indstil lokalt maksimum for besøg pr. kort, og ignorer eller genaktivér konkrete forslag uden automatisk omfordeling.
 - Kør syntetiske sikkerheds-, adgangs-, PDF-, print-, responsiv-, platform- og backup-regressionstests. Dette er **Beta**; Stable ændres ikke.
+
+## 1.12.20 · 2026-11-09
+
+- Overfør de afprøvede forbedringer fra Beta 1.12.19-beta.4 til Stable: personlig påmindelse om åbne opgaver med adgangsstyret automatisk opdatering og genvej til brugerens egne opgaver.
+- Bevar og vis korrekt de vejledende kortantal for forkynderroller ved brugerkonti. Vejledningen begrænser ikke udlevering.
+- Vælg allerede eksisterende kort til den daglige mappe uden dubletter; sortér distriktskort efter længst tid siden gennemgang uden at miste filtrene.
+- Forbedr IB-bagsidens udskrivning i originalstørrelse med korrekt sideopdeling, og bevar historiske opgavelister og profilrettigheder.
+- Hold Stable og Home Assistant Beta adskilt med egne data og porte. Versionsnummer og afprøvede Stable-pakker opdateres særskilt.
 
 ## 1.12.19-beta.4 · 2026-11-09
 

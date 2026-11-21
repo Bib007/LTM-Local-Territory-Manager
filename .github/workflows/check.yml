@@ -19,6 +19,8 @@ jobs:
           python-version: '3.12'
       - name: Require synchronized Danish/English changelogs
         run: python scripts/check_changelog.py
+      - name: Shared Beta/Stable version policy regression tests
+        run: python -m unittest discover -s scripts -p test_version_policy.py -v
       - name: Fictional package privacy and reproducibility checks
         run: python scripts/test_build_release.py
       - name: Real archive startup and checksums
