@@ -2,6 +2,14 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.13.0-beta.2 · 2026-11-21
+
+- **KTM visit points:** The report header now sums known visit points on current territory cards, including manually maintained street rows. Unassigned DAR addresses do not count. Cards with unknown counts are reported separately so a partial total is not presented as complete.
+- **One accurate do-not-call total:** Only one figure includes all active do-not-call records, including manually entered ones without a DAR match. The geographic subset is removed from the KTM presentation, without changing geographic data.
+- **Coverage and missing territory cards:** A single coverage donut replaces current home/issued splits in report metrics. For the selected calendar year, service year or rolling 12 months, every current card without a completion is listed by number, name, area and last known completion date, including in PDF print.
+- **Scope and access:** Repeated completions and archived-card history remain counted as events; only current cards affect coverage and the missing-card list. Summary-only roles receive counts, never individual card details, and the IB total still requires do-not-call viewing permission. Original S-13 output is unchanged.
+- No stored card or completion records are modified, and no database migration is required.
+
 ## 1.13.0-beta.1 · 2026-11-21
 
 - **Usage statistics (Beta):** A new read-only Settings overview provides estimated editing time for LTM overall, per user and month, plus saved edit counts and days with activity.
