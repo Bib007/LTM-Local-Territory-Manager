@@ -2,6 +2,19 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.12.36 · 2026-11-21
+
+- Unified Beta/Stable version train: Published `1.12.36-beta.N` promotes to `1.12.36` only with the same verified code. Fixes increment PATCH, backward-compatible features increment MINOR, and breaking changes increment MAJOR.
+- Releases now check consecutive beta numbering, immutable Git tags, latest Stable ancestry for Beta and identical application code when promoting the latest Beta to Stable.
+- Each independent Stable track validates this policy before uploading packages. Beta remains isolated, and the macOS-server physical testing gate stays in effect.
+- No new user-facing features or data-schema changes compared with Stable 1.12.35.
+
+## 1.12.36-beta.1 · 2026-11-21
+
+- Beta and Stable now share one version base. The next patch Beta is 1.12.36-beta.1 and promotes to Stable 1.12.36; compatible features advance MINOR and incompatible changes advance MAJOR.
+- Release workflows validate the version sequence, immutable Git tags, latest Stable ancestry for Beta and source parity between the latest Beta and its Stable promotion. An ordinary develop push with an already released Beta version now skips publishing with an explicit notice rather than reusing a tag.
+- This migration Beta contains the same user-facing features as Stable 1.12.35 and does not change stored data, permissions or channel isolation.
+
 ## 1.12.35 · 2026-11-21
 
 - **Reports and do-not-call totals:** Count all active do-not-call entries, including manual entries with no linked DAR address. Display the geographically mapped subset inside the territory boundary separately; both numbers respect viewing permissions.
@@ -10,6 +23,19 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - **Internal territory names:** Store an optional internal name per card, search for it administratively and preserve it through imports, readable exports and backups. Official names/numbers, S-12/S-13 and public sharing are unchanged.
 - **Existing Stable fixes retained:** Safe save dialogs, focus/scroll preservation during autosave, clearing stale DAR feedback and the measured do-not-call readable archive remain included.
 - Pending DAR preview isolation PR #134 and other unfinished pull requests are excluded. The macOS-server track retains its separate physical validation gate.
+
+## 1.12.19-beta.37 · 2026-11-21
+
+- **Congregation customization:** Configure local display labels for home/box, folder and issued. Congregations can disable the carry-folder workflow without losing stored placements or history. Internal status keys and official forms are unchanged.
+- **Bulk safe do-not-call address matching:** Preview and explicitly approve unambiguous DAR matches for manual do-not-call entries across all territory cards. Ambiguous matches are skipped; authorization, atomic saving and one-step undo are preserved.
+- **Internal territory names:** Each territory card can have an optional private name for administrative display and search without replacing its official name. Long names wrap on mobile and desktop.
+- **Data and privacy:** Private names are supported by editing, permissions, imports, readable exports and backups. Existing cards, assignments, do-not-call entries and history remain intact. S-12/S-13 and publicly shared maps keep their official labels only.
+- **Stable fixes included in Beta:** The fixes for save dialogs, autosave, focus/scroll, stale DAR messages and the measured do-not-call readable-archive layout and backup-adjacent action are also included in the Beta code. This release does not modify Stable.
+
+## 1.12.19-beta.36 · 2026-11-21
+
+- **Report do-not-call totals:** Show every active do-not-call entry, including manual lines without a linked DAR address. Separately show how many match mapped addresses within the saved territory boundary.
+- **Access protection:** Both do-not-call totals remain protected by the IB viewing permission; existing records are unchanged.
 
 ## 1.12.34 · 2026-11-20
 
