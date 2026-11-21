@@ -288,6 +288,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
             for c in result['cards']:
                 c.setdefault('internal_number','')  # Old cards remain valid.
+                c.setdefault('internal_name','')  # Optional local label on legacy cards.
                 for side in ('front','back'):c[side+'_print_token']=self.print_token(c,side,print_context)
             histories=self.loan_history_tokens(result['cards'],result['loans'])
             result['loan_delete_tokens']={loan['id']:histories[loan['card_id']] for loan in result['loans']}
@@ -470,7 +471,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             internal=internal_code(data.get('internal_number',card.get('internal_number','')))
             if any(c.get('internal_number','').casefold()==internal.casefold() and c['id']!=card['id'] for c in reserved) and internal:
                 raise ValueError('Det interne nummer findes allerede (evt. i 48-timers gendannelse).')
-            card.update(number=number, internal_number=internal, name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
+            card.update(number=number, internal_number=internal,
+                        internal_name=clean_text(data.get('internal_name',card.get('internal_name','')),160),
+                        name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
                         kind=data.get('kind', 'Ukendt'), temporary=bool(data.get('temporary', True)))
             color = data.get('map_color', card.get('map_color', '#477596'))
             if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
