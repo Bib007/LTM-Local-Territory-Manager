@@ -7,7 +7,7 @@ class Fields{constructor(form){this.values=new Map(form.fields);}has(k){return t
 const c={console,Date,Intl,Number,String,Math,Map,Set,Array,Object,JSON,Promise,FormData:Fields,writes,location:{origin:'http://127.0.0.1:9999'},
  setTimeout(){},clearTimeout(){},frontResizeObserver:null,DistrictMap:{dispose(){}},window:{addEventListener(){}},
  document:{getElementById:get,querySelector(){return {content:'INVENTED_TOKEN'};},addEventListener(k,fn){(listeners[k]??=[]).push(fn);}},fetch(){throw Error('Network forbidden');}};
-vm.createContext(c);for(const name of ['i18n.js','workspace.js','report-map.js','s13-template.js','report-print.js'])vm.runInContext(read(name),c);
+vm.createContext(c);for(const name of ['i18n.js','workspace.js','ktm-report-ui.js','report-map.js','s13-template.js','report-print.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);
 const run=s=>vm.runInContext(s,c);
 run(`GeoUI={data:{main_boundary:{points:[]}}};state={boundary_report:{visits:91,ib:7,ib_total:11},today:'2026-10-16',settings:{congregation:'Tjenesteår <invented> & Kort'},
@@ -18,6 +18,7 @@ run(`GeoUI={data:{main_boundary:{points:[]}}};state={boundary_report:{visits:91,
  visits:[{id:'v',date:'2026-09-10',note:'KTM-besøg <invented> & Kort'},{id:'v-old',date:'2025-09-01',note:'OLD'}],
  ib:[{card_id:'c1',road:'DO_NOT_INCLUDE_ROAD',number:'PRIVATE_NO'}]};year=2027;
  mutate=async(action,data,options)=>writes.push({action,data,options});`);
+run('state.report_summary={territory_totals:{visit_points:10,unknown_visit_cards:0,ib_total:11}}');
 const original=run('JSON.stringify(state)'),print={},contracts={},submit=listeners.submit.find(fn=>String(fn).includes("case 'visitForm'"));
 const counts=markup=>Array.from(markup.matchAll(/<td>(\d+)<\/td>/g),m=>Number(m[1]));
 const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-action|data-id|data-value)="[^"]*"/g)||[]).join('\n');
@@ -27,21 +28,20 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   run(`I18n.set('${language}');Workspace.reportPeriod='service'`);print[language]=run("reportPrintDocument({calendar:'<div>FIXED_CALENDAR_MAP</div>',service:'<div>FIXED_SERVICE_MAP</div>',rolling:'<div>FIXED_ROLLING_MAP</div>'},'all')");
   assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],language==='en'?/s13-background-en.jpg/:/s13-background.jpg/);if(language==='da')assert.match(print[language],/Hus til hus/);else assert.doesNotMatch(print[language],/Hus til hus/);
   assert.match(print[language],/<section class="reportCover"[^>]*>[\s\S]*?<h1>Tjenesteår &lt;invented&gt; &amp; Kort<\/h1>/);
-  assert.equal((print[language].match(/class="reportRing"/g)||[]).length,6);
+  assert.equal((print[language].match(/class="reportRing"/g)||[]).length,3);
   const boundary=run('Workspace.boundaryReport()');
-  const points=language==='en'?/Total mapped visit points/:/Kortlagte besøgspunkter i alt/;
-  const ib=language==='en'?/Of which mapped inside the boundary/:/Heraf kortlagt inden for grænsen/;
+  const points=language==='en'?/Visit points on current territory cards/:/Besøgspunkter på aktuelle distriktskort/;
   const allIB=language==='en'?/Do-not-call records in total/:/IB-registreringer i alt/;
+  const oldMapped=language==='en'?/Of which mapped inside the boundary/:/Heraf kortlagt inden for grænsen/;
   for(const html of [boundary,print[language]]){
-   assert.match(html,points);assert.match(html,allIB);assert.match(html,ib);
-   assert.match(html,/<strong>91<\/strong>/);assert.match(html,/<strong>11<\/strong>/);assert.match(html,/<strong>7<\/strong>/);
-   assert.match(html,language==='en'?/manual do-not-call lines/:/manuelle linjer/);
+    assert.match(html,points);assert.match(html,allIB);
+    assert.doesNotMatch(html,oldMapped);
+    assert.match(html,/<strong>10<\/strong>/);assert.match(html,/<strong>11<\/strong>/);
+    assert.doesNotMatch(html,/<strong>91<\/strong>|<strong>7<\/strong>/);
   }
-  const withoutMapped=run('(()=>{const data=state.boundary_report;state.boundary_report={visits:91,ib_total:11};const html=Workspace.boundaryReport();state.boundary_report=data;return html;})()');
-  assert.doesNotMatch(withoutMapped,ib);
-  const old=run('(()=>{const data=state.boundary_report;state.boundary_report={visits:91,ib:7};const html=Workspace.boundaryReport();state.boundary_report=data;return html;})()');
-  assert.match(old,language==='en'?/Mapped do-not-call records/:/Kortlagte IB-registreringer/);
-  assert.doesNotMatch(old,allIB);
+  const noIB=run('(()=>{const d=state.report_summary.territory_totals;state.report_summary.territory_totals={visit_points:10,unknown_visit_cards:2};const h=Workspace.boundaryReport();state.report_summary.territory_totals=d;return h;})()');
+  assert.match(noIB,points);assert.doesNotMatch(noIB,allIB);
+  assert.match(noIB,language==='en'?/Cards without a known visit count/:/Kort uden et kendt besøgstal/);
   const mapPages=Array.from(print[language].matchAll(/<section class="report reportMapPage[^"]*">([\s\S]*?)<\/section>/g),m=>m[1]);
   assert.equal(mapPages.length,3);assert.match(mapPages[0],/Kalenderår 2026/);assert.match(mapPages[0],/FIXED_CALENDAR_MAP/);assert.match(mapPages[1],/Tjenesteår 2026\/2027/);assert.match(mapPages[1],/FIXED_SERVICE_MAP/);assert.match(mapPages[2],/Seneste 12 måneder/);assert.match(mapPages[2],/FIXED_ROLLING_MAP/);assert.doesNotMatch(print[language],/data-ui|Kort til opfølgning|AKTUEL OPFØLGNING/);
   // Deliberate print choice: never include unrelated period pages.
@@ -61,14 +61,16 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.match(overview,language==='en'?/Combined report overview/:/Samlet rapportoversigt/);
   const figures=Array.from(overview.matchAll(/<article class="reportPeriod" data-report-period="([^"]+)">([\s\S]*?)<\/article>/g));
   assert.deepEqual(figures.map(f=>f[1]),['calendar','service','rolling']);
-  assert.deepEqual(Array.from(figures[0][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['1','1','1','1','3','2','0','1']);
-  assert.deepEqual(Array.from(figures[1][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['1','1','1','1','3','2','0','1']);
-  assert.deepEqual(Array.from(figures[2][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['2','0','1','1','4','2','0','0']);
+  assert.deepEqual(Array.from(figures[0][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['1','1','3','2','1']);
+  assert.deepEqual(Array.from(figures[1][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['1','1','3','2','1']);
+  assert.deepEqual(Array.from(figures[2][2].matchAll(/<strong>([^<]+)<\/strong>/g),m=>m[1]),['2','0','4','2','0']);
   assert.doesNotMatch(overview,/DO_NOT_INCLUDE_ROAD|PRIVATE_NO|reportDistrictMap|<invented>/);
   assert.equal((print[language].match(/class="reportchart"/g)||[]).length,3,'All three periods intentionally include their own month timelines');
   assert.equal((print[language].match(/data-report-period=/g)||[]).length,0,'No combined overview is included in the period PDFs');
   assert(print[language].indexOf('reportchart')<print[language].indexOf('<section class="report reportMapPage'));assert.match(print[language],/Sidste KTM besøg/);
   assert.match(summary,language==='en'?/>Current territories completed<\//:/>Gennemgåede aktuelle distrikter<\//);
+   assert.match(summary,language==='en'?/Territory cards not completed in the period/:/Ikke gennemgåede distriktskort i perioden/);
+   assert.match(summary,/\b102\b/);
   const service=counts(run("Workspace.reportChart('2026-09-01','2027-08-31')"));assert.equal(service.length,12);assert.equal(service.reduce((a,b)=>a+b,0),3);assert.equal(service[0],2);assert.equal(service[1],1);
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
   const rolling=run("Workspace.periodBounds('rolling')");assert.equal(rolling[0],'2025-10-16');assert.equal(rolling[1],'2026-10-16');const monthly=counts(run('Workspace.reportChart(...Workspace.periodBounds("rolling"))'));assert.equal(monthly.length,13);assert.equal(monthly.reduce((a,b)=>a+b,0),4);
@@ -77,8 +79,8 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    const screen=run('Workspace.reports()');
    assert.equal(run('Workspace.reportPeriod'),mode);
    assert.equal((screen.match(/class="metrics"/g)||[]).length,2);
-   assert.match(screen,points);assert.match(screen,ib);
-   assert.equal((screen.match(/class="reportRing"/g)||[]).length,2);
+   assert.match(screen,points);assert.match(screen,allIB);assert.doesNotMatch(screen,oldMapped);
+   assert.equal((screen.match(/class="reportRing"/g)||[]).length,1);
    assert.doesNotMatch(screen,/class="reportComparison"/);
    assert.equal(screen.includes('id="calendarYear"'),mode==='calendar');assert.match(screen,/id="reportPrintPeriod"/);assert.match(screen,new RegExp('value="'+mode+'" selected'));
   }

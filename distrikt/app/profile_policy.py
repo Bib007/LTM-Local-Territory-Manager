@@ -250,6 +250,8 @@ def state_for(raw,user):
     if 'backup.notify' in p:result['backup_last_day']=raw['backup_last_day']
     if READ_ALL|WRITE_ALL|{'backup.restore'}<=p:result['recovery']=deepcopy(raw['recovery'])
     summary=summaries(raw) if {'dashboard.view','reports.view'}&p else None
+    if summary and 'ib.view' not in p:
+        summary['territory_totals'].pop('ib_total',None)
     result['dashboard_summary']=deepcopy(summary) if 'dashboard.view' in p else None
     result['report_summary']=deepcopy(summary) if 'reports.view' in p else None
     result['profile']={'desk_only':bool(user.get('desk_only')),'language':user.get('language',''),'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision'],'capabilities':capability_catalog()}
