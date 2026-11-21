@@ -31,7 +31,7 @@ class MainBoundaryTests(unittest.TestCase):
         self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':0,'ib_total':0})
         for n,ident in ((1,assigned),(2,None),(3,outside),(9,None)):
             self.s.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':str(n),'address_id':ident,'date':'2026-01-01'})
-        self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':2})
+        self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':2,'ib_total':4})
 
     def test_many_points_and_restart_preserve_all_details(self):
         points=[[10+.01*math.cos(i*2*math.pi/5000),55+.01*math.sin(i*2*math.pi/5000)] for i in range(5000)]
