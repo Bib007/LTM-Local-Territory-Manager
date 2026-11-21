@@ -20,11 +20,11 @@ const AdminUI={
  selection(cards){
   this.visible=cards.map(c=>c.id);
   const chosen=this.selectedCards(),toFolder=this.folderIds(chosen,true),toBox=this.folderIds(chosen,false),excluded=chosen.length-toFolder.length,canMove=typeof ProfilesUI==='undefined'||ProfilesUI.canAction('folder.set');
-  return `<div class="actions cardSelection"><button data-admin="all">${ui('Vælg viste kort')}</button><button data-admin="none">${ui('Fravælg alle')}</button><button data-admin="bulk" ${chosen.length?'':'disabled'}>${ui('Ændr område / type · {count} valgt',{count:chosen.length})}</button>${folderEnabled()?`<button data-action="folder-selection" ${toFolder.length&&toFolder.length<=500&&canMove?'':'disabled'}>${ui('Læg {count} i mappen',{count:toFolder.length})}${excluded?' · '+ui('{count} springes over',{count:excluded}):''}</button>${toBox.length?`<button data-action="folder-selection-box">${ui('Flyt {count} til kassen',{count:toBox.length})}</button>`:''}`:''}</div>
+  return `<div class="actions cardSelection"><button data-admin="all">${ui('Vælg viste kort')}</button><button data-admin="none">${ui('Fravælg alle')}</button><button data-admin="bulk" ${chosen.length?'':'disabled'}>${ui('Ændr område / type · {count} valgt',{count:chosen.length})}</button>${(typeof state==='undefined'||state?.settings?.folder_enabled!==false)?`<button data-action="folder-selection" ${toFolder.length&&toFolder.length<=500&&canMove?'':'disabled'}>${ui('Læg {count} i mappen',{count:toFolder.length})}${excluded?' · '+ui('{count} springes over',{count:excluded}):''}</button>${toBox.length?`<button data-action="folder-selection-box">${ui('Flyt {count} til kassen',{count:toBox.length})}</button>`:''}`:''}</div>
   <p class="hint" role="status">${ui('{count} kort valgt på tværs af filtre',{count:chosen.length})}${chosen.length?': '+chosen.map(c=>`${esc(c.number)}${this.folderReason(c)?' ('+esc(I18n.text(this.folderReason(c)))+')':''}`).join(' · '):''}</p>`;
  },
  folderPreview(ids=null){
-  if(!folderEnabled()){toast(I18n.text('Slå mappen til for at flytte kort mellem kassen og mappen.'));return;}
+  if(typeof state!=='undefined'&&state?.settings?.folder_enabled===false){toast(I18n.text('Slå mappen til for at flytte kort mellem kassen og mappen.'));return;}
   if(this.folderConfirmBusy)return;
   if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('folder.set')){toast(I18n.text('Din rolle giver ikke adgang til denne handling.'));return;}
   // The daily-use picker supplies its own IDs; never overwrite inventory selections.

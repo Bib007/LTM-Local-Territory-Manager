@@ -8,3 +8,18 @@
 #updateNotice :focus-visible{outline:2px solid var(--link);outline-offset:2px}
 @media(max-width:750px){header:has(#updateNotice:not([hidden])){flex-wrap:wrap;height:auto;min-height:64px}#updateNotice{order:3;max-width:100%;width:100%;margin:0;padding:4px 0 7px;border-left:0;border-top:1px solid var(--line)}}
 @media print{#updateNotice{display:none!important}}
+
+/* Congregation-specific names may be much longer than the original labels. */
+@media screen{
+ .deskCounts{min-width:0;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))}
+ .deskCounts button,.dashboardShortcuts button,.deskTabs button,.cardSelection button,
+ .statusBadge,.folderSummary button,.publisherReturns button,.returnAction,.issueAction{
+   min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;
+ }
+ .deskCounts button span,.dashboardShortcuts button span,.deskTabs button span,
+ .statusBadge span,.cardSelection button span{overflow-wrap:anywhere;min-width:0}
+ .actions button,.toolbar button{overflow-wrap:anywhere;white-space:normal;min-width:0}
+ #statusFilter{min-width:0;max-width:100%;flex:1 1 9rem}
+ .workflowLabels,.workflowLabels label,.workflowLabels input{min-width:0;max-width:100%}
+ .workflowLabels label{overflow-wrap:anywhere}
+}
