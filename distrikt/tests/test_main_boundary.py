@@ -28,7 +28,7 @@ class MainBoundaryTests(unittest.TestCase):
         self.s.mutate('ignore.save',{'address_id':ignored,'reason':'Fiktiv undtagelse'})
         self.address(6)
         self.save()
-        self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':0})
+        self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':0,'ib_total':0})
         for n,ident in ((1,assigned),(2,None),(3,outside),(9,None)):
             self.s.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':str(n),'address_id':ident,'date':'2026-01-01'})
         self.assertEqual(self.s.boundary_report(),{'visits':5,'ib':2})
