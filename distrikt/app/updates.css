@@ -23,3 +23,13 @@
  .workflowLabels,.workflowLabels label,.workflowLabels input{min-width:0;max-width:100%}
  .workflowLabels label{overflow-wrap:anywhere}
 }
+
+/* Prevent form controls and native fieldset min-content sizing from widening the
+   page when a congregation uses long names or edits the carry-folder policy. */
+@media screen{
+ #settingsForm,#settingsForm fieldset,#settingsForm label,#settingsForm input,
+ #settingsForm select,#settingsForm .workflowLabels{min-width:0;max-width:100%}
+ #settingsForm fieldset{width:100%;overflow-wrap:anywhere}
+ #settingsForm input:not([type=checkbox]):not([type=radio]),#settingsForm select{width:100%}
+ #settingsForm label,#settingsForm p,#settings-general{overflow-wrap:anywhere}
+}
