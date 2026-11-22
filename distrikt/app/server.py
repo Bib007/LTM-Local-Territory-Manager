@@ -41,7 +41,7 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.12.39'
+VERSION='1.12.40'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')

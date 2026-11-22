@@ -1,19 +1,23 @@
-# LTM 1.12.39
+# LTM 1.12.40
 
-Afgrænset Stable-rettelse af S-13 efter 1.12.38: Kalenderår og seneste 12 måneder bruger nu selve den originale S-13-formular frem for en ny separat tabel.
+Afgrænset stable-opdatering af forsiden: korrekte anslåede besøg pr. gennemgang og et fuldt sammenligningsår i søjlediagrammet.
 
-## Original S-13-formular for alle perioder
+## Beregning af besøg
 
-- **Kalenderår**, **Tjenesteår** og **Seneste 12 måneder** udfylder alle den eksisterende S-13-formular med dens oprindelige billedbaggrund, præcise felter, fire udleveringskolonner, kortnumre, tidligere gennemgange og udleverings-/gennemgangsdatoer.
-- For kalenderår og rullende 12 måneder fremgår de præcise start-/slutdatoer tydeligt af en periodeoverskrift på samme side som formularen. Formularen er tilpasset perioden, ikke en officiel tjenesteårsrapport.
-- Den særskilte HTML-tabel fra 1.12.38 bruges ikke længere. Samlet rapport/PDF og den særskilte periode-PDF viser begge S-13 på originalformularen.
-- Tjenesteårets originale S-13 og direkte servergenererede PDF forbliver **uændrede**. Ingen data migreres eller redigeres.
-- Hotfixen er isoleret til Stable-grenen; uafsluttede Beta-ændringer følger ikke med.
+- For hver registreret gennemgang bruges kortets **aktuelle kendte besøgstal minus antallet af IB på kortet**. Et kort med 35 besøg og 2 IB bidrager med 33 pr. gennemgang, eller 66 ved to gennemgange.
+- Tidligere historikposter med ukendt besøgstal kan dermed indgå, når det tilknyttede kort nu har kendt antal. Hvis kortets antal er ukendt, bruges kun et eventuelt kendt historisk tal; ellers udelades posten fra skønnet.
+- Skønnet er ikke en optælling af faktiske husbesøg. Ændringer i et korts aktuelle antal eller IB kan ændre skønnet, men **gennemgangshistorikken omskrives ikke**.
+
+## Sammenligning med tidligere tjenesteår
+
+- Hele foregående tjenesteårs registreringer vises, også for måneder, som endnu ikke er begyndt i indeværende tjenesteår.
+- Aktuel måned afgrænses fortsat til dags dato og samme dato sidste år. Alle måneders præcise datointervaller findes i tabellen.
+- Ingen andre data eller uafsluttede Beta-funktioner følger med denne Stable-rettelse.
 
 ## Udgivelse
 
-Udgivelsen kræver grønne PR- og Stable-workflowkontroller. Vælg det ønskede spor under **Stable release tracks** på `main`; macOS-server kræver fortsat separat fysisk godkendelse.
+Udgivelse kræver grønne PR- og Stable-workflowkontroller. Vælg det ønskede spor under **Stable release tracks** på `main`. MacOS-server kræver fortsat separat fysisk godkendelse.
 
 ## English
 
-LTM 1.12.39 corrects the 1.12.38 S-13 presentation: every reporting period now uses the actual original S-13 image form, its existing field positions and four assignment columns, rather than a substitute table. Calendar-year and rolling-period prints include a precise date-range caption and remain explicitly non-official period extracts. The original service-year S-13 and its direct downloadable PDF are unchanged. No existing records or unfinished Beta features are included in this change.
+LTM 1.12.40 fixes the dashboard's estimated visits and previous-year comparison. Each completion uses the card's current known visit total less its registered do-not-call entries. Historical records are not modified; estimates can change as a card's current counts change. All twelve months of the previous service year are displayed even when the corresponding current months have not begun. The current month's comparison remains limited to the same calendar date last year. No unfinished Beta work is included.
