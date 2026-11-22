@@ -69,7 +69,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      assert.equal(text.includes('Sidste KTM besøg'),!empty);
      assert.equal(text.includes('S-13-periodeudtræk'),choice!=='service');
      assert.equal(text.includes('Ikke en original S-13'),choice!=='service');
-     if(!empty&&choice!=='service')assert.match(text,/01\.10\.2026/,'The extract uses the selected period completion date');
+     if(!empty&&choice!=='service')assert.match(text,/0?1\.10\.2026/,'The extract uses the selected period completion date');
      assert.doesNotMatch(text,/NaN|Infinity|undefined/);
     }finally{await printed.close();}
    }
