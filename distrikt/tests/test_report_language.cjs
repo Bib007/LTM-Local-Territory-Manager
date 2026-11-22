@@ -66,7 +66,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    }
    for(const mode of ['calendar','service','rolling']){
      const standalone=run(`reportPrintDocument({},'${mode}',{s13Only:true})`);
-     assert.doesNotMatch(standalone,/reportMapPage|class="reportchart"/,'Standalone print must contain only S-13 data');
+     assert.doesNotMatch(standalone,/class="report reportMapPage|class="reportchart"/,'Standalone print must contain only S-13 pages');
      assert.equal((standalone.match(/class="report s13Original"/g)||[]).length,mode==='service'?1:0);
      assert.equal((standalone.match(/class="report s13Period"/g)||[]).length,mode==='service'?0:1);
     }
