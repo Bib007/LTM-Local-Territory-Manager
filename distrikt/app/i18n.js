@@ -47,6 +47,8 @@ const I18n={
   "Kontrollér sammenlægning":"Review merge",
   "Saml og gem":"Merge and save",
   "Forkyndere sammenlagt":"Publishers merged",
+  "Ret fejlene i tabellen og kontrollér importen igen. Godkendelse kræver en fejlfri kontrol.":"Fix the errors in the table and check the import again. Approval requires an error-free preview.",
+  "Ingen nye gennemgange eller udlån kan importeres. Rækkerne kan være dubletter eller ligge uden for perioden.":"No new completions or loans can be imported. Rows may be duplicates or outside the import period.",
   "Ukendte forkyndere oprettes i gruppen Ikke i en tjenestegruppe.":"Unknown publishers are created in the group Not in a service group.",
 
   "Vælg en IB-opfølgning fra listen.":"Select a DNC follow-up from the list.",
