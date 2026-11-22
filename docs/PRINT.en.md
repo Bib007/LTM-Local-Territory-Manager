@@ -23,7 +23,7 @@ Do-not-call backs contain private records. Handle printed pages and PDFs locally
 
 Under **Reports and history**, choose **Calendar year**, **Service year** or **Last 12 months**. You can also select the specific calendar year. **Print complete report / PDF** includes the figures, map and S-13 data for the chosen period (or all three when explicitly selected).
 
-The service-year appendix and **Download original completed S-13** use the unchanged original S-13 form and downloadable local PDF. For calendar years and rolling 12-month periods, the screen and the complete report instead show a clearly labelled **S-13 period extract** with the actual assignments, known previous completions and period-specific completion totals. **Print S-13 period extract / PDF** opens a standalone print view for that period. This is not an official S-13 service-year form.
+**All three period choices now use the actual original S-13 form background, fields and columns.** Assignments, previous completions and period completions appear directly in the existing form cells. Service years retain **Download original completed S-13** and the unchanged direct PDF. Calendar years and rolling 12-month periods use the same form layout with an explicit period caption, but are **adapted period extracts**, not official service-year reports. **Print S-13 form for selected period / PDF** opens that completed form alone for printing or saving as PDF.
 
 Reports use A4 with 15 mm margins; wide map views may use landscape pages. Check the selected boundaries, assignment dates, completed dates and continuation pages. OSM map tiles must load for map reports; standalone period extracts do not require map tiles.
 
