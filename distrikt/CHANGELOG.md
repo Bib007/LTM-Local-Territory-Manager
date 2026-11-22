@@ -5,6 +5,13 @@
 
 
 
+
+## 1.12.39 · 2026-11-22
+
+- **Original S-13 for alle rapportperioder:** Kalenderår og seneste 12 måneder udfyldes nu på den faktiske originale S-13-billedformular med de eksisterende kolonner, felter og datoer. Den tidligere særskilte S-13-tabel er fjernet.
+- **Tydelig periode:** Ved kalenderår og rullende 12 måneder står den valgte periode over formularen. De er tilpassede periodeudtræk og ikke officielle tjenesteårsrapporter. Tjenesteårets originale S-13 og direkte PDF-download er uændrede.
+- **Stabil rettelse:** Kun visning og PDF-print er rettet. Alle data og øvrige Stable-funktioner fra 1.12.38 er bevaret, og uafsluttede Beta-funktioner følger ikke med.
+
 ## 1.12.38 · 2026-11-22
 
 - **S-13 og rapportperioder:** S-13-oversigten viser nu udleveringer og gennemgange for det valgte kalenderår, tjenesteår eller de seneste 12 måneder. Kalenderår kan vælges tilbage i historikken.

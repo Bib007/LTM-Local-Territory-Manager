@@ -28,8 +28,8 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],language==='en'?/s13-background-en.jpg/:/s13-background.jpg/);if(language==='da')assert.match(print[language],/Hus til hus/);else assert.doesNotMatch(print[language],/Hus til hus/);
   assert.match(print[language],/<section class="reportCover"[^>]*>[\s\S]*?<h1>Tjenesteår &lt;invented&gt; &amp; Kort<\/h1>/);
   assert.equal((print[language].match(/class="reportRing"/g)||[]).length,6);
-   assert.equal((print[language].match(/class="report s13Period"/g)||[]).length,2);
-   assert.equal((print[language].match(/class="report s13Original"/g)||[]).length,1);
+   assert.equal((print[language].match(/class="report s13Original s13Period"/g)||[]).length,2);
+   assert.equal((print[language].match(/class="report s13Original(?: s13Period)?"/g)||[]).length,3,'All three periods use the original S-13 form');
   const boundary=run('Workspace.boundaryReport()');
   const points=language==='en'?/Total mapped visit points/:/Kortlagte besøgspunkter i alt/;
   const ib=language==='en'?/Of which mapped inside the boundary/:/Heraf kortlagt inden for grænsen/;
@@ -53,17 +53,25 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
     assert.equal((single.match(/class="reportchart"/g)||[]).length,1,chosen);
     assert.match(single,/Gennemgange pr. måned/);assert.match(single,/Sidste KTM besøg/);
     for(const name of ['calendar','service','rolling'])assert.equal(single.includes('FIXED_'+name.toUpperCase()+'_MAP'),name===chosen,chosen+' must not contain '+name);
-    assert.equal(single.includes('s13-background'),chosen==='service','Original S-13 remains service-year only');
-     assert.equal((single.match(/class="report s13Period"/g)||[]).length,chosen==='service'?0:1);
-     assert.equal((single.match(/class="report s13Original"/g)||[]).length,chosen==='service'?1:0);
-     if(chosen!=='service')assert.match(single,language==='en'?/Not an original S-13 form/:/Ikke en original S-13/);
+    assert(single.includes('s13-background'),'The original S-13 image is required for every period');
+     assert.match(single,/s13-background(?:-en)?\.jpg/);
+     assert.equal((single.match(/class="report s13Period"/g)||[]).length,0,'No custom S-13 table is used');
+     assert.equal((single.match(/class="report s13Original(?: s13Period)?"/g)||[]).length,1,'Every period uses the original S-13 form');
+     if(chosen!=='service'){
+      assert.match(single,language==='en'?/Original S-13 layout with selected-period data/:/S-13-formular med periodedata/);
+      const form=single.match(/<section class="report s13Original s13Period"[\s\S]*?<\/section>/)?.[0];
+      assert(form,'Adapted original S-13 form must be present');
+      assert.match(form,/<svg[^>]*viewBox="0 0 /);
+      assert.match(form,/<image href="[^"]*s13-background(?:-en)?\.jpg"/);
+      assert.doesNotMatch(form,/<table|class="s13Record"/,'No substitute table or custom columns');
+     }
     assert.equal(run('Workspace.reportPeriod'),'service','Print restores the selected screen period');
    }
    for(const mode of ['calendar','service','rolling']){
      const standalone=run(`reportPrintDocument({},'${mode}',{s13Only:true})`);
      assert.doesNotMatch(standalone,/class="report reportMapPage|class="reportchart"/);
-     assert.equal((standalone.match(/class="report s13Original"/g)||[]).length,mode==='service'?1:0);
-     assert.equal((standalone.match(/class="report s13Period"/g)||[]).length,mode==='service'?0:1);
+     assert.equal((standalone.match(/class="report s13Original(?: s13Period)?"/g)||[]).length,1,'Standalone print always uses original S-13');
+     assert.equal((standalone.match(/class="report s13Original s13Period"/g)||[]).length,mode==='service'?0:1);
     }
     assert.throws(()=>run("reportPrintDocument(null,'invalid')"),/Ugyldigt rapportperiodevalg/);
    const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.doesNotMatch(summary,/Anslåede besøg|Estimated visits/);assert.match(summary,/>50%<\/text>/);
@@ -92,11 +100,11 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    assert.equal((screen.match(/class="reportRing"/g)||[]).length,2);
    assert.doesNotMatch(screen,/class="reportComparison"/);
    assert.equal(screen.includes('id="calendarYear"'),mode==='calendar');
-    assert.equal(screen.includes('class="report s13Original"'),mode==='service');
-    assert.equal(screen.includes('class="report s13Period"'),mode!=='service');
-    assert.match(screen,mode==='service'?/Hent original udfyldt S-13|Download filled S-13/:/Print S-13-periodeudtræk|Print S-13 period extract/);assert.match(screen,/id="reportPrintPeriod"/);assert.match(screen,new RegExp('value="'+mode+'" selected'));
+    assert.equal(screen.includes('class="report s13Original'),true,'Every report tab shows the original S-13 layout');
+    assert.equal(screen.includes('class="report s13Original s13Period"'),mode!=='service');
+    assert.match(screen,mode==='service'?/Hent original udfyldt S-13|Download filled S-13/:/Print S-13-formular for perioden|Print S-13 form for selected period/);assert.match(screen,/id="reportPrintPeriod"/);assert.match(screen,new RegExp('value="'+mode+'" selected'));
   }
-  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/s13-background.jpg|Kort til opfølgning|AKTUEL OPFØLGNING/);assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
+  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.match(screen,/s13-background(?:-en)?\.jpg/,'Rolling report must embed the original S-13 background');assert.doesNotMatch(screen,/Kort til opfølgning|AKTUEL OPFØLGNING/);assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);assert.match(visits,/OLD/,'Historic remarks remain visible in the visit list');contracts[language]=[formContract(visits)];
   assert.equal(run("ktmTuesday('2026-09-08')"),true);
   assert.equal(run("ktmTuesday('2026-09-11')"),false);
@@ -123,7 +131,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.doesNotMatch(emptyPdf,/NaN|Infinity|undefined/);
  }
  run('state=JSON.parse(emptyStateFixture)');
- const unchangedPrintSections=html=>html.split('<div class="printReports">')[1].replace(/<section class="(?:report (?:s13Original|s13Period|boundaryReport)|reportCover)"[\s\S]*?<\/section>/g,'');assert.equal(unchangedPrintSections(print.en),unchangedPrintSections(print.da),'Language switching preserves all other printed report data; original S-13 follows the chosen language');assert.match(print.en,/>Print \/ save PDF<\//);assert.match(print.da,/>Udskriv \/ gem PDF<\//);assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
+ const unchangedPrintSections=html=>html.split('<div class="printReports">')[1].replace(/<section class="(?:report (?:s13Original(?: s13Period)?|boundaryReport)|reportCover)"[\s\S]*?<\/section>/g,'');assert.equal(unchangedPrintSections(print.en),unchangedPrintSections(print.da),'Language switching preserves all other printed report data; original S-13 follows the chosen language');assert.match(print.en,/>Print \/ save PDF<\//);assert.match(print.da,/>Udskriv \/ gem PDF<\//);assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(submitted.en.data,submitted.da.data);assert.equal(submitted.en.action,'visit.save');
  assert.deepEqual(Array.from(run("Workspace.periodBounds('calendar')")),['2026-01-01','2026-10-16']);
  run('Workspace.calendarYear=2025');assert.deepEqual(Array.from(run("Workspace.periodBounds('calendar')")),['2025-01-01','2025-12-31']);
  assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).events'),2);

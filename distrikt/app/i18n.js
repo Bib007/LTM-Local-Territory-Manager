@@ -50,6 +50,8 @@ const I18n={
   "Ret fejlene i tabellen og kontrollér importen igen. Godkendelse kræver en fejlfri kontrol.":"Fix the errors in the table and check the import again. Approval requires an error-free preview.",
   "Ingen nye gennemgange eller udlån kan importeres. Rækkerne kan være dubletter eller ligge uden for perioden.":"No new completions or loans can be imported. Rows may be duplicates or outside the import period.",
   "S-13-periodeudtræk":"S-13 period extract",
+  "S-13-formular med periodedata, ikke en officiel tjenesteårsrapport.":"Original S-13 layout with selected-period data, not an official service-year report.",
+  "Print S-13-formular for perioden / PDF":"Print S-13 form for selected period / PDF",
   "Print S-13-periodeudtræk / PDF":"Print S-13 period extract / PDF",
   "Ikke en original S-13. Tidligere udleveringer vises, hvis de berører perioden; kun gennemgange i perioden tælles.":"Not an original S-13 form. Earlier assignments appear if they overlap the period; only completions in the period are counted.",
   "Gennemgange i perioden":"Completions in the period",

@@ -23,7 +23,7 @@ IB-bagsiden indeholder private registreringer. Behandl print og PDF lokalt som �
 
 Under **Rapporter og historik** kan du vælge **Kalenderår**, **Tjenesteår** eller **Seneste 12 måneder** og vælge et bestemt kalenderår. **Print samlet rapport / PDF** viser tal, kort og S-13-oplysninger for den valgte periode, eller for alle tre perioder hvis du vælger det.
 
-For tjenesteår bruger bilaget og **Hent original udfyldt S-13** fortsat den uændrede originale S-13 og den lokale PDF-download. For kalenderår og seneste 12 måneder vises i stedet et tydeligt mærket **S-13-periodeudtræk**, hvor udleveringer, kendte tidligere gennemgange og periodens gennemgange fremgår. **Print S-13-periodeudtræk / PDF** åbner udtrækket alene til udskrivning eller PDF. Det er ikke den officielle tjenesteårsformular.
+**Alle tre perioder bruger nu selve den originale S-13-formular** med dens baggrund, felter og kolonner. Udleveringer, seneste gennemgang før perioden og periodens gennemgange placeres direkte i formularens felter. Tjenesteår beholder **Hent original udfyldt S-13** og den uændrede direkte PDF-download. Kalenderår og seneste 12 måneder bruger den samme S-13-formular med en tydelig periodeoverskrift, men dette er et **tilpasset periodeudtræk**, ikke en officiel tjenesteårsrapport. **Print S-13-formular for perioden / PDF** viser formularen alene og kan gemmes som PDF.
 
 Rapporten bruger A4 med 15 mm margener; brede kortudsnit kan bruge liggende sider. Kontrollér den valgte periodes datoer, udleveringer, gennemgange og fortsættelsessider. Kortbaserede rapporter kræver OSM-kortfliser, men det særskilte periodeudtræk gør ikke.
 

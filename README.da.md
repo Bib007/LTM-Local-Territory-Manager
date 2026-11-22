@@ -40,7 +40,7 @@ Skærmbillederne viser programmet med opdigtede eksempler.
 
 ## Vælg, hvordan du vil bruge LTM
 
-**Seneste stabile udgave: 1.12.38**
+**Seneste stabile udgave: 1.12.39**
 
 | Brug LTM på | Sådan kommer du i gang |
 | --- | --- |
