@@ -49,6 +49,12 @@ const I18n={
   "Forkyndere sammenlagt":"Publishers merged",
   "Ret fejlene i tabellen og kontrollér importen igen. Godkendelse kræver en fejlfri kontrol.":"Fix the errors in the table and check the import again. Approval requires an error-free preview.",
   "Ingen nye gennemgange eller udlån kan importeres. Rækkerne kan være dubletter eller ligge uden for perioden.":"No new completions or loans can be imported. Rows may be duplicates or outside the import period.",
+  "S-13-periodeudtræk":"S-13 period extract",
+  "Print S-13-periodeudtræk / PDF":"Print S-13 period extract / PDF",
+  "Ikke en original S-13. Tidligere udleveringer vises, hvis de berører perioden; kun gennemgange i perioden tælles.":"Not an original S-13 form. Earlier assignments appear if they overlap the period; only completions in the period are counted.",
+  "Gennemgange i perioden":"Completions in the period",
+  "Sidst gennemgået før perioden":"Last completed before the period",
+  "Udlevering":"Assignment",
   "Ukendte forkyndere oprettes i gruppen Ikke i en tjenestegruppe.":"Unknown publishers are created in the group Not in a service group.",
 
   "Vælg en IB-opfølgning fra listen.":"Select a DNC follow-up from the list.",

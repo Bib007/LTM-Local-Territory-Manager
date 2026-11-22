@@ -4,6 +4,13 @@
 
 
 
+
+## 1.12.38 · 2026-11-22
+
+- **S-13 og rapportperioder:** S-13-oversigten viser nu udleveringer og gennemgange for det valgte kalenderår, tjenesteår eller de seneste 12 måneder. Kalenderår kan vælges tilbage i historikken.
+- **PDF-udtræk:** Udskriv den valgte periodes S-13-oplysninger alene eller sammen med rapporten. Den originale udfyldte S-13 og dens download bevares uændret ved tjenesteår; kalenderår og rullende periode får tydeligt mærkede periodeudtræk, ikke en officiel tjenesteårsformular.
+- **Afgrænset Stable-hotfix:** Alle tidligere registreringer, rapporttal og øvrige funktioner fra 1.12.37 bevares. Andre uafsluttede Beta-funktioner medtages ikke.
+
 ## 1.12.37 · 2026-11-22
 
 - **Historikimport:** Bekræftelsesfeltet kan nu altid udfyldes efter en forhåndskontrol. Hvis der er fejl eller ingen nye gennemgange/udlån, vises en konkret forklaring ved feltet i stedet for et uforklarligt låst input.
