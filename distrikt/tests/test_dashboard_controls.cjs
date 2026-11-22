@@ -74,6 +74,9 @@ assert.match(run('Workspace.dashboard()'),/Completions without known visit count
 run(`state=${original}`);
 run("state.cards[0].addresses[0].count=35");
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),75,'Each of two completions of a 35-visit card contributes 35');
+run("state.ib=[{card_id:'c0'},{card_id:'c0'},{card_id:'not-this-card'}]");
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),71,'Each completion contributes 35 minus two IB entries');
+run("state.ib=[]");
 run("state.archived_cards[0].addresses=[{count:35}]");
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),107,'Archived territory totals count where known');
 run(`state=${original}`);
