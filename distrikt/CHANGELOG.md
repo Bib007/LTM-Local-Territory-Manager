@@ -6,6 +6,12 @@
 
 
 
+## 1.12.40 · 2026-11-22
+
+- **Forsidens anslåede besøg:** Hver gennemgang tæller kortets aktuelle kendte besøgstal minus registrerede IB, også når en importeret historisk gennemgang oprindeligt havde ukendt antal. Kort uden kendt aktuelt besøgstal bruger et eventuelt tidligere kendt antal; ellers udelades de fortsat fra skønnet.
+- **Hele sidste års sammenligning:** Søjler og tabel viser forrige års registreringer også for måneder, der endnu ikke er begyndt i dette tjenesteår. Indeværende måned sammenlignes fortsat kun til samme dato sidste år.
+- **Afgrænset Stable-rettelse:** Gennemgangsdata og IB ændres ikke. Kun den afledte forsidestatistik, tilhørende tekst og regressionstests er ændret. Uafsluttede Beta-funktioner medtages ikke.
+
 ## 1.12.39 · 2026-11-22
 
 - **Original S-13 for alle rapportperioder:** Kalenderår og seneste 12 måneder udfyldes nu på den faktiske originale S-13-billedformular med de eksisterende kolonner, felter og datoer. Den tidligere særskilte S-13-tabel er fjernet.
