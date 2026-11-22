@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+
+## 1.12.36 · 2026-11-22
+
+- **History workbook import:** Accept both newest-first and oldest-first assignment periods. The five-period Excel template displays the newest period on the left; existing older and manually prepared files remain compatible. Repeated dates, mixed ordering, overlapping loans and invalid completion flags still fail validation.
+- **Stable hotfix only:** Preserve every feature and stored record from Stable 1.12.35; unfinished Beta changes are not included. The macOS-server release remains subject to its separate physical validation gate.
+
 ## 1.12.35 · 2026-11-21
 
 - **Reports and do-not-call totals:** Count all active do-not-call entries, including manual entries with no linked DAR address. Display the geographically mapped subset inside the territory boundary separately; both numbers respect viewing permissions.

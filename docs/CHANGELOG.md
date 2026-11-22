@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+
+## 1.12.36 · 2026-11-22
+
+- **Historikimport:** Accepter både nyeste og ældste udleveringsperiode først. Excel-skabelonen viser den nyeste periode til venstre; tidligere og manuelt udfyldte filer kan fortsat indlæses. Ens udleveringsdatoer, blandet rækkefølge, overlappende udlån og ugyldige gennemgangsmarkeringer afvises stadig.
+- **Kun Stable-rettelse:** Alle funktioner og gemte registreringer fra Stable 1.12.35 bevares. Uafsluttede Beta-ændringer er ikke med. macOS-server har fortsat særskilt fysisk godkendelseskrav.
+
 ## 1.12.35 · 2026-11-21
 
 - **Rapporter og IB:** Rapporten tæller nu alle aktive IB-registreringer, også manuelt oprettede uden tilknyttet DAR-adresse. Antallet af kortlagte IB inden for distriktsgrænsen vises særskilt, og begge tal respekterer IB-rettighederne.

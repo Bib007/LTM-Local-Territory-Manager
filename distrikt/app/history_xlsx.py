@@ -176,6 +176,7 @@ def wide_records(lines):
             continue
         found = False
         previous_assigned = None
+        direction = None
         for index in range(5):
             part = cells[1 + index * 4:5 + index * 4]
             if not any(str(value).strip() for value in part):
@@ -193,8 +194,15 @@ def wide_records(lines):
             if not trouble and assigned:
                 try:
                     normalized_assigned = day(assigned)
-                    if previous_assigned and normalized_assigned <= previous_assigned:
-                        trouble = 'Perioderne skal stå i datoorden, ældste udlevering først.'
+                    if previous_assigned:
+                        if normalized_assigned == previous_assigned:
+                            trouble = 'Perioderne må ikke have samme udleveringsdato.'
+                        else:
+                            step = 1 if normalized_assigned > previous_assigned else -1
+                            if direction is not None and step != direction:
+                                trouble = 'Perioderne skal stå i datoorden, nyeste eller ældste udlevering først.'
+                            elif direction is None:
+                                direction = step
                     previous_assigned = normalized_assigned
                 except (ValueError, TypeError):
                     pass  # Normal history-import validation reports the invalid date.
