@@ -48,6 +48,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      assert.equal(await printed.locator('.reportchart').count(),choice==='all'?3:1);
      assert.equal(await printed.locator('.reportMapPage').count(),choice==='all'?3:1);
      assert.equal(await printed.locator('.s13Original').count(),choice==='service'||choice==='all'?1:0);
+     assert.equal(await printed.locator('.s13Period').count(),choice==='all'?2:choice==='service'?0:1,'Non-service periods include a labelled S-13 extract');
      const marker=await printed.locator('svg text').filter({hasText:'Sidste KTM besøg'}).count();
      assert.equal(marker,empty?0:choice==='all'?3:1,'The yellow KTM timeline marker must match the selected periods');
      if(marker){
@@ -66,6 +67,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
       assert.equal(text.includes('FIKTIVT_KORT_'+mode.toUpperCase()),choice==='all'||choice===mode,'Unexpected map '+mode+' in PDF '+choice);
      }
      assert.equal(text.includes('Sidste KTM besøg'),!empty);
+     assert.equal(text.includes('S-13-periodeudtræk'),choice!=='service');
+     assert.equal(text.includes('Ikke en original S-13'),choice!=='service');
+     if(!empty&&choice!=='service')assert.match(text,/01\.10\.2026/,'The extract uses the selected period completion date');
      assert.doesNotMatch(text,/NaN|Infinity|undefined/);
     }finally{await printed.close();}
    }
