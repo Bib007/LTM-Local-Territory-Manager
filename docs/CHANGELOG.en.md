@@ -5,6 +5,13 @@ This preserves the complete changelog as it stood before the Danish-default migr
 
 
 
+
+## 1.12.39 · 2026-11-22
+
+- **Original S-13 layout for every reporting period:** Calendar-year and rolling-12-month views now fill the actual original S-13 image template using its existing columns, cells and assignment/completion fields. The substitute custom S-13 table has been removed.
+- **Explicit selected period:** Calendar and rolling forms include an explanatory period caption; these are adapted extracts, not official service-year reports. The original service-year S-13 and direct PDF download are unchanged.
+- **Focused Stable fix:** No data migrations or unrelated feature changes; all previous 1.12.38 functionality and data remain intact. Unfinished Beta features are excluded.
+
 ## 1.12.38 · 2026-11-22
 
 - **S-13 reporting periods:** View assignment and completion details for the selected calendar year, service year or rolling last 12 months, including earlier selectable calendar years.
