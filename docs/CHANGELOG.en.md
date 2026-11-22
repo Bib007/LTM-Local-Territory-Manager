@@ -4,6 +4,13 @@ This preserves the complete changelog as it stood before the Danish-default migr
 
 
 
+
+## 1.12.38 · 2026-11-22
+
+- **S-13 reporting periods:** View assignment and completion details for the selected calendar year, service year or rolling last 12 months, including earlier selectable calendar years.
+- **Period PDFs:** Print the selected S-13 period extract on its own or alongside the report. The original completed S-13 and direct download remain unchanged for service years; calendar and rolling periods receive clearly labelled non-official extracts.
+- **Focused Stable hotfix:** All existing data, report figures and other 1.12.37 features are preserved. Unfinished Beta features are excluded.
+
 ## 1.12.37 · 2026-11-22
 
 - **History import:** The confirmation text field stays editable after every preview. If validation finds errors or no new completions/loans, a clear explanation appears next to the field rather than leaving it unexpectedly locked.
