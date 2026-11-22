@@ -9,7 +9,7 @@ function s13OriginalPages(rows){
 // Calendar-year and rolling periods are S-13-style extracts, not official service-year forms.
 function s13PeriodPages(rows,mode,start,end){
  if(!['calendar','rolling'].includes(mode))throw Error('Ugyldig S-13-periode.');
- const t=key=>esc(ui(key)),inventory=Workspace.reportInventory(start,end),parts=[];
+ const t=key=>esc(I18n.text(key)),inventory=Workspace.reportInventory(start,end),parts=[];
  for(let offset=0;offset<Math.max(1,rows.length);offset+=12){
   const cells=rows.slice(offset,offset+12).map(r=>{
    const allocations=Array.from({length:4},(_,i)=>{
@@ -22,7 +22,7 @@ function s13PeriodPages(rows,mode,start,end){
   }).join('');
   const headers=Array.from({length:4},(_,i)=>'<th>'+t('Udlevering')+' '+(i+1)+'</th>').join('');
   parts.push('<section class="report s13Period" data-s13-period="'+mode+'" lang="'+I18n.language()+'">'+
-   '<div class="eyebrow">'+t('S-13-periodeudtræk')+'</div><h2>'+esc(Workspace.reportTitle(mode,true))+'</h2>'+
+   '<div class="eyebrow">'+t('S-13-periodeudtræk')+'</div><h2>'+esc(mode==='calendar'?I18n.text('Kalenderår')+' '+(Workspace.calendarYear??state.today.slice(0,4)):I18n.text('Seneste 12 måneder'))+'</h2>'+
    '<p>'+esc(fmt(start))+' – '+esc(fmt(end))+'</p>'+
    '<p class="hint">'+t('Ikke en original S-13. Tidligere udleveringer vises, hvis de berører perioden; kun gennemgange i perioden tælles.')+'</p>'+
    '<p>'+t('Gennemgange i perioden')+': <strong>'+inventory.events+'</strong> · '+
