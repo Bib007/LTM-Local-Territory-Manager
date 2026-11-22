@@ -15,7 +15,7 @@ const state={
 };
 const ctx={state,document:{addEventListener:(key,fn)=>{(listeners[key]??=[]).push(fn);}},
  ProfilesUI:{has:()=>true},Workspace:{loanLine:l=>'<div>'+l.id+'</div>'},
- I18n:{language:()=> 'da'},areaName:()=> 'Fiktivt område',
+ I18n:{language:()=> 'da'},ui:(key,params={})=>key.replace(/\{(\w+)\}/g,(_,name)=>String(params[name]??'')),areaName:()=> 'Fiktivt område',
  publisherName:id=>state.publishers.find(p=>p.id===id)?.name||'Ukendt',
  cmp:(a,b)=>String(a).localeCompare(String(b),'da'),
  esc:value=>String(value??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
