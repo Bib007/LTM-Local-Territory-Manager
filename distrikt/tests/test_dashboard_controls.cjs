@@ -40,7 +40,7 @@ assert.match(run('Workspace.recurringTasks()'),/data-due="2026-10-16"/);assert.m
 run(`state=${original};I18n.set('da')`);
 for(const language of ['da','en']){
  run(`I18n.set('${language}')`);const html=run('Workspace.dashboard()');
- assert.match(html,/>4<\/strong>/);assert.match(html,/>14<\/strong>/);assert.match(html,/>67%<\/strong>/);
+ assert.match(html,/>4<\/strong>/);assert.match(html,/>13<\/strong>/);assert.match(html,/>67%<\/strong>/);
  assert.equal((html.match(/class="attentionCard"/g)||[]).length,0);assert.match(html,/data-work="followups"/);assert.doesNotMatch(html,/revisionSummary/);
  assert(!html.includes('<invented>'));
  assert.equal((html.match(/data-ui="[a-z]{3} \{year\}"/g)||[]).length,24);
@@ -63,10 +63,19 @@ for(const language of ['da','en']){
  assert.doesNotMatch(run('Workspace.intervalLabel(NaN)'),/NaN/);
 }
 run("state.completions.push({card_id:'c0',date:'2026-10-07',visits:0,visits_unknown:true})");
-assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),14);
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),17,'Current card count applies even to historically unknown completions');
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').events.length"),5);
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').unknownVisits"),0);
+assert.doesNotMatch(run('Workspace.dashboard()'),/Completions without known visit counts/);
+run("state.cards[0].addresses[0].count_unknown=true");
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),14,'Retain known historic snapshots when current card count is unknown');
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').unknownVisits"),1);
 assert.match(run('Workspace.dashboard()'),/Completions without known visit counts/);
+run(`state=${original}`);
+run("state.cards[0].addresses[0].count=35");
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),75,'Each of two completions of a 35-visit card contributes 35');
+run("state.archived_cards[0].addresses=[{count:35}]");
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),107,'Archived territory totals count where known');
 run(`state=${original}`);
 run('state.cards=[];state.completions=[];state.archived_cards=[];state.loans=[];state.notes=[]');
 assert.match(run('Workspace.dashboard()'),/Begin|Begynd|Start with/);assert(!run('Workspace.dashboard()').includes('NaN'));
