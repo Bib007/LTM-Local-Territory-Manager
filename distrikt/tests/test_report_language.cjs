@@ -28,7 +28,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   assert.equal(run('Workspace.reportPeriod'),'service');assert.match(print[language],/<html lang="da">/);assert.match(print[language],/margin:15mm/);assert.match(print[language],language==='en'?/s13-background-en.jpg/:/s13-background.jpg/);if(language==='da')assert.match(print[language],/Hus til hus/);else assert.doesNotMatch(print[language],/Hus til hus/);
   assert.match(print[language],/<section class="reportCover"[^>]*>[\s\S]*?<h1>Tjenesteår &lt;invented&gt; &amp; Kort<\/h1>/);
   assert.equal((print[language].match(/class="reportRing"/g)||[]).length,6);
-   assert.equal((print[language].match(/class="report s13Period"/g)||[]).length,2);
+   assert.equal((print[language].match(/class="report s13Original s13Period"/g)||[]).length,2);
    assert.equal((print[language].match(/class="report s13Original(?: s13Period)?"/g)||[]).length,3,'All three periods use the original S-13 form');
   const boundary=run('Workspace.boundaryReport()');
   const points=language==='en'?/Total mapped visit points/:/Kortlagte besøgspunkter i alt/;
