@@ -21,13 +21,13 @@ IB-bagsiden indeholder private registreringer. Behandl print og PDF lokalt som �
 
 ## Rapport og S-13
 
-Under **Rapporter og historik** vælges tjenesteår. **Print samlet rapport / PDF** samler tjenesteåret, de seneste 12 måneder, begge kortudsnit, distriktsoplysninger og udfyldt original S-13. Rapportindholdet er dansk på begge app-sprog. **Hent original udfyldt S-13** henter den lokale PDF direkte.
+Under **Rapporter og historik** kan du vælge **Kalenderår**, **Tjenesteår** eller **Seneste 12 måneder** og vælge et bestemt kalenderår. **Print samlet rapport / PDF** viser tal, kort og S-13-oplysninger for den valgte periode, eller for alle tre perioder hvis du vælger det.
 
-Rapporten bruger A4 med 15 mm margener; brede kortudsnit kan bruge liggende sider. Original S-13 og dens feltplacering ændres ikke af sprogvalg. Kontroller tjenesteår, navne, datoer, sideskift og alle fortsættelsessider. OSM-kort kræver, at fliserne kan indlæses.
+For tjenesteår bruger bilaget og **Hent original udfyldt S-13** fortsat den uændrede originale S-13 og den lokale PDF-download. For kalenderår og seneste 12 måneder vises i stedet et tydeligt mærket **S-13-periodeudtræk**, hvor udleveringer, kendte tidligere gennemgange og periodens gennemgange fremgår. **Print S-13-periodeudtræk / PDF** åbner udtrækket alene til udskrivning eller PDF. Det er ikke den officielle tjenesteårsformular.
 
-Dobbeltklik starter ikke en ekstra forberedelse. Ændres side, kortgrundlag eller tjenesteår under forberedelsen, stoppes den gamle opgave. Nyere dialoger bevares. Ved fejl i profilgemning kontrolleres gemmestatus og eventuelt **Opdater** før et nyt forsøg.
+Rapporten bruger A4 med 15 mm margener; brede kortudsnit kan bruge liggende sider. Kontrollér den valgte periodes datoer, udleveringer, gennemgange og fortsættelsessider. Kortbaserede rapporter kræver OSM-kortfliser, men det særskilte periodeudtræk gør ikke.
 
-Fysisk printerkalibrering er et ejertrin; automatiske prøver bruger opdigtede data. Se [slutkontrollen](SLUTKONTROL.md).
+Dobbeltklik starter ikke en ekstra forberedelse. Navigation eller ændringer i datagrundlaget stopper forældede printforberedelser. Ved fejl i profilgemning kontrolleres gemmestatus og eventuelt **Opdater**. Automatiske prøver bruger opdigtede data; fysisk printerkalibrering er fortsat et ejertrin.
 
 ## Formularsprog
 
