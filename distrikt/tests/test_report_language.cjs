@@ -64,7 +64,13 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
      }
     assert.equal(run('Workspace.reportPeriod'),'service','Print restores the selected screen period');
    }
-   assert.throws(()=>run("reportPrintDocument(null,'invalid')"),/Ugyldigt rapportperiodevalg/);
+   for(const mode of ['calendar','service','rolling']){
+     const standalone=run(`reportPrintDocument({},'${mode}',{s13Only:true})`);
+     assert.doesNotMatch(standalone,/reportMapPage|class="reportchart"/,'Standalone print must contain only S-13 data');
+     assert.equal((standalone.match(/class="report s13Original"/g)||[]).length,mode==='service'?1:0);
+     assert.equal((standalone.match(/class="report s13Period"/g)||[]).length,mode==='service'?0:1);
+    }
+    assert.throws(()=>run("reportPrintDocument(null,'invalid')"),/Ugyldigt rapportperiodevalg/);
    const summary=run("Workspace.reportSummary('service',true,true)");assert.match(summary,/Tjenesteår &lt;invented&gt; &amp; Kort/);assert.match(summary,/<strong>3<\/strong>/);assert.doesNotMatch(summary,/Anslåede besøg|Estimated visits/);assert.match(summary,/>50%<\/text>/);
   const beforeOverview=run('Workspace.reportPeriod'),overview=run('Workspace.reportOverview(true)');
   assert.equal(run('Workspace.reportPeriod'),beforeOverview,'Comparing periods must not change map selection');
