@@ -936,6 +936,7 @@ const I18n={
   "? betyder ingen registreringer i sammenligningsperioden. Historik kan mangle; det er ikke en bekræftelse af nul gennemgange. Alle tal er gemte registreringer, også for arkiverede kort.":"? means there are no records in the comparison period. History may be missing; this does not confirm zero completions. All figures are saved records, including archived cards.",
   "Historiske gennemgange uden besøgstal er udeladt fra besøgsskønnet.":"Historical completions without visit counts are excluded from the visit estimate.",
   "Gennemgange uden kendt besøgstal er udeladt fra besøgsskønnet.":"Completions without known visit counts are excluded from the visit estimate.",
+  "Kortets aktuelle besøgstal minus IB tælles for hver gennemgang.":"The card’s current visit count minus do-not-call entries is counted for each completion.",
   "Ukendt besøgstal":"Unknown visit count",
   "Kortets datoer opdateres automatisk":"Card dates are updating automatically",
   "Jeg har kontrolleret kortbilledet og godkender deling samt automatisk opdatering af de to datoer.":"I have reviewed the card image and approve sharing and automatic updates to its two dates.",
