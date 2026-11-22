@@ -1,19 +1,19 @@
-# LTM 1.12.38
+# LTM 1.12.39
 
-Afgrænset Stable-hotfix på 1.12.37: S-13-oplysninger følger nu den periode, man vælger i rapporten. Kalenderår og seneste 12 måneder er tilføjet uden at trække uafsluttede Beta-funktioner med.
+Afgrænset Stable-rettelse af S-13 efter 1.12.38: Kalenderår og seneste 12 måneder bruger nu selve den originale S-13-formular frem for en ny separat tabel.
 
-## S-13 efter periode
+## Original S-13-formular for alle perioder
 
-- Vælg **Kalenderår**, **Tjenesteår** eller **Seneste 12 måneder** under Rapporter og historik. For kalenderår kan du vælge historiske år.
-- Tal, udleveringer og gennemgangsdatoer i S-13-visningen følger den præcise periode. En gennemgang uden for perioden tælles ikke med.
-- For tjenesteår vises den uændrede originale S-13, som fortsat kan hentes direkte som lokal PDF.
-- For kalenderår og seneste 12 måneder vises et tydeligt mærket, ikke-officielt **S-13-periodeudtræk**. Det kan printes/gemmes som PDF alene eller indgå i den samlede rapport.
-- Eksisterende Stable-rapporttal og øvrige funktioner bevares. Ingen registreringer ændres, og der sker ingen datamigrering.
+- **Kalenderår**, **Tjenesteår** og **Seneste 12 måneder** udfylder alle den eksisterende S-13-formular med dens oprindelige billedbaggrund, præcise felter, fire udleveringskolonner, kortnumre, tidligere gennemgange og udleverings-/gennemgangsdatoer.
+- For kalenderår og rullende 12 måneder fremgår de præcise start-/slutdatoer tydeligt af en periodeoverskrift på samme side som formularen. Formularen er tilpasset perioden, ikke en officiel tjenesteårsrapport.
+- Den særskilte HTML-tabel fra 1.12.38 bruges ikke længere. Samlet rapport/PDF og den særskilte periode-PDF viser begge S-13 på originalformularen.
+- Tjenesteårets originale S-13 og direkte servergenererede PDF forbliver **uændrede**. Ingen data migreres eller redigeres.
+- Hotfixen er isoleret til Stable-grenen; uafsluttede Beta-ændringer følger ikke med.
 
 ## Udgivelse
 
-Udgiv først efter grønne PR-kontroller på den præcise kode. GitHubs **Stable release tracks** skal derefter køres manuelt på `main` for hvert ønsket spor. macOS-server kræver fortsat særskilt fysisk godkendelse.
+Udgivelsen kræver grønne PR- og Stable-workflowkontroller. Vælg det ønskede spor under **Stable release tracks** på `main`; macOS-server kræver fortsat separat fysisk godkendelse.
 
 ## English
 
-LTM 1.12.38 adds period-specific S-13 assignment and completion details to calendar-year and rolling-12-month reports while preserving the original S-13 and direct PDF download for service years. Each non-service-year extract is clearly marked as non-official. Previous Stable functionality and stored records remain unchanged; unreleased Beta functionality is excluded. The Stable release remains manually dispatched per platform after green checks.
+LTM 1.12.39 corrects the 1.12.38 S-13 presentation: every reporting period now uses the actual original S-13 image form, its existing field positions and four assignment columns, rather than a substitute table. Calendar-year and rolling-period prints include a precise date-range caption and remain explicitly non-official period extracts. The original service-year S-13 and its direct downloadable PDF are unchanged. No existing records or unfinished Beta features are included in this change.
