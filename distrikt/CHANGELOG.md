@@ -3,6 +3,12 @@
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
 
+
+## 1.12.37 · 2026-11-22
+
+- **Historikimport:** Bekræftelsesfeltet kan nu altid udfyldes efter en forhåndskontrol. Hvis der er fejl eller ingen nye gennemgange/udlån, vises en konkret forklaring ved feltet i stedet for et uforklarligt låst input.
+- **Importbeskyttelsen bevares:** Knappen og serveren afviser fortsat fejlbehæftede, tomme eller allerede registrerede importer. Ingen eksisterende kort, forkyndere eller historik ændres. Stable 1.12.36's rettelse af periodenes datoorden er bevaret.
+
 ## 1.12.36 · 2026-11-22
 
 - **Historikimport:** Accepter både nyeste og ældste udleveringsperiode først. Excel-skabelonen viser den nyeste periode til venstre; tidligere og manuelt udfyldte filer kan fortsat indlæses. Ens udleveringsdatoer, blandet rækkefølge, overlappende udlån og ugyldige gennemgangsmarkeringer afvises stadig.
