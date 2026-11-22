@@ -6,6 +6,12 @@ This preserves the complete changelog as it stood before the Danish-default migr
 
 
 
+## 1.12.40 · 2026-11-22
+
+- **Estimated visits on the dashboard:** Each completion contributes the card's current known visit count less registered do-not-call entries, including imported historical completions that originally had an unknown count. When the current card count is unknown, a valid recorded count is used if available; otherwise the completion remains excluded from the estimate.
+- **Full previous-year comparison:** Both bars and table show recorded figures for last year's months even where this service year's months have not started. The current month still compares only through the same day last year.
+- **Focused Stable correction:** No history or do-not-call records are modified. Only derived dashboard values, explanatory text and regression tests change. Unfinished Beta features are excluded.
+
 ## 1.12.39 · 2026-11-22
 
 - **Original S-13 layout for every reporting period:** Calendar-year and rolling-12-month views now fill the actual original S-13 image template using its existing columns, cells and assignment/completion fields. The substitute custom S-13 table has been removed.
