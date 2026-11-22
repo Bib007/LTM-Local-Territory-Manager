@@ -21,13 +21,13 @@ Do-not-call backs contain private records. Handle printed pages and PDFs locally
 
 ## Reports and S-13
 
-Choose the service year under **Reports and history**. **Print complete report / PDF (Danish)** includes the service year, rolling 12 months, both map views, territory details and the completed original S-13. Report content remains Danish in either app language. **Download original completed S-13** downloads the local PDF directly.
+Under **Reports and history**, choose **Calendar year**, **Service year** or **Last 12 months**. You can also select the specific calendar year. **Print complete report / PDF** includes the figures, map and S-13 data for the chosen period (or all three when explicitly selected).
 
-Reports use A4 with 15 mm margins; wide map views may use landscape pages. Language selection does not alter the original S-13 or its field placement. Check year, names, dates, page breaks and continuation pages. OSM map tiles must load successfully.
+The service-year appendix and **Download original completed S-13** use the unchanged original S-13 form and downloadable local PDF. For calendar years and rolling 12-month periods, the screen and the complete report instead show a clearly labelled **S-13 period extract** with the actual assignments, known previous completions and period-specific completion totals. **Print S-13 period extract / PDF** opens a standalone print view for that period. This is not an official S-13 service-year form.
 
-Duplicate clicks do not start a second preparation. Navigation, changed data or a changed service year cancel stale preparation and preserve newer dialogs. If profile saving fails, check save status and use **Refresh** when requested before retrying.
+Reports use A4 with 15 mm margins; wide map views may use landscape pages. Check the selected boundaries, assignment dates, completed dates and continuation pages. OSM map tiles must load for map reports; standalone period extracts do not require map tiles.
 
-Physical printer calibration remains an owner check. Automated tests use invented data. See [final verification](SLUTKONTROL.en.md).
+Duplicate clicks do not start a second preparation. Navigation or changed source data cancel stale print preparation. If profile saving fails, check save status and use **Refresh** when requested before retrying. Automated tests use invented data; physical printer calibration remains an owner check.
 
 ## Original form language
 
