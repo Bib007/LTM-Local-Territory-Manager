@@ -59,7 +59,7 @@ async function inlineReportAssets(markup){
 async function printReport({withoutBackground=false,s13Only=false}={}){
  if(printReport.busy)return;printReport.busy=true;
  const origin=page,originalState=state,revision=state.revision,originalYear=year,originalCalendarYear=Workspace.calendarYear,map=ReportMap.map,before=Workspace.reportPeriod,language=I18n.language(),picker=el('reportPrintPeriod'),selection=s13Only?before:(picker?.value||before),showNumbers=Workspace.reportShowNumbers!==false;let owned=before,win,buildingMap=false;
- const current=()=>page===origin&&state===originalState&&state.revision===revision&&year===originalYear&&Workspace.calendarYear===originalCalendarYear&&ReportMap.map===map&&Workspace.reportPeriod===owned&&((Workspace.reportShowNumbers!==false)===showNumbers)&&(!picker?.value||(picker.isConnected!==false&&picker.value===selection))&&!win.closed;
+ const current=()=>page===origin&&state===originalState&&state.revision===revision&&year===originalYear&&Workspace.calendarYear===originalCalendarYear&&ReportMap.map===map&&Workspace.reportPeriod===owned&&((Workspace.reportShowNumbers!==false)===showNumbers)&&(s13Only||!picker?.value||(picker.isConnected!==false&&picker.value===selection))&&!win.closed;
  const check=()=>{if(!current())throw Error('Printgrundlaget er ændret. Åbn print igen.');};
  try{
   const modes=selection==='all'?['calendar','service','rolling']:[selection];if(!modes.every(mode=>['calendar','service','rolling'].includes(mode)))throw Error('Ugyldigt rapportperiodevalg.');
