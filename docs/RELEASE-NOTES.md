@@ -1,18 +1,19 @@
-# LTM 1.12.37
+# LTM 1.12.38
 
-Afgrænset Stable-rettelse oven på 1.12.36. Import af historik viser nu tydeligt, hvorfor godkendelse kan være blokeret, og lader brugeren skrive i bekræftelsesfeltet. Ingen andre Beta-funktioner er med.
+Afgrænset Stable-hotfix på 1.12.37: S-13-oplysninger følger nu den periode, man vælger i rapporten. Kalenderår og seneste 12 måneder er tilføjet uden at trække uafsluttede Beta-funktioner med.
 
-## Rettelse
+## S-13 efter periode
 
-- Efter forhåndskontrol er feltet **Skriv IMPORTÉR HISTORIK** altid skrivbart, også hvis nogle rækker har fejl eller ingen nye poster kan tilføjes.
-- Ved fejl vises en forklaring om at rette tabellens fejl og kontrollere igen. Når der ikke er nye poster, forklares det, at rækkerne kan være dubletter eller uden for den understøttede importperiode.
-- **Tilføj den kontrollerede historik** kan fortsat kun bruges, når der er mindst én gyldig ny gennemgang eller ét nyt udlån, og ingen fejl. Serverens kontroller ændres ikke.
-- Rettelsen af nyeste-/ældste-først-datoorden fra Stable 1.12.36 samt alle eksisterende registreringer og øvrige Stable-funktioner bevares.
+- Vælg **Kalenderår**, **Tjenesteår** eller **Seneste 12 måneder** under Rapporter og historik. For kalenderår kan du vælge historiske år.
+- Tal, udleveringer og gennemgangsdatoer i S-13-visningen følger den præcise periode. En gennemgang uden for perioden tælles ikke med.
+- For tjenesteår vises den uændrede originale S-13, som fortsat kan hentes direkte som lokal PDF.
+- For kalenderår og seneste 12 måneder vises et tydeligt mærket, ikke-officielt **S-13-periodeudtræk**. Det kan printes/gemmes som PDF alene eller indgå i den samlede rapport.
+- Eksisterende Stable-rapporttal og øvrige funktioner bevares. Ingen registreringer ændres, og der sker ingen datamigrering.
 
-## Kontrol og udgivelse
+## Udgivelse
 
-Alle PR- og releasekontroller skal være grønne på det præcise `main`-commit. Udgivelse af Home Assistant og andre Stable-spor kræver manuel igangsættelse af **Stable release tracks**. macOS-server udgives kun efter særskilt fysisk Apple Silicon/LAN/VPN/genstartstest. Eksisterende udgivelsestags og aktiver overskrives ikke.
+Udgiv først efter grønne PR-kontroller på den præcise kode. GitHubs **Stable release tracks** skal derefter køres manuelt på `main` for hvert ønsket spor. macOS-server kræver fortsat særskilt fysisk godkendelse.
 
 ## English
 
-LTM 1.12.37 is a focused Stable hotfix on top of 1.12.36. The history confirmation input stays editable after every preview, with an actionable explanation when errors or no new records block approval. The apply button and server continue to reject invalid or no-op imports; all existing Stable features and stored records remain unchanged. Unfinished Beta changes are excluded, and each Stable track retains its manual release gate.
+LTM 1.12.38 adds period-specific S-13 assignment and completion details to calendar-year and rolling-12-month reports while preserving the original S-13 and direct PDF download for service years. Each non-service-year extract is clearly marked as non-official. Previous Stable functionality and stored records remain unchanged; unreleased Beta functionality is excluded. The Stable release remains manually dispatched per platform after green checks.
