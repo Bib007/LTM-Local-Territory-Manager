@@ -18,7 +18,7 @@ Fra beta.32 bruges **Opgaver** til al opfølgning. Tidligere noter bliver opgave
 
 Navigationens tæller viser kun åbne opgaver. Kort med åbne opgaver markeres i kortlisten/mappen, og udleveringsformularen viser en tydelig advarsel med opgaveteksten. En opgave opretter ikke IB automatisk og spærrer ikke udlevering. Brug fx opgaver til at tilføje IB, kontrollere numre eller fjerne et hus, der ikke findes. **○** markerer udført; **✓** genåbner. Udførte opgaver kan findes og redigeres under Udførte uden at miste indhold eller tilknytning.
 
-Forsiden samler tjenesteåret, kortenes placering, gennemgange og opfølgning. Genvejene til mappen, kassen og åbne opgaver åbner de eksisterende lister. Et kort, der gennemgås to gange, tæller som to gennemgange, men kun én gang i dækningen. Anslåede besøg er adresser/enheder på de gennemgåede kort — ikke en registrering af faktiske husbesøg.
+Forsiden samler tjenesteåret, kortenes placering, gennemgange og opfølgning. Genvejene til mappen, kassen og åbne opgaver åbner de eksisterende lister. Et kort, der gennemgås to gange, tæller som to gennemgange, men kun én gang i dækningen. Forsidens anslåede besøg bruger kortets aktuelle kendte besøgstal minus kortets registrerede IB for hver gennemgang. Et kort med 35 besøg og 2 IB, gennemgået to gange, bidrager derfor med 66. Historiske gennemgange ændres ikke; anslaget kan ændre sig, når kortet eller IB ændres.
 
 Opfølgningslisten regner fire kalendermåneder fra starten af den aktuelle gennemgang. Den er til din egen kontrol og træffer ikke beslutninger eller omfordeler kort automatisk. Ændrede sider er en påmindelse om kontrol og genprint af de fysiske kort. Forsiden ændrer ingen registreringer. Grafens månedstal kan også åbnes som tabel.
 
