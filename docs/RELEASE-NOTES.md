@@ -1,17 +1,18 @@
-# LTM 1.12.36
+# LTM 1.12.37
 
-Afgrænset Stable-hotfix på Stable 1.12.35. Denne udgave løser valideringen af rækkefølgen ved import af distriktskortenes historik. Andre uafsluttede Beta-funktioner er ikke med.
+Afgrænset Stable-rettelse oven på 1.12.36. Import af historik viser nu tydeligt, hvorfor godkendelse kan være blokeret, og lader brugeren skrive i bekræftelsesfeltet. Ingen andre Beta-funktioner er med.
 
 ## Rettelse
 
-- Historikskabelonen viser nyeste periode længst til venstre. Importen accepterer nu både ældste-først og nyeste-først, også for ældre eller manuelt udfyldte Excel-/CSV-filer.
-- Perioder med samme udleveringsdato, blandet datoorden, overlappende udlån og ugyldige gennemgangsmarkeringer afvises stadig. De reelle datoer, forkyndere og gennemgange ændres ikke eller opfindes ikke.
-- Alle øvrige funktioner og eksisterende registreringer fra Stable 1.12.35 bevares. Beta og Stable har fortsat adskilte installationer.
+- Efter forhåndskontrol er feltet **Skriv IMPORTÉR HISTORIK** altid skrivbart, også hvis nogle rækker har fejl eller ingen nye poster kan tilføjes.
+- Ved fejl vises en forklaring om at rette tabellens fejl og kontrollere igen. Når der ikke er nye poster, forklares det, at rækkerne kan være dubletter eller uden for den understøttede importperiode.
+- **Tilføj den kontrollerede historik** kan fortsat kun bruges, når der er mindst én gyldig ny gennemgang eller ét nyt udlån, og ingen fejl. Serverens kontroller ændres ikke.
+- Rettelsen af nyeste-/ældste-først-datoorden fra Stable 1.12.36 samt alle eksisterende registreringer og øvrige Stable-funktioner bevares.
 
 ## Kontrol og udgivelse
 
-Kandidaten kræver grønne fælles Python-, JavaScript-, browser-, sikkerheds- og pakkekontroller på det præcise main-commit. Hvert Stable-spor publiceres manuelt via **Stable release tracks**. macOS-server kræver desuden den særskilte fysiske Apple Silicon/LAN/VPN/genstartstest. Intet eksisterende release-tag eller aktiv installation overskrives.
+Alle PR- og releasekontroller skal være grønne på det præcise `main`-commit. Udgivelse af Home Assistant og andre Stable-spor kræver manuel igangsættelse af **Stable release tracks**. macOS-server udgives kun efter særskilt fysisk Apple Silicon/LAN/VPN/genstartstest. Eksisterende udgivelsestags og aktiver overskrives ikke.
 
 ## English
 
-LTM 1.12.36 is a narrowly scoped Stable hotfix based on 1.12.35. Five-period history imports now accept consistently newest-first or oldest-first assignments, matching both the current workbook template and older files. Equal dates, mixed order, overlapping loans and unsupported completion flags remain invalid. All other Stable behaviour and stored data are preserved, with no unfinished Beta changes included. Each release track still requires its manual workflow and independent checks, including the separate macOS-server physical gate.
+LTM 1.12.37 is a focused Stable hotfix on top of 1.12.36. The history confirmation input stays editable after every preview, with an actionable explanation when errors or no new records block approval. The apply button and server continue to reject invalid or no-op imports; all existing Stable features and stored records remain unchanged. Unfinished Beta changes are excluded, and each Stable track retains its manual release gate.
