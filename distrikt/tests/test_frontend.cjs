@@ -169,6 +169,13 @@ assert(s12Page.includes('translate(1.5mm,-1mm) scale(1.05)'));assert(s12Page.inc
 assert.throws(()=>run("printSettings({...defaultPrintProfile('front'),x:'0; color:red'})"));
 run("state.cards[1].front_revision=true;printRevisions('front')");assert(get('dialog').innerHTML.includes('data-ids='));
 run("issue('c4',true)");assert(get('dialog').innerHTML.includes('data-publisher-search'));assert(!get('dialog').innerHTML.includes('name="new_publisher"'));
+assert(get('dialog').innerHTML.includes('<input type="hidden" name="initial" value="yes">'),'Existing-loan registration still submits initial=true');
+assert(!get('dialog').innerHTML.includes('type="checkbox" name="initial"'),'Existing-loan flag is no longer an editable checkbox');
+assert(!get('dialog').innerHTML.includes('Kortet var allerede udleveret før registrering'),'Redundant checkbox text is absent');
+run("issue('c4')");
+assert(!get('dialog').innerHTML.includes('name="initial"'),'Ordinary issues do not submit an initial-loan flag');
+assert(!get('dialog').innerHTML.includes('Kortet var allerede udleveret før registrering'),'Ordinary issue form has no redundant choice');
+assert(!get('dialog').innerHTML.includes('Brug afkrydsningen'),'No reference to the removed checkbox remains');
 run("deskTab='Udlever';page='Udlevering';render()");assert(!get('app').innerHTML.includes('id="serviceYear"'));assert(get('nav').innerHTML.includes('Daglig brug'));
 console.log('Desk, day-count, print-profile, batch-print and local person-search tests passed.');
 run("editCard('c3')");assert(get('dialog').innerHTML.includes('Vejlisten følger de valgte huse'));assert(get('dialog').innerHTML.includes('<fieldset disabled>'));
