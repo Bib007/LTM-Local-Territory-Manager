@@ -22,6 +22,8 @@ MODULES = {'settings': 'indstillinger', 'cards': 'kort', 'publishers': 'forkynde
            'visits': 'ktm_besoeg', 'maps': 'kortbilleder', 'geo': 'geodata', 'ignored': 'se_bort_fra', 'notes': 'kortnoter'}
 ADDRESS_TYPES = ['Hus', 'Lejlighed', 'Lejlighedskompleks', 'Butik', 'Kontor', 'Virksomhed', 'Andet']
 DEFAULT_PUBLISHER_CARD_GUIDANCE = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+DEFAULT_HISTORY_YEARS = 2
+MAX_HISTORY_YEARS = 100
 # Values are UI labels, never stored placement/loan state identifiers.
 LOCATION_LABEL_KEYS = frozenset(('home', 'folder', 'issued'))
 
@@ -118,7 +120,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             if not self.get('settings', 'config'):
                 self.put('settings', {'id': 'config', 'congregation': '', 'folder_minimum': 0,
                     'rural_mode': 'auto', 'rural_minimum': 0, 'require_revision': False,
-                    'publisher_card_guidance': dict(DEFAULT_PUBLISHER_CARD_GUIDANCE), 'schema': 1})
+                    'publisher_card_guidance': dict(DEFAULT_PUBLISHER_CARD_GUIDANCE),
+                    'history_years': DEFAULT_HISTORY_YEARS, 'schema': 1})
         self.purge_expired()
 
     @contextmanager
@@ -750,6 +753,9 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             minimum = int(data.get('folder_minimum', c.get('folder_minimum',0)))
             rural = int(data.get('rural_minimum', c.get('rural_minimum',0)))
             mode = data.get('rural_mode', c.get('rural_mode', 'auto'))
+            years = data.get('history_years', c.get('history_years', DEFAULT_HISTORY_YEARS))
+            if type(years) is not int or not 1 <= years <= MAX_HISTORY_YEARS:
+                raise ValueError('Antal år med historik skal være mellem 1 og 100.')
             if mode == 'auto':
                 rural = min(rural, minimum)
             if not 0 <= minimum <= 1000 or not 0 <= rural <= minimum or mode not in ('auto', 'manual'):
@@ -778,7 +784,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 folder_minimum=minimum, rural_mode=mode, rural_minimum=rural,
                 require_revision=bool(data.get('require_revision', c.get('require_revision'))),
                 publisher_card_guidance=dict(limits), split_visit_limit=limit,
-                folder_enabled=folder_enabled, location_labels=normalized)
+                folder_enabled=folder_enabled, location_labels=normalized,
+                history_years=years)
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)
@@ -1136,12 +1143,17 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             return {'batch': batch, 'count': count}
         raise ValueError('Ukendt handling.')
 
+    def history_years(self):
+        years = self.require('settings', 'config').get('history_years', DEFAULT_HISTORY_YEARS)
+        return years if type(years) is int and 1 <= years <= MAX_HISTORY_YEARS else DEFAULT_HISTORY_YEARS
+
     def history_cutoff(self):
         d = date.today()
+        year = d.year - self.history_years()
         try:
-            return d.replace(year=d.year-2).isoformat()
+            return d.replace(year=year).isoformat()
         except ValueError:
-            return d.replace(year=d.year-2, day=28).isoformat()
+            return d.replace(year=year, day=28).isoformat()
 
     def close(self):
         self.db.close()

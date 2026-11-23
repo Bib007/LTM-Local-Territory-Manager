@@ -34,6 +34,30 @@ class HistoryImportTests(unittest.TestCase):
         p=self.preview([['001',self.day],['001',self.s.history_cutoff()],['001',self.s.history_cutoff()],['001','2001-01-01']])
         self.assertEqual([r['status'] for r in p['rows']],['duplicate','ready','duplicate','outside'])
         self.assertEqual(p['count'],1)
+    def test_selected_history_years_include_older_closed_loans_and_completions(self):
+        self.card2()
+        middle = (date.today() - timedelta(days=3*365)).isoformat()
+        outside = (date.today() - timedelta(days=6*365)).isoformat()
+        self.s.mutate('settings.save', {'history_years': 5})
+        rows = [['001', middle], ['001', outside],
+                ['002', '', 'Fiktiv ny', middle, middle],
+                ['002', '', 'Fiktiv for gammel', outside, outside]]
+        p = self.preview(rows)
+        self.assertEqual(p['years'], 5)
+        self.assertEqual([r['status'] for r in p['rows']], ['ready', 'outside', 'ready', 'outside'])
+        self.assertEqual((p['count'], p['loan_count'], p['publisher_count']), (2, 1, 1))
+        self.apply(p)
+        self.assertEqual(len(self.s.all('completions')), 2)
+        self.assertEqual(len(self.s.all('loans')), 1)
+        self.s.mutate('settings.save', {'history_years': 1})
+        self.assertEqual(self.preview([['001', middle]])['rows'][0]['status'], 'outside')
+
+    def test_history_import_preview_is_invalid_after_retention_change(self):
+        p = self.preview([['001', self.day]])
+        self.s.mutate('settings.save', {'history_years': 4})
+        with self.assertRaises(ValueError):
+            self.apply(p)
+
     def test_any_error_blocks_whole_batch_and_current_loans_are_preserved(self):
         publisher=self.s.mutate('publisher.save',{'name':'Fiktiv forkynder'})['id']
         self.s.mutate('loan.issue',{'card_id':self.card,'publisher_id':publisher,'date':self.day,'initial':True})
