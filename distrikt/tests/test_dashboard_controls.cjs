@@ -91,7 +91,7 @@ run("state.archived_cards[0].addresses=[{count:35}]");
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),107,'Archived territory totals count where known');
 run(`state=${original}`);
 run("state.loans.push({card_id:'old',returned:null})");
-assert.match(run('Workspace.dashboard()'),/data-ui="Udleveret nu"[\\s\\S]*?<\\/span><\\/span><strong>1<\\/strong>/,'Archived territory loans do not inflate current placement');
+assert.match(run('Workspace.dashboard()'),/data-ui="Udleveret nu"[\s\S]*?<\/span><\/span><strong>1<\/strong>/,'Archived territory loans do not inflate current placement');
 run("state.settings.folder_enabled=false");
 assert.doesNotMatch(run('Workspace.dashboard()'),/data-status="Kort i mappen"/);
 assert.match(run('Workspace.dashboard()'),/data-status="Kort i kassen"/);
