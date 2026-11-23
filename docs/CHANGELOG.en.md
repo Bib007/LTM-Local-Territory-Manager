@@ -2,6 +2,12 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.13.0-beta.3 · 2026-11-23
+
+- **Dashboard estimated visits:** Each completion now counts the territory's current known visit total minus its linked do-not-call entries. Historically unknown completions can be estimated when the territory now has a known count. A card with 35 visits and 2 do-not-call entries contributes 33 per completion.
+- **Full previous service year in the monthly chart:** All twelve previous-year months display saved completions even when the corresponding current-year months have not started. The current month still uses the same calendar-date cut-off last year.
+- This remains a present-day estimate, not recorded house visits. No card, do-not-call or completion records are modified. Stable 1.12.40 fixes are included without removing the functionality introduced in beta.1 and beta.2.
+
 ## 1.13.0-beta.2 · 2026-11-21
 
 - **KTM visit points:** The report header now sums known visit points on current territory cards, including manually maintained street rows. Unassigned DAR addresses do not count. Cards with unknown counts are reported separately so a partial total is not presented as complete.
