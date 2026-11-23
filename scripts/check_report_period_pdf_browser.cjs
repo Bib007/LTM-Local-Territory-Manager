@@ -49,6 +49,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      assert.equal(await printed.locator('.reportMapPage').count(),choice==='all'?3:1);
      assert.equal(await printed.locator('.s13Original').count(),choice==='all'?3:1,'All periods use the actual original S-13 form');
      assert.equal(await printed.locator('.s13Period').count(),choice==='all'?2:choice==='service'?0:1,'Non-service periods use the S-13 image with an explicit period caption');
+     assert.equal(await printed.locator('.s13Original svg image[href^="data:image/"]').count(),choice==='all'?3:1,'Every period must embed the supplied S-13 background image');
+     assert.equal(await printed.locator('.s13Period table').count(),0,'The custom replacement table must not return');
+     assert.equal(await printed.locator('.s13Original svg').count(),choice==='all'?3:1);
+     assert.equal(await printed.locator('.s13Original svg image').evaluateAll(images=>images.every(img=>img.getAttribute('href')?.startsWith('data:image/'))),true,'Every actual S-13 form background must be inlined in the PDF');
      const marker=await printed.locator('svg text').filter({hasText:'Sidste KTM besøg'}).count();
      assert.equal(marker,empty?0:choice==='all'?3:1,'The yellow KTM timeline marker must match the selected periods');
      if(marker){
