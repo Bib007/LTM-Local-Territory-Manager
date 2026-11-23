@@ -2,6 +2,7 @@
 
 ## Nyt siden beta.3
 
+- **To gennemgangsmål:** »Gennemsnitlig gennemgangstid« måler tiden fra udlevering til aflevering, når kortet meldes gennemgået. »Ældste kort i gennemgangskøen« viser alderen på det næste ledige kort efter udleveringsrækkefølgen. Begge bokse har korte forklaringer, og kort uden kendt dato vises særskilt.
 - Forsiden går direkte fra »Dit overblik / Velkommen« til de relevante nøgletal. Den ekstra titelblok og den dobbelte tæller for gennemgange er fjernet.
 - Fremdriftsboksen viser både dækning af **forskellige aktuelle distriktskort** og **anslåede besøg på de samme kort**. Hvert kort med en gennemgang i tjenesteåret medregnes én gang i begge tal, uanset gentagne gennemgange. Ukendte besøgstal mærkes særskilt. Historiske S-13-rapporter og månedsdiagrammer ændrer ikke optællingsmetode.
 - Brugsstatistik har fået sin egen fane under Indstillinger.
