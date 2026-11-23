@@ -18,6 +18,7 @@ from pathlib import Path
 from access import write_private
 from publication_dates import ApprovedImages,dates,date_key,render as render_dates
 from pdf_export import shared_card_pdf
+from public_address_list import address_entries
 from resource_paths import vendor_dir
 sys.path.insert(0,str(vendor_dir()))
 import qrcode
@@ -125,7 +126,8 @@ class Drive:
 
 DATE_RENDER_REVISION=7
 PDF_RENDER_REVISION=11
-RENDER_REVISION=12
+PDF_ADDRESS_RENDER_REVISION=13
+RENDER_REVISION=13
 
 def public_members(store,c):
     addresses=c.get('geo_addresses') or [a for a in store.all('geo') if a.get('entity')=='address' and a['id'] in c.get('address_ids',[])]
@@ -321,8 +323,10 @@ class Publications:
             if c.get('geo_polygon'):public_card['geo_polygon']=c['geo_polygon']
             public_card.update(name=public_name(self.store,c),public_dates=public_dates)
             # Send the same fields for every dot, regardless of its IB status.
+            safe_members=public_members(self.store,c)
             members=[{k:a[k] for k in ('id','road','number','lng','lat','count')}
-                     for a in public_members(self.store,c)]
+                     for a in safe_members]
+            address_list=address_entries(safe_members,manual_rows)
             from geography import front_summaries
             if has_geo:
                 public_card['front_line_overrides']=c.get('front_line_overrides') or []
@@ -339,7 +343,7 @@ class Publications:
             else:
                 public_card['addresses']=manual_rows
                 public_card['temporary']=bool(c.get('temporary'))
-            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'pdf':True,'dates':public_dates,'card':public_card,'members':members,'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
+            return {'render_revision':RENDER_REVISION,'fingerprint':fingerprint(self.store,c),'date_fingerprint':date_key(public_dates),'date_updates':True,'pdf':True,'dates':public_dates,'card':public_card,'members':members,'address_list':address_list,'manual_front_rows':manual_rows,'manual_ib_withheld':manual_ib_withheld,'geography_missing':not has_geo}
     def date_preview(self,data):
         png=png_bytes(data.get('png'))
         with self.store.lock:
@@ -355,7 +359,7 @@ class Publications:
             for row in rows:
                 if first_due and row['card_id']!=first_due:continue
                 if row.get('status')=='review' and not row.get('date_retry_allowed'):continue
-                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,9,10,PDF_RENDER_REVISION,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
+                if row.get('manual_withdraw') or row.get('render_revision') not in (DATE_RENDER_REVISION,9,10,PDF_RENDER_REVISION,12,RENDER_REVISION) or not row.get('date_updates') or row.get('date_error') or row.get('status') not in ('published','ready','access_retry','access_failed','queued','retry','failed','review'):continue
                 c=self.store.get('cards',row['card_id'])
                 if not c or fingerprint(self.store,c)!=row.get('fingerprint'):continue
                 values=dates(self.store,c);key=date_key(values)
@@ -461,7 +465,14 @@ class Publications:
                     with self.store.transaction():row.update(url='',possibly_public=False);self.store.put('maps',row)
                 png=base64.b64decode(row['queued_png'])
                 if row.get('render_revision',0)>=PDF_RENDER_REVISION:
-                    pdf=shared_card_pdf(png,self.images.load(row.get('approved_front_image')))
+                    options={}
+                    if row.get('render_revision',0)>=PDF_ADDRESS_RENDER_REVISION:
+                        with self.store.lock:
+                            current_card=self.store.require('cards',row['card_id'])
+                            safe_manual,_=public_manual_front(self.store,current_card)
+                            options={'address_list':address_entries(public_members(self.store,current_card),safe_manual),
+                                     'number':current_card['number'],'name':public_name(self.store,current_card)}
+                    pdf=shared_card_pdf(png,self.images.load(row.get('approved_front_image')),**options)
                     send=lambda:self.drive.upload_pdf(pdf,c['number'],row.get('file_id'))
                 else:
                     send=lambda:self.drive.upload(png,row.get('file_id'))
