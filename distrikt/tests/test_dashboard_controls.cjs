@@ -131,5 +131,29 @@ keyboard({key:'k',ctrlKey:true,target:{closest(){return null;}},preventDefault()
  get('dialog').open=false;await run("Workspace.handle('refresh',{})");assert.equal(run('readCount'),1);
  assert.equal(run('SaveStatus.kind'),'review','A refreshed snapshot does not prove an earlier write');
  assert.equal(requests.filter(r=>r.url==='/api/mutate').length,writeCount);
+ // The usage statistics are a dedicated settings tab, not a panel repeated on all settings screens.
+ run("state.profile=null;ProfilesUI={has:()=>true,settings:()=>''};UsageStatsUI={html:()=>'<section id=\\\"settings-usage\\\">Fictional activity</section>'};settingsView='usage'");
+ const usage=run('settingsPage()');
+ assert.match(usage,/data-action="settings-view" data-tab="usage" aria-current="page"/);
+ assert.match(usage,/Fictional activity/);
+ assert.doesNotMatch(usage,/settings-general|settings-data|settingsForm/);
+ assert(!source.includes('?UsageStatsUI.html():""'),'Usage statistics must not be embedded in the general settings grid');
+ // Returns offer the same selected card details as the publisher view, plus
+ // explicit marking. No group action silently completes a loan.
+ run(`state={today:'2026-10-16',cards:[{id:'aa',number:'01',name:'Fictional street'},{id:'bb',number:'02',name:'Fictional lane'}],loans:[{id:'one',card_id:'aa',publisher_id:'p',assigned:'2026-10-01',returned:null},{id:'two',card_id:'bb',publisher_id:'p',assigned:'2026-10-02',returned:null}],publishers:[{id:'p',name:'Fictional publisher'}],areas:[],settings:{folder_enabled:true}};deskReturnSelected.clear();query='';selected='';details=c=>c?'<aside data-selected="'+c.id+'"></aside>':'';`);
+ const returns=run('deskReturns()');
+ assert.match(returns,/class="cardRow deskReturnRow selected" data-card-row="aa"/);
+ assert.match(returns,/data-selected="aa"/,'The selected loan renders the sidebar card details');
+ assert.match(returns,/data-return-mark="one"/);
+ assert.match(returns,/data-action="desk-return-mark-visible"/);
+ assert.match(returns,/data-action="desk-return-next" disabled/);
+ run("deskReturnSelected.add('one')");
+ assert.match(run('deskReturns()'),/data-return-mark="one" checked/);
+ assert.doesNotMatch(run('deskReturns()'),/data-action="desk-return-next" disabled/);
+ run("query='Fictional lane'");
+ assert.match(run('deskReturns()'),/data-action="desk-return-next" disabled/,'Hidden marked loans are not returned by mistake');
+ run("state.loans[0].returned='2026-10-15';query=''");
+ assert.equal(run('deskReturns()').includes('data-return-mark="one"'),false);
+ assert.equal(run('deskReturnSelected.size'),0,'A returned loan cannot remain marked');
  console.log('Dashboard arithmetic, archived/repeat coverage, empty states, bilingual local search, keyboard/menu access and independent save/connectivity states passed; probes preserve drafts and never replay writes.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
