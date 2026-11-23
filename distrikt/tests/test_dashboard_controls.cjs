@@ -48,7 +48,7 @@ for(const language of ['da','en']){
  assert.doesNotMatch(html,/dashboardLead|dashboardVisits|data-ui="Gennemgange i tjenesteåret"/,'The dashboard no longer repeats titles or completion tiles');
  assert.doesNotMatch(html,/dashboardPeriod|Gennemgange og anslåede besøg:|Completions and estimated visits:/);
  assert.match(html,language==='en'?/View monthly figures as a table/:/Vis månedstallene som tabel/);
- assert.match(html,language==='en'?/1 month and 0 days/:/1 måned og 0 dage/);
+ assert.match(html,language==='en'?/Not enough history yet/:/Ikke nok historik endnu/,'Open loans and manually added completions cannot establish issue-to-return duration');
  assert.match(html,/data-dashboard-layout="compact"/);
  assert.match(html,/class="dashboardPrimary"/);
  assert.match(html,/class="dashboardAverageValue">/);
