@@ -210,10 +210,11 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  },
  dashboardCoverage(covered,total){
   const pct=total?Math.round(covered/total*100):0,remaining=Math.max(0,total-covered),summary=ui('{covered} af {total} forskellige kort gennemgået',{covered,total});
-  return `<section class="panel dashboardCoverage" aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}">
+  const progressLabel=typeof I18n.attribute==='function'?I18n.attribute('aria','Dækning i tjenesteåret'):`aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}"`;
+  return `<section class="panel dashboardCoverage">
    <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div><span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span></div>
    <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
-   <div class="dashboardProgressTrack" role="progressbar" aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span></div>
+   <div class="dashboardProgressTrack" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span></div>
    <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui('{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
    <p class="srOnly">${summary}</p>
   </section>`;
