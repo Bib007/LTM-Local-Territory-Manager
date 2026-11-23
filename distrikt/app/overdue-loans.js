@@ -30,8 +30,10 @@ const OverdueLoans={
  render(){
   if(!this.allowed())return '<section class="panel"><p class="hint">'+ui('Du har ikke adgang til udleveringsoplysninger.')+'</p></section>';
   const rows=this.items().filter(r=>[r.name,r.card.number,r.card.name,r.card.internal_number].join(' ').toLocaleLowerCase('da-DK').includes(query.toLocaleLowerCase('da-DK').trim()));
-  const headings=withPublisher?'<thead><tr><th>'+ui('Forkynder')+'</th><th>'+ui('Kort')+'</th>':'<thead><tr><th>'+ui('Kort')+'</th><th>'+ui('Udleveret')+'</th><th>'+ui('Hvor længe')+'</th>';
-  const table=(items,withPublisher)=>'<div class="tablewrap"><table>'+headings+(withPublisher?'<th>'+ui('Handling')+'</th>':'')+'</tr></thead><tbody>'+items.map(r=>this.row(r,withPublisher)).join('')+'</tbody></table></div>';
+  const table=(items,withPublisher)=>{
+   const headings=(withPublisher?'<thead><tr><th>'+ui('Forkynder')+'</th>':'<thead><tr>')+'<th>'+ui('Kort')+'</th><th>'+ui('Udleveret')+'</th><th>'+ui('Hvor længe')+'</th>';
+   return '<div class="tablewrap"><table>'+headings+(withPublisher?'<th>'+ui('Handling')+'</th>':'')+'</tr></thead><tbody>'+items.map(r=>this.row(r,withPublisher)).join('')+'</tbody></table></div>';
+  };
   const ordered=rows.slice().sort((a,b)=>cmp(a.loan.assigned||a.loan.cycle_start,b.loan.assigned||b.loan.cycle_start)||cmp(a.card.number,b.card.number));
   const groups=this.groups(rows),sorted=this.sort==='oldest';
   return '<section class="panel overdueLoans"><div class="between"><div><h2>'+ui('Distrikter udleveret for længe')+'</h2><p class="hint">'+ui('Opfølgning efter fire kalendermåneder uden registreret gennemgang. Ingen ændringer sker automatisk.')+'</p></div><strong class="publisherGroupCount">'+ui('{count} distrikter udleveret for længe',{count:rows.length})+'</strong></div>'
