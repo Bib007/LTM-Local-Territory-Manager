@@ -172,3 +172,4 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .areaColorSwatch{display:inline-block;flex:0 0 20px;width:20px;height:20px;border:1px solid var(--line);border-radius:5px}
 #areaForm .areaColorWarning{border-left:4px solid #c59147;font-size:14px;font-weight:600;line-height:1.55}
 #areaForm .areaColorWarning[hidden]{display:none}
+.areaColorName{display:inline-flex;align-items:center;gap:10px;min-width:0;overflow-wrap:anywhere}
