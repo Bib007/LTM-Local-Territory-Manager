@@ -15,6 +15,8 @@ const ctx={
  I18n:{language:()=> 'da',fixedLanguage:()=>true,text:text=>text},
  ui:(value,params={})=>String(value).replace(/\{(\w+)\}/g,(_,k)=>String(params[k]??'{'+k+'}')),
  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
+ cmp:(a,b)=>String(a).localeCompare(String(b)),
+ fmt:value=>String(value),
  serviceYear:()=>2027,yearLabel:()=> '2026/2027',
 };
 vm.createContext(ctx);
