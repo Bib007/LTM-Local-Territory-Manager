@@ -81,6 +81,52 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
 
+    def test_geo_preview_isolation_and_revalidation(self):
+        from geo_store import suggest_outline
+        self.store.mutate('geo.import',{'records':[{'id':'f1','entity':'address','road':'Fiktivvej','number':'1','postcode':'9999','lng':10,'lat':55,'unknown':{'keep':True}}],'source':'Test','label':'Fiktiv'})
+        with self.store.transaction():
+            row=self.store.get('geo','f1');row['unknown']={'keep':True};self.store.put('geo',row)
+            card=self.store.get('cards',self.card);card['addresses']=[{'road':'Fiktivvej','numbers':'1','count':1}];self.store.put('cards',card)
+            self.store.put('geo',{'id':'download:f','entity':'download','complete_road':{'road':'Fiktivvej','postcode':'9999'}})
+        rights=['cards.view','cards.edit','geo.view','geo.edit']
+        editor,role,user=self.reader(rights)
+        original=suggest_outline
+        for mode in ('ids','street_lines'):
+            for outcome in ('success','rejected','internal','changed','revoked','logout'):
+                with self.subTest(mode=mode,outcome=outcome):
+                    self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',rights,ident=role)
+                    editor=self.login('Fiktiv bruger','Fiktiv-password-456')
+                    entered=threading.Event();release=threading.Event()
+                    def held(*args):
+                        entered.set()
+                        if not release.wait(5):raise RuntimeError('Test did not release preview')
+                        if outcome=='rejected':raise ValueError('Fiktiv afvisning')
+                        if outcome=='internal':raise RuntimeError('FICTIONAL_PRIVATE_DIAGNOSTIC')
+                        return original(*args)
+                    before=self.store.revision
+                    with patch('geo_store.suggest_outline',held),concurrent.futures.ThreadPoolExecutor() as pool:
+                        pending=pool.submit(self.value,'/api/mutate',{'action':'geo.preview','data':{'mode':mode,'address_ids':['f1'],'suggest_outline':True,'card_id':self.card,'postcodes':['9999']}},editor)
+                        try:
+                            self.assertTrue(entered.wait(2))
+                            # Both requests must complete while calculation is held.
+                            self.assertEqual(pool.submit(self.state,self.admin).result(timeout=2)['cards'][0]['id'],self.card)
+                            if outcome=='changed':self.store.mutate('card.color',{'card_id':self.card,'map_color':'#aabbcc'})
+                            if outcome=='revoked':self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',['cards.view'],ident=role)
+                            if outcome=='logout':self.value('/api/logout',{},editor)
+                        finally:release.set()
+                        if outcome=='success':
+                            result=pending.result(timeout=2)
+                            self.assertTrue(result['result']['addresses'][0]['unknown']['keep'])
+                        else:
+                            with self.assertRaises(urllib.error.HTTPError) as caught:pending.result(timeout=2)
+                            self.assertEqual(caught.exception.code,401 if outcome=='logout' else 403 if outcome=='revoked' else 500 if outcome=='internal' else 400)
+                            message=json.load(caught.exception)['error']
+                            self.assertNotIn('FICTIONAL_PRIVATE',message)
+                            if outcome=='changed':self.assertIn('ændret',message)
+                        if outcome!='changed':self.assertEqual(self.store.revision,before)
+                        self.assertTrue(self.store.get('geo','f1')['unknown']['keep'])
+                        self.assertEqual(self.state(self.admin)['cards'][0]['id'],self.card)
+
     def test_publisher_merge_profile_save_alias_assignment_and_actor_owned_undo(self):
         from datetime import date
         target=self.store.mutate('publisher.save',{'name':'Fiktiv mål','group':'Fiktiv gruppe','group_role':'assistant','pioneer':True})['id']

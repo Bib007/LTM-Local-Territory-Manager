@@ -133,7 +133,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         self.send_header('Content-Type',kind+('; charset=utf-8' if kind in ('text/html','text/css','text/javascript','application/json') else ''))
         self.send_header('Content-Length',str(size if stream else len(data)))
         self.send_header('Cache-Control','no-store')
-        if getattr(self,'profile_user',None):self.send_header('X-LTM-Authorization',str(self.server.accounts.generation))
+        if getattr(self,'profile_user',None):self.send_header('X-LTM-Authorization',str(getattr(self,'preview_authorization',self.server.accounts.generation)))
         for key,value in (headers or {}).items():self.send_header(key,value)
         self.send_header('X-Content-Type-Options','nosniff')
         self.send_header('Referrer-Policy','strict-origin-when-cross-origin')
@@ -335,8 +335,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                     self.rfile=io.BytesIO(payload)
             except (ValueError,OSError):
                 self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
+            self.geo_preview_work=None
             with self.profile_scope(post=True) as permitted:
                 if permitted:self._post(restore_upload=upload)
+            if self.geo_preview_work is not None:self.finish_geo_preview()
             self.send_pending_archive()
         finally:
             if upload:upload.close()
@@ -364,6 +366,8 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if not 0<length<=16000000:raise ValueError('Forespørgslen er for stor eller tom.')
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
+            if self.path=='/api/mutate' and data.get('action')=='geo.preview':
+                return self.prepare_geo_preview(data.get('data',{}))
             if self.profile_post(self.path,data):return
             if self.path=='/api/runtime/test':return self.send(self.server.runtime_status.test_notification())
             if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))
