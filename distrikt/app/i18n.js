@@ -2085,6 +2085,7 @@ const I18n={
   "Mappen / udleveret / kassen":"Carry folder / assigned / storage box",
   "Gennemgået i tjenesteåret":"Completed in the service year",
   "Kortets egen farve":"The card’s own colour",
+  "Farverne følger de to valgte månedgrænser. Filteret Under/Mindst intervallet bruger den røde grænse. Ukendte datoer vises særskilt.":"The colours follow the two selected month thresholds. The Below/At least interval filter uses the red threshold. Unknown dates appear separately.",
   "Visningsinterval":"Display interval",
   "Farveintervaller (måneder)":"Colour intervals (months)",
   "Grøn under":"Green below",
