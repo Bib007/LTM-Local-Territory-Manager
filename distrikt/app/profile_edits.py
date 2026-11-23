@@ -28,12 +28,18 @@ REVIEW_FIELDS={
 }
 
 def capture(store,modules=None):
-    return {'id':'workspace','records':{m:{r['id']:deepcopy(r) for r in store.all(m)
+    # Store.all() decodes fresh SQLite JSON objects. Copying them again here
+    # doubles work for every overview/save without improving data isolation.
+    return {'id':'workspace','records':{m:{r['id']:r for r in store.all(m)
                    if not r.get('entity') and (m!='notes' or not is_ib_review(r))} for m in REVIEW_FIELDS if modules is None or m in modules}}
 
 class ReviewedMutation:
     def __init__(self,base,actor,on_precommit=None):
-        self.base=base;self.actor=actor;self.observed=deepcopy(base);self.conflicts=[]
+        # Copy only module indexes: prepare() replaces a proposed record, while
+        # unmodified captured values remain read-only until serialization.
+        self.base=base;self.actor=actor
+        self.observed={**base,'records':{module:rows.copy() for module,rows in base['records'].items()}}
+        self.conflicts=[]
         self.on_precommit=on_precommit
 
     def prepare(self,store,action,data):

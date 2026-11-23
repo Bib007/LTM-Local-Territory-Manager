@@ -1,5 +1,6 @@
 """W124: real loopback HTTP, disposable SQLite and fictional accounts only."""
 import hashlib
+import json
 import unittest
 import urllib.error
 from unittest.mock import patch
@@ -144,5 +145,45 @@ class SaveReceiptTests(unittest.TestCase):
         self.assertIn(fork,self.server.profiles.bases._items)
         self.value('/api/profiles/edit-base/release',{'snapshot':fork},self.admin)
         self.assertNotIn(fork,self.server.profiles.bases._items)
+
+class SnapshotPerformanceSafetyTests(unittest.TestCase):
+    def test_fork_reuses_immutable_packed_data_with_independent_lease(self):
+        from edit_snapshots import EditSnapshots
+        snapshots=EditSnapshots(max_bytes=1024*1024)
+        base={'id':'workspace','records':{'cards':{'fictional':{'id':'fictional','name':'Før'}}}}
+        original=snapshots.create('fictional-session','workspace','workspace',base)
+        with patch('edit_snapshots.zlib.decompress',side_effect=AssertionError('Fork must not decompress')):
+            cloned=snapshots.fork(original,'fictional-session')
+        self.assertIs(snapshots._items[cloned]['record'],snapshots._items[original]['record'])
+        self.assertTrue(snapshots._items[cloned]['protected'])
+        self.assertEqual(snapshots._items[cloned]['until'],snapshots._items[original]['until'])
+        with snapshots.claim(cloned,'fictional-session','workspace','workspace') as data:
+            data['records']['cards']['fictional']['name']='Ændret'
+        with snapshots.claim(original,'fictional-session','workspace','workspace') as data:
+            self.assertEqual(data['records']['cards']['fictional']['name'],'Før')
+
+    def test_review_observed_records_copy_on_write_preserves_original(self):
+        from profile_edits import ReviewedMutation
+        base={'id':'workspace','records':{'cards':{'fictional':{'id':'fictional','name':'Før'}},
+                                          'notes':{'other':{'id':'other','text':'Uændret'}}}}
+        reviewed=ReviewedMutation(base,'fictional-actor')
+        self.assertIsNot(reviewed.observed['records'],base['records'])
+        self.assertIsNot(reviewed.observed['records']['cards'],base['records']['cards'])
+        self.assertIs(reviewed.observed['records']['cards']['fictional'],base['records']['cards']['fictional'])
+        reviewed.observed['records']['cards']['fictional']={'id':'fictional','name':'Ændret'}
+        self.assertEqual(base['records']['cards']['fictional']['name'],'Før')
+        self.assertEqual(reviewed.base,base)
+
+    def test_capture_uses_fresh_sqlite_rows_without_duplicate_deepcopy(self):
+        from profile_edits import capture
+        stored=[{'id':'fictional','name':'Før'}]
+        class FictionalStore:
+            def all(self,module):
+                return json.loads(json.dumps(stored)) if module=='cards' else []
+        with patch('profile_edits.deepcopy',side_effect=AssertionError('No second copy needed')):
+            observed=capture(FictionalStore(),{'cards'})
+        observed['records']['cards']['fictional']['name']='Ændret'
+        self.assertEqual(stored[0]['name'],'Før')
+
 
 if __name__=='__main__':unittest.main()

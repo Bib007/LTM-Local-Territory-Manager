@@ -73,6 +73,23 @@ class RuntimeProbeHTTPTests(unittest.TestCase):
         self.server.shutdown();self.server.server_close();self.thread.join(2)
         self.store.close();self.temp.cleanup()
 
+    def test_public_ping_stays_responsive_while_a_save_holds_account_lock(self):
+        # A legitimate write may hold the profile lock for a long snapshot.
+        # That must not make the browser falsely declare its server offline.
+        acquired=threading.Event();release=threading.Event()
+        def held_lock():
+            with self.server.accounts.lock:
+                acquired.set();release.wait(4)
+        worker=threading.Thread(target=held_lock,daemon=True);worker.start()
+        try:
+            self.assertTrue(acquired.wait(2))
+            request=urllib.request.Request(self.server.origin+'/api/ping')
+            with urllib.request.urlopen(request,timeout=1.5) as response:
+                self.assertEqual(json.load(response)['app'],'Distrikt')
+        finally:
+            release.set();worker.join(2)
+            self.assertFalse(worker.is_alive())
+
     def settled(self):
         # Establish a quiet recovery observation, rather than racing the probe
         # against the sampler's own brief Store read (legitimately 'busy').
