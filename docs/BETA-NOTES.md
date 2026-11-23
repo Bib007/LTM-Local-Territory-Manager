@@ -7,6 +7,7 @@ Denne Beta indeholder forsidefejlrettelserne fra Stable 1.12.40 samt de eksister
 - **Anslåede besøg:** Et korts aktuelle, kendte besøgstal minus kortets IB tæller for **hver** gennemgang. Eksempel: 35 besøg, 2 IB og to gennemgange giver 66 anslåede besøg.
 - Gennemgange importeret med ukendt antal kan nu medregnes, hvis kortet i dag har et kendt antal. Ukendte tal uden brugbart grundlag forbliver udeladt. De gemte historikposter ændres ikke.
 - **Sammenligning med sidste år:** Grafen viser også sidste års gennemgange for de måneder, der ikke er begyndt endnu i det aktuelle tjenesteår. Indeværende måned afgrænses til dags dato og samme dato sidste år.
+- De tidligere Stable-korrektioner er også bevaret: historikperioder kan importeres i begge datoordener, importgodkendelsens tekstfelt kan udfyldes ved afviste forhåndsvisninger, og alle S-13-perioder bruger den originale S-13-formular med en tydelig periodeangivelse.
 - Nul og manglende registreringer må ikke forveksles. Tabellen viser de præcise perioder, og skønnet er ikke faktiske husbesøg.
 
 ## Prøv selv
