@@ -4,6 +4,7 @@
 
 ## 1.13.0-beta.4 · 2026-11-23
 
+- **To gennemgangsmål på forsiden:** Gennemsnitlig gennemgangstid viser dagene fra udlevering til aflevering med registreret gennemgang, kun for afsluttede forløb. Ældste kort i gennemgangskøen viser hvor længe næste ledige kort har ventet siden den seneste relevante dato. Begge har korte forklaringer, og ukendte datoer vises særskilt.
 - **Kortere forside:** Fjern de dobbelte titel-/tjenesteårsoverskrifter og den overflødige særskilte gennemgangstæller. Forsidens dækningsboks viser nu både fremdrift i procent og anslåede besøg på de unikke aktuelle kort, der er gennemgået i tjenesteåret. Gentagne gennemgange af samme kort giver ikke ekstra besøg i denne dækningsvisning; rapporternes særskilte historiske optællinger ændres ikke.
 - **Brugsstatistik i egen fane:** Indstillinger har nu et selvstændigt valg til Brugsstatistik, som ikke længere optager plads mellem øvrige indstillinger. Rettigheder og læseadgang bevares.
 - **Aflever til kassen:** Samme valgte kort og højrepanel med kortdetaljer som ved Aflever pr. forkynder. Vælg og markér kort enkeltvis eller alle viste, og åbn næste markerede udlevering. Hver aflevering kræver fortsat sin egen formular med gennemgangs-, dato- og IB-kontrol; ingen blind masseaflevering.
