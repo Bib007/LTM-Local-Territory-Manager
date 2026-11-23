@@ -109,7 +109,7 @@ def preview(store,data):
             key=(card['id'],stamp)
             if key in recovery:raise ValueError('Gennemgangen findes i Gendan ved fejl. Gendan eller fjern den dér først.')
             if stamp>today:raise ValueError('Datoen ligger i fremtiden.')
-            if stamp<cutoff:row.update(status='outside',message='Ældre end to år; medtages ikke.')
+            if stamp<cutoff:row.update(status='outside',message='Ældre end den valgte historikperiode; medtages ikke.')
             elif key in known or key in seen:row.update(status='duplicate',message='Allerede kendt eller gentaget; medtages ikke.')
             else:
                 row['status']='ready';ready[key]={'card_id':card['id'],'date':stamp};plain_rows[key]=row
@@ -122,9 +122,9 @@ def preview(store,data):
         if key in plain_rows:plain_rows[key].update(status='duplicate',message='Gennemgangen medtages sammen med udleveringen.')
         ready[key]=event
     allocation_plan=allocations.payload()
-    payload={'rows':rows,'entries':list(ready.values()),'allocation_plan':allocation_plan,'revision':store.revision,'cutoff':cutoff,'today':today}
+    payload={'rows':rows,'entries':list(ready.values()),'allocation_plan':allocation_plan,'revision':store.revision,'cutoff':cutoff,'today':today,'years':store.history_years()}
     token=store.setup_remember('history-import',payload)
-    return {'token':token,'rows':rows,'csv':text,'count':len(ready),'loan_count':len(allocation_plan['loans']),'publisher_count':len(allocation_plan['publishers']),'linked_count':len(allocation_plan['links']),'errors':sum(r['status']=='error' for r in rows),'cutoff':cutoff,'today':today}
+    return {'token':token,'rows':rows,'csv':text,'count':len(ready),'loan_count':len(allocation_plan['loans']),'publisher_count':len(allocation_plan['publishers']),'linked_count':len(allocation_plan['links']),'errors':sum(r['status']=='error' for r in rows),'cutoff':cutoff,'today':today,'years':store.history_years()}
 
 def apply(store,data):
     if data.get('confirm')!='IMPORTÉR HISTORIK':raise ValueError('Skriv IMPORTÉR HISTORIK for at fortsætte.')
