@@ -2,6 +2,8 @@
 Object.assign(I18n.english,{
  'Side 3 og videre · Adresseliste':'Page 3 onward · Address list',
  'Adresseliste':'Address list',
+ 'Adresser i dette distrikt':'Addresses in this territory',
+ 'Kortets adresseliste mangler. Dan en ny forhåndsvisning.':'The address list is missing. Generate a new preview.',
  'Alle adresser fra kortets godkendte adressevalg, grupperet efter vej og postnummer.':'All addresses from the approved card selection, grouped by street and postcode.',
  '{count} adresser':'{count} addresses',
  '{count} registrerede vejlinjer':'{count} recorded street lines',
