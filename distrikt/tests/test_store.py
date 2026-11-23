@@ -19,6 +19,21 @@ class StorageTests(unittest.TestCase):
     def issue(self,c,initial=False):
         return self.s.mutate('loan.issue',{'card_id':c,'publisher_id':self.publisher,'date':date.today().isoformat(),'initial':initial})['id']
 
+    def test_overdue_message_template_persists_and_rejects_invalid_input(self):
+        template = 'Hej {fornavn}\\n{kort}\\nKh {initialer}'
+        self.s.mutate('settings.save', {'overdue_message_template': template})
+        self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+        self.s.mutate('settings.save', {'congregation': 'Fiktiv menighed'})
+        self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+        self.s.close()
+        self.s = Store(self.tmp.name)
+        self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+        for bad in ('', 'Ingen kortpladsholder', 'x' * 3001, 1234, '{kort}\\x00'):
+            with self.subTest(bad=repr(bad)):
+                with self.assertRaises(ValueError):
+                    self.s.mutate('settings.save', {'overdue_message_template': bad})
+                self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+
     def test_role_guidance_config_is_local_persistent_and_never_blocks_loan_issue(self):
         defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
         self.assertEqual(self.s.get('settings', 'config')['publisher_card_guidance'], defaults)
