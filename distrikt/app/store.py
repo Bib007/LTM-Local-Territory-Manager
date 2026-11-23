@@ -774,11 +774,19 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                            for value in labels.values())):
                 raise ValueError('Stednavne må højst være 48 tegn og må ikke indeholde kontroltegn.')
             normalized = {key: value.strip() for key, value in labels.items() if value.strip()}
+            template = data.get('overdue_message_template', c.get('overdue_message_template'))
+            if template is not None:
+                if (not isinstance(template, str) or not template.strip() or len(template) > 3000
+                        or '{kort}' not in template or any(ord(char) < 32 and char not in '\n\t'
+                                                            or ord(char) == 127 for char in template)):
+                    raise ValueError('Beskedskabelonen skal indeholde {kort}, være højst 3.000 tegn og må ikke indeholde kontroltegn.')
             c.update(congregation=clean_text(data.get('congregation', c.get('congregation')), 100),
                 folder_minimum=minimum, rural_mode=mode, rural_minimum=rural,
                 require_revision=bool(data.get('require_revision', c.get('require_revision'))),
                 publisher_card_guidance=dict(limits), split_visit_limit=limit,
                 folder_enabled=folder_enabled, location_labels=normalized)
+            if template is not None:
+                c['overdue_message_template'] = template
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)
