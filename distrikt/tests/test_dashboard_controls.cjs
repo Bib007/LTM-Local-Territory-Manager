@@ -107,6 +107,7 @@ assert.match(run("Workspace.dashboardChart('2026-09-01','2027-08-31')"),/No comp
 run(`state=${original}`);
 // The two prominent figures measure different facts: finished loan duration
 // versus the age of the next currently issuable card.
+run("I18n.set('da')");
 run(`state.loans=[
  {id:'done-10',card_id:'c0',assigned:'2026-10-01',returned:'2026-10-11'},
  {id:'done-20',card_id:'c1',assigned:'2026-09-01',returned:'2026-09-21'},
