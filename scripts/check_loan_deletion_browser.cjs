@@ -33,9 +33,8 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
       page.on('pageerror', error => errors.push(String(error)));
       await page.goto(f.origin);
       await page.waitForFunction(() => typeof state !== 'undefined' && state && SaveStatus.kind === 'saved');
-      await page.waitForFunction(() => PersonalGuide.data !== null);
-      const later = page.locator('[data-personal-guide=later]');
-      if (await later.count()) await later.click();
+      
+      
       return page;
     }
     const a = await open(f.admin);
