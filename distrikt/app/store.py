@@ -475,7 +475,12 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                         internal_name=clean_text(data.get('internal_name',card.get('internal_name','')),160),
                         name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
                         kind=data.get('kind', 'Ukendt'), temporary=bool(data.get('temporary', True)))
-            color = data.get('map_color', card.get('map_color', '#477596'))
+            # A new or reassigned card inherits the destination area's colour unless
+            # the caller explicitly supplies a card-specific override.
+            area = self.get('settings', card['area_id']) if card['area_id'] else None
+            area_color = (area or {}).get('map_color', '#477596')
+            fallback_color = (card.get('map_color', area_color) if old and old.get('area_id') == card['area_id'] else area_color)
+            color = data.get('map_color', fallback_color)
             if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
                 raise ValueError('Vælg en gyldig kortfarve.')
             card['map_color'] = color.lower()
@@ -698,12 +703,27 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             name = clean_text(data.get('name'), 80, True)
             if any(a['id'] != 'config' and a.get('name', '').casefold() == name.casefold() and a['id'] != data.get('id') for a in self.all('settings') + self.all('settings', deleted=True)):
                 raise ValueError('Områdenavnet findes allerede (evt. i 48-timers gendannelse).')
+            previous_color = (old or {}).get('map_color', '#477596')
+            color = data.get('map_color', previous_color)
+            if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
+                raise ValueError('Vælg en gyldig områdefarve.')
+            color = color.lower()
+            color_changed = bool(old and color != previous_color.lower())
+            if color_changed and data.get('reset_card_colors') is not True:
+                raise ValueError('Bekræft at tidligere kortfarver overskrives for hele området.')
             item = dict(old or {'id': new_id()})
-            item['name'] = name
+            item.update(name=name, map_color=color)
             if old and old.get('name') != name:
                 for c in self.all('cards'):
                     if c.get('area_id') == item['id'] and not c.get('name'):
                         c['front_revision'] = True
+                        self.put('cards', c)
+            if color_changed:
+                # Deliberately reset every previous card override in one transaction.
+                # A card may receive its own colour again after this operation.
+                for c in self.all('cards'):
+                    if c.get('area_id') == item['id']:
+                        c['map_color'] = color
                         self.put('cards', c)
             self.put('settings', item)
             return {'id': item['id']}
