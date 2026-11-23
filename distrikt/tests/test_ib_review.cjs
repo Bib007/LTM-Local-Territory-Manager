@@ -38,9 +38,10 @@ for (const lang of ['da', 'en']) {
   run("I18n.set('" + lang + "')");
   run("finish('l1',false)");
   const html = run('renderedReturn');
-  assert.match(html, /name="revise_ib" required/);
-  assert.match(html, /<option value="yes">/);
-  assert.match(html, /<option value="no">/);
+  assert.match(html, /<label class="return-ib-checkbox">/);
+  assert.match(html, /<input type="checkbox" name="revise_ib" value="yes">/);
+  assert.doesNotMatch(html, /<input[^>]*name="revise_ib"[^>]*checked/); // Default is no.
+  assert.doesNotMatch(html, /<select name="revise_ib"/);
   assert.match(html, lang === 'da' ? /Skal IB på det fysiske kort revideres/ : /Does the physical card’s DNC need revision/);
   run("finish('l1',true)");
   assert.doesNotMatch(run('renderedReturn'), /name="revise_ib"/, 'Retained cards do not create a return follow-up');

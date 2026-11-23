@@ -48,7 +48,7 @@ for(const language of ['da','en']){
   assert.match(html(),new RegExp('data-retain="'+(retain?'yes':'no')+'"'));
   assert.match(html(),/min="2026-09-12" max="2026-10-16" required/);
   assert.match(html(),/name="note" maxlength="1000"/);
-  if(!retain){assert.match(html(),/option value="yes"/);assert.match(html(),/option value="no"/);assert.match(html(),/name="revise_ib" required/);}
+  if(!retain){assert.match(html(),/option value="yes"/);assert.match(html(),/option value="no"/);assert.match(html(),/<input type="checkbox" name="revise_ib" value="yes">/);assert.doesNotMatch(html(),/<input[^>]*name="revise_ib"[^>]*checked/);}
   else {assert(!html().includes('name="complete"'));assert(!html().includes('name="revise_ib"'));}
   if(language==='en')assert.match(html(),retain?/publisher keeps the card/:/return without completion/);
   forms[language].push(contract(html()));
@@ -77,7 +77,7 @@ async function submit(id,fields,dataset={},valid=true){
   run(`I18n.set('${language}')`);const start=context.calls.length;
   await submit('issueForm',[['card_id','available'],['publisher_name','Forkynder'],['date','2026-10-15']]);
   await submit('issueForm',[['card_id','stored'],['publisher_name','Forkynder'],['date','2026-08-01'],['initial','on']]);
-  await submit('finishForm',[['date','2026-10-15'],['complete','no'],['revise_ib','no'],['note',note]],{id:'loan',retain:'no'});
+  await submit('finishForm',[['date','2026-10-15'],['complete','no'],['note',note]],{id:'loan',retain:'no'});
   await submit('finishForm',[['date','2026-10-15'],['complete','yes'],['revise_ib','yes'],['note',note]],{id:'loan',retain:'no'});
   await submit('finishForm',[['date','2026-10-15'],['note',note]],{id:'loan',retain:'yes'});
   await submit('completionForm',[['date','2026-09-20'],['note',note]],{id:'available'});
