@@ -34,8 +34,8 @@ fire('keydown',{key:'ArrowUp'});assert.equal(attrs.get('aria-activedescendant'),
 type('Anna');const unchosen=fire('keydown',{key:'Enter'});assert(unchosen.prevented);assert.equal(input.value,'Anna','Never select an unrequested suggestion or accidentally save');
 type('Helt nyt fiktivt navn');assert.equal(options.length,0);assert.equal(list.hidden,true);assert.match(hint.textContent,/nyt navn/);assert.equal(fire('keydown',{key:'Enter'}).prevented,undefined);
 run("I18n.set('en');PublisherSearch.localize()");assert.match(hint.textContent,/new name/);assert.equal(input.value,'Helt nyt fiktivt navn');
-context.many=Array.from({length:12},(_,i)=>({name:'Eksempel '+(i+1)}));run('PublisherSearch.attach(input,many)');type('eksempel');assert.equal(options.length,8);assert.match(hint.textContent,/8 of 12/);assert(list.innerHTML.indexOf('Eksempel 2<')<list.innerHTML.indexOf('Eksempel 3<'));
-fire('keydown',{key:'ArrowDown'});run("I18n.set('da');PublisherSearch.localize()");assert.equal(input.value,'eksempel');assert.equal(attrs.has('aria-activedescendant'),false);assert.match(hint.textContent,/8 af 12/);
+context.many=Array.from({length:12},(_,i)=>({name:'Eksempel '+(i+1)}));run('PublisherSearch.attach(input,many)');type('eksempel');assert.equal(options.length,8);assert.equal(hint.textContent,'','No overflow-count hint should appear when the list is truncated (English)');assert(list.innerHTML.indexOf('Eksempel 2<')<list.innerHTML.indexOf('Eksempel 3<'));
+fire('keydown',{key:'ArrowDown'});run("I18n.set('da');PublisherSearch.localize()");assert.equal(input.value,'eksempel');assert.equal(attrs.has('aria-activedescendant'),false);assert.equal(hint.textContent,'','No overflow-count hint should appear when the list is truncated (Danish)');
 fire('focusout',{relatedTarget:{}});assert.equal(list.hidden,true);
 fire('focusin');const mouse=fire('pointerdown',{target:options[1],pointerType:'mouse'});assert(mouse.prevented);
 const touch=fire('pointerdown',{target:options[1],pointerType:'touch'});assert.equal(touch.prevented,undefined,'Touch scrolling must not be cancelled');focused=false;fire('click',{target:options[1]});assert.equal(input.value,'Eksempel 2');assert.equal(list.hidden,true);assert.match(hint.textContent,/Navnet er valgt/);
@@ -52,5 +52,9 @@ assert.equal(context.selectedAdvisory.at(-1),'Anna Test Jensen','Selecting a sug
 
 assert.equal(JSON.stringify(records),original,'Suggestions never create or change records');
 assert.match(run('PublisherSearch.field()'),/name="publisher_name"/);assert.match(run('PublisherSearch.field()'),/maxlength="100" required autocomplete="off"/);
+assert.doesNotMatch(run('PublisherSearch.field()'),/Et nyt navn oprettes automatisk/, 'No redundant automatic-name creation hint');
+const issueMarkup=read('app.js').match(/function issue\(.*?(?=\nfunction finish\()/s)?.[0]||'';
+assert.ok(issueMarkup, 'Assignment form should be found for regression check');
+assert.doesNotMatch(issueMarkup,/Kun vejledende – det er altid muligt at udlevere flere kort/, 'No redundant guidance disclaimer in assignment dialog');
 const index=read('index.html'),server=read('server.py');assert(index.indexOf('/publisher-search.js')<index.indexOf('/app.js'));assert(server.includes("'/publisher-search.js'"),'Server must actually serve the module');
 console.log('Local publisher ranking, escaping, limits, keyboard/IME, mouse/touch, language and free-name form contracts passed.');
