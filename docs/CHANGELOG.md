@@ -6,6 +6,7 @@
 
 - **Forsidens anslåede besøg:** Hver gennemgang tæller nu kortets aktuelt kendte besøgstal minus de tilknyttede IB. Historiske gennemgange med tidligere ukendt antal kan derfor tælle, når kortet nu har et kendt besøgstal. Et kort med 35 besøg og 2 IB bidrager med 33 ved hver gennemgang.
 - **Hele sidste tjenesteår i månedsdiagrammet:** Foregående års gennemgange vises i alle 12 måneder, selv når de tilsvarende måneder i dette tjenesteår endnu ikke er begyndt. Indeværende måned sammenlignes fortsat med samme dato sidste år.
+- **Tidligere Stable-rettelser bevaret:** Historikimport understøtter begge datoordener og redigerbar bekræftelse. S-13 benytter originalformularen i kalenderår, tjenesteår og rullende periode, med periodeangivelse for de tilpassede udtræk.
 - Beregningen er et nutidigt skøn, ikke registrerede husbesøg. Ingen kort, IB eller historikposter ændres. Rettelserne fra Stable 1.12.40 er indarbejdet uden at fjerne Beta-funktionerne fra beta.1 og beta.2.
 
 ## 1.13.0-beta.2 · 2026-11-21
