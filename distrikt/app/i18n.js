@@ -2238,6 +2238,7 @@ const I18n={
   "Vis datamappe":"Show data folder",
   "Hent lokal sikkerhedskopi":"Download local backup",
   "Antal år med historik":"Years of history to retain",
+  "Antal år med historik skal være mellem 1 og 100.":"Years of retained history must be between 1 and 100.",
   "Grænsen bruges ved import og manuel oprydning. Ændringen sletter ikke eksisterende historik automatisk.":"The period applies to history import and manual cleanup. Changing it does not automatically delete existing history.",
   "Gem historikperiode":"Save history period",
   "Fjern historik ældre end {years} år":"Remove history older than {years} years",
