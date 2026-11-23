@@ -222,7 +222,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
   assert.equal(await page.locator('.dashboardHero,.dashboardRing').count(),0,'The former tall hero and decorative rings must not return');
   assert.equal(await page.locator('.dashboardAverageValue').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day');
   assert.equal(await page.locator('.dashboardProgressTrack[role=progressbar]').count(),1);
-  assert.match(await page.locator('.dashboardProgressTrack').getAttribute('aria-valuenow'),/^\\d+$/);
+  assert.match(await page.locator('.dashboardProgressTrack').getAttribute('aria-valuenow'),/^\d+$/);
   assert.equal(await page.locator('.dashboardAverage .dashboardSpotlightNote').count(),0,'Average has no qualification clutter');
   const geometry=await page.evaluate(()=>{
    const rect=selector=>{const node=document.querySelector(selector);if(!node)return null;const box=node.getBoundingClientRect();return {top:box.top,bottom:box.bottom,left:box.left,right:box.right};};
