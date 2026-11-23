@@ -179,7 +179,7 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardLead h2{font-size:clamp(21px,2vw,26px);letter-spacing:-.035em;font-weight:650;margin:3px 0 0}
 .dashboardEyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:750;color:var(--muted)}
 .dashboardWorkButton{min-height:37px;white-space:nowrap;font-size:12px;padding:8px 14px}
-.dashboardPrimary{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:12px;align-items:stretch}
+.dashboardPrimary{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}
 .dashboardPrimary>.panel{margin:0;padding:22px 23px;min-width:0;min-height:188px;border:1px solid var(--line);border-radius:13px}
 .dashboardPrimarySummary{grid-template-columns:minmax(0,1fr)}
 .dashboardCoverage{display:flex;flex-direction:column;gap:14px;background:linear-gradient(125deg,var(--dashboard-faint),var(--surface) 65%)}
@@ -202,6 +202,8 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardSpotlight small{font-size:12px;font-weight:650;line-height:1.5;color:var(--muted)}
 .dashboardSpotlightNumber{display:block;font-size:clamp(38px,4vw,56px);letter-spacing:-.045em;line-height:1.02;font-weight:680;font-variant-numeric:tabular-nums;color:var(--text)}
 .dashboardAverageValue{display:block;font-size:clamp(29px,2.75vw,39px);letter-spacing:-.04em;line-height:1.18;font-weight:720;color:var(--dashboard-accent);overflow-wrap:break-word}
+.dashboardQueueValue{font-size:clamp(24px,2.2vw,33px)}
+.dashboardAverage .dashboardSpotlightNote,.dashboardQueue .dashboardSpotlightNote{max-width:42ch}
 .dashboardVisits .dashboardSpotlightNumber{color:var(--dashboard-accent)}
 .dashboardSpotlightNote{font-size:11px;line-height:1.55;color:var(--muted)}
 .dashboardUnknownVisits{font-size:11px;line-height:1.45;color:var(--muted)}
