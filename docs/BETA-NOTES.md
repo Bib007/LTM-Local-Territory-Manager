@@ -1,29 +1,22 @@
-# LTM 1.13.0-beta.2
+# LTM 1.13.0-beta.3
 
-Denne Beta forbedrer **KTM-rapporten** under Rapporter og historik. Beta og Stable har fortsat adskilte data, port og login. Stable ændres ikke.
+Denne Beta indeholder forsidefejlrettelserne fra Stable 1.12.40 samt de eksisterende Beta-forbedringer med **brugsstatistik** (beta.1) og **KTM-rapporten** (beta.2). Beta og Stable har fortsat separate data, porte og logins.
 
-## Det nye i rapporten
+## Forsiden
 
-- **Besøgspunkter på aktuelle distriktskort:** Summen kommer fra de registrerede vejlinjer på de aktuelle kort, inklusive manuelle kort. Adresser, som kun findes i DAR eller inden for den samlede grænse uden at være på et kort, tæller ikke. Ukendte besøgstal markeres, så tallet ikke bliver misvisende.
-- **Én IB-total:** Alle aktive IB indgår, både med og uden DAR-adressematch. Der vises ikke længere et ekstra felt for geografisk kortlagte IB.
-- **Gennemgået / ikke gennemgået:** Én cirkelformet dækningsoversigt viser andelen af aktuelle kort, der har en registreret gennemgang i den valgte periode. Antal gennemgange tæller også gentagelser.
-- **Tydelig opfølgningsliste:** Den detaljerede rapport og PDF angiver hvert aktuelt kort, der ikke er registreret gennemgået i perioden, med kortnummer, navn, område og seneste kendte gennemgangsdato.
-- Fjernet fra KTM-hovedoversigten: unødvendig opdeling af kort i hjemme/udleveret samt ekstra geografisk IB-tal.
+- **Anslåede besøg:** Et korts aktuelle, kendte besøgstal minus kortets IB tæller for **hver** gennemgang. Eksempel: 35 besøg, 2 IB og to gennemgange giver 66 anslåede besøg.
+- Gennemgange importeret med ukendt antal kan nu medregnes, hvis kortet i dag har et kendt antal. Ukendte tal uden brugbart grundlag forbliver udeladt. De gemte historikposter ændres ikke.
+- **Sammenligning med sidste år:** Grafen viser også sidste års gennemgange for de måneder, der ikke er begyndt endnu i det aktuelle tjenesteår. Indeværende måned afgrænses til dags dato og samme dato sidste år.
+- Nul og manglende registreringer må ikke forveksles. Tabellen viser de præcise perioder, og skønnet er ikke faktiske husbesøg.
 
-## Afgrænsning
+## Prøv selv
 
-Kalenderår, tjenesteår og rullende 12 måneder følger de eksisterende periodevalg. Aktuelle kort tælles én gang; arkiverede kort er ikke med i mangellisten, men deres historiske gennemgange kan stadig indgå i antallet af afslutninger. Manglende gennemgangsdato betyder ikke nødvendigvis, at distriktet aldrig er blevet gennemgået.
-
-Rapportroller uden kortlæserettighed ser kun summer, ikke individuelle kort. IB-total kræver IB-læserettighed. Ingen ændringer i data eller den originale S-13-PDF.
-
-## Test af beta
-
-1. Kontrollér version 1.13.0-beta.2 på den separate beta-installation, port 8788.
-2. Åbn Rapporter og historik og vælg Kalenderår, Tjenesteår og Seneste 12 måneder på skift. Kontrollér dækningsring, antal gennemgange og listen over manglende distriktskort.
-3. Kontrollér, at manuelle korts besøgspunkter og alle aktive IB indgår, men at adresser uden et kort ikke gør.
-4. Udskriv én periode og derefter alle tre. Kontrollér kortlister, områdebetegnelser, diagrammer og at den originale S-13 fortsat findes ved tjenesteår.
-5. Kontrollér, at oversigtsroller ikke kan se kortnavne eller IB uden tilladelse.
+1. Kontrollér **1.13.0-beta.3** på den separate Beta-installation (port 8788).
+2. Gennemgå et prøvekort med 35 besøg, registrér 2 IB, og kontrollér at forsidens skøn stiger med 33 for hver gennemgang.
+3. Kontrollér, at gentagne gennemgange tæller igen, og at arkiverede kort kun bidrager til besøgsestimatet, når der er kendte tal.
+4. Kontrollér 12 måneders sammenligning mod sidste tjenesteår, også for fremtidige måneder i det aktuelle år, samt tabellen under grafen.
+5. Kontrollér fortsat brugsstatistikken under Indstillinger og den udvidede KTM-rapport med dækning/mangelliste fra tidligere betaer.
 
 ## English
 
-KTM reporting now uses visit points actually listed on current territory cards and a single authorized total of all active do-not-call records. A coverage donut and an explicit list of cards not completed in each selected reporting period appear on screen and in PDF. Counts-only roles receive no card details. Data and original S-13 remain unchanged.
+Beta 1.13.0-beta.3 carries the dashboard corrections from Stable 1.12.40 while preserving usage statistics and the updated KTM reporting. Estimated visits use each territory's current known visit count less linked do-not-call entries for every completion, including formerly unknown historic completions when a current count exists. Previous-year columns remain visible for all twelve months, independently of current-year activity. No stored records are rewritten.
