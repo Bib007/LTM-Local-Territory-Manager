@@ -8,7 +8,8 @@ const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,inne
 const drawn={polygons:[],tooltips:[],markers:[],leaders:[]},reset=()=>Object.values(drawn).forEach(list=>list.length=0);
 const layer=()=>({addTo(){return this;},bindTooltip(fn){drawn.tooltips.push(fn());return this;}});
 const map={getSize:()=>({x:720,y:480}),fitBounds(){},latLngToContainerPoint:p=>({x:(p[1]-10)*7200,y:(p[0]-55)*9000}),containerPointToLatLng:p=>({lng:p[0]/7200+10,lat:p[1]/9000+55})};
-const c={document:{addEventListener(){}},window:{addEventListener(){}},console,Date,Math,Number,String,Array,Object,Set,Map,JSON,Promise,
+const prefs=new Map(),localStorage={getItem:key=>prefs.get(key)??null,setItem:(key,value)=>prefs.set(key,String(value))};
+const c={document:{addEventListener(){}},window:{addEventListener(){}},localStorage,console,Date,Math,Number,String,Array,Object,Set,Map,JSON,Promise,
  state,GeoUI:{data:{main_boundary:{points:[[10,55],[10.04,55],[10.04,55.04],[10,55.04]]}}},
  location:{origin:'https://fictional.invalid'},setTimeout:fn=>{fn();return 1;},clearTimeout:()=>{},
  I18n:{language:()=> 'da',text:key=>key,attribute:(kind,value)=>kind+'="'+value+'"'},
@@ -27,6 +28,9 @@ run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class
  assert.match(toolbar,/id="reportPrintPeriod"/);
  assert.match(toolbar,/id="reportMapNumbers" type="checkbox" checked/);
  assert.match(toolbar,/id="reportDistrictMap"/);
+ assert.equal(prefs.size,0,'The default does not write a browser preference');
+ assert.match(read('app.js'),/Workspace\.setReportShowNumbers\(e\.target\.checked\)/,'The checkbox handler must persist changes');
+ const restartedPreference=()=>{const fresh={...c};vm.createContext(fresh);vm.runInContext(read('workspace.js'),fresh);return vm.runInContext('Workspace.reportShowNumbers',fresh);};
  run('ReportMap.map=mapMock;ReportMap.layer={clearLayers(){}};ReportMap.tiles={isLoading:()=>false};ReportMap.fit=()=>{};');
  reset();run('ReportMap.draw()');
  assert.equal(drawn.markers.length,1,'Preview should initially show the number marker');
@@ -36,7 +40,9 @@ run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class
  const onTiles=await run('ReportMap.printable()');
  for(const html of [onFallback,onTiles]){assert.match(html,/<polygon/);assert.match(html,/F-314/);}
  c.printedMap=onTiles;assert.match(run("reportPrintDocument({service:printedMap},'service')"),/F-314/);
- run('Workspace.reportShowNumbers=false');
+ run('Workspace.setReportShowNumbers(false)');
+ assert.equal(prefs.get('ltm-report-map-numbers'),'false');
+ assert.equal(restartedPreference(),false,'A disabled switch must stay disabled after restart');
  assert.doesNotMatch(run('Workspace.detailedReports()'),/id="reportMapNumbers" type="checkbox" checked/);
  reset();run('ReportMap.draw()');
  assert.equal(drawn.markers.length,0,'Preview must remove all number markers');
@@ -50,7 +56,9 @@ run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class
  assert.match(offTiles,/<image/,'Printed basemap remains when numbers are hidden');
  assert.doesNotMatch(offFallback,/og numre er bevaret/,'Offline explanation follows the switch');
  c.printedMap=offTiles;assert.doesNotMatch(run("reportPrintDocument({service:printedMap},'service')"),/F-314/);
- run('Workspace.reportShowNumbers=true');
+ run('Workspace.setReportShowNumbers(true)');
+ assert.equal(prefs.get('ltm-report-map-numbers'),'true');
+ assert.equal(restartedPreference(),true,'Re-enabling must survive restart');
  reset();run('ReportMap.draw()');assert.equal(drawn.markers.length,1,'Re-enabling restores number markers');
  assert.equal(JSON.stringify(state),before,'Report preference must not change stored territory data');
  // A changed selection during asynchronous print preparation must invalidate that PDF.
@@ -59,11 +67,16 @@ run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class
  c.window={open(){popup={closed:false,close(){this.closed=true;},document:{write(){},open(){},close(){}}};return popup;}};
  run('ReportMap.printable=async()=>pendingPrint');
  const job=run('printReport({withoutBackground:true})');
- run('Workspace.reportShowNumbers=false');
+ run('Workspace.setReportShowNumbers(false)');
  releasePrint('<svg>F-314</svg>');
  await assert.rejects(job,/Printgrundlaget er ændret/);
  assert.equal(popup.closed,true,'Stale print popup closes instead of enabling an outdated PDF');
  assert.equal(run('printReport.busy'),false);
  assert.equal(JSON.stringify(state),before);
- console.log('Report map numbers: visible toolbar, live preview, hover, SVG fallback, OSM print, PDF markup, re-enable and stale-print guard passed.');
+ c.localStorage.setItem=()=>{throw Error('storage is blocked');};
+ run('Workspace.setReportShowNumbers(true)');
+ assert.equal(run('Workspace.reportShowNumbers'),true,'Blocked writes must not break the switch');
+ c.localStorage.getItem=()=>{throw Error('storage is blocked');};
+ assert.equal(restartedPreference(),true,'Blocked reads use the original enabled default');
+ console.log('Report map numbers: switch persistence, restart, blocked storage, live map, PDF and stale-print guard passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
