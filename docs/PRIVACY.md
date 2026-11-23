@@ -14,7 +14,7 @@ Maskinen, som kører Python-appen, opbevarer de private SQLite-filer. Desktopver
 | Godkendt offentligt kort | Et gennemgået PNG-billede med kortnummer/navn, grænse og tilladte besøgspunkter | Den valgte Google Drive-konto |
 | Privat backup | En fil, der hentes til browser/enhed | Det sted, hvor operatøren efterfølgende gemmer den |
 
-Delte kort-PDF’er viser alle gemte adressepunkter med ens røde prikker og husnumre. IB-listen findes på det fysiske korts bagside. Billedet udelader IB-status, IB-noter, forkyndernavne, udlånsdata og databasefiler.
+Delte kort-PDF’er viser alle tilladte adressepunkter med ens røde prikker og husnumre og har derudover en adresseliste fra side 3. Listen indeholder vej, husnummer, eventuelt postnummer og kun de etage-/dørdetaljer, som allerede er godkendt til offentlig visning. IB-tilknyttede enheder vises højst på husnummerniveau uden etage/dør, og den private IB-liste bliver på det fysiske korts bagside. PDF’en udelader IB-status, IB-noter, forkyndernavne, udlånsdata og databasefiler.
 
 IB-ændringer kræver et nyt billede dannet i browseren og en ny godkendelse. Serveren kan uploade et godkendt billede, men danner ikke selv nye OSM-billeder. Fjernelse af forældet offentlig adgang kræver kontakt til Google. Følg delingsstatus og løs eventuelle fejl.
 

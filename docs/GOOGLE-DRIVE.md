@@ -8,9 +8,9 @@ Databaser, forkyndere, udleveringer, noter og IB-liste uploades ikke af funktion
 
 ## Digitalt kort og printforside
 
-Fra Stable v1.12.16 deler LTM én PDF med to sider. Side 1 viser det digitale vejkort, kortnummer, navn, optælling og datoer. Side 2 viser den læsbare printforside med ombrudte vejlinjer. Adresseprikkerne er ens røde. IB-listen hører til på papirkortets bagside.
+Fra Stable v1.12.16 har LTM delt et digitalt kort og en printforside i én PDF. Den nye PDF har også **side 3: en adresseliste**, der viser hvert sikkert offentligt adressepunkt med vej, postnummer, husnummer og eventuelt etage/dør. Adresserne grupperes efter vej og sorteres efter husnummer. Ved mange adresser fortsætter listen automatisk på side 4 osv. Side 1 er fortsat det digitale vejkort, og side 2 den printbare forside. IB-listen hører kun til på papirkortets bagside; beskyttede lejlighedsoplysninger vises ikke i den offentlige adresseliste.
 
-Vælg **Opdater Google Drive-upload** og gennemse begge sider, før du godkender. LTM sender PDF’en som en ny revision af Drive-filen, hvis den allerede findes. Kontrollér det aktuelle Drive-link, før du trykker QR-koder. Datoopdateringer bruger den samme godkendte printforside.
+Vælg **Opdater Google Drive-upload** og gennemse alle sider, inklusive adresselisten, før du godkender. LTM sender PDF’en som en ny revision af Drive-filen, hvis den allerede findes. Kontrollér det aktuelle Drive-link, før du trykker QR-koder. Datoopdateringer bruger den samme godkendte printforside.
 
 ## 1. Opret egen Google-klient
 
@@ -77,6 +77,6 @@ Ved flytning beholdes samme Google-konto og klient, hvis QR-links skal bevares. 
 
 ## Kortforside og samlet godkendelse
 
-Drive-PDF’ens side 2 bruger samme printskabelon og vejinddeling som almindeligt print. Opdatér kortets Drive-upload og kontrollér begge sider for at erstatte den tidligere forside. Efter print kan du vælge »Godkend printede sider i appen« og godkende de kontrollerede for- og bagsider samlet. En ændret side kræver nyt print. Det gælder også ved »Print alle«. Ingen sider godkendes automatisk.
+Drive-PDF’ens side 2 bruger samme printskabelon og vejinddeling som almindeligt print. Adresselisten fra side 3 indeholder kun offentligt tilladte oplysninger. Kort uden præcise geoadresser viser sikre manuelle vejlinjer og nummerintervaller nøjagtigt, som de er registreret; LTM gætter ikke manglende husnumre. Opdatér kortets Drive-upload og kontrollér alle sider for at erstatte den tidligere forside. Efter print kan du vælge »Godkend printede sider i appen« og godkende de kontrollerede for- og bagsider samlet. En ændret side kræver nyt print. Det gælder også ved »Print alle«. Ingen sider godkendes automatisk.
 
 I forhåndsvisningen kan du slå **Vis husnumre og streger på kortet** til/fra. Alle røde prikker bevares. Valget ændrer kun det nye billede; godkend det igen før upload. PDF-læsearkivets forsider bruger nu samme printvisning som de almindelige kort.

@@ -22,6 +22,8 @@ Læsning og redigering er adskilt. At administrere brugere giver ikke automatisk
 
 Datafordeler og Google Drive er samlet under **Indstillinger → Forbindelser**. Fanen vises kun med **Administrere forbindelser**. **Deling og QR** indeholder de digitale kort. Brugere uden brugeradministration ser ikke kataloget over roller og rettigheder. Serveren kontrollerer både forbindelses- og delingsadgang.
 
+Under **Indstillinger → Brugere og roller** kan du særskilt give adgang til at flytte kort mellem mappe og kasse, udlevere kort, aflevere kort, redigere forsidens vejlinjer, godkende print, slette forkyndere og rydde gammel historik. En bruger kan have ret til at aflevere uden også at kunne registrere gennemgang eller skrive noter. Eksisterende roller får de tilsvarende rettigheder én gang. Dine efterfølgende valg bevares, når LTM genstarter.
+
 ## Samtidig arbejde og gennemgang
 
 Uafhængige rettelser kan gemmes samtidig. Ved forskellige rettelser til samme oplysning bevares udgangspunktet og begge forslag. Forsiden viser en påmindelse. Åbn **Gennemgå rettelser**, sammenlign den aktuelle værdi med de to rettelser, og vælg **Brug denne rettelse** eller **Behold aktuel · markér gennemgået**. Påmindelsen opdateres straks. At åbne listen ændrer intet.

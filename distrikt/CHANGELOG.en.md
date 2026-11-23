@@ -2,6 +2,19 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.13.0-beta.3 · 2026-11-23
+
+- **Daily use and tasks:** Simplified task filters, address checks below the task list, unread task replies and copyable overdue-card reminders under Publishers. Assignment dialogs are cleaner, DNC review is an explicit unchecked checkbox, and the selected card is highlighted in publisher returns.
+- **Cards, history and settings:** Area colours with confirmed bulk replacement and individual card choices; adjustable month bands; configurable history retention; remembered territory numbers on report maps; clearer responsive history.
+- **Performance and safeguards:** Reuse complete DAR streets, explain download counts and show blocking addresses. Geographic previews and liveness checks no longer wait behind long writes. Reduce snapshot work while retaining conflict checks and quotas. Separate role permissions for daily operations and cleanup.
+- **Sharing and guidance:** Approved Google Drive PDFs gain a searchable, grouped address list from page 3. Private DNC information remains filtered. The website guide replaces personal guides/news; only the logo links home. Unfinished transfer suggestions are hidden.
+- **Maintenance and limited import:** Retire old working notes. Include the experimental offline single-boundary NW Scheduler/TH converter; international address retrieval and full migration are not added. Archive extra GitHub branch heads as tags and remove branches only after a verified beta publication.
+- **Redesigned dashboard:** Replace the tall service-year hero and two large rings with a compact first-screen view: explicit progress towards completing current territories this service year, a much larger average interval, estimated visits and concise shortcuts. Charts and follow-ups come next, with reminders below. Responsive in light/dark modes and still permission-safe for summary-only users.
+- **Dashboard estimated visits:** Each completion now counts the territory's current known visit total minus its linked do-not-call entries. Historically unknown completions can be estimated when the territory now has a known count. A card with 35 visits and 2 do-not-call entries contributes 33 per completion.
+- **Full previous service year in the monthly chart:** All twelve previous-year months display saved completions even when the corresponding current-year months have not started. The current month still uses the same calendar-date cut-off last year.
+- **Previous Stable fixes retained:** History imports accept either date order and keep confirmation input editable; S-13 uses the original form in calendar, service and rolling periods, with a clear period caption on adapted extracts.
+- This remains a present-day estimate, not recorded house visits. No card, do-not-call or completion records are modified. Stable 1.12.40 fixes are included without removing the functionality introduced in beta.1 and beta.2.
+
 ## 1.13.0-beta.2 · 2026-11-21
 
 - **KTM visit points:** The report header now sums known visit points on current territory cards, including manually maintained street rows. Unassigned DAR addresses do not count. Cards with unknown counts are reported separately so a partial total is not presented as complete.

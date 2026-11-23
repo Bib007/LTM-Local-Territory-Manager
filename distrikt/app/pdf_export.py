@@ -21,7 +21,7 @@ def pdf_document(pages, width=595.28, height=841.89, image=None, *, page_images=
         page_id = len(objects)+1
         content_id = page_id+1
         kids.append('%s 0 R' % page_id)
-        image_id=4+index if page_images else (4 if image else None)
+        image_id=4+index if page_images and index<len(page_images) else (4 if image and not page_images else None)
         resources='/XObject << /Im1 %s 0 R >>'%image_id if image_id else ''
         objects.append(('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.2f %.2f] /Resources << /Font << /F1 3 0 R >> %s >> /Contents %s 0 R >>' % (width, height, resources,content_id)).encode())
         content = '\n'.join(commands).encode('latin1')
@@ -35,8 +35,8 @@ def pdf_document(pages, width=595.28, height=841.89, image=None, *, page_images=
     result.extend(('trailer\n<< /Size %s /Root 1 0 R >>\nstartxref\n%s\n%%%%EOF\n' % (len(objects)+1,xref)).encode())
     return bytes(result)
 
-def shared_card_pdf(map_png,front_png):
-    """Place the two approved raster images on separate landscape PDF pages."""
+def shared_card_pdf(map_png,front_png,*,address_list=None,number='',name=''):
+    """Place approved raster pages first, followed by searchable address pages."""
     import zlib
     from publication_dates import png_idat,rgb_pixels
 
@@ -48,7 +48,11 @@ def shared_card_pdf(map_png,front_png):
     # generated it, flattening transparency onto white.
     images=[(png_idat(raw) if raw[25]==2 else zlib.compress(rgb_pixels(raw)),
              2200,1560,'png') for raw in (map_png,front_png)]
-    return pdf_document([draw,draw],width,height,page_images=images)
+    pages=[draw,draw]
+    if address_list is not None:
+        from public_address_list import address_pages
+        pages.extend(address_pages(address_list,number,name,width,height))
+    return pdf_document(pages,width,height,page_images=images)
 
 def text(x,y,value,size=8,maxchars=None):
     value=str(value or '')

@@ -97,7 +97,7 @@ class BulkFolderTests(unittest.TestCase):
         self.assertEqual(ACTIONS['folder.set_many'], ACTIONS['folder.set'])
         with self.assertRaises(PermissionError):
             require({'cards.view', 'loans.view'}, ACTIONS['folder.set_many'])
-        require({'cards.view', 'loans.view', 'loans.manage'}, ACTIONS['folder.set_many'])
+        require({'cards.view', 'loans.view', 'folder.manage'}, ACTIONS['folder.set_many'])
 
     def test_two_concurrent_users_same_card_change_it_once(self):
         ident = self.card('F-501')

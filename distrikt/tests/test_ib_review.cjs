@@ -29,7 +29,7 @@ vm.runInContext(app.slice(0, app.indexOf('(async()=>{try{await refresh();')), c)
 const run = source => vm.runInContext(source, c);
 
 run("state={today:'2026-11-17',cards:[{id:'c1',number:'F-101',name:'Fiktivt kort',area_id:'a',geo_polygon:[[10,55],[10.01,55],[10,55.01]]}],loans:[{id:'l1',card_id:'c1',publisher_id:'p1',assigned:'2026-11-15',cycle_start:'2026-11-15',returned:'2026-11-17'}],publishers:[{id:'p1',name:'Fiktiv person'}],notes:[],ib:[],settings:{},ib_reviews:[{id:'ib-review:l1',card_id:'c1',date:'2026-11-17',resolved:false}],areas:[]};");
-run("ProfilesUI={has(...rights){return !state.profile||rights.every(r=>state.profile.permissions.includes(r));},canAction(action){return action==='ib.review.resolve'&&this.has('cards.view','ib.view','ib.edit');},pageAllowed(){return true;}};");
+run("ProfilesUI={has(...rights){return !state.profile||rights.every(r=>state.profile.permissions.includes(r));},canAction(action){return action==='loan.finish'||action==='ib.review.resolve'&&this.has('cards.view','ib.view','ib.edit');},pageAllowed(){return true;}};");
 run("state.profile={desk_only:false,permissions:['cards.view','ib.view','ib.edit']};");
 run("GeoUI={loaded:false,data:{changes:[]},addresses:()=>[],load:async()=>{throw Error('Geo access not needed for IB role')}};");
 run("openDialog=html=>{globalThis.renderedReturn=html};");
@@ -38,9 +38,10 @@ for (const lang of ['da', 'en']) {
   run("I18n.set('" + lang + "')");
   run("finish('l1',false)");
   const html = run('renderedReturn');
-  assert.match(html, /name="revise_ib" required/);
-  assert.match(html, /<option value="yes">/);
-  assert.match(html, /<option value="no">/);
+  assert.match(html, /<label class="return-ib-checkbox">/);
+  assert.match(html, /<input type="checkbox" name="revise_ib" value="yes">/);
+  assert.doesNotMatch(html, /<input[^>]*name="revise_ib"[^>]*checked/); // Default is no.
+  assert.doesNotMatch(html, /<select name="revise_ib"/);
   assert.match(html, lang === 'da' ? /Skal IB på det fysiske kort revideres/ : /Does the physical card’s DNC need revision/);
   run("finish('l1',true)");
   assert.doesNotMatch(run('renderedReturn'), /name="revise_ib"/, 'Retained cards do not create a return follow-up');

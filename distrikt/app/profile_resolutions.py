@@ -29,6 +29,7 @@ def command(row,current):
         data.pop('assignee_id',None)
         data.pop('followup_key',None)
     if action.startswith(('card.color','geo.','map.')):data['card_id']=current['id']
+    if action=='area.save' and field=='map_color':data['reset_card_colors']=True
     return action,data
 
 

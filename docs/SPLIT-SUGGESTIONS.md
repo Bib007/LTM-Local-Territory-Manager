@@ -6,7 +6,7 @@
 
 I opdelingsforslagene kan administrator vælge **Se bort fra forslag**, skrive en begrundelse (1–300 tegn) eller **Gendan forslag**. En ignoreret vurdering knyttes til kort-ID, kortnummer, aktuel grænse, besøgstal og sorteret adressetilknytning. Ændres disse forhold, tæller det nye forslag igen. Ikke-administratorer får ikke begrundelsen i deres profildata.
 
-Listerne viser mulige adresseflytninger til egnede kort i samme område/type/vej samt opdeling til nyt kort med antal før/efter. Forslag anvendes aldrig automatisk; de eksisterende formularer, serverforhåndsvisninger og særskilte bekræftelser anvendes. Et fælles vejnavn beviser **ikke** fysisk geografisk sammenhæng; den skal kontrolleres manuelt før godkendelse.
+Listerne viser kun forslag til opdeling i et **nyt kort** med besøgstal før og efter. Forslag om flytning til et andet, eksisterende kort er midlertidigt fjernet, da funktionen ikke er færdigudviklet. Forslag anvendes aldrig automatisk; opdeling kræver stadig særskilt forhåndsvisning og bekræftelse. Eventuelle allerede igangsatte midlertidige flytninger kan fortsat afsluttes, så eksisterende data og historik bevares.
 
 ## Afhængigheder og kontrol
 

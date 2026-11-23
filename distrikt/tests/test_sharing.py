@@ -9,6 +9,7 @@ import threading
 import unittest
 import zlib
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app/vendor_py/pypdf-6.21.4.zip'))
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from store import Store
@@ -55,7 +56,7 @@ class SharingTests(unittest.TestCase):
         return self.s.mutate('loan.finish',{'id':self.loan,'date':'2026-01-02','complete':retain,'retain':retain})
     def issue_again(self):
         self.loan=self.s.mutate('loan.issue',{'card_id':self.c,'publisher_id':self.publisher,'date':'2026-01-03','initial':True})['id']
-    def test_png_upgrades_to_a_two_page_pdf_on_the_same_drive_file(self):
+    def test_png_upgrades_to_a_paginated_address_pdf_on_the_same_drive_file(self):
         from pypdf import PdfReader
         self.enqueue()
         self.p.process_one()
@@ -68,8 +69,13 @@ class SharingTests(unittest.TestCase):
         self.assertEqual(updated_id,old['file_id'])
         self.assertEqual(current['front_url'],old['front_url'])
         reader=PdfReader(io.BytesIO(pdf))
-        self.assertEqual(len(reader.pages),2)
-        self.assertTrue(all(len(page.images)==1 for page in reader.pages))
+        self.assertEqual(len(reader.pages),3)
+        self.assertEqual([len(page.images) for page in reader.pages],[1,1,0])
+        index=reader.pages[2].extract_text()
+        self.assertIn('ADRESSELISTE',index)
+        self.assertIn('Fiktiv vej',index)
+        self.assertIn('001 1',index)
+        self.assertIn('002 3',index)
         self.assertNotIn(b'PRIVATE_METADATA',pdf)
         self.assertEqual(current['render_revision'],RENDER_REVISION)
         with self.assertRaises(ValueError):

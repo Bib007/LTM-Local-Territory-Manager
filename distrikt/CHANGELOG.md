@@ -2,6 +2,19 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.13.0-beta.3 · 2026-11-23
+
+- **Daglig brug og opgaver:** Enklere opgavefiltre, adressekontrol nederst, ulæste opgavesvar og kopierbare påmindelser om for gamle udleveringer under Forkyndere. Udleveringsdialogen er ryddet op, IB-revision er en tydelig fravalgt checkbox, og valgte kort fremhæves ved aflevering pr. forkynder.
+- **Kort, historik og indstillinger:** Områdefarver med eksplicit masseoverskrivning og individuelle kortvalg; justerbare månedintervaller; valgfrit antal års historik; husket visning af distriktnumre i rapportkortet; mere læsbar historik på mobil og desktop.
+- **Hurtigere og sikrere arbejde:** Genbrug af komplette DAR-veje, tydeligere hentetal og konfliktadresser; geografiske forhåndsvisninger og forbindelsestjek venter ikke bag lange writes. Snapshots bruger mindre arbejde, mens redigeringskonflikter og kvoter bevares. Særskilte rollerettigheder til daglige handlinger og oprydning.
+- **Deling og vejledning:** Godkendte Google Drive-PDF'er får en søgbar, grupperet adresseliste fra side 3. Private IB-oplysninger filtreres fortsat. Den personlige guide/nyhedsvisning erstattes af hjemmesideguiden; kun logoets klikflade fører til forsiden. Ufærdige flytteforslag er skjult.
+- **Vedligeholdelse og afgrænset import:** Gamle arbejdsnoter ryddes op. Offlineværktøjet til enkelte NW Scheduler-/TH-grænsefiler følger med som forsøgsvis filkonverter; udenlandsk adressehentning eller fuld migrering er ikke tilføjet. Ekstra GitHub-grene arkiveres som tags og fjernes først efter verificeret betaudgivelse.
+- **Redesignet forside:** Det store tjenesteårs-banner og de to høje ringe er erstattet af en kompakt oversigt med tydelig fremdriftsbjælke for andelen af aktuelle kort gennemgået i tjenesteåret, stort gennemsnit mellem gennemgange, besøgsskøn og korte genveje. Diagrammer og opfølgning står under hovedtallene; øvrige påmindelser følger længere nede. Responsivt i lyst/mørkt tema og fortsat adgangsbegrænset for oversigtsroller.
+- **Forsidens anslåede besøg:** Hver gennemgang tæller nu kortets aktuelt kendte besøgstal minus de tilknyttede IB. Historiske gennemgange med tidligere ukendt antal kan derfor tælle, når kortet nu har et kendt besøgstal. Et kort med 35 besøg og 2 IB bidrager med 33 ved hver gennemgang.
+- **Hele sidste tjenesteår i månedsdiagrammet:** Foregående års gennemgange vises i alle 12 måneder, selv når de tilsvarende måneder i dette tjenesteår endnu ikke er begyndt. Indeværende måned sammenlignes fortsat med samme dato sidste år.
+- **Tidligere Stable-rettelser bevaret:** Historikimport understøtter begge datoordener og redigerbar bekræftelse. S-13 benytter originalformularen i kalenderår, tjenesteår og rullende periode, med periodeangivelse for de tilpassede udtræk.
+- Beregningen er et nutidigt skøn, ikke registrerede husbesøg. Ingen kort, IB eller historikposter ændres. Rettelserne fra Stable 1.12.40 er indarbejdet uden at fjerne Beta-funktionerne fra beta.1 og beta.2.
+
 ## 1.13.0-beta.2 · 2026-11-21
 
 - **KTM-rapportens besøgspunkter:** Rapportens øverste tal summerer nu kun kendte besøgspunkter på aktuelle distriktskort, inklusive manuelle vejlinjer. DAR-adresser uden et distriktskort tæller ikke. Kort uden fuldt kendte besøgstal oplyses særskilt, så subtotalen ikke fremstilles som fuldstændig.

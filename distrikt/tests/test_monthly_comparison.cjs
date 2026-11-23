@@ -22,6 +22,17 @@ months=plain(run("Workspace.monthlyComparison('2025-02-01','2025-02-28')"));asse
 run("state.today='2025-03-01'");months=plain(run("Workspace.monthlyComparison('2025-02-01','2025-02-28')"));assert.equal(months[0].previousTo,'2024-02-29');assert.equal(months[0].previousCount,2);
 run("state.today='2026-01-15';state.completions=[{date:'2025-12-31'},{date:'2024-12-31'},{date:'2025-01-15'},{date:'2025-01-16'}]");
 months=plain(run("Workspace.monthlyComparison('2025-12-01','2026-01-31')"));assert.equal(months[1].previousTo,'2025-01-15');assert.deepEqual(months.map(m=>[m.count,m.previousCount]),[[1,1],[0,1]]);
+run("state.today='2026-10-19';state.completions=[{date:'2025-11-03'},{date:'2025-11-25'},{date:'2026-08-04'}]");
+months=plain(run("Workspace.monthlyComparison('2026-09-01','2027-08-31')"));
+assert.equal(months[2].future,true);assert.equal(months[2].count,null);assert.equal(months[2].previousCount,2);
+assert.equal(months[2].previousFrom,'2025-11-01');assert.equal(months[2].previousTo,'2025-11-30');
+assert.equal(months[11].previousCount,1);assert.equal(months[11].previousTo,'2026-08-31');
+const futureChart=run("Workspace.dashboardChart('2026-09-01','2027-08-31')");
+assert.match(futureChart,/data-comparison="previous" data-month="2026-11" data-count="2"/);
+assert.match(futureChart,/data-comparison="previous" data-month="2027-08" data-count="1"/);
+assert.doesNotMatch(futureChart,/data-comparison="current" data-month="2026-11"/);
+assert.doesNotMatch(futureChart,/class="hint chartEmpty"/);
+assert.match(futureChart,/Last year’s figures are shown|Sidste års tal vises/);
 run("state.today='2026-10-19';state.completions=[]");
 months=plain(run("Workspace.monthlyComparison('2026-09-01','2027-08-31')"));assert.equal(months[0].count,0);assert.equal(months[0].previousCount,null);
 for(const language of ['da','en']){

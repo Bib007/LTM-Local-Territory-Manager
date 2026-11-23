@@ -126,6 +126,26 @@ class HistoryXlsxTests(unittest.TestCase):
         self.assertEqual(legacy['rows'], current['rows'])
         self.assertEqual(legacy['csv'], current['csv'])
 
+    def test_newest_first_periods_import_from_legacy_excel_and_csv(self):
+        # Earlier templates and manually prepared rows may have period 1 newest.
+        oldest_first = self.pairs()
+        blocks = [oldest_first[1 + i * 4:5 + i * 4] for i in range(5)]
+        newest_first = oldest_first[:1] + [
+            value for block in reversed(blocks) for value in block
+        ]
+        xlsx = self.preview_xlsx(workbook(newest_first, legacy=True))
+        csv_preview = self.preview_csv([newest_first])
+        self.assertEqual((xlsx['count'], xlsx['loan_count'], xlsx['errors']), (3, 5, 0))
+        self.assertEqual((csv_preview['count'], csv_preview['loan_count'],
+                          csv_preview['errors']), (3, 5, 0))
+        self.assertEqual([row['assigned'] for row in xlsx['rows']],
+                         [self.ago(n) for n in (100, 200, 300, 400, 500)])
+        self.apply(xlsx)
+        self.assertEqual({event['date'] for event in self.store.all('completions')},
+                         {self.ago(n) for n in (80, 280, 480)})
+        self.assertEqual(self.store.require('cards', self.card)['last_completed'],
+                         self.ago(80))
+
     def test_extra_data_after_five_periods_is_still_rejected(self):
         preview = self.preview_xlsx(workbook(self.pairs() + ['unexpected extra data']))
         self.assertEqual(preview['errors'], 1)
@@ -189,12 +209,18 @@ class HistoryXlsxTests(unittest.TestCase):
             self.apply(p)
         self.assertEqual(digest(self.store), before)
 
-    def test_validation_rejects_reversed_order_overlap_missing_name_and_unproven_completion(self):
+    def test_validation_rejects_mixed_order_overlap_missing_name_and_unproven_completion(self):
         wrong_order = self.pairs()
-        wrong_order[6] = self.ago(600)  # Period 2 issue before period 1 issue.
+        # All five intervals are valid and non-overlapping, but their column
+        # order is neither consistently newest-first nor oldest-first.
+        wrong_order[5:9], wrong_order[17:21] = wrong_order[17:21], wrong_order[5:9]
         p = self.preview_csv([wrong_order])
-        self.assertEqual(p['rows'][1]['status'], 'error')
-        self.assertIn('datoorden', p['rows'][1]['message'])
+        self.assertEqual(p['rows'][2]['status'], 'error')
+        self.assertIn('datoorden', p['rows'][2]['message'])
+        duplicate_date = self.pairs()
+        duplicate_date[6] = duplicate_date[2]
+        p = self.preview_csv([duplicate_date])
+        self.assertIn('samme udleveringsdato', p['rows'][1]['message'])
         overlap = self.pairs()
         overlap[6] = self.ago(490)  # Period 2 begins before period 1 is returned.
         p = self.preview_csv([overlap])

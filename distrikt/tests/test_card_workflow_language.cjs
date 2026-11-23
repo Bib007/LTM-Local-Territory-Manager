@@ -19,8 +19,8 @@ GeoUI={addresses:()=>state.cards[0].geo_addresses,ignored:()=>new Set()};mutate=
 const original=run('JSON.stringify(state)'),contracts={},payloads={};
 const contract=html=>(html.match(/(?:name|data-field|data-tab|data-id|data-module|data-side|value|max|min|maxlength)="[^"]*"/g)||[]).join('\n');
 for(const language of ['da','en']){
- run(`I18n.set('${language}');query='';year=2027;loanTab='Opfølgning'`);contracts[language]=[];
- const loans=run('loans()');assert.match(loans,/data-tab="Opfølgning"/);assert.match(loans,/Forkynder &lt;fictional&gt;/);contracts[language].push(contract(loans));
+ run(`I18n.set('${language}');query='';year=2027;loanTab='Aktive'`);contracts[language]=[];
+ const loans=run('loans()');assert.match(loans,/data-tab="Aktive"/);assert.doesNotMatch(loans,/data-tab="Opfølgning"/);assert.match(loans,/Forkynder &lt;fictional&gt;/);contracts[language].push(contract(loans));
  const history=run('Workspace.history()');assert.match(history,/99 Historik/);assert.match(history,/old-loan/);contracts[language].push(contract(history));
  for(const tab of ['Noter','Historik','IB-bagside','Adresser']){
   run(`detail('c','${tab}')`);contracts[language].push(contract(get('dialog').innerHTML));
