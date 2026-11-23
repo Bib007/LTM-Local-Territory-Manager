@@ -108,6 +108,7 @@ module.exports=async(browser,out)=>{
    return ShareUI.prepare('c1');
   });
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
+  assert.match(await page.locator('#shareAddressPreview').getAttribute('aria-label'),/Adresseliste|Address list/,'The address preview must retain a translated accessible name');
   const addressPreview=await page.locator('#shareAddressPreview').innerText();
   assert.match(addressPreview,/Fiktiv vej/);assert.match(addressPreview,/17/);
   assert.match(addressPreview,/Fiktiv ældre vej/);
