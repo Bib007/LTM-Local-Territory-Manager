@@ -5,6 +5,36 @@ const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,{id,innerHTML:'',t
 const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,requestAnimationFrame:callback=>setTimeout(callback,0),setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),getElementById:get},window:{addEventListener(){},removeEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/publisher-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s12-layout.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ktm-report-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
 run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],completions:[],ib:[],visits:[],maps:[],recovery:[],settings:{folder_minimum:30,rural_mode:'manual',rural_minimum:5,require_revision:false,congregation:''},today:'2026-10-06',version:'1.2.0'}`);
 
+// Task page keeps two independent filters in one compact control group.
+// Scheduled address checks belong below the actionable list.
+{
+ const snapshot=run('JSON.stringify({state,taskFilter:Workspace.taskFilter,taskOwnerFilter:Workspace.taskOwnerFilter,taskQuery:Workspace.taskQuery})');
+ context.taskPageSnapshot=snapshot;
+ run(`state={...state,profile:{id:'fictional-user'},task_users:[],address_task:{available:true,status:'idle',enabled:false},
+  notes:[{id:'mine',text:'Fiktiv egen åben',date:'2026-10-02',created:'2026-10-02',resolved:false,assigned:true,assignee_self:true,task:true},
+         {id:'unassigned',text:'Fiktiv uden ansvar',date:'2026-10-03',created:'2026-10-03',resolved:false,assigned:false,task:true},
+         {id:'done',text:'Fiktiv udført',date:'2026-10-04',created:'2026-10-04',resolved:true,assigned:true,assignee_self:true,task:true}]};
+  Workspace.taskFilter='open';Workspace.taskOwnerFilter='all';Workspace.taskQuery='';`);
+ const html=run('Workspace.tasks()');
+ assert.equal((html.match(/class="taskFilterRow"/g)||[]).length,1,'One compact filter row');
+ assert.equal((html.match(/data-work-select="task-owner-filter"/g)||[]).length,1,'Owner choices use a single select');
+ assert.equal((html.match(/data-work="task-owner-filter"/g)||[]).length,0,'No duplicate owner tab menu');
+ assert.equal((html.match(/data-work="task-filter"/g)||[]).length,3,'Status choices stay available');
+ assert(html.indexOf('class="panel taskList"')<html.indexOf('id="addressTask"'),'Address scheduling is after the task list');
+ assert.match(html,/Fiktiv egen åben/);assert.match(html,/Fiktiv uden ansvar/);assert.doesNotMatch(html,/Fiktiv udført/);
+ run("Workspace.taskOwnerFilter='mine'");
+ assert.match(run('Workspace.tasks()'),/Fiktiv egen åben/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv uden ansvar/);
+ run("Workspace.taskOwnerFilter='unassigned'");
+ assert.match(run('Workspace.tasks()'),/Fiktiv uden ansvar/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv egen åben/);
+ run("Workspace.taskOwnerFilter='mine';Workspace.taskFilter='done'");
+ assert.match(run('Workspace.tasks()'),/Fiktiv udført/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv egen åben/);
+ run("I18n.set('en')");
+ assert.match(run('Workspace.tasks()'),/Responsible person/);assert.match(run('Workspace.tasks()'),/Open tasks/);
+ run("I18n.set('da');{const saved=JSON.parse(taskPageSnapshot);state=saved.state;Workspace.taskFilter=saved.taskFilter;Workspace.taskOwnerFilter=saved.taskOwnerFilter;Workspace.taskQuery=saved.taskQuery;}");
+ console.log('Tasks: compact status/owner filters, combined selection, English labels and address check order passed.');
+}
+
+
  // Publisher role suggestions are advisory, computed live from currently open loans.
  {
   const old=run('JSON.stringify(state)');
