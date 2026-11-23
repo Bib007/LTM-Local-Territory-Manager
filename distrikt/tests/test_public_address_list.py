@@ -47,7 +47,7 @@ class DriveAddressListTests(unittest.TestCase):
         self.assertNotIn('PRIVATE_IB_', text)
 
     def test_manual_ranges_are_kept_verbatim_and_long_lines_wrap(self):
-        number_range = '9' * 950
+        number_range = '9' * 2500
         rows = address_entries([], [
             {'road': 'Lang fiktiv vej', 'numbers': number_range},
             {'road': 'Kort vej', 'numbers': '2–8'},
@@ -60,7 +60,7 @@ class DriveAddressListTests(unittest.TestCase):
                                  address_list=rows, number='M1', name='Manuelt kort')))
         text = '\n'.join((p.extract_text() or '') for p in reader.pages[2:])
         self.assertIn('2–8', text)
-        self.assertGreaterEqual(sum(len(x) for x in re.findall(r'9+', text)), 950)
+        self.assertGreaterEqual(sum(len(x) for x in re.findall(r'9+', text)), 2500)
         self.assertIn('Manuelle nummerintervaller', text)
 
     def test_empty_list_still_has_a_third_page(self):
