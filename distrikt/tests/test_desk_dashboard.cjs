@@ -44,10 +44,11 @@ const html=evalJS('Workspace.dashboard()');
 assert.match(html,/data-dashboard-layout="compact-summary"/);
 assert.match(html,/role="progressbar"[^>]*aria-valuenow="60"/,'Summary progress comes only from aggregate completed/current totals');
 assert.match(html,/3 af 5 forskellige kort gennemgået/);
+assert.doesNotMatch(html,/dashboardLead|dashboardVisits|data-ui="Gennemgange i tjenesteåret"/,'Summary hides redundant title and completion boxes');
 assert.doesNotMatch(html,/dashboardAverageValue|data-work="tasks"/,'Summary role cannot expose restricted history or task controls');
-for(const value of ['Tjenesteår','Kortenes placering','Dækning i tjenesteåret','Gennemgange i tjenesteåret','Aktuelle distrikter'])
+for(const value of ['Kortenes placering','Dækning i tjenesteåret','Aktuelle distrikter'])
  assert.ok(html.includes(value),value);
-for(const value of ['>2</strong>','>3</strong>','>5</strong>','>8</strong>','>60%</strong>'])
+for(const value of ['>2</strong>','>3</strong>','>5</strong>','>60%</strong>'])
  assert.ok(html.includes(value),value);
 assert.doesNotMatch(html,/opfølgning|data-work="tasks"|data-work="followups"|taskMetric|recurringTasks|note\.save/i);
 assert.doesNotMatch(evalJS('Navigation.html()'),/Opgaver|Opfølgninger|Rapporter|Kortoversigt/);
