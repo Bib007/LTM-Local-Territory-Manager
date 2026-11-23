@@ -19,11 +19,11 @@ Roles combine when an account has more than one. Managing users does not automat
 
 The role panel groups permissions and describes dependencies. Ordinary updates migrate older role combinations conservatively, using visible compatibility roles where necessary to preserve former overview/report access. Review those visible grants, then change them deliberately if you want a different policy. Later choices are preserved.
 
-## Personal introduction and release news
+## Help and getting started
 
-A personal guide follows the account's current permissions. It does not change the installation's common setup plan. A user administrator can preview the selected account's permitted guide and schedule it for that account's **next successful login**. A currently open session does not consume that next-login request.
+The step-by-step guide is available to all account types under **Help** in the LTM navigation and opens the language-matched guide on the [LTM website](https://localterritorymanager.netlify.app/en/guide/). Personal introduction tours and login-based release-news tours are no longer shown or scheduled. Existing account data and previous guide progress are left untouched.
 
-Progress and seen release items are saved for the account. A stale acknowledgement cannot finish a newer guide request. Permission changes alter the steps and release items that are available. Manually replaying the introduction preserves the current form draft.
+The shared first-run installation setup remains available separately for configuring a new installation.
 
 ## Two people editing
 
