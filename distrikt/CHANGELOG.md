@@ -2,6 +2,12 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.13.0-beta.3 · 2026-11-23
+
+- **Forsidens anslåede besøg:** Hver gennemgang tæller nu kortets aktuelt kendte besøgstal minus de tilknyttede IB. Historiske gennemgange med tidligere ukendt antal kan derfor tælle, når kortet nu har et kendt besøgstal. Et kort med 35 besøg og 2 IB bidrager med 33 ved hver gennemgang.
+- **Hele sidste tjenesteår i månedsdiagrammet:** Foregående års gennemgange vises i alle 12 måneder, selv når de tilsvarende måneder i dette tjenesteår endnu ikke er begyndt. Indeværende måned sammenlignes fortsat med samme dato sidste år.
+- Beregningen er et nutidigt skøn, ikke registrerede husbesøg. Ingen kort, IB eller historikposter ændres. Rettelserne fra Stable 1.12.40 er indarbejdet uden at fjerne Beta-funktionerne fra beta.1 og beta.2.
+
 ## 1.13.0-beta.2 · 2026-11-21
 
 - **KTM-rapportens besøgspunkter:** Rapportens øverste tal summerer nu kun kendte besøgspunkter på aktuelle distriktskort, inklusive manuelle vejlinjer. DAR-adresser uden et distriktskort tæller ikke. Kort uden fuldt kendte besøgstal oplyses særskilt, så subtotalen ikke fremstilles som fuldstændig.
