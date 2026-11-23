@@ -158,7 +158,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
         target=self.store.mutate('publisher.save',{'name':'Fiktiv mål','group':'Fiktiv gruppe','group_role':'assistant','pioneer':True})['id']
         source=self.store.mutate('publisher.save',{'name':'Fiktiv alias'})['id']
         loan=self.store.mutate('loan.issue',{'card_id':self.card,'publisher_id':source,'date':date.today().isoformat(),'initial':True})['id']
-        rights=['publishers.view','publishers.manage','loans.view','loans.manage','cards.view']
+        rights=['publishers.view','publishers.manage','loans.view','loans.manage','loans.issue','cards.view']
         editor,role,_=self.reader(rights)
         base=self.state(editor)
         request={'target_id':target,'source_id':source,'name':'Fiktiv samlet'}
@@ -669,7 +669,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(base['profile']['desk_only'])
         self.assertEqual(base['profile']['language'],'da')
         self.assertEqual(set(base['profile']['permissions']),
-                         {'cards.view','loans.view','loans.manage','publishers.view','dashboard.view'})
+                         {'cards.view','loans.view','loans.manage','loans.issue','loans.return','publishers.view','dashboard.view'})
         self.assertEqual(self.value('/api/profiles/heartbeat',{},reader)['language'],'da')
         with self.assertRaises(urllib.error.HTTPError) as forbidden:
             self.value('/api/geo',session=reader)
