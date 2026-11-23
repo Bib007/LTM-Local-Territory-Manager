@@ -179,13 +179,18 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardLead h2{font-size:clamp(21px,2vw,26px);letter-spacing:-.035em;font-weight:650;margin:3px 0 0}
 .dashboardEyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:750;color:var(--muted)}
 .dashboardWorkButton{min-height:37px;white-space:nowrap;font-size:12px;padding:8px 14px}
-.dashboardPrimary{display:grid;grid-template-columns:minmax(0,1.32fr) repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}
+.dashboardPrimary{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:12px;align-items:stretch}
 .dashboardPrimary>.panel{margin:0;padding:22px 23px;min-width:0;min-height:188px;border:1px solid var(--line);border-radius:13px}
+.dashboardPrimarySummary{grid-template-columns:minmax(0,1fr)}
 .dashboardCoverage{display:flex;flex-direction:column;gap:14px;background:linear-gradient(125deg,var(--dashboard-faint),var(--surface) 65%)}
 .dashboardCoverageTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .dashboardCoverageTop h3{font-size:15px;font-weight:650;line-height:1.3;margin:5px 0 0}
 .dashboardCoverageTag{font-size:10px;line-height:1.4;padding:4px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.dashboardCoverageMetrics{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:20px;align-items:center}
 .dashboardCoverageAmount{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 15px}
+.dashboardCoverageVisits{display:flex;flex-direction:column;gap:5px;min-width:0;border-left:1px solid var(--line);padding-left:18px}
+.dashboardCoverageVisits small,.dashboardCoverageVisits>span{font-size:11px;line-height:1.4;color:var(--muted)}
+.dashboardCoverageVisits strong{font-size:clamp(30px,3vw,44px);line-height:1.05;letter-spacing:-.045em;color:var(--dashboard-accent);font-variant-numeric:tabular-nums}
 .dashboardCoverageAmount strong{font-size:clamp(43px,4.2vw,59px);font-weight:700;line-height:1;letter-spacing:-.055em;font-variant-numeric:tabular-nums;color:var(--dashboard-accent)}
 .dashboardCoverageAmount>span{font-size:12px;line-height:1.5;color:var(--text);max-width:19ch}
 .dashboardProgressTrack{height:11px;border-radius:99px;background:var(--dashboard-track);overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 45%,transparent)}
@@ -204,7 +209,7 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardQuickHeader h3{margin:0;font-size:12px;font-weight:700;color:var(--text)}
 .dashboardQuickHeader>span{font-size:11px;color:var(--muted)}
 .dashboardQuickFacts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:18px}
-.dashboardPrimarySummary+.dashboardQuickHeader+.dashboardQuickFacts{grid-template-columns:repeat(4,minmax(0,1fr))}
+.dashboardPrimarySummary+.dashboardQuickHeader+.dashboardQuickFacts{grid-template-columns:repeat(3,minmax(0,1fr))}
 .dashboardHome .dashboardFact{min-width:0;min-height:76px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:7px;margin:0;padding:12px 15px;background:var(--surface);border:1px solid var(--line);border-radius:10px;text-align:left;color:var(--text)}
 .dashboardFact>span{font-size:11px;line-height:1.4;color:var(--muted)}
 .dashboardFact strong{font-size:25px;font-weight:650;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--text)}
@@ -222,10 +227,11 @@ html[data-theme=light] .dashboardHome button.dashboardFact{background:var(--surf
 html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(--dashboard-faint)}
 @media(max-width:1150px){
  .dashboardPrimary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .dashboardPrimarySummary{grid-template-columns:minmax(0,1fr)}
  .dashboardCoverage{grid-column:1/-1}
  .dashboardPrimary>.panel{min-height:155px}
  .dashboardQuickFacts{grid-template-columns:repeat(3,minmax(0,1fr))}
- .dashboardPrimarySummary+.dashboardQuickHeader+.dashboardQuickFacts{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .dashboardPrimarySummary+.dashboardQuickHeader+.dashboardQuickFacts{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:750px){
  .dashboardHome .dashboardLead{gap:10px;align-items:flex-start}
@@ -235,6 +241,8 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .dashboardPrimary>.panel{padding:17px;min-height:145px;border-radius:10px}
  .dashboardCoverage{gap:12px}
  .dashboardCoverageAmount strong{font-size:46px}
+ .dashboardCoverageMetrics{grid-template-columns:minmax(0,1fr) minmax(0,.95fr);gap:12px}
+ .dashboardCoverageVisits{padding-left:12px}
  .dashboardCoverageTag{white-space:normal;text-align:right}
  .dashboardAverageValue{font-size:clamp(24px,6.1vw,33px)}
  .dashboardSpotlightNumber{font-size:38px}
@@ -253,3 +261,10 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .dashboardPrimary>.panel{padding:14px}
  .dashboardCoverageFoot{flex-wrap:wrap}
 }
+
+/* Compact dashboard and settings tabs. Return rows retain independent selection. */
+@media(max-width:510px){.dashboardCoverageMetrics{grid-template-columns:minmax(0,1fr)}.dashboardCoverageVisits{border-left:0;border-top:1px solid var(--line);padding:10px 0 0}.dashboardPrimary{grid-template-columns:minmax(0,1fr)}.dashboardCoverage{grid-column:auto}}
+.settingsViewTabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.settingsViewTabs button[aria-current="page"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.deskReturnRow.selected{background:var(--dashboard-faint,var(--surface));outline:1px solid var(--accent);outline-offset:-1px}
+.deskReturnRow td:first-child{width:45px}.deskReturnSelect{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.deskReturnSelect input[type=checkbox]{width:17px;height:17px}
+.deskReturnSelect strong{font-size:12px;color:var(--muted)}
