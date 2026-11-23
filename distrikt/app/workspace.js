@@ -274,19 +274,45 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
     ${this.backupReminder()}
    </div>`;
  },
+ completedReturnAverage(){
+  // Only a return explicitly completed on the same date is a finished
+  // assignment. An older retained-card completion or a return without
+  // a completed territory must not enter the average.
+  const completed=new Set(state.completions.filter(e=>e.loan_id&&e.date).map(e=>e.loan_id+'|'+e.date));
+  const durations=state.loans.filter(l=>l.id&&l.assigned&&l.returned&&completed.has(l.id+'|'+l.returned))
+   .map(l=>dayDiff(l.returned,l.assigned)).filter(d=>Number.isInteger(d)&&d>=0);
+  return durations.length?durations.reduce((sum,d)=>sum+d,0)/durations.length:null;
+ },
+ oldestQueueCard(){
+  // Match the unfiltered "Udlever" list: in-folder when folders are in use,
+  // otherwise all available current cards. Respect planning-date overrides.
+  const withFolder=state.settings.folder_enabled!==false,desk=!!state.profile?.desk_only;
+  const active=new Set(state.loans.filter(l=>!l.returned).map(l=>l.card_id));
+  const queue=state.cards.filter(c=>!active.has(c.id)&&(desk||!withFolder||c.in_folder));
+  queue.sort((a,b)=>age(b)-age(a)||cmp(a.number,b.number));
+  const next=queue[0];
+  if(!next)return {value:ui('Ingen kort i køen'),card:null};
+  const date=typeof SplitSuggestions!=='undefined'?SplitSuggestions.effectiveDate(next):next.last_completed;
+  return {value:date?elapsedLabel(date):ui('Ingen gennemgang registreret'),card:next};
+ },
  dashboard(){
   if(state.dashboard_summary&&!ProfilesUI.has('cards.view','history.view','loans.view','publishers.view','notes.view','geo.view'))return this.dashboardSummary(state.dashboard_summary);
   const y=serviceYear(state.today),start=`${y-1}-09-01`,s=this.stats(start,state.today),ids=new Set(state.cards.map(c=>c.id));
-  const out=new Set(state.loans.filter(l=>!l.returned&&ids.has(l.card_id)).map(l=>l.card_id)).size,total=state.cards.length,home=total-out,covered=state.cards.filter(c=>s.done.has(c.id)).length,intervals=[];
-  for(const c of [...state.cards,...(state.archived_cards||[])]){const dates=[...new Set(state.completions.filter(e=>e.card_id===c.id).flatMap(e=>[e.date,e.previous_completed]).filter(Boolean))].sort();for(let i=1;i<dates.length;i++)intervals.push(dayDiff(dates[i],dates[i-1]));}
-  const avg=intervals.length?this.intervalLabel(intervals.reduce((a,b)=>a+b,0)/intervals.length):ui('Ikke nok historik endnu');
+  const out=new Set(state.loans.filter(l=>!l.returned&&ids.has(l.card_id)).map(l=>l.card_id)).size,total=state.cards.length,home=total-out,covered=state.cards.filter(c=>s.done.has(c.id)).length;
+  const returnAverage=this.completedReturnAverage(),avg=returnAverage===null?ui('Ikke nok historik endnu'):this.intervalLabel(returnAverage),oldest=this.oldestQueueCard();
   const open=this.actionableTasks().length,folder=state.settings.folder_enabled===false?0:state.cards.filter(c=>c.in_folder&&!loanFor(c.id)).length,box=Math.max(0,home-folder);
   return `<div class="dashboardHome" data-dashboard-layout="compact">
     <div class="dashboardPrimary">
       ${this.dashboardCoverage(covered,total,this.coverageVisitEstimate(s.events,state.cards),true)}
       <section class="panel dashboardSpotlight dashboardAverage">
-       <small>${ui('Gennemsnit mellem gennemgange')}</small>
+       <small>${ui('Gennemsnitlig gennemgangstid')}</small>
        <strong class="dashboardAverageValue">${avg}</strong>
+       <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering, når kortet meldes gennemgået.')}</span>
+      </section>
+      <section class="panel dashboardSpotlight dashboardQueue">
+       <small>${ui('Ældste kort i gennemgangskøen')}</small>
+       <strong class="dashboardAverageValue dashboardQueueValue">${oldest.value}</strong>
+       <span class="dashboardSpotlightNote">${ui('Alder på næste ledige kort efter den dato, der bruges til at prioritere udlevering.')}</span>
       </section>
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><span>${ui('Aktuelle distrikter')}: ${total}</span></div>

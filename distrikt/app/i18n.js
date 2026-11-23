@@ -3,6 +3,12 @@
 const I18n={
  current:'en',
  english:{
+  "Gennemsnitlig gennemgangstid":"Average completion time",
+  "Fra udlevering til aflevering, når kortet meldes gennemgået.":"From issue to return when a territory is reported completed.",
+  "Ældste kort i gennemgangskøen":"Oldest territory in the completion queue",
+  "Alder på næste ledige kort efter den dato, der bruges til at prioritere udlevering.":"Age of the next available territory, based on the date used to prioritize issue.",
+  "Ingen kort i køen":"No territories in the queue",
+  "Ingen gennemgang registreret":"No completion recorded",
   "Gem ændringerne, før du skifter fane.":"Save your changes before switching tabs.",
   "Anslåede besøg på gennemgåede kort":"Estimated visits on covered territories",
   "Nogle kort har ukendt besøgstal og er ikke medregnet.":"Territories with unknown visit counts are excluded.",
