@@ -3,6 +3,7 @@
 const I18n={
  current:'en',
  english:{
+  "Gem ændringerne, før du skifter fane.":"Save your changes before switching tabs.",
   "Anslåede besøg på gennemgåede kort":"Estimated visits on covered territories",
   "Nogle kort har ukendt besøgstal og er ikke medregnet.":"Territories with unknown visit counts are excluded.",
   "Markér viste":"Select visible",
