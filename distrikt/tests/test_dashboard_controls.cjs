@@ -40,12 +40,12 @@ assert.match(run('Workspace.recurringTasks()'),/data-due="2026-10-16"/);assert.m
 run(`state=${original};I18n.set('da')`);
 for(const language of ['da','en']){
  run(`I18n.set('${language}')`);const html=run('Workspace.dashboard()');
- assert.match(html,/>4<\/strong>/);assert.match(html,/>13<\/strong>/);assert.match(html,/>67%<\/strong>/);
+ assert.match(html,/class="dashboardCoverageVisits"[\s\S]*?<strong>6<\/strong>/,'Two completed current territories contribute six visits only once');assert.match(html,/>67%<\/strong>/);
  assert.equal((html.match(/class="attentionCard"/g)||[]).length,0);assert.match(html,/data-work="followups"/);assert.doesNotMatch(html,/revisionSummary/);
  assert(!html.includes('<invented>'));
  assert.equal((html.match(/data-ui="[a-z]{3} \{year\}"/g)||[]).length,24);
  assert.match(html,/aria-hidden="true"/);assert.match(html,/class="srOnly"/);
- assert.match(html,language==='en'?/Service year 2026\/2027/:/Tjenesteår 2026\/2027/);
+ assert.doesNotMatch(html,/dashboardLead|dashboardVisits|data-ui="Gennemgange i tjenesteåret"/,'The dashboard no longer repeats titles or completion tiles');
  assert.doesNotMatch(html,/dashboardPeriod|Gennemgange og anslåede besøg:|Completions and estimated visits:/);
  assert.match(html,language==='en'?/View monthly figures as a table/:/Vis månedstallene som tabel/);
  assert.match(html,language==='en'?/1 month and 0 days/:/1 måned og 0 dage/);
@@ -76,19 +76,23 @@ run("state.completions.push({card_id:'c0',date:'2026-10-07',visits:0,visits_unkn
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),17,'Current card count applies even to historically unknown completions');
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').events.length"),5);
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').unknownVisits"),0);
-assert.doesNotMatch(run('Workspace.dashboard()'),/Completions without known visit counts/);
+assert.equal(run("Workspace.coverageVisitEstimate(Workspace.stats('2026-09-01','2026-10-16').events,state.cards).value"),6,'Repeated completions do not inflate the coverage visit total');
+assert.doesNotMatch(run('Workspace.dashboard()'),/Territories with unknown visit counts are excluded/);
 run("state.cards[0].addresses[0].count_unknown=true");
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),14,'Retain known historic snapshots when current card count is unknown');
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').unknownVisits"),1);
-assert.match(run('Workspace.dashboard()'),/Completions without known visit counts/);
+assert.equal(run("Workspace.coverageVisitEstimate(Workspace.stats('2026-09-01','2026-10-16').events,state.cards).unknown"),1);
+assert.match(run('Workspace.dashboard()'),/Territories with unknown visit counts are excluded/);
 run(`state=${original}`);
 run("state.cards[0].addresses[0].count=35");
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),75,'Each of two completions of a 35-visit card contributes 35');
 run("state.ib=[{card_id:'c0'},{card_id:'c0'},{card_id:'not-this-card'}]");
-assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),71,'Each completion contributes 35 minus two IB entries');
+assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),71,'Historical report still counts each completion');
+assert.equal(run("Workspace.coverageVisitEstimate(Workspace.stats('2026-09-01','2026-10-16').events,state.cards).value"),35,'Coverage counts 35 minus 2 IB once, plus 2 for the other completed card');
 run("state.ib=[]");
 run("state.archived_cards[0].addresses=[{count:35}]");
 assert.equal(run("Workspace.stats('2026-09-01','2026-10-16').visits"),107,'Archived territory totals count where known');
+assert.equal(run("Workspace.coverageVisitEstimate(Workspace.stats('2026-09-01','2026-10-16').events,state.cards).value"),37,'Archived cards never increase current-year coverage visits');
 run(`state=${original}`);
 run("state.loans.push({card_id:'old',returned:null})");
 assert.match(run('Workspace.dashboard()'),/data-ui="Udleveret nu"[\s\S]*?<\/span><\/span><strong>1<\/strong>/,'Archived territory loans do not inflate current placement');
@@ -127,5 +131,29 @@ keyboard({key:'k',ctrlKey:true,target:{closest(){return null;}},preventDefault()
  get('dialog').open=false;await run("Workspace.handle('refresh',{})");assert.equal(run('readCount'),1);
  assert.equal(run('SaveStatus.kind'),'review','A refreshed snapshot does not prove an earlier write');
  assert.equal(requests.filter(r=>r.url==='/api/mutate').length,writeCount);
+ // The usage statistics are a dedicated settings tab, not a panel repeated on all settings screens.
+ run("state.profile=null;ProfilesUI={has:()=>true,settings:()=>''};UsageStatsUI={html:()=>'<section id=\\\"settings-usage\\\">Fictional activity</section>'};settingsView='usage'");
+ const usage=run('settingsPage()');
+ assert.match(usage,/data-action="settings-view" data-tab="usage" aria-current="page"/);
+ assert.match(usage,/Fictional activity/);
+ assert.doesNotMatch(usage,/settings-general|settings-data|settingsForm/);
+ assert(!source.includes('?UsageStatsUI.html():""'),'Usage statistics must not be embedded in the general settings grid');
+ // Returns offer the same selected card details as the publisher view, plus
+ // explicit marking. No group action silently completes a loan.
+ run(`state={today:'2026-10-16',cards:[{id:'aa',number:'01',name:'Fictional street'},{id:'bb',number:'02',name:'Fictional lane'}],loans:[{id:'one',card_id:'aa',publisher_id:'p',assigned:'2026-10-01',returned:null},{id:'two',card_id:'bb',publisher_id:'p',assigned:'2026-10-02',returned:null}],publishers:[{id:'p',name:'Fictional publisher'}],areas:[],settings:{folder_enabled:true}};deskReturnSelected.clear();query='';selected='';details=c=>c?'<aside data-selected="'+c.id+'"></aside>':'';`);
+ const returns=run('deskReturns()');
+ assert.match(returns,/class="cardRow deskReturnRow selected" data-card-row="aa"/);
+ assert.match(returns,/data-selected="aa"/,'The selected loan renders the sidebar card details');
+ assert.match(returns,/data-return-mark="one"/);
+ assert.match(returns,/data-action="desk-return-mark-visible"/);
+ assert.match(returns,/data-action="desk-return-next" disabled/);
+ run("deskReturnSelected.add('one')");
+ assert.match(run('deskReturns()'),/data-return-mark="one" checked/);
+ assert.doesNotMatch(run('deskReturns()'),/data-action="desk-return-next" disabled/);
+ run("query='Fictional lane'");
+ assert.match(run('deskReturns()'),/data-action="desk-return-next" disabled/,'Hidden marked loans are not returned by mistake');
+ run("state.loans[0].returned='2026-10-15';query=''");
+ assert.equal(run('deskReturns()').includes('data-return-mark="one"'),false);
+ assert.equal(run('deskReturnSelected.size'),0,'A returned loan cannot remain marked');
  console.log('Dashboard arithmetic, archived/repeat coverage, empty states, bilingual local search, keyboard/menu access and independent save/connectivity states passed; probes preserve drafts and never replay writes.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

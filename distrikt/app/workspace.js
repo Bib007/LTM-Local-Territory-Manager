@@ -219,15 +219,35 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   return ui(months===1?(days===1?'{months} måned og {days} dag':'{months} måned og {days} dage'):(days===1?'{months} måneder og {days} dag':'{months} måneder og {days} dage'),{months,days});
  },
 
- dashboardLead(y,canWork){
-  return `<div class="dashboardLead"><div><span class="dashboardEyebrow">${ui('DIT LOKALE OVERBLIK')}</span><h2>${ui('Tjenesteår {year}',{year:yearLabel(y)})}</h2></div>${canWork?`<button class="primary dashboardWorkButton" data-work="desk">${ui('Gå til daglig brug →')}</button>`:''}</div>`;
+ coverageVisitEstimate(events,cards){
+  // The progress bar measures distinct CURRENT territories: only one visit
+  // estimate per completed territory, even if it was completed many times.
+  const latest=new Map(),ibByCard=new Map();
+  const active=new Set(cards.map(c=>c.id));
+  for(const item of state.ib||[])ibByCard.set(item.card_id,(ibByCard.get(item.card_id)||0)+1);
+  for(const entry of events)if(active.has(entry.card_id)){
+   const prior=latest.get(entry.card_id);
+   if(!prior||entry.date>=prior.date)latest.set(entry.card_id,entry);
+  }
+  let value=0,unknown=0;
+  for(const c of cards){
+   const entry=latest.get(c.id);
+   if(!entry)continue;
+   if(visitsKnown(c))value+=Math.max(0,visitsCount(c)-(ibByCard.get(c.id)||0));
+   else if(!entry.visits_unknown&&Number.isInteger(entry.visits)&&entry.visits>=0)value+=entry.visits;
+   else unknown++;
+  }
+  return {value,unknown};
  },
- dashboardCoverage(covered,total){
+ dashboardCoverage(covered,total,visitEstimate=null,canWork=false){
   const pct=total?Math.round(covered/total*100):0,remaining=Math.max(0,total-covered),summary=ui('{covered} af {total} forskellige kort gennemgået',{covered,total});
   const progressLabel=typeof I18n.attribute==='function'?I18n.attribute('aria','Dækning i tjenesteåret'):`aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}"`;
   return `<section class="panel dashboardCoverage">
-   <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div><span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span></div>
-   <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
+   <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div>${canWork?`<button class="dashboardWorkButton" data-work="desk">${ui('Gå til daglig brug →')}</button>`:`<span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span>`}</div>
+   <div class="dashboardCoverageMetrics">
+    <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
+    ${visitEstimate?`<div class="dashboardCoverageVisits"><small>${ui('Anslåede besøg på gennemgåede kort')}</small><strong>${Number(visitEstimate.value).toLocaleString('da-DK')}</strong>${visitEstimate.unknown?`<span>${ui('Nogle kort har ukendt besøgstal og er ikke medregnet.')}</span>`:''}</div>`:''}
+   </div>
    <div class="dashboardProgressTrack" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span></div>
    <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui(remaining===1?'1 kort tilbage':'{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
    <p class="srOnly">${summary}</p>
@@ -242,17 +262,13 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  dashboardSummary(summary){
   const s=summary.periods.service,year=serviceYear(summary.as_of),canWork=ProfilesUI.pageAllowed('Udlevering');
   return `<div class="dashboardHome" data-dashboard-layout="compact-summary">
-    ${this.dashboardLead(year,canWork)}
     <div class="dashboardPrimary dashboardPrimarySummary">
-     ${this.dashboardCoverage(s.completed_territories,s.territories)}
-     <section class="panel dashboardSpotlight"><small>${ui('Gennemgange i tjenesteåret')}</small><strong class="dashboardSpotlightNumber">${Number(s.completions)}</strong></section>
-     <section class="panel dashboardSpotlight"><small>${ui('Aktuelle distrikter')}</small><strong class="dashboardSpotlightNumber">${Number(s.territories)}</strong></section>
+     ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork)}
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3></div>
     <div class="dashboardQuickFacts">
       ${this.dashboardFact('Udleveret nu',s.assigned)}
       ${this.dashboardFact('Hjemme nu',s.home)}
-      ${this.dashboardFact('Gennemgange i tjenesteåret',s.completions)}
       ${this.dashboardFact('Aktuelle distrikter',s.territories)}
     </div>
     ${this.backupReminder()}
@@ -266,23 +282,15 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   const avg=intervals.length?this.intervalLabel(intervals.reduce((a,b)=>a+b,0)/intervals.length):ui('Ikke nok historik endnu');
   const open=this.actionableTasks().length,folder=state.settings.folder_enabled===false?0:state.cards.filter(c=>c.in_folder&&!loanFor(c.id)).length,box=Math.max(0,home-folder);
   return `<div class="dashboardHome" data-dashboard-layout="compact">
-    ${this.dashboardLead(y,true)}
     <div class="dashboardPrimary">
-      ${this.dashboardCoverage(covered,total)}
+      ${this.dashboardCoverage(covered,total,this.coverageVisitEstimate(s.events,state.cards),true)}
       <section class="panel dashboardSpotlight dashboardAverage">
        <small>${ui('Gennemsnit mellem gennemgange')}</small>
        <strong class="dashboardAverageValue">${avg}</strong>
       </section>
-      <section class="panel dashboardSpotlight dashboardVisits">
-       <small>${ui('Anslåede besøg ved gennemgange')}</small>
-       <strong class="dashboardSpotlightNumber">${s.visits.toLocaleString('da-DK')}</strong>
-       <span class="dashboardSpotlightNote">${ui('Kortets aktuelle besøgstal minus IB tælles for hver gennemgang.')}</span>
-       ${s.unknownVisits?`<span class="dashboardUnknownVisits">${ui('Gennemgange uden kendt besøgstal er udeladt fra besøgsskønnet.')}</span>`:''}
-      </section>
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><span>${ui('Aktuelle distrikter')}: ${total}</span></div>
     <div class="dashboardQuickFacts">
-      ${this.dashboardFact('Gennemgange i tjenesteåret',s.events.length)}
       ${this.dashboardFact('Udleveret nu',out)}
       ${state.settings.folder_enabled===false?'':this.dashboardFact('Kort i mappen',folder,{action:'stock',status:'Kort i mappen'})}
       ${this.dashboardFact('Kort i kassen',box,{action:'stock',status:'Kort i kassen'})}
