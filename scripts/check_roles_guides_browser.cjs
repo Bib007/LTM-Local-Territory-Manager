@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),{chromium}=require(process.env.PLAYWR
 (async()=>{const browser=await chromium.launch({channel:'chrome'});try{
  const errors=[],responses=[];
  async function context(cookie){const c=await browser.newContext({viewport:{width:1100,height:900}});await c.addInitScript(()=>localStorage.setItem('ltm-language','da')); if(cookie)await c.addCookies([cookie]);await c.route('**/*',r=>new URL(r.request().url()).origin===f.url?r.continue():r.abort());const p=await c.newPage();p.on('pageerror',e=>{errors.push(e.message);console.log('PAGEERROR',e.message);});p.on('response',r=>{if(r.url().endsWith('/api/mutate'))responses.push(r.status());});return {c,p};}
- const {c:readerContext,p:r}=await context(f.reader);await r.goto(f.url);await r.locator('.dashboardHero').waitFor();
+ const {c:readerContext,p:r}=await context(f.reader);await r.goto(f.url);await r.locator('.dashboardLead').waitFor();
  assert.equal(await r.locator('#personalGuideTour').count(),0,'No personal or release-news tour at login');assert.equal(await r.evaluate(()=>typeof PersonalGuide),'undefined');
  await r.reload();await r.waitForFunction(()=>state!==null);
  const state=await r.evaluate(()=>({publishers:state.publishers,notes:state.notes,cards:state.cards,summary:state.dashboard_summary}));assert.deepEqual(state.publishers,[]);assert.deepEqual(state.notes,[]);assert.deepEqual(state.cards,[]);assert.equal(state.summary.periods.service.territories,1);
@@ -29,7 +29,7 @@ const assert=require('node:assert/strict'),{chromium}=require(process.env.PLAYWR
   await p.locator('#navigationLanguage').selectOption('da');
  }
  const {c:newContext,p:n}=await context();await n.goto(f.url);await n.locator('#loginName').fill('Fiktiv læser');await n.locator('#loginPassword').fill('Fiktiv-password-456');await n.locator('#loginForm button').click();
- await n.locator('.dashboardHero').waitFor();assert.equal(await n.locator('#personalGuideTour').count(),0,'New logins must not show an introductory tour');
+ await n.locator('.dashboardLead').waitFor();assert.equal(await n.locator('#personalGuideTour').count(),0,'New logins must not show an introductory tour');
  const publicGuide=n.locator('#nav [data-help-guide]');assert.equal(await publicGuide.getAttribute('href'),'https://localterritorymanager.netlify.app/da/guide/');
  assert.deepEqual(errors,[]);console.log('PASS real HTTP/browser: restored full/aggregate home layouts; no personal tour or release news; website guide for both languages and independent login; summary-only permissions; onboarding tour preserved.');await readerContext.close();await adminContext.close();await newContext.close();
  }finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});
