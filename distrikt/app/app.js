@@ -754,7 +754,7 @@ case 'desk-tab':deskTab=d.tab;query='';render();break;
 case 'settings-view':{
  if(d.tab!=='general'&&d.tab!=='usage'||d.tab==='usage'&&state.profile&&!ProfilesUI.has('settings.manage','activity.view'))break;
  // Switching tabs re-renders settings. Never discard a form the user has edited.
- const dirty=[...document.querySelectorAll('.settingsGrid form')].some(form=>[...form.elements].some(field=>{
+ const dirty=[...document.querySelectorAll('#app form')].some(form=>[...form.elements].some(field=>{
   if(field.type==='checkbox'||field.type==='radio')return field.checked!==field.defaultChecked;
   if(field.tagName==='SELECT'){
    const options=[...field.options],chosen=options.find(o=>o.defaultSelected)||options[0];
