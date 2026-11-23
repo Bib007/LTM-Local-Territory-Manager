@@ -7,8 +7,9 @@ import tempfile
 
 root=Path(__file__).resolve().parents[2]/'distrikt'
 sys.path[:0]=[str(root/'app'),str(root/'tests')]
-from sharing import Publications, png_bytes
+from sharing import Publications, png_bytes, public_members, public_manual_front, public_name
 from pdf_export import shared_card_pdf
+from public_address_list import address_entries
 from store import Store
 from test_sharing import FakeDrive
 
@@ -32,7 +33,10 @@ def run(stage,fixture,data):
             publications.process_one()
             [(pdf,_)]=publications.drive.uploads
             assert store.require('maps',publications.key(card['id']))['status']=='published'
-            expected=shared_card_pdf(png_bytes(data['png']),png_bytes(data['front_png']))
+            safe_manual,_=public_manual_front(store,card)
+            index=address_entries(public_members(store,card),safe_manual)
+            expected=shared_card_pdf(png_bytes(data['png']),png_bytes(data['front_png']),
+                                     address_list=index,number=card['number'],name=public_name(store,card))
             assert pdf==expected
             return {**result,'pdf':base64.b64encode(pdf).decode()}
         finally:
