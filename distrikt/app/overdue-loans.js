@@ -25,17 +25,17 @@ const OverdueLoans={
  loanAge(loan){return elapsedLabel(loan.assigned||loan.cycle_start);},
  row(row,showPublisher=false){
   const {loan,card:c}=row;
-  return '<tr><td>'+(showPublisher?esc(row.name):'')+'</td><td><button class="link" data-action="detail" data-id="'+esc(c.id)+'">'+ui('Kort')+' '+esc(c.number)+'</button></td><td>'+fmt(loan.assigned)+'</td><td>'+this.loanAge(loan)+'</td>'+(showPublisher?'<td><button data-overdue="message" data-id="'+esc(loan.publisher_id)+'">'+ui('Generer besked')+'</button></td>':'')+'</tr>';
+  return '<tr>'+(showPublisher?'<td>'+esc(row.name)+'</td>':'')+'<td><button class="link" data-action="detail" data-id="'+esc(c.id)+'">'+ui('Kort')+' '+esc(c.number)+'</button></td><td>'+fmt(loan.assigned)+'</td><td>'+this.loanAge(loan)+'</td>'+(showPublisher?'<td><button data-overdue="message" data-id="'+esc(loan.publisher_id)+'">'+ui('Generer besked')+'</button></td>':'')+'</tr>';
  },
  render(){
   if(!this.allowed())return '<section class="panel"><p class="hint">'+ui('Du har ikke adgang til udleveringsoplysninger.')+'</p></section>';
   const rows=this.items().filter(r=>[r.name,r.card.number,r.card.name,r.card.internal_number].join(' ').toLocaleLowerCase('da-DK').includes(query.toLocaleLowerCase('da-DK').trim()));
-  const headings='<thead><tr><th>'+ui('Forkynder')+'</th><th>'+ui('Kort')+'</th><th>'+ui('Udleveret')+'</th><th>'+ui('Hvor længe')+'</th>';
+  const headings=withPublisher?'<thead><tr><th>'+ui('Forkynder')+'</th><th>'+ui('Kort')+'</th>':'<thead><tr><th>'+ui('Kort')+'</th><th>'+ui('Udleveret')+'</th><th>'+ui('Hvor længe')+'</th>';
   const table=(items,withPublisher)=>'<div class="tablewrap"><table>'+headings+(withPublisher?'<th>'+ui('Handling')+'</th>':'')+'</tr></thead><tbody>'+items.map(r=>this.row(r,withPublisher)).join('')+'</tbody></table></div>';
   const ordered=rows.slice().sort((a,b)=>cmp(a.loan.assigned||a.loan.cycle_start,b.loan.assigned||b.loan.cycle_start)||cmp(a.card.number,b.card.number));
   const groups=this.groups(rows),sorted=this.sort==='oldest';
   return '<section class="panel overdueLoans"><div class="between"><div><h2>'+ui('Distrikter udleveret for længe')+'</h2><p class="hint">'+ui('Opfølgning efter fire kalendermåneder uden registreret gennemgang. Ingen ændringer sker automatisk.')+'</p></div><strong class="publisherGroupCount">'+ui('{count} distrikter udleveret for længe',{count:rows.length})+'</strong></div>'
-   +'<div class="toolbar"><label for="overdueSearch">'+ui('Søg forkynder eller kortnummer')+'</label><input id="search" aria-label="'+esc(I18n.text('Søg forkynder eller kortnummer'))+'" '+I18n.attribute('placeholder','Søg forkynder eller kortnummer')+' value="'+esc(query)+'">'
+   +'<div class="toolbar"><label for="search">'+ui('Søg forkynder eller kortnummer')+'</label><input id="search" aria-label="'+esc(I18n.text('Søg forkynder eller kortnummer'))+'" '+I18n.attribute('placeholder','Søg forkynder eller kortnummer')+' value="'+esc(query)+'">'
    +'<label for="overdueSort">'+ui('Vis efter')+'</label><select id="overdueSort" data-overdue="sort"><option value="publisher" '+(sorted?'':'selected')+'>'+ui('Forkynder')+'</option><option value="oldest" '+(sorted?'selected':'')+'>'+ui('Ældste udlevering først')+'</option></select></div>'
    +(sorted?(ordered.length?table(ordered,true):'<p class="hint">'+ui('Ingen distrikter udleveret for længe.')+'</p>')
     :(groups.length?'<div class="publisherGroups">'+groups.map(g=>'<section class="publisherGroup"><div class="publisherGroupHeading"><h3>'+esc(g.name)+'</h3><span>'+ui('{count} kort',{count:g.rows.length})+'</span><button data-overdue="message" data-id="'+esc(g.id)+'">'+ui('Generer besked')+'</button></div>'+table(g.rows.slice().sort((a,b)=>cmp(a.loan.assigned,b.loan.assigned)),false)+'</section>').join('')+'</div>':'<p class="hint">'+ui('Ingen distrikter udleveret for længe.')+'</p>'))
