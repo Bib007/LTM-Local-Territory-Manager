@@ -3,6 +3,12 @@
 const I18n={
  current:'en',
  english:{
+  "Anslåede besøg på gennemgåede kort":"Estimated visits on covered territories",
+  "Nogle kort har ukendt besøgstal og er ikke medregnet.":"Territories with unknown visit counts are excluded.",
+  "Markér viste":"Select visible",
+  "Fjern markering":"Clear selection",
+  "{count} markerede":"{count} selected",
+  "Aflever næste markerede":"Return next selected",
   "Vælg en gyldig områdefarve.":"Choose a valid area colour.",
   "Bekræft at tidligere kortfarver overskrives for hele området.":"Confirm that previous card colours will be overwritten for the whole area.",
   "Beskedskabelonen skal indeholde {kort}, være højst 3.000 tegn og må ikke indeholde kontroltegn.":"The message template must contain {kort}, be no longer than 3,000 characters and contain no control characters.",
