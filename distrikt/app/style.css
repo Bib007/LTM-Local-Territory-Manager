@@ -167,3 +167,21 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .geoMapTools button svg{flex:0 0 16px;width:16px;height:16px;opacity:.8}
 .geoMapTools button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
 @media(max-width:800px){.geoMapTools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.geoMapTools button{min-width:0;padding:7px 4px;overflow-wrap:anywhere;flex-direction:column;gap:4px}.geoMapColumn .geographicEditor{height:clamp(240px,48svh,450px)}}
+
+
+/* Approved Drive address-list preview: a readable, paper-like third PDF section. */
+.shareAddressSheet{box-sizing:border-box;margin:12px 0 20px;background:#fff;color:#263a4b;border:1px solid #cddbe4;border-radius:8px;overflow:hidden}
+.shareAddressHead{background:#1b344d;color:#fff;padding:20px 24px}
+.shareAddressHead small{display:block;text-transform:uppercase;font-size:11px;letter-spacing:.12em;color:#c6e0eb}
+.shareAddressHead h4{margin:6px 0;font-size:27px;line-height:1.2;color:#fff}
+.shareAddressHead span{display:block;font-size:13px;overflow-wrap:anywhere}
+.shareAddressMeta{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:13px 24px;border-bottom:1px solid #d7e3eb;font-size:12px}
+.shareAddressMeta strong{white-space:nowrap;color:#175d75}
+.shareAddressColumns{columns:2;column-gap:24px;padding:16px 24px 22px}
+.shareAddressGroup{break-inside:avoid;display:inline-block;width:100%;min-width:0;margin:0 0 12px}
+.shareAddressGroup h5{margin:0;padding:8px 10px;background:#e7f2f7;border-left:3px solid #278ba6;font-size:13px;color:#194b60;overflow-wrap:anywhere}
+.shareAddressGroup ul{margin:0;padding:0;list-style:none}
+.shareAddressGroup li{padding:5px 10px 5px 22px;border-bottom:1px solid #edf1f4;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.shareAddressGroup li:nth-child(odd){background:#f7fafc}
+.shareAddressFoot{margin:0;padding:12px 24px;border-top:1px solid #d7e3eb;color:#587082;font-size:12px}
+@media(max-width:650px){.shareAddressColumns{columns:1;padding:12px 15px}.shareAddressHead{padding:16px}.shareAddressMeta{padding:12px 16px;flex-wrap:wrap}.shareAddressGroup{display:block}}
