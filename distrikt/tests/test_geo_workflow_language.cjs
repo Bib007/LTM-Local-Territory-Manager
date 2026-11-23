@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const read=n=>fs.readFileSync(path.join(__dirname,'../app',n),'utf8'),nodes=new Map(),listeners={},writes=[];
 const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',dataset:{},style:{},open:false,showModal(){this.open=true;},close(){this.open=false;},addEventListener(){}});return nodes.get(id);};
 const c={console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,writes,frontResizeObserver:null,DistrictMap:{dispose(){}},setTimeout(){},clearTimeout(){},window:{addEventListener(){},confirm:()=>true},document:{getElementById:get,querySelector:()=>({content:'FICTIONAL',disabled:false}),querySelectorAll:()=>[],addEventListener(k,fn){(listeners[k]??=[]).push(fn);}},fetch(){throw Error('Network forbidden');}};
-vm.createContext(c);for(const n of ['i18n.js','geo.js','main-boundary.js','boundary-import.js','road-search.js','address-source-ui.js'])vm.runInContext(read(n),c);let src=read('app.js');vm.runInContext(src.slice(0,src.indexOf('(async()=>{try{await refresh();')),c);const run=s=>vm.runInContext(s,c);
+vm.createContext(c);for(const n of ['i18n.js','geo.js','street-suggestions.js','main-boundary.js','boundary-import.js','road-search.js','address-source-ui.js'])vm.runInContext(read(n),c);let src=read('app.js');vm.runInContext(src.slice(0,src.indexOf('(async()=>{try{await refresh();')),c);const run=s=>vm.runInContext(s,c);
 run('const realApi=api,realPreview=GeoUI.preview;');
 run(`state={revision:'r1',today:'2026-10-17',cards:[{id:'c1',number:'101',area_id:'area',address_ids:['a1'],geo_polygon:[[10,55],[10.01,55],[10,55.01]]},{id:'c2',number:'102',address_ids:[],geo_polygon:[]}],areas:[{id:'area',name:'Vejnavn <invented>'}],ignored:[],settings:{}};
 GeoUI.loaded=true;GeoUI.target='c1';GeoUI.ids=new Set(['a1']);GeoUI.polygon=state.cards[0].geo_polygon.map(p=>p.slice());GeoUI.data={addresses:[{id:'a1',road:'Vejnavn',number:'1',postcode:'9999',floor:'',door:'',label:'Adresse <invented>',type:'Hus',lng:10,lat:55,count:1},{id:'a2',road:'Vejnavn',number:'2',postcode:'9999',label:'B',type:'Kontor',lng:10.001,lat:55.001,count:1}],buildings:[],roads:[],info:{addresses:2},status:{a1:{card_id:'c1'}}};page='Kortopsætning';GeoUI.drawLayers=()=>{};GeoUI.drawBoundary=()=>{};render=()=>{};saved=()=>{};saving=()=>{};toast=()=>{};MapBackground={mode:'road',toolbar:()=>'',detach(){}};`);
@@ -47,6 +47,10 @@ const contracts={};const initial=run('JSON.stringify(state)');
   assert.match(live,/data-geo="pause"/);
   run("GeoUI.showJob({status:'running',kind:'boundary',retry_delay:60,retry_attempt:1,retry_stage:'Old stage',received_count:42})");
   assert.doesNotMatch(get('geoDownloadStatus').innerHTML,/60|Old stage/);
+  run("StreetSuggestions.pending={currentRoad:{road:'Fictional road'}};GeoUI.showJob({status:'running',kind:'road',activity:'Henter adresser…',received_count:160})");
+  assert.match(get('geoDownloadStatus').innerHTML,lang==='en'?/160 addresses received from the full street/:/160 adresser modtaget fra hele vejen/);
+  run("StreetSuggestions.pending=null;GeoUI.showJob({status:'running',kind:'road',activity:'Henter adresser…',received_count:160})");
+  assert.doesNotMatch(get('geoDownloadStatus').innerHTML,/full street|hele vejen/);
  }
  run("I18n.set('en');GeoUI.whole=false;GeoUI.target='c1';GeoUI.dirty=false");
  // A draft change, another editor session and a newer request each invalidate a late selection.

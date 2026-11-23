@@ -2,9 +2,20 @@
 // Existing authenticated road downloads; the card changes only after normal review/save.
 const StreetSuggestions={
  pending:null,
+ // A complete-road marker is written only after the full public-road import.
+ // A partial selection is never sufficient for reuse or retirement checks.
+ completeRoad(road){
+  const same=(name,other)=>String(name||'').trim().toLocaleLowerCase('da')===String(other||'').trim().toLocaleLowerCase('da');
+  const postcode=road.postcode;
+  return (GeoUI.data?.info?.downloads||[]).some(download=>{
+   const complete=download.complete_road;
+   return ['DAR / Datafordeleren','DAR / Adressevælger'].includes(download.source)
+    &&complete&&same(complete.road,road.road)&&complete.postcode===postcode;
+  })&&(GeoUI.data?.addresses||[]).some(a=>!a.retired&&same(a.road,road.road)&&a.postcode===postcode);
+ },
  open(){
   const c=card(GeoUI.target);if(!c?.addresses?.length||GeoUI.busy)return;
-  openDialog(`<h2>${ui('Foreslå DAR-adresser fra vejlisten')}</h2><p>${ui('Bekræft postnummeret for hver vejlinje. Hele vejen hentes fra DAR, og nummerintervallet bruges til et forslag. Kontrollér alle adresser og den foreslåede grænse før Gem. Kortet ændres ikke ved hentning.')}</p><p class="hint">${ui('Grænseforslaget holder andre indlæste adresseprikker udenfor og tager hensyn til nabodistrikter.')}</p><form id="streetSuggestionForm"><div class="tablewrap"><table><thead><tr><th>${ui('Vejnavn')}</th><th>${ui('Nummerinterval')}</th><th>${ui('Postnummer')}</th></tr></thead><tbody>${c.addresses.map((r,i)=>{const posts=[...new Set((c.geo_addresses||c.imported_addresses||[]).filter(a=>a.road===r.road).map(a=>a.postcode).filter(Boolean))];return `<tr><td>${esc(r.road)}</td><td>${esc(r.numbers)}</td><td><input name="postcode_${i}" aria-label="${esc(I18n.text('Postnummer')+' · '+r.road)}" required pattern="[0-9]{4}" maxlength="4" inputmode="numeric" value="${esc(posts.length===1?posts[0]:'')}"></td></tr>`;}).join('')}</tbody></table></div>${formEnd('Hent og foreslå adresser')}</form>`);
+  openDialog(`<h2>${ui('Foreslå DAR-adresser fra vejlisten')}</h2><p>${ui('Bekræft postnummeret for hver vejlinje. Manglende veje hentes komplet fra DAR, mens allerede komplette veje genbruges. Nummerintervallet bruges først til kortforslaget. Kontrollér adresser og den foreslåede grænse før Gem. Kortet ændres ikke ved hentning.')}</p><p class="hint">${ui('Grænseforslaget holder andre indlæste adresseprikker udenfor og tager hensyn til nabodistrikter.')}</p><form id="streetSuggestionForm"><div class="tablewrap"><table><thead><tr><th>${ui('Vejnavn')}</th><th>${ui('Nummerinterval')}</th><th>${ui('Postnummer')}</th></tr></thead><tbody>${c.addresses.map((r,i)=>{const posts=[...new Set((c.geo_addresses||c.imported_addresses||[]).filter(a=>a.road===r.road).map(a=>a.postcode).filter(Boolean))];return `<tr><td>${esc(r.road)}</td><td>${esc(r.numbers)}</td><td><input name="postcode_${i}" aria-label="${esc(I18n.text('Postnummer')+' · '+r.road)}" required pattern="[0-9]{4}" maxlength="4" inputmode="numeric" value="${esc(posts.length===1?posts[0]:'')}"></td></tr>`;}).join('')}</tbody></table></div><label class="check"><input name="refresh_roads" type="checkbox"> ${ui('Hent alle veje på ny fra DAR')}</label>${formEnd('Hent og foreslå adresser')}</form>`);
  },
  async start(form){
   if(this.pending||GeoUI.busy||!form.reportValidity())return;
@@ -19,7 +30,11 @@ const StreetSuggestions={
    ...road,
    numbers:c.addresses.filter((line,i)=>String(line.road||'').trim().toLowerCase()===road.road.toLowerCase()&&postcodes[i]===road.postcode).map(line=>String(line.numbers||'').trim()).filter(Boolean)
   }));
-  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads,card_number:c.number,currentRoad:null};
+  await GeoUI.load(); // Reuse only the latest locally confirmed full-road imports.
+  if(target!==GeoUI.target||session!==GeoUI.session||stamp!==GeoUI.draftStamp(false)||!el('dialog').open)return;
+  const refreshAll=form.elements.refresh_roads?.checked===true;
+  const missing=refreshAll?roads:roads.filter(road=>!this.completeRoad(road));
+  this.pending={target,session,stamp,postcodes,source_expected:plan.source_expected,roads:missing,card_number:c.number,currentRoad:null};
   closeDialog();await this.next();
  },
  async next(){
