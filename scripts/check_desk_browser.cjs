@@ -219,9 +219,19 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  await page.evaluate(()=>{state.completions=[{id:'interval-one',card_id:'folder',date:'2026-09-01'},{id:'interval-two',card_id:'folder',date:'2026-10-02'}];render();});
  for(const language of ['da','en']){
   await page.evaluate(language=>{I18n.set(language);Navigation.localize();},language);
-  assert.equal(await page.locator('.dashboardHero small').count(),0,'The removed date and explanation must not be shown');
-  assert.equal(await page.locator('.dashboardMetrics .metricText').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day');
-  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Months and days fit the viewport');
+  assert.equal(await page.locator('.dashboardHero,.dashboardRing').count(),0,'The former tall hero and decorative rings must not return');
+  assert.equal(await page.locator('.dashboardAverageValue').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day');
+  assert.equal(await page.locator('.dashboardProgressTrack[role=progressbar]').count(),1);
+  assert.match(await page.locator('.dashboardProgressTrack').getAttribute('aria-valuenow'),/^\\d+$/);
+  assert.equal(await page.locator('.dashboardAverage .dashboardSpotlightNote').count(),0,'Average has no qualification clutter');
+  const geometry=await page.evaluate(()=>{
+   const rect=selector=>{const node=document.querySelector(selector);if(!node)return null;const box=node.getBoundingClientRect();return {top:box.top,bottom:box.bottom,left:box.left,right:box.right};};
+   return {lead:rect('.dashboardLead'),primary:rect('.dashboardPrimary'),quick:rect('.dashboardQuickFacts'),chart:rect('.dashboardLower'),below:rect('.dashboardBelow')};
+  });
+  assert(geometry.lead&&geometry.primary&&geometry.quick&&geometry.chart&&geometry.below);
+  assert(geometry.lead.bottom<=geometry.primary.top+1&&geometry.primary.bottom<=geometry.quick.top&&geometry.quick.bottom<=geometry.chart.top+1&&geometry.chart.bottom<=geometry.below.top+1,'Dashboard hierarchy must put KPIs and actions before detailed reports and reminders');
+  if(width===1440)assert(geometry.quick.bottom<height-40,'Desktop should show all primary metrics and shortcuts without scrolling');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Compact dashboard fits the viewport without horizontal scrolling');
  }
  await page.evaluate(()=>{state.completions=[{id:'fictional-september',card_id:'folder',date:'2026-09-02'},{id:'fictional-current',card_id:'folder',date:'2026-10-17'},{id:'fictional-future',card_id:'folder',date:'2026-10-18'},{id:'fictional-previous',card_id:'folder',date:'2025-10-17'},{id:'fictional-too-late',card_id:'folder',date:'2025-10-18'}];I18n.set('da');render();});
  assert.equal(await page.locator('[data-comparison=current][data-month="2026-10"]').getAttribute('data-count'),'1');
