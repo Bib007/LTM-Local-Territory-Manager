@@ -19,7 +19,7 @@ const ProfilesUI={
   // full state is refreshed. Preserve that confirmed count across rerenders.
   // A new state revision or another login invalidates the cached projection.
   const cached=this.myOpenTaskAccount===state.profile.user.id&&this.myOpenTaskRevision===state.revision&&Number.isInteger(this.myOpenTaskCount);
-  return `<section class="profileWelcome"><span>${ui("DIT OVERBLIK")}</span><h2>${ui("Velkommen, {name}",{name:state.profile.user.name})}</h2><div id="myTasksWelcomeSlot" aria-live="polite">${cached?Workspace.myTasksWelcome(this.myOpenTaskCount):Workspace.myTasksWelcome()}</div></section>`;
+  return `<section class="profileWelcome"><span>${ui("DIT OVERBLIK")}</span><h2>${ui("Velkommen, {name}",{name:state.profile.user.name})}</h2><div id="myTasksWelcomeSlot" aria-live="polite">${cached?Workspace.myTasksWelcome(this.myOpenTaskCount):Workspace.myTasksWelcome()}</div></section>`+Workspace.replyNotifications();
  },
  notice(){if(!state?.profile)return '';return `<div id="profileConflictNotice">`+(state.profile.conflicts?`<section class="panel notice warning"><h2>${ui("Rettelser skal gennemgås")}</h2><p>${ui("{count} modstridende rettelser er bevaret med deres udgangspunkt.",{count:state.profile.conflicts})}</p><button data-profile="conflicts">${ui("Gennemgå rettelser")}</button></section>`:'')+`</div>`;},
  home(){return `${Workspace.backupReminder()}<section class="panel"><h2>${ui("Dine genveje")}</h2><p>${ui("Din administrator styrer din adgang. Vælg en af de tilgængelige sider i menuen.")}</p></section>`;},

@@ -133,11 +133,23 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   return `<div class="welcomeTasksNotice" role="status" style="display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-top:12px;padding:12px 15px;border:1px solid var(--line);border-radius:9px"><span>${ui(count===1?'Du er ansvarlig for 1 åben opgave':'Du er ansvarlig for {count} åbne opgaver',{count})}</span><button type="button" data-work="my-tasks" class="primary" style="font-size:12px;min-height:34px">${ui('Se mine opgaver')}</button></div>`;
  },
 
+ unreadTaskReplies(){
+  if(!state?.profile||!ProfilesUI.pageAllowed('Opgaver'))return [];
+  return (state.notes||[]).flatMap(note=>(note.task_history||[])
+   .filter(entry=>entry.reply&&entry.recipient_self&&!entry.read)
+   .map(entry=>({note,entry})))
+   .sort((a,b)=>cmp(b.entry.at||b.entry.date,a.entry.at||a.entry.date));
+ },
+ replyNotifications(){
+  const replies=this.unreadTaskReplies();
+  if(!replies.length)return '';
+  return `<section class="panel taskReplyNotifications" role="region" aria-label="${esc(I18n.text('Nye svar på dine opgaver'))}"><div class="between"><div><h3>${ui('Nye svar på dine opgaver')}</h3><p class="hint">${ui('{count} ulæste svar',{count:replies.length})}</p></div><button type="button" data-work="task-replies">${ui('Se alle svar')}</button></div>${replies.slice(0,5).map(({note,entry})=>`<div class="line"><div><strong>${esc(note.text)}</strong><p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(entry.reply)}</p>${entry.author?`<small>${ui('Fra {name}',{name:entry.author})}</small>`:''}</div><button type="button" data-work="read-task-reply" data-id="${esc(note.id)}" data-entry="${esc(entry.id)}">${ui('Markér som læst')}</button></div>`).join('')}</section>`;
+ },
  taskHistory(n,allowDelete=true){
   const history=n.task_history||[];
   if(!history.length)return '';
   const canDelete=allowDelete&&(!state.profile||ProfilesUI.canAction('note.reply.delete'));
-  return `<details class="taskCompletionHistory"><summary>${ui('Afslutningshistorik · {count}',{count:history.length})}</summary><ol>${[...history].reverse().map(entry=>`<li><small>${entry.due?ui('Planlagt {due} · udført {date}',{due:fmt(entry.due),date:fmt(entry.date)}):ui('Udført {date}',{date:fmt(entry.date)})}</small>${entry.reply?`<p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(entry.reply)}</p>${entry.author?`<small>${ui('Fra {name}',{name:entry.author})}</small> `:''}${entry.recipient?`<small>${entry.recipient_self?ui('Svar til dig'):ui('Til {name}',{name:entry.recipient})}</small>`:''}${canDelete?` <button type="button" class="danger" data-work="delete-task-reply" data-id="${esc(n.id)}" data-entry="${esc(entry.id)}">${ui('Slet svar')}</button>`:''}`:''}</li>`).join('')}</ol></details>`;
+  return `<details class="taskCompletionHistory"><summary>${ui('Afslutningshistorik · {count}',{count:history.length})}</summary><ol>${[...history].reverse().map(entry=>`<li><small>${entry.due?ui('Planlagt {due} · udført {date}',{due:fmt(entry.due),date:fmt(entry.date)}):ui('Udført {date}',{date:fmt(entry.date)})}</small>${entry.reply?`<p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(entry.reply)}</p>${entry.author?`<small>${ui('Fra {name}',{name:entry.author})}</small> `:''}${entry.recipient?`<small>${entry.recipient_self?ui('Svar til dig'):ui('Til {name}',{name:entry.recipient})}</small>`:''}${entry.recipient_self&&!entry.read?` <button type="button" data-work="read-task-reply" data-id="${esc(n.id)}" data-entry="${esc(entry.id)}">${ui('Markér som læst')}</button>`:''}${canDelete?` <button type="button" class="danger" data-work="delete-task-reply" data-id="${esc(n.id)}" data-entry="${esc(entry.id)}">${ui('Slet svar')}</button>`:''}`:''}</li>`).join('')}</ol></details>`;
  },
  taskCompletionForm(n,due,cardOrigin=false){
   const recipient=n.assigned_by_name||n.assigned_by?.name;
@@ -410,6 +422,18 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
 
  async handle(action,d){switch(action){
   case 'desk':page='Udlevering';render();break;case 'tasks':page='Opgaver';render();break;
+  case 'task-replies':{
+   if(!state?.profile||!ProfilesUI.pageAllowed('Opgaver'))break;
+   await refresh({beforeRender:()=>{this.taskFilter='replies';this.taskOwnerFilter='all';this.taskQuery='';page='Opgaver';}});
+   break;
+  }
+  case 'read-task-reply':{
+   const generation=openDialog.generation,origin=page,fromCard=el('dialog').open;
+   const note=state.notes.find(n=>n.id===d.id);
+   await mutate('note.reply.read',{id:d.id,entry_id:d.entry},{close:false,message:'Svar markeret som læst'});
+   if(fromCard&&note?.card_id&&generation===openDialog.generation&&page===origin)detail(note.card_id,'Noter');
+   break;
+  }
   case 'my-tasks':{
    if(!state?.profile||!ProfilesUI.pageAllowed('Opgaver'))break;
    // Fetch a fresh authorized projection so assignments changed in another

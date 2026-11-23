@@ -89,6 +89,7 @@ GROUPS={
  ('loans.view','loans.manage','publishers.view','publishers.manage'):'loan.correct.preview loan.correct publisher.merge.preview publisher.merge',
  ('publishers.view','publishers.manage'):'publisher.save setup.publisher-import.preview setup.publisher-import.apply',
  ('notes.view','notes.edit'):'note.save note.resolve note.task note.complete note.reply.delete',
+ ('notes.view',):'note.reply.read',
  ('cards.view','history.view','history.edit'):'completion.record',
  ('history.view','history.edit'):'visit.save history.cleanup',
   ('cards.view','loans.view','loans.manage','publishers.view','history.view','history.edit'):'history.grid.add history.grid.edit',
@@ -114,7 +115,7 @@ def mutation(user,action,data,store):
     if user.get('desk_only') and (action not in DESK_ACTIONS or data.get('retain')):
         raise PermissionError('Du har ikke rettighed til denne handling.')
     # A note permission never authorizes writes to a system-owned IB follow-up.
-    if ((action in ('note.save','note.resolve','note.task','note.complete','note.reply.delete')
+    if ((action in ('note.save','note.resolve','note.task','note.complete','note.reply.delete','note.reply.read')
          or (action=='delete' and data.get('module')=='notes'))
             and is_ib_review_id(data.get('id'))):
         raise PermissionError('Du har ikke rettighed til denne handling.')
@@ -210,7 +211,10 @@ def state_for(raw,user):
         note['reply_target']=task_reply_target(source)
         for completion in note.get('task_history',[]):
             recipient=completion.pop('recipient_id',None)
-            if recipient==user['id']:completion['recipient_self']=True
+            read_at=completion.pop('read_at',None)
+            if recipient==user['id']:
+                completion['recipient_self']=True
+                completion['read']=bool(read_at)
         if 'users.manage' not in p:note.pop('assignee_id',None)
         if 'geo.view' not in p:note.pop('followup_key',None)
     result['settings']={k:deepcopy(v) for k,v in raw['settings'].items() if k in CONFIG_FIELDS} if 'settings.manage' in p else {'congregation':'','folder_minimum':0,'rural_minimum':0,'rural_mode':'auto','require_revision':False}
