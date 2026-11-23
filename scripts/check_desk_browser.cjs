@@ -216,24 +216,26 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  await page.locator('[data-work=task-filter][data-value=done]').click();assert.match(await page.locator('#app').innerText(),/FIKTIV_DONE_TASK/);await page.locator('[data-work=new-task]').click();assert.equal(await page.locator('[data-work-form=note] [name=task]').count(),0);assert.equal(await page.locator('[data-work-form=note]').count(),1);await activate(page.locator('.dialogClose'));assert.deepEqual(errors,[]);
  // Dashboard reminder is local and calendar-based; ordinary download is never called a disk save.
  await page.evaluate(()=>{page='Forside';render();});await page.locator('#backupReminder').waitFor();const beforeBackup=writes.length;
- await page.evaluate(()=>{state.completions=[{id:'interval-one',card_id:'folder',date:'2026-09-01'},{id:'interval-two',card_id:'folder',date:'2026-10-02'}];render();});
+ await page.evaluate(()=>{state.loans.push({id:'fictional-metric-loan',card_id:'folder',publisher_id:'p1',assigned:'2026-09-01',cycle_start:'2026-09-01',returned:'2026-10-02'});state.completions=[{id:'interval-one',card_id:'folder',date:'2026-09-01'},{id:'interval-two',loan_id:'fictional-metric-loan',card_id:'folder',date:'2026-10-02'}];render();});
  for(const language of ['da','en']){
   await page.evaluate(language=>{I18n.set(language);Navigation.localize();},language);
   assert.equal(await page.locator('.dashboardHero,.dashboardRing').count(),0,'The former tall hero and decorative rings must not return');
-  assert.equal(await page.locator('.dashboardAverageValue').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day');
+  assert.equal(await page.locator('.dashboardAverage .dashboardAverageValue').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day','Average uses a completed issue-to-return interval');
+  assert.equal(await page.locator('.dashboardQueue .dashboardQueueValue').count(),1,'Queue age is a separate visible figure');
   assert.equal(await page.locator('.dashboardProgressTrack[role=progressbar]').count(),1);
   assert.match(await page.locator('.dashboardProgressTrack').getAttribute('aria-valuenow'),/^\d+$/);
-  assert.equal(await page.locator('.dashboardAverage .dashboardSpotlightNote').count(),0,'Average has no qualification clutter');
+  assert.equal(await page.locator('.dashboardAverage .dashboardSpotlightNote').count(),1,'Average explains its issue-to-return definition');
+  assert.equal(await page.locator('.dashboardQueue .dashboardSpotlightNote').count(),1,'Queue age explains the next available card');
   const geometry=await page.evaluate(()=>{
    const rect=selector=>{const node=document.querySelector(selector);if(!node)return null;const box=node.getBoundingClientRect();return {top:box.top,bottom:box.bottom,left:box.left,right:box.right};};
-   return {lead:rect('.dashboardLead'),primary:rect('.dashboardPrimary'),quick:rect('.dashboardQuickFacts'),chart:rect('.dashboardLower'),below:rect('.dashboardBelow')};
+   return {primary:rect('.dashboardPrimary'),quick:rect('.dashboardQuickFacts'),chart:rect('.dashboardLower'),below:rect('.dashboardBelow')};
   });
-  assert(geometry.lead&&geometry.primary&&geometry.quick&&geometry.chart&&geometry.below);
-  assert(geometry.lead.bottom<=geometry.primary.top+1&&geometry.primary.bottom<=geometry.quick.top&&geometry.quick.bottom<=geometry.chart.top+1&&geometry.chart.bottom<=geometry.below.top+1,'Dashboard hierarchy must put KPIs and actions before detailed reports and reminders');
+  assert(geometry.primary&&geometry.quick&&geometry.chart&&geometry.below,'Compact dashboard no longer requires a separate lead banner');
+  assert(geometry.primary.bottom<=geometry.quick.top+1&&geometry.quick.bottom<=geometry.chart.top+1&&geometry.chart.bottom<=geometry.below.top+1,'Dashboard hierarchy must put KPIs and actions before detailed reports and reminders');
   if(width===1440)assert(geometry.quick.bottom<height-40,'Desktop should show all primary metrics and shortcuts without scrolling');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Compact dashboard fits the viewport without horizontal scrolling');
  }
- await page.evaluate(()=>{state.completions=[{id:'fictional-september',card_id:'folder',date:'2026-09-02'},{id:'fictional-current',card_id:'folder',date:'2026-10-17'},{id:'fictional-future',card_id:'folder',date:'2026-10-18'},{id:'fictional-previous',card_id:'folder',date:'2025-10-17'},{id:'fictional-too-late',card_id:'folder',date:'2025-10-18'}];I18n.set('da');render();});
+ await page.evaluate(()=>{state.loans=state.loans.filter(l=>l.id!=='fictional-metric-loan');state.completions=[{id:'fictional-september',card_id:'folder',date:'2026-09-02'},{id:'fictional-current',card_id:'folder',date:'2026-10-17'},{id:'fictional-future',card_id:'folder',date:'2026-10-18'},{id:'fictional-previous',card_id:'folder',date:'2025-10-17'},{id:'fictional-too-late',card_id:'folder',date:'2025-10-18'}];I18n.set('da');render();});
  assert.equal(await page.locator('[data-comparison=current][data-month="2026-10"]').getAttribute('data-count'),'1');
  assert.equal(await page.locator('[data-comparison=previous][data-month="2026-10"]').getAttribute('data-count'),'1');
  assert.equal(await page.locator('[data-comparison=previous][data-month="2026-09"]').count(),0);
