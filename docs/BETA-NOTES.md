@@ -1,4 +1,11 @@
-# LTM 1.13.0-beta.3
+# LTM 1.13.0-beta.4
+
+## Nyt siden beta.3
+
+- Forsiden går direkte fra »Dit overblik / Velkommen« til de relevante nøgletal. Den ekstra titelblok og den dobbelte tæller for gennemgange er fjernet.
+- Fremdriftsboksen viser både dækning af **forskellige aktuelle distriktskort** og **anslåede besøg på de samme kort**. Hvert kort med en gennemgang i tjenesteåret medregnes én gang i begge tal, uanset gentagne gennemgange. Ukendte besøgstal mærkes særskilt. Historiske S-13-rapporter og månedsdiagrammer ændrer ikke optællingsmetode.
+- Brugsstatistik har fået sin egen fane under Indstillinger.
+- »Aflever til kassen« har nu valgt kort, sidens kortdetaljer, markeringer og hjælp til at åbne næste markerede kort. Hver aflevering gennemføres individuelt med kontrol af dato, gennemgang og IB; markeringerne skriver aldrig data alene.
 
 Denne Beta indeholder forsidefejlrettelserne fra Stable 1.12.40 samt de eksisterende Beta-forbedringer med **brugsstatistik** (beta.1) og **KTM-rapporten** (beta.2). Beta og Stable har fortsat separate data, porte og logins.
 
