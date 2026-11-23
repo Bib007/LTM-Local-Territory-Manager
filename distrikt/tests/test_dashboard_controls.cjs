@@ -105,6 +105,49 @@ assert.match(run('Workspace.dashboard()'),/Begin|Begynd|Start with/);assert(!run
 assert.match(run('Workspace.dashboard()'),/role="progressbar"[^>]*aria-valuenow="0"/);
 assert.match(run("Workspace.dashboardChart('2026-09-01','2027-08-31')"),/No completions recorded/);
 run(`state=${original}`);
+// The two prominent figures measure different facts: finished loan duration
+// versus the age of the next currently issuable card.
+run(`state.loans=[
+ {id:'done-10',card_id:'c0',assigned:'2026-10-01',returned:'2026-10-11'},
+ {id:'done-20',card_id:'c1',assigned:'2026-09-01',returned:'2026-09-21'},
+ {id:'not-complete',card_id:'c2',assigned:'2026-09-01',returned:'2026-09-02'},
+ {id:'retained-only',card_id:'c2',assigned:'2026-08-01',returned:'2026-10-01'},
+ {id:'still-out',card_id:'c2',assigned:'2026-10-01',returned:null}
+];
+state.completions=[
+ {loan_id:'done-10',card_id:'c0',date:'2026-10-11'},
+ {loan_id:'done-20',card_id:'c1',date:'2026-09-21'},
+ {loan_id:'retained-only',card_id:'c2',date:'2026-08-10'},
+ {loan_id:'still-out',card_id:'c2',date:'2026-10-15'},
+ {card_id:'c0',date:'2026-10-12'}
+];`);
+assert.equal(run('Workspace.completedReturnAverage()'),15,'Only matching completed returns contribute their full issue-to-return duration');
+assert.match(run('Workspace.dashboard()'),/Gennemsnitlig gennemgangstid/);
+assert.match(run('Workspace.dashboard()'),/Fra udlevering til aflevering/);
+assert.match(run('Workspace.dashboard()'),/Ældste kort i gennemgangskøen/);
+assert.match(run('Workspace.dashboard()'),/Alder på næste ledige kort/);
+run("state.completions=state.completions.filter(e=>e.loan_id!=='done-20'&&e.loan_id!=='done-10')");
+assert.equal(run('Workspace.completedReturnAverage()'),null,'No completed returns should never turn into a misleading zero duration');
+run(`state.cards=[
+ {id:'q1',number:'1',in_folder:true,last_completed:'2026-09-20',addresses:[{count:5}]},
+ {id:'q2',number:'2',in_folder:true,last_completed:'2026-04-10',addresses:[{count:7}]},
+ {id:'q3',number:'3',in_folder:false,last_completed:'2025-01-01',addresses:[{count:5}]},
+ {id:'q4',number:'4',in_folder:true,last_completed:'2025-01-01',addresses:[{count:5}]},
+ {id:'q5',number:'5',in_folder:true,addresses:[{count:2}]}
+];
+state.settings.folder_enabled=true;
+state.loans=[{id:'active',card_id:'q4',assigned:'2026-10-01',returned:null}];
+state.completions=[];`);
+assert.equal(run('Workspace.oldestQueueCard().card.id'),'q5','A never-completed available card comes first');
+run("state.cards[4].last_completed='2026-07-01'");
+assert.equal(run('Workspace.oldestQueueCard().card.id'),'q2','The queue follows the oldest eligible card, not an active loan or box-only card');
+run("state.settings.folder_enabled=false");
+assert.equal(run('Workspace.oldestQueueCard().card.id'),'q3','Without folder mode the oldest available card in the box also qualifies');
+run("state.loans.push({id:'active3',card_id:'q3',returned:null})");
+assert.equal(run('Workspace.oldestQueueCard().card.id'),'q2');
+run("state.cards=[]");
+assert.equal(run('Workspace.oldestQueueCard().card'),null);
+run(`state=${original}`);
 run('Workspace.boot();saved()');windowListeners.offline();assert.equal(run('SaveStatus.kind'),'saved');
 get('dialog').open=false;run("Workspace.menu(true)");assert.equal(menu.attrs['aria-expanded'],'true');
 let prevented=false;listeners.keydown.at(-1)({key:'Escape',preventDefault(){prevented=true;}});assert(prevented);assert.equal(menu.attrs['aria-expanded'],'false');assert(menu.focused);
