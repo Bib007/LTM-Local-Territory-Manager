@@ -2,6 +2,13 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.13.0-beta.4 · 2026-11-23
+
+- **Two separate dashboard metrics:** Average completion time measures issue-to-return days for finished assignments with a recorded completion. The oldest territory in the completion queue shows the age of the next available card based on its relevant planning/completion date. Both include short explanations and handle unknown dates explicitly.
+- **Compact dashboard:** Remove duplicate page and service-year headings and the redundant completion tile. The service-year coverage card now shows both progress and estimated visits for distinct current territories completed this year. Repeated completions never inflate this coverage metric; separate historical report totals retain their existing definition.
+- **Dedicated usage statistics tab:** Settings now offers a separate Usage Statistics view instead of embedding the panel among unrelated settings, respecting existing permissions.
+- **Returns to home:** The Return to Box view now offers selected-card highlighting, the matching card-details sidebar, checkboxes and a select-visible action. Open each marked return individually with its own completion, date and DNC review choices; no unchecked bulk mutation.
+
 ## 1.13.0-beta.3 · 2026-11-23
 
 - **Daily use and tasks:** Simplified task filters, address checks below the task list, unread task replies and copyable overdue-card reminders under Publishers. Assignment dialogs are cleaner, DNC review is an explicit unchecked checkbox, and the selected card is highlighted in publisher returns.
