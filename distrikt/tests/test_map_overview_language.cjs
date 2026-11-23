@@ -18,13 +18,33 @@ for(const language of ['da','en']){
  const page=run('OverviewMap.page()');contracts[language]=(page.match(/(?:data-overview-field|data-overview|value|max)="[^"]*"/g)||[]).join('\n');
  assert.match(page,/option value="Land"/);assert.match(page,/option value="Ingen dato"/);assert.match(page,/Område &lt;invented&gt;/);
  assert.match(page,language==='en'?/>Reset filters<\//:/>Nulstil filtre<\//);
+  assert.match(page,/data-overview-field="recentMonths" min="1"/,'Green threshold is editable');
+  assert.match(page,/data-overview-field="months" min="2"/,'Red threshold is editable independently');
+  assert.match(page,language==='en'?/Green below/:/Grøn under/);
  run('OverviewMap.draw()');assert.match(get('overviewSelected').innerHTML,/<p>Farver &lt;invented&gt;<\/p>/);assert.match(get('overviewSelected').innerHTML,language==='en'?/>Open territory card<\//:/>Åbn distriktskort<\//);assert.match(get('overviewCount').innerHTML,/data-ui-params="\{&quot;matching&quot;:3,&quot;mapped&quot;:1,&quot;missing&quot;:2\}"/);
  results[language]=[];
- for(const [key,value] of [['kind','Land'],['kind','Alle'],['status','Udleverede distriktskort'],['status','Alle'],['completion','Gennemgået'],['completion','Alle'],['ageFilter','Ingen dato'],['ageFilter','Alle'],['publisher','p'],['publisher',''],['months',6]]){run(`OverviewMap.change(${JSON.stringify(key)},${JSON.stringify(value)})`);results[language].push(JSON.parse(run('JSON.stringify(OverviewMap.filtered().map(c=>c.id))')));}
- assert.equal(run('OverviewMap.filters.months'),6);assert.match(run('OverviewMap.legend()[0][0]'),language==='en'?/Under 3 months/:/Under 3 måneder/);
+ for(const [key,value] of [['kind','Land'],['kind','Alle'],['status','Udleverede distriktskort'],['status','Alle'],['completion','Gennemgået'],['completion','Alle'],['ageFilter','Ingen dato'],['ageFilter','Alle'],['publisher','p'],['publisher',''],['recentMonths',3],['months',6]]){run(`OverviewMap.change(${JSON.stringify(key)},${JSON.stringify(value)})`);results[language].push(JSON.parse(run('JSON.stringify(OverviewMap.filtered().map(c=>c.id))')));}
+ assert.equal(run('OverviewMap.filters.recentMonths'),3);assert.equal(run('OverviewMap.filters.months'),6);
+  assert.match(run('OverviewMap.legend()[0][0]'),language==='en'?/Under 3 months/:/Under 3 måneder/);
+  assert.match(run('OverviewMap.legend()[1][0]'),language==='en'?/3–6 months/:/3–6 måneder/);
  run("OverviewMap.filters.color='year';OverviewMap.draw()");assert.match(get('overviewLegend').innerHTML,language==='en'?/Completed in 2026\/2027/:/Gennemgået i 2026\/2027/);run("OverviewMap.filters.color='age'");
  assert.equal(run('JSON.stringify(state)'),original);
 }
+// Colour bands and the advanced age filter share the upper threshold, not a fixed 2:1 ratio.
+run("I18n.set('da');OverviewMap.filters.color='age';OverviewMap.change('recentMonths',4);OverviewMap.change('months',10)");
+assert.equal(run("OverviewMap.color({last_completed:'2026-09-20'})"),'#258454');
+assert.equal(run("OverviewMap.color({last_completed:'2026-05-10'})"),'#d49a25');
+assert.equal(run("OverviewMap.color({last_completed:'2025-12-01'})"),'#bd4a43');
+assert.equal(run("OverviewMap.color({last_completed:null})"),'#8b79ac');
+assert.match(run('OverviewMap.legend()[1][0]'),/4–10 måneder/);
+run("OverviewMap.change('recentMonths',12)");
+assert.equal(run('OverviewMap.filters.months'),13,'Raising green threshold moves red threshold forward');
+run("OverviewMap.change('months',5)");
+assert.equal(run('OverviewMap.filters.recentMonths'),4,'Lowering red threshold moves green back');
+run("OverviewMap.change('months',0);OverviewMap.change('recentMonths','invalid')");
+assert.equal(run('OverviewMap.filters.months'),5);assert.equal(run('OverviewMap.filters.recentMonths'),4,'Invalid values cannot corrupt thresholds');
+run("OverviewMap.change('color','status')");assert.equal(get('overviewIntervals').hidden,true);
+run("OverviewMap.change('color','age')");assert.equal(get('overviewIntervals').hidden,false);
 assert.deepEqual(contracts.en,contracts.da);assert.deepEqual(results.en,results.da);assert.deepEqual(results.en[0],['folder']);assert.deepEqual(results.en[2],['out']);assert.deepEqual(results.en[4],['folder']);assert.deepEqual(results.en[6],['box']);
 run(`MapExport={members:()=>[{road:'Fiktiv Vej',number:'1',lng:10.005,lat:55.005,count:2},{road:'Fiktiv Vej',number:'1',lng:10.015,lat:55.015,count:1}]};OverviewMap.focus='folder';`);points.length=0;run('OverviewMap.draw()');assert.equal(points.length,3,'Overview map shows one red visit dot for each visit, including separate coordinates for the same house number');
 console.log('Map overview language preserves filter identifiers/results, numeric intervals, user text, counts, legend and read-only state.');
