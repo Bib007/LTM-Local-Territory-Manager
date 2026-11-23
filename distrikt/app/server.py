@@ -180,9 +180,17 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             self.send({'error':'Genindlæs appen, og prøv igen.'},status=403);return False
         return True
     def do_GET(self):
+        path=urlsplit(self.path).path
+        # Public, read-only liveness checks must not wait behind an expensive
+        # profile write or state snapshot. Preserve the usual host/LAN checks.
+        if path=='/api/ping':
+            if self.allowed(public=True):
+                try:self.send({'app':'Distrikt','version':VERSION})
+                except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
+            return
         # This machine-only route must precede profile_scope (accounts lock).
         # It never waits for Store/accounts, reads data, or permits mutations.
-        if urlsplit(self.path).path=='/api/runtime/probe':
+        if path=='/api/runtime/probe':
             return self.runtime_probe()
         with self.profile_scope() as permitted:
             if permitted:self._get()

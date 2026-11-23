@@ -49,8 +49,14 @@ class EditSnapshots:
             item=self._items.get(token)
             if not item or item['busy'] or (item['session'],item['module'],item['id'])!=(session,'workspace','workspace'):
                 raise ValueError('Edit snapshot is unavailable')
-            copied=self.create(session,'workspace','workspace',json.loads(zlib.decompress(item['record'])),protected=True)
-            self._items[copied]['until']=item['until']
+            # The packed snapshot is immutable. Forking an editor needs a
+            # separate lease, not another JSON decode and zlib recompression.
+            # Count its full size towards the existing per-server memory quota.
+            if (len(self._items)>=self.capacity or
+                    sum(record['size'] for record in self._items.values())+item['size']>self.max_bytes):
+                raise ValueError('Too many active edit snapshots')
+            copied=secrets.token_urlsafe(32)
+            self._items[copied]={**item,'busy':False,'protected':True}
             return copied
 
     def keep_workspace_alive(self,session,tokens):
