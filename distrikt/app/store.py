@@ -394,7 +394,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     # Client-supplied actor fields are never accepted.
                     data = {**data, '_actor_id':review.actor if review else None,
                             '_actor_name':getattr(review,'actor_name','') if review else ''}
-                if action in ('note.save','note.resolve','note.complete'):
+                if action in ('note.save','note.resolve','note.complete','note.reply.read'):
                     data={**data,'_task_actor_id':review.actor if review else None,
                           '_task_actor_name':getattr(review,'actor_name','') if review else ''}
                 result = self._mutate(action, data)
@@ -426,7 +426,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
     def _mutate(self, action, data, *, geographic=False, ib_address_only=False):
         # Domain boundary also applies in shared-login mode and to direct Store calls.
         # Never allow generic note actions to change a system IB review.
-        if (action in ('note.save','note.resolve','note.task','note.complete','note.reply.delete')
+        if (action in ('note.save','note.resolve','note.task','note.complete','note.reply.delete','note.reply.read')
                 or (action=='delete' and data.get('module')=='notes')) and is_ib_review_id(data.get('id')):
             raise PermissionError('Du har ikke rettighed til denne handling.')
         if action in ('ib.bulk.preview', 'ib.bulk.apply'):
@@ -441,7 +441,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         if action == 'followup.ignore':return self.followup_mutate(data)
         if action.startswith(('card.numbering.', 'area.numbering.')):return self.numbering_mutate(action,data)
         if action.startswith('setup.'):return self.setup_mutate(action,data)
-        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete','note.reply.delete'):
+        if action.startswith(('filter.','workflow.','card.restructure.','address.change.')) or action in ('backup.record','backup.snooze','note.task','note.complete','note.reply.delete','note.reply.read'):
             return self.workflow_mutate(action,data)
         if action in ('card.bulk.preview','card.bulk.create','card.bulk.edit.preview','card.bulk.edit','loan.correct.preview','loan.correct'):
             return self.admin_mutate(action,data)

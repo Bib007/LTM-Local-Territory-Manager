@@ -999,6 +999,39 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(task(self.admin)['resolved'])
         self.assertNotIn('reply',task(self.admin)['task_history'][0])
 
+    def test_task_reply_unread_notification_can_only_be_read_by_recipient(self):
+        editor,role,user=self.reader(['notes.view','notes.edit'])
+        self.assign_task(user)
+        def task(session):
+            return next(n for n in self.state(session)['notes'] if n['id']==self.note)
+        self.change(editor,self.state(editor),'note.resolve',{
+            'id':self.note,'resolved':True,'reply':'Fiktivt svar til opgavefordeleren',
+            'reply_target':task(editor)['reply_target']})
+        history=task(self.admin)['task_history']
+        entry=history[0]
+        self.assertTrue(entry['recipient_self'])
+        self.assertFalse(entry['read'])
+        self.assertNotIn('read_at',entry)
+        self.assertNotIn('read',task(editor)['task_history'][0])
+        self.assertNotIn('read_at',task(editor)['task_history'][0])
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.change(editor,self.state(editor),'note.reply.read',{
+                'id':self.note,'entry_id':entry['id'],
+                '_task_actor_id':self.state(self.admin)['profile']['user']['id']})
+        self.assertEqual(forbidden.exception.code,403)
+        self.assertNotIn('read_at',self.store.require('notes',self.note)['task_history'][0])
+        self.change(self.admin,self.state(self.admin),'note.reply.read',{
+            'id':self.note,'entry_id':entry['id'],'_task_actor_id':'forged'})
+        self.assertTrue(task(self.admin)['task_history'][0]['read'])
+        self.assertIn('read_at',self.store.require('notes',self.note)['task_history'][0])
+        self.assertTrue(task(self.login('Fiktiv admin','Fiktiv-password-123'))['task_history'][0]['read'])
+        # Repeated marking is harmless and cannot revive the notification.
+        self.change(self.admin,self.state(self.admin),'note.reply.read',{'id':self.note,'entry_id':entry['id']})
+        self.assertTrue(task(self.admin)['task_history'][0]['read'])
+        with self.assertRaises(urllib.error.HTTPError) as missing:
+            self.change(self.admin,self.state(self.admin),'note.reply.read',{'id':self.note,'entry_id':'missing'})
+        self.assertEqual(missing.exception.code,400)
+
     def test_task_ownership_directory_requires_note_access(self):
         session,role,user=self.reader(['users.manage'])
         state=self.state(session)
