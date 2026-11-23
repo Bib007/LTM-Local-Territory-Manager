@@ -11,7 +11,7 @@ SAVE={
  'note.save':('notes',{'text','card_id','recurrence'}),
  'ib.save':('ib',{'address_id','road','number','date','date_text','postcode'}),
  'area.save':('settings',{'name','map_color'}),
- 'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision','publisher_card_guidance','folder_enabled','location_labels'}),
+ 'settings.save':('settings',{'congregation','folder_minimum','rural_minimum','rural_mode','require_revision','publisher_card_guidance','folder_enabled','location_labels','history_years','overdue_message_template'}),
  'visit.save':('visits',{'date','note'}),
  'card.color':('cards',{'map_color'}),
  'geo.boundary':('cards',{'geo_polygon'}),
@@ -23,7 +23,7 @@ REVIEW_FIELDS={
  'publishers':{'name','group','group_role','pioneer'},'notes':{'text','card_id','recurrence','resolved'},
  'ib':{'address_id','road','number','date','date_text','postcode'},
  'visits':{'date','note'},'loans':{'assigned','cycle_start','returned','publisher_id'},
- 'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision publisher_card_guidance folder_enabled location_labels name map_color print_profiles saved_views'.split()),
+ 'settings':set('congregation folder_minimum rural_minimum rural_mode require_revision publisher_card_guidance folder_enabled location_labels history_years overdue_message_template name map_color print_profiles saved_views'.split()),
  'maps':{'image','name'},
 }
 
@@ -61,7 +61,7 @@ class ReviewedMutation:
             if field=='recurrence' and isinstance(value,dict):return {k:value.get(k) for k in ('frequency','weekday')}
             if field=='address_ids' and isinstance(value,list) and all(isinstance(v,str) for v in value):return sorted(value)
             if field=='map_color' and isinstance(value,str):return value.lower()
-            if field in ('name','number','text','road') and isinstance(value,str):return value.strip()
+            if field in ('name','number','text','road','overdue_message_template') and isinstance(value,str):return value.strip()
             if field in ('area_id','address_id','card_id'):return value or None
             if field in ('group','group_role') and value is None:return ''
             if field=='pioneer' and value is None:return False

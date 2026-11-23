@@ -178,7 +178,7 @@ FIELDS={
 }
 MODULE_RIGHT={'cards':'cards.view','archived_cards':'cards.view','publishers':'publishers.view',
               'loans':'loans.view','ib':'ib.view','notes':'notes.view','completions':'history.view','visits':'history.view'}
-CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance folder_enabled location_labels split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
+CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimum require_revision folder_minimum_configured publisher_card_guidance folder_enabled location_labels history_years overdue_message_template split_visit_limit split_suggestion_ignored print_profiles saved_views last_backup backup_snoozed_until backup_history onboarding'.split())
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
@@ -233,6 +233,10 @@ def state_for(raw,user):
     if 'settings.manage' not in p and 'publishers.view' in p:
         from store import DEFAULT_PUBLISHER_CARD_GUIDANCE
         result['settings']['publisher_card_guidance']=deepcopy(raw['settings'].get('publisher_card_guidance', DEFAULT_PUBLISHER_CARD_GUIDANCE))
+    if 'settings.manage' not in p and {'publishers.view','loans.view'}<=p and 'overdue_message_template' in raw['settings']:
+        result['settings']['overdue_message_template']=deepcopy(raw['settings']['overdue_message_template'])
+    if 'settings.manage' not in p and 'history.view' in p:
+        result['settings']['history_years']=raw['settings'].get('history_years',2)
     if 'backup.notify' not in p:
         for key in ('last_backup','backup_snoozed_until','backup_history'):result['settings'].pop(key,None)
     result['backup_status']=({'last_day':raw['backup_last_day'],'snoozed_until':raw['settings'].get('backup_snoozed_until')} if 'backup.notify' in p else None)
