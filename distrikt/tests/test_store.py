@@ -20,7 +20,7 @@ class StorageTests(unittest.TestCase):
         return self.s.mutate('loan.issue',{'card_id':c,'publisher_id':self.publisher,'date':date.today().isoformat(),'initial':initial})['id']
 
     def test_overdue_message_template_persists_and_rejects_invalid_input(self):
-        template = 'Hej {fornavn}\\n{kort}\\nKh {initialer}'
+        template = 'Hej {fornavn}\n{kort}\nKh {initialer}'
         self.s.mutate('settings.save', {'overdue_message_template': template})
         self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
         self.s.mutate('settings.save', {'congregation': 'Fiktiv menighed'})
@@ -28,7 +28,7 @@ class StorageTests(unittest.TestCase):
         self.s.close()
         self.s = Store(self.tmp.name)
         self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
-        for bad in ('', 'Ingen kortpladsholder', 'x' * 3001, 1234, '{kort}\\x00'):
+        for bad in ('', 'Ingen kortpladsholder', 'x' * 3001, 1234, '{kort}\x00'):
             with self.subTest(bad=repr(bad)):
                 with self.assertRaises(ValueError):
                     self.s.mutate('settings.save', {'overdue_message_template': bad})
