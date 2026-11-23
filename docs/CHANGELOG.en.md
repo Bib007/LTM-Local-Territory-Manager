@@ -6,6 +6,7 @@ This preserves the complete changelog as it stood before the Danish-default migr
 
 - **Dashboard estimated visits:** Each completion now counts the territory's current known visit total minus its linked do-not-call entries. Historically unknown completions can be estimated when the territory now has a known count. A card with 35 visits and 2 do-not-call entries contributes 33 per completion.
 - **Full previous service year in the monthly chart:** All twelve previous-year months display saved completions even when the corresponding current-year months have not started. The current month still uses the same calendar-date cut-off last year.
+- **Previous Stable fixes retained:** History imports accept either date order and keep confirmation input editable; S-13 uses the original form in calendar, service and rolling periods, with a clear period caption on adapted extracts.
 - This remains a present-day estimate, not recorded house visits. No card, do-not-call or completion records are modified. Stable 1.12.40 fixes are included without removing the functionality introduced in beta.1 and beta.2.
 
 ## 1.13.0-beta.2 · 2026-11-21
