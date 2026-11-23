@@ -204,17 +204,79 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   const total=Math.round(value),months=Math.floor(total/30),days=total%30;
   return ui(months===1?(days===1?'{months} måned og {days} dag':'{months} måned og {days} dage'):(days===1?'{months} måneder og {days} dag':'{months} måneder og {days} dage'),{months,days});
  },
- dashboardSummary(summary){
-  const s=summary.periods.service,pct=s.territories?Math.round(s.completed_territories/s.territories*100):0;
-  const ring=(portion,value,title,detail)=>`<div class="dashboardRing" style="--portion:${portion}%" aria-hidden="true"><div><strong>${value}</strong><span>${ui(title)}</span></div></div><p class="hint">${detail}</p>`;
-  return `${this.backupReminder()}<section class="dashboardHero"><div><span class="eyebrow">${ui('DIT LOKALE OVERBLIK')}</span><h2>${ui('Tjenesteår {year}',{year:yearLabel(serviceYear(summary.as_of))})}</h2><p>${ui(state.profile?.desk_only?'Kort og gennemgange — samlet ét sted.':'Kort, gennemgange og opfølgning — samlet ét sted.')}</p></div><div class="heroActions">${ProfilesUI.pageAllowed('Udlevering')?`<button class="primary" data-work="desk">${ui('Gå til daglig brug →')}</button>`:''}<span class="privacyBadge">${ui('Privat · på din egen server')}</span></div></section><div class="dashboardGrid"><section class="panel"><h3>${ui('Kortenes placering')}</h3><p class="srOnly">${ui('{out} af {total} kort er udleveret.',{out:s.assigned,total:s.territories})}</p>${ring(s.territories?s.assigned/s.territories*100:0,s.assigned,'udleveret',ui('Hjemme nu')+': '+s.home)}<div class="ringLegend"><i aria-hidden="true"></i>${ui('Udleverede distriktskort')} <span>○ ${ui('Hjemme')}</span></div></section><section class="panel"><h3>${ui('Dækning i tjenesteåret')}</h3><p class="srOnly">${ui('{covered} af {total} forskellige kort gennemgået',{covered:s.completed_territories,total:s.territories})}</p>${ring(pct,pct+'%','dækning',ui('{covered} af {total} forskellige kort gennemgået',{covered:s.completed_territories,total:s.territories}))}<p class="hint">${ui('Hvert kort tæller én gang her. Gentagne gennemgange tæller med i tallene nedenfor.')}</p></section></div><div class="dashboardMetrics">${[['Gennemgange i tjenesteåret',s.completions],['Aktuelle distrikter',s.territories],['Udleveret nu',s.assigned],['Hjemme nu',s.home]].map(([label,value])=>`<section class="panel"><small>${ui(label)}</small><strong>${Number(value)}</strong></section>`).join('')}</div>`;
+
+ dashboardLead(y,canWork){
+  return `<div class="dashboardLead"><div><span class="dashboardEyebrow">${ui('DIT LOKALE OVERBLIK')}</span><h2>${ui('Tjenesteår {year}',{year:yearLabel(y)})}</h2></div>${canWork?`<button class="primary dashboardWorkButton" data-work="desk">${ui('Gå til daglig brug →')}</button>`:''}</div>`;
  },
- dashboard(){if(state.dashboard_summary&&!ProfilesUI.has('cards.view','history.view','loans.view','publishers.view','notes.view','geo.view'))return this.dashboardSummary(state.dashboard_summary);
-  const y=serviceYear(state.today),start=`${y-1}-09-01`,s=this.stats(start,state.today),out=state.loans.filter(l=>!l.returned).length,total=state.cards.length,home=total-out,covered=state.cards.filter(c=>s.done.has(c.id)).length,pct=total?Math.round(covered/total*100):0,intervals=[];
+ dashboardCoverage(covered,total){
+  const pct=total?Math.round(covered/total*100):0,remaining=Math.max(0,total-covered),summary=ui('{covered} af {total} forskellige kort gennemgået',{covered,total});
+  return `<section class="panel dashboardCoverage" aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}">
+   <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div><span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span></div>
+   <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
+   <div class="dashboardProgressTrack" role="progressbar" aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span></div>
+   <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui('{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
+   <p class="srOnly">${summary}</p>
+  </section>`;
+ },
+ dashboardFact(label,value,{work='',action='',status=''}={}){
+  const content=`<span>${ui(label)}</span><strong>${Number(value).toLocaleString('da-DK')}</strong>`;
+  return work?`<button class="dashboardFact" data-work="${work}">${content}</button>`:
+   action?`<button class="dashboardFact" data-action="${action}" data-status="${esc(status)}">${content}</button>`:
+   `<div class="dashboardFact">${content}</div>`;
+ },
+ dashboardSummary(summary){
+  const s=summary.periods.service,year=serviceYear(summary.as_of),canWork=ProfilesUI.pageAllowed('Udlevering');
+  return `<div class="dashboardHome" data-dashboard-layout="compact-summary">
+    ${this.dashboardLead(year,canWork)}
+    <div class="dashboardPrimary dashboardPrimarySummary">
+     ${this.dashboardCoverage(s.completed_territories,s.territories)}
+     <section class="panel dashboardSpotlight"><small>${ui('Gennemgange i tjenesteåret')}</small><strong class="dashboardSpotlightNumber">${Number(s.completions)}</strong></section>
+     <section class="panel dashboardSpotlight"><small>${ui('Aktuelle distrikter')}</small><strong class="dashboardSpotlightNumber">${Number(s.territories)}</strong></section>
+    </div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3></div>
+    <div class="dashboardQuickFacts">
+      ${this.dashboardFact('Udleveret nu',s.assigned)}
+      ${this.dashboardFact('Hjemme nu',s.home)}
+      ${this.dashboardFact('Gennemgange i tjenesteåret',s.completions)}
+      ${this.dashboardFact('Aktuelle distrikter',s.territories)}
+    </div>
+    ${this.backupReminder()}
+   </div>`;
+ },
+ dashboard(){
+  if(state.dashboard_summary&&!ProfilesUI.has('cards.view','history.view','loans.view','publishers.view','notes.view','geo.view'))return this.dashboardSummary(state.dashboard_summary);
+  const y=serviceYear(state.today),start=`${y-1}-09-01`,s=this.stats(start,state.today),ids=new Set(state.cards.map(c=>c.id));
+  const out=new Set(state.loans.filter(l=>!l.returned&&ids.has(l.card_id)).map(l=>l.card_id)).size,total=state.cards.length,home=total-out,covered=state.cards.filter(c=>s.done.has(c.id)).length,intervals=[];
   for(const c of [...state.cards,...(state.archived_cards||[])]){const dates=[...new Set(state.completions.filter(e=>e.card_id===c.id).flatMap(e=>[e.date,e.previous_completed]).filter(Boolean))].sort();for(let i=1;i<dates.length;i++)intervals.push(dayDiff(dates[i],dates[i-1]));}
-  const avg=intervals.length?this.intervalLabel(intervals.reduce((a,b)=>a+b,0)/intervals.length):null,open=this.actionableTasks().length,folder=state.settings.folder_enabled===false?0:state.cards.filter(c=>c.in_folder&&!loanFor(c.id)).length;
-  const ring=(value,title,count,detail)=>`<div class="dashboardRing" style="--portion:${value}%" aria-hidden="true"><div><strong>${count}</strong><span>${ui(title)}</span></div></div><p class="hint">${detail}</p>`;
-  return `${typeof Onboarding!=='undefined'?Onboarding.panel():''}${this.backupReminder()}${this.recurringTasks()}${this.addressTaskPanel(true)}<section class="dashboardHero"><div><span class="eyebrow">${ui('DIT LOKALE OVERBLIK')}</span><h2>${ui('Tjenesteår {year}',{year:yearLabel(y)})}</h2><p>${ui('Kort, gennemgange og opfølgning — samlet ét sted.')}</p></div><div class="heroActions"><button class="primary" data-work="desk">${ui('Gå til daglig brug →')}</button><span class="privacyBadge">${ui('Privat · på din egen server')}</span></div></section>${!total?`<section class="dashboardStart panel"><div><h3>${ui('Begynd med dit første kort')}</h3><p class="hint">${ui('Et kortnummer er nok til at komme i gang. Adresser og grænser kan tilføjes senere.')}</p></div><button class="primary" data-action="new-card">${ui('Tilføj første kortnummer')}</button></section>`:''}<div class="dashboardShortcuts">${state.settings.folder_enabled===false?'':`<button data-action="stock" data-status="Kort i mappen"><span>${ui('Kort i mappen')}</span><strong>${folder}</strong></button>`}<button data-action="stock" data-status="Kort i kassen"><span>${ui('Kort i kassen')}</span><strong>${home-folder}</strong></button><button data-work="tasks"><span>${ui('Åbne opgaver')}</span><strong>${open}</strong></button></div><div class="dashboardGrid"><section class="panel"><h3>${ui('Kortenes placering')}</h3><p class="srOnly">${ui('{out} af {total} kort er udleveret.',{out,total})}</p>${ring(total?out/total*100:0,'udleveret',out,ui(state.settings.folder_enabled===false?'{home} ledige kort hjemme · {total} kort i alt':'{home} hjemme · {folder} i mappen · {total} kort i alt',{home,folder,total}))}<div class="ringLegend"><i aria-hidden="true"></i>${ui('Udleverede distriktskort')} <span>○ ${ui('Hjemme')}</span></div></section><section class="panel"><h3>${ui('Dækning i tjenesteåret')}</h3><p class="srOnly">${ui('{covered} af {total} forskellige kort gennemgået',{covered,total})}</p>${ring(pct,'dækning',pct+'%',ui('{covered} af {total} forskellige kort gennemgået',{covered,total}))}<p class="hint">${ui('Hvert kort tæller én gang her. Gentagne gennemgange tæller med i tallene nedenfor.')}</p></section></div><div class="dashboardMetrics"><section class="panel"><small>${ui('Gennemgange i tjenesteåret')}</small><strong>${s.events.length}</strong><span>${ui('Alle gennemgange tæller')}</span></section><section class="panel"><small>${ui('Anslåede besøg ved gennemgange')}</small><strong>${s.visits.toLocaleString('da-DK')}</strong><small>${ui('Kortets aktuelle besøgstal minus IB tælles for hver gennemgang.')}</small>${s.unknownVisits?`<small>${ui('Gennemgange uden kendt besøgstal er udeladt fra besøgsskønnet.')}</small>`:''}<span>${ui('Ikke en registrering af faktiske husbesøg')}</span></section><section class="panel"><small>${ui('Gennemsnit mellem gennemgange')}</small><strong class="metricText">${avg!==null?avg:ui('Ikke nok historik endnu')}</strong><span>${ui('{count} kendte intervaller · ikke en prognose',{count:intervals.length})}</span><span class="hint">${ui('Omregnet med 30 dage pr. måned.')}</span></section><button class="panel taskMetric" data-work="tasks"><small>${ui('Åbne opgaver')}</small><strong>${open}</strong><span>${ui('Se opgaver →')}</span></button></div><div class="dashboardLower"><section class="panel dashboardTrend">${this.dashboardChart(start,`${y}-08-31`)}</section>${this.followupsSummary()}</div>`;
+  const avg=intervals.length?this.intervalLabel(intervals.reduce((a,b)=>a+b,0)/intervals.length):ui('Ikke nok historik endnu');
+  const open=this.actionableTasks().length,folder=state.settings.folder_enabled===false?0:state.cards.filter(c=>c.in_folder&&!loanFor(c.id)).length,box=Math.max(0,home-folder);
+  return `<div class="dashboardHome" data-dashboard-layout="compact">
+    ${this.dashboardLead(y,true)}
+    <div class="dashboardPrimary">
+      ${this.dashboardCoverage(covered,total)}
+      <section class="panel dashboardSpotlight dashboardAverage">
+       <small>${ui('Gennemsnit mellem gennemgange')}</small>
+       <strong class="dashboardAverageValue">${avg}</strong>
+      </section>
+      <section class="panel dashboardSpotlight dashboardVisits">
+       <small>${ui('Anslåede besøg ved gennemgange')}</small>
+       <strong class="dashboardSpotlightNumber">${s.visits.toLocaleString('da-DK')}</strong>
+       <span class="dashboardSpotlightNote">${ui('Kortets aktuelle besøgstal minus IB tælles for hver gennemgang.')}</span>
+       ${s.unknownVisits?`<span class="dashboardUnknownVisits">${ui('Gennemgange uden kendt besøgstal er udeladt fra besøgsskønnet.')}</span>`:''}
+      </section>
+    </div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><span>${ui('Aktuelle distrikter')}: ${total}</span></div>
+    <div class="dashboardQuickFacts">
+      ${this.dashboardFact('Gennemgange i tjenesteåret',s.events.length)}
+      ${this.dashboardFact('Udleveret nu',out)}
+      ${state.settings.folder_enabled===false?'':this.dashboardFact('Kort i mappen',folder,{action:'stock',status:'Kort i mappen'})}
+      ${this.dashboardFact('Kort i kassen',box,{action:'stock',status:'Kort i kassen'})}
+      ${this.dashboardFact('Åbne opgaver',open,{work:'tasks'})}
+    </div>
+    ${!total?`<section class="dashboardStart panel"><div><h3>${ui('Begynd med dit første kort')}</h3><p class="hint">${ui('Et kortnummer er nok til at komme i gang. Adresser og grænser kan tilføjes senere.')}</p></div><button class="primary" data-action="new-card">${ui('Tilføj første kortnummer')}</button></section>`:''}
+    <div class="dashboardLower"><section class="panel dashboardTrend">${this.dashboardChart(start,`${y}-08-31`)}</section>${this.followupsSummary()}</div>
+    <div class="dashboardBelow">${typeof Onboarding!=='undefined'?Onboarding.panel():''}${this.backupReminder()}${this.recurringTasks()}${this.addressTaskPanel(true)}</div>
+   </div>`;
  },
 
  addressTaskProgress(n){
