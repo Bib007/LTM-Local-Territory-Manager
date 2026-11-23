@@ -35,7 +35,7 @@ class HistoryImportTests(unittest.TestCase):
         self.assertEqual([r['status'] for r in p['rows']],['duplicate','ready','duplicate','outside'])
         self.assertEqual(p['count'],1)
     def test_selected_history_years_include_older_closed_loans_and_completions(self):
-        self.card2()
+        self.s.mutate('card.save', {'number': '002'})
         middle = (date.today() - timedelta(days=3*365)).isoformat()
         outside = (date.today() - timedelta(days=6*365)).isoformat()
         self.s.mutate('settings.save', {'history_years': 5})
