@@ -41,6 +41,20 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
     const b = await open(f.admin);
     const reader = await open(f.reader);
     const deleteButton = (page, id) => page.locator(`[data-action="delete"][data-module="loans"][data-id="${id}"]`);
+    // Expand the redesigned, nested history sections before clicking an assignment.
+    async function clickDelete(page, id) {
+      const button = deleteButton(page, id);
+      const card = page.locator('.hg-card').filter({has: button});
+      const history = card.locator('details.hg-details');
+      if (await history.count() && !(await history.evaluate(node => node.open))) {
+        await history.locator(':scope > summary').click();
+      }
+      const older = button.locator('xpath=ancestor::details[not(contains(concat(" ", normalize-space(@class), " "), " hg-details "))]');
+      if (await older.count() && !(await older.evaluate(node => node.open))) {
+        await older.locator(':scope > summary').click();
+      }
+      await button.click();
+    }
     const form = a.locator('#deleteLoanForm');
     const dialog = a.locator('#dialog');
     async function history(page) {
@@ -62,14 +76,14 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
 
     await history(a);
     const before = await a.evaluate(() => ({completions: state.completions, notes: state.notes}));
-    await a.getByText('3 tidligere udleveringer', {exact: true}).click();
-    await deleteButton(a, f.mistake).click();
+    assert.equal(await a.getByText('3 tidligere udleveringer', {exact: true}).count(), 1);
+    await clickDelete(a, f.mistake);
     assert.match(await dialog.innerText(), /Kort F42[\s\S]*Fictional mistaken[\s\S]*4\.10\.2025[\s\S]*Afleveret/);
     await form.getByRole('button', {name: 'Annuller'}).click();
     assert.equal(await dialog.isVisible(), false);
     assert.equal(await deleteButton(a, f.mistake).evaluate(button => button === document.activeElement), true);
 
-    await deleteButton(a, f.mistake).click();
+    await clickDelete(a, f.mistake);
     assert.ok(await form.getAttribute('data-history-token'),'The viewed history owns a scoped delete token');
     // A background/local setting save must not force repeated history reloads.
     await b.evaluate(async()=>{await refresh();await mutate('print.profile.save',{side:'front',profile:defaultPrintProfile('front')},{close:false});});
@@ -91,16 +105,16 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
 
     await a.locator('#navigationLanguage').selectOption('en');
     await history(a);
-    await deleteButton(a, f.archived).click();
+    await clickDelete(a, f.archived);
     assert.match(await dialog.innerText(), /Delete erroneous assignment\?[\s\S]*Card F43[\s\S]*archived after merging[\s\S]*Unknown[\s\S]*Returned/);
     await a.keyboard.press('Escape');
     await dialog.waitFor({state: 'hidden'});
-    await deleteButton(a, f.archived).click();
+    await clickDelete(a, f.archived);
     await form.getByRole('button', {name: 'Delete assignment'}).click();
     await form.waitFor({state: 'hidden'});
     assert.equal(await deleteButton(a, f.archived).count(), 0);
 
-    await deleteButton(a, f.active).click();
+    await clickDelete(a, f.active);
     assert.match(await dialog.innerText(), /Fictional active[\s\S]*Still assigned/);
     await form.getByRole('button', {name: 'Delete assignment'}).click();
     assert.equal(await form.locator('select').evaluate(select => select.validity.valueMissing), true);
@@ -113,7 +127,7 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
     await form.getByRole('alert').getByText('History has changed. Refresh and select the assignment again.').waitFor();
     await form.getByRole('button', {name: 'Cancel'}).click();
     await a.evaluate(() => refresh());
-    await deleteButton(a, f.active).click();
+    await clickDelete(a, f.active);
     await form.getByLabel('Where is the physical card kept?').selectOption('folder');
     await form.getByRole('button', {name: 'Delete assignment'}).click();
     await form.waitFor({state: 'hidden'});
@@ -125,7 +139,7 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
     await a.waitForFunction(id => loanFor(id)?.cycle_start === '2025-10-11' && !card(id).in_folder, f.card);
 
     await history(a);
-    await deleteButton(a, f.active).click();
+    await clickDelete(a, f.active);
     await form.getByLabel('Where is the physical card kept?').selectOption('box');
     await form.getByRole('button', {name: 'Delete assignment'}).click();
     await form.waitFor({state: 'hidden'});
