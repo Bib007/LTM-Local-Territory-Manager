@@ -22,7 +22,11 @@ const OverdueLoans={
   for(const row of rows){const id=row.loan.publisher_id;if(!groups.has(id))groups.set(id,{id,name:row.name,rows:[]});groups.get(id).rows.push(row);}
   return [...groups.values()].sort((a,b)=>cmp(a.name,b.name)||cmp(a.id,b.id));
  },
- loanAge(loan){return elapsedLabel(loan.assigned||loan.cycle_start);},
+ loanAge(loan){
+  const parts=elapsedParts(loan.assigned||loan.cycle_start);
+  if(!parts)return I18n.text('Ingen dato registreret');
+  return I18n.format('{months} måned'+(parts.months===1?'':'er')+' og {days} dag'+(parts.days===1?'':'e')+' siden',parts);
+ },
  row(row,showPublisher=false){
   const {loan,card:c}=row;
   return '<tr>'+(showPublisher?'<td>'+esc(row.name)+'</td>':'')+'<td><button class="link" data-action="detail" data-id="'+esc(c.id)+'">'+ui('Kort')+' '+esc(c.number)+'</button></td><td>'+fmt(loan.assigned)+'</td><td>'+this.loanAge(loan)+'</td>'+(showPublisher?'<td><button data-overdue="message" data-id="'+esc(loan.publisher_id)+'">'+ui('Generer besked')+'</button></td>':'')+'</tr>';
