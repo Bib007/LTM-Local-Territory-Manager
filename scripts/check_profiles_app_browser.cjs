@@ -19,12 +19,12 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   process.on('unhandledRejection',e=>console.error(e));
   async function newPage(width){const context=await browser.newContext({viewport:{width,height:900}});await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await context.route('**/*',route=>{assert.equal(new URL(route.request().url()).origin,fixture.origin,'Only the temporary local server is contacted');return route.continue();});const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));return page;}
   async function ready(page){await page.waitForFunction(()=>typeof state!=='undefined'&&state&&SaveStatus.kind==='saved');}
-  async function postponePersonalGuide(page){await page.waitForFunction(()=>typeof PersonalGuide!=='undefined'&&PersonalGuide.data!==null);const later=page.locator('[data-personal-guide=later]');if(await later.count()){await later.click();await page.waitForFunction(()=>!document.querySelector('#personalGuideTour'));}}
+  async function assertNoPersonalGuide(page){await page.waitForFunction(()=>typeof state!=='undefined'&&state!==null);assert.equal(await page.locator('#personalGuideTour').count(),0);assert.equal(await page.evaluate(()=>typeof PersonalGuide),'undefined');}
   async function login(page,name,password){await page.goto(fixture.origin);await page.locator('#loginName').fill(name);await page.locator('#loginPassword').fill(password);await page.locator('#loginForm button').click();await ready(page);const intro=page.locator('[data-profile=welcome-done]'),seen=!!await intro.count();if(seen)await intro.click();return seen;}
   const admin=await newPage(1440);watched=admin;await admin.goto(fixture.origin);await ready(admin);
   await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=users]').click();await admin.locator('[data-profile=activate]').click();
   await admin.locator('#profileActivate input[name=name]').fill('Fiktiv admin');await admin.locator('#profileActivate input[name=password]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=repeat]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=confirmation]').fill('AKTIVÉR PROFILER');await admin.locator('#profileActivate button').click();
-  await admin.locator('#loginName').waitFor();await login(admin,'Fiktiv admin','Fiktiv-password-123');await postponePersonalGuide(admin);
+  await admin.locator('#loginName').waitFor();await login(admin,'Fiktiv admin','Fiktiv-password-123');await assertNoPersonalGuide(admin);
   // Regression: in profile mode the values were stored successfully but the
   // filtered /api/state response silently dropped them and reset the inputs.
   await admin.locator('[data-navigation="2:2"]').click();
@@ -37,7 +37,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   for(const [role,value] of Object.entries(suggested))
     assert.equal(await admin.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,
       'Settings must not revert to default counts after the confirmed save');
-  await admin.reload();await ready(admin);await postponePersonalGuide(admin);
+  await admin.reload();await ready(admin);await assertNoPersonalGuide(admin);
   await admin.locator('[data-navigation="2:2"]').click();
   await admin.locator('[data-work=settings-tab][data-value=general]').click();
   for(const [role,value] of Object.entries(suggested))
@@ -64,7 +64,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await admin.locator(`#profileRoles input[value="${role}"]`).isChecked(),true);
   await admin.locator('#profileUser > button.primary').click();
   await admin.waitForFunction(()=>[...(document.querySelector('#profileUser select')?.options||[])].some(o=>o.text==='Fiktiv redaktør'));
-  const editor=await newPage(390);await login(editor,'Fiktiv redaktør','Fiktiv-password-456');await postponePersonalGuide(editor);assert.equal(await editor.locator('#nav [data-profile=admin]').count(),0);
+  const editor=await newPage(390);await login(editor,'Fiktiv redaktør','Fiktiv-password-456');await assertNoPersonalGuide(editor);assert.equal(await editor.locator('#nav [data-profile=admin]').count(),0);
   assert.ok((await editor.locator('.profileWelcome').innerText()).includes('Velkommen, Fiktiv redaktør'));
   assert.equal(await editor.locator('#backupReminder').count(),0);
   assert.equal(await editor.locator('.dashboardRing').count(),2,'Restricted profiles also retain home styling');assert.equal(await editor.locator('.reportOverview').count(),0);assert.deepEqual(await editor.evaluate(()=>state.loans),[],'Home presentation must not grant raw loan access');
@@ -143,7 +143,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await editor.waitForFunction(()=>!WriteGuard.uncertain);
   assert.equal(await editor.evaluate(()=>state.notes.filter(n=>n.text==='Fiktiv afbrudt kvittering').length),1);
   assert.equal(await editor.evaluate(()=>state.notes.some(n=>n.text==='Må ikke sendes igen')),false);
-  await postponePersonalGuide(editor);
+  await assertNoPersonalGuide(editor);
   await editor.locator('.mobileMenu').click();await editor.locator('[data-action=logout]').click();await editor.locator('#loginName').waitFor();
   await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=connections]').click();
   await admin.locator('#driveConnection').waitFor();assert.equal(await admin.locator('[data-profile=activate]').count(),0);assert.equal(await admin.locator('#profileUser').isVisible(),false);
@@ -293,12 +293,12 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('#profileAccountPreview input[name=backup]').setInputFiles(backupPath);await admin.locator('#profileAccountPreview input[name=password]').fill('Fiktiv-password-123');await admin.locator('#profileAccountPreview button').click();
   await admin.locator('#profileAccountApply').waitFor();await admin.locator('#profileAccountApply input[name=confirmation]').fill('GENDAN KONTI');await admin.locator('#profileAccountApply button').click();await admin.locator('#loginName').waitFor();
   assert.equal(await login(admin,'Fiktiv admin','Fiktiv-password-123'),false,'Restored introduction remains completed');
-  await postponePersonalGuide(admin);
+  await assertNoPersonalGuide(admin);
   // Real authenticated desktop/mobile flow with independent accounts. No
   // invented live data, remote origins or manually refreshed task counts.
   const mobileTasks=await newPage(390);
   await login(mobileTasks,'Fiktiv redaktør','Fiktiv-password-456');
-  await postponePersonalGuide(mobileTasks);
+  await assertNoPersonalGuide(mobileTasks);
   assert.equal(await admin.locator('.welcomeTasksNotice').count(),0);
   assert.equal(await mobileTasks.locator('.welcomeTasksNotice').count(),0);
   const mobileUser=await admin.evaluate(()=>state.task_users.find(u=>u.name==='Fiktiv redaktør')?.id);
