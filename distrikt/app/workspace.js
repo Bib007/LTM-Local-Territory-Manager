@@ -215,7 +215,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div><span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span></div>
    <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
    <div class="dashboardProgressTrack" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span></div>
-   <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui('{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
+   <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui(remaining===1?'1 kort tilbage':'{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
    <p class="srOnly">${summary}</p>
   </section>`;
  },
