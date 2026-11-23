@@ -44,7 +44,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     assert.equal(await admin.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,
       'Saved card guidance must survive a real server reload');
   await admin.locator('#nav [data-navigation="0:0"]').click();
-  assert.equal(await admin.locator('.dashboardRing').count(),2,'Profile administrators retain the familiar home rings');assert.equal(await admin.locator('.dashboardTrend').count(),1,'Home retains the monthly comparison');assert.equal(await admin.locator('.reportOverview').count(),0,'Report layout stays off the home page');
+  assert.equal(await admin.locator('.dashboardCoverage [role="progressbar"]').count(),1,'Administrators see service-year coverage');assert.equal(await admin.locator('.dashboardTrend').count(),1,'Home retains the monthly comparison');assert.equal(await admin.locator('.reportOverview').count(),0,'Report layout stays off the home page');
   await openUsers(admin);await admin.locator('#profileRole input[name=name]').fill('Kortredaktør');
   for(const right of ['dashboard.view','cards.view','cards.edit','geo.view','notes.view','notes.edit','presence.view','settings.manage'])await admin.locator(`#profilePermissions input[value="${right}"]`).check();
   await admin.evaluate(()=>window.profileDraftNode=document.querySelector('#profileRole input[name=name]'));
@@ -67,7 +67,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const editor=await newPage(390);await login(editor,'Fiktiv redaktør','Fiktiv-password-456');await postponePersonalGuide(editor);assert.equal(await editor.locator('#nav [data-profile=admin]').count(),0);
   assert.ok((await editor.locator('.profileWelcome').innerText()).includes('Velkommen, Fiktiv redaktør'));
   assert.equal(await editor.locator('#backupReminder').count(),0);
-  assert.equal(await editor.locator('.dashboardRing').count(),2,'Restricted profiles also retain home styling');assert.equal(await editor.locator('.reportOverview').count(),0);assert.deepEqual(await editor.evaluate(()=>state.loans),[],'Home presentation must not grant raw loan access');
+  assert.equal(await editor.locator('.dashboardCoverage [role="progressbar"]').count(),1,'Restricted profiles see compact coverage');assert.equal(await editor.locator('.reportOverview').count(),0);assert.deepEqual(await editor.evaluate(()=>state.loans),[],'Home presentation must not grant raw loan access');
   await editor.locator('.mobileMenu').click();await editor.locator('[data-navigation="2:2"]').click();
   assert.equal(await editor.locator('[data-work=settings-tab][data-value=connections]').count(),0);
   assert.equal(await editor.locator('[data-work=settings-tab][data-value=users]').count(),0);
