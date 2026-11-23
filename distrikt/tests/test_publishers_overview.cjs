@@ -8,7 +8,7 @@ const context={console,Date,Intl,Number,String,Math,Map,Set,JSON,Array,Object,Pr
  window:{addEventListener(){}},document:{addEventListener(){},getElementById:get,querySelector(){return {content:'FICTIONAL_TOKEN'};},querySelectorAll(){return [];}},
  fetch(){throw Error('No network requests allowed for publisher view');}};
 vm.createContext(context);
-for(const name of ['i18n.js','workspace.js'])vm.runInContext(read(name),context);
+for(const name of ['i18n.js','workspace.js','overdue-loans.js'])vm.runInContext(read(name),context);
 const source=read('app.js');
 vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),context);
 const run=code=>vm.runInContext(code,context);

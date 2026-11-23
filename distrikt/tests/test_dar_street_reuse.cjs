@@ -17,7 +17,7 @@ const geo={
 const cardData={id:'f-card',number:'F1',addresses:[{road:'Fictional Søvej',numbers:'1-9'}]};
 const form={reportValidity:()=>true,elements:{postcode_0:{value:'9999'},refresh_roads:{checked:false}}};
 const c={document:{addEventListener(){}},GeoUI:geo,card:id=>id==='f-card'?cardData:null,
- el:id=>id==='dialog'?dialog:null,closeDialog(){closes++;dialog.open=false;},form};
+ openDialog:{generation:0},el:id=>id==='dialog'?dialog:null,closeDialog(){closes++;dialog.open=false;},form};
 vm.createContext(c);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/street-suggestions.js'),'utf8'),c);
 vm.runInContext('StreetSuggestions.next=async function(){this.nextCalls=(this.nextCalls||0)+1;}',c);

@@ -14,7 +14,7 @@ The machine running the Python app stores the private SQLite files. A desktop br
 | Approved public map | Reviewed PNG with card number/name, boundary and allowed visit points | Chosen Google Drive account |
 | Private backup export | File downloaded to your browser/device | Wherever you subsequently choose to store it |
 
-Shared card PDFs show all saved address points with identical red dots and house numbers. The do-not-call list is on the back of the physical card. The image omits do-not-call status, notes, publisher names, assignment history and database files.
+Shared card PDFs show permitted address points with identical red dots and house numbers, plus a readable address index from page 3 onward. The index lists street, house number, optional postcode and only floor/door details approved for public sharing. Protected apartment details for do-not-call addresses are withheld; the private do-not-call list stays on the physical card back. The PDF excludes do-not-call status, notes, publisher names, assignment history and database files.
 
 An IB change requires a fresh browser-generated image and approval. The server can upload an approved image but does not independently generate a new OSM screenshot. Removal of obsolete public access depends on reaching Google; inspect the sharing status and resolve failures.
 

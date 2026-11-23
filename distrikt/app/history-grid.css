@@ -1,24 +1,74 @@
-/* Compact, keyboard-first history grid. Horizontal scrolling on narrow displays. */
-.hg-panel .hg-toolbar{display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;margin:12px 0}
-.hg-toolbar label{display:flex;flex-direction:column;gap:5px;min-width:180px}
-.hg-toolbar input{min-width:160px}
-.hg-scroll{max-height:70vh;overflow:auto;overscroll-behavior:contain}
-.hg-table{width:100%;min-width:980px;border-collapse:collapse}
-.hg-table th{position:sticky;top:0;z-index:1;background:var(--surface,#fff);white-space:nowrap;text-align:left}
-.hg-table td{vertical-align:top;min-width:132px;padding:9px 7px}
-.hg-table td:first-child{min-width:145px}
-.hg-table td small{display:block;margin-top:3px}
-.hg-table td:nth-child(6){min-width:190px}
-.hg-table td:last-child{min-width:180px}
-.hg-table .hg-warning{outline:1px solid var(--warn,#bc7738)}
-.hg-date{display:flex;align-items:center;gap:3px;flex-wrap:nowrap}
-.hg-date-text{width:108px;min-width:108px;max-width:108px;font-variant-numeric:tabular-nums}
-.hg-date-picker{width:38px;min-width:38px;max-width:38px;padding:4px 0;color:transparent}
+/* History: readable territory cards with a consistent two-period timeline.
+   All editing remains in the existing history-grid actions; no data is duplicated. */
+.hg-panel{min-width:0}
+.hg-intro{display:grid;gap:7px;margin-bottom:22px}
+.hg-intro h2{margin:0}
+.hg-intro .hint{margin:0;max-width:70ch;line-height:1.55}
+.hg-toolbar{display:grid;grid-template-columns:minmax(230px,1.4fr) minmax(175px,.7fr) auto;align-items:end;gap:12px;margin-bottom:16px}
+.hg-toolbar label{display:grid;min-width:0;gap:6px;font-size:13px;color:var(--muted)}
+.hg-toolbar label input,.hg-toolbar label select{width:100%;min-width:0;color:var(--text)}
+.hg-toolbar-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hg-toolbar-actions button{white-space:normal}
+.hg-list{display:grid;gap:16px;margin:20px 0}
+.hg-card{min-width:0;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}
+.hg-card.hg-warning{border-color:var(--warn,#bc7738)}
+.hg-card-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;padding-bottom:17px}
+.hg-card-identity{display:flex;align-items:flex-start;min-width:0;gap:12px}
+.hg-card-number{display:grid;place-items:center;flex:0 0 auto;min-width:52px;min-height:45px;padding:8px 11px;border-radius:9px;background:var(--surface);font-size:20px;font-variant-numeric:tabular-nums;line-height:1.2}
+.hg-card-description{min-width:0}
+.hg-card-description h3{margin:0 0 5px;font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+.hg-card-description small{display:block;color:var(--muted);font-size:12px;line-height:1.5}
+.hg-card-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:9px;margin-left:auto}
+.hg-card-actions button{margin:0}
+.hg-status{display:inline-flex;align-items:center;max-width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.hg-status-active{border-color:var(--accent);color:var(--link)}
+.hg-status-warning{border-color:var(--warn,#bc7738);color:var(--text)}
+.hg-status-neutral{color:var(--muted)}
+.hg-periods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.hg-period{min-width:0;padding:15px 17px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.hg-period-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.hg-period-heading strong{font-size:14px}
+.hg-period-state{flex:0 0 auto;font-size:11px;color:var(--muted)}
+.hg-period-publisher{min-height:18px;margin:0 0 16px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.hg-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.hg-field{min-width:0}
+.hg-field-label{display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.hg-date{display:flex;align-items:center;gap:6px;min-width:0}
+.hg-date-text{flex:1 1 auto;min-width:0;width:100%;max-width:none;font-size:13px;font-variant-numeric:tabular-nums}
+.hg-date-picker{flex:0 0 38px;width:38px;min-width:38px;max-width:38px;padding:4px 0;color:transparent}
 .hg-date-picker::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer}
-.hg-empty{display:inline-block;min-width:100px;text-align:center;opacity:.65}
-.hg-table button{margin:5px 0 0}
-.hg-full{min-width:260px;max-height:350px;overflow:auto;padding:8px 0}
-.hg-full h4{margin:10px 0 5px}
-.hg-full .historyLoan{padding:8px 0;border-bottom:1px solid var(--line)}
-.hg-table input:focus-visible,.hg-table button:focus-visible{outline:2px solid var(--focus,#1d6dba);outline-offset:2px}
-@media(max-width:780px){.hg-panel .hg-toolbar{align-items:stretch}.hg-toolbar label{min-width:130px}.hg-scroll{max-height:65vh}.hg-table{min-width:970px}}
+.hg-no-loans{grid-column:1/-1;margin:0;padding:20px 16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.hg-details{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}
+.hg-details>summary,.hg-help>summary{width:fit-content;max-width:100%;cursor:pointer;color:var(--link);font-size:13px;font-weight:600}
+.hg-details[open]>summary{margin-bottom:12px}
+.hg-full{max-height:420px;overflow:auto;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.hg-full h4{margin:12px 0 6px}
+.hg-full .historyLoan{padding:10px 0;border-bottom:1px solid var(--line)}
+.hg-full details{margin:12px 0}
+.hg-full details summary{cursor:pointer}
+.hg-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.hg-footer .hint{margin:0}
+.hg-help{margin-top:18px;padding-top:12px;border-top:1px solid var(--line)}
+.hg-help p{max-width:85ch;font-size:13px;line-height:1.55;color:var(--muted)}
+.hg-empty-state{margin:0;padding:24px;text-align:center;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.hg-panel input:focus-visible,.hg-panel select:focus-visible,.hg-panel button:focus-visible,.hg-panel summary:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:2px}
+@media(max-width:1120px){
+ .hg-toolbar{grid-template-columns:minmax(220px,1fr) minmax(160px,.55fr)}
+ .hg-toolbar-actions{grid-column:1/-1}
+ .hg-periods{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+ .hg-panel{padding:16px}
+ .hg-toolbar{grid-template-columns:minmax(0,1fr)}
+ .hg-toolbar-actions{grid-column:auto}
+ .hg-toolbar-actions button{flex:1 1 auto}
+ .hg-card{padding:14px}
+ .hg-card-header{gap:12px}
+ .hg-card-actions{justify-content:flex-start;margin-left:0;width:100%}
+ .hg-card-description h3{font-size:15px}
+ .hg-card-number{min-width:46px;min-height:42px;font-size:18px}
+ .hg-period{padding:14px}
+ .hg-fields{grid-template-columns:1fr;gap:11px}
+ .hg-date-text{min-height:40px}
+ .hg-date-picker{min-height:40px}
+}

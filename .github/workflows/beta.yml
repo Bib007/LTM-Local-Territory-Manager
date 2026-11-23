@@ -165,3 +165,10 @@ jobs:
           if ! gh release view "v$BETA_VERSION" >/dev/null 2>&1; then
             gh release create "v$BETA_VERSION" "dist/LTM-HA-v$BETA_VERSION.zip" "dist/LTM-HA-v$BETA_VERSION.zip.sha256" "dist/LTM-v$BETA_VERSION.zip" "dist/LTM-v$BETA_VERSION.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "LTM $BETA_VERSION · HA-beta" --notes-file docs/BETA-NOTES.md
           fi
+      - name: Archive reviewed branches after the verified consolidated beta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/test_cleanup_beta_branches.py
+          git fetch --no-tags origin '+refs/heads/*:refs/remotes/origin/*'
+          python scripts/cleanup_beta_branches.py

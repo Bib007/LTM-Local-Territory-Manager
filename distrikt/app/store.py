@@ -419,7 +419,16 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                             if target:targets.add(target['number'])
                     self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.record_table(module)+' WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
                 reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','publisher.merge','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','ib.bulk.apply','ib.global.apply','revision.approve','revision.approve_many')
-                candidate={'rows':touched,'action':action,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
+                undo_context = {}
+                if changed and reversible:
+                    undo_context = {key: bool(data[key]) for key in ('complete', 'note', 'assignee_id', 'initial_completed', 'id') if key in data}
+                    if action=='revision.approve':
+                        undo_context['side']=data.get('side')
+                    if action=='revision.approve_many':
+                        undo_context['entries']=[{'side': entry['side']} for entry in data['entries']]
+                    if action=='loan.issue':
+                        undo_context['created_publisher']=any(module=='publishers' and previous is None for (module,_),previous in touched.items())
+                candidate={'rows':touched,'action':action,'context':undo_context,'until':__import__('time').monotonic()+120,**({'actor_id':review.actor} if review else {})} if changed and reversible and not (review and review.conflicts) else None
             finally:self._tracking=None
         if candidate:
             candidate['revision']=self.revision;self._undo=candidate
@@ -478,7 +487,12 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                         internal_name=clean_text(data.get('internal_name',card.get('internal_name','')),160),
                         name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
                         kind=data.get('kind', 'Ukendt'), temporary=bool(data.get('temporary', True)))
-            color = data.get('map_color', card.get('map_color', '#477596'))
+            # A new or reassigned card inherits the destination area's colour unless
+            # the caller explicitly supplies a card-specific override.
+            area = self.get('settings', card['area_id']) if card['area_id'] else None
+            area_color = (area or {}).get('map_color', '#477596')
+            fallback_color = (card.get('map_color', area_color) if old and old.get('area_id') == card['area_id'] else area_color)
+            color = data.get('map_color', fallback_color)
             if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
                 raise ValueError('Vælg en gyldig kortfarve.')
             card['map_color'] = color.lower()
@@ -701,12 +715,27 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             name = clean_text(data.get('name'), 80, True)
             if any(a['id'] != 'config' and a.get('name', '').casefold() == name.casefold() and a['id'] != data.get('id') for a in self.all('settings') + self.all('settings', deleted=True)):
                 raise ValueError('Områdenavnet findes allerede (evt. i 48-timers gendannelse).')
+            previous_color = (old or {}).get('map_color', '#477596')
+            color = data.get('map_color', previous_color)
+            if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
+                raise ValueError('Vælg en gyldig områdefarve.')
+            color = color.lower()
+            color_changed = bool(old and color != previous_color.lower())
+            if color_changed and data.get('reset_card_colors') is not True:
+                raise ValueError('Bekræft at tidligere kortfarver overskrives for hele området.')
             item = dict(old or {'id': new_id()})
-            item['name'] = name
+            item.update(name=name, map_color=color)
             if old and old.get('name') != name:
                 for c in self.all('cards'):
                     if c.get('area_id') == item['id'] and not c.get('name'):
                         c['front_revision'] = True
+                        self.put('cards', c)
+            if color_changed:
+                # Deliberately reset every previous card override in one transaction.
+                # A card may receive its own colour again after this operation.
+                for c in self.all('cards'):
+                    if c.get('area_id') == item['id']:
+                        c['map_color'] = color
                         self.put('cards', c)
             self.put('settings', item)
             return {'id': item['id']}
@@ -780,12 +809,20 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                            for value in labels.values())):
                 raise ValueError('Stednavne må højst være 48 tegn og må ikke indeholde kontroltegn.')
             normalized = {key: value.strip() for key, value in labels.items() if value.strip()}
+            template = data.get('overdue_message_template', c.get('overdue_message_template'))
+            if template is not None:
+                if (not isinstance(template, str) or not template.strip() or len(template) > 3000
+                        or '{kort}' not in template or any(ord(char) < 32 and char not in '\n\t'
+                                                            or ord(char) == 127 for char in template)):
+                    raise ValueError('Beskedskabelonen skal indeholde {kort}, være højst 3.000 tegn og må ikke indeholde kontroltegn.')
             c.update(congregation=clean_text(data.get('congregation', c.get('congregation')), 100),
                 folder_minimum=minimum, rural_mode=mode, rural_minimum=rural,
                 require_revision=bool(data.get('require_revision', c.get('require_revision'))),
                 publisher_card_guidance=dict(limits), split_visit_limit=limit,
                 folder_enabled=folder_enabled, location_labels=normalized,
                 history_years=years)
+            if template is not None:
+                c['overdue_message_template'] = template
             if minimum!=self.require('settings','config')['folder_minimum'] or data.get('folder_minimum_confirmed') is True:
                 c['folder_minimum_configured']=True
             self.put('settings', c)

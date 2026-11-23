@@ -9,7 +9,7 @@ const c={console,Date,Intl,Number,String,Math,Map,Set,JSON,Array,Object,Promise,
  window:{addEventListener(){}},document:{addEventListener(k,f){(listeners[k]??=[]).push(f);},getElementById:get,
   querySelector(){return {content:'FICTIONAL_TOKEN'};},querySelectorAll(selector){return selector==='[data-ui]'?tagged:selector==='[data-ui-aria]'?aria:selector==='[data-ui-placeholder]'?placeholders:[];}},
  fetch(){throw Error('Network forbidden');}};
-vm.createContext(c);for(const name of ['i18n.js','workspace.js'])vm.runInContext(read(name),c);
+vm.createContext(c);for(const name of ['i18n.js','workspace.js','overdue-loans.js'])vm.runInContext(read(name),c);
 const source=read('app.js');vm.runInContext(source.slice(0,source.indexOf('(async()=>{try{await refresh();')),c);
 const run=s=>vm.runInContext(s,c);
 run(`state={today:'2026-10-16',cards:[

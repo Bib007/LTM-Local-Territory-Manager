@@ -1,6 +1,9 @@
-# LTM release policy
+# LTM
 
-Develop and test future changes on `develop` / Beta first. Stable (`main`) is the tested baseline; do not use Stable as the normal test channel.
+- Brug `develop` til udvikling og Beta. `main` er Stable, og `beta` genereres af Beta-udgivelsen.
+- Test med midlertidige mapper og fiktive data. Åbn aldrig en rigtig brugers data til test.
+- Udgiv fra den kontrollerede commit. Genbrug ikke eksisterende udgivelsesfiler. Bevar separate Stable- og Beta-installationer, login og data.
+- Udgivelse af den separate Mac-server kræver dens egen fysiske prøve på Apple Silicon med LAN/VPN og genstart.
 
 The owner authorized the consolidated 1.12.19 Stable and matching 1.12.19-beta.1 release on 8 November 2026 and confirmed physical Mac/Windows installation and data preservation. Keep Stable/Beta folders, login cookies and native installer identities separate.
 
@@ -22,3 +25,5 @@ Exclude vendor/generated/build output, release bundles, old checkout copies, arc
 Use at most one implementation chat by default. Parallel work is appropriate only for genuinely independent tasks with distinct files and a clear benefit. Send a compact task prompt with relevant file paths, base branch and acceptance criteria; do not copy the full project/chat history. Do not start extra chats just to review a small safe change.
 
 Run focused checks after an edit. Run the broader required suite once on the final integrated release candidate; repeat only for relevant changes or a newly discovered failure. Preserve all required release checks and data-preservation tests. Monitor with compact status and longer/event-driven waits, avoid repeatedly reading whole chats or logs, and notify the owner only on meaningful progress, completion or a blocker.
+
+Se [bidragsvejledningen](.github/CONTRIBUTING.md) for testkommandoer og [udgivelsessporene](docs/RELEASE-TRACKS.md).

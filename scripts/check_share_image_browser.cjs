@@ -108,9 +108,14 @@ module.exports=async(browser,out)=>{
    return ShareUI.prepare('c1');
   });
   assert.equal(await page.locator('#sharePublish').isDisabled(),true,'Approval remains mandatory');
+  const addressPreview=await page.locator('#shareAddressPreview').innerText();
+  assert.match(addressPreview,/Fiktiv vej/);assert.match(addressPreview,/17/);
+  assert.match(addressPreview,/Fiktiv ældre vej/);
+  assert.doesNotMatch(addressPreview,/PRIVAT_IB_NOTE|IB_SKAL_IKKE_MED|41, 2|tv|Udeladt prøvevej/);
+  assert.match(await page.locator('label:has(#shareApproved)').innerText(),/adresselisten/);
   const result=await page.evaluate(async()=>{
    const pending=ShareUI.pending,doc=new DOMParser().parseFromString(window.actualPreviewSvg,'image/svg+xml');
-   if(!pending||pending.render_revision!==12||pending.date_updates!==true)throw Error('Missing current preview');
+   if(!pending||pending.render_revision!==13||pending.date_updates!==true)throw Error('Missing current preview');
    if(doc.querySelectorAll('[data-ltm-brand] svg').length!==1||doc.querySelector('[data-ltm-brand] text')?.textContent!=='Local Territory Manager')throw Error('Missing public project identity');
    const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
@@ -185,7 +190,7 @@ module.exports=async(browser,out)=>{
    await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=pending.png;});
    return {width:image.naturalWidth,height:image.naturalHeight,png:pending.png,svg:window.manualPreviewSvg,frontSvg:window.actualFrontSvg,dialog:document.querySelector('#dialog')?.innerHTML||document.body.innerHTML,approvedDisabled:document.querySelector('#sharePublish').disabled};
   });
-  assert.deepEqual([manual.width,manual.height],[2200,1560]);assert.match(manual.svg,/Geografisk kortvisning mangler/);assert.doesNotMatch(manual.svg,/Kortets printforside/);assert.match(manual.frontSvg,/Prøvevej 2-8/);assert.match(manual.frontSvg,/ukendt/);assert.match(manual.frontSvg,/Sikker sti hele vejen/);assert.doesNotMatch(manual.frontSvg,/Udeladt prøvevej/);assert.doesNotMatch(manual.svg,/<circle\b/);assert.doesNotMatch(manual.svg,/0 besøg/);assert.match(manual.dialog,/Nogle manuelle vejlinjer er udeladt/);assert.equal(manual.approvedDisabled,true);assert.ok(!calls.includes('/api/share/publish'));
+  assert.deepEqual([manual.width,manual.height],[2200,1560]);assert.match(manual.svg,/Geografisk kortvisning mangler/);assert.doesNotMatch(manual.svg,/Kortets printforside/);assert.match(manual.frontSvg,/Prøvevej 2-8/);assert.match(manual.frontSvg,/ukendt/);assert.match(manual.frontSvg,/Sikker sti hele vejen/);assert.doesNotMatch(manual.frontSvg,/Udeladt prøvevej/);assert.doesNotMatch(manual.svg,/<circle\b/);assert.doesNotMatch(manual.svg,/0 besøg/);assert.match(manual.dialog,/Nogle manuelle vejlinjer er udeladt/);assert.match(manual.dialog,/2–8/);assert.equal(manual.approvedDisabled,true);assert.ok(!calls.includes('/api/share/publish'));
   await page.evaluate(async()=>{closeDialog();page='Indstillinger';openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');await ShareUI.prepare('c1');});
   await page.locator('#shareApproved').check();
   await page.locator('#sharePublish').click();
@@ -202,6 +207,6 @@ module.exports=async(browser,out)=>{
    return {dots:doc.querySelectorAll('circle[fill="#c62828"]').length,labels:[...doc.querySelectorAll('text')].filter(t=>/^\d+$/.test(t.textContent)).length,bytes:blob.size};
   });
   assert.equal(dense.dots,900);assert.ok(dense.labels<900);assert.ok(dense.bytes>10000,'A real PNG is generated even when crowded labels are omitted');
-  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 37 identical red visit regions, including both IB addresses, both approved pages embedded losslessly in a PDF sent to offline Drive, private metadata exclusions and manual fallback passed.');
+  console.log('Actual ShareUI → OSM snapshot → SVG → PNG: 37 identical red visit regions, including both IB addresses, both approved images and searchable address pages embedded in a PDF sent to offline Drive, private metadata exclusions and manual fallback passed.');
  }finally{await context.close();}
 };

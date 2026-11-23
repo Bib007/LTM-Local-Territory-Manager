@@ -76,6 +76,7 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.assertIn('assets/brand/logo-dark.svg',names)
             self.assertIn('docs/INSTALL.md',names)
             self.assertIn('Distrikt-lokal/app/server.py',names)
+            self.assertFalse(any(name.startswith('Distrikt-lokal/tests/') for name in names))
             self.assertIn('Home-Assistant/distrikt/app/server.py',names)
             self.assertIn('Home-Assistant/distrikt/app/kort-import-skabelon.xlsx',names)
             self.assertIn('Distrikt-lokal/app/kort-import-skabelon.xlsx',names)

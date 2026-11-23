@@ -15,7 +15,7 @@ REQUIRED=('S-12-E.pdf','S-13-E.pdf','S-12-E-source.png','S-13-E-background.jpg',
 PDF_DEPENDENCIES=('pypdf-6.21.4.zip','PYPDF-LICENSE','PYPDF.md','typing_extensions.py','TYPING-EXTENSIONS-LICENSE')
 BLOCKED_SUFFIXES=('.sqlite','.sqlite3','.db','.pyc','.log','.tmp')
 BLOCKED_NAMES={'drive-auth.json','datafordeler-auth.json','access.json','run.json','launcher.json','profiles.json','profiles.tmp'}
-ROOT_DOCS=('homeassistant/ltm-status.yaml','repository.yaml','README.md','README.da.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/CHANGELOG.en.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/planning/KOREPLAN.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
+ROOT_DOCS=('homeassistant/ltm-status.yaml','repository.yaml','README.md','README.da.md','docs/README.en.md','LICENSE','docs/CHANGELOG.md','docs/CHANGELOG.en.md','docs/planning/ROADMAP.md','.github/CONTRIBUTING.md','docs/CONTRIBUTING.en.md','docs/help/Dette-skal-hjaelpes-manuelt.md','docs/help/Dette-skal-hjaelpes-manuelt.en.md')
 BRAND_FILES=('mark.svg','logo-light.svg','logo-dark.svg','README.md')
 SCREENSHOT_FILES=('overblik.png','udlevering.png','distriktskort.png','deling.png','dashboard-en.jpg','cards-en.jpg','report-en.jpg')
 
@@ -40,7 +40,7 @@ def files():
     if missing:raise ValueError('Release incomplete: missing blank form assets: '+', '.join(missing))
     if not (SRC/'app'/'kort-import-skabelon.xlsx').is_file():raise ValueError('Release incomplete: missing Excel import template.')
     result={}
-    for section in ('app','templates','tests','translations'):
+    for section in ('app','templates','translations'):
         for p in sorted((SRC/section).rglob('*')):
             if not p.is_file() or '__pycache__' in p.parts:continue
             if p.is_symlink():raise ValueError('Symlink not allowed in release: '+str(p))
