@@ -4,6 +4,7 @@ This preserves the complete changelog as it stood before the Danish-default migr
 
 ## 1.13.0-beta.3 · 2026-11-23
 
+- **Redesigned dashboard:** Replace the tall service-year hero and two large rings with a compact first-screen view: explicit progress towards completing current territories this service year, a much larger average interval, estimated visits and concise shortcuts. Charts and follow-ups come next, with reminders below. Responsive in light/dark modes and still permission-safe for summary-only users.
 - **Dashboard estimated visits:** Each completion now counts the territory's current known visit total minus its linked do-not-call entries. Historically unknown completions can be estimated when the territory now has a known count. A card with 35 visits and 2 do-not-call entries contributes 33 per completion.
 - **Full previous service year in the monthly chart:** All twelve previous-year months display saved completions even when the corresponding current-year months have not started. The current month still uses the same calendar-date cut-off last year.
 - **Previous Stable fixes retained:** History imports accept either date order and keep confirmation input editable; S-13 uses the original form in calendar, service and rolling periods, with a clear period caption on adapted extracts.
