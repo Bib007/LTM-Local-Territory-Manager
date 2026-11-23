@@ -751,7 +751,20 @@ case 'note-edit':editNote(d.id);break;
 case 'note-resolve':await Workspace.resolveTask(d.id,'',true);break;
 case 'record-completion':recordCompletion(d.id);break;
 case 'desk-tab':deskTab=d.tab;query='';render();break;
-case 'settings-view':if(d.tab==='general'||d.tab==='usage'&&(!state.profile||ProfilesUI.has('settings.manage','activity.view'))){settingsView=d.tab;render();}break;
+case 'settings-view':{
+ if(d.tab!=='general'&&d.tab!=='usage'||d.tab==='usage'&&state.profile&&!ProfilesUI.has('settings.manage','activity.view'))break;
+ // Switching tabs re-renders settings. Never discard a form the user has edited.
+ const dirty=[...document.querySelectorAll('.settingsGrid form')].some(form=>[...form.elements].some(field=>{
+  if(field.type==='checkbox'||field.type==='radio')return field.checked!==field.defaultChecked;
+  if(field.tagName==='SELECT'){
+   const options=[...field.options],chosen=options.find(o=>o.defaultSelected)||options[0];
+   return chosen&&field.value!==chosen.value;
+  }
+  return field.value!==field.defaultValue;
+ }));
+ if(dirty){toast(I18n.text('Gem ændringerne, før du skifter fane.'));break;}
+ settingsView=d.tab;render();break;
+}
 case 'desk-return-mark-visible':document.querySelectorAll('#deskReturnRows [data-return-mark]').forEach(node=>{if(state.loans.some(l=>l.id===node.dataset.returnMark&&!l.returned))deskReturnSelected.add(node.dataset.returnMark);});render();break;
 case 'desk-return-clear':deskReturnSelected.clear();render();break;
 case 'desk-return-next':{const marked=document.querySelector('#deskReturnRows input[data-return-mark]:checked')?.dataset.returnMark;if(marked&&state.loans.some(l=>l.id===marked&&!l.returned))finish(marked,false);break;}
