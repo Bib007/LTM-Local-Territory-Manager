@@ -4,17 +4,17 @@
 
 Available from LTM 1.12.4. Open **Settings → Congregation and carry folder → Split suggestions**, or the optional setup-checklist item. Choose an approximate visit target and a box-only filter. These preferences are remembered in this browser without storing account or territory data in browser preferences.
 
-Unknown or invalid visit totals are excluded. Visit counts remain estimates, not records of actual house-to-house visits. Exact, unique geographic membership and matching known counts are required for proposed address units. Whole units stay together; no addresses or visit totals are guessed. Receiving alternatives match area, type, street and postcode. This is a numerical alternative, not verified geographic continuity. Review alternatives separately and recalculate after each change.
+Unknown or invalid visit totals are excluded. Visit counts remain estimates, not records of actual house-to-house visits. Exact, unique geographic membership and matching known counts are required for proposed address units. Whole units stay together; no addresses or visit totals are guessed. Suggestions to move addresses to an existing card are temporarily disabled until the workflow is complete; only split-to-new-card proposals are shown.
 
-Both source and receiving cards must be returned and in the box before a transfer can be applied. The box filter hides issued and carry-folder cards. With the filter off, they can be reviewed, but cannot be changed by this workflow. Up to 100 oversized cards and three receiving alternatives per source are shown.
+The box filter hides issued and carry-folder cards. With the filter off, they can be reviewed, but not split by this workflow until they are returned. Up to 100 oversized cards are shown.
 
 ## Split into a new card
 
 **Review split into a new card** opens the existing manual split form with the proposed address boxes selected. Enter a new card number, review the server preview and type the confirmation before anything changes. History stays on the original card. The new card gets no invented completion and needs boundary review and reprinting.
 
-## Move to an existing card
+## Existing transfer workflows (not offered as suggestions)
 
-**Move addresses to this card** offers two explicit workflows:
+New transfers to existing cards are not offered by the split planner while this feature is unfinished. The existing transfer and interim-card handling is retained to protect previously started workflows. It supports two policies:
 
 - **Use the latest known date for scheduling:** move the selected units and coupled do-not-call records to the receiver. Its latest known date becomes a scheduling reference for card-age planning. Its actual completion date, completion events and S-13 history are unchanged. The card detail shows the scheduling reference separately.
 - **Create an interim card first:** choose a unique interim number. The selected units move to that card while the intended receiver stays unchanged. The interim card can be printed and issued under its own number. Its name and task explain the intended receiver and later reprint. It starts without a completion event.
@@ -38,4 +38,4 @@ The **Territory cards** page shows a live count of cards exceeding the congregat
 
 An administrator may **Dismiss suggestion** with a 1–300-character reason and **Restore suggestion** later. A dismissal is tied to card identity, current estimated visits, address membership, and the threshold; changing any of these makes a changed proposal visible again. Non-administrators do not receive the free-text reason. New mutations are `split.suggestion.ignore` and `split.suggestion.restore`, authorized by `settings.manage`. Existing local SQLite settings and backup retain them without schema changes.
 
-Moves to an existing card and splits to a new card still go through explicit preview/confirmation, preserving loan-history requirements. Same area/type/street name does not by itself prove geographic continuity: an operator must verify the boundaries before applying. Combining selected visits from two source cards into a third card is **not implemented** by this PR. Synthetic tests cover changed limits, stale dismissals, restore and existing split planning; physical platform checks remain outstanding.
+Only splits to a new card are suggested, and they still require explicit preview/confirmation. Existing interim transfer finalization is retained so earlier workflows can be completed safely. Suggestions to transfer to existing cards remain disabled pending further development. Combining selected visits from two source cards into a third card is not implemented. Synthetic tests cover changed limits, stale dismissals, restore and existing split planning; physical platform checks remain outstanding.
