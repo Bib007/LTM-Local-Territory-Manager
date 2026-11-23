@@ -360,7 +360,9 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("openDialog('<h2>Test</h2>')");assert(get('dialog').innerHTML.includes('class="dialogClose"'));assert(get('dialog').innerHTML.includes('aria-label="Luk"'));assert(get('dialog').innerHTML.includes('data-action="close"'));
  run("state.public_maps=[]");
 
- run("overviewSavedState=state;state={...state,today:'2026-10-14',cards:[{id:'ov-new',number:'1',kind:'By',area_id:'a',in_folder:true,last_completed:'2026-10-01',addresses:[],geo_polygon:[[10,55],[10.01,55],[10.01,55.01]]},{id:'ov-old',number:'2',kind:'Land',area_id:'b',last_completed:'2024-01-01',addresses:[]},{id:'ov-none',number:'3',kind:'By',area_id:'a',last_completed:null,addresses:[]}],loans:[{id:'ol',card_id:'ov-old',publisher_id:'p1',returned:null}],completions:[{card_id:'ov-new',date:'2026-10-01'}]};OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',months:12,year:2027,search:''}");
+ run("overviewSavedState=state;state={...state,today:'2026-10-14',cards:[{id:'ov-new',number:'1',kind:'By',area_id:'a',in_folder:true,last_completed:'2026-10-01',addresses:[],geo_polygon:[[10,55],[10.01,55],[10.01,55.01]]},{id:'ov-old',number:'2',kind:'Land',area_id:'b',last_completed:'2024-01-01',addresses:[]},{id:'ov-none',number:'3',kind:'By',area_id:'a',last_completed:null,addresses:[]}],loans:[{id:'ol',card_id:'ov-old',publisher_id:'p1',returned:null}],completions:[{card_id:'ov-new',date:'2026-10-01'}]};OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',recentMonths:6,months:12,year:2027,search:''}");
+ assert.match(run('OverviewMap.page()'),/data-overview-field="recentMonths"/);
+ assert.match(run('OverviewMap.page()'),/data-overview-field="months"/);
  assert.equal(run('OverviewMap.filtered().length'),3);assert.equal(run("OverviewMap.color(card('ov-new'))"),'#258454');assert.equal(run("OverviewMap.color(card('ov-old'))"),'#bd4a43');assert.equal(run("OverviewMap.color(card('ov-none'))"),'#8b79ac');
  run("OverviewMap.filters.status='Kort i mappen'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-new');
  run("OverviewMap.filters.status='Udleverede distriktskort'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-old');
@@ -371,7 +373,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("OverviewMap.filters.after='';OverviewMap.filters.publisher='p1'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-old');
  run("OverviewMap.filters.publisher='';OverviewMap.filters.kind='Land'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-old');
  assert(run("table(state.cards).includes('Se på kort')"));assert(run("OverviewMap.page().includes('Tid siden gennemgang')"));assert(run("Navigation.groups[1][1].some(v=>v[1]==='Kortoversigt')"));
- run("state=overviewSavedState;OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',months:12,year:0,search:''}");
+ run("state=overviewSavedState;OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',recentMonths:6,months:12,year:0,search:''}");
  console.log('Overview status/area/type/age/year/assignee filters, date limits and quick-map links passed.');
  console.log('Front QR in full/preprinted modes, private back separation and accessible close control passed.');
  console.log('Public-only map recipe, escaped sharing UI and transfer controls passed.');
