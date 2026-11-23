@@ -39,10 +39,11 @@ class HistoryImportTests(unittest.TestCase):
         middle = (date.today() - timedelta(days=3*365)).isoformat()
         outside = (date.today() - timedelta(days=6*365)).isoformat()
         self.s.mutate('settings.save', {'history_years': 5})
-        rows = [['001', middle], ['001', outside],
+        rows = [['001', middle, '', '', ''], ['001', outside, '', '', ''],
                 ['002', '', 'Fiktiv ny', middle, middle],
                 ['002', '', 'Fiktiv for gammel', outside, outside]]
-        p = self.preview(rows)
+        p = self.s.mutate('setup.history-import.preview',
+                          {'name': 'fiktion.csv', 'content': csv_text(rows, FULL_HEADERS)})
         self.assertEqual(p['years'], 5)
         self.assertEqual([r['status'] for r in p['rows']], ['ready', 'outside', 'ready', 'outside'])
         self.assertEqual((p['count'], p['loan_count'], p['publisher_count']), (2, 1, 1))
