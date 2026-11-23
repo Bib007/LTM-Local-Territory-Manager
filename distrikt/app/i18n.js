@@ -2547,6 +2547,7 @@ const I18n={
   "Årets fremdrift":"This year’s progress",
   "Dette tjenesteår":"Current service year",
   "Fremdrift mod alle aktuelle distriktskort":"Progress towards completing every current territory card",
+  "1 kort tilbage":"1 card remaining",
   "{remaining} kort tilbage":"{remaining} cards remaining",
   "Ingen distriktskort endnu":"No territory cards yet",
   "Dækning i tjenesteåret":"Service-year coverage",
