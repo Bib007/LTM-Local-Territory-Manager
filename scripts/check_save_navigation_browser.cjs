@@ -34,8 +34,8 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    if(profiles){
     await page.evaluate(()=>api('/api/profiles/activate',{name:'Fiktiv admin',password:'Fiktiv-password-123',confirmation:'AKTIVÉR PROFILER'}));
     await page.reload();await page.locator('#loginName').fill('Fiktiv admin');await page.locator('#loginPassword').fill('Fiktiv-password-123');await page.locator('#loginForm button').click();
-    await page.waitForFunction(()=>typeof state!=='undefined'&&state?.profile&&SaveStatus.kind==='saved');await page.waitForFunction(()=>PersonalGuide.data!==null);
-    if(await page.locator('[data-personal-guide=later]').count())await page.locator('[data-personal-guide=later]').click();
+    await page.waitForFunction(()=>typeof state!=='undefined'&&state?.profile&&SaveStatus.kind==='saved');
+    
    }
    const ids=await page.evaluate(async()=>{
     const person=await mutate('publisher.save',{name:'Fiktiv person',group:'Fiktiv gruppe'});

@@ -11,7 +11,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    const p=await context.newPage(),errors=[],writes=[],downloads=[];p.setDefaultTimeout(15000);p.on('pageerror',e=>errors.push(e.stack||e.message));p.on('dialog',d=>d.accept());p.on('request',r=>{if(r.url().endsWith('/api/geo/download'))downloads.push(r.url());if(r.url().endsWith('/api/mutate')&&r.method()==='POST')writes.push(r.postDataJSON());});
    await p.goto(fixture.origin);await p.waitForFunction(()=>typeof state!=='undefined'&&state&&SaveStatus.kind==='saved');
    if(await p.locator('[data-profile=welcome-done]').count())await p.locator('[data-profile=welcome-done]').click();
-   await p.waitForFunction(()=>PersonalGuide.data!==null);if(await p.locator('[data-personal-guide=later]').count())await p.locator('[data-personal-guide=later]').click();
+   
    console.log('Manual Excel flow',language);
    await p.evaluate(async language=>{I18n.set(language);closeDialog();await SetupUI.open(4);},language);
    await p.locator('[data-card-import=open]').click();
