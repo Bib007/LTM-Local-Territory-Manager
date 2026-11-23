@@ -238,6 +238,7 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .dashboardLead h2{font-size:22px}
  .dashboardWorkButton{min-height:35px;font-size:11px;max-width:150px;white-space:normal}
  .dashboardPrimary{gap:9px}
+ .dashboardPrimarySummary{grid-template-columns:minmax(0,1fr)}
  .dashboardPrimary>.panel{padding:17px;min-height:145px;border-radius:10px}
  .dashboardCoverage{gap:12px}
  .dashboardCoverageAmount strong{font-size:46px}
