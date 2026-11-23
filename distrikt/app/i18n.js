@@ -492,6 +492,7 @@ const I18n={
   "Senest afleveret {date}":"Last delivered {date}",
   "Originale printformularer og gemt brugerindhold bevarer deres sprog.":"Original printed forms and stored user content keep their language.",
 
+  "Ansvarshavende":"Responsible person",
   "Ansvarshavende: {name}":"Responsible: {name}",
   "Du er ansvarshavende":"Assigned to you",
   "Ansvarshavende: inaktiv eller fjernet bruger":"Responsible: inactive or removed account",
