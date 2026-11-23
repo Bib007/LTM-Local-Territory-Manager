@@ -35,7 +35,7 @@ class LoanPreview:
         if assigned>self.today or returned and returned>self.today:raise ValueError('Datoen ligger i fremtiden.')
         if returned and returned<assigned:raise ValueError('Indlevering skal være på eller efter udlevering.')
         row.update(publisher=name,assigned=assigned,returned=returned or '',date=returned or '',loan_state='closed' if returned else 'active',completion_requested=completed)
-        if returned and returned<self.cutoff:row.update(status='outside',message='Ældre end to år; medtages ikke.');return
+        if returned and returned<self.cutoff:row.update(status='outside',message='Ældre end den valgte historikperiode; medtages ikke.');return
         matches=self.people.get(norm(name),[])
         if len(matches)>1:raise ValueError('Forkyndernavnet er ikke entydigt. Ret navnene i LTM før import.')
         person=matches[0] if matches else None

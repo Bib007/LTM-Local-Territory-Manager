@@ -16,13 +16,13 @@ const Navigation={
   const icons={Forside:'⌂',Udlevering:'⇄',Distrikter:'▤',Kortoversigt:'◇',Forkyndere:'♙',Opgaver:'☑',Opfølgninger:'◉',Rapporter:'▥',Adresser:'⌖',Indstillinger:'⚙'};
   const allowed=name=>typeof ProfilesUI==='undefined'||ProfilesUI.pageAllowed(name);
   const groups=this.groups.map(([name,items],i)=>{
-   if(name==='Hjælp')return desk?'':`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>${this.guideLink()}`;
+   if(name==='Hjælp')return `<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>${this.guideLink()}`;
    const buttons=items.map((item,j)=>{
     if(!allowed(item[1]))return '';
     const count=item[1]==='Opfølgninger'&&typeof GeoUI!=='undefined'&&GeoUI.loaded?Workspace.followupItems().length:null;
     const followups=count===null?'':`<span class="navFollowupCount" ${I18n.attribute('aria','Til opfølgning: {count}',{count})}>${count}</span>`;
     const tasks=item[1]==='Opgaver'?`<span class="navTaskCount" ${I18n.attribute('aria','{count} åbne opgaver',{count:Workspace.actionableTasks().length})}>${Workspace.actionableTasks().length}</span>`:'';
-    return `<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icons[item[1]]}</span>${esc(I18n.text(desk&&item[1]==='Udlevering'?'Ind/udlevering':item[0]))}${followups}${tasks}</button>`;
+    return `<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icons[item[1]]}</span>${esc(I18n.text(desk&&item[1]==='Udlevering'?'Ind/udlevering':item[0]))}${followups}${tasks}${item[1]==='Forkyndere'&&typeof OverdueLoans!=='undefined'?OverdueLoans.badge():''}</button>`;
    }).join('');
    return buttons?`${name?`<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>`:''}${buttons}`:'';
   }).join('');
@@ -41,7 +41,7 @@ const Navigation={
   I18n.applyShell();
   if(typeof ProfilesUI!=='undefined')ProfilesUI.localize();
   
-  if(typeof GuidedTour!=='undefined')GuidedTour.localize();if(typeof PersonalGuide!=='undefined')PersonalGuide.localize();
+  if(typeof GuidedTour!=='undefined')GuidedTour.localize();
   if(typeof Onboarding!=='undefined')Onboarding.localizePanel();
   if(typeof BoundaryImportUI!=='undefined')BoundaryImportUI.localize();
   if(typeof PublisherSearch!=='undefined')PublisherSearch.localize();

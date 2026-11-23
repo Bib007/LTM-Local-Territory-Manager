@@ -41,7 +41,7 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.13.0-beta.2'
+VERSION='1.13.0-beta.3'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -133,7 +133,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         self.send_header('Content-Type',kind+('; charset=utf-8' if kind in ('text/html','text/css','text/javascript','application/json') else ''))
         self.send_header('Content-Length',str(size if stream else len(data)))
         self.send_header('Cache-Control','no-store')
-        if getattr(self,'profile_user',None):self.send_header('X-LTM-Authorization',str(self.server.accounts.generation))
+        if getattr(self,'profile_user',None):self.send_header('X-LTM-Authorization',str(getattr(self,'preview_authorization',self.server.accounts.generation)))
         for key,value in (headers or {}).items():self.send_header(key,value)
         self.send_header('X-Content-Type-Options','nosniff')
         self.send_header('Referrer-Policy','strict-origin-when-cross-origin')
@@ -180,9 +180,17 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             self.send({'error':'Genindlæs appen, og prøv igen.'},status=403);return False
         return True
     def do_GET(self):
+        path=urlsplit(self.path).path
+        # Public, read-only liveness checks must not wait behind an expensive
+        # profile write or state snapshot. Preserve the usual host/LAN checks.
+        if path=='/api/ping':
+            if self.allowed(public=True):
+                try:self.send({'app':'Distrikt','version':VERSION})
+                except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
+            return
         # This machine-only route must precede profile_scope (accounts lock).
         # It never waits for Store/accounts, reads data, or permits mutations.
-        if urlsplit(self.path).path=='/api/runtime/probe':
+        if path=='/api/runtime/probe':
             return self.runtime_probe()
         with self.profile_scope() as permitted:
             if permitted:self._get()
@@ -227,7 +235,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if self.server.beta and '<b>LTM</b>' in html:html=html.replace('<b>LTM</b>','<b>LTM Beta</b>').replace('<body>','<body class="betaChannel">')
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/usage-stats.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/ktm-report-ui.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/overdue-loans.js','/usage-stats.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/ktm-report-ui.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -335,8 +343,10 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                     self.rfile=io.BytesIO(payload)
             except (ValueError,OSError):
                 self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
+            self.geo_preview_work=None
             with self.profile_scope(post=True) as permitted:
                 if permitted:self._post(restore_upload=upload)
+            if self.geo_preview_work is not None:self.finish_geo_preview()
             self.send_pending_archive()
         finally:
             if upload:upload.close()
@@ -364,6 +374,8 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if not 0<length<=16000000:raise ValueError('Forespørgslen er for stor eller tom.')
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
+            if self.path=='/api/mutate' and data.get('action')=='geo.preview':
+                return self.prepare_geo_preview(data.get('data',{}))
             if self.profile_post(self.path,data):return
             if self.path=='/api/runtime/test':return self.send(self.server.runtime_status.test_notification())
             if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))
