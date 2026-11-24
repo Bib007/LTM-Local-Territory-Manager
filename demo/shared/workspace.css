@@ -296,7 +296,7 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .rowActions{min-width:0;gap:5px;align-items:flex-start}
  .details .cardActionMenu{width:100%}
  .details .cardActionMenu>summary{justify-content:center}
- .tablewrap:has(>table>tbody>.cardRow){max-height:68vh;overflow:auto}
+ .tablewrap:has(>table>tbody>.cardRow){max-height:68vh;overflow:auto;isolation:isolate}
  .tablewrap:has(>table>tbody>.cardRow)>table>thead>tr>th{position:sticky;top:0;z-index:2;background:var(--surface);color:var(--muted)}
  .cardRow td{padding:8px 9px}
  .cardRow td small{margin-top:3px}
