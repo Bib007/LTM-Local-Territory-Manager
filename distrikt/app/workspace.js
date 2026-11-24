@@ -239,8 +239,19 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   }
   return {value,unknown};
  },
- dashboardCoverage(covered,total,visitEstimate=null,canWork=false){
+ serviceYearTarget(today){
+  const year=serviceYear(today),start=`${year-1}-09-01`,end=`${year}-09-01`;
+  return Math.round(Math.max(0,Math.min(1,dayDiff(today,start)/dayDiff(end,start)))*100);
+ },
+ rollingCompletionStart(today){
+  const year=Number(today.slice(0,4))-1,month=Number(today.slice(5,7)),day=Number(today.slice(8,10));
+  const last=new Date(Date.UTC(year,month,0)).getUTCDate();
+  return `${year}-${String(month).padStart(2,'0')}-${String(Math.min(day,last)).padStart(2,'0')}`;
+ },
+ dashboardCoverage(covered,total,visitEstimate=null,canWork=false,today=state.today){
   const pct=total?Math.round(covered/total*100):0,remaining=Math.max(0,total-covered),summary=ui('{covered} af {total} forskellige kort gennemgået',{covered,total});
+  const target=this.serviceYearTarget(today),difference=pct-target;
+  const paceLabel=difference>0?ui('{count} procentpoint foran årets mål',{count:difference}):difference<0?ui('{count} procentpoint bag årets mål',{count:-difference}):ui('På niveau med årets mål');
   const progressLabel=typeof I18n.attribute==='function'?I18n.attribute('aria','Dækning i tjenesteåret'):`aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}"`;
   return `<section class="panel dashboardCoverage">
    <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div>${canWork?`<button class="dashboardWorkButton" data-work="desk">${ui('Gå til daglig brug →')}</button>`:`<span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span>`}</div>
@@ -248,7 +259,8 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
     <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
     ${visitEstimate?`<div class="dashboardCoverageVisits"><small>${ui('Anslåede besøg på gennemgåede kort')}</small><strong>${Number(visitEstimate.value).toLocaleString('da-DK')}</strong>${visitEstimate.unknown?`<span>${ui('Nogle kort har ukendt besøgstal og er ikke medregnet.')}</span>`:''}</div>`:''}
    </div>
-   <div class="dashboardProgressTrack" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span></div>
+   <div class="dashboardProgressTrack" style="position:relative" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span><i class="dashboardTargetMarker" aria-hidden="true" style="position:absolute;top:0;bottom:0;left:clamp(0px,calc(${target}% - 1px),calc(100% - 2px));width:2px;background:var(--text)"></i></div>
+   <div class="dashboardCoverageFoot dashboardTargetCaption"><span>${ui('Mål i dag: {percent} %',{percent:target})}</span>${total?`<b>${paceLabel}</b>`:''}</div>
    <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui(remaining===1?'1 kort tilbage':'{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
    <p class="srOnly">${summary}</p>
   </section>`;
@@ -263,7 +275,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   const s=summary.periods.service,year=serviceYear(summary.as_of),canWork=ProfilesUI.pageAllowed('Udlevering');
   return `<div class="dashboardHome" data-dashboard-layout="compact-summary">
     <div class="dashboardPrimary dashboardPrimarySummary">
-     ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork)}
+     ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork,summary.as_of)}
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3></div>
     <div class="dashboardQuickFacts">
@@ -278,8 +290,9 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   // Only a return explicitly completed on the same date is a finished
   // assignment. An older retained-card completion or a return without
   // a completed territory must not enter the average.
-  const completed=new Set(state.completions.filter(e=>e.loan_id&&e.date).map(e=>e.loan_id+'|'+e.date));
-  const durations=state.loans.filter(l=>l.id&&l.assigned&&l.returned&&completed.has(l.id+'|'+l.returned))
+  const cutoff=this.rollingCompletionStart(state.today);
+  const completed=new Set(state.completions.filter(e=>e.loan_id&&e.date>=cutoff&&e.date<=state.today).map(e=>e.loan_id+'|'+e.date));
+  const durations=state.loans.filter(l=>l.id&&l.assigned&&l.returned>=cutoff&&l.returned<=state.today&&completed.has(l.id+'|'+l.returned))
    .map(l=>dayDiff(l.returned,l.assigned)).filter(d=>Number.isInteger(d)&&d>=0);
   return durations.length?durations.reduce((sum,d)=>sum+d,0)/durations.length:null;
  },
@@ -307,7 +320,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
       <section class="panel dashboardSpotlight dashboardAverage">
        <small>${ui('Gennemsnitlig gennemgangstid')}</small>
        <strong class="dashboardAverageValue">${avg}</strong>
-       <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering, når kortet meldes gennemgået.')}</span>
+       <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering med gennemgang · seneste 12 måneder.')}</span>
       </section>
       <section class="panel dashboardSpotlight dashboardQueue">
        <small>${ui('Ældste kort i gennemgangskøen')}</small>
