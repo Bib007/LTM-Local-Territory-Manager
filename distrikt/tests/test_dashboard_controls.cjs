@@ -123,6 +123,28 @@ state.completions=[
  {card_id:'c0',date:'2026-10-12'}
 ];`);
 assert.equal(run('Workspace.completedReturnAverage()'),15,'Only matching completed returns contribute their full issue-to-return duration');
+run(`state.loans.push(
+ {id:'old-completed',card_id:'c0',assigned:'2024-01-01',returned:'2025-10-15'},
+ {id:'boundary-completed',card_id:'c0',assigned:'2025-09-26',returned:'2025-10-16'},
+ {id:'future-completed',card_id:'c0',assigned:'2026-10-01',returned:'2026-10-17'}
+);state.completions.push(
+ {loan_id:'old-completed',card_id:'c0',date:'2025-10-15'},
+ {loan_id:'boundary-completed',card_id:'c0',date:'2025-10-16'},
+ {loan_id:'future-completed',card_id:'c0',date:'2026-10-17'}
+);`);
+assert.equal(run('Workspace.completedReturnAverage()'),50/3,'Include cutoff date but exclude older and future completed returns');
+assert.equal(run("Workspace.rollingCompletionStart('2028-02-29')"),'2027-02-28');
+assert.equal(run("Workspace.serviceYearTarget('2026-09-01')"),0);
+assert.equal(run("Workspace.serviceYearTarget('2027-03-01')"),50);
+assert.equal(run("Workspace.serviceYearTarget('2027-08-31')"),100);
+assert.equal(run("Workspace.serviceYearTarget('2027-09-01')"),0);
+assert.equal(run("Workspace.serviceYearTarget('2028-03-01')"),50);
+assert.match(run("Workspace.dashboardCoverage(32,100,null,false,'2026-11-24')"),/9 procentpoint foran årets mål/);
+assert.match(run("Workspace.dashboardCoverage(10,100,null,false,'2026-11-24')"),/13 procentpoint bag årets mål/);
+assert.match(run("Workspace.dashboardCoverage(23,100,null,false,'2026-11-24')"),/På niveau med årets mål/);
+assert.doesNotMatch(run("Workspace.dashboardCoverage(0,0,null,false,'2026-11-24')"),/procentpoint bag årets mål/);
+run("state.loans=state.loans.filter(l=>!['old-completed','boundary-completed','future-completed'].includes(l.id));state.completions=state.completions.filter(e=>!['old-completed','boundary-completed','future-completed'].includes(e.loan_id))");
+
 assert.match(run('Workspace.dashboard()'),/Gennemsnitlig gennemgangstid/);
 assert.match(run('Workspace.dashboard()'),/Fra udlevering til aflevering/);
 assert.match(run('Workspace.dashboard()'),/Ældste kort i gennemgangskøen/);
