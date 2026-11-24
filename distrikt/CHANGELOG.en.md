@@ -2,6 +2,13 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.13.0-beta.5 · 2026-11-24
+
+- **Dashboard:** A linear service-year target marker and pace difference. Average completed assignment duration uses the last 12 months; the oldest available territory shows its known completion age across folder and box, with undated territories listed separately.
+- **Design:** Collapsible navigation groups, consistent icons, compact secondary actions and card tables with sticky headings, one settings navigation with a dedicated usage tab and advanced settings. Tab changes protect actual unsaved edits.
+- **Desk:** Select the next visible territory after confirmed return; clearer undo action bound to the displayed data revision.
+- **Reliability:** Faster automatic read-only connectivity probes with bounded backoff; never replay uncertain writes or reload drafts automatically. Skip redundant activity scans for empty recovery lists and reuse loaded settings. Actual save latency still depends on deployment and data size.
+
 ## 1.13.0-beta.4 · 2026-11-23
 
 - **Two separate dashboard metrics:** Average completion time measures issue-to-return days for finished assignments with a recorded completion. The oldest territory in the completion queue shows the age of the next available card based on its relevant planning/completion date. Both include short explanations and handle unknown dates explicitly.
