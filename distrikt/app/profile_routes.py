@@ -98,6 +98,7 @@ class ProfileRuntime:
                     pass
                 else:
                     result['undo_available']=True
+                    result['undo_action']=self.server.store._undo['action']
             return result
 
     def mutate(self,token,user,action,data,snapshot):
