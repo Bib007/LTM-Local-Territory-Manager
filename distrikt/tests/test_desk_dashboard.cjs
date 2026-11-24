@@ -17,7 +17,7 @@ const ctx={
  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
  cmp:(a,b)=>String(a).localeCompare(String(b)),
  fmt:value=>String(value),
- serviceYear:()=>2027,yearLabel:()=> '2026/2027',
+ serviceYear:()=>2027,yearLabel:()=> '2026/2027',dayDiff:(a,b)=>(Date.parse(a)-Date.parse(b))/86400000,
 };
 vm.createContext(ctx);
 for(const name of ['workspace.js','profiles-ui.js','navigation.js'])
