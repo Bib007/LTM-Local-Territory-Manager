@@ -134,6 +134,8 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
     assert.deepEqual(await a.evaluate(id => [!!loanFor(id), cardLocation(card(id))], f.card), [false, 'folder']);
 
     await a.locator('[data-navigation="2:2"]').click();
+    const advanced = a.locator('.settingsAdvanced:not([open]) > summary');
+    if (await advanced.count()) await advanced.click();
     await a.locator('[data-work=settings-tab][data-value=data]').click();
     await a.locator('.line').filter({hasText: 'F42 · Fictional active · 2025-10-09'}).getByRole('button', {name: 'Restore', exact: true}).click();
     await a.waitForFunction(id => loanFor(id)?.cycle_start === '2025-10-11' && !card(id).in_folder, f.card);
@@ -149,6 +151,7 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
     await a.locator('#issueForm button:not([type=button])').click();
     await a.waitForFunction(id => publisherName(loanFor(id)?.publisher_id) === 'Fictional new assignment', f.card);
     await a.locator('[data-navigation="2:2"]').click();
+    if (await advanced.count()) await advanced.click();
     await a.locator('[data-work=settings-tab][data-value=data]').click();
     await a.locator('.line').filter({hasText: 'F42 · Fictional active · 2025-10-09'}).getByRole('button', {name: 'Restore', exact: true}).click();
     await a.locator('#toast').getByText('The card already has a new active assignment.', {exact: true}).waitFor();
