@@ -149,6 +149,26 @@ assert.equal(run('Workspace.oldestQueueCard().card.id'),'q2');
 run("state.cards=[]");
 assert.equal(run('Workspace.oldestQueueCard().card'),null);
 run(`state=${original}`);
+// The next return selection is derived from the actual visible list order,
+// applied only after the returned loan appears in a confirmed snapshot.
+run(`page='Udlevering';deskTab='Aflever';query='';area='';selected='c1';
+state.loans=[{id:'r0',card_id:'c0'},{id:'r1',card_id:'c1'},{id:'r2',card_id:'c2'}];
+var oldQuerySelectorAll=document.querySelectorAll;
+document.querySelectorAll=()=>['c0','c1','c2'].map(id=>({dataset:{cardRow:id}}));
+var returnPlan=ReturnSelection.capture('r1');`);
+run('ReturnSelection.apply(returnPlan)');
+assert.equal(run('selected'),'c1','Unconfirmed returns cannot move selection');
+run("state.loans[1].returned='2026-10-16';ReturnSelection.apply(returnPlan)");
+assert.equal(run('selected'),'c2','Follow the next row, not the first row');
+run("deskTab='Forkyndere';returnPlan=ReturnSelection.capture('r2');state.loans[2].returned='2026-10-16';ReturnSelection.apply(returnPlan)");
+assert.equal(run('selected'),'c0','Wrap to remaining earlier rows in publisher order');
+run("returnPlan=ReturnSelection.capture('r0');state.loans[0].returned='2026-10-16';ReturnSelection.apply(returnPlan)");
+assert.equal(run('selected'),'','No active row remains');
+run(`state.loans.forEach(l=>delete l.returned);selected='c0';returnPlan=ReturnSelection.capture('r0');selected='c2';state.loans[0].returned='2026-10-16';ReturnSelection.apply(returnPlan);`);
+assert.equal(run('selected'),'c2','Do not replace a newer manual selection');
+run(`selected='c1';returnPlan=ReturnSelection.capture('r1');query='changed';state.loans[1].returned='2026-10-16';ReturnSelection.apply(returnPlan);`);
+assert.equal(run('selected'),'c1','Do not move selection after the filter changes');
+run(`document.querySelectorAll=oldQuerySelectorAll;page='Forside';deskTab='Udlever';query='';area='';selected='';state=${original}`);
 run('Workspace.boot();saved()');windowListeners.offline();assert.equal(run('SaveStatus.kind'),'saved');
 get('dialog').open=false;run("Workspace.menu(true)");assert.equal(menu.attrs['aria-expanded'],'true');
 let prevented=false;listeners.keydown.at(-1)({key:'Escape',preventDefault(){prevented=true;}});assert(prevented);assert.equal(menu.attrs['aria-expanded'],'false');assert(menu.focused);
