@@ -27,9 +27,40 @@ class LANTests(unittest.TestCase):
         req=urllib.request.Request(self.server.origin+path,json.dumps(data).encode() if data is not None else None,h)
         return (client or self.client).open(req,timeout=5)
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
+    def test_logout_during_preview_rejects_late_shared_login_response(self):
+        from concurrent.futures import ThreadPoolExecutor
+        self.login().close()
+        cookie='; '.join(c.name+'='+c.value for c in self.cookies)
+        self.s.mutate('geo.import',{'records':[{'id':'fictional','entity':'address','road':'Fiktivvej','number':'1','postcode':'9999','lng':10,'lat':55}],'source':'Test','label':'Fiktiv'})
+        before=self.s.revision
+        entered=threading.Event();release=threading.Event()
+        def held(*args):
+            entered.set()
+            if not release.wait(5):raise RuntimeError('Preview not released')
+            return [],'unavailable'
+        # Freeze the request cookie independently of the logout cookie jar.
+        client=urllib.request.build_opener()
+        with patch('geo_store.suggest_outline',held),ThreadPoolExecutor() as pool:
+            pending=pool.submit(self.req,'/api/mutate',{'action':'geo.preview','data':{'address_ids':['fictional'],'suggest_outline':True}},{'Cookie':cookie},client)
+            try:
+                self.assertTrue(entered.wait(2))
+                with self.req('/api/state',headers={'X-Distrikt-Token':self.server.token}) as response:self.assertEqual(response.status,200)
+                self.req('/api/logout',{}).close()
+            finally:release.set()
+            with self.assertRaises(urllib.error.HTTPError) as error:pending.result(timeout=2)
+            self.assertEqual(error.exception.code,401)
+            body=json.load(error.exception)
+            self.assertNotIn('result',body)
+            self.assertIn('Log ind',body['error'])
+        self.assertEqual(self.s.revision,before)
+        self.assertIsNotNone(self.s.get('geo','fictional'))
+        self.login().close()
+        with self.req('/api/mutate',{'action':'geo.preview','data':{'address_ids':['fictional']}}) as response:
+            self.assertEqual(len(json.load(response)['result']['addresses']),1)
+
     def test_sensitive_route_matrix_requires_session_and_request_token(self):
         routes=[('/api/update-check',None),('/api/state',None),('/api/geo',None),('/api/storage',None),
-                ('/api/activity',None),('/api/map',None),('/api/data-info',None),
+                ('/api/activity',None),('/api/usage-statistics',None),('/api/map',None),('/api/data-info',None),
                 ('/api/export/backup',None),('/api/export/s13?year=2026',None),
                 ('/api/restore/safety?name=foer-import-fake.zip',None),
                 ('/api/address-source/status',None),('/api/share/status',None),

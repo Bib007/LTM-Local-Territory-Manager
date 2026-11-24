@@ -17,7 +17,7 @@ from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
 from server import Server,stop_running
 from store import Store
-from profile_policy import GET,POST,PERMISSIONS
+from profile_policy import GET,POST,PERMISSIONS,require
 from profile_recovery import export_accounts,restore_accounts
 from portable import snapshot
 
@@ -80,13 +80,85 @@ class ProfilesIntegrationTests(unittest.TestCase):
 
     def change(self,session,base,action,data):
         return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
+    def test_return_only_role_cannot_issue_move_or_record_completion(self):
+        publisher=self.store.mutate('publisher.save',{'name':'Fiktiv person'})['id']
+        day=self.state(self.admin)['today']
+        loan=self.store.mutate('loan.issue',{'card_id':self.card,'publisher_id':publisher,'date':day,'initial':True})['id']
+        guest,role,_=self.reader(['cards.view','loans.view','loans.return','publishers.view'])
+        for action,data in (
+            ('loan.issue',{'card_id':self.card,'publisher_id':publisher,'date':day}),
+            ('folder.set',{'ids':[self.card],'in_folder':True}),
+            ('loan.finish',{'id':loan,'date':day,'complete':True}),
+            ('loan.finish',{'id':loan,'date':day,'note':'Fiktiv note'}),
+        ):
+            with self.subTest(action=action,data=data), self.assertRaises(urllib.error.HTTPError) as failure:
+                self.change(guest,self.state(guest),action,data)
+            self.assertEqual(failure.exception.code,403)
+        self.change(guest,self.state(guest),'loan.finish',{'id':loan,'date':day})
+        self.assertEqual(self.store.require('loans',loan)['returned'],day)
+        self.assertTrue(self.state(guest)['undo_available'])
+        self.change(guest,self.state(guest),'workflow.undo',{})
+        self.assertIsNone(self.store.require('loans',loan)['returned'])
+        self.change(guest,self.state(guest),'loan.finish',{'id':loan,'date':day})
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view','loans.view']},self.admin)
+        self.assertFalse(self.state(guest)['undo_available'])
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.change(guest,self.state(guest),'workflow.undo',{})
+        self.assertEqual(failure.exception.code,403)
+
+
+    def test_geo_preview_isolation_and_revalidation(self):
+        from geo_store import suggest_outline
+        self.store.mutate('geo.import',{'records':[{'id':'f1','entity':'address','road':'Fiktivvej','number':'1','postcode':'9999','lng':10,'lat':55,'unknown':{'keep':True}}],'source':'Test','label':'Fiktiv'})
+        with self.store.transaction():
+            row=self.store.get('geo','f1');row['unknown']={'keep':True};self.store.put('geo',row)
+            card=self.store.get('cards',self.card);card['addresses']=[{'road':'Fiktivvej','numbers':'1','count':1}];self.store.put('cards',card)
+            self.store.put('geo',{'id':'download:f','entity':'download','complete_road':{'road':'Fiktivvej','postcode':'9999'}})
+        rights=['cards.view','cards.edit','geo.view','geo.edit']
+        editor,role,user=self.reader(rights)
+        original=suggest_outline
+        for mode in ('ids','street_lines'):
+            for outcome in ('success','rejected','internal','changed','revoked','logout'):
+                with self.subTest(mode=mode,outcome=outcome):
+                    self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',rights,ident=role)
+                    editor=self.login('Fiktiv bruger','Fiktiv-password-456')
+                    entered=threading.Event();release=threading.Event()
+                    def held(*args):
+                        entered.set()
+                        if not release.wait(5):raise RuntimeError('Test did not release preview')
+                        if outcome=='rejected':raise ValueError('Fiktiv afvisning')
+                        if outcome=='internal':raise RuntimeError('FICTIONAL_PRIVATE_DIAGNOSTIC')
+                        return original(*args)
+                    before=self.store.revision
+                    with patch('geo_store.suggest_outline',held),concurrent.futures.ThreadPoolExecutor() as pool:
+                        pending=pool.submit(self.value,'/api/mutate',{'action':'geo.preview','data':{'mode':mode,'address_ids':['f1'],'suggest_outline':True,'card_id':self.card,'postcodes':['9999']}},editor)
+                        try:
+                            self.assertTrue(entered.wait(2))
+                            # Both requests must complete while calculation is held.
+                            self.assertEqual(pool.submit(self.state,self.admin).result(timeout=2)['cards'][0]['id'],self.card)
+                            if outcome=='changed':self.store.mutate('card.color',{'card_id':self.card,'map_color':'#aabbcc'})
+                            if outcome=='revoked':self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',['cards.view'],ident=role)
+                            if outcome=='logout':self.value('/api/logout',{},editor)
+                        finally:release.set()
+                        if outcome=='success':
+                            result=pending.result(timeout=2)
+                            self.assertTrue(result['result']['addresses'][0]['unknown']['keep'])
+                        else:
+                            with self.assertRaises(urllib.error.HTTPError) as caught:pending.result(timeout=2)
+                            self.assertEqual(caught.exception.code,401 if outcome=='logout' else 403 if outcome=='revoked' else 500 if outcome=='internal' else 400)
+                            message=json.load(caught.exception)['error']
+                            self.assertNotIn('FICTIONAL_PRIVATE',message)
+                            if outcome=='changed':self.assertIn('ændret',message)
+                        if outcome!='changed':self.assertEqual(self.store.revision,before)
+                        self.assertTrue(self.store.get('geo','f1')['unknown']['keep'])
+                        self.assertEqual(self.state(self.admin)['cards'][0]['id'],self.card)
 
     def test_publisher_merge_profile_save_alias_assignment_and_actor_owned_undo(self):
         from datetime import date
         target=self.store.mutate('publisher.save',{'name':'Fiktiv mål','group':'Fiktiv gruppe','group_role':'assistant','pioneer':True})['id']
         source=self.store.mutate('publisher.save',{'name':'Fiktiv alias'})['id']
         loan=self.store.mutate('loan.issue',{'card_id':self.card,'publisher_id':source,'date':date.today().isoformat(),'initial':True})['id']
-        rights=['publishers.view','publishers.manage','loans.view','loans.manage','cards.view']
+        rights=['publishers.view','publishers.manage','loans.view','loans.manage','loans.issue','cards.view']
         editor,role,_=self.reader(rights)
         base=self.state(editor)
         request={'target_id':target,'source_id':source,'name':'Fiktiv samlet'}
@@ -266,7 +338,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
 
     def test_bulk_folder_two_authenticated_users_and_permission_denial(self):
         """Two different accounts race on one fictional card; only one changes it."""
-        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'loans.manage'])
+        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'folder.manage'])
         admin_base = self.state(self.admin)
         guest_base = self.state(guest)
         ready = threading.Barrier(2)
@@ -296,6 +368,25 @@ class ProfilesIntegrationTests(unittest.TestCase):
             self.change(without_manage, self.state(without_manage),
                         'folder.set_many', payload)
         self.assertEqual(error.exception.code, 403)
+
+    def test_usage_statistics_requires_settings_permission_and_exposes_only_aggregates(self):
+        start=self.store.revision
+        admin_data=self.value('/api/usage-statistics',session=self.admin)
+        self.assertGreaterEqual(admin_data['actions'],2)
+        self.assertIn('system_minutes',admin_data)
+        self.assertIn('person_minutes',admin_data)
+        self.assertNotIn('Opdigtet privat opgave',str(admin_data))
+        self.assertNotIn('F101',str(admin_data))
+        self.assertEqual(self.store.revision,start)
+        with self.assertRaises(PermissionError):
+            require({'settings.manage'},GET['/api/usage-statistics'])
+        reader,_,_=self.reader(['activity.view'])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.value('/api/usage-statistics',session=reader)
+        self.assertEqual(denied.exception.code,403)
+        # Even an authorized profile cannot obtain the raw audit payload.
+        self.assertTrue(all('fields' not in user and 'cards' not in user
+                            for user in admin_data['users']))
 
     def test_activity_and_recovery_name_the_authenticated_actor(self):
         before=self.state(self.admin)
@@ -356,6 +447,18 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1})
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
         self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1,'ib_total':2})
+        # The new report derives points from cards and includes every active IB.
+        admin_totals=self.state(self.admin)['report_summary']['territory_totals']
+        self.assertEqual(admin_totals['visit_points'],1)
+        self.assertEqual(admin_totals['ib_total'],2)
+        # Report-only access permits aggregates but never the raw card/IB data.
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['reports.view']},self.admin)
+        report_state=self.state(reader)
+        self.assertEqual(report_state['report_summary']['territory_totals']['visit_points'],1)
+        self.assertNotIn('ib_total',report_state['report_summary']['territory_totals'])
+        self.assertEqual(report_state['cards'],[])
+        self.assertEqual(report_state['ib'],[])
+
 
     def test_role_guidance_survives_profile_settings_save_and_real_http_refresh(self):
         # Regression: before this fix the authenticated state stripped the four
@@ -566,7 +669,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.assertTrue(base['profile']['desk_only'])
         self.assertEqual(base['profile']['language'],'da')
         self.assertEqual(set(base['profile']['permissions']),
-                         {'cards.view','loans.view','loans.manage','publishers.view','dashboard.view'})
+                         {'cards.view','loans.view','loans.manage','loans.issue','loans.return','publishers.view','dashboard.view'})
         self.assertEqual(self.value('/api/profiles/heartbeat',{},reader)['language'],'da')
         with self.assertRaises(urllib.error.HTTPError) as forbidden:
             self.value('/api/geo',session=reader)
@@ -591,7 +694,7 @@ class ProfilesIntegrationTests(unittest.TestCase):
     def test_loan_manager_can_select_existing_name_but_cannot_create_publishers(self):
         publisher=self.store.mutate('publisher.save',{'name':'Fiktiv Forkynder'})['id']
         second_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
-        reader,_,_=self.reader(['cards.view','loans.view','loans.manage','publishers.view'])
+        reader,_,_=self.reader(['cards.view','loans.view','loans.issue','publishers.view'])
         base=self.state(reader)
         data={'card_id':self.card,'publisher_name':'  FIKTIV FORKYNDER  ','date':base['today'],'initial':True}
         self.change(reader,base,'loan.issue',data)
@@ -967,6 +1070,39 @@ class ProfilesIntegrationTests(unittest.TestCase):
         self.change(self.admin,self.state(self.admin),'note.reply.delete',{'id':self.note,'entry_id':entry['id']})
         self.assertTrue(task(self.admin)['resolved'])
         self.assertNotIn('reply',task(self.admin)['task_history'][0])
+
+    def test_task_reply_unread_notification_can_only_be_read_by_recipient(self):
+        editor,role,user=self.reader(['notes.view','notes.edit'])
+        self.assign_task(user)
+        def task(session):
+            return next(n for n in self.state(session)['notes'] if n['id']==self.note)
+        self.change(editor,self.state(editor),'note.resolve',{
+            'id':self.note,'resolved':True,'reply':'Fiktivt svar til opgavefordeleren',
+            'reply_target':task(editor)['reply_target']})
+        history=task(self.admin)['task_history']
+        entry=history[0]
+        self.assertTrue(entry['recipient_self'])
+        self.assertFalse(entry['read'])
+        self.assertNotIn('read_at',entry)
+        self.assertNotIn('read',task(editor)['task_history'][0])
+        self.assertNotIn('read_at',task(editor)['task_history'][0])
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.change(editor,self.state(editor),'note.reply.read',{
+                'id':self.note,'entry_id':entry['id'],
+                '_task_actor_id':self.state(self.admin)['profile']['user']['id']})
+        self.assertEqual(forbidden.exception.code,403)
+        self.assertNotIn('read_at',self.store.require('notes',self.note)['task_history'][0])
+        self.change(self.admin,self.state(self.admin),'note.reply.read',{
+            'id':self.note,'entry_id':entry['id'],'_task_actor_id':'forged'})
+        self.assertTrue(task(self.admin)['task_history'][0]['read'])
+        self.assertIn('read_at',self.store.require('notes',self.note)['task_history'][0])
+        self.assertTrue(task(self.login('Fiktiv admin','Fiktiv-password-123'))['task_history'][0]['read'])
+        # Repeated marking is harmless and cannot revive the notification.
+        self.change(self.admin,self.state(self.admin),'note.reply.read',{'id':self.note,'entry_id':entry['id']})
+        self.assertTrue(task(self.admin)['task_history'][0]['read'])
+        with self.assertRaises(urllib.error.HTTPError) as missing:
+            self.change(self.admin,self.state(self.admin),'note.reply.read',{'id':self.note,'entry_id':'missing'})
+        self.assertEqual(missing.exception.code,400)
 
     def test_task_ownership_directory_requires_note_access(self):
         session,role,user=self.reader(['users.manage'])

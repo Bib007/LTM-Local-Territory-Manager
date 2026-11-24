@@ -22,7 +22,7 @@ await row.getByRole('checkbox').check();
 await page.getByRole('button',{name:'Flyt 1 til kassen',exact:true}).click();
 await page.waitForFunction(id=>!card(id).in_folder,cardId);
 await row.getByRole('button',{name:'Udlever fra kassen',exact:true}).click();
-assert.equal(await page.locator('#issueForm [name=initial]').isChecked(),false);
+assert.equal(await page.locator('#issueForm [name=initial]').count(),0,'Removed initial-assignment checkbox stays absent');
 await page.locator('#issueForm [name=publisher_name]').fill('Fictional publisher');
 await page.locator('#issueForm button:not([type=button])').click();
 await page.waitForFunction(id=>loanFor(id)?.initial===false,cardId);

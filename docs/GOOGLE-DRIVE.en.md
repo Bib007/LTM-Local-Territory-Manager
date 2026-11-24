@@ -10,9 +10,9 @@ The installed app is currently Danish. The menu and file names below are the act
 
 ## Digital map and printable front
 
-Starting in Stable v1.12.16, LTM shares one two-page PDF. Page 1 shows the digital street map, card number, name, point total and dates. Page 2 shows the printable front with wrapped street lines. All saved address dots are identically red. The do-not-call list belongs on the physical card back.
+Since Stable v1.12.16, LTM has shared the digital map and printable front in one PDF. The updated PDF also includes **page 3: a searchable address list**, grouped by street and postcode and sorted by house number, with floor/door details only where public sharing is permitted. Long lists continue automatically on page 4 and beyond. Page 1 remains the map and page 2 the printable front. The do-not-call list stays on the physical card back; protected apartment details do not appear in the shared address index.
 
-Choose **Update Google Drive upload** and review both pages before approval. If a Drive file already exists, LTM sends the PDF as a new revision of that file. Check the current Drive link before printing QR codes. Date updates reuse the same approved printable front.
+Choose **Update Google Drive upload** and review all pages, including the address list, before approval. If a Drive file already exists, LTM sends the PDF as a new revision of that file. Check the current Drive link before printing QR codes. Date updates reuse the same approved printable front.
 
 ## 1. Create your own Google client
 
@@ -86,6 +86,6 @@ For Danish instructions included with the program, see [GOOGLE-DRIVE-OPSAETNING.
 
 ## Card front and batch approval
 
-Page 2 of the Drive PDF uses the normal print template and street grouping. Update the card’s Drive upload and review both pages to replace the previous front. After printing, choose “Approve printed sides in the app” to approve the reviewed fronts and backs together, including after printing all cards. Changed content requires a new print. No sides are approved automatically.
+Page 2 of the Drive PDF uses the normal print template and street grouping. Page 3 and any continuation pages list approved public addresses. For manually entered cards, only safely verified street lines and number ranges are listed as recorded; missing individual addresses are never guessed. Update the Drive upload and review every page to replace the previous front. After printing, choose “Approve printed sides in the app” to approve the reviewed fronts and backs together, including after printing all cards. Changed content requires a new print. No sides are approved automatically.
 
 In the preview, switch **Show house numbers and lines on the map** on/off. Every red dot stays. This changes the new image only; approve it again before uploading. Readable-archive fronts now use the same print view as ordinary cards.

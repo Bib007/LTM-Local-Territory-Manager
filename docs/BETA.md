@@ -1,6 +1,6 @@
 # Test LTM-beta i Home Assistant
 
-Beta 1.12.19-beta.35 opretter ukendte forkyndere fra historikimport i gruppen "Ikke i en tjenestegruppe". To forkyndere kan sammenlægges under et valgfrit navn med bevaret udlån og historik. Tidligere navne genkendes ved senere import. Betaen samler også navigation under sikre gemninger, kortværktøjer under kortet, enklere lige/ulige-mærkning og HA-diagnostik for vedvarende svarproblemer. Se [betanoten](BETA-NOTES.md) for prøver og genimport af HA-blueprint.
+Beta afprøver den næste planlagte Stable-version. Begge kanaler følger [samme versionssystem](VERSIONERING.md): fx `1.12.36-beta.1`, `1.12.36-beta.2` og derefter Stable `1.12.36`. Tidligere beta-tags bevares uændrede. Se [den aktuelle betanote](BETA-NOTES.md) for funktioner og afprøvning.
 
 ## Installer betakanalen én gang
 

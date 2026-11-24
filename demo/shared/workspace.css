@@ -87,11 +87,11 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 
 .publisherReturnGroup{padding:10px 0 20px;border-bottom:2px solid var(--line);margin-bottom:18px}.publisherReturnGroup h3{display:flex;gap:12px;flex-wrap:wrap;align-items:center;overflow-wrap:anywhere}.publisherReturns{min-width:0}.publisherReturnGroup table{min-width:0;width:100%;table-layout:fixed}.publisherReturnGroup td,.publisherReturnGroup th{padding:12px 5px;overflow-wrap:anywhere}.publisherReturnGroup th:last-child{width:36%}.publisherReturnGroup button{padding:8px 9px}
 
-.brand{flex:1 1 auto;min-width:0}.brandIdentity{display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 auto}.brand .brandWordmark{width:360px;max-width:none;height:66px;flex:0 0 360px;object-position:left center}.brandIdentity b{order:3;flex-shrink:0}header #saveState{flex:0 1 auto;max-width:30%;min-width:65px}
+.brand{flex:0 1 auto;min-width:0}.brandIdentity{display:flex;align-items:center;gap:12px;min-width:0;flex:0 1 auto}.brand .brandWordmark{width:360px;max-width:none;height:66px;flex:0 0 360px;object-position:left center}.brandIdentity b{order:3;flex-shrink:0}header #saveState{flex:0 1 auto;max-width:30%;min-width:65px}
 /* The unchanged 360 × 66 wordmark includes right-hand whitespace. Align the
    beta badge with the first text line, not with the two-line image's centre. */
 @media(min-width:751px){.brand .brandWordmark{margin-right:-60px}.brandIdentity b{align-self:flex-start;margin-top:15px}}
-@media(max-width:750px){.brand{flex:1 1 auto;gap:8px}.brandIdentity{gap:6px}.brand .brandCompact{width:34px;height:34px;flex:0 0 34px}.brandIdentity b{order:0;font-size:14px}.betaChannel .brandIdentity b{font-size:14px}header #saveState{flex:0 1 85px;max-width:30%;min-width:65px}}
+@media(max-width:750px){.brand{flex:0 1 auto;gap:8px}.brandIdentity{gap:6px}.brand .brandCompact{width:34px;height:34px;flex:0 0 34px}.brandIdentity b{order:0;font-size:14px}.betaChannel .brandIdentity b{font-size:14px}header #saveState{flex:0 1 85px;max-width:30%;min-width:65px}}
 
 .onboardingTasks{padding:12px 16px;margin-bottom:16px}.onboardingTasks>summary{font-size:14px;font-weight:600;cursor:pointer;line-height:1.5}.onboardingTasks>p{font-size:12px;line-height:1.5;margin:10px 0}.onboardingTasks .onboardingChecklist{margin:8px 0;padding-left:22px}.onboardingTasks .onboardingChecklist li{padding:7px 0;font-size:12px;line-height:1.4}.onboardingTasks .onboardingChecklist .actions{margin-top:5px;gap:5px}.onboardingTasks .onboardingChecklist button{padding:5px 8px;font-size:11px;min-height:28px}
 
@@ -151,3 +151,172 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .taskImages img{display:block;width:100%;height:112px;object-fit:contain;border-radius:6px;background:var(--surface)}
 .taskImages figcaption{overflow-wrap:anywhere;font-size:.85em}
 .taskImages .check{margin:4px 0}
+
+/* Tasks: one compact status switch with a secondary owner filter. */
+.taskControls{display:grid;gap:12px;margin-bottom:16px}
+.taskSearchRow{display:flex;align-items:center;gap:10px}
+.taskSearchRow input{flex:1 1 auto;min-width:0}
+.taskSearchRow button{flex-shrink:0}
+.taskFilterRow{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.taskStatusFilters{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:9px;background:var(--surface2)}
+.taskStatusFilters button{margin:0;min-height:36px;padding:8px 12px;border:1px solid transparent;border-radius:6px;background:transparent;color:inherit}
+.taskStatusFilters button[aria-pressed=true]{border-color:var(--line);background:var(--surface);font-weight:650}
+.taskOwnerPicker{display:grid;gap:6px;min-width:205px;margin:0;font-size:12px}
+.taskOwnerPicker span{color:var(--muted)}
+.taskOwnerPicker select{width:100%;min-height:40px}
+.taskList{margin-bottom:20px}
+@media(max-width:600px){.taskFilterRow{align-items:stretch}.taskStatusFilters,.taskOwnerPicker{width:100%}.taskStatusFilters button{flex:1 1 auto;padding-inline:8px}.taskSearchRow .primary{white-space:nowrap}}
+
+
+/* Beta home: show actionable information before secondary reports and reminders. */
+.dashboardHome{
+ --dashboard-accent:#9acdec;
+ --dashboard-track:#3a4751;
+ --dashboard-faint:color-mix(in srgb,var(--accent) 11%,var(--surface));
+ min-width:0;
+}
+.dashboardHome .dashboardLead{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 13px;padding:1px 2px}
+.dashboardLead h2{font-size:clamp(21px,2vw,26px);letter-spacing:-.035em;font-weight:650;margin:3px 0 0}
+.dashboardEyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:750;color:var(--muted)}
+.dashboardWorkButton{min-height:37px;white-space:nowrap;font-size:12px;padding:8px 14px}
+.dashboardPrimary{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}
+.dashboardPrimary>.panel{margin:0;padding:22px 23px;min-width:0;min-height:188px;border:1px solid var(--line);border-radius:13px}
+.dashboardPrimarySummary{grid-template-columns:minmax(0,1fr)}
+.dashboardCoverage{display:flex;flex-direction:column;gap:14px;background:linear-gradient(125deg,var(--dashboard-faint),var(--surface) 65%)}
+.dashboardCoverageTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.dashboardCoverageTop h3{font-size:15px;font-weight:650;line-height:1.3;margin:5px 0 0}
+.dashboardCoverageTag{font-size:10px;line-height:1.4;padding:4px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.dashboardCoverageMetrics{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:20px;align-items:center}
+.dashboardCoverageAmount{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 15px}
+.dashboardCoverageVisits{display:flex;flex-direction:column;gap:5px;min-width:0;border-left:1px solid var(--line);padding-left:18px}
+.dashboardCoverageVisits small,.dashboardCoverageVisits>span{font-size:11px;line-height:1.4;color:var(--muted)}
+.dashboardCoverageVisits strong{font-size:clamp(30px,3vw,44px);line-height:1.05;letter-spacing:-.045em;color:var(--dashboard-accent);font-variant-numeric:tabular-nums}
+.dashboardCoverageAmount strong{font-size:clamp(43px,4.2vw,59px);font-weight:700;line-height:1;letter-spacing:-.055em;font-variant-numeric:tabular-nums;color:var(--dashboard-accent)}
+.dashboardCoverageAmount>span{font-size:12px;line-height:1.5;color:var(--text);max-width:19ch}
+.dashboardProgressTrack{height:11px;border-radius:99px;background:var(--dashboard-track);overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 45%,transparent)}
+.dashboardProgressTrack>span{display:block;height:100%;background:linear-gradient(90deg,#4e92c3,#a1d6d7);border-radius:inherit}
+.dashboardCoverageFoot{display:flex;gap:8px;justify-content:space-between;align-items:baseline;font-size:11px;line-height:1.45;color:var(--muted)}
+.dashboardCoverageFoot b{font-weight:650;color:var(--text);white-space:nowrap}
+.dashboardCoverage .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.dashboardSpotlight{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:12px}
+.dashboardSpotlight small{font-size:12px;font-weight:650;line-height:1.5;color:var(--muted)}
+.dashboardSpotlightNumber{display:block;font-size:clamp(38px,4vw,56px);letter-spacing:-.045em;line-height:1.02;font-weight:680;font-variant-numeric:tabular-nums;color:var(--text)}
+.dashboardAverageValue{display:block;font-size:clamp(29px,2.75vw,39px);letter-spacing:-.04em;line-height:1.18;font-weight:720;color:var(--dashboard-accent);overflow-wrap:break-word}
+.dashboardQueueValue{font-size:clamp(24px,2.2vw,33px)}
+.dashboardAverage .dashboardSpotlightNote,.dashboardQueue .dashboardSpotlightNote{max-width:42ch}
+.dashboardVisits .dashboardSpotlightNumber{color:var(--dashboard-accent)}
+.dashboardSpotlightNote{font-size:11px;line-height:1.55;color:var(--muted)}
+.dashboardUnknownVisits{font-size:11px;line-height:1.45;color:var(--muted)}
+.dashboardQuickHeader{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 2px;margin:15px 0 8px}
+.dashboardQuickHeader h3{margin:0;font-size:12px;font-weight:700;color:var(--text)}
+.dashboardQuickHeader>span{font-size:11px;color:var(--muted)}
+.dashboardQuickFacts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:18px}
+.dashboardPrimarySummary+.dashboardQuickHeader+.dashboardQuickFacts{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dashboardHome .dashboardFact{min-width:0;min-height:76px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:7px;margin:0;padding:12px 15px;background:var(--surface);border:1px solid var(--line);border-radius:10px;text-align:left;color:var(--text)}
+.dashboardFact>span{font-size:11px;line-height:1.4;color:var(--muted)}
+.dashboardFact strong{font-size:25px;font-weight:650;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--text)}
+.dashboardHome button.dashboardFact:hover{border-color:var(--accent);background:var(--dashboard-faint)}
+.dashboardHome button.dashboardFact:focus-visible,.dashboardWorkButton:focus-visible{outline:2px solid var(--dashboard-accent);outline-offset:3px}
+.dashboardHome .dashboardLower{margin:0 0 18px;gap:13px}
+.dashboardHome .dashboardLower>.panel{margin:0;min-width:0;border:1px solid var(--line);border-radius:12px}
+.dashboardBelow{display:grid;gap:12px}
+.dashboardBelow>*{min-width:0;margin:0}
+.dashboardBelow:empty{display:none}
+.dashboardHome>.dashboardStart{margin:0 0 15px}
+html[data-theme=light] .dashboardHome{--dashboard-accent:#1d638f;--dashboard-track:#d7e5ef;--dashboard-faint:#edf5fb}
+html[data-theme=light] .dashboardProgressTrack>span{background:linear-gradient(90deg,#286e9d,#54a1b4)}
+html[data-theme=light] .dashboardHome button.dashboardFact{background:var(--surface);color:var(--text)}
+html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(--dashboard-faint)}
+@media(max-width:1150px){
+ .dashboardPrimary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .dashboardPrimarySummary{grid-template-columns:minmax(0,1fr)}
+ .dashboardCoverage{grid-column:1/-1}
+ .dashboardPrimary>.panel{min-height:155px}
+ .dashboardQuickFacts{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .dashboardPrimarySummary+.dashboardQuickHeader+.dashboardQuickFacts{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:750px){
+ .dashboardHome .dashboardLead{gap:10px;align-items:flex-start}
+ .dashboardLead h2{font-size:22px}
+ .dashboardWorkButton{min-height:35px;font-size:11px;max-width:150px;white-space:normal}
+ .dashboardPrimary{gap:9px}
+ .dashboardPrimarySummary{grid-template-columns:minmax(0,1fr)}
+ .dashboardPrimary>.panel{padding:17px;min-height:145px;border-radius:10px}
+ .dashboardCoverage{gap:12px}
+ .dashboardCoverageAmount strong{font-size:46px}
+ .dashboardCoverageMetrics{grid-template-columns:minmax(0,1fr) minmax(0,.95fr);gap:12px}
+ .dashboardCoverageVisits{padding-left:12px}
+ .dashboardCoverageTag{white-space:normal;text-align:right}
+ .dashboardAverageValue{font-size:clamp(24px,6.1vw,33px)}
+ .dashboardSpotlightNumber{font-size:38px}
+ .dashboardQuickHeader{margin-top:13px}
+ .dashboardQuickFacts,.dashboardPrimarySummary+.dashboardQuickHeader+.dashboardQuickFacts{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:13px}
+ .dashboardHome .dashboardFact{min-height:65px;padding:10px 12px}
+ .dashboardFact strong{font-size:23px}
+ .dashboardHome .dashboardLower{gap:11px}
+}
+@media(max-width:390px){
+ .dashboardHome .dashboardLead{align-items:stretch;flex-wrap:wrap}
+ .dashboardWorkButton{max-width:100%}
+ .dashboardCoverageTag{display:none}
+ .dashboardAverageValue{font-size:24px}
+ .dashboardSpotlightNumber{font-size:33px}
+ .dashboardPrimary>.panel{padding:14px}
+ .dashboardCoverageFoot{flex-wrap:wrap}
+}
+
+/* Compact dashboard and settings tabs. Return rows retain independent selection. */
+@media(max-width:510px){.dashboardCoverageMetrics{grid-template-columns:minmax(0,1fr)}.dashboardCoverageVisits{border-left:0;border-top:1px solid var(--line);padding:10px 0 0}.dashboardPrimary{grid-template-columns:minmax(0,1fr)}.dashboardCoverage{grid-column:auto}}
+.settingsViewTabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.settingsViewTabs button[aria-current="page"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.deskReturnRow.selected{background:var(--dashboard-faint,var(--surface));outline:1px solid var(--accent);outline-offset:-1px}
+.deskReturnRow td:first-child{width:45px}.deskReturnSelect{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.deskReturnSelect input[type=checkbox]{width:17px;height:17px}
+.deskReturnSelect strong{font-size:12px;color:var(--muted)}
+
+/* Shared compact workspace: keep maps, print sheets and dialog controls intact. */
+@media screen {
+ #nav .navGroup{padding:4px 0 8px;border-color:var(--line)}
+ #nav .navGroup>summary{padding:9px 8px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+ #nav button{padding:9px 9px;min-height:40px;margin-bottom:2px}
+ #nav .navIcon{width:20px;height:20px;color:var(--muted)}
+ #nav button.active .navIcon{color:inherit}
+ #nav .navExternal{padding:9px 8px}
+ #congregation{padding-bottom:14px}
+ .settingsSectionNav{margin-bottom:14px;padding:6px 0 12px;border-bottom:1px solid var(--line)}
+ .settingsSectionTabs,.settingsAdvancedTabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+ .settingsSectionNav button{width:auto;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;margin:0;padding:9px 12px;min-height:40px;border:1px solid var(--line);color:var(--text);background:var(--surface2)}
+ .settingsSectionNav button[aria-current=page]{border-color:var(--accent);background:var(--surface);box-shadow:inset 0 -2px var(--accent)}
+ .settingsAdvanced{margin-top:9px}
+ .settingsAdvanced>summary{color:var(--link);cursor:pointer;padding:8px 0;min-height:38px}
+ .settingsAdvancedTabs{padding:4px 0 3px}
+ .cardActionMenu{position:relative;min-width:36px}
+ .cardActionMenu>summary{list-style:none;cursor:pointer;display:grid;place-items:center;border:1px solid var(--line);border-radius:6px;background:var(--surface2);min-height:36px;padding:5px 10px;color:var(--text);font-weight:700}
+ .cardActionMenu>summary::-webkit-details-marker{display:none}
+ .cardActionItems{display:grid;gap:5px;margin:6px 0 0;border:1px solid var(--line);border-radius:6px;padding:5px;background:var(--surface)}
+ .cardActionItems button{text-align:left;white-space:normal;width:100%}
+ .rowActions{min-width:0;gap:5px;align-items:flex-start}
+ .details .cardActionMenu{width:100%}
+ .details .cardActionMenu>summary{justify-content:center}
+ .tablewrap:has(>table>tbody>.cardRow){max-height:68vh;overflow:auto;isolation:isolate}
+ .tablewrap:has(>table>tbody>.cardRow)>table>thead>tr>th{position:sticky;top:0;z-index:2;background:var(--surface);color:var(--muted)}
+ .cardRow td{padding:8px 9px}
+ .cardRow td small{margin-top:3px}
+ .cardRow button{min-height:34px}
+ .cardRow .statusBadge{padding:3px 6px;font-weight:500}
+ .cardRow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+ #saveState[data-save-kind=checking]:before{background:#d1b268}
+ #saveState[data-save-kind=offline]:before{background:#e4a385}
+ #saveState[data-save-kind=offline],#saveState[data-save-kind=checking]{color:var(--muted)}
+ .dashboardQuickFacts{grid-template-columns:repeat(auto-fit,minmax(min(100%,135px),1fr))}
+ .dashboardTargetCaption{flex-wrap:wrap}
+ .dashboardTargetCaption b{white-space:normal}
+ .dashboardPrimary>.panel{min-width:0}
+ .undoBar{margin:8px 0 12px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface2)}
+ .publisherReturnGroup{padding:6px 0 12px;margin-bottom:12px;border-bottom-width:1px}
+ .publisherReturnGroup h3{margin:8px 0}
+}
+@media screen and (max-width:750px){
+ .settingsSectionNav button,.settingsAdvanced>summary,.cardActionMenu>summary,.cardRow button,#nav button{min-height:44px}
+ .cardRow td{padding:8px 6px}
+ .tablewrap:has(>table>tbody>.cardRow){max-height:64vh}
+ .dashboardQuickFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

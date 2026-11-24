@@ -142,6 +142,19 @@ class WorkflowStore:
             delta=(recurrence['weekday']-day.weekday())%7 or 7
             item.update(resolved=False,resolved_at=now(),recurrence={**recurrence,'next_due':(day+timedelta(days=delta)).isoformat()})
             self.put('notes',item);return {'id':item['id']}
+        if action=='note.reply.read':
+            from ui_errors import UIError
+            item=self.require('notes',data.get('id'))
+            entry=next((h for h in item.get('task_history',[]) if h.get('id')==data.get('entry_id') and h.get('reply')),None)
+            if entry is None:
+                raise UIError('Svaret findes ikke længere.')
+            actor=data.get('_task_actor_id')
+            if not actor or entry.get('recipient_id')!=actor:
+                raise PermissionError('Kun modtageren kan markere svaret som læst.')
+            if not entry.get('read_at'):
+                entry['read_at']=now()
+                self.put('notes',item)
+            return {'id':item['id']}
         if action=='note.reply.delete':
             from ui_errors import UIError
             item=self.require('notes',data.get('id'))
@@ -187,7 +200,7 @@ class WorkflowStore:
             self.put('settings',config);return {}
         if action=='workflow.undo':
             entry=self._undo
-            if not entry or entry['until']<time.monotonic() or entry['revision']!=self.revision:raise ValueError('Fortryd er udløbet, eller data er ændret siden handlingen.')
+            if not entry or ('expected_revision' in data and data['expected_revision']!=self.revision) or entry['until']<time.monotonic() or entry['revision']!=self.revision:raise ValueError('Fortryd er udløbet, eller data er ændret siden handlingen.')
             for (module,ident),row in entry['rows'].items():
                 self._dirty_modules.add(module)
                 self.workflow_track(module,ident)

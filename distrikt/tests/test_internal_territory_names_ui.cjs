@@ -40,7 +40,7 @@ const ctx={
 vm.createContext(ctx);
 vm.runInContext(
   section('function searchText(c)','function cardLocation(c)')+
-  section('function table(cards','function controls(')+
+  section('function moreCardActions(','function controls(')+
   section('function details(c)','function folderPlan(')+
   section(' function folderCardPickerRows(',' function folderCardPickerFooter(')+
   section('function editCard(id)','async function saveCard('),

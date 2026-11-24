@@ -15,7 +15,9 @@ const ctx={
  I18n:{language:()=> 'da',fixedLanguage:()=>true,text:text=>text},
  ui:(value,params={})=>String(value).replace(/\{(\w+)\}/g,(_,k)=>String(params[k]??'{'+k+'}')),
  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
- serviceYear:()=>2027,yearLabel:()=> '2026/2027',
+ cmp:(a,b)=>String(a).localeCompare(String(b)),
+ fmt:value=>String(value),
+ serviceYear:()=>2027,yearLabel:()=> '2026/2027',dayDiff:(a,b)=>(Date.parse(a)-Date.parse(b))/86400000,
 };
 vm.createContext(ctx);
 for(const name of ['workspace.js','profiles-ui.js','navigation.js'])
@@ -39,9 +41,14 @@ assert.equal(evalJS("ProfilesUI.pageAllowed('Forside')"),true);
 for(const page of ['Opgaver','Opfølgninger','Rapporter','Adresser','Kortoversigt'])
  assert.equal(evalJS(`ProfilesUI.pageAllowed('${page}')`),false,page);
 const html=evalJS('Workspace.dashboard()');
-for(const value of ['Tjenesteår','Kortenes placering','Dækning i tjenesteåret','Gennemgange i tjenesteåret','Aktuelle distrikter'])
+assert.match(html,/data-dashboard-layout="compact-summary"/);
+assert.match(html,/role="progressbar"[^>]*aria-valuenow="60"/,'Summary progress comes only from aggregate completed/current totals');
+assert.match(html,/3 af 5 forskellige kort gennemgået/);
+assert.doesNotMatch(html,/dashboardLead|dashboardVisits|data-ui="Gennemgange i tjenesteåret"/,'Summary hides redundant title and completion boxes');
+assert.doesNotMatch(html,/dashboardAverageValue|data-work="tasks"/,'Summary role cannot expose restricted history or task controls');
+for(const value of ['Kortenes placering','Dækning i tjenesteåret','Aktuelle distrikter'])
  assert.ok(html.includes(value),value);
-for(const value of ['>2</strong>','>3</strong>','>5</strong>','>8</strong>','>60%</strong>'])
+for(const value of ['>2</strong>','>3</strong>','>5</strong>','>60%</strong>'])
  assert.ok(html.includes(value),value);
 assert.doesNotMatch(html,/opfølgning|data-work="tasks"|data-work="followups"|taskMetric|recurringTasks|note\.save/i);
 assert.doesNotMatch(evalJS('Navigation.html()'),/Opgaver|Opfølgninger|Rapporter|Kortoversigt/);
@@ -56,4 +63,27 @@ vm.runInContext(`ProfilesUI.admin={
 evalJS('ProfilesUI.userExtras()');
 assert.match(elements.profileEffectiveRights.innerHTML,/Se forsidestatus/);
 assert.doesNotMatch(elements.profileEffectiveRights.innerHTML,/Se opgaver|Se IB|Se rapportoversigt/);
-console.log('Restricted desk: aggregate home rendered, forbidden navigation and task widgets hidden, effective rights accurate.');
+vm.runInContext(`state={
+  ...state,
+  profile:{...state.profile,desk_only:false,user:{id:'fictional-recipient',name:'Fiktiv modtager'},permissions:['notes.view','dashboard.view']},
+  notes:[{id:'fictional-task',text:'Fiktiv <opgave>',task_history:[
+   {id:'unread-1',reply:'Svar <ikke HTML>',recipient_self:true,read:false,author:'Fiktiv afsender'},
+   {id:'already-read',reply:'Gammelt svar',recipient_self:true,read:true},
+   {id:'other-user',reply:'Privat svar',read:false}
+  ]}]
+};`,ctx);
+const replyNotice=evalJS('Workspace.replyNotifications()');
+assert.match(replyNotice,/Nye svar på dine opgaver/);
+assert.match(replyNotice,/1 ulæste svar/);
+assert.match(replyNotice,/data-work="read-task-reply"/);
+assert.match(replyNotice,/data-work="task-replies"/);
+assert.match(replyNotice,/Fiktiv &lt;opgave>/);
+assert.match(replyNotice,/Svar &lt;ikke HTML>/);
+assert.doesNotMatch(replyNotice,/Gammelt svar|Privat svar/);
+assert.match(evalJS('Workspace.taskHistory(state.notes[0],false)'),/data-work="read-task-reply"/);
+vm.runInContext('state.notes[0].task_history[0].read=true',ctx);
+assert.equal(evalJS('Workspace.replyNotifications()'),'');
+assert.doesNotMatch(evalJS('Workspace.taskHistory(state.notes[0],false)'),/data-work="read-task-reply"/);
+vm.runInContext("state.profile.permissions=['dashboard.view']",ctx);
+assert.equal(evalJS('Workspace.replyNotifications()'),'');
+console.log('Restricted desk and recipient-only task reply notifications verified with fictional data.');

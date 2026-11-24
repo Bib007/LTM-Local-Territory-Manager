@@ -2,37 +2,62 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.13.0 · 2026-11-24
 
+- **Forside:** Tjenesteårets mål og dækning, besøgsestimat for de unikke gennemgåede kort, gennemsnitlig gennemgangstid for 12 måneder og ældste ledige kort med særskilt visning af ukendte datoer.
+- **Daglig brug:** Sammenklappelig navigation, kompakte korttabeller, færre sekundære knapper og beskyttelse af kladder ved faneskift. Ved aflevering til kassen eller pr. forkynder kan man markere kort og gå videre efter individuel bekræftelse. Fortryd knyttes til den viste datarevision.
+- **Rapporter og brugsstatistik:** KTM viser besøgspunkter på aktuelle kort, ét IB-tal og en periodisk liste over manglende gennemgange med de gældende adgangsgrænser. Brugsstatistik har egen fane og estimerer aktiv redigeringstid ud fra historiske gemninger.
+- **Opgaver, kort og historik:** Enklere opgavefiltre, ulæste svar, påmindelser om gamle udleveringer, områdefarver med eksplicit massevalg, justerbare månedintervaller og valgfri historikperiode. Rapportkortet husker visningen af distriktnumre.
+- **Deling og vejledning:** Godkendte Google Drive-PDF’er får søgbare adresselister med fortsat filtrering af private IB-oplysninger. Hjemmesideguiden erstatter den personlige guide. En afgrænset offlinekonverter kan læse enkelte NW Scheduler-/TH-grænsefiler.
+- **Drift og gemning:** Genbrug af komplette DAR-veje, bedre konfliktvisning og forbindelsesprøver med stigende interval. Gemning genbruger indstillinger og undgår ekstra aktivitetslæsning ved tom gendannelsesliste. Ubekræftede skrivninger gentages ikke automatisk.
+- **Omfang:** Samlet promovering af 1.13.0-beta.1–beta.5 med rettelserne fra Stable 1.12.40. Ufærdige flytteforslag, fuld NW Scheduler-/TH-migrering og arbejde uden for beta.5 indgår ikke.
 
+## 1.13.0-beta.5 · 2026-11-24
 
+- **Forside:** Målmarkering viser den forløbne andel af tjenesteåret og afstanden til målet. Gennemsnitlig gennemgangstid bruger afsluttede gennemgange fra seneste 12 måneder; ældste ledige kort viser kendt gennemgangsalder på tværs af mappe og kasse, med ukendte datoer særskilt.
+- **Design:** Sammenklappelige navigationsgrupper, ensartede ikoner, færre sekundære knapper, kompakte korttabeller med faste overskrifter, én indstillingsnavigation med separat brugsstatistik og avancerede valg. Faneskift beskytter reelle ugemte ændringer.
+- **Daglig brug:** Vælg næste synlige kort efter bekræftet aflevering; fortrydelsesknappen er tydeligere og bundet til den viste datarevision.
+- **Drift:** Hurtigere automatiske forbindelsesprøver med gradvist stigende interval. Ingen automatisk gentagelse af ubekræftede skrivninger eller tab af kladder. Fjern redundant aktivitetslæsning, når gendannelseslisten er tom, og genbrug indlæste indstillinger. Den faktiske gemmehastighed afhænger fortsat af installation og datamængde.
 
-## 1.12.40 · 2026-11-22
+## 1.13.0-beta.4 · 2026-11-23
 
-- **Forsidens anslåede besøg:** Hver gennemgang tæller kortets aktuelle kendte besøgstal minus registrerede IB, også når en importeret historisk gennemgang oprindeligt havde ukendt antal. Kort uden kendt aktuelt besøgstal bruger et eventuelt tidligere kendt antal; ellers udelades de fortsat fra skønnet.
-- **Hele sidste års sammenligning:** Søjler og tabel viser forrige års registreringer også for måneder, der endnu ikke er begyndt i dette tjenesteår. Indeværende måned sammenlignes fortsat kun til samme dato sidste år.
-- **Afgrænset Stable-rettelse:** Gennemgangsdata og IB ændres ikke. Kun den afledte forsidestatistik, tilhørende tekst og regressionstests er ændret. Uafsluttede Beta-funktioner medtages ikke.
+- **To gennemgangsmål på forsiden:** Gennemsnitlig gennemgangstid viser dagene fra udlevering til aflevering med registreret gennemgang, kun for afsluttede forløb. Ældste kort i gennemgangskøen viser hvor længe næste ledige kort har ventet siden den seneste relevante dato. Begge har korte forklaringer, og ukendte datoer vises særskilt.
+- **Kortere forside:** Fjern de dobbelte titel-/tjenesteårsoverskrifter og den overflødige særskilte gennemgangstæller. Forsidens dækningsboks viser nu både fremdrift i procent og anslåede besøg på de unikke aktuelle kort, der er gennemgået i tjenesteåret. Gentagne gennemgange af samme kort giver ikke ekstra besøg i denne dækningsvisning; rapporternes særskilte historiske optællinger ændres ikke.
+- **Brugsstatistik i egen fane:** Indstillinger har nu et selvstændigt valg til Brugsstatistik, som ikke længere optager plads mellem øvrige indstillinger. Rettigheder og læseadgang bevares.
+- **Aflever til kassen:** Samme valgte kort og højrepanel med kortdetaljer som ved Aflever pr. forkynder. Vælg og markér kort enkeltvis eller alle viste, og åbn næste markerede udlevering. Hver aflevering kræver fortsat sin egen formular med gennemgangs-, dato- og IB-kontrol; ingen blind masseaflevering.
 
-## 1.12.39 · 2026-11-22
+## 1.13.0-beta.3 · 2026-11-23
 
-- **Original S-13 for alle rapportperioder:** Kalenderår og seneste 12 måneder udfyldes nu på den faktiske originale S-13-billedformular med de eksisterende kolonner, felter og datoer. Den tidligere særskilte S-13-tabel er fjernet.
-- **Tydelig periode:** Ved kalenderår og rullende 12 måneder står den valgte periode over formularen. De er tilpassede periodeudtræk og ikke officielle tjenesteårsrapporter. Tjenesteårets originale S-13 og direkte PDF-download er uændrede.
-- **Stabil rettelse:** Kun visning og PDF-print er rettet. Alle data og øvrige Stable-funktioner fra 1.12.38 er bevaret, og uafsluttede Beta-funktioner følger ikke med.
+- **Daglig brug og opgaver:** Enklere opgavefiltre, adressekontrol nederst, ulæste opgavesvar og kopierbare påmindelser om for gamle udleveringer under Forkyndere. Udleveringsdialogen er ryddet op, IB-revision er en tydelig fravalgt checkbox, og valgte kort fremhæves ved aflevering pr. forkynder.
+- **Kort, historik og indstillinger:** Områdefarver med eksplicit masseoverskrivning og individuelle kortvalg; justerbare månedintervaller; valgfrit antal års historik; husket visning af distriktnumre i rapportkortet; mere læsbar historik på mobil og desktop.
+- **Hurtigere og sikrere arbejde:** Genbrug af komplette DAR-veje, tydeligere hentetal og konfliktadresser; geografiske forhåndsvisninger og forbindelsestjek venter ikke bag lange writes. Snapshots bruger mindre arbejde, mens redigeringskonflikter og kvoter bevares. Særskilte rollerettigheder til daglige handlinger og oprydning.
+- **Deling og vejledning:** Godkendte Google Drive-PDF'er får en søgbar, grupperet adresseliste fra side 3. Private IB-oplysninger filtreres fortsat. Den personlige guide/nyhedsvisning erstattes af hjemmesideguiden; kun logoets klikflade fører til forsiden. Ufærdige flytteforslag er skjult.
+- **Vedligeholdelse og afgrænset import:** Gamle arbejdsnoter ryddes op. Offlineværktøjet til enkelte NW Scheduler-/TH-grænsefiler følger med som forsøgsvis filkonverter; udenlandsk adressehentning eller fuld migrering er ikke tilføjet. Ekstra GitHub-grene arkiveres som tags og fjernes først efter verificeret betaudgivelse.
+- **Redesignet forside:** Det store tjenesteårs-banner og de to høje ringe er erstattet af en kompakt oversigt med tydelig fremdriftsbjælke for andelen af aktuelle kort gennemgået i tjenesteåret, stort gennemsnit mellem gennemgange, besøgsskøn og korte genveje. Diagrammer og opfølgning står under hovedtallene; øvrige påmindelser følger længere nede. Responsivt i lyst/mørkt tema og fortsat adgangsbegrænset for oversigtsroller.
+- **Forsidens anslåede besøg:** Hver gennemgang tæller nu kortets aktuelt kendte besøgstal minus de tilknyttede IB. Historiske gennemgange med tidligere ukendt antal kan derfor tælle, når kortet nu har et kendt besøgstal. Et kort med 35 besøg og 2 IB bidrager med 33 ved hver gennemgang.
+- **Hele sidste tjenesteår i månedsdiagrammet:** Foregående års gennemgange vises i alle 12 måneder, selv når de tilsvarende måneder i dette tjenesteår endnu ikke er begyndt. Indeværende måned sammenlignes fortsat med samme dato sidste år.
+- **Tidligere Stable-rettelser bevaret:** Historikimport understøtter begge datoordener og redigerbar bekræftelse. S-13 benytter originalformularen i kalenderår, tjenesteår og rullende periode, med periodeangivelse for de tilpassede udtræk.
+- Beregningen er et nutidigt skøn, ikke registrerede husbesøg. Ingen kort, IB eller historikposter ændres. Rettelserne fra Stable 1.12.40 er indarbejdet uden at fjerne Beta-funktionerne fra beta.1 og beta.2.
 
-## 1.12.38 · 2026-11-22
+## 1.13.0-beta.2 · 2026-11-21
 
-- **S-13 og rapportperioder:** S-13-oversigten viser nu udleveringer og gennemgange for det valgte kalenderår, tjenesteår eller de seneste 12 måneder. Kalenderår kan vælges tilbage i historikken.
-- **PDF-udtræk:** Udskriv den valgte periodes S-13-oplysninger alene eller sammen med rapporten. Den originale udfyldte S-13 og dens download bevares uændret ved tjenesteår; kalenderår og rullende periode får tydeligt mærkede periodeudtræk, ikke en officiel tjenesteårsformular.
-- **Afgrænset Stable-hotfix:** Alle tidligere registreringer, rapporttal og øvrige funktioner fra 1.12.37 bevares. Andre uafsluttede Beta-funktioner medtages ikke.
+- **KTM-rapportens besøgspunkter:** Rapportens øverste tal summerer nu kun kendte besøgspunkter på aktuelle distriktskort, inklusive manuelle vejlinjer. DAR-adresser uden et distriktskort tæller ikke. Kort uden fuldt kendte besøgstal oplyses særskilt, så subtotalen ikke fremstilles som fuldstændig.
+- **Ét korrekt IB-tal:** Rapporten viser én total med alle aktive IB-registreringer, også manuelle IB uden DAR-tilknytning. Den geografiske IB-deloptælling er fjernet fra KTM-rapporten, men de eksisterende geografiske data ændres ikke.
+- **Dækning og manglende distrikter:** Ét tydeligt dækningsdiagram erstatter hjemme-/udleveret-opdelingen i rapportens hovedtal. Hvert aktuelt kort uden registreret gennemgang i det valgte kalenderår, tjenesteår eller de seneste 12 måneder vises med nummer, navn, område og senest kendte gennemgangsdato – også i periodens PDF.
+- **Afgrænsning og adgang:** Gentagne gennemgange og arkiveret kort-historik tæller som hændelser, men kun aktuelle kort indgår i dækningsprocent og mangelliste. Roller med kun rapportoverblik ser samlede tal, aldrig kortlisten; samlet IB er stadig beskyttet af IB-læserettigheden. Original S-13 ændres ikke.
+- Kun rapportvisning og summer er ændret, ikke indholdet i registreringer eller databaseformat.
 
-## 1.12.37 · 2026-11-22
+## 1.13.0-beta.1 · 2026-11-21
 
-- **Historikimport:** Bekræftelsesfeltet kan nu altid udfyldes efter en forhåndskontrol. Hvis der er fejl eller ingen nye gennemgange/udlån, vises en konkret forklaring ved feltet i stedet for et uforklarligt låst input.
-- **Importbeskyttelsen bevares:** Knappen og serveren afviser fortsat fejlbehæftede, tomme eller allerede registrerede importer. Ingen eksisterende kort, forkyndere eller historik ændres. Stable 1.12.36's rettelse af periodenes datoorden er bevaret.
+- **Brugsstatistik (Beta):** Nyt, læsebaseret overblik under Indstillinger viser estimeret aktiv redigeringstid på tværs af LTM, pr. bruger og pr. måned samt antal gemte ændringer og dage med aktivitet.
+- **Historik bagud:** Beregningen genbruger eksisterende aktivitetsposter. Kun intervaller mellem to gemte ændringer inden for 15 minutter tælles. Længere pauser og enkeltstående ændringer giver ingen tidsestimat; læsning, ikke-gemte rettelser og aktivitet før loggen kan ikke rekonstrueres.
+- **Adgang og privatliv:** Kun brugere med både Administrere indstillinger og Se aktivitet kan hente statistikken. Fælles login og historik uden pålidelig brugeridentitet holdes adskilt fra navngivne brugere. Kun summer og tidsperioder returneres, ikke rå registreringer, kort eller personoplysninger. Ingen databasemigration.
 
-## 1.12.36 · 2026-11-22
+## 1.12.36-beta.1 · 2026-11-21
 
-- **Historikimport:** Accepter både nyeste og ældste udleveringsperiode først. Excel-skabelonen viser den nyeste periode til venstre; tidligere og manuelt udfyldte filer kan fortsat indlæses. Ens udleveringsdatoer, blandet rækkefølge, overlappende udlån og ugyldige gennemgangsmarkeringer afvises stadig.
-- **Kun Stable-rettelse:** Alle funktioner og gemte registreringer fra Stable 1.12.35 bevares. Uafsluttede Beta-ændringer er ikke med. macOS-server har fortsat særskilt fysisk godkendelseskrav.
+- Beta og Stable har nu ét fælles versionsgrundlag: næste fejlrettelses-Beta hedder 1.12.36-beta.1, og dens Stable-udgave hedder 1.12.36. Nye bagudkompatible funktioner starter en minor-version, og uforenelige ændringer starter en major-version.
+- Udgivelsesworkflows validerer nu versionsrækkefølge, entydige Git-tags, seneste Stable som grundlag for Beta og samme programkode fra seneste Beta til Stable. En eksisterende Beta-genudgivelse springes over med en tydelig besked i stedet for at ændre et tidligere tag.
+- Denne overgangs-Beta indeholder de samme brugerfunktioner som Stable 1.12.35. Ingen ændringer i brugerdata, rettigheder eller driftskanal.
 
 ## 1.12.35 · 2026-11-21
 
@@ -42,6 +67,19 @@
 - **Interne distriktskortnavne:** Tilføj et valgfrit internt navn pr. kort, søg efter det i administrationen, og bevar det gennem import, læsbar eksport og backup. Officielle distriktsnavne og -numre, S-12/S-13 og offentlig deling ændres ikke.
 - **Tidligere Stable-rettelser bevares:** Sikker gemmedialog, fokus/scroll under autosave, oprydning i forældede DAR-fejl og det korrekt opmålte IB-læsearkiv følger fortsat med.
 - DAR-preview-isolering i åben PR #134 og øvrige uafsluttede PR'er er ikke inkluderet. macOS-server kræver stadig sin særskilte fysiske godkendelse.
+
+## 1.12.19-beta.37 · 2026-11-21
+
+- **Menighedstilpasning:** Vælg jeres egne visningsnavne for hjemme/kasse, mappe og udleveret. En menighed kan fravælge mappen og bruge hjemme/ude uden at miste gemte placeringer eller historik. Statuskoder og officielle formularer ændres ikke.
+- **Samlet IB-adressegodkendelse:** Gennemgå sikre, entydige DAR-match for manuelle IB på alle distriktskort i én forhåndsvist og bekræftet handling. Tvivlsomme match springes over; rettigheder og samlet Fortryd bevares.
+- **Interne distriktskortnavne:** Hvert kort kan få et valgfrit internt navn, som vises og kan søges i administrationen, uden at erstatte det officielle navn. Lange navne ombrydes på mobil og computer.
+- **Data og privatliv:** Interne navne følger redigering, rettigheder, import, læsbar eksport og sikkerhedskopier. Eksisterende kort, udleveringer, IB og historik bevares. S-12/S-13 og offentligt delte kort viser fortsat kun de officielle oplysninger.
+- **Stable-rettelser med i Beta:** Rettelserne til gemmedialog, autosave, fokus/scroll, forældede DAR-beskeder og IB-læsearkiv med korrekt printlayout og knap ved sikkerhedskopi er også med i Beta-koden. Stable er ikke ændret af denne udgivelse.
+
+## 1.12.19-beta.36 · 2026-11-21
+
+- **Rapportens IB-antal:** Vis alle aktive IB-registreringer, også manuelle IB-linjer uden DAR-adressetilknytning. Vis særskilt hvor mange der kan knyttes til kortlagte adresser inden for den gemte distriktsgrænse.
+- **Adgangsbeskyttelse:** Begge IB-tal følger fortsat rettigheden til at se IB, og eksisterende data ændres ikke.
 
 ## 1.12.34 · 2026-11-20
 

@@ -2,37 +2,62 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.13.0 · 2026-11-24
 
+- **Dashboard:** Service-year target and coverage, estimated visits across unique completed territories, a 12-month completion-time average and the oldest available territory, with unknown dates shown separately.
+- **Daily work:** Collapsible navigation, compact tables, fewer secondary buttons and draft protection when switching settings tabs. Select multiple returns to the box or by publisher and continue to the next territory after individual confirmation. Undo is tied to the displayed data revision.
+- **Reports and usage statistics:** KTM reports show visit points on current territories, one do-not-call total and the period’s missing territories within existing access limits. A dedicated settings tab estimates active editing time from historical saves.
+- **Tasks, maps and history:** Simpler task filters, unread replies, overdue assignment reminders, explicit bulk area colors, adjustable monthly intervals and optional history limits. The report map remembers territory-number visibility.
+- **Sharing and guidance:** Approved Google Drive PDFs gain searchable address lists with private do-not-call details filtered. The website guide replaces the personal guide. A limited offline converter handles individual NW Scheduler/TH boundary files.
+- **Reliability and saves:** Reuse complete DAR streets and loaded settings, show conflicts more clearly, probe connectivity with bounded backoff and skip redundant activity reads for empty recovery lists. Unconfirmed writes are never replayed automatically.
+- **Scope:** Consolidates 1.13.0-beta.1–beta.5 and preserves Stable 1.12.40 fixes. Unfinished move suggestions, full NW Scheduler/TH migration and changes outside beta.5 are excluded.
 
+## 1.13.0-beta.5 · 2026-11-24
 
+- **Dashboard:** A linear service-year target marker and pace difference. Average completed assignment duration uses the last 12 months; the oldest available territory shows its known completion age across folder and box, with undated territories listed separately.
+- **Design:** Collapsible navigation groups, consistent icons, compact secondary actions and card tables with sticky headings, one settings navigation with a dedicated usage tab and advanced settings. Tab changes protect actual unsaved edits.
+- **Desk:** Select the next visible territory after confirmed return; clearer undo action bound to the displayed data revision.
+- **Reliability:** Faster automatic read-only connectivity probes with bounded backoff; never replay uncertain writes or reload drafts automatically. Skip redundant activity scans for empty recovery lists and reuse loaded settings. Actual save latency still depends on deployment and data size.
 
-## 1.12.40 · 2026-11-22
+## 1.13.0-beta.4 · 2026-11-23
 
-- **Estimated visits on the dashboard:** Each completion contributes the card's current known visit count less registered do-not-call entries, including imported historical completions that originally had an unknown count. When the current card count is unknown, a valid recorded count is used if available; otherwise the completion remains excluded from the estimate.
-- **Full previous-year comparison:** Both bars and table show recorded figures for last year's months even where this service year's months have not started. The current month still compares only through the same day last year.
-- **Focused Stable correction:** No history or do-not-call records are modified. Only derived dashboard values, explanatory text and regression tests change. Unfinished Beta features are excluded.
+- **Two separate dashboard metrics:** Average completion time measures issue-to-return days for finished assignments with a recorded completion. The oldest territory in the completion queue shows the age of the next available card based on its relevant planning/completion date. Both include short explanations and handle unknown dates explicitly.
+- **Compact dashboard:** Remove duplicate page and service-year headings and the redundant completion tile. The service-year coverage card now shows both progress and estimated visits for distinct current territories completed this year. Repeated completions never inflate this coverage metric; separate historical report totals retain their existing definition.
+- **Dedicated usage statistics tab:** Settings now offers a separate Usage Statistics view instead of embedding the panel among unrelated settings, respecting existing permissions.
+- **Returns to home:** The Return to Box view now offers selected-card highlighting, the matching card-details sidebar, checkboxes and a select-visible action. Open each marked return individually with its own completion, date and DNC review choices; no unchecked bulk mutation.
 
-## 1.12.39 · 2026-11-22
+## 1.13.0-beta.3 · 2026-11-23
 
-- **Original S-13 layout for every reporting period:** Calendar-year and rolling-12-month views now fill the actual original S-13 image template using its existing columns, cells and assignment/completion fields. The substitute custom S-13 table has been removed.
-- **Explicit selected period:** Calendar and rolling forms include an explanatory period caption; these are adapted extracts, not official service-year reports. The original service-year S-13 and direct PDF download are unchanged.
-- **Focused Stable fix:** No data migrations or unrelated feature changes; all previous 1.12.38 functionality and data remain intact. Unfinished Beta features are excluded.
+- **Daily use and tasks:** Simplified task filters, address checks below the task list, unread task replies and copyable overdue-card reminders under Publishers. Assignment dialogs are cleaner, DNC review is an explicit unchecked checkbox, and the selected card is highlighted in publisher returns.
+- **Cards, history and settings:** Area colours with confirmed bulk replacement and individual card choices; adjustable month bands; configurable history retention; remembered territory numbers on report maps; clearer responsive history.
+- **Performance and safeguards:** Reuse complete DAR streets, explain download counts and show blocking addresses. Geographic previews and liveness checks no longer wait behind long writes. Reduce snapshot work while retaining conflict checks and quotas. Separate role permissions for daily operations and cleanup.
+- **Sharing and guidance:** Approved Google Drive PDFs gain a searchable, grouped address list from page 3. Private DNC information remains filtered. The website guide replaces personal guides/news; only the logo links home. Unfinished transfer suggestions are hidden.
+- **Maintenance and limited import:** Retire old working notes. Include the experimental offline single-boundary NW Scheduler/TH converter; international address retrieval and full migration are not added. Archive extra GitHub branch heads as tags and remove branches only after a verified beta publication.
+- **Redesigned dashboard:** Replace the tall service-year hero and two large rings with a compact first-screen view: explicit progress towards completing current territories this service year, a much larger average interval, estimated visits and concise shortcuts. Charts and follow-ups come next, with reminders below. Responsive in light/dark modes and still permission-safe for summary-only users.
+- **Dashboard estimated visits:** Each completion now counts the territory's current known visit total minus its linked do-not-call entries. Historically unknown completions can be estimated when the territory now has a known count. A card with 35 visits and 2 do-not-call entries contributes 33 per completion.
+- **Full previous service year in the monthly chart:** All twelve previous-year months display saved completions even when the corresponding current-year months have not started. The current month still uses the same calendar-date cut-off last year.
+- **Previous Stable fixes retained:** History imports accept either date order and keep confirmation input editable; S-13 uses the original form in calendar, service and rolling periods, with a clear period caption on adapted extracts.
+- This remains a present-day estimate, not recorded house visits. No card, do-not-call or completion records are modified. Stable 1.12.40 fixes are included without removing the functionality introduced in beta.1 and beta.2.
 
-## 1.12.38 · 2026-11-22
+## 1.13.0-beta.2 · 2026-11-21
 
-- **S-13 reporting periods:** View assignment and completion details for the selected calendar year, service year or rolling last 12 months, including earlier selectable calendar years.
-- **Period PDFs:** Print the selected S-13 period extract on its own or alongside the report. The original completed S-13 and direct download remain unchanged for service years; calendar and rolling periods receive clearly labelled non-official extracts.
-- **Focused Stable hotfix:** All existing data, report figures and other 1.12.37 features are preserved. Unfinished Beta features are excluded.
+- **KTM visit points:** The report header now sums known visit points on current territory cards, including manually maintained street rows. Unassigned DAR addresses do not count. Cards with unknown counts are reported separately so a partial total is not presented as complete.
+- **One accurate do-not-call total:** Only one figure includes all active do-not-call records, including manually entered ones without a DAR match. The geographic subset is removed from the KTM presentation, without changing geographic data.
+- **Coverage and missing territory cards:** A single coverage donut replaces current home/issued splits in report metrics. For the selected calendar year, service year or rolling 12 months, every current card without a completion is listed by number, name, area and last known completion date, including in PDF print.
+- **Scope and access:** Repeated completions and archived-card history remain counted as events; only current cards affect coverage and the missing-card list. Summary-only roles receive counts, never individual card details, and the IB total still requires do-not-call viewing permission. Original S-13 output is unchanged.
+- No stored card or completion records are modified, and no database migration is required.
 
-## 1.12.37 · 2026-11-22
+## 1.13.0-beta.1 · 2026-11-21
 
-- **History import:** The confirmation text field stays editable after every preview. If validation finds errors or no new completions/loans, a clear explanation appears next to the field rather than leaving it unexpectedly locked.
-- **Import safeguards unchanged:** The approval button and server still reject invalid, empty and duplicate-only imports. Existing cards, publishers and history are untouched. The period-order correction from Stable 1.12.36 remains included.
+- **Usage statistics (Beta):** A new read-only Settings overview provides estimated editing time for LTM overall, per user and month, plus saved edit counts and days with activity.
+- **Historical estimates:** Existing audit events support retrospective estimates. Only intervals between two saved edits within 15 minutes count; longer gaps and isolated events add no time. Reading, unsaved work and activity before logging began cannot be reconstructed.
+- **Access and privacy:** Only accounts with both Manage settings and View activity permissions can read statistics. Shared login and events without reliable user identity remain separate from named users. Responses contain aggregates and time ranges, never raw events, territory data or personal notes. No database migration.
 
-## 1.12.36 · 2026-11-22
+## 1.12.36-beta.1 · 2026-11-21
 
-- **History workbook import:** Accept both newest-first and oldest-first assignment periods. The five-period Excel template displays the newest period on the left; existing older and manually prepared files remain compatible. Repeated dates, mixed ordering, overlapping loans and invalid completion flags still fail validation.
-- **Stable hotfix only:** Preserve every feature and stored record from Stable 1.12.35; unfinished Beta changes are not included. The macOS-server release remains subject to its separate physical validation gate.
+- Beta and Stable now share one version base. The next patch Beta is 1.12.36-beta.1 and promotes to Stable 1.12.36; compatible features advance MINOR and incompatible changes advance MAJOR.
+- Release workflows validate the version sequence, immutable Git tags, latest Stable ancestry for Beta and source parity between the latest Beta and its Stable promotion. An ordinary develop push with an already released Beta version now skips publishing with an explicit notice rather than reusing a tag.
+- This migration Beta contains the same user-facing features as Stable 1.12.35 and does not change stored data, permissions or channel isolation.
 
 ## 1.12.35 · 2026-11-21
 
@@ -42,6 +67,19 @@ This preserves the complete changelog as it stood before the Danish-default migr
 - **Internal territory names:** Store an optional internal name per card, search for it administratively and preserve it through imports, readable exports and backups. Official names/numbers, S-12/S-13 and public sharing are unchanged.
 - **Existing Stable fixes retained:** Safe save dialogs, focus/scroll preservation during autosave, clearing stale DAR feedback and the measured do-not-call readable archive remain included.
 - Pending DAR preview isolation PR #134 and other unfinished pull requests are excluded. The macOS-server track retains its separate physical validation gate.
+
+## 1.12.19-beta.37 · 2026-11-21
+
+- **Congregation customization:** Configure local display labels for home/box, folder and issued. Congregations can disable the carry-folder workflow without losing stored placements or history. Internal status keys and official forms are unchanged.
+- **Bulk safe do-not-call address matching:** Preview and explicitly approve unambiguous DAR matches for manual do-not-call entries across all territory cards. Ambiguous matches are skipped; authorization, atomic saving and one-step undo are preserved.
+- **Internal territory names:** Each territory card can have an optional private name for administrative display and search without replacing its official name. Long names wrap on mobile and desktop.
+- **Data and privacy:** Private names are supported by editing, permissions, imports, readable exports and backups. Existing cards, assignments, do-not-call entries and history remain intact. S-12/S-13 and publicly shared maps keep their official labels only.
+- **Stable fixes included in Beta:** The fixes for save dialogs, autosave, focus/scroll, stale DAR messages and the measured do-not-call readable-archive layout and backup-adjacent action are also included in the Beta code. This release does not modify Stable.
+
+## 1.12.19-beta.36 · 2026-11-21
+
+- **Report do-not-call totals:** Show every active do-not-call entry, including manual lines without a linked DAR address. Separately show how many match mapped addresses within the saved territory boundary.
+- **Access protection:** Both do-not-call totals remain protected by the IB viewing permission; existing records are unchanged.
 
 ## 1.12.34 · 2026-11-20
 

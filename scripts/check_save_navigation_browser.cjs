@@ -34,8 +34,8 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    if(profiles){
     await page.evaluate(()=>api('/api/profiles/activate',{name:'Fiktiv admin',password:'Fiktiv-password-123',confirmation:'AKTIVÉR PROFILER'}));
     await page.reload();await page.locator('#loginName').fill('Fiktiv admin');await page.locator('#loginPassword').fill('Fiktiv-password-123');await page.locator('#loginForm button').click();
-    await page.waitForFunction(()=>typeof state!=='undefined'&&state?.profile&&SaveStatus.kind==='saved');await page.waitForFunction(()=>PersonalGuide.data!==null);
-    if(await page.locator('[data-personal-guide=later]').count())await page.locator('[data-personal-guide=later]').click();
+    await page.waitForFunction(()=>typeof state!=='undefined'&&state?.profile&&SaveStatus.kind==='saved');
+    
    }
    const ids=await page.evaluate(async()=>{
     const person=await mutate('publisher.save',{name:'Fiktiv person',group:'Fiktiv gruppe'});
@@ -46,7 +46,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    });
    // The modal releases on submit; navigation uses real clickable navigation.
    let gate=holdNext('loan.finish');await page.evaluate(id=>finish(id,false),ids.loan);
-   await page.locator('#finishForm select[name=revise_ib]').selectOption('no');await page.locator('#finishForm button.primary').click();await waitForReceipt(gate);
+   assert.equal(await page.locator('#finishForm input[name=revise_ib]').isChecked(),false);await page.locator('#finishForm button.primary').click();await waitForReceipt(gate);
    assert.equal(await page.evaluate(()=>SaveStatus.kind),'saving');assert.equal(await page.locator('#dialog').evaluate(n=>n.matches(':modal')),false);
    await page.locator('#finishForm').evaluate(f=>f.requestSubmit());assert.equal(writes.filter(w=>w.action==='loan.finish').length,1);
    await page.locator('[data-navigation="1:2"]').click();await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Ny fiktiv kladde');

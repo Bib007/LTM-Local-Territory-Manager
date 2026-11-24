@@ -123,6 +123,8 @@ class RolesGuidesHTTPTests(unittest.TestCase):
             'date':today,'initial':True})
         actual=self.request('/api/state',desk)
         expected=self.request('/api/state',self.admin)
+        expected['dashboard_summary']['territory_totals'].pop('ib_total',None)
+        self.assertNotIn('ib_total',actual['dashboard_summary']['territory_totals'])
         self.assertEqual(actual['dashboard_summary'],expected['dashboard_summary'])
         period=actual['dashboard_summary']['periods']['service']
         self.assertEqual((period['territories'],period['assigned'],period['home']),(2,1,1))
@@ -130,7 +132,7 @@ class RolesGuidesHTTPTests(unittest.TestCase):
         self.assertEqual(self.a.authorize(desk,'dashboard.view'),
                          actual['profile']['user']['id'])
         self.assertEqual(set(actual['profile']['permissions']),
-                         {'dashboard.view','cards.view','loans.view','loans.manage','publishers.view'})
+                         {'dashboard.view','cards.view','loans.view','loans.manage','loans.issue','loans.return','publishers.view'})
         self.assertIsNone(actual['report_summary'])
         for name in ('notes','ib','ib_reviews','completions','visits','followup_ignores'):
             self.assertEqual(actual[name],[])

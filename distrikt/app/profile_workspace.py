@@ -18,7 +18,7 @@ EDIT = {'cards':'cards.edit','publishers':'publishers.manage','ib':'ib.edit','no
 # Only fields supported by the reconciliation prototype can be reviewed here.
 CONFLICT_FIELDS = REVIEW_FIELDS
 VIEWS.update(visits=('history.view',('id','date','note')),
-             settings=('settings.manage',('id','name')),maps=('geo.view',('id','name')))
+             settings=('settings.manage',('id','name','map_color')),maps=('geo.view',('id','name')))
 EDIT.update(visits='history.edit',loans='loans.manage',settings='settings.manage',maps='geo.edit')
 NOTICE_FIELDS = ('id','module','record_id','field','at','incoming_actor_id',
                  'base','saved','incoming','resolved')

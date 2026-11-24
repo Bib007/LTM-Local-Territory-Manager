@@ -2,8 +2,38 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
 let src=fs.readFileSync(path.join(__dirname,'../app/app.js'),'utf8');src=src.slice(0,src.indexOf("document.addEventListener('input'"));
 const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,{id,innerHTML:'',textContent:'',className:'',style:{},dataset:{},classList:{toggle(){}},addEventListener(){},removeEventListener(){},setAttribute(){},showModal(){},close(){},querySelector(){return null}});return nodes.get(id);};
-const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,requestAnimationFrame:callback=>setTimeout(callback,0),setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),getElementById:get},window:{addEventListener(){},removeEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/publisher-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s12-layout.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
+const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,requestAnimationFrame:callback=>setTimeout(callback,0),setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),querySelectorAll:()=>[],getElementById:get},window:{addEventListener(){},removeEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/publisher-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overdue-loans.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s12-layout.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ktm-report-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
 run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],completions:[],ib:[],visits:[],maps:[],recovery:[],settings:{folder_minimum:30,rural_mode:'manual',rural_minimum:5,require_revision:false,congregation:''},today:'2026-10-06',version:'1.2.0'}`);
+
+// Task page keeps two independent filters in one compact control group.
+// Scheduled address checks belong below the actionable list.
+{
+ const snapshot=run('JSON.stringify({state,taskFilter:Workspace.taskFilter,taskOwnerFilter:Workspace.taskOwnerFilter,taskQuery:Workspace.taskQuery})');
+ context.taskPageSnapshot=snapshot;
+ run(`state={...state,profile:{id:'fictional-user'},task_users:[],address_task:{available:true,status:'idle',enabled:false},
+  notes:[{id:'mine',text:'Fiktiv egen åben',date:'2026-10-02',created:'2026-10-02',resolved:false,assigned:true,assignee_self:true,task:true},
+         {id:'unassigned',text:'Fiktiv uden ansvar',date:'2026-10-03',created:'2026-10-03',resolved:false,assigned:false,task:true},
+         {id:'done',text:'Fiktiv udført',date:'2026-10-04',created:'2026-10-04',resolved:true,assigned:true,assignee_self:true,task:true}]};
+  Workspace.taskFilter='open';Workspace.taskOwnerFilter='all';Workspace.taskQuery='';`);
+ const html=run('Workspace.tasks()');
+ assert.equal((html.match(/class="taskFilterRow"/g)||[]).length,1,'One compact filter row');
+ assert.equal((html.match(/data-work-select="task-owner-filter"/g)||[]).length,1,'Owner choices use a single select');
+ assert.equal((html.match(/data-work="task-owner-filter"/g)||[]).length,0,'No duplicate owner tab menu');
+ assert.equal((html.match(/data-work="task-filter"/g)||[]).length,3,'Status choices stay available');
+ assert(html.indexOf('class="panel taskList"')<html.indexOf('id="addressTask"'),'Address scheduling is after the task list');
+ assert.match(html,/Fiktiv egen åben/);assert.match(html,/Fiktiv uden ansvar/);assert.doesNotMatch(html,/Fiktiv udført/);
+ run("Workspace.taskOwnerFilter='mine'");
+ assert.match(run('Workspace.tasks()'),/Fiktiv egen åben/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv uden ansvar/);
+ run("Workspace.taskOwnerFilter='unassigned'");
+ assert.match(run('Workspace.tasks()'),/Fiktiv uden ansvar/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv egen åben/);
+ run("Workspace.taskOwnerFilter='mine';Workspace.taskFilter='done'");
+ assert.match(run('Workspace.tasks()'),/Fiktiv udført/);assert.doesNotMatch(run('Workspace.tasks()'),/Fiktiv egen åben/);
+ run("I18n.set('en')");
+ assert.match(run('Workspace.tasks()'),/Responsible person/);assert.match(run('Workspace.tasks()'),/Open tasks/);
+ run("I18n.set('da');{const saved=JSON.parse(taskPageSnapshot);state=saved.state;Workspace.taskFilter=saved.taskFilter;Workspace.taskOwnerFilter=saved.taskOwnerFilter;Workspace.taskQuery=saved.taskQuery;}");
+ console.log('Tasks: compact status/owner filters, combined selection, English labels and address check order passed.');
+}
+
 
  // Publisher role suggestions are advisory, computed live from currently open loans.
  {
@@ -83,7 +113,7 @@ run(`for(let i=0;i<40;i++)state.cards.push({id:'c'+i,number:String(i),temporary:
 assert.equal(run('folderPlan().picked.length'),30);assert.equal(run("folderPlan().picked.filter(c=>c.kind==='Land').length"),5);assert.equal(run('folderPlan().need'),30);
 run("state.settings.rural_mode='auto'");assert.equal(run('folderPlan().rural'),6);
 run("state.loans.push({id:'l',card_id:'c0',publisher_id:'p',assigned:'2026-01-01',cycle_start:'2026-01-01',returned:null})");assert(!run("folderPlan().picked.some(c=>c.id==='c0')"));
-run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Aktuelle distrikter og udlevering')"));assert(run("reports().includes('2026/2027')"));
+run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Ikke gennemgåede distriktskort i perioden')"));assert(run("reports().includes('2026/2027')"));
 run("mapImage='data:image/png;base64,AA==';state.cards[1].polygon=[[1,1],[40,1],[40,30]]");assert(run("mapSvg(new Set(['c1'])).includes('#52aa82')"));
 assert.equal(run("fourMonths('2026-10-31')"),'2027-02-28');assert.equal(run("serviceYear('2026-08-31')"),2026);assert.equal(run("serviceYear('2026-09-01')"),2027);
 assert(run("esc('<img onerror=alert(1)>').includes('&lt;')"));assert(!run("table(state.cards).includes('onclick=')"));
@@ -169,6 +199,13 @@ assert(s12Page.includes('translate(1.5mm,-1mm) scale(1.05)'));assert(s12Page.inc
 assert.throws(()=>run("printSettings({...defaultPrintProfile('front'),x:'0; color:red'})"));
 run("state.cards[1].front_revision=true;printRevisions('front')");assert(get('dialog').innerHTML.includes('data-ids='));
 run("issue('c4',true)");assert(get('dialog').innerHTML.includes('data-publisher-search'));assert(!get('dialog').innerHTML.includes('name="new_publisher"'));
+assert(get('dialog').innerHTML.includes('<input type="hidden" name="initial" value="yes">'),'Existing-loan registration still submits initial=true');
+assert(!get('dialog').innerHTML.includes('type="checkbox" name="initial"'),'Existing-loan flag is no longer an editable checkbox');
+assert(!get('dialog').innerHTML.includes('Kortet var allerede udleveret før registrering'),'Redundant checkbox text is absent');
+run("issue('c4')");
+assert(!get('dialog').innerHTML.includes('name="initial"'),'Ordinary issues do not submit an initial-loan flag');
+assert(!get('dialog').innerHTML.includes('Kortet var allerede udleveret før registrering'),'Ordinary issue form has no redundant choice');
+assert(!get('dialog').innerHTML.includes('Brug afkrydsningen'),'No reference to the removed checkbox remains');
 run("deskTab='Udlever';page='Udlevering';render()");assert(!get('app').innerHTML.includes('id="serviceYear"'));assert(get('nav').innerHTML.includes('Daglig brug'));
 console.log('Desk, day-count, print-profile, batch-print and local person-search tests passed.');
 run("editCard('c3')");assert(get('dialog').innerHTML.includes('Vejlisten følger de valgte huse'));assert(get('dialog').innerHTML.includes('<fieldset disabled>'));
@@ -268,7 +305,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  await run("Navigation.go('2:0')");assert.equal(run('reportTab'),'Rapport');
  run("page='Kortopsætning';GeoUI.dirty=true;window.confirm=()=>false");await run("Navigation.go('1:0')");assert.equal(run('page'),'Kortopsætning');assert.equal(run('GeoUI.dirty'),true);
  run("window.confirm=()=>true;GeoUI.dirty=false;page='Distrikter';status='Alle';render()");
- assert(!get('nav').innerHTML.includes('<details'));assert(get('nav').innerHTML.includes('Forside'));assert(!get('nav').innerHTML.includes('tally.so'));assert(get('nav').innerHTML.includes('data-help-guide'));assert(get('nav').innerHTML.includes('rel="noopener noreferrer"'));assert(get('nav').innerHTML.includes('Distriktskort'));assert(!get('nav').innerHTML.includes('Printprofiler'));assert(run("table(state.cards).includes('tabindex=\"0\"')"));
+ assert(/<details class="navGroup" data-nav-group="1" open>/.test(get('nav').innerHTML),'The active navigation group must remain open');assert(get('nav').innerHTML.includes('<summary>'));assert(get('nav').innerHTML.includes('<svg width="18"'));assert(get('nav').innerHTML.includes('Forside'));assert(!get('nav').innerHTML.includes('tally.so'));assert(get('nav').innerHTML.includes('data-help-guide'));assert(get('nav').innerHTML.includes('rel="noopener noreferrer"'));assert(get('nav').innerHTML.includes('Distriktskort'));assert(!get('nav').innerHTML.includes('Printprofiler'));assert(run("table(state.cards).includes('tabindex=\"0\"')"));
  run("rowEvent={type:'click',preventDefault(){this.prevented=true;}};rowTarget={closest(selector){return selector==='[data-card-row]'?{dataset:{cardRow:'c4'}}:null;}};Navigation.selectRow(rowTarget,rowEvent)");assert.equal(run('selected'),'c4');assert.equal(run('rowEvent.prevented'),true);
  run("rowEvent.prevented=false;buttonTarget={closest(){return {}}};Navigation.selectRow(buttonTarget,rowEvent)");assert.equal(run('rowEvent.prevented'),false);
  // The header logo uses the same guarded home navigation as the sidebar.
@@ -360,7 +397,9 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("openDialog('<h2>Test</h2>')");assert(get('dialog').innerHTML.includes('class="dialogClose"'));assert(get('dialog').innerHTML.includes('aria-label="Luk"'));assert(get('dialog').innerHTML.includes('data-action="close"'));
  run("state.public_maps=[]");
 
- run("overviewSavedState=state;state={...state,today:'2026-10-14',cards:[{id:'ov-new',number:'1',kind:'By',area_id:'a',in_folder:true,last_completed:'2026-10-01',addresses:[],geo_polygon:[[10,55],[10.01,55],[10.01,55.01]]},{id:'ov-old',number:'2',kind:'Land',area_id:'b',last_completed:'2024-01-01',addresses:[]},{id:'ov-none',number:'3',kind:'By',area_id:'a',last_completed:null,addresses:[]}],loans:[{id:'ol',card_id:'ov-old',publisher_id:'p1',returned:null}],completions:[{card_id:'ov-new',date:'2026-10-01'}]};OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',months:12,year:2027,search:''}");
+ run("overviewSavedState=state;state={...state,today:'2026-10-14',cards:[{id:'ov-new',number:'1',kind:'By',area_id:'a',in_folder:true,last_completed:'2026-10-01',addresses:[],geo_polygon:[[10,55],[10.01,55],[10.01,55.01]]},{id:'ov-old',number:'2',kind:'Land',area_id:'b',last_completed:'2024-01-01',addresses:[]},{id:'ov-none',number:'3',kind:'By',area_id:'a',last_completed:null,addresses:[]}],loans:[{id:'ol',card_id:'ov-old',publisher_id:'p1',returned:null}],completions:[{card_id:'ov-new',date:'2026-10-01'}]};OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',recentMonths:6,months:12,year:2027,search:''}");
+ assert.match(run('OverviewMap.page()'),/data-overview-field="recentMonths"/);
+ assert.match(run('OverviewMap.page()'),/data-overview-field="months"/);
  assert.equal(run('OverviewMap.filtered().length'),3);assert.equal(run("OverviewMap.color(card('ov-new'))"),'#258454');assert.equal(run("OverviewMap.color(card('ov-old'))"),'#bd4a43');assert.equal(run("OverviewMap.color(card('ov-none'))"),'#8b79ac');
  run("OverviewMap.filters.status='Kort i mappen'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-new');
  run("OverviewMap.filters.status='Udleverede distriktskort'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-old');
@@ -371,7 +410,7 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  run("OverviewMap.filters.after='';OverviewMap.filters.publisher='p1'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-old');
  run("OverviewMap.filters.publisher='';OverviewMap.filters.kind='Land'");assert.equal(run('OverviewMap.filtered()[0].id'),'ov-old');
  assert(run("table(state.cards).includes('Se på kort')"));assert(run("OverviewMap.page().includes('Tid siden gennemgang')"));assert(run("Navigation.groups[1][1].some(v=>v[1]==='Kortoversigt')"));
- run("state=overviewSavedState;OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',months:12,year:0,search:''}");
+ run("state=overviewSavedState;OverviewMap.filters={status:'Alle',area:'',kind:'Alle',completion:'Alle',ageFilter:'Alle',after:'',before:'',publisher:'',revision:'Alle',color:'age',recentMonths:6,months:12,year:0,search:''}");
  console.log('Overview status/area/type/age/year/assignee filters, date limits and quick-map links passed.');
  console.log('Front QR in full/preprinted modes, private back separation and accessible close control passed.');
  console.log('Public-only map recipe, escaped sharing UI and transfer controls passed.');

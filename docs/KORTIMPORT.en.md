@@ -14,9 +14,9 @@ Import card numbers, manual street lines or exact addresses. Open the first-use 
 
 Limits: 2 MB, 10,000 lines, 500 cards and 300 street lines or addresses per card. No online address service receives the file. Select geographic addresses and boundaries later, one card at a time. The card number, assignments, do-not-call entries and history remain. The street list then follows the selected addresses and needs another print review. Existing cards and history are never overwritten; deleted numbers reserved for recovery remain unavailable.
 
-Exact apartments are included in private backups and can be matched by local do-not-call import. Editing a road list keeps exact address selections for retained rows. Card import creates no do-not-call entries. Those entries do not alter the card's stored visit total, but are subtracted per completion in the dashboard estimate. Keep real files private; use fictional examples in bug reports.
+Exact apartments are included in private backups and can be matched by local do-not-call import. Editing a road list keeps exact address selections for retained rows. Card import creates no do-not-call entries, and those entries do not reduce visit totals. Keep real files private; use fictional examples in bug reports.
 
-Unknown counts remain visible on cards, printouts and current totals. They may be filled in through normal card editing. Completions with unknown counts still count as completions. The dashboard includes their current card visit estimate, less do-not-call entries, once that card has a known visit count; otherwise the completion remains excluded. Editing a card does not change the saved historical completion.
+Unknown counts remain visible on cards, printouts and current totals. They may be filled in through normal card editing. Completions with unknown counts still count as completions but are excluded from visit estimates. Later card edits do not change those historical records.
 
 ## Multiple files
 

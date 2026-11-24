@@ -95,7 +95,7 @@ class PublisherDeletionTests(unittest.TestCase):
             self.store.mutate('restore', result)
         self.assertIsNone(self.store.get('publishers', person['id']))
 
-    def test_role_requires_publisher_management_and_loan_read(self):
+    def test_role_requires_publisher_deletion_and_loan_read(self):
         person = self.create()
         request = {'module': 'publishers', 'id': person['id'],
                    'confirmation': 'SLET FORKYNDER', 'expected': self.expected(person)}
@@ -104,7 +104,7 @@ class PublisherDeletionTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 mutation({'id': 'fictional', 'permissions': rights}, 'delete', request, self.store)
         mutation({'id': 'fictional', 'permissions':
-                  {'publishers.view', 'publishers.manage', 'loans.view'}},
+                  {'publishers.view', 'publishers.delete', 'loans.view'}},
                  'delete', request, self.store)
         self.assertIsNotNone(self.store.get('publishers', person['id']))
 

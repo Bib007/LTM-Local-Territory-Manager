@@ -87,7 +87,18 @@ class ProfileRuntime:
             self.bases.limit_session(token)
             result['profile']['snapshot']=self.bases.create(token,'workspace','workspace',capture(self.server.store,modules))
             result['profile']['conflicts']=len(self.workspace.conflicts(token))+(len(self.accounts.reviews(token)) if 'users.manage' in user['permissions'] else 0)
-            result['undo_available']=bool(raw['undo_available'] and (self.server.store._undo or {}).get('actor_id')==user['id'])
+            from profile_policy import ACTIONS
+            if ACTIONS['history.cleanup']<=permissions:
+                result['history_cleanup_cutoff']=self.server.store.history_cutoff()
+            result['undo_available']=False
+            if raw['undo_available']:
+                try:
+                    mutation(user,'workflow.undo',{},self.server.store)
+                except PermissionError:
+                    pass
+                else:
+                    result['undo_available']=True
+                    result['undo_action']=self.server.store._undo['action']
             return result
 
     def mutate(self,token,user,action,data,snapshot):
@@ -150,6 +161,52 @@ class ProfileRoutes:
         except PermissionError:
             self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
             if not handed:yield False
+
+    def prepare_geo_preview(self,data):
+        # Called inside the normal authenticated request scope. No transaction,
+        # expiry purge, profile-base claim or other write is permitted here.
+        store=self.server.store
+        with store.lock:
+            if self.server.profiles.enabled:mutation(self.profile_user,'geo.preview',data,store)
+            snapshot,revision=store.geo_preview_snapshot()
+            self.geo_preview_work=(snapshot,revision,data,self.server.profiles.enabled,
+                self.profile_user['id'] if self.profile_user else None)
+
+    def finish_geo_preview(self):
+        from ui_errors import error_payload
+        snapshot,revision,data,enabled,user_id=self.geo_preview_work
+        self.geo_preview_work=None
+        try:
+            calculation_error=None
+            try:result=snapshot.geo_preview(data)
+            except Exception as error:calculation_error=error
+            # Re-enter normal session/CSRF/route authorization after computation.
+            # Validate in accounts -> Store order; socket writes run unlocked.
+            with self.profile_scope(post=True) as permitted:
+                if not permitted:return
+                # profile_scope alone does not validate shared server login.
+                # Repeat the same session/token check used by _post, including
+                # logout/expiry while the unlocked calculation was running.
+                if not self.allowed(token=True):return
+                if enabled!=self.server.profiles.enabled or (self.profile_user['id'] if self.profile_user else None)!=user_id:
+                    raise PermissionError()
+                with self.server.store.lock:
+                    if enabled:mutation(self.profile_user,'geo.preview',data,self.server.store)
+                    if revision!=self.server.store.revision:
+                        raise ValueError('Grundlaget for adresseforslaget er ændret. Hent et nyt forslag.')
+                    if calculation_error is not None:raise calculation_error
+                    response={'ok':True,'result':result,'revision':revision,'geo_changed':False}
+                    self.preview_authorization=self.server.accounts.generation
+            self.send(response)
+        except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
+        except PermissionError:
+            try:self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
+            except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
+        except Exception as error:
+            # Do not expose an internal exception or private snapshot contents.
+            payload=error_payload(error) if isinstance(error,ValueError) else {'error':'Adresseforslaget kunne ikke beregnes. Prøv igen.'}
+            try:self.send(payload,status=400 if isinstance(error,ValueError) else 500)
+            except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
 
     def profile_login(self):
         try:

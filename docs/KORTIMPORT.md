@@ -31,7 +31,7 @@ Udfyldte filer med virkelige adresser skal blive på dit eget system. Brug opdig
 
 ## Ukendte besøgstal
 
-Et interval tælles ikke automatisk. Manglende antal vises som ukendt på kort, print og i aktuelle totaler. Udfyld et kendt antal i kortets almindelige redigering, eller vælg præcise geografiske adresser senere. En gennemgang registreret med ukendt antal tæller stadig som en gennemgang. Forsidens besøgsskøn medregner den, når kortet senere får et aktuelt kendt antal besøg, fratrukket registrerede IB; ellers udelades den fortsat. Selve gennemgangens historiske tal og dato omskrives ikke.
+Et interval tælles ikke automatisk. Manglende antal vises som ukendt på kort, print og i aktuelle totaler. Udfyld et kendt antal i kortets almindelige redigering, eller vælg præcise geografiske adresser senere. En gennemgang registreret med ukendt antal tæller stadig som en gennemgang; den bidrager ikke til besøgsskønnet. Senere ændringer af kortet omskriver ikke den tidligere gennemgang.
 
 ## Flere filer
 

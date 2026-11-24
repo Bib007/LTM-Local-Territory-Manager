@@ -125,6 +125,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           pattern: ltm-native-*
@@ -137,6 +139,13 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          # The direct installers are releases too: check the exact source,
+          # version train, published tag, and Stable/Beta ancestry before upload.
+          gh auth setup-git
+          git fetch --prune --tags origin
+          git fetch origin main:refs/remotes/origin/main
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then channel=stable; else channel=beta; fi
+          python scripts/version_policy.py verify --channel "$channel"
           version=$(python3 -c "import sys; sys.path.insert(0, 'scripts'); import build_native_desktop as b; print(b.version())")
           tag="v${version}"
           files=(

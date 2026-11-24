@@ -19,6 +19,39 @@ class StorageTests(unittest.TestCase):
     def issue(self,c,initial=False):
         return self.s.mutate('loan.issue',{'card_id':c,'publisher_id':self.publisher,'date':date.today().isoformat(),'initial':initial})['id']
 
+    def test_empty_recovery_skips_activity_log_scan(self):
+        from unittest.mock import patch
+        with patch.object(self.s,'activity',side_effect=AssertionError('unnecessary activity read')):
+            self.assertEqual(self.s.recovery(), [])
+
+    def test_undo_expected_revision_cannot_undo_newer_action(self):
+        card=self.make_card()
+        self.s.mutate('folder.set',{'ids':[card],'in_folder':True})
+        loan=self.issue(card)
+        revision=self.s.revision
+        self.assertEqual(self.s.state()['undo_action'],'loan.issue')
+        self.s.mutate('loan.finish',{'id':loan,'date':date.today().isoformat(),'complete':False})
+        with self.assertRaises(ValueError):
+            self.s.mutate('workflow.undo',{'expected_revision':revision})
+        self.assertIsNotNone(self.s.get('loans',loan)['returned'])
+        self.s.mutate('workflow.undo',{'expected_revision':self.s.revision})
+        self.assertFalse(self.s.get('loans',loan).get('returned'))
+
+    def test_overdue_message_template_persists_and_rejects_invalid_input(self):
+        template = 'Hej {fornavn}\n{kort}\nKh {initialer}'
+        self.s.mutate('settings.save', {'overdue_message_template': template})
+        self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+        self.s.mutate('settings.save', {'congregation': 'Fiktiv menighed'})
+        self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+        self.s.close()
+        self.s = Store(self.tmp.name)
+        self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+        for bad in ('', 'Ingen kortpladsholder', 'x' * 3001, 1234, '{kort}\x00'):
+            with self.subTest(bad=repr(bad)):
+                with self.assertRaises(ValueError):
+                    self.s.mutate('settings.save', {'overdue_message_template': bad})
+                self.assertEqual(self.s.get('settings', 'config')['overdue_message_template'], template)
+
     def test_role_guidance_config_is_local_persistent_and_never_blocks_loan_issue(self):
         defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
         self.assertEqual(self.s.get('settings', 'config')['publisher_card_guidance'], defaults)
@@ -57,6 +90,36 @@ class StorageTests(unittest.TestCase):
                     self.s.mutate('settings.save', {'publisher_card_guidance': value})
                 self.assertEqual(self.s.get('settings', 'config'), before)
 
+    def test_history_years_are_validated_and_persist_without_erasing_history(self):
+        self.assertEqual(self.s.history_years(), 2)
+        for value in (0, 101, -1, True, 2.5, '5', None):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    self.s.mutate('settings.save', {'history_years': value})
+                self.assertEqual(self.s.history_years(), 2)
+        self.s.mutate('settings.save', {'history_years': 5})
+        self.assertEqual(self.s.history_years(), 5)
+        self.s.mutate('settings.save', {'congregation': 'Fiktiv menighed'})
+        self.assertEqual(self.s.history_years(), 5)
+        self.s.close()
+        self.s = Store(self.tmp.name)
+        self.assertEqual(self.s.history_years(), 5)
+
+    def test_history_cleanup_follows_selected_years_not_a_fixed_two_year_limit(self):
+        card = self.make_card('H100')
+        old = (date.today() - timedelta(days=400)).isoformat()
+        recent = (date.today() - timedelta(days=100)).isoformat()
+        with self.s.transaction():
+            for ident, stamp in (('older-than-one-year', old), ('within-one-year', recent)):
+                self.s.put('completions', {'id': ident, 'card_id': card, 'date': stamp})
+        self.s.mutate('settings.save', {'history_years': 5})
+        self.assertEqual(self.s.mutate('history.cleanup', {})['count'], 0)
+        self.assertEqual(len(self.s.all('completions')), 2)
+        self.s.mutate('settings.save', {'history_years': 1})
+        self.assertEqual(self.s.mutate('history.cleanup', {})['count'], 1)
+        self.assertIsNone(self.s.get('completions', 'older-than-one-year'))
+        self.assertIsNotNone(self.s.get('completions', 'within-one-year'))
+
     def test_separate_files_and_persistence(self):
         c=self.make_card();self.issue(c,True);before=self.s.state()
         self.assertEqual(len(list(Path(self.tmp.name).glob('*.sqlite3'))),len(MODULES))
@@ -66,10 +129,10 @@ class StorageTests(unittest.TestCase):
 
     def test_folder_selection_requires_loan_management_permission(self):
         required = ACTIONS['folder.set']
-        self.assertEqual(required, frozenset({'cards.view', 'loans.view', 'loans.manage'}))
+        self.assertEqual(required, frozenset({'cards.view', 'loans.view', 'folder.manage'}))
         with self.assertRaises(PermissionError):
             require({'cards.view', 'loans.view'}, required)
-        require({'cards.view', 'loans.view', 'loans.manage'}, required)
+        require({'cards.view', 'loans.view', 'folder.manage'}, required)
 
     def test_specific_existing_card_stays_the_same_record(self):
         target = self.make_card('F-42')

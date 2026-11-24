@@ -9,7 +9,8 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
-from profile_accounts import ProfileAccounts,SESSION_LIFETIME,ONLINE_WINDOW,PERMISSIONS
+from profile_accounts import ProfileAccounts,SESSION_LIFETIME,ONLINE_WINDOW,PERMISSIONS,SPLIT_PERMISSIONS
+from profile_recovery import validated
 from portable import snapshot
 from store import Store
 
@@ -59,6 +60,22 @@ class ProfileAccountsTests(unittest.TestCase):
         restarted=ProfileAccounts(self.root)
         token=restarted.login('Fiktiv Admin','Fiktiv-Password-123','fictional-client')
         with self.assertRaises(PermissionError):restarted.authorize(token,'backup.notify')
+
+    def test_granular_permissions_upgrade_existing_roles_once(self):
+        role,user,_=self.user()
+        legacy=self.a._copy()
+        legacy['permission_schema']=3
+        legacy['roles'][role]['permissions']=['cards.view','loans.view','loans.manage']
+        self.a.path.write_text(json.dumps(legacy))
+        upgraded=ProfileAccounts(self.root)
+        rights=upgraded._permissions(upgraded.data,upgraded.data['users'][user])
+        self.assertEqual(rights, {'cards.view','loans.view','loans.manage'} | SPLIT_PERMISSIONS['loans.manage'])
+        validated(upgraded._copy())
+        admin=upgraded.login('Fiktiv Admin','Fiktiv-Password-123','fictional-client')
+        upgraded.save_role(admin,'Fiktiv rolle',sorted(rights-{'loans.issue'}),role)
+        restarted=ProfileAccounts(self.root)
+        self.assertNotIn('loans.issue', restarted.data['roles'][role]['permissions'])
+        self.assertIn('folder.manage', restarted.data['roles'][role]['permissions'])
 
     def test_disabling_or_resetting_an_account_invalidates_all_sessions(self):
         role,user,token=self.user();second=self.a.login('Fiktiv bruger','Fiktiv-Password-456','fictional-client-c')

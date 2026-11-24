@@ -38,36 +38,53 @@ const HistoryGrid={
  details(c,loans){
   const known=new Set(loans.map(l=>l.id)),unlinked=this.datesFor(c.id).filter(e=>!e.loan_id||!known.has(e.loan_id));
   const ordered=loans.slice().reverse(),older=ordered.slice(3);
-  return '<details open><summary>Hele historikken ('+loans.length+' udleveringer · '+this.datesFor(c.id).length+' gennemgange)</summary><div class="hg-full">'+
+  return '<details class="hg-details"><summary>Hele historikken ('+loans.length+' udleveringer · '+this.datesFor(c.id).length+' gennemgange)</summary><div class="hg-full">'+
     ordered.slice(0,3).map(l=>Workspace.loanLine(l)).join('')+
     (older.length?'<details><summary>'+ui('{count} tidligere udleveringer',{count:older.length})+'</summary>'+older.map(l=>Workspace.loanLine(l)).join('')+'</details>':'')+
     (unlinked.length?'<h4>Øvrige gennemgange</h4>'+unlinked.map(e=>'<p>'+esc(this.dateText(e.date))+' · '+(e.loan_id?'Udlevering ikke fundet':'Uden udlevering')+'</p>').join(''):'')+
     (!loans.length&&!unlinked.length?'<p>Ingen historik registreret</p>':'')+'</div></details>';
  },
  row(c){
-  const loans=this.loansFor(c.id),latest=loans.slice(-2),slots=latest.length===1?[latest[0],null]:latest.length===0?[null,null]:latest;
-  const active=loans.find(l=>!l.returned),issue=this.problem(c,loans);
-  const placement=active?'Udleveret · '+publisherName(active.publisher_id):c.in_folder?'I mappen':'I kassen';
-  return '<tr class="'+(issue?'hg-warning':'')+'"><td><strong>'+esc(c.number)+'</strong><small>'+esc(c.name||areaName(c.area_id))+'</small><small>Senest gennemgået: '+esc(this.dateText(c.last_completed)||'ukendt')+'</small></td>'+
-   slots.map(l=>'<td>'+this.dateCell(l,'assigned')+'</td><td>'+this.dateCell(l,'returned')+'</td>').join('')+
-   '<td><span>'+esc(issue?'Kontrollér rækkefølge':placement)+'</span>'+(this.canEdit()&&!c.archived?'<button type="button" data-hg-add="'+esc(c.id)+'">+ Udlevering</button>':'')+'</td>'+
-   '<td>'+this.details(c,loans)+'</td></tr>';
+  const loans=this.loansFor(c.id),latest=loans.slice(-2),active=loans.find(l=>!l.returned),issue=this.problem(c,loans);
+  const placement=active?'Udleveret · '+publisherName(active.publisher_id):c.archived?'Arkiveret':c.in_folder?'I mappen':'I kassen';
+  const edit=this.canEdit()&&!c.archived;
+  const status=issue?'Kontrollér rækkefølge':placement;
+  const statusClass=issue?'hg-status-warning':active?'hg-status-active':'hg-status-neutral';
+  const history=latest.length?latest.map((l,i)=>{
+   const title=latest.length===2&&i===0?'Forrige udlevering':'Seneste udlevering';
+   return '<section class="hg-period" aria-label="'+title+'">'+
+    '<div class="hg-period-heading"><strong>'+title+'</strong><span class="hg-period-state">'+(l.returned?'Afsluttet':'Aktiv')+'</span></div>'+
+    '<p class="hg-period-publisher">'+esc(publisherName(l.publisher_id))+'</p>'+
+    '<div class="hg-fields"><div class="hg-field"><span class="hg-field-label">Udleveret</span>'+this.dateCell(l,'assigned')+'</div>'+
+    '<div class="hg-field"><span class="hg-field-label">Indleveret</span>'+this.dateCell(l,'returned')+'</div></div></section>';
+  }).join(''):'<p class="hg-no-loans">Ingen udleveringer registreret endnu.</p>';
+  return '<article class="hg-card'+(issue?' hg-warning':'')+'" data-hg-card="'+esc(c.id)+'">'+
+   '<header class="hg-card-header"><div class="hg-card-identity"><strong class="hg-card-number">'+esc(c.number)+'</strong>'+
+   '<div class="hg-card-description"><h3>'+esc(c.name||areaName(c.area_id))+'</h3><small>Senest gennemgået: '+esc(this.dateText(c.last_completed)||'ukendt')+'</small></div></div>'+
+   '<div class="hg-card-actions"><span class="hg-status '+statusClass+'">'+esc(status)+'</span>'+
+   (edit?'<button type="button" data-hg-add="'+esc(c.id)+'">+ Udlevering</button>':'')+'</div></header>'+
+   '<div class="hg-periods">'+history+'</div>'+this.details(c,loans)+'</article>';
  },
- rows(){const cards=this.visible();return cards.slice(0,this.limit).map(c=>this.row(c)).join('')||'<tr><td colspan="7">Ingen kort matcher søgningen.</td></tr>';},
+
+ rows(){const cards=this.visible();return cards.slice(0,this.limit).map(c=>this.row(c)).join('')||'<p class="hg-empty-state" role="status">Ingen kort matcher søgningen.</p>';},
+
  render(){
   const total=this.visible().length,editable=this.canEdit();
-  return '<section class="panel hg-panel"><h2>Gennemgange & historik</h2>'+
-   '<p class="hint">Et kort pr. række. De to nyeste udleveringer vises fra ældst til nyest, fra venstre mod højre. En indlevering er ikke automatisk en registreret gennemgang. Tom dato betyder ukendt eller stadig udleveret.</p>'+
-   '<div class="toolbar hg-toolbar"><label>Søg kort, område eller forkynder <input id="hg-search" type="search" value="'+esc(this.query)+'" placeholder="Kortnummer, område eller navn" autocomplete="off"></label>'+
+  return '<section class="panel hg-panel"><div class="hg-intro"><h2>Gennemgange & historik</h2>'+
+   '<p class="hint">Se kortenes seneste udleveringer og gennemgange samlet. Åbn hele historikken på det kort, du vil undersøge.</p></div>'+
+   '<div class="hg-toolbar"><label class="hg-search-label">Søg kort, område eller forkynder <input id="hg-search" type="search" value="'+esc(this.query)+'" placeholder="Kortnummer, område eller navn" autocomplete="off"></label>'+
    '<label>Vis <select id="hg-filter"><option value="all"'+(this.filter==='all'?' selected':'')+'>Alle kort</option><option value="active"'+(this.filter==='active'?' selected':'')+'>Aktuelt udleverede</option><option value="empty"'+(this.filter==='empty'?' selected':'')+'>Uden historik</option><option value="review"'+(this.filter==='review'?' selected':'')+'>Ulogisk rækkefølge</option></select></label>'+
-   '<button type="button" data-history-import="open">Importér CSV / S-13</button><button type="button" data-action="backup">Sikkerhedskopi</button>'+
-   (state.undo_available&&editable?'<button type="button" data-work="undo">Fortryd sidste ændring</button>':'')+'</div>'+
-   '<p class="hint">Indtast DD.MM.ÅÅÅÅ og tryk Enter eller Tab, eller brug datovælgeren. Hver ændring gemmes særskilt. Eksisterende gennemgange og deres datoer kobles kun om ved sikker validering.</p>'+
-   '<div class="tablewrap hg-scroll"><table class="historyTable hg-table"><thead><tr><th>Kort</th><th>1 · Udleveret</th><th>1 · Indleveret</th><th>2 · Udleveret</th><th>2 · Indleveret</th><th>Status / forkynder</th><th>Historik</th></tr></thead><tbody id="hg-body">'+this.rows()+'</tbody></table></div>'+
-   '<p id="hg-count" class="hint" role="status">Viser '+Math.min(this.limit,total)+' af '+total+' kort</p>'+
-   (total>this.limit?'<button type="button" data-hg-more>Vis 100 flere kort</button>':'')+
-   (editable?'<p class="hint">Ny udlevering oprettes med en eksisterende forkynder. Brug importen til mange historiske rækker; kontrollér dens toårsgrænse før import. Tag backup inden større indtastning.</p>':'<p class="hint">Du har læseadgang. Redigering kræver særskilte rettigheder.</p>')+'</section>';
+   '<div class="hg-toolbar-actions"><button type="button" data-history-import="open">Importér CSV / S-13</button><button type="button" data-action="backup">Sikkerhedskopi</button>'+
+   (state.undo_available&&editable?'<button type="button" data-work="undo">Fortryd sidste ændring</button>':'')+'</div></div>'+
+   '<div class="hg-list" id="hg-body">'+this.rows()+'</div>'+
+   '<div class="hg-footer"><p id="hg-count" class="hint" role="status">Viser '+Math.min(this.limit,total)+' af '+total+' kort</p>'+
+   (total>this.limit?'<button type="button" data-hg-more>Vis 100 flere kort</button>':'')+'</div>'+
+   '<details class="hg-help"><summary>Sådan bruger du historikken</summary>'+
+   '<p>De seneste to udleveringer vises i datoorden, fra venstre mod højre på store skærme. En indlevering er ikke automatisk en gennemgang. Tom dato betyder ukendt eller stadig udleveret.</p>'+
+   (editable?'<p>Ret en dato med DD.MM.ÅÅÅÅ og Enter/Tab, eller brug kalenderen. Hver ændring gemmes særskilt. Eksisterende gennemgange flyttes kun, når valideringen tillader det. Brug import til mange historiske rækker, og tag backup før større rettelser.</p>':'<p>Du har læseadgang. Redigering kræver særskilte rettigheder.</p>')+
+   '</details></section>';
  },
+
  draw(){
   const body=document.getElementById('hg-body');if(!body)return;
   body.innerHTML=this.rows();

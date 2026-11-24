@@ -27,10 +27,14 @@ def workbook(headers,values):
     return base64.b64encode(out.getvalue()).decode()
 
 with tempfile.TemporaryDirectory(prefix='ltm-fictional-streets-') as root:
-    store=Store(root);cards=[]
+    store=Store(root);cards=[];blocked_cards=[]
     for index in range(2):
         road='Fictional road '+str(index)
         ident=store.mutate('card.save',{'number':'F'+str(index),'addresses':[{'road':road,'numbers':('hele vejen (kun ulige)' if index==0 else '23-25 & 24-26'),'count':4,'type':'Hus'}]})['id'];cards.append(ident)
+        blocked=store.mutate('card.save',{'number':'B'+str(index),'addresses':[{
+            'road':road,'numbers':'1–2' if index==0 else '22–23','count':2,'type':'Hus',
+        }]})['id']
+        blocked_cards.append(blocked)
     range_cards=[]
     for index in range(2):
         numbers=['2','3','7','8','9','15','25','67']
@@ -70,6 +74,6 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-streets-') as root:
     signal.signal(signal.SIGTERM,stop)
     fronts=[workbook(['Card','Street','Range','Visits'],['M'+str(i),'Manual road '+str(i),'hele vejen' if i==0 else '23-25 & 24-26',12]) for i in range(2)]
     backs=[workbook(['Card','Street','Number','Date'],['M'+str(i),'Manual road '+str(i),'1A' if i==0 else '23-25 & 24-26','marts 2024' if i==0 else '2024']) for i in range(2)]
-    print(json.dumps({'origin':server.origin,'cards':cards,'failed_card':failed_card,'range_cards':range_cards,'parity_cards':parity_cards,'fronts':fronts,'backs':backs,'cookie':{'name':server.profiles.cookie,'value':cookie,'url':server.origin}}),flush=True)
+    print(json.dumps({'origin':server.origin,'cards':cards,'blocked_cards':blocked_cards,'failed_card':failed_card,'range_cards':range_cards,'parity_cards':parity_cards,'fronts':fronts,'backs':backs,'cookie':{'name':server.profiles.cookie,'value':cookie,'url':server.origin}}),flush=True)
     try:server.serve_forever()
     finally:server.server_close();store.close()

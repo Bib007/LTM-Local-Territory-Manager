@@ -41,7 +41,9 @@ const BoundaryOverlap={
   this.stamp=stamp;this.pairs=pairs;return pairs;
  }
 };
-const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:true,calendarYear:null,
+const REPORT_MAP_NUMBERS_KEY='ltm-report-map-numbers';
+const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:(()=>{try{return localStorage.getItem(REPORT_MAP_NUMBERS_KEY)!=='false';}catch{return true;}})(),calendarYear:null,
+ setReportShowNumbers(enabled){this.reportShowNumbers=!!enabled;try{localStorage.setItem(REPORT_MAP_NUMBERS_KEY,String(this.reportShowNumbers));}catch{}},
  restructureStamp(form){return JSON.stringify([form.dataset.mode,form.dataset.source,[...new FormData(form)]]);},
  async previewRestructure(form,payload){
   payload=JSON.parse(JSON.stringify(payload));
@@ -55,7 +57,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  },
  remember(){this.memory[page]={query,area,status,selected,addressTab,addressPostcode,scroll:window.scrollY||0};},
  restore(target){const m=this.memory[target]||{};query=m.query||'';area=m.area||'';status=m.status||'Alle';selected=m.selected||'';addressTab=m.addressTab||'Mangler på kort';addressPostcode=m.addressPostcode||'';this.scroll=m.scroll||0;},
- subtitle(p){return I18n.text(({Opstart:'Import af IB fra fil',Forside:'Status og udvikling i dette tjenesteår',Udlevering:state?.settings?.folder_enabled===false?'Udlever og aflever kort':'Udlever fra mappen · aflever til kassen',Distrikter:'Find, fremvis og administrer distriktskort',Opgaver:'Private opgaver og ugentlige gentagelser',Opfølgninger:'Kortkontrol, genprint, udleveringer og adresseændringer',Rapporter:'Perioder, korthistorik og KTM-besøg',Adresser:'Adresser, IB og kortgrænser',Kortoversigt:'Find distrikter geografisk',Indstillinger:'Menighed, områder, import, backup og deling'})[p]||'');},
+ subtitle(p){return I18n.text(({Opstart:'Import af IB fra fil',Forside:'Status og udvikling i dette tjenesteår',Udlevering:state?.settings?.folder_enabled===false?'Udlever og aflever kort':'Udlever fra mappen · aflever til kassen',Distrikter:'Find, fremvis og administrer distriktskort',Opgaver:'Private opgaver og ugentlige gentagelser',Opfølgninger:'Kortkontrol, genprint og adresseændringer',Rapporter:'Perioder, korthistorik og KTM-besøg',Adresser:'Adresser, IB og kortgrænser',Kortoversigt:'Find distrikter geografisk',Indstillinger:'Menighed, områder, import, backup og deling'})[p]||'');},
  title(pageName){if(state?.profile?.desk_only&&pageName==='Udlevering')return I18n.text('Ind/udlevering');return I18n.text(({Opstart:'Lokal IB-import',Forside:'Forside',Udlevering:'Daglig brug',Distrikter:'Distriktskort',Opgaver:'Opgaver',Rapporter:'Rapporter og historik',Adresser:'Kort og adresser'})[pageName]||pageName);},
  periodBounds(mode=this.reportPeriod){if(mode==='calendar'){const value=this.calendarYear??Number(state.today.slice(0,4));return [value+'-01-01',[value+'-12-31',state.today].sort()[0]];}if(mode!=='rolling')return yearBounds();const end=state.today,back=new Date(end+'T12:00:00Z'),month=back.getUTCMonth();back.setUTCFullYear(back.getUTCFullYear()-1);if(back.getUTCMonth()!==month)back.setUTCDate(0);return [back.toISOString().slice(0,10),end];},
  chart(start,end){const events=state.completions.filter(e=>e.date>=start&&e.date<=end),first=new Date(start+'T12:00:00Z'),last=new Date(end+'T12:00:00Z'),months=[];let d=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),1,12));while(d<=last){const key=d.toISOString().slice(0,7);months.push({key,label:d.toLocaleDateString('da-DK',{month:'short',year:'2-digit',timeZone:'UTC'}),count:events.filter(e=>e.date.startsWith(key)).length});d.setUTCMonth(d.getUTCMonth()+1);}const max=Math.max(1,...months.map(m=>m.count)),step=660/Math.max(1,months.length),ktm=state.visits.filter(v=>v.date>=start&&v.date<=end).sort((a,b)=>cmp(a.date,b.date)),lastVisit=ktm[ktm.length-1];return `<div class="reportchart"><h3>Gennemgange pr. måned</h3><svg viewBox="0 0 760 270" role="img" aria-label="Gennemgange pr. måned; sidste KTM-besøg markeret med gul pil"><line x1="45" y1="210" x2="720" y2="210" stroke="#c9d7e1"/>${months.map((m,i)=>{const bar=Math.min(36,step*.6),x=55+i*step+(step-bar)/2,h=m.count/max*145;return `<rect x="${x}" y="${210-h}" width="${bar}" height="${Math.max(1,h)}" rx="5" fill="#628db3"/><text x="${x+bar/2}" y="${201-h}" text-anchor="middle" font-size="12" fill="#54718a">${m.count}</text><text x="${x+bar/2}" y="235" text-anchor="middle" font-size="10" fill="#71889a">${m.label}</text>`;}).join('')}${lastVisit?(()=>{const i=months.findIndex(m=>m.key===lastVisit.date.slice(0,7)),x=55+(i+.5)*step;return `<line x1="${x}" y1="51" x2="${x}" y2="212" stroke="#c69a25" stroke-width="2" stroke-dasharray="4 4"/><path d="M${x-5} 53L${x} 46L${x+5} 53" fill="none" stroke="#c69a25" stroke-width="2"/><text x="${Math.max(130,Math.min(630,x))}" y="22" text-anchor="middle" font-size="12" fill="#a17b1c">Sidste KTM besøg</text><text x="${Math.max(130,Math.min(630,x))}" y="39" text-anchor="middle" font-size="10" fill="#a17b1c">${fmt(lastVisit.date)}</text>`;})():''}</svg></div>`;},
@@ -64,30 +66,13 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  reportInventory(start,end,cards=state.cards){
   const ids=new Set(cards.map(c=>c.id)),events=state.completions.filter(e=>e.date>=start&&e.date<=end),done=new Set(events.filter(e=>ids.has(e.card_id)).map(e=>e.card_id)),assigned=new Set(state.loans.filter(l=>!l.returned&&ids.has(l.card_id)).map(l=>l.card_id));
   for(const c of cards)if(c.last_completed>=start&&c.last_completed<=end)done.add(c.id);
-  return {total:ids.size,events:events.length,covered:done.size,missing:ids.size-done.size,assigned:assigned.size,home:ids.size-assigned.size,missingAssigned:[...assigned].filter(id=>!done.has(id)).length,missingHome:[...ids].filter(id=>!done.has(id)&&!assigned.has(id)).length};
+  return {total:ids.size,events:events.length,covered:done.size,missing:ids.size-done.size,assigned:assigned.size,home:ids.size-assigned.size,missingAssigned:[...assigned].filter(id=>!done.has(id)).length,missingHome:[...ids].filter(id=>!done.has(id)&&!assigned.has(id)).length,missingCards:cards.filter(c=>!done.has(c.id))};
  },
- reportRings({total,covered,missing,assigned,home},localized=false){
-  const t=key=>localized?ui(key):esc(key);
-  const ring=(title,value,other,primary,secondary)=>{
-   const share=total?Math.max(0,Math.min(100,value/total*100)):0;
-   return `<figure class="reportRing"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" fill="none" stroke="#d7e4ed" stroke-width="12"/><circle cx="50" cy="50" r="40" fill="none" stroke="#5584ab" stroke-width="12" pathLength="100" stroke-dasharray="${share} 100" transform="rotate(-90 50 50)"/><text x="50" y="56" text-anchor="middle" font-size="21" fill="currentColor">${total?Math.round(share)+'%':'—'}</text></svg><figcaption><h4>${t(title)}</h4><p>${t(primary)} <strong>${value}</strong></p><p>${t(secondary)} <strong>${other}</strong></p></figcaption></figure>`;
-  };
-  return `<div class="reportRings">${ring('Dækning i perioden',covered,missing,'Gennemgåede aktuelle distrikter','Ikke registreret gennemgået i perioden')}${ring('Kortenes placering',assigned,home,'Udleveret nu','Hjemme nu')}</div>`;
- },
- reportMetrics(mode,localized=false){const t=key=>localized?ui(key):key,[start,end]=this.periodBounds(mode),s=this.reportInventory(start,end);return this.reportRings(s,localized)+`<div class="metrics">${[['Gennemgange',s.events],['Aktuelle distrikter',s.total],['Heraf udleveret nu',s.missingAssigned],['Heraf hjemme nu',s.missingHome]].map(([label,value])=>`<div><small>${t(label)}</small><strong>${value}</strong></div>`).join('')}</div>`;},
- reportExplanation(localized=false){return (localized?ui:key=>key)('Gentagne gennemgange tæller hver gang. Aktuelle distrikter tæller én gang; arkiverede distrikter indgår kun i antal gennemgange. Ingen registreret gennemgang er ikke det samme som aldrig gennemgået. Udleveret og hjemme beskriver status nu.');},
- reportSummary(mode,includeMap=true,localized=false){const t=key=>localized?ui(key):key,[a,b]=this.periodBounds(mode);return `<section class="report"><div class="eyebrow">${state.settings.congregation?esc(state.settings.congregation):t('DISTRIKT')}</div><h1>${this.reportTitle(mode,localized)}</h1><small>${fmt(a)} – ${fmt(b)} · ${t('Rapport udarbejdet den')} ${fmt(state.today)}</small>${this.reportMetrics(mode,localized)}<p class="hint">${this.reportExplanation(localized)}</p>${localized?this.reportChart(a,b):this.chart(a,b)}${includeMap?'<h3>'+t('Gennemgåede distrikter')+'</h3>'+ReportMap.html(localized):''}</section>`;},
- boundaryReport(print=false){
-  const totals=state.boundary_report;
-  if(!totals)return '';
-  const t=key=>print?esc(I18n.text(key)):ui(key);
-  const metrics=[['Kortlagte besøgspunkter i alt',totals.visits]];
-  const hasTotal=Number.isInteger(totals.ib_total);
-  if(hasTotal)metrics.push(['IB-registreringer i alt',totals.ib_total]);
-  if(Number.isInteger(totals.ib))metrics.push([hasTotal?'Heraf kortlagt inden for grænsen':'Kortlagte IB-registreringer',totals.ib]);
-  const explanation=t('Omfatter kortlagte adresser i den gemte grænse, også adresser uden distriktskort.')+(hasTotal?' '+t('IB-totalen omfatter også manuelle linjer uden en entydig kortlagt adresse. Det kortlagte IB-tal gælder kun inden for den gemte grænse.'):'');
-  return `<section class="report boundaryReport"><h2>${t('Hele distriktsgrænsen')}</h2><div class="metrics">${metrics.map(([label,value])=>`<div><small>${t(label)}</small><strong>${Number(value)}</strong></div>`).join('')}</div><p class="hint">${explanation}</p></section>`;
- },
+ reportRings(summary,localized=false){return KtmReportUI.ring(summary,localized);},
+ reportMetrics(mode,localized=false){return KtmReportUI.metrics(mode,localized);},
+ reportExplanation(localized=false){return (localized?ui:key=>key)('Hver registreret gennemgang tæller, også gentagelser og historik på arkiverede kort. Dækningen omfatter kun aktuelle distriktskort, der er registreret gennemgået i den valgte periode. Manglende registrering betyder ikke nødvendigvis, at kortet aldrig er gennemgået.');},
+ reportSummary(mode,includeMap=true,localized=false){const t=key=>localized?ui(key):key,[a,b]=this.periodBounds(mode);return `<section class="report"><div class="eyebrow">${state.settings.congregation?esc(state.settings.congregation):t('DISTRIKT')}</div><h1>${this.reportTitle(mode,localized)}</h1><small>${fmt(a)} – ${fmt(b)} · ${t('Rapport udarbejdet den')} ${fmt(state.today)}</small>${this.reportMetrics(mode,localized)}${KtmReportUI.missing(mode,localized)}<p class="hint">${this.reportExplanation(localized)}</p>${localized?this.reportChart(a,b):this.chart(a,b)}${includeMap?'<h3>'+t('Gennemgåede distrikter')+'</h3>'+ReportMap.html(localized):''}</section>`;},
+ boundaryReport(print=false){return KtmReportUI.totals(print);},
  reportOverview(localized=false){if(state.report_summary&&typeof ProfilesUI!=='undefined')return ProfilesUI.summaryHTML(state.report_summary,true);const t=key=>localized?ui(key):key,periods=['calendar','service','rolling'].map(mode=>{const [start,end]=this.periodBounds(mode);return `<article class="reportPeriod" data-report-period="${mode}"><h2>${this.reportTitle(mode,localized)}</h2><p class="periodDates">${fmt(start)} – ${fmt(end)}</p>${this.reportMetrics(mode,localized)}</article>`;}).join('');return `<section class="report reportOverview"><div class="eyebrow">${state.settings.congregation?esc(state.settings.congregation):t('DISTRIKT')}</div><h1>${t('Samlet rapportoversigt')}</h1><p>${t('Rapport udarbejdet den')} ${fmt(state.today)}</p><div class="reportComparison">${periods}</div><p class="hint">${this.reportExplanation(localized)}</p></section>`;},
  reports(){
   const raw=!state.profile||ProfilesUI.has('cards.view','history.view','loans.view','publishers.view');
@@ -103,7 +88,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(raw)return tabs+this.detailedReports();
   return tabs+`<div class="toolbar">${this.printPeriodPicker()}<button data-profile="print-summary">${ui('Print rapportoversigt / PDF')}</button></div>`+this.boundaryReport()+ProfilesUI.summaryHTML(state.report_summary,true,this.reportPeriod);
  },
- detailedReports(){const calendarYears=[...new Set([Number(state.today.slice(0,4)),this.calendarYear??Number(state.today.slice(0,4)),...state.completions.map(e=>Number(e.date.slice(0,4)))])].sort((a,b)=>b-a);return `<div class="toolbar">${this.reportPeriod==='calendar'?`<label>${ui('Kalenderår')} <select id="calendarYear">${calendarYears.map(y=>`<option value="${y}" ${y===(this.calendarYear??Number(state.today.slice(0,4)))?'selected':''}>${y}</option>`).join('')}</select></label>`:''}${this.printPeriodPicker()}<label class="check"><input id="reportMapNumbers" type="checkbox" ${this.reportShowNumbers?'checked':''}>${ui('Vis distriktsnumre på rapportkortet')}</label><button class="primary" data-action="print-report">${ui('Print samlet rapport / PDF')}</button><button data-action="s13">${ui(this.reportPeriod==='service'?'Hent original udfyldt S-13':'Print S-13-formular for perioden / PDF')}</button></div>`+this.boundaryReport()+this.reportSummary(this.reportPeriod,false,true)+((typeof ProfilesUI==='undefined'||ProfilesUI.has('cards.view','geo.view'))?this.reportMapPage(this.reportPeriod,true):'')+reportDetails(true)+s13Appendix(this.reportPeriod);},
+ detailedReports(){const calendarYears=[...new Set([Number(state.today.slice(0,4)),this.calendarYear??Number(state.today.slice(0,4)),...state.completions.map(e=>Number(e.date.slice(0,4)))])].sort((a,b)=>b-a);return `<div class="toolbar">${this.reportPeriod==='calendar'?`<label>${ui('Kalenderår')} <select id="calendarYear">${calendarYears.map(y=>`<option value="${y}" ${y===(this.calendarYear??Number(state.today.slice(0,4)))?'selected':''}>${y}</option>`).join('')}</select></label>`:''}${this.printPeriodPicker()}<label class="check"><input id="reportMapNumbers" type="checkbox" ${this.reportShowNumbers?'checked':''}>${ui('Vis distriktsnumre på rapportkortet')}</label><button class="primary" data-action="print-report">${ui('Print samlet rapport / PDF')}</button><button data-action="s13">${ui(this.reportPeriod==='service'?'Hent original udfyldt S-13':'Print S-13-formular for perioden / PDF')}</button></div>`+this.boundaryReport()+this.reportSummary(this.reportPeriod,false,true)+((typeof ProfilesUI==='undefined'||ProfilesUI.has('cards.view','geo.view'))?this.reportMapPage(this.reportPeriod,true):'')+ s13Appendix(this.reportPeriod);},
  reportMapPage(mode,localized=false){const t=key=>localized?ui(key):key,[start,end]=this.periodBounds(mode);return `<section class="report reportScreenMap"><h2>${t('Gennemgåede distrikter')} · ${this.reportTitle(mode,localized)}</h2><p>${fmt(start)} – ${fmt(end)}</p>${ReportMap.html(localized)}</section>`;},
  visitList(){return `<section class="panel"><div class="between"><h2>${ui('KTM-besøg')}</h2><button class="primary" data-action="visit">${ui('Tilføj besøg')}</button></div>${state.visits.slice().sort((a,b)=>cmp(b.date,a.date)).map(v=>`<div class="line"><span><b>${fmt(v.date)}</b><br><small>${esc(v.note)}</small></span><div><button data-action="visit" data-id="${v.id}">${ui('Rediger')}</button> <button class="danger" data-action="delete" data-module="visits" data-id="${v.id}">${ui('Slet')}</button></div></div>`).join('')||empty(ui('Ingen besøg registreret.'))}</section>`;},
  reportChart(start,end){
@@ -167,11 +152,23 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   return `<div class="welcomeTasksNotice" role="status" style="display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-top:12px;padding:12px 15px;border:1px solid var(--line);border-radius:9px"><span>${ui(count===1?'Du er ansvarlig for 1 åben opgave':'Du er ansvarlig for {count} åbne opgaver',{count})}</span><button type="button" data-work="my-tasks" class="primary" style="font-size:12px;min-height:34px">${ui('Se mine opgaver')}</button></div>`;
  },
 
+ unreadTaskReplies(){
+  if(!state?.profile||!ProfilesUI.pageAllowed('Opgaver'))return [];
+  return (state.notes||[]).flatMap(note=>(note.task_history||[])
+   .filter(entry=>entry.reply&&entry.recipient_self&&!entry.read)
+   .map(entry=>({note,entry})))
+   .sort((a,b)=>cmp(b.entry.at||b.entry.date,a.entry.at||a.entry.date));
+ },
+ replyNotifications(){
+  const replies=this.unreadTaskReplies();
+  if(!replies.length)return '';
+  return `<section class="panel taskReplyNotifications" role="region" aria-label="${esc(I18n.text('Nye svar på dine opgaver'))}"><div class="between"><div><h3>${ui('Nye svar på dine opgaver')}</h3><p class="hint">${ui('{count} ulæste svar',{count:replies.length})}</p></div><button type="button" data-work="task-replies">${ui('Se alle svar')}</button></div>${replies.slice(0,5).map(({note,entry})=>`<div class="line"><div><strong>${esc(note.text)}</strong><p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(entry.reply)}</p>${entry.author?`<small>${ui('Fra {name}',{name:entry.author})}</small>`:''}</div><button type="button" data-work="read-task-reply" data-id="${esc(note.id)}" data-entry="${esc(entry.id)}">${ui('Markér som læst')}</button></div>`).join('')}</section>`;
+ },
  taskHistory(n,allowDelete=true){
   const history=n.task_history||[];
   if(!history.length)return '';
   const canDelete=allowDelete&&(!state.profile||ProfilesUI.canAction('note.reply.delete'));
-  return `<details class="taskCompletionHistory"><summary>${ui('Afslutningshistorik · {count}',{count:history.length})}</summary><ol>${[...history].reverse().map(entry=>`<li><small>${entry.due?ui('Planlagt {due} · udført {date}',{due:fmt(entry.due),date:fmt(entry.date)}):ui('Udført {date}',{date:fmt(entry.date)})}</small>${entry.reply?`<p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(entry.reply)}</p>${entry.author?`<small>${ui('Fra {name}',{name:entry.author})}</small> `:''}${entry.recipient?`<small>${entry.recipient_self?ui('Svar til dig'):ui('Til {name}',{name:entry.recipient})}</small>`:''}${canDelete?` <button type="button" class="danger" data-work="delete-task-reply" data-id="${esc(n.id)}" data-entry="${esc(entry.id)}">${ui('Slet svar')}</button>`:''}`:''}</li>`).join('')}</ol></details>`;
+  return `<details class="taskCompletionHistory"><summary>${ui('Afslutningshistorik · {count}',{count:history.length})}</summary><ol>${[...history].reverse().map(entry=>`<li><small>${entry.due?ui('Planlagt {due} · udført {date}',{due:fmt(entry.due),date:fmt(entry.date)}):ui('Udført {date}',{date:fmt(entry.date)})}</small>${entry.reply?`<p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(entry.reply)}</p>${entry.author?`<small>${ui('Fra {name}',{name:entry.author})}</small> `:''}${entry.recipient?`<small>${entry.recipient_self?ui('Svar til dig'):ui('Til {name}',{name:entry.recipient})}</small>`:''}${entry.recipient_self&&!entry.read?` <button type="button" data-work="read-task-reply" data-id="${esc(n.id)}" data-entry="${esc(entry.id)}">${ui('Markér som læst')}</button>`:''}${canDelete?` <button type="button" class="danger" data-work="delete-task-reply" data-id="${esc(n.id)}" data-entry="${esc(entry.id)}">${ui('Slet svar')}</button>`:''}`:''}</li>`).join('')}</ol></details>`;
  },
  taskCompletionForm(n,due,cardOrigin=false){
   const recipient=n.assigned_by_name||n.assigned_by?.name;
@@ -221,17 +218,125 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   const total=Math.round(value),months=Math.floor(total/30),days=total%30;
   return ui(months===1?(days===1?'{months} måned og {days} dag':'{months} måned og {days} dage'):(days===1?'{months} måneder og {days} dag':'{months} måneder og {days} dage'),{months,days});
  },
- dashboardSummary(summary){
-  const s=summary.periods.service,pct=s.territories?Math.round(s.completed_territories/s.territories*100):0;
-  const ring=(portion,value,title,detail)=>`<div class="dashboardRing" style="--portion:${portion}%" aria-hidden="true"><div><strong>${value}</strong><span>${ui(title)}</span></div></div><p class="hint">${detail}</p>`;
-  return `${this.backupReminder()}<section class="dashboardHero"><div><span class="eyebrow">${ui('DIT LOKALE OVERBLIK')}</span><h2>${ui('Tjenesteår {year}',{year:yearLabel(serviceYear(summary.as_of))})}</h2><p>${ui(state.profile?.desk_only?'Kort og gennemgange — samlet ét sted.':'Kort, gennemgange og opfølgning — samlet ét sted.')}</p></div><div class="heroActions">${ProfilesUI.pageAllowed('Udlevering')?`<button class="primary" data-work="desk">${ui('Gå til daglig brug →')}</button>`:''}<span class="privacyBadge">${ui('Privat · på din egen server')}</span></div></section><div class="dashboardGrid"><section class="panel"><h3>${ui('Kortenes placering')}</h3><p class="srOnly">${ui('{out} af {total} kort er udleveret.',{out:s.assigned,total:s.territories})}</p>${ring(s.territories?s.assigned/s.territories*100:0,s.assigned,'udleveret',ui('Hjemme nu')+': '+s.home)}<div class="ringLegend"><i aria-hidden="true"></i>${ui('Udleverede distriktskort')} <span>○ ${ui('Hjemme')}</span></div></section><section class="panel"><h3>${ui('Dækning i tjenesteåret')}</h3><p class="srOnly">${ui('{covered} af {total} forskellige kort gennemgået',{covered:s.completed_territories,total:s.territories})}</p>${ring(pct,pct+'%','dækning',ui('{covered} af {total} forskellige kort gennemgået',{covered:s.completed_territories,total:s.territories}))}<p class="hint">${ui('Hvert kort tæller én gang her. Gentagne gennemgange tæller med i tallene nedenfor.')}</p></section></div><div class="dashboardMetrics">${[['Gennemgange i tjenesteåret',s.completions],['Aktuelle distrikter',s.territories],['Udleveret nu',s.assigned],['Hjemme nu',s.home]].map(([label,value])=>`<section class="panel"><small>${ui(label)}</small><strong>${Number(value)}</strong></section>`).join('')}</div>`;
+
+ coverageVisitEstimate(events,cards){
+  // The progress bar measures distinct CURRENT territories: only one visit
+  // estimate per completed territory, even if it was completed many times.
+  const latest=new Map(),ibByCard=new Map();
+  const active=new Set(cards.map(c=>c.id));
+  for(const item of state.ib||[])ibByCard.set(item.card_id,(ibByCard.get(item.card_id)||0)+1);
+  for(const entry of events)if(active.has(entry.card_id)){
+   const prior=latest.get(entry.card_id);
+   if(!prior||entry.date>=prior.date)latest.set(entry.card_id,entry);
+  }
+  let value=0,unknown=0;
+  for(const c of cards){
+   const entry=latest.get(c.id);
+   if(!entry)continue;
+   if(visitsKnown(c))value+=Math.max(0,visitsCount(c)-(ibByCard.get(c.id)||0));
+   else if(!entry.visits_unknown&&Number.isInteger(entry.visits)&&entry.visits>=0)value+=entry.visits;
+   else unknown++;
+  }
+  return {value,unknown};
  },
- dashboard(){if(state.dashboard_summary&&!ProfilesUI.has('cards.view','history.view','loans.view','publishers.view','notes.view','geo.view'))return this.dashboardSummary(state.dashboard_summary);
-  const y=serviceYear(state.today),start=`${y-1}-09-01`,s=this.stats(start,state.today),out=state.loans.filter(l=>!l.returned).length,total=state.cards.length,home=total-out,covered=state.cards.filter(c=>s.done.has(c.id)).length,pct=total?Math.round(covered/total*100):0,intervals=[];
-  for(const c of [...state.cards,...(state.archived_cards||[])]){const dates=[...new Set(state.completions.filter(e=>e.card_id===c.id).flatMap(e=>[e.date,e.previous_completed]).filter(Boolean))].sort();for(let i=1;i<dates.length;i++)intervals.push(dayDiff(dates[i],dates[i-1]));}
-  const avg=intervals.length?this.intervalLabel(intervals.reduce((a,b)=>a+b,0)/intervals.length):null,open=this.actionableTasks().length,folder=state.settings.folder_enabled===false?0:state.cards.filter(c=>c.in_folder&&!loanFor(c.id)).length;
-  const ring=(value,title,count,detail)=>`<div class="dashboardRing" style="--portion:${value}%" aria-hidden="true"><div><strong>${count}</strong><span>${ui(title)}</span></div></div><p class="hint">${detail}</p>`;
-  return `${typeof Onboarding!=='undefined'?Onboarding.panel():''}${this.backupReminder()}${this.recurringTasks()}${this.addressTaskPanel(true)}<section class="dashboardHero"><div><span class="eyebrow">${ui('DIT LOKALE OVERBLIK')}</span><h2>${ui('Tjenesteår {year}',{year:yearLabel(y)})}</h2><p>${ui('Kort, gennemgange og opfølgning — samlet ét sted.')}</p></div><div class="heroActions"><button class="primary" data-work="desk">${ui('Gå til daglig brug →')}</button><span class="privacyBadge">${ui('Privat · på din egen server')}</span></div></section>${!total?`<section class="dashboardStart panel"><div><h3>${ui('Begynd med dit første kort')}</h3><p class="hint">${ui('Et kortnummer er nok til at komme i gang. Adresser og grænser kan tilføjes senere.')}</p></div><button class="primary" data-action="new-card">${ui('Tilføj første kortnummer')}</button></section>`:''}<div class="dashboardShortcuts">${state.settings.folder_enabled===false?'':`<button data-action="stock" data-status="Kort i mappen"><span>${ui('Kort i mappen')}</span><strong>${folder}</strong></button>`}<button data-action="stock" data-status="Kort i kassen"><span>${ui('Kort i kassen')}</span><strong>${home-folder}</strong></button><button data-work="tasks"><span>${ui('Åbne opgaver')}</span><strong>${open}</strong></button></div><div class="dashboardGrid"><section class="panel"><h3>${ui('Kortenes placering')}</h3><p class="srOnly">${ui('{out} af {total} kort er udleveret.',{out,total})}</p>${ring(total?out/total*100:0,'udleveret',out,ui(state.settings.folder_enabled===false?'{home} ledige kort hjemme · {total} kort i alt':'{home} hjemme · {folder} i mappen · {total} kort i alt',{home,folder,total}))}<div class="ringLegend"><i aria-hidden="true"></i>${ui('Udleverede distriktskort')} <span>○ ${ui('Hjemme')}</span></div></section><section class="panel"><h3>${ui('Dækning i tjenesteåret')}</h3><p class="srOnly">${ui('{covered} af {total} forskellige kort gennemgået',{covered,total})}</p>${ring(pct,'dækning',pct+'%',ui('{covered} af {total} forskellige kort gennemgået',{covered,total}))}<p class="hint">${ui('Hvert kort tæller én gang her. Gentagne gennemgange tæller med i tallene nedenfor.')}</p></section></div><div class="dashboardMetrics"><section class="panel"><small>${ui('Gennemgange i tjenesteåret')}</small><strong>${s.events.length}</strong><span>${ui('Alle gennemgange tæller')}</span></section><section class="panel"><small>${ui('Anslåede besøg ved gennemgange')}</small><strong>${s.visits.toLocaleString('da-DK')}</strong><small>${ui('Kortets aktuelle besøgstal minus IB tælles for hver gennemgang.')}</small>${s.unknownVisits?`<small>${ui('Gennemgange uden kendt besøgstal er udeladt fra besøgsskønnet.')}</small>`:''}<span>${ui('Ikke en registrering af faktiske husbesøg')}</span></section><section class="panel"><small>${ui('Gennemsnit mellem gennemgange')}</small><strong class="metricText">${avg!==null?avg:ui('Ikke nok historik endnu')}</strong><span>${ui('{count} kendte intervaller · ikke en prognose',{count:intervals.length})}</span><span class="hint">${ui('Omregnet med 30 dage pr. måned.')}</span></section><button class="panel taskMetric" data-work="tasks"><small>${ui('Åbne opgaver')}</small><strong>${open}</strong><span>${ui('Se opgaver →')}</span></button></div><div class="dashboardLower"><section class="panel dashboardTrend">${this.dashboardChart(start,`${y}-08-31`)}</section>${this.followupsSummary()}</div>`;
+ serviceYearTarget(today){
+  const year=serviceYear(today),start=`${year-1}-09-01`,end=`${year}-09-01`;
+  return Math.round(Math.max(0,Math.min(1,dayDiff(today,start)/dayDiff(end,start)))*100);
+ },
+ rollingCompletionStart(today){
+  const year=Number(today.slice(0,4))-1,month=Number(today.slice(5,7)),day=Number(today.slice(8,10));
+  const last=new Date(Date.UTC(year,month,0)).getUTCDate();
+  return `${year}-${String(month).padStart(2,'0')}-${String(Math.min(day,last)).padStart(2,'0')}`;
+ },
+ dashboardCoverage(covered,total,visitEstimate=null,canWork=false,today=state.today){
+  const pct=total?Math.round(covered/total*100):0,remaining=Math.max(0,total-covered),summary=ui('{covered} af {total} forskellige kort gennemgået',{covered,total});
+  const target=this.serviceYearTarget(today),difference=pct-target;
+  const paceLabel=difference>0?ui('{count} procentpoint foran årets mål',{count:difference}):difference<0?ui('{count} procentpoint bag årets mål',{count:-difference}):ui('På niveau med årets mål');
+  const progressLabel=typeof I18n.attribute==='function'?I18n.attribute('aria','Dækning i tjenesteåret'):`aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}"`;
+  return `<section class="panel dashboardCoverage">
+   <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div>${canWork?`<button class="dashboardWorkButton" data-work="desk">${ui('Gå til daglig brug →')}</button>`:`<span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span>`}</div>
+   <div class="dashboardCoverageMetrics">
+    <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
+    ${visitEstimate?`<div class="dashboardCoverageVisits"><small>${ui('Anslåede besøg på gennemgåede kort')}</small><strong>${Number(visitEstimate.value).toLocaleString('da-DK')}</strong>${visitEstimate.unknown?`<span>${ui('Nogle kort har ukendt besøgstal og er ikke medregnet.')}</span>`:''}</div>`:''}
+   </div>
+   <div class="dashboardProgressTrack" style="position:relative" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span><i class="dashboardTargetMarker" aria-hidden="true" style="position:absolute;top:0;bottom:0;left:clamp(0px,calc(${target}% - 1px),calc(100% - 2px));width:2px;background:var(--text)"></i></div>
+   <div class="dashboardCoverageFoot dashboardTargetCaption"><span>${ui('Mål i dag: {percent} %',{percent:target})}</span>${total?`<b>${paceLabel}</b>`:''}</div>
+   <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui(remaining===1?'1 kort tilbage':'{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
+   <p class="srOnly">${summary}</p>
+  </section>`;
+ },
+ dashboardFact(label,value,{work='',action='',status=''}={}){
+  const content=`<span>${ui(label)}</span><strong>${Number(value).toLocaleString('da-DK')}</strong>`;
+  return work?`<button class="dashboardFact" data-work="${work}">${content}</button>`:
+   action?`<button class="dashboardFact" data-action="${action}" data-status="${esc(status)}">${content}</button>`:
+   `<div class="dashboardFact">${content}</div>`;
+ },
+ dashboardSummary(summary){
+  const s=summary.periods.service,year=serviceYear(summary.as_of),canWork=ProfilesUI.pageAllowed('Udlevering');
+  return `<div class="dashboardHome" data-dashboard-layout="compact-summary">
+    <div class="dashboardPrimary dashboardPrimarySummary">
+     ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork,summary.as_of)}
+    </div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3></div>
+    <div class="dashboardQuickFacts">
+      ${this.dashboardFact('Udleveret nu',s.assigned)}
+      ${this.dashboardFact('Hjemme nu',s.home)}
+      ${this.dashboardFact('Aktuelle distrikter',s.territories)}
+    </div>
+    ${this.backupReminder()}
+   </div>`;
+ },
+ completedReturnAverage(){
+  // Only a return explicitly completed on the same date is a finished
+  // assignment. An older retained-card completion or a return without
+  // a completed territory must not enter the average.
+  const cutoff=this.rollingCompletionStart(state.today);
+  const completed=new Set(state.completions.filter(e=>e.loan_id&&e.date>=cutoff&&e.date<=state.today).map(e=>e.loan_id+'|'+e.date));
+  const durations=state.loans.filter(l=>l.id&&l.assigned&&l.returned>=cutoff&&l.returned<=state.today&&completed.has(l.id+'|'+l.returned))
+   .map(l=>dayDiff(l.returned,l.assigned)).filter(d=>Number.isInteger(d)&&d>=0);
+  return durations.length?durations.reduce((sum,d)=>sum+d,0)/durations.length:null;
+ },
+ oldestQueueCard(){
+  // The district-wide queue includes available cards in both the box and
+  // folder. Undated cards are reported separately, not assigned a fake age.
+  const active=new Set(state.loans.filter(l=>!l.returned).map(l=>l.card_id));
+  const queue=state.cards.filter(c=>!active.has(c.id));
+  const known=queue.filter(c=>typeof c.last_completed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.last_completed)&&Number.isFinite(dayDiff(state.today,c.last_completed))&&c.last_completed<=state.today);
+  known.sort((a,b)=>a.last_completed.localeCompare(b.last_completed)||cmp(a.number,b.number)||cmp(a.id,b.id));
+  const next=known[0];
+  return {value:next?elapsedLabel(next.last_completed):ui(queue.length?'Ukendt':'Ingen kort i køen'),card:next||null,unknown:queue.length-known.length};
+ },
+ dashboard(){
+  if(state.dashboard_summary&&!ProfilesUI.has('cards.view','history.view','loans.view','publishers.view','notes.view','geo.view'))return this.dashboardSummary(state.dashboard_summary);
+  const y=serviceYear(state.today),start=`${y-1}-09-01`,s=this.stats(start,state.today),ids=new Set(state.cards.map(c=>c.id));
+  const out=new Set(state.loans.filter(l=>!l.returned&&ids.has(l.card_id)).map(l=>l.card_id)).size,total=state.cards.length,home=total-out,covered=state.cards.filter(c=>s.done.has(c.id)).length;
+  const returnAverage=this.completedReturnAverage(),avg=returnAverage===null?ui('Ikke nok historik endnu'):this.intervalLabel(returnAverage),oldest=this.oldestQueueCard();
+  const open=this.actionableTasks().length,folder=state.settings.folder_enabled===false?0:state.cards.filter(c=>c.in_folder&&!loanFor(c.id)).length,box=Math.max(0,home-folder);
+  return `<div class="dashboardHome" data-dashboard-layout="compact">
+    <div class="dashboardPrimary">
+      ${this.dashboardCoverage(covered,total,this.coverageVisitEstimate(s.events,state.cards),true)}
+      <section class="panel dashboardSpotlight dashboardAverage">
+       <small>${ui('Gennemsnitlig gennemgangstid')}</small>
+       <strong class="dashboardAverageValue">${avg}</strong>
+       <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering med gennemgang · seneste 12 måneder.')}</span>
+      </section>
+      <section class="panel dashboardSpotlight dashboardQueue">
+       <small>${ui('Ældste kort i gennemgangskøen')}</small>
+       <strong class="dashboardAverageValue dashboardQueueValue">${oldest.value}</strong>
+       <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
+      </section>
+    </div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><span>${ui('Aktuelle distrikter')}: ${total}</span></div>
+    <div class="dashboardQuickFacts">
+      ${this.dashboardFact('Udleveret nu',out)}
+      ${state.settings.folder_enabled===false?'':this.dashboardFact('Kort i mappen',folder,{action:'stock',status:'Kort i mappen'})}
+      ${this.dashboardFact('Kort i kassen',box,{action:'stock',status:'Kort i kassen'})}
+      ${this.dashboardFact('Åbne opgaver',open,{work:'tasks'})}
+    </div>
+    ${!total?`<section class="dashboardStart panel"><div><h3>${ui('Begynd med dit første kort')}</h3><p class="hint">${ui('Et kortnummer er nok til at komme i gang. Adresser og grænser kan tilføjes senere.')}</p></div><button class="primary" data-action="new-card">${ui('Tilføj første kortnummer')}</button></section>`:''}
+    <div class="dashboardLower"><section class="panel dashboardTrend">${this.dashboardChart(start,`${y}-08-31`)}</section>${this.followupsSummary()}</div>
+    <div class="dashboardBelow">${typeof Onboarding!=='undefined'?Onboarding.panel():''}${this.backupReminder()}${this.recurringTasks()}${this.addressTaskPanel(true)}</div>
+   </div>`;
  },
 
  addressTaskProgress(n){
@@ -249,7 +354,9 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  addressTaskForm(){const n=state.address_task;if(!n?.available)return;openDialog(`<h2>${ui('Automatisk adressekontrol')}</h2><form data-work-form="address-task"><label class="check"><input name="enabled" type="checkbox" ${n.enabled?'checked':''}><span data-ui="Kontrollér adresser automatisk">Kontrollér adresser automatisk</span></label><label>${ui('Hyppighed · antal dage')}</label><input name="days" type="number" min="1" max="30" value="${Number(n.days||7)}" required><label><span data-ui="Klokkeslæt · serverens lokale tid">Klokkeslæt · serverens lokale tid</span></label><input name="time" type="time" value="${esc(n.time||'02:00')}" required><p class="hint"><span data-ui="Kontrollen bruger den gemte samlede distriktsgrænse og Datafordeler-forbindelsen. Slå fra for at stoppe en igangværende kontrol efter det aktuelle opslag. Ved fejl venter opgaven og prøver automatisk igen. Appen skal køre i Home Assistant.">Kontrollen bruger den gemte samlede distriktsgrænse og Datafordeler-forbindelsen. Slå fra for at stoppe en igangværende kontrol efter det aktuelle opslag. Ved fejl venter opgaven og prøver automatisk igen. Appen skal køre i Home Assistant.</span></p>${formEnd()}</form>`,I18n.language());},
  tasks(){
   const q=this.taskQuery.toLowerCase(),items=state.notes.filter(n=>this.taskFilter==='replies'&&n.task_history?.some(entry=>entry.reply&&entry.recipient_self)||this.taskFilter==='all'||this.taskFilter==='done'&&n.resolved||this.taskFilter==='open'&&!n.resolved).filter(n=>this.taskOwnerFilter==='all'||this.taskOwnerFilter==='mine'&&n.assignee_self||this.taskOwnerFilter==='unassigned'&&!n.assigned&&!n.assignee_id).filter(n=>this.taskOwnerFilter!=='mine'||this.taskFilter!=='open'||n.task!==false&&!n.ignored&&n.entity!=='activity'&&(!n.recurrence||n.recurrence.next_due<=state.today)).filter(n=>[n.text,taskCard(n.card_id)?.number,(state.task_users||[]).find(u=>u.id===n.assignee_id)?.name].join(' ').toLowerCase().includes(q)).sort((a,b)=>cmp(b.created,a.created));
-  return `${this.addressTaskPanel()}${state.profile?`<div class="tabs">${[['all','Alle ansvarshavende'],['mine','Mine opgaver'],['unassigned','Uden ansvarshavende']].map(([k,t])=>`<button data-work="task-owner-filter" data-value="${k}" aria-pressed="${this.taskOwnerFilter===k}" class="${this.taskOwnerFilter===k?'active':''}">${ui(t)}</button>`).join('')}</div>`:''}<div class="toolbar"><input data-work-input="tasks" value="${esc(this.taskQuery)}" ${I18n.attribute('placeholder','Søg opgave eller kortnummer')} ${I18n.attribute('aria','Søg opgaver')}><button class="primary" data-work="new-task">${ui('Ny opgave')}</button></div><div class="tabs">${[['open','Åbne opgaver'],['done','Udførte'],['all','Alle'],...((this.taskFilter==='replies'||state.notes.some(n=>n.task_history?.some(h=>h.recipient_self)))?[['replies','Svar til mig']]:[])].map(([k,t])=>`<button data-work="task-filter" data-value="${k}" class="${this.taskFilter===k?'active':''}">${ui(t)}</button>`).join('')}</div><section class="panel"><p class="hint">${ui('Vælg Marker udført eller svar for at afslutte og eventuelt skrive et svar. Ugentlige opgaver flyttes til næste dato. Andre opgaver findes under Udførte og kan genåbnes med Genåbn.')}</p>${items.slice(0,200).map(n=>`<article class="taskRow"><div><p>${esc(n.text)}</p>${this.taskOwner(n)}${this.taskSchedule(n)}${this.taskImages(n)}${this.taskHistory(n)}<small>${n.card_id?`${ui('Kort')} ${esc(taskCard(n.card_id)?.number||I18n.text('arkiveret'))}`:ui('Generel')} · ${fmt(n.date)} · ${ui('Opgave')}</small></div><div class="actions">${this.taskButton(n)}${card(n.card_id)?`<button data-action="detail" data-id="${n.card_id}">${ui('Åbn kort')}</button>`:''}<button data-work="edit-note" data-id="${n.id}">${ui('Rediger')}</button><button data-action="delete" data-module="notes" data-id="${n.id}" ${I18n.attribute('aria','Slet opgave')}>${ui('Slet')}</button></div></article>`).join('')||empty(ui('Ingen opgaver i denne visning.'))}<p class="hint">${ui('{count} i alt',{count:items.length})}${items.length>200?` · ${ui('De første 200 vises; afgræns søgningen.')}`:''}. ${ui('Alt gemmes privat på hovedsystemet.')}</p></section>`;
+  const statusTabs=[['open','Åbne opgaver'],['done','Udførte'],['all','Alle'],...((this.taskFilter==='replies'||state.notes.some(n=>n.task_history?.some(h=>h.recipient_self)))?[['replies','Svar til mig']]:[])].map(([k,t])=>`<button data-work="task-filter" data-value="${k}" aria-pressed="${this.taskFilter===k}" class="${this.taskFilter===k?'active':''}">${ui(t)}</button>`).join('');
+  const ownerPicker=state.profile?`<label class="taskOwnerPicker"><span>${ui('Ansvarshavende')}</span><select data-work-select="task-owner-filter">${[['all','Alle ansvarshavende'],['mine','Mine opgaver'],['unassigned','Uden ansvarshavende']].map(([k,t])=>`<option value="${k}" ${this.taskOwnerFilter===k?'selected':''}>${ui(t)}</option>`).join('')}</select></label>`:'';
+  return `<div class="taskControls"><div class="taskSearchRow"><input data-work-input="tasks" value="${esc(this.taskQuery)}" ${I18n.attribute('placeholder','Søg opgave eller kortnummer')} ${I18n.attribute('aria','Søg opgaver')}><button class="primary" data-work="new-task">${ui('Ny opgave')}</button></div><div class="taskFilterRow"><div class="taskStatusFilters" role="group" ${I18n.attribute('aria','Status')}>${statusTabs}</div>${ownerPicker}</div></div><section class="panel taskList"><p class="hint">${ui('Vælg Marker udført eller svar for at afslutte og eventuelt skrive et svar. Ugentlige opgaver flyttes til næste dato. Andre opgaver findes under Udførte og kan genåbnes med Genåbn.')}</p>${items.slice(0,200).map(n=>`<article class="taskRow"><div><p>${esc(n.text)}</p>${this.taskOwner(n)}${this.taskSchedule(n)}${this.taskImages(n)}${this.taskHistory(n)}<small>${n.card_id?`${ui('Kort')} ${esc(taskCard(n.card_id)?.number||I18n.text('arkiveret'))}`:ui('Generel')} · ${fmt(n.date)} · ${ui('Opgave')}</small></div><div class="actions">${this.taskButton(n)}${card(n.card_id)?`<button data-action="detail" data-id="${n.card_id}">${ui('Åbn kort')}</button>`:''}<button data-work="edit-note" data-id="${n.id}">${ui('Rediger')}</button><button data-action="delete" data-module="notes" data-id="${n.id}" ${I18n.attribute('aria','Slet opgave')}>${ui('Slet')}</button></div></article>`).join('')||empty(ui('Ingen opgaver i denne visning.'))}<p class="hint">${ui('{count} i alt',{count:items.length})}${items.length>200?` · ${ui('De første 200 vises; afgræns søgningen.')}`:''}. ${ui('Alt gemmes privat på hovedsystemet.')}</p></section>${this.addressTaskPanel()}`;
  },
  taskOwner(n){if(!n.assigned&&!n.assignee_id)return '';const name=(state.task_users||[]).find(u=>u.id===n.assignee_id)?.name;return `<p class="hint taskOwner">${name?ui('Ansvarshavende: {name}',{name}):ui(n.assignee_self?'Du er ansvarshavende':n.assignee_id?'Ansvarshavende: inaktiv eller fjernet bruger':'En ansvarshavende er valgt')}</p>`;},
  taskOwnerField(n){if(!state.profile||!Array.isArray(state.task_users)||!ProfilesUI.has('notes.edit','users.manage'))return '';const users=state.task_users,missing=n.assignee_id&&!users.some(u=>u.id===n.assignee_id);return `<label for="taskAssignee">${ui('Ansvarshavende (valgfri)')}</label><select id="taskAssignee" name="assignee_id"><option value="" data-ui="Ingen ansvarshavende">${esc(I18n.text('Ingen ansvarshavende'))}</option>${missing?`<option value="${esc(n.assignee_id)}" selected data-ui="Inaktiv eller fjernet bruger">${esc(I18n.text('Inaktiv eller fjernet bruger'))}</option>`:''}${users.map(u=>`<option value="${esc(u.id)}" ${n.assignee_id===u.id?'selected':''}>${esc(u.name)}</option>`).join('')}</select><input type="hidden" name="assignee_before" value="${esc(n.assignee_id||'')}"><p class="hint">${ui('Tildeling giver ingen nye rettigheder. Kun brugere med brugeradministration kan ændre den ansvarshavende.')}</p>`;},
@@ -298,9 +405,38 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  filters(){const views=state.settings.saved_views||[];return `<div class="savedViews"><label>${ui('Gemte visninger')} <select data-work-select="view"><option value="" data-ui="Vælg visning…">${esc(I18n.text('Vælg visning…'))}</option>${views.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('')}</select></label><button data-work="save-view">${ui('Gem denne visning')}</button></div>`;},
  connectionState:'connected',connectionIssue:false,checkingConnection:false,
  connectionPanel(){const mode=this.connectionState,title=mode==='offline'?'Forbindelsen til hovedsystemet mangler':mode==='checking'?'Kontrollerer forbindelsen…':'Forbindelsen svarer igen',message=mode==='connected'?'Kontrollér tidligere gemninger. Opdatér data, når du er færdig med dine åbne redigeringer.':'Dine åbne felter bliver stående. Gemning kan først bekræftes, når hovedsystemet svarer.';return `<section id="connectionNotice" class="connectionNotice ${mode==='connected'?'restored':''}" role="status" aria-live="polite" ${!this.connectionIssue?'hidden':''}><div><strong>${ui(title)}</strong><p>${ui(message)}</p></div><button data-work="connection-check" ${this.checkingConnection?'disabled':''}>${ui('Kontrollér forbindelse')}</button></section>`;},
- paintConnection(){const node=el('connectionNotice');if(node)node.outerHTML=this.connectionPanel();},
- connectionChanged(mode){const changed=this.connectionState!==mode;this.connectionState=mode;if(mode!=='connected')this.connectionIssue=true;if(changed)this.paintConnection();},
- async checkConnection(showProgress=false){if(this.checkingConnection)return;this.checkingConnection=true;if(showProgress&&this.connectionIssue)this.connectionChanged('checking');const controller=typeof AbortController==='function'?new AbortController():null,timer=setTimeout(()=>controller?.abort(),6000);try{const response=await fetch('/api/ping',{cache:'no-store',...(controller?{signal:controller.signal}:{})});this.connectionChanged(response.ok?'connected':'offline');}catch{this.connectionChanged('offline');}finally{clearTimeout(timer);this.checkingConnection=false;if(showProgress)this.paintConnection();}},
+ paintConnection(){const node=el('connectionNotice');if(node)node.outerHTML=this.connectionPanel();if(typeof SaveStatus!=='undefined')SaveStatus.paint();},
+ connectionTimer:null,connectionDelay:2000,connectionBooted:false,
+ scheduleConnection(delay){
+  if(!this.connectionBooted)return;
+  if(this.connectionTimer!==null)clearTimeout(this.connectionTimer);
+  this.connectionTimer=setTimeout(()=>{this.connectionTimer=null;this.checkConnection(this.connectionIssue&&this.connectionState!=='connected');},delay);
+ },
+ connectionChanged(mode){
+  const changed=this.connectionState!==mode;this.connectionState=mode;
+  if(mode!=='connected')this.connectionIssue=true;
+  if(changed)this.paintConnection();
+  if(changed&&mode==='offline'&&!this.checkingConnection){this.connectionDelay=2000;this.scheduleConnection(this.connectionDelay);}
+ },
+ async checkConnection(showProgress=false){
+  if(this.checkingConnection)return;
+  if(this.connectionTimer!==null){clearTimeout(this.connectionTimer);this.connectionTimer=null;}
+  this.checkingConnection=true;
+  const wasDisconnected=this.connectionState!=='connected';
+  if(showProgress&&this.connectionIssue)this.connectionChanged('checking');
+  const controller=typeof AbortController==='function'?new AbortController():null,timer=setTimeout(()=>controller?.abort(),6000);
+  try{
+   const response=await fetch('/api/ping',{cache:'no-store',...(controller?{signal:controller.signal}:{})});
+   this.connectionChanged(response.ok?'connected':'offline');
+   if(response.ok&&wasDisconnected&&state?.profile&&typeof ProfilesUI!=='undefined'&&typeof ProfilesUI.poll==='function')void ProfilesUI.poll();
+  }catch{this.connectionChanged('offline');}
+  finally{
+   clearTimeout(timer);this.checkingConnection=false;
+   if(this.connectionState==='connected'){this.connectionDelay=2000;this.scheduleConnection(30000);}
+   else{this.scheduleConnection(this.connectionDelay);this.connectionDelay=Math.min(30000,this.connectionDelay*2);}
+   if(showProgress)this.paintConnection();
+  }
+ },
  menu(open,returnFocus=false){document.body?.classList.toggle('menuOpen',open);const button=document.querySelector('.mobileMenu');button?.setAttribute?.('aria-expanded',String(open));if(!open&&returnFocus)button?.focus?.();},
 
  followupItems(includeIgnored=false){
@@ -331,7 +467,6 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    const a=cards.get(first),b=cards.get(second);
    add('checks',['overlap',...[first,second].sort()],'Grænsen overlapper kort {number} · kontrollér begge kort',{card:a,relatedCard:b,params:{number:b.number}});
   }
-  for(const loan of state.loans||[])if(!loan.returned&&cards.has(loan.card_id)&&loan.cycle_start&&fourMonths(loan.cycle_start)<state.today)add('loans',[loan.id],'Udleveret over fire måneder',{card:cards.get(loan.card_id),loan});
   for(const change of GeoUI.data.changes||[])add('addresses',[change.id],({new:'Ny adresse',changed:'Ændret adresse',retired:'Udgået adresse'})[change.kind]||'Adresseændring',{change});
   }
   return results.sort((a,b)=>cmp(a.card?.number||'',b.card?.number||'')||cmp(a.category,b.category)||cmp(a.key,b.key)).map(item=>{const ignoreInfo=ignoredByKey.get(item.key)||null;return {...item,ignoreInfo,ignored:!!ignoreInfo?.ignored,canIgnore:item.category==='checks'&&JSON.parse(item.key)[1]==='overlap'};}).filter(item=>includeIgnored||!item.ignored);
@@ -397,7 +532,8 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   }finally{this.outsideBusy=false;}
  },
  followups(){
-  const allItems=this.followupItems(true),items=this.followupItems(),q=(this.followupQuery||'').trim().toLocaleLowerCase(),tabs=[['all','Alle'],['ib-review',ibReviewLabel('Revidér IB','Review DNC')],...(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view')?[['checks','Kortkontrol'],['reprint','Genprint'],['loans','Udleveringer'],['addresses','Adresseændringer'],['ignored','Ignorerede']]:[])],visible=(this.followupFilter==='ignored'?allItems.filter(r=>r.ignored):items).filter(r=>(this.followupFilter==='all'||this.followupFilter==='ignored'||r.category===this.followupFilter)&&[r.card?.number,r.card?.name,r.relatedCard?.number,r.relatedCard?.name,I18n.format(r.text,r.params),r.change?.after?.label,r.loan&&publisherName(r.loan.publisher_id)].join(' ').toLocaleLowerCase().includes(q));
+  if(this.followupFilter==='loans')this.followupFilter='all';
+  const allItems=this.followupItems(true),items=this.followupItems(),q=(this.followupQuery||'').trim().toLocaleLowerCase(),tabs=[['all','Alle'],['ib-review',ibReviewLabel('Revidér IB','Review DNC')],...(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view')?[['checks','Kortkontrol'],['reprint','Genprint'],['addresses','Adresseændringer'],['ignored','Ignorerede']]:[])],visible=(this.followupFilter==='ignored'?allItems.filter(r=>r.ignored):items).filter(r=>(this.followupFilter==='all'||this.followupFilter==='ignored'||r.category===this.followupFilter)&&[r.card?.number,r.card?.name,r.relatedCard?.number,r.relatedCard?.name,I18n.format(r.text,r.params),r.change?.after?.label,r.loan&&publisherName(r.loan.publisher_id)].join(' ').toLocaleLowerCase().includes(q));
   return `<div class="tabs followupTabs">${tabs.map(([key,label])=>`<button data-work="followup-filter" data-value="${key}" class="${this.followupFilter===key?'active':''}" aria-pressed="${this.followupFilter===key}">${ui(label)} · ${key==='ignored'?allItems.filter(r=>r.ignored).length:items.filter(r=>key==='all'||r.category===key).length}</button>`).join('')}</div><div class="toolbar"><input data-work-input="followups" value="${esc(this.followupQuery||'')}" ${I18n.attribute('placeholder','Søg kort, adresse eller opfølgning')} ${I18n.attribute('aria','Søg opfølgninger')}></div><section class="panel"><p class="hint">${ui('Hvert punkt tæller for sig. Forside og bagside vises hver for sig; godkend først en side, når den er kontrolleret og printet.')}</p>${this.followupFilter==='reprint'?`<div class="actions"><button data-action="print-revisions" data-side="front" ${!items.some(r=>r.side==='front')?'disabled':''}>${ui('Print ændrede forsider')}</button><button data-action="print-revisions" data-side="back" ${!items.some(r=>r.side==='back')?'disabled':''}>${ui('Print ændrede bagsider')}</button></div>`:''}${this.followupFilter==='addresses'?'<div class="actions"><button data-work="reject-outside-preview" '+(!GeoUI.data.main_boundary||!items.some(r=>r.category==='addresses')||(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('address.change.outside.preview'))?'disabled':'')+'>'+ui('Afvis alle adresser uden for distriktsgrænsen')+'</button></div>'+(!GeoUI.data.main_boundary?'<p class="hint">'+ui('Gem den samlede distriktsgrænse før du afviser adresseændringer.')+'</p>':''):''}<p data-followup-count>${ui('Til opfølgning: {count}',{count:visible.length})}</p>${visible.slice(0,this.followupLimit).map(r=>this.followupRow(r)).join('')||empty(ui('Ingen punkter i denne visning.'))}${visible.length>this.followupLimit?`<button data-work="more-followups">${ui('Vis flere')}</button>`:''}</section>${!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view')?`<p class="hint">${ui('Kortkontrol ændrer ikke dine kort. Adresseændringer kræver særskilt godkendelse og skal derefter indarbejdes på relevante kort.')}</p><button data-work="missing">${ui('Vis adresser uden kort')}</button>`:''}`;
  },
  async openFollowups(filter='all'){
@@ -408,11 +544,21 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(!state.profile||typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view'))await GeoUI.load();if(origin!==page||generation!==openDialog.generation||el('dialog').open)return;
   this.remember();this.followupFilter=filter;this.followupQuery='';this.followupLimit=100;GeoUI.dirty=false;page='Opfølgninger';this.menu(false);render();
  },
- followupsSummary(){const loaded=(typeof GeoUI!=='undefined'&&GeoUI.loaded)||!!state?.ib_reviews?.length||!!(state?.profile&&typeof ProfilesUI!=='undefined'&&!ProfilesUI.has('geo.view')),items=loaded?this.followupItems():[];return `<section class="panel dashboardAttention"><span class="eyebrow">${ui('NÆSTE SKRIDT')}</span><h3>${ui('Opfølgninger')}</h3><p class="hint">${ui('Kortkontrol, genprint, langvarige udleveringer og adresseændringer samlet ét sted.')}</p>${loaded?`<p><b>${ui('Til opfølgning: {count}',{count:items.length})}</b></p>${items.slice(0,3).map(r=>`<button class="attentionCard" data-work="followups" data-value="${r.category}"><span>${r.card?`${ui('Kort')} ${esc(r.card.number)}`:esc(r.change.after.label||'')}<small>${ui(r.text,r.params)}</small></span><span aria-hidden="true">→</span></button>`).join('')}`:''}<button class="attentionLink" data-work="followups">${ui('Åbn opfølgninger →')}</button></section>`;},
- settingsNav(){
-  const tabs=[['general','Menighedstilpasning'],['areas','Områder'],['printing','Print'],['connections','Forbindelser'],['import','Import'],['data','Backup og vedligeholdelse'],['sharing','Deling og QR'],...(typeof ProfilesUI!=='undefined'?[['users','Brugere og roller']]:[])].filter(([k])=>typeof ProfilesUI==='undefined'||ProfilesUI.settingsAllowed(k));
+ followupsSummary(){const loaded=(typeof GeoUI!=='undefined'&&GeoUI.loaded)||!!state?.ib_reviews?.length||!!(state?.profile&&typeof ProfilesUI!=='undefined'&&!ProfilesUI.has('geo.view')),items=loaded?this.followupItems():[];return `<section class="panel dashboardAttention"><span class="eyebrow">${ui('NÆSTE SKRIDT')}</span><h3>${ui('Opfølgninger')}</h3><p class="hint">${ui('Kortkontrol, genprint og adresseændringer samlet ét sted. For gamle udleveringer findes under Forkyndere.')}</p>${loaded?`<p><b>${ui('Til opfølgning: {count}',{count:items.length})}</b></p>${items.slice(0,3).map(r=>`<button class="attentionCard" data-work="followups" data-value="${r.category}"><span>${r.card?`${ui('Kort')} ${esc(r.card.number)}`:esc(r.change.after.label||'')}<small>${ui(r.text,r.params)}</small></span><span aria-hidden="true">→</span></button>`).join('')}`:''}<button class="attentionLink" data-work="followups">${ui('Åbn opfølgninger →')}</button></section>`;},
+ settingsTabs(){
+  const allowed=k=>typeof ProfilesUI==='undefined'||ProfilesUI.settingsAllowed(k);
+  return [['general','Menighedstilpasning'],['areas','Områder'],['printing','Print'],...(typeof UsageStatsUI!=='undefined'?[['usage','Brugsstatistik']]:[]),['connections','Forbindelser'],['import','Import'],['data','Backup og vedligeholdelse'],['sharing','Deling og QR'],...(typeof ProfilesUI!=='undefined'?[['users','Brugere og roller']]:[])].filter(([k])=>allowed(k));
+ },
+ normalizeSettingsSection(){
+  const tabs=this.settingsTabs();
   if(!tabs.some(([k])=>k===Navigation.settingsSection))Navigation.settingsSection=tabs[0]?.[0]||'general';
-  return `<div class="tabs">${tabs.map(([k,t])=>`<button data-work="settings-tab" data-value="${k}" class="${Navigation.settingsSection===k?'active':''}">${ui(t)}</button>`).join('')}</div>`;
+ },
+ settingsNav(){
+  this.normalizeSettingsSection();
+  const tabs=this.settingsTabs(),advancedKeys=new Set(['connections','import','data','sharing','users']);
+  const button=([k,t])=>`<button type="button" data-work="settings-tab" data-value="${k}" class="${Navigation.settingsSection===k?'active':''}" ${Navigation.settingsSection===k?'aria-current="page"':''}>${ui(t)}</button>`;
+  const basic=tabs.filter(([k])=>!advancedKeys.has(k)),advanced=tabs.filter(([k])=>advancedKeys.has(k));
+  return `<nav class="settingsSectionNav" ${I18n.attribute('aria','Indstillinger')}><div class="settingsSectionTabs">${basic.map(button).join('')}</div>${advanced.length?`<details class="settingsAdvanced" ${advancedKeys.has(Navigation.settingsSection)?'open':''}><summary>${ui('Avanceret')}</summary><div class="settingsAdvancedTabs">${advanced.map(button).join('')}</div></details>`:''}</nav>`;
  },
  async inspect(kind){if(!['checks','addressChanges'].includes(kind))return;const generation=openDialog.generation,origin=page;if(kind==='addressChanges'||!GeoUI.loaded)await GeoUI.load();if(openDialog.generation!==generation||page!==origin)return;openDialog(this[kind](),I18n.language());},
  tools(){return `<div class="toolbar compactTools"><button data-work="editor">${ui("Rediger distriktskort")}</button><button data-work="boundary">${ui("Samlet distriktsgrænse")}</button></div>`;},
@@ -424,7 +570,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  async runtimeTest(){if(this.runtimeBusy)return;this.runtimeBusy=true;const button=document.querySelector('[data-work="runtime-test"]'),node=el('runtimeTestResult');if(button)button.disabled=true;try{const result=await(await api('/api/runtime/test',{})).json();if(node?.isConnected)I18n.errorContent(node,result.message);}catch(error){if(node?.isConnected)node.textContent=error.message;else toast(error);}finally{this.runtimeBusy=false;if(button)button.disabled=false;}},
  afterRender(){if(typeof window.requestAnimationFrame!=='function')return;const same=this.lastPage===page,y=same?(window.scrollY||0):this.scroll;this.lastPage=page;this.scroll=0;
   const app=el('app');if(!app)return;
-  if(page==='Indstillinger'){app.insertAdjacentHTML('afterbegin',this.settingsNav());if(Navigation.settingsSection==='general')app.insertAdjacentHTML('afterbegin',`<button class="welcomeReopen" data-welcome="open">${ui('Kom godt i gang · åbn opsætningsguide')}</button>`);if(typeof SetupUI!=='undefined')app.querySelector('.foot')?.insertAdjacentHTML('beforebegin',SetupUI.imports());for(const key of ['general','areas','printing','connections','import','data','sharing','advanced','users']){const n=el('settings-'+key);if(n){const panel=n.closest('.panel');if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.settingsAllowed(key))panel.remove();else panel.hidden=key!==Navigation.settingsSection;}}if(Navigation.settingsSection==='connections'){AddressSourceUI.load();if(typeof ShareUI.connectionHTML==='function'){el('settings-connections')?.closest('.panel').insertAdjacentHTML('beforeend',ShareUI.connectionHTML());ShareUI.loadConnection();}}if(Navigation.settingsSection==='data'&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('settings.manage')))el('settings-data').insertAdjacentHTML('afterend',`<div class="notice"><b>${ui('Installeret version {version}',{version:state.version})}</b><p>${ui('Hent en frisk privat backup før en Home Assistant-opdatering. Afinstaller ikke appen.')}</p>${this.backupHistory()}<button data-action="backup">${ui('Hent sikkerhedskopi nu')}</button><button data-work="activity">${ui('Ændringshistorik')}</button></div>`);}
+  if(page==='Indstillinger'){app.insertAdjacentHTML('afterbegin',this.settingsNav());if(Navigation.settingsSection==='general')app.insertAdjacentHTML('afterbegin',`<button class="welcomeReopen" data-welcome="open">${ui('Kom godt i gang · åbn opsætningsguide')}</button>`);if(Navigation.settingsSection==='import'&&typeof SetupUI!=='undefined')app.querySelector('.foot')?.insertAdjacentHTML('beforebegin',SetupUI.imports());for(const key of ['general','areas','printing','connections','import','data','sharing','advanced','users']){const n=el('settings-'+key);if(n){const panel=n.closest('.panel');if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.settingsAllowed(key))panel.remove();else panel.hidden=key!==Navigation.settingsSection;}}if(Navigation.settingsSection==='connections'){AddressSourceUI.load();if(typeof ShareUI.connectionHTML==='function'){el('settings-connections')?.closest('.panel').insertAdjacentHTML('beforeend',ShareUI.connectionHTML());ShareUI.loadConnection();}}if(Navigation.settingsSection==='data'&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('settings.manage')))el('settings-data')?.insertAdjacentHTML('afterend',`<div class="notice"><b>${ui('Installeret version {version}',{version:state.version})}</b><p>${ui('Hent en frisk privat backup før en Home Assistant-opdatering. Afinstaller ikke appen.')}</p>${this.backupHistory()}<button data-action="backup">${ui('Hent sikkerhedskopi nu')}</button><button data-work="activity">${ui('Ændringshistorik')}</button></div>`);}
   if(page==='Distrikter'&&typeof SplitSuggestions!=='undefined')app.querySelector('.territories .panel')?.insertAdjacentHTML('afterbegin',SplitSuggestions.entry());
   if(page==='Indstillinger'&&Navigation.settingsSection==='general'&&typeof SplitSuggestions!=='undefined')el('settings-general')?.closest('.panel').insertAdjacentHTML('beforeend',SplitSuggestions.entry());
   if(page==='Indstillinger'&&Navigation.settingsSection==='data'&&typeof ProfileBackupUI!=='undefined')el('settings-data')?.closest('.panel').insertAdjacentHTML('beforeend',ProfileBackupUI.html());
@@ -432,7 +578,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(page==='Kortoversigt')app.insertAdjacentHTML('beforeend',this.filters());
   if(page==='Adresser')app.insertAdjacentHTML('afterbegin',this.tools());
   if(page==='Kortopsætning'&&typeof SetupUI!=='undefined'&&SetupUI.returning)app.insertAdjacentHTML('afterbegin','<button data-setup="return"><span data-ui="← Tilbage til opsætning">← Tilbage til opsætning</span></button>');
-  if(state.undo_available)app.insertAdjacentHTML('beforeend',`<div class="undoBar"><span>${ui('Seneste handling kan fortrydes i op til 2 minutter.')}</span><button data-work="undo">${ui('Fortryd sidste handling')}</button></div>`);
+  if(state.undo_available)app.insertAdjacentHTML('afterbegin',`<div class="undoBar"><span>${ui('Seneste handling kan fortrydes i op til 2 minutter.')}</span><button data-work="undo" data-revision="${esc(state.revision)}">${ui(state.undo_action==='loan.issue'?'Fortryd udlevering':state.undo_action==='loan.finish'?'Fortryd aflevering eller gennemgang':'Fortryd sidste handling')}</button></div>`);
   if(!state.profile?.desk_only&&!el('globalSearchBar'))app.insertAdjacentHTML('afterbegin',`<div class="globalSearchBar" id="globalSearchBar"><button data-work="search"><span aria-hidden="true">⌕</span> ${ui('Søg på tværs · kort, vej, område, forkynder')} <kbd aria-hidden="true">⌘ / Ctrl K</kbd></button><button data-work="refresh" ${I18n.attribute('aria','Opdater data fra hovedsystemet')}><span aria-hidden="true">↻</span> ${ui('Opdater')}</button></div>`);
   app.insertAdjacentHTML('afterbegin',this.connectionPanel());
 
@@ -444,6 +590,18 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
 
  async handle(action,d){switch(action){
   case 'desk':page='Udlevering';render();break;case 'tasks':page='Opgaver';render();break;
+  case 'task-replies':{
+   if(!state?.profile||!ProfilesUI.pageAllowed('Opgaver'))break;
+   await refresh({beforeRender:()=>{this.taskFilter='replies';this.taskOwnerFilter='all';this.taskQuery='';page='Opgaver';}});
+   break;
+  }
+  case 'read-task-reply':{
+   const generation=openDialog.generation,origin=page,fromCard=el('dialog').open;
+   const note=state.notes.find(n=>n.id===d.id);
+   await mutate('note.reply.read',{id:d.id,entry_id:d.entry},{close:false,message:'Svar markeret som læst'});
+   if(fromCard&&note?.card_id&&generation===openDialog.generation&&page===origin)detail(note.card_id,'Noter');
+   break;
+  }
   case 'my-tasks':{
    if(!state?.profile||!ProfilesUI.pageAllowed('Opgaver'))break;
    // Fetch a fresh authorized projection so assignments changed in another
@@ -466,13 +624,20 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    if(fromCard&&n?.card_id&&generation===openDialog.generation&&page===origin)detail(n.card_id,'Noter');
    break;
   }
-  case 'undo':if(window.confirm(I18n.text('Fortryd seneste gemte handling?')))await mutate('workflow.undo',{});break;
+  case 'undo':if(!state.undo_available||!d.revision||d.revision!==state.revision||PendingSaves.count||WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)break;if(window.confirm(I18n.text('Fortryd seneste gemte handling?')))await mutate('workflow.undo',{expected_revision:d.revision});break;
   case 'search':this.searchDialog();break;
   case 'connection-check':await this.checkConnection(true);break;
   case 'reload-app':if(!el('dialog').open&&!GeoUI.dirty)window.location.reload();break;
   case 'refresh':{const waitPage=page,waitGeneration=openDialog.generation,waitStamp=GeoUI.draftStamp?.(false),formStamp=PendingSaves.pageStamp(),sequence=PendingSaves.sequence;await saveQueue;if(page!==waitPage||openDialog.generation!==waitGeneration||GeoUI.draftStamp?.(false)!==waitStamp||PendingSaves.pageStamp()!==formStamp||PendingSaves.count||PendingSaves.sequence!==sequence)break;if(el('dialog').open){toast('Afslut din åbne redigering, før du opdaterer data.');break;}const discard=GeoUI.dirty;if(discard&&!GeoUI.canLeave())break;const review=SaveStatus.kind==='error'||SaveStatus.kind==='review'||WriteGuard.uncertain||WriteGuard.needsReview,origin=page,generation=openDialog.generation,stamp=GeoUI.draftStamp?.();const current=()=>page===origin&&openDialog.generation===generation&&!el('dialog').open&&GeoUI.draftStamp?.()===stamp&&!PendingSaves.count&&PendingSaves.sequence===sequence&&PendingSaves.pageStamp()===formStamp;if(GeoUI.loaded)await GeoUI.load();const updated=await refresh({guard:current,beforeRender:()=>{if(discard){const c=card(GeoUI.target);GeoUI.ids=new Set(c?.address_ids||[]);GeoUI.polygon=(GeoUI.whole?GeoUI.data.main_boundary?.points||[]:c?.geo_polygon||[]).map(p=>p.slice());GeoUI.dirty=false;}}});if(updated===false){toast('En nyere redigering er åbnet. Opdater igen, når du er færdig.');break;}WriteGuard.reviewed();this.connectionIssue=false;this.connectionState='connected';this.paintConnection();if(review)SaveStatus.set('review','Data opdateret · kontrollér tidligere ændring');else saved();toast('Data opdateret fra hovedsystemet');break;}
   case 'connections':if(page==='Kortopsætning'&&!GeoUI.canLeave())break;await closeRequested();if(el('dialog').open)break;this.remember();GeoUI.dirty=false;page='Indstillinger';Navigation.settingsSection='connections';render();break;
-  case 'settings-tab':if(d.value==='users'&&state.profile){await ProfilesUI.openAdmin();break;}if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.settingsAllowed(d.value))break;Navigation.settingsSection=d.value==='advanced'?'import':d.value;render();break;
+  case 'settings-tab':{
+   const target=d.value==='advanced'?'import':d.value;
+   if(!this.settingsTabs().some(([k])=>k===target))break;
+   if(target===Navigation.settingsSection&&target!=='users')break;
+   if(typeof SettingsViewDrafts!=='undefined'&&SettingsViewDrafts.dirty(document)){toast(I18n.text('Gem ændringerne, før du skifter fane.'));break;}
+   if(target==='users'&&state.profile){await ProfilesUI.openAdmin();break;}
+   Navigation.settingsSection=target;render();break;
+  }
   case 'report-tab':reportTab=d.value;render();break;
   case 'more-history':this.historyLimit+=100;render();break;case 'more-checks':this.checkLimit+=100;render();break;
   case 'editor':if(!GeoUI.loaded)await GeoUI.load();GeoUI.openCard('');break;
@@ -538,7 +703,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   case 'restructure':{const payload={mode:form.dataset.mode,ids:form.dataset.mode==='split'?[form.dataset.source]:fd.getAll('ids'),number:data.number,name:data.name,address_ids:fd.getAll('address_ids')};await this.previewRestructure(form,payload);break;}
  }},
  applyView(id){const item=(state.settings.saved_views||[]).find(v=>v.id===id);if(!item)return;this.remember();const v=item.view;page=['Distrikter','Kortoversigt','Adresser'].includes(v.page)?v.page:'Distrikter';query=v.query||'';area=v.area||'';status=v.status||'Alle';addressTab=v.addressTab||'Mangler på kort';addressPostcode=v.addressPostcode||'';if(page==='Kortoversigt'&&v.filters)OverviewMap.filters={...OverviewMap.filters,...v.filters};render();toast('Visning: '+item.name);},
- boot(){if(typeof window.addEventListener!=='function')return;window.addEventListener('offline',()=>this.connectionChanged('offline'));window.addEventListener('online',()=>{this.connectionIssue=true;this.checkConnection(true);});if(typeof window.setInterval==='function')window.setInterval(()=>this.checkConnection(),30000);
+ boot(){if(typeof window.addEventListener!=='function')return;window.addEventListener('offline',()=>this.connectionChanged('offline'));window.addEventListener('online',()=>{this.connectionIssue=true;this.checkConnection(true);});this.connectionBooted=true;this.scheduleConnection(this.connectionState==='connected'?30000:2000);
   // Populate follow-ups on first opening, without redrawing a page/form the user opened meanwhile.
   if(typeof GeoUI!=='undefined'&&!GeoUI.loaded&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view','cards.view')))GeoUI.load().then(()=>{if(page==='Forside'){const summary=document.querySelector('.dashboardAttention');if(summary)summary.outerHTML=this.followupsSummary();}}).catch(error=>toast(error));
  }
@@ -547,7 +712,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-work]');if(!b)return;e.preventDefault();const generation=openDialog.generation,origin=page;try{await Workspace.handle(b.dataset.work,b.dataset);}catch(error){toast(error);const node=el('formError');if(node&&generation===openDialog.generation&&page===origin)I18n.errorContent(node,error);}});
 document.addEventListener('submit',async e=>{const f=e.target;if(!f.dataset?.workForm)return;e.preventDefault();e.stopImmediatePropagation();if(f.dataset.busy==='yes'||!f.reportValidity())return;if(FormDrafts.unchanged(f)){FormDrafts.idle();if(!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const generation=openDialog.generation,origin=page;f.dataset.busy='yes';try{await Workspace.submit(f);}catch(error){const n=el('formError');if(n&&generation===openDialog.generation&&page===origin&&f.isConnected!==false)I18n.errorContent(n,error);toast(error);}finally{f.dataset.busy='no';}});
 document.addEventListener('input',e=>{const kind=e.target.dataset?.workInput;if(!kind)return;const q=e.target.value;if(kind==='global-search'){Workspace.searchResults(q);return;}if(kind==='split-search'){document.querySelectorAll('[data-split-label]').forEach(n=>n.hidden=!n.textContent.toLowerCase().includes(q.toLowerCase()));return;}if(kind==='followups'){Workspace.followupQuery=q;Workspace.followupLimit=100;}if(kind==='tasks')Workspace.taskQuery=q;if(kind==='history')Workspace.historyQuery=q;const pos=e.target.selectionStart;render();const n=document.querySelector('[data-work-input="'+kind+'"]');n?.focus();n?.setSelectionRange(pos,pos);});
-document.addEventListener('change',e=>{if(e.target.dataset?.workSelect==='view')Workspace.applyView(e.target.value);});
+document.addEventListener('change',e=>{const kind=e.target.dataset?.workSelect;if(kind==='view')Workspace.applyView(e.target.value);if(kind==='task-owner-filter')Workspace.handle('task-owner-filter',{value:e.target.value});});
 
 document.addEventListener('keydown',event=>{
  if(event.key==='Escape'&&document.body?.classList.contains('menuOpen')&&!el('dialog').open){event.preventDefault();Workspace.menu(false,true);return;}

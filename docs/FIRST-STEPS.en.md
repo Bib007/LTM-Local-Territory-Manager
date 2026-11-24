@@ -49,7 +49,7 @@ Put the cards you actually carry into the folder in the app. When assigning one,
 
 Under **Daily use → Assign → Put a specific card in the carry folder**, tick multiple cards. Selections persist as you change the search. Cards already assigned or already in the folder cannot be selected. Choose **Put N in the carry folder** at the bottom, review the list and confirm. If another user moves or assigns a card in the meantime, the result lists successful moves and rejected cards separately. Card numbers, completion history and assignment records are preserved.
 
-Each recorded completion counts, including repeated completions of the same card. The dashboard visit estimate uses the card's current known address/unit count minus registered do-not-call entries for each completion; it is not a record of individual calls made. A service year runs from **1 September to 31 August**.
+Each recorded completion counts, including repeated completions of the same card. The visit total is an estimate based on the card's address/unit count; it is not a record of individual calls made. A service year runs from **1 September to 31 August**.
 
 ## 5. Add detail when ready
 

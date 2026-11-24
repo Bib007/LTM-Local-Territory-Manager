@@ -16,8 +16,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.evaluate(()=>api('/api/profiles/activate',{name:'Fiktiv admin',password:'Fiktiv-password-123',confirmation:'AKTIVÉR PROFILER'}));
    await page.reload();await page.locator('#loginName').fill('Fiktiv admin');await page.locator('#loginPassword').fill('Fiktiv-password-123');await page.locator('#loginForm button').click();
    await page.waitForFunction(()=>typeof state!=='undefined'&&state?.profile&&SaveStatus.kind==='saved');
-   await page.waitForFunction(()=>PersonalGuide.data!==null);
-   const later=page.locator('[data-personal-guide=later]');if(await later.count())await later.click();
+   
+   
   }
   const ids=await page.evaluate(async()=>{
    const a=await mutate('publisher.save',{name:'Fiktiv Person',group:'Fiktiv gruppe',group_role:'assistant',pioneer:false});
