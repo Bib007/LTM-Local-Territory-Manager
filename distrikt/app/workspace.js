@@ -239,8 +239,19 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   }
   return {value,unknown};
  },
- dashboardCoverage(covered,total,visitEstimate=null,canWork=false){
+ serviceYearTarget(today){
+  const year=serviceYear(today),start=`${year-1}-09-01`,end=`${year}-09-01`;
+  return Math.round(Math.max(0,Math.min(1,dayDiff(today,start)/dayDiff(end,start)))*100);
+ },
+ rollingCompletionStart(today){
+  const year=Number(today.slice(0,4))-1,month=Number(today.slice(5,7)),day=Number(today.slice(8,10));
+  const last=new Date(Date.UTC(year,month,0)).getUTCDate();
+  return `${year}-${String(month).padStart(2,'0')}-${String(Math.min(day,last)).padStart(2,'0')}`;
+ },
+ dashboardCoverage(covered,total,visitEstimate=null,canWork=false,today=state.today){
   const pct=total?Math.round(covered/total*100):0,remaining=Math.max(0,total-covered),summary=ui('{covered} af {total} forskellige kort gennemgået',{covered,total});
+  const target=this.serviceYearTarget(today),difference=pct-target;
+  const paceLabel=difference>0?ui('{count} procentpoint foran årets mål',{count:difference}):difference<0?ui('{count} procentpoint bag årets mål',{count:-difference}):ui('På niveau med årets mål');
   const progressLabel=typeof I18n.attribute==='function'?I18n.attribute('aria','Dækning i tjenesteåret'):`aria-label="${esc(I18n.text('Dækning i tjenesteåret'))}"`;
   return `<section class="panel dashboardCoverage">
    <div class="dashboardCoverageTop"><div><span class="dashboardEyebrow">${ui('Årets fremdrift')}</span><h3>${ui('Dækning i tjenesteåret')}</h3></div>${canWork?`<button class="dashboardWorkButton" data-work="desk">${ui('Gå til daglig brug →')}</button>`:`<span class="dashboardCoverageTag">${ui('Dette tjenesteår')}</span>`}</div>
@@ -248,7 +259,8 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
     <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
     ${visitEstimate?`<div class="dashboardCoverageVisits"><small>${ui('Anslåede besøg på gennemgåede kort')}</small><strong>${Number(visitEstimate.value).toLocaleString('da-DK')}</strong>${visitEstimate.unknown?`<span>${ui('Nogle kort har ukendt besøgstal og er ikke medregnet.')}</span>`:''}</div>`:''}
    </div>
-   <div class="dashboardProgressTrack" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span></div>
+   <div class="dashboardProgressTrack" style="position:relative" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span><i class="dashboardTargetMarker" aria-hidden="true" style="position:absolute;top:0;bottom:0;left:clamp(0px,calc(${target}% - 1px),calc(100% - 2px));width:2px;background:var(--text)"></i></div>
+   <div class="dashboardCoverageFoot dashboardTargetCaption"><span>${ui('Mål i dag: {percent} %',{percent:target})}</span>${total?`<b>${paceLabel}</b>`:''}</div>
    <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui(remaining===1?'1 kort tilbage':'{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
    <p class="srOnly">${summary}</p>
   </section>`;
@@ -263,7 +275,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   const s=summary.periods.service,year=serviceYear(summary.as_of),canWork=ProfilesUI.pageAllowed('Udlevering');
   return `<div class="dashboardHome" data-dashboard-layout="compact-summary">
     <div class="dashboardPrimary dashboardPrimarySummary">
-     ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork)}
+     ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork,summary.as_of)}
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3></div>
     <div class="dashboardQuickFacts">
@@ -278,8 +290,9 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   // Only a return explicitly completed on the same date is a finished
   // assignment. An older retained-card completion or a return without
   // a completed territory must not enter the average.
-  const completed=new Set(state.completions.filter(e=>e.loan_id&&e.date).map(e=>e.loan_id+'|'+e.date));
-  const durations=state.loans.filter(l=>l.id&&l.assigned&&l.returned&&completed.has(l.id+'|'+l.returned))
+  const cutoff=this.rollingCompletionStart(state.today);
+  const completed=new Set(state.completions.filter(e=>e.loan_id&&e.date>=cutoff&&e.date<=state.today).map(e=>e.loan_id+'|'+e.date));
+  const durations=state.loans.filter(l=>l.id&&l.assigned&&l.returned>=cutoff&&l.returned<=state.today&&completed.has(l.id+'|'+l.returned))
    .map(l=>dayDiff(l.returned,l.assigned)).filter(d=>Number.isInteger(d)&&d>=0);
   return durations.length?durations.reduce((sum,d)=>sum+d,0)/durations.length:null;
  },
@@ -305,7 +318,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
       <section class="panel dashboardSpotlight dashboardAverage">
        <small>${ui('Gennemsnitlig gennemgangstid')}</small>
        <strong class="dashboardAverageValue">${avg}</strong>
-       <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering, når kortet meldes gennemgået.')}</span>
+       <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering med gennemgang · seneste 12 måneder.')}</span>
       </section>
       <section class="panel dashboardSpotlight dashboardQueue">
        <small>${ui('Ældste kort i gennemgangskøen')}</small>
@@ -393,8 +406,37 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
  connectionState:'connected',connectionIssue:false,checkingConnection:false,
  connectionPanel(){const mode=this.connectionState,title=mode==='offline'?'Forbindelsen til hovedsystemet mangler':mode==='checking'?'Kontrollerer forbindelsen…':'Forbindelsen svarer igen',message=mode==='connected'?'Kontrollér tidligere gemninger. Opdatér data, når du er færdig med dine åbne redigeringer.':'Dine åbne felter bliver stående. Gemning kan først bekræftes, når hovedsystemet svarer.';return `<section id="connectionNotice" class="connectionNotice ${mode==='connected'?'restored':''}" role="status" aria-live="polite" ${!this.connectionIssue?'hidden':''}><div><strong>${ui(title)}</strong><p>${ui(message)}</p></div><button data-work="connection-check" ${this.checkingConnection?'disabled':''}>${ui('Kontrollér forbindelse')}</button></section>`;},
  paintConnection(){const node=el('connectionNotice');if(node)node.outerHTML=this.connectionPanel();if(typeof SaveStatus!=='undefined')SaveStatus.paint();},
- connectionChanged(mode){const changed=this.connectionState!==mode;this.connectionState=mode;if(mode!=='connected')this.connectionIssue=true;if(changed)this.paintConnection();},
- async checkConnection(showProgress=false){if(this.checkingConnection)return;this.checkingConnection=true;if(showProgress&&this.connectionIssue)this.connectionChanged('checking');const controller=typeof AbortController==='function'?new AbortController():null,timer=setTimeout(()=>controller?.abort(),6000);try{const response=await fetch('/api/ping',{cache:'no-store',...(controller?{signal:controller.signal}:{})});this.connectionChanged(response.ok?'connected':'offline');}catch{this.connectionChanged('offline');}finally{clearTimeout(timer);this.checkingConnection=false;if(showProgress)this.paintConnection();}},
+ connectionTimer:null,connectionDelay:2000,connectionBooted:false,
+ scheduleConnection(delay){
+  if(!this.connectionBooted)return;
+  if(this.connectionTimer!==null)clearTimeout(this.connectionTimer);
+  this.connectionTimer=setTimeout(()=>{this.connectionTimer=null;this.checkConnection(this.connectionIssue&&this.connectionState!=='connected');},delay);
+ },
+ connectionChanged(mode){
+  const changed=this.connectionState!==mode;this.connectionState=mode;
+  if(mode!=='connected')this.connectionIssue=true;
+  if(changed)this.paintConnection();
+  if(changed&&mode==='offline'&&!this.checkingConnection){this.connectionDelay=2000;this.scheduleConnection(this.connectionDelay);}
+ },
+ async checkConnection(showProgress=false){
+  if(this.checkingConnection)return;
+  if(this.connectionTimer!==null){clearTimeout(this.connectionTimer);this.connectionTimer=null;}
+  this.checkingConnection=true;
+  const wasDisconnected=this.connectionState!=='connected';
+  if(showProgress&&this.connectionIssue)this.connectionChanged('checking');
+  const controller=typeof AbortController==='function'?new AbortController():null,timer=setTimeout(()=>controller?.abort(),6000);
+  try{
+   const response=await fetch('/api/ping',{cache:'no-store',...(controller?{signal:controller.signal}:{})});
+   this.connectionChanged(response.ok?'connected':'offline');
+   if(response.ok&&wasDisconnected&&state?.profile&&typeof ProfilesUI!=='undefined'&&typeof ProfilesUI.poll==='function')void ProfilesUI.poll();
+  }catch{this.connectionChanged('offline');}
+  finally{
+   clearTimeout(timer);this.checkingConnection=false;
+   if(this.connectionState==='connected'){this.connectionDelay=2000;this.scheduleConnection(30000);}
+   else{this.scheduleConnection(this.connectionDelay);this.connectionDelay=Math.min(30000,this.connectionDelay*2);}
+   if(showProgress)this.paintConnection();
+  }
+ },
  menu(open,returnFocus=false){document.body?.classList.toggle('menuOpen',open);const button=document.querySelector('.mobileMenu');button?.setAttribute?.('aria-expanded',String(open));if(!open&&returnFocus)button?.focus?.();},
 
  followupItems(includeIgnored=false){
@@ -536,7 +578,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(page==='Kortoversigt')app.insertAdjacentHTML('beforeend',this.filters());
   if(page==='Adresser')app.insertAdjacentHTML('afterbegin',this.tools());
   if(page==='Kortopsætning'&&typeof SetupUI!=='undefined'&&SetupUI.returning)app.insertAdjacentHTML('afterbegin','<button data-setup="return"><span data-ui="← Tilbage til opsætning">← Tilbage til opsætning</span></button>');
-  if(state.undo_available)app.insertAdjacentHTML('beforeend',`<div class="undoBar"><span>${ui('Seneste handling kan fortrydes i op til 2 minutter.')}</span><button data-work="undo">${ui('Fortryd sidste handling')}</button></div>`);
+  if(state.undo_available)app.insertAdjacentHTML('afterbegin',`<div class="undoBar"><span>${ui('Seneste handling kan fortrydes i op til 2 minutter.')}</span><button data-work="undo" data-revision="${esc(state.revision)}">${ui(state.undo_action==='loan.issue'?'Fortryd udlevering':state.undo_action==='loan.finish'?'Fortryd aflevering eller gennemgang':'Fortryd sidste handling')}</button></div>`);
   if(!state.profile?.desk_only&&!el('globalSearchBar'))app.insertAdjacentHTML('afterbegin',`<div class="globalSearchBar" id="globalSearchBar"><button data-work="search"><span aria-hidden="true">⌕</span> ${ui('Søg på tværs · kort, vej, område, forkynder')} <kbd aria-hidden="true">⌘ / Ctrl K</kbd></button><button data-work="refresh" ${I18n.attribute('aria','Opdater data fra hovedsystemet')}><span aria-hidden="true">↻</span> ${ui('Opdater')}</button></div>`);
   app.insertAdjacentHTML('afterbegin',this.connectionPanel());
 
@@ -582,7 +624,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    if(fromCard&&n?.card_id&&generation===openDialog.generation&&page===origin)detail(n.card_id,'Noter');
    break;
   }
-  case 'undo':if(window.confirm(I18n.text('Fortryd seneste gemte handling?')))await mutate('workflow.undo',{});break;
+  case 'undo':if(!state.undo_available||!d.revision||d.revision!==state.revision||PendingSaves.count||WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)break;if(window.confirm(I18n.text('Fortryd seneste gemte handling?')))await mutate('workflow.undo',{expected_revision:d.revision});break;
   case 'search':this.searchDialog();break;
   case 'connection-check':await this.checkConnection(true);break;
   case 'reload-app':if(!el('dialog').open&&!GeoUI.dirty)window.location.reload();break;
@@ -660,7 +702,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   case 'restructure':{const payload={mode:form.dataset.mode,ids:form.dataset.mode==='split'?[form.dataset.source]:fd.getAll('ids'),number:data.number,name:data.name,address_ids:fd.getAll('address_ids')};await this.previewRestructure(form,payload);break;}
  }},
  applyView(id){const item=(state.settings.saved_views||[]).find(v=>v.id===id);if(!item)return;this.remember();const v=item.view;page=['Distrikter','Kortoversigt','Adresser'].includes(v.page)?v.page:'Distrikter';query=v.query||'';area=v.area||'';status=v.status||'Alle';addressTab=v.addressTab||'Mangler på kort';addressPostcode=v.addressPostcode||'';if(page==='Kortoversigt'&&v.filters)OverviewMap.filters={...OverviewMap.filters,...v.filters};render();toast('Visning: '+item.name);},
- boot(){if(typeof window.addEventListener!=='function')return;window.addEventListener('offline',()=>this.connectionChanged('offline'));window.addEventListener('online',()=>{this.connectionIssue=true;this.checkConnection(true);});if(typeof window.setInterval==='function')window.setInterval(()=>this.checkConnection(),30000);
+ boot(){if(typeof window.addEventListener!=='function')return;window.addEventListener('offline',()=>this.connectionChanged('offline'));window.addEventListener('online',()=>{this.connectionIssue=true;this.checkConnection(true);});this.connectionBooted=true;this.scheduleConnection(this.connectionState==='connected'?30000:2000);
   // Populate follow-ups on first opening, without redrawing a page/form the user opened meanwhile.
   if(typeof GeoUI!=='undefined'&&!GeoUI.loaded&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view','cards.view')))GeoUI.load().then(()=>{if(page==='Forside'){const summary=document.querySelector('.dashboardAttention');if(summary)summary.outerHTML=this.followupsSummary();}}).catch(error=>toast(error));
  }
