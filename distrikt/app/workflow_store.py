@@ -200,7 +200,7 @@ class WorkflowStore:
             self.put('settings',config);return {}
         if action=='workflow.undo':
             entry=self._undo
-            if not entry or entry['until']<time.monotonic() or entry['revision']!=self.revision:raise ValueError('Fortryd er udløbet, eller data er ændret siden handlingen.')
+            if not entry or ('expected_revision' in data and data['expected_revision']!=self.revision) or entry['until']<time.monotonic() or entry['revision']!=self.revision:raise ValueError('Fortryd er udløbet, eller data er ændret siden handlingen.')
             for (module,ident),row in entry['rows'].items():
                 self._dirty_modules.add(module)
                 self.workflow_track(module,ident)

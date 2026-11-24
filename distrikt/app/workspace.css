@@ -271,3 +271,52 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
 .deskReturnRow.selected{background:var(--dashboard-faint,var(--surface));outline:1px solid var(--accent);outline-offset:-1px}
 .deskReturnRow td:first-child{width:45px}.deskReturnSelect{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.deskReturnSelect input[type=checkbox]{width:17px;height:17px}
 .deskReturnSelect strong{font-size:12px;color:var(--muted)}
+
+/* Shared compact workspace: keep maps, print sheets and dialog controls intact. */
+@media screen {
+ #nav .navGroup{padding:4px 0 8px;border-color:var(--line)}
+ #nav .navGroup>summary{padding:9px 8px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+ #nav button{padding:9px 9px;min-height:40px;margin-bottom:2px}
+ #nav .navIcon{width:20px;height:20px;color:var(--muted)}
+ #nav button.active .navIcon{color:inherit}
+ #nav .navExternal{padding:9px 8px}
+ #congregation{padding-bottom:14px}
+ .settingsSectionNav{margin-bottom:14px;padding:6px 0 12px;border-bottom:1px solid var(--line)}
+ .settingsSectionTabs,.settingsAdvancedTabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+ .settingsSectionNav button{width:auto;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;margin:0;padding:9px 12px;min-height:40px;border:1px solid var(--line);color:var(--text);background:var(--surface2)}
+ .settingsSectionNav button[aria-current=page]{border-color:var(--accent);background:var(--surface);box-shadow:inset 0 -2px var(--accent)}
+ .settingsAdvanced{margin-top:9px}
+ .settingsAdvanced>summary{color:var(--link);cursor:pointer;padding:8px 0;min-height:38px}
+ .settingsAdvancedTabs{padding:4px 0 3px}
+ .cardActionMenu{position:relative;min-width:36px}
+ .cardActionMenu>summary{list-style:none;cursor:pointer;display:grid;place-items:center;border:1px solid var(--line);border-radius:6px;background:var(--surface2);min-height:36px;padding:5px 10px;color:var(--text);font-weight:700}
+ .cardActionMenu>summary::-webkit-details-marker{display:none}
+ .cardActionItems{display:grid;gap:5px;margin:6px 0 0;border:1px solid var(--line);border-radius:6px;padding:5px;background:var(--surface)}
+ .cardActionItems button{text-align:left;white-space:normal;width:100%}
+ .rowActions{min-width:0;gap:5px;align-items:flex-start}
+ .details .cardActionMenu{width:100%}
+ .details .cardActionMenu>summary{justify-content:center}
+ .tablewrap:has(>table>tbody>.cardRow){max-height:68vh;overflow:auto;isolation:isolate}
+ .tablewrap:has(>table>tbody>.cardRow)>table>thead>tr>th{position:sticky;top:0;z-index:2;background:var(--surface);color:var(--muted)}
+ .cardRow td{padding:8px 9px}
+ .cardRow td small{margin-top:3px}
+ .cardRow button{min-height:34px}
+ .cardRow .statusBadge{padding:3px 6px;font-weight:500}
+ .cardRow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+ #saveState[data-save-kind=checking]:before{background:#d1b268}
+ #saveState[data-save-kind=offline]:before{background:#e4a385}
+ #saveState[data-save-kind=offline],#saveState[data-save-kind=checking]{color:var(--muted)}
+ .dashboardQuickFacts{grid-template-columns:repeat(auto-fit,minmax(min(100%,135px),1fr))}
+ .dashboardTargetCaption{flex-wrap:wrap}
+ .dashboardTargetCaption b{white-space:normal}
+ .dashboardPrimary>.panel{min-width:0}
+ .undoBar{margin:8px 0 12px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface2)}
+ .publisherReturnGroup{padding:6px 0 12px;margin-bottom:12px;border-bottom-width:1px}
+ .publisherReturnGroup h3{margin:8px 0}
+}
+@media screen and (max-width:750px){
+ .settingsSectionNav button,.settingsAdvanced>summary,.cardActionMenu>summary,.cardRow button,#nav button{min-height:44px}
+ .cardRow td{padding:8px 6px}
+ .tablewrap:has(>table>tbody>.cardRow){max-height:64vh}
+ .dashboardQuickFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

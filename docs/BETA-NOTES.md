@@ -1,4 +1,12 @@
-# LTM 1.13.0-beta.4
+# LTM 1.13.0-beta.5
+
+## Nyt siden beta.4
+
+- **Forside:** Målmarkering viser den forløbne andel af tjenesteåret og afstanden til målet. Gennemsnitlig gennemgangstid bruger afsluttede gennemgange fra seneste 12 måneder; ældste ledige kort viser kendt gennemgangsalder på tværs af mappe og kasse, med ukendte datoer særskilt.
+- **Design:** Sammenklappelige navigationsgrupper, ensartede ikoner, færre sekundære knapper, kompakte korttabeller med faste overskrifter, én indstillingsnavigation med separat brugsstatistik og avancerede valg. Faneskift beskytter reelle ugemte ændringer.
+- **Daglig brug:** Vælg næste synlige kort efter bekræftet aflevering; fortrydelsesknappen er tydeligere og bundet til den viste datarevision.
+- **Drift:** Hurtigere automatiske forbindelsesprøver med gradvist stigende interval. Ingen automatisk gentagelse af ubekræftede skrivninger eller tab af kladder. Fjern redundant aktivitetslæsning, når gendannelseslisten er tom, og genbrug indlæste indstillinger. Den faktiske gemmehastighed afhænger fortsat af installation og datamængde.
+
 
 ## Nyt siden beta.3
 

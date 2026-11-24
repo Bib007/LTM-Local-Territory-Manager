@@ -3,6 +3,16 @@
 const I18n={
  current:'en',
  english:{
+  "Mål i dag: {percent} %":"Target today: {percent}%",
+  "{count} procentpoint foran årets mål":"{count} percentage points ahead of the year's target",
+  "{count} procentpoint bag årets mål":"{count} percentage points behind the year's target",
+  "På niveau med årets mål":"On track for the year's target",
+  "Fra udlevering til aflevering med gennemgang · seneste 12 måneder.":"From issue to completed return · last 12 months.",
+  "Fortryd udlevering":"Undo issue",
+  "Fortryd aflevering eller gennemgang":"Undo return or completion",
+  "Tid siden sidste gennemgang af det ældste ledige kort med kendt dato.":"Time since the oldest available territory with a known completion date was last completed.",
+  "1 ledigt kort uden kendt gennemgangsdato.":"1 available territory has no known completion date.",
+  "{count} ledige kort uden kendt gennemgangsdato.":"{count} available territories have no known completion date.",
   "Gennemsnitlig gennemgangstid":"Average completion time",
   "Fra udlevering til aflevering, når kortet meldes gennemgået.":"From issue to return when a territory is reported completed.",
   "Ældste kort i gennemgangskøen":"Oldest territory in the completion queue",

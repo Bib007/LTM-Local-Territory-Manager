@@ -5,7 +5,7 @@ async function openUsers(page){
   // Settings remembers its last tab. Leave any already-rendered users form
   // before reopening it so the test waits for the freshly loaded role data.
   await page.locator('[data-work=settings-tab][data-value=general]').click();
-  await page.locator('[data-work=settings-tab][data-value=users]').click();
+  if(await page.locator('.settingsAdvanced:not([open])').count())await page.locator('.settingsAdvanced>summary').click();await page.locator('[data-work=settings-tab][data-value=users]').click();
   await page.locator('#profileRole').waitFor();
 }
 const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
@@ -22,7 +22,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   async function assertNoPersonalGuide(page){await page.waitForFunction(()=>typeof state!=='undefined'&&state!==null);assert.equal(await page.locator('#personalGuideTour').count(),0);assert.equal(await page.evaluate(()=>typeof PersonalGuide),'undefined');}
   async function login(page,name,password){await page.goto(fixture.origin);await page.locator('#loginName').fill(name);await page.locator('#loginPassword').fill(password);await page.locator('#loginForm button').click();await ready(page);const intro=page.locator('[data-profile=welcome-done]'),seen=!!await intro.count();if(seen)await intro.click();return seen;}
   const admin=await newPage(1440);watched=admin;await admin.goto(fixture.origin);await ready(admin);
-  await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=users]').click();await admin.locator('[data-profile=activate]').click();
+  await admin.locator('[data-navigation="2:2"]').click();if(await admin.locator('.settingsAdvanced:not([open])').count())await admin.locator('.settingsAdvanced>summary').click();await admin.locator('[data-work=settings-tab][data-value=users]').click();await admin.locator('[data-profile=activate]').click();
   await admin.locator('#profileActivate input[name=name]').fill('Fiktiv admin');await admin.locator('#profileActivate input[name=password]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=repeat]').fill('Fiktiv-password-123');await admin.locator('#profileActivate input[name=confirmation]').fill('AKTIVÉR PROFILER');await admin.locator('#profileActivate button').click();
   await admin.locator('#loginName').waitFor();await login(admin,'Fiktiv admin','Fiktiv-password-123');await assertNoPersonalGuide(admin);
   // Regression: in profile mode the values were stored successfully but the
@@ -145,9 +145,9 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await editor.evaluate(()=>state.notes.some(n=>n.text==='Må ikke sendes igen')),false);
   await assertNoPersonalGuide(editor);
   await editor.locator('.mobileMenu').click();await editor.locator('[data-action=logout]').click();await editor.locator('#loginName').waitFor();
-  await admin.locator('[data-navigation="2:2"]').click();await admin.locator('[data-work=settings-tab][data-value=connections]').click();
+  await admin.locator('[data-navigation="2:2"]').click();if(await admin.locator('.settingsAdvanced:not([open])').count())await admin.locator('.settingsAdvanced>summary').click();await admin.locator('[data-work=settings-tab][data-value=connections]').click();
   await admin.locator('#driveConnection').waitFor();assert.equal(await admin.locator('[data-profile=activate]').count(),0);assert.equal(await admin.locator('#profileUser').isVisible(),false);
-  await admin.locator('[data-work=settings-tab][data-value=data]').click();
+  if(await admin.locator('.settingsAdvanced:not([open])').count())await admin.locator('.settingsAdvanced>summary').click();await admin.locator('[data-work=settings-tab][data-value=data]').click();
   await admin.setViewportSize({width:390,height:900});
   await admin.waitForFunction(()=>document.querySelector('aside').getBoundingClientRect().right<=1);
   await admin.locator('#runtimePanel').waitFor();
@@ -160,7 +160,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.locator('[data-work=runtime-test]').click();
   await admin.locator('#runtimeTestResult').filter({hasText:'Vent et minut'}).waitFor();
   await admin.setViewportSize({width:1440,height:900});
-  await admin.locator('[data-work=settings-tab][data-value=import]').click();
+  if(await admin.locator('.settingsAdvanced:not([open])').count())await admin.locator('.settingsAdvanced>summary').click();await admin.locator('[data-work=settings-tab][data-value=import]').click();
   await admin.locator('[data-setup=ib-open]').click();
   const templateReady=admin.waitForEvent('download');await admin.locator('[data-setup=ib-template][data-format=xlsx]').click();
   assert.equal((await templateReady).suggestedFilename(),'IB-import-skabelon.xlsx');
@@ -201,7 +201,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await admin.locator('.badge').filter({hasText:'Postnummer mangler'}).count(),0);
   await admin.setViewportSize({width:1440,height:900});
   await admin.locator('[data-navigation="2:2"]').click();
-  await admin.locator('[data-work=settings-tab][data-value=import]').click();
+  if(await admin.locator('.settingsAdvanced:not([open])').count())await admin.locator('.settingsAdvanced>summary').click();await admin.locator('[data-work=settings-tab][data-value=import]').click();
   await admin.locator('[data-card-import=open]').click();
   const cardTemplate=admin.waitForEvent('download');await admin.locator('[data-card-import=xlsx]').click();
   assert.equal((await cardTemplate).suggestedFilename(),'LTM-kort-import-skabelon.xlsx');
@@ -286,7 +286,7 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await admin.screenshot({path:'/tmp/ltm-publisher-groups-mobile.png',fullPage:true});
   await admin.setViewportSize({width:1440,height:900});
   await admin.locator('[data-navigation="2:2"]').click();
-  await admin.locator('[data-work=settings-tab][data-value=data]').click();
+  if(await admin.locator('.settingsAdvanced:not([open])').count())await admin.locator('.settingsAdvanced>summary').click();await admin.locator('[data-work=settings-tab][data-value=data]').click();
   const downloadReady=admin.waitForEvent('download');await admin.locator('[data-profile=account-backup]').click();const accountDownload=await downloadReady,backupPath=await accountDownload.path();
   const accountBackup=JSON.parse(require('node:fs').readFileSync(backupPath,'utf8'));assert.equal(accountBackup.format,'ltm-account-backup');assert.equal(Object.keys(accountBackup.accounts.users).length,2);
   await admin.locator('.profileAccountBackup summary').filter({hasText:'Gendan konti og roller fra fil'}).click();
