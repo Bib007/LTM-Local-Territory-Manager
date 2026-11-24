@@ -2,6 +2,16 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.13.0 · 2026-11-24
+
+- **Forside:** Tjenesteårets mål og dækning, besøgsestimat for de unikke gennemgåede kort, gennemsnitlig gennemgangstid for 12 måneder og ældste ledige kort med særskilt visning af ukendte datoer.
+- **Daglig brug:** Sammenklappelig navigation, kompakte korttabeller, færre sekundære knapper og beskyttelse af kladder ved faneskift. Ved aflevering til kassen eller pr. forkynder kan man markere kort og gå videre efter individuel bekræftelse. Fortryd knyttes til den viste datarevision.
+- **Rapporter og brugsstatistik:** KTM viser besøgspunkter på aktuelle kort, ét IB-tal og en periodisk liste over manglende gennemgange med de gældende adgangsgrænser. Brugsstatistik har egen fane og estimerer aktiv redigeringstid ud fra historiske gemninger.
+- **Opgaver, kort og historik:** Enklere opgavefiltre, ulæste svar, påmindelser om gamle udleveringer, områdefarver med eksplicit massevalg, justerbare månedintervaller og valgfri historikperiode. Rapportkortet husker visningen af distriktnumre.
+- **Deling og vejledning:** Godkendte Google Drive-PDF’er får søgbare adresselister med fortsat filtrering af private IB-oplysninger. Hjemmesideguiden erstatter den personlige guide. En afgrænset offlinekonverter kan læse enkelte NW Scheduler-/TH-grænsefiler.
+- **Drift og gemning:** Genbrug af komplette DAR-veje, bedre konfliktvisning og forbindelsesprøver med stigende interval. Gemning genbruger indstillinger og undgår ekstra aktivitetslæsning ved tom gendannelsesliste. Ubekræftede skrivninger gentages ikke automatisk.
+- **Omfang:** Samlet promovering af 1.13.0-beta.1–beta.5 med rettelserne fra Stable 1.12.40. Ufærdige flytteforslag, fuld NW Scheduler-/TH-migrering og arbejde uden for beta.5 indgår ikke.
+
 ## 1.13.0-beta.5 · 2026-11-24
 
 - **Forside:** Målmarkering viser den forløbne andel af tjenesteåret og afstanden til målet. Gennemsnitlig gennemgangstid bruger afsluttede gennemgange fra seneste 12 måneder; ældste ledige kort viser kendt gennemgangsalder på tværs af mappe og kasse, med ukendte datoer særskilt.

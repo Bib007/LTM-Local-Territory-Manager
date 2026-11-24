@@ -1,32 +1,21 @@
-# LTM 1.12.35
-
-Samlet Stable-opdatering af de færdige, verificerede Beta-funktioner siden Stable 1.12.34 (1.12.19-beta.36–beta.37). Eksisterende Stable-rettelser for gemning, scrollposition og IB-læsearkiv er bevaret. DAR-preview-rettelsen i den åbne PR #134 og de øvrige uafsluttede PR'er er **ikke** med.
+# LTM 1.13.0
 
 ## Nyt i Stable
 
-- **Korrekte IB-tal i rapporter:** Alle aktive IB-linjer tælles, også manuelt registrerede uden kortlagt DAR-adresse. Det geografiske delantal inden for grænsen vises separat. Begge tal kræver IB-læserettighed.
-- **Godkend sikre IB-adresser samlet:** Se en forhåndsvisning af entydige DAR-match på tværs af distriktskort, og godkend dem samlet. Tvivlsomme match bliver til manuel gennemgang. Serveren genkontrollerer rettigheder og datagrundlag før den atomiske gemning, og handlingen kan fortrydes samlet. Besøgstal og eksisterende IB-datoer ændres ikke.
-- **Menighedstilpasning:** Under Indstillinger kan man selv navngive hjemme/kasse, i mappen og udleveret. Mappen kan fravælges, hvis menigheden kun bruger hjemme og ude. Gemte kortplaceringer, historik og tekniske statuskoder ændres ikke. Eksisterende vejledende kortantal og fordeling kan stadig indstilles.
-- **Interne distriktskortnavne:** Hvert kort kan få et valgfrit internt navn op til 160 tegn. Navnene kan søges og vises i administrationen og bevares ved import, læsbar eksport og backup. De vises **ikke** på officielle S-12/S-13, offentlige kort eller andre udadvendte udskrifter. Identitet, officielle numre og historik er uændrede.
+- **Forside:** Tjenesteårets mål og dækning, besøgsestimat for de unikke gennemgåede kort, gennemsnitlig gennemgangstid for 12 måneder og ældste ledige kort med særskilt visning af ukendte datoer.
+- **Daglig brug:** Sammenklappelig navigation, kompakte korttabeller, færre sekundære knapper og beskyttelse af kladder ved faneskift. Ved aflevering til kassen eller pr. forkynder kan man markere kort og gå videre efter individuel bekræftelse. Fortryd knyttes til den viste datarevision.
+- **Rapporter og brugsstatistik:** KTM viser besøgspunkter på aktuelle kort, ét IB-tal og en periodisk liste over manglende gennemgange med de gældende adgangsgrænser. Brugsstatistik har egen fane og estimerer aktiv redigeringstid ud fra historiske gemninger.
+- **Opgaver, kort og historik:** Enklere opgavefiltre, ulæste svar, påmindelser om gamle udleveringer, områdefarver med eksplicit massevalg, justerbare månedintervaller og valgfri historikperiode. Rapportkortet husker visningen af distriktnumre.
+- **Deling og vejledning:** Godkendte Google Drive-PDF’er får søgbare adresselister med fortsat filtrering af private IB-oplysninger. Hjemmesideguiden erstatter den personlige guide. En afgrænset offlinekonverter kan læse enkelte NW Scheduler-/TH-grænsefiler.
+- **Drift og gemning:** Genbrug af komplette DAR-veje, bedre konfliktvisning og forbindelsesprøver med stigende interval. Gemning genbruger indstillinger og undgår ekstra aktivitetslæsning ved tom gendannelsesliste. Ubekræftede skrivninger gentages ikke automatisk.
+- **Omfang:** Samlet promovering af 1.13.0-beta.1–beta.5 med rettelserne fra Stable 1.12.40. Ufærdige flytteforslag, fuld NW Scheduler-/TH-migrering og arbejde uden for beta.5 indgår ikke.
 
-## Bevarede rettelser
+## What’s new
 
-- Gem og vejliste bevarer dialogadfærd, fokus, tekstmarkør og scrollposition.
-- Forældede DAR-fejl og -statusbeskeder fjernes ved nye ændringer i korteditoren.
-- IB-bagsider i læsearkivet bruger det opmålte normale printlayout, inklusive fortsættelsessider; eksportknappen er placeret ved Sikkerhedskopi.
-- Stable-brugere beholder deres normale datamappe, login og port. Beta er fortsat en særskilt installation og opdateres ikke til Stable automatisk.
-
-## Kontrol og udgivelse
-
-Kandidaten skal bestå fælles Python-/JavaScript-/browser-/sikkerheds-/pakkeprøver på det præcise `main`-commit. Hvert Stable-spor udgives derefter særskilt fra **Stable release tracks**. Home Assistant, macOS-app, Windows-app og Windows-server kræver deres egne kontroller; macOS-server må først udgives efter dokumenteret fysisk Apple Silicon, LAN/VPN og genstartstest. Versionspakker og checksums må ikke overskrives.
-
-## English
-
-LTM 1.12.35 promotes all completed, released Beta features since Stable 1.12.34 (beta.36–beta.37) without including unfinished pull requests.
-
-- **Reports:** Count all active do-not-call entries, including unmapped manual entries, while separately displaying the mapped subset. Preserve access checks.
-- **Bulk address matching:** Preview and approve only safe, unique DAR matches across all cards, with validation, atomic saving and undo.
-- **Congregation customization:** Set local home/folder/issued labels, customize card guidance and optionally disable the folder workflow without modifying stored placements, history or internal status keys.
-- **Private territory names:** Add a searchable optional name to each card and preserve it through backup/import/export without changing official names, numbering or public S-12/S-13/share output.
-- Existing Stable save, scroll, DAR-feedback and readable-archive fixes remain included. Pending PR #134 and other unfinished work are excluded.
-- Each Stable release track requires its own tests and manual selection. The macOS-server physical test gate remains in force.
+- **Dashboard:** Service-year target and coverage, estimated visits across unique completed territories, a 12-month completion-time average and the oldest available territory, with unknown dates shown separately.
+- **Daily work:** Collapsible navigation, compact tables, fewer secondary buttons and draft protection when switching settings tabs. Select multiple returns to the box or by publisher and continue to the next territory after individual confirmation. Undo is tied to the displayed data revision.
+- **Reports and usage statistics:** KTM reports show visit points on current territories, one do-not-call total and the period’s missing territories within existing access limits. A dedicated settings tab estimates active editing time from historical saves.
+- **Tasks, maps and history:** Simpler task filters, unread replies, overdue assignment reminders, explicit bulk area colors, adjustable monthly intervals and optional history limits. The report map remembers territory-number visibility.
+- **Sharing and guidance:** Approved Google Drive PDFs gain searchable address lists with private do-not-call details filtered. The website guide replaces the personal guide. A limited offline converter handles individual NW Scheduler/TH boundary files.
+- **Reliability and saves:** Reuse complete DAR streets and loaded settings, show conflicts more clearly, probe connectivity with bounded backoff and skip redundant activity reads for empty recovery lists. Unconfirmed writes are never replayed automatically.
+- **Scope:** Consolidates 1.13.0-beta.1–beta.5 and preserves Stable 1.12.40 fixes. Unfinished move suggestions, full NW Scheduler/TH migration and changes outside beta.5 are excluded.
