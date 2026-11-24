@@ -19,6 +19,23 @@ class StorageTests(unittest.TestCase):
     def issue(self,c,initial=False):
         return self.s.mutate('loan.issue',{'card_id':c,'publisher_id':self.publisher,'date':date.today().isoformat(),'initial':initial})['id']
 
+    def test_empty_recovery_skips_activity_log_scan(self):
+        from unittest.mock import patch
+        with patch.object(self.s,'activity',side_effect=AssertionError('unnecessary activity read')):
+            self.assertEqual(self.s.recovery(), [])
+
+    def test_undo_expected_revision_cannot_undo_newer_action(self):
+        card=self.make_card()
+        loan=self.issue(card)
+        revision=self.s.revision
+        self.assertEqual(self.s.state()['undo_action'],'loan.issue')
+        self.s.mutate('loan.finish',{'id':loan,'date':date.today().isoformat(),'complete':False})
+        with self.assertRaises(ValueError):
+            self.s.mutate('workflow.undo',{'expected_revision':revision})
+        self.assertIsNotNone(self.s.get('loans',loan)['returned'])
+        self.s.mutate('workflow.undo',{'expected_revision':self.s.revision})
+        self.assertFalse(self.s.get('loans',loan).get('returned'))
+
     def test_overdue_message_template_persists_and_rejects_invalid_input(self):
         template = 'Hej {fornavn}\n{kort}\nKh {initialer}'
         self.s.mutate('settings.save', {'overdue_message_template': template})
