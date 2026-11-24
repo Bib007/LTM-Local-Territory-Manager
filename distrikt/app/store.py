@@ -298,11 +298,11 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             front_summaries(result['cards'])
             from front_labels import token as front_labels_token
             for c in result['cards']:c['front_labels_token']=front_labels_token(c)
-            result['settings'] = self.get('settings', 'config')
+            settings_rows=result['settings']
+            result['settings'] = next((x for x in settings_rows if x['id']=='config'),None)
             try:
                 result['backup_last_day']=datetime.fromisoformat(result['settings'].get('last_backup','').replace('Z','+00:00')).astimezone().date().isoformat()
             except (ValueError,TypeError,AttributeError,OverflowError):result['backup_last_day']=None
-            settings_rows=self.all('settings')
             result['areas'] = [x for x in settings_rows if x['id'] != 'config' and not x.get('entity')]
             number_batches=sorted((x for x in settings_rows if x.get('entity')=='territory-numbering-batch' and not x.get('undone_at')),key=lambda x:x.get('created',''),reverse=True)
             result['numbering_last_batch']=({'id':number_batches[0]['id'],'count':len(number_batches[0]['changes'])} if number_batches else None)
@@ -323,6 +323,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             result['cards']=[c for c in result['cards'] if not c.get('archived')]
             result['revision']=self.revision
             result['undo_available']=bool(self._undo and self._undo['revision']==self.revision and self._undo['until']>__import__('time').monotonic())
+            if result['undo_available']:result['undo_action']=self._undo['action']
             result['maps'] = [{k: v for k, v in m.items() if k != 'image'} for m in maps if m.get('entity')!='publication']
             result['recovery'] = self.recovery()
             result['today'] = today()
@@ -342,7 +343,6 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
     def recovery(self):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(timespec='seconds')
         rows = []
-        actors={batch:{k:event[k] for k in ('actor_id','actor_name','action') if k in event} for event in self.activity(10000) for batch in event.get('batches',[])}
         for m in MODULES:
             if m=='maps':
                 continue
@@ -355,9 +355,12 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                         dates = item['assigned'] + (' → ' + item['returned'] if item.get('returned') else '')
                         label = ' · '.join(filter(None, (card.get('number'), publisher.get('name'), dates)))
                     rows.append({'batch': item['_batch'], 'at': item['_deleted_at'],
-                        'label': 'Adresser uden for samlet grænse' if m=='geo' else label,**actors.get(item['_batch'],{})})
+                        'label': 'Adresser uden for samlet grænse' if m=='geo' else label})
+        if not rows:return []
+        actors={batch:{k:event[k] for k in ('actor_id','actor_name','action') if k in event} for event in self.activity(10000) for batch in event.get('batches',[])}
         groups = {}
         for row in rows:
+            row.update(actors.get(row['batch'],{}))
             if row['batch'] not in groups:
                 groups[row['batch']] = dict(row, count=0)
             groups[row['batch']]['count'] += 1
