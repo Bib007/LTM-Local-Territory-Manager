@@ -26,6 +26,7 @@ class StorageTests(unittest.TestCase):
 
     def test_undo_expected_revision_cannot_undo_newer_action(self):
         card=self.make_card()
+        self.s.mutate('folder.set',{'ids':[card],'in_folder':True})
         loan=self.issue(card)
         revision=self.s.revision
         self.assertEqual(self.s.state()['undo_action'],'loan.issue')
