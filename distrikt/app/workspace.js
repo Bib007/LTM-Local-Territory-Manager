@@ -284,16 +284,14 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   return durations.length?durations.reduce((sum,d)=>sum+d,0)/durations.length:null;
  },
  oldestQueueCard(){
-  // Match the unfiltered "Udlever" list: in-folder when folders are in use,
-  // otherwise all available current cards. Respect planning-date overrides.
-  const withFolder=state.settings.folder_enabled!==false,desk=!!state.profile?.desk_only;
+  // The district-wide queue includes available cards in both the box and
+  // folder. Undated cards are reported separately, not assigned a fake age.
   const active=new Set(state.loans.filter(l=>!l.returned).map(l=>l.card_id));
-  const queue=state.cards.filter(c=>!active.has(c.id)&&(desk||!withFolder||c.in_folder));
-  queue.sort((a,b)=>age(b)-age(a)||cmp(a.number,b.number));
-  const next=queue[0];
-  if(!next)return {value:ui('Ingen kort i køen'),card:null};
-  const date=typeof SplitSuggestions!=='undefined'?SplitSuggestions.effectiveDate(next):next.last_completed;
-  return {value:date?elapsedLabel(date):ui('Ingen gennemgang registreret'),card:next};
+  const queue=state.cards.filter(c=>!active.has(c.id));
+  const known=queue.filter(c=>typeof c.last_completed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.last_completed)&&Number.isFinite(dayDiff(state.today,c.last_completed))&&c.last_completed<=state.today);
+  known.sort((a,b)=>a.last_completed.localeCompare(b.last_completed)||cmp(a.number,b.number)||cmp(a.id,b.id));
+  const next=known[0];
+  return {value:next?elapsedLabel(next.last_completed):ui(queue.length?'Ukendt':'Ingen kort i køen'),card:next||null,unknown:queue.length-known.length};
  },
  dashboard(){
   if(state.dashboard_summary&&!ProfilesUI.has('cards.view','history.view','loans.view','publishers.view','notes.view','geo.view'))return this.dashboardSummary(state.dashboard_summary);
@@ -312,7 +310,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
       <section class="panel dashboardSpotlight dashboardQueue">
        <small>${ui('Ældste kort i gennemgangskøen')}</small>
        <strong class="dashboardAverageValue dashboardQueueValue">${oldest.value}</strong>
-       <span class="dashboardSpotlightNote">${ui('Alder på næste ledige kort efter den dato, der bruges til at prioritere udlevering.')}</span>
+       <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
       </section>
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><span>${ui('Aktuelle distrikter')}: ${total}</span></div>
