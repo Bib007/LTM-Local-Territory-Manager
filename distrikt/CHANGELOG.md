@@ -2,6 +2,13 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.13.0-beta.5 · 2026-11-24
+
+- **Forside:** Målmarkering viser den forløbne andel af tjenesteåret og afstanden til målet. Gennemsnitlig gennemgangstid bruger afsluttede gennemgange fra seneste 12 måneder; ældste ledige kort viser kendt gennemgangsalder på tværs af mappe og kasse, med ukendte datoer særskilt.
+- **Design:** Sammenklappelige navigationsgrupper, ensartede ikoner, færre sekundære knapper, kompakte korttabeller med faste overskrifter, én indstillingsnavigation med separat brugsstatistik og avancerede valg. Faneskift beskytter reelle ugemte ændringer.
+- **Daglig brug:** Vælg næste synlige kort efter bekræftet aflevering; fortrydelsesknappen er tydeligere og bundet til den viste datarevision.
+- **Drift:** Hurtigere automatiske forbindelsesprøver med gradvist stigende interval. Ingen automatisk gentagelse af ubekræftede skrivninger eller tab af kladder. Fjern redundant aktivitetslæsning, når gendannelseslisten er tom, og genbrug indlæste indstillinger. Den faktiske gemmehastighed afhænger fortsat af installation og datamængde.
+
 ## 1.13.0-beta.4 · 2026-11-23
 
 - **To gennemgangsmål på forsiden:** Gennemsnitlig gennemgangstid viser dagene fra udlevering til aflevering med registreret gennemgang, kun for afsluttede forløb. Ældste kort i gennemgangskøen viser hvor længe næste ledige kort har ventet siden den seneste relevante dato. Begge har korte forklaringer, og ukendte datoer vises særskilt.
