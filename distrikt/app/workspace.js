@@ -632,7 +632,8 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   case 'connections':if(page==='Kortopsætning'&&!GeoUI.canLeave())break;await closeRequested();if(el('dialog').open)break;this.remember();GeoUI.dirty=false;page='Indstillinger';Navigation.settingsSection='connections';render();break;
   case 'settings-tab':{
    const target=d.value==='advanced'?'import':d.value;
-   if(!this.settingsTabs().some(([k])=>k===target)||target===Navigation.settingsSection)break;
+   if(!this.settingsTabs().some(([k])=>k===target))break;
+   if(target===Navigation.settingsSection&&target!=='users')break;
    if(typeof SettingsViewDrafts!=='undefined'&&SettingsViewDrafts.dirty(document)){toast(I18n.text('Gem ændringerne, før du skifter fane.'));break;}
    if(target==='users'&&state.profile){await ProfilesUI.openAdmin();break;}
    Navigation.settingsSection=target;render();break;
