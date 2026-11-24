@@ -38,8 +38,10 @@ const SaveStatus={kind:'loading',message:'Åbner dine data…',detail:'',
  paint(){
   const node=el('saveState');if(!node)return;
   const explanation=expanded=>`<details class="saveExplanation" ${expanded?'open':''}><summary ${I18n.attribute('aria','{message} · vis hele forklaringen',{message:I18n.text(this.message)})}>${ui(this.message)}</summary><div class="saveExplanationText"><b>${ui(this.message)}</b><p>${I18n.errorHTML(this.detail)}</p><button type="button" data-save-explanation-close>${ui('Luk')}</button></div></details>`;
-  node.className=this.kind==='error'?'error':'';node.dataset.saveKind=this.kind;node.title=I18n.text(this.message)+(this.detail?' · '+I18n.errorText(this.detail):'');
-  node.innerHTML=this.detail?explanation(!!node.querySelector?.('.saveExplanation[open]')):ui(this.message);
+  const connection=typeof Workspace!=='undefined'?Workspace.connectionState:'connected',showConnection=!['error','review','loading','saving'].includes(this.kind)&&connection!=='connected';
+  const kind=showConnection?connection:this.kind,message=showConnection?(connection==='checking'?'Kontrollerer forbindelsen…':'Forbindelsen til hovedsystemet mangler'):this.message;
+  node.className=this.kind==='error'?'error':'';node.dataset.saveKind=kind;node.title=I18n.text(message)+(this.detail?' · '+I18n.errorText(this.detail):'');
+  node.innerHTML=this.detail?explanation(!!node.querySelector?.('.saveExplanation[open]')):ui(message);
   const dialog=el('dialog');
   if(dialog?.open&&document.createElement&&dialog.appendChild){
    let notice=dialog.querySelector('[data-save-feedback]');
@@ -307,6 +309,31 @@ function folderPlan(){const cfg=state.settings,min=folderEnabled()?cfg.folder_mi
   openDialog(`<h2>${ui('Læg specifikt kort i mappen')}</h2><p class="hint">${ui('Kun placeringen ændres. Kortnummer, historik og udleveringsstatus bevares.')}</p><label for="folderCardSearch">${ui('Søg kortnummer, navn eller område')}</label><input id="folderCardSearch" type="search" autocomplete="off" ${I18n.attribute('placeholder','Søg blandt eksisterende kort')}><div id="folderCardMatches">${folderCardPickerRows()}</div><div id="folderCardFooter">${folderCardPickerFooter()}</div>`,I18n.language());
  }
 
+// Follow the displayed return-list order without moving a newer selection.
+const ReturnSelection={
+ capture(loanId){
+  if(page!=='Udlevering'||!['Aflever','Forkyndere'].includes(deskTab))return null;
+  const loan=state.loans.find(l=>l.id===loanId&&!l.returned);
+  if(!loan)return null;
+  const rows=[...document.querySelectorAll('#app .deskReturns [data-card-row], #app .publisherReturns [data-card-row]')].map(row=>row.dataset.cardRow),index=rows.indexOf(loan.card_id);
+  if(index<0)return null;
+  return {loanId,cardId:loan.card_id,generation:openDialog.generation,tab:deskTab,query,area,selection:selected,order:rows.slice(index+1).concat(rows.slice(0,index)),applied:false,next:''};
+ },
+ current(plan){
+  return page==='Udlevering'&&deskTab===plan.tab&&query===plan.query&&area===plan.area&&openDialog.generation===plan.generation;
+ },
+ apply(plan){
+  if(!plan||!this.current(plan)||selected!==plan.selection||!state.loans.some(l=>l.id===plan.loanId&&l.returned))return;
+  const active=new Set(state.loans.filter(l=>!l.returned).map(l=>l.card_id));
+  selected=plan.order.find(id=>active.has(id)&&card(id))||'';
+  plan.next=selected;plan.applied=true;
+ },
+ focus(plan){
+  if(!plan?.applied||!plan.next||!this.current(plan)||selected!==plan.next||el('dialog').open)return;
+  if(document.activeElement&&document.activeElement!==document.body&&document.activeElement.isConnected!==false)return;
+  document.querySelector(`[data-card-row="${CSS.escape(plan.next)}"]`)?.focus?.({preventScroll:true});
+ }
+};
 function deskReturns(){
  const q=query.toLocaleLowerCase(),loans=state.loans.filter(l=>!l.returned)
   .filter(l=>[card(l.card_id)?.number,card(l.card_id)?.internal_number,card(l.card_id)?.name,card(l.card_id)?.internal_name,publisherName(l.publisher_id),areaName(card(l.card_id)?.area_id)].join(' ').toLocaleLowerCase().includes(q))
@@ -510,7 +537,7 @@ const SettingsViewDrafts={
  },
  dirty(root){
   return [...root.querySelectorAll('#app form')].some(form=>
-   (this.baselines.has(form)&&this.baselines.get(form)!==this.signature(form))||
+   form.dataset.saving==='yes'||form.dataset.busy==='yes'||(this.baselines.has(form)&&this.baselines.get(form)!==this.signature(form))||
    (form.id==='settingsForm'&&form.dataset.folderTouched==='yes'&&!state.settings.folder_minimum_configured));
  }
 };
@@ -850,10 +877,14 @@ case 'remove-address':target.closest('[data-address-row]').remove();scheduleCard
 case 'stop':openDialog(`<h2>${ui('Luk den lokale app?')}</h2><p>${ui('Alle gemte registreringer beholdes. Startfilen åbner appen igen.')}</p><div class="actions"><button data-action="confirm-stop">${ui('Luk appen')}</button><button data-action="close">${ui('Annuller')}</button></div>`);break;
 case 'confirm-stop':await saveQueue;await api('/api/shutdown',{});el('app').innerHTML=`<section class="panel"><h1>${ui('Appen er lukket')}</h1><p>${ui('Dine gemte registreringer er bevaret. Åbn appens startfil for at starte igen.')}</p></section>`;closeDialog();saved('Appen er lukket');break;
 }}catch(e){toast(e);}});
-document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','publisherMergeForm','areaForm','noteForm','visitForm','ibForm','settingsForm','historySettingsForm','profileModeForm','printForm','completionForm','deleteLoanForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const areaColorPicker=form.id==='areaForm'?form.querySelector('[name=map_color]'):null;const resetAreaColors=!!(areaColorPicker&&typeof areaColorPicker.value==='string'&&form.dataset.id&&areaColorPicker.value.toLowerCase()!==(form.dataset.originalColor||'#477596'));if(resetAreaColors&&!window.confirm(I18n.text('Farven ændres på alle kort i området, også dem med en tidligere særskilt farve. Vil du fortsætte?')))return;const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
+document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','publisherMergeForm','areaForm','noteForm','visitForm','ibForm','settingsForm','historySettingsForm','profileModeForm','printForm','completionForm','deleteLoanForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const areaColorPicker=form.id==='areaForm'?form.querySelector('[name=map_color]'):null;const resetAreaColors=!!(areaColorPicker&&typeof areaColorPicker.value==='string'&&form.dataset.id&&areaColorPicker.value.toLowerCase()!==(form.dataset.originalColor||'#477596'));if(resetAreaColors&&!window.confirm(I18n.text('Farven ændres på alle kort i området, også dem med en tidligere særskilt farve. Vil du fortsætte?')))return;const settingsSignature=page==='Indstillinger'&&SettingsViewDrafts.baselines.has(form)?SettingsViewDrafts.signature(form):null;const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
 case 'cardForm':clearTimeout(autosaveTimer);await saveCard(true);break;
 case 'issueForm':await mutate('loan.issue',{card_id:fields.card_id,publisher_name:fields.publisher_name,date:fields.date,initial:fd.has('initial'),from_box:form.dataset.fromBox==='true'},{message:I18n.text('Udlevering gemt')});break;
-case 'finishForm':await mutate('loan.finish',{id:form.dataset.id,date:fields.date,complete:form.dataset.retain==='yes'||fields.complete==='yes',retain:form.dataset.retain==='yes',revise_ib:form.dataset.retain==='yes'?false:fd.has('revise_ib'),note:fields.note},{message:I18n.text(form.dataset.retain==='yes'?'Gennemgang gemt; kortet beholdes':'Afleveret til kassen')});break;
+case 'finishForm':{
+ const retain=form.dataset.retain==='yes',plan=retain?null:ReturnSelection.capture(form.dataset.id);
+ await mutate('loan.finish',{id:form.dataset.id,date:fields.date,complete:retain||fields.complete==='yes',retain,revise_ib:retain?false:fd.has('revise_ib'),note:fields.note},{message:I18n.text(retain?'Gennemgang gemt; kortet beholdes':'Afleveret til kassen'),...(plan?{synchronize:async(result,snapshot)=>refresh({snapshot,preserveDrafts:true,beforeRender:()=>ReturnSelection.apply(plan)})}:{})});
+ ReturnSelection.focus(plan);break;
+}
 case 'publisherMergeForm':await previewPublisherMerge(form,fields);break;
 case 'publisherForm':await mutate('publisher.save',{id:form.dataset.id||undefined,name:fields.name,group:fields.group,group_role:fields.group_role,pioneer:fd.has('pioneer')});break;
 case 'areaForm':await mutate('area.save',{id:form.dataset.id||undefined,name:fields.name,...(fields.map_color?{map_color:fields.map_color}:{}),...(resetAreaColors?{reset_card_colors:true}:{})});break;
@@ -866,7 +897,7 @@ case 'profileModeForm':{const side=form.dataset.side,profile={...defaultPrintPro
 case 'printForm':await printCard(form);break;
 case 'deleteLoanForm':await mutate('delete',{module:'loans',id:form.dataset.id,history_revision:form.dataset.historyRevision,...(form.dataset.historyToken?{history_token:form.dataset.historyToken}:{}),location:fields.location},{message:I18n.text('Slettet · kan gendannes i 48 timer ved fejl')});break;
 case 'completionForm':await mutate('completion.record',{card_id:form.dataset.id,date:fields.date,note:fields.note},{message:I18n.text('Gennemgang gemt')});break;
-}if(form.id!=='cardForm'&&confirmedSignature!==null)FormDrafts.forms.get(form).confirmed=confirmedSignature;}catch(e){const err=el('formError');if(err&&generation===openDialog.generation&&page===origin&&form.isConnected!==false)I18n.errorContent(err,e);else toast(e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
+}if(form.id!=='cardForm'&&confirmedSignature!==null)FormDrafts.forms.get(form).confirmed=confirmedSignature;if(settingsSignature!==null)SettingsViewDrafts.baselines.set(form,settingsSignature);}catch(e){const err=el('formError');if(err&&generation===openDialog.generation&&page===origin&&form.isConnected!==false)I18n.errorContent(err,e);else toast(e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
 el('dialog').addEventListener('keydown',e=>DialogFocus.keydown(e,el('dialog')));
 el('dialog').addEventListener('cancel',e=>{e.preventDefault();closeRequested();});
 window.addEventListener('beforeunload',e=>{if(dialogDirty||PendingSaves.count){e.preventDefault();e.returnValue='';}});
