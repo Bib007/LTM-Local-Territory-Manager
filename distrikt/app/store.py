@@ -588,7 +588,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     try:
                         result = self._mutate('loan.issue', {**issue_data, 'card_id': ident})
                     except ValueError as exc:
-                        raise ValueError(f"{card['number']}: {exc}") from exc
+                        raise UIError('Kort {number}: {reason}',number=card['number'],reason=str(exc)) from exc
                     results.append(result['id'])
                     issue_data['publisher_id'] = self.require('loans', result['id'])['publisher_id']
                 return {'id': results[0], 'ids': results}

@@ -2183,6 +2183,7 @@ const I18n={
   "måneder":"months",
   "… Mere":"… More",
   "Udlever flere til samme forkynder?":"Issue more to the same publisher?",
+  "Kort {number}: {reason}":"Card {number}: {reason}",
   "Vælg højst fem forskellige ledige kort.":"Select up to five different available cards.",
   "Pr. forkynder":"By publisher",
   "Udlever":"Issue",
