@@ -130,3 +130,9 @@
 .territoryMobileFilterActions{display:none}
 .territoryFilterPanel{min-width:0;max-width:100%}
 @media(max-width:600px){.territoryMobileFilterActions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.territoryMobileFilterActions button{max-width:100%;white-space:normal}.territoryFilterPanel:not(.isOpen){display:none}.territoryFilterPanel.isOpen{margin-top:8px}}
+
+/* Preserve the daily-mode outlines against the light-theme button surfaces. */
+@media screen{
+ html[data-theme=light] .tabs.deskTabs>button{border-color:var(--muted)}
+ html[data-theme=light] .tabs.deskTabs>button.active{border-color:var(--link)}
+}
