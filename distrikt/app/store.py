@@ -85,6 +85,11 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     probe.close()
         self.lock = threading.RLock()
         self.db = sqlite3.connect(str(self.root / (MODULES['settings'] + '.sqlite3')), check_same_thread=False)
+        try:
+            self.db.execute("SELECT json_extract('{}', '$.id')").fetchone()
+            self._sqlite_json = True
+        except sqlite3.OperationalError:
+            self._sqlite_json = False
         self.db.row_factory = sqlite3.Row
         self.db.execute('PRAGMA busy_timeout=10000')
         for module, filename in MODULES.items():
@@ -245,6 +250,13 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         return item
 
     def active_loan(self, card_id):
+        if self._sqlite_json:
+            row=self.db.execute(
+                'SELECT payload FROM '+self.record_table('loans')+
+                " WHERE deleted_at IS NULL AND json_extract(payload,'$.card_id')=?"
+                " AND COALESCE(json_extract(payload,'$.returned'),'') IN ('',0) LIMIT 1",
+                (card_id,)).fetchone()
+            return json.loads(row['payload']) if row else None
         return next((l for l in self.all('loans') if l['card_id'] == card_id and not l.get('returned')), None)
 
     def overlapping_loans(self, loan):
@@ -410,17 +422,30 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 changed=any(before!=tuple(after) if after else before is not None for (m,i),before in touched.items() for after in [self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.record_table(m)+' WHERE id=?',(i,)).fetchone()])
                 if changed and not action.startswith(('geo.import','geo.postcode','geo.main.download')):
                     self._tracking=None
-                    targets=set();fields=set()
+                    targets=set();fields=set();assignments=[];changes=[]
                     for (module,ident),previous in touched.items():
                         after=self.get(module,ident) or {};old=json.loads(previous[1]) if previous else {}
                         current=after or old
                         if module=='cards':
                             if current.get('number'):targets.add(current['number'])
                             fields.update(k for k in set(old)|set(after) if k not in ('id','created') and old.get(k)!=after.get(k))
+                            if action=='card.save' and previous:
+                                for key in ('number','name','kind','last_completed'):
+                                    if old.get(key)!=after.get(key):
+                                        changes.append({'field':key,'before':old.get(key),'after':after.get(key)})
+                        elif module=='loans' and action in ('loan.issue','loan.finish') and after:
+                            target=self.get('cards',after['card_id'])
+                            publisher=self.get('publishers',after['publisher_id'])
+                            if target:
+                                targets.add(target['number'])
+                                assignments.append({'card':target['number'],'publisher':(publisher or {}).get('name',''),
+                                    'date':data.get('date'),'complete':bool(data.get('complete')),
+                                    'position':'Udleveret' if action=='loan.issue' or data.get('retain') else 'Kort i kassen'})
+
                         elif current.get('card_id'):
                             target=self.get('cards',current['card_id'])
                             if target:targets.add(target['number'])
-                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.record_table(module)+' WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
+                    self.put('notes',{'id':new_id(),'entity':'activity','at':datetime.now(timezone.utc).isoformat(timespec='microseconds'),'action':action,'count':len(touched),'card_id':None,'cards':sorted(targets),'fields':sorted(fields),**({'assignments':assignments} if assignments else {}),**({'changes':changes} if changes else {}),'batches':sorted({row['batch'] for (module,ident) in touched for row in self.db.execute('SELECT batch FROM '+self.record_table(module)+' WHERE id=? AND deleted_at IS NOT NULL',(ident,)) if row['batch']}),**({'actor_id':review.actor,'actor_name':getattr(review,'actor_name','')} if review else {})})
                 reversible=action in ('card.save','card.front_labels.save','card.color','publisher.save','publisher.merge','loan.issue','loan.finish','folder.set','folder.set_many','note.save','note.resolve','note.complete','note.task','completion.record','history.grid.add','history.grid.edit','visit.save','ib.save','ib.bulk.apply','ib.global.apply','revision.approve','revision.approve_many')
                 undo_context = {}
                 if changed and reversible:
@@ -549,6 +574,24 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             from publisher_data import save
             return save(self,data)
         if action == 'loan.issue':
+            if 'additional_card_ids' in data:
+                extra = data['additional_card_ids']
+                if (not isinstance(extra, list) or not 1 <= len(extra) <= 4
+                        or any(not isinstance(ident, str) or not ident for ident in extra)
+                        or len(set(extra)) != len(extra) or data.get('card_id') in extra
+                        or data.get('initial')):
+                    raise ValueError('Vælg højst fem forskellige ledige kort.')
+                issue_data = {key: value for key, value in data.items() if key != 'additional_card_ids'}
+                results = []
+                for ident in [data['card_id'], *extra]:
+                    card = self.require('cards', ident)
+                    try:
+                        result = self._mutate('loan.issue', {**issue_data, 'card_id': ident})
+                    except ValueError as exc:
+                        raise UIError('Kort {number}: {reason}',number=card['number'],reason=str(exc)) from exc
+                    results.append(result['id'])
+                    issue_data['publisher_id'] = self.require('loans', result['id'])['publisher_id']
+                return {'id': results[0], 'ids': results}
             c = self.require('cards', data['card_id'])
             if c.get('archived'):raise ValueError('Kortet er arkiveret efter sammenlægning.')
             if self.active_loan(c['id']):

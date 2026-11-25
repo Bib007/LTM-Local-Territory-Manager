@@ -320,3 +320,31 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .tablewrap:has(>table>tbody>.cardRow){max-height:64vh}
  .dashboardQuickFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+.issueBatch{margin:12px 0}
+.issueBatch>summary{cursor:pointer;padding:8px 0;font-weight:600}
+.issueBatchOptions{max-height:200px;overflow:auto}
+.issueBatchOptions label:not([hidden]){display:flex;gap:8px;align-items:center;margin:0;padding:8px}
+.issueBatchOptions input{width:auto}
+.dialogSaveProgress{position:fixed;z-index:101;inset:auto 16px 16px auto;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:12px 16px;background:var(--surface);color:var(--text);pointer-events:none;box-shadow:0 4px 16px #0005}
+.dialogSaveProgress::before{content:'';width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:dialog-save-spinner .8s linear infinite}
+@keyframes dialog-save-spinner{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.dialogSaveProgress::before{animation:none}}
+
+.deskTabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.deskTabs button{min-height:48px;font-weight:700}
+.deskTabs button span{font-size:1.2em}
+.deskReturnOrder{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.deskReturnOrder button[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:-2px}
+#app [id^="settings-"]>label:not(.check){margin-top:14px}
+#app [id^="settings-"] .actions{gap:8px;flex-wrap:wrap}
+
+.territories.territoryCompact{display:block}
+.territoryTools>summary{cursor:pointer;min-height:36px;padding:8px 10px}
+.territoryFilterStatus,.issueQuickPublishers{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}
+.territoryFilterStatus button{max-width:100%;overflow-wrap:anywhere}
+@media(max-width:900px){
+ #issueForm select,.overviewFilters label,.overviewAdvanced label{min-width:0;max-width:100%}
+ .territoryCompact .panel{min-width:0}
+ .territoryCompact .toolbar,.deskTabs,.overviewFilters{max-width:100%}
+}

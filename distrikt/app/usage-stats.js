@@ -8,10 +8,10 @@ const UsageStatsUI={
  key(user){return user.actor_id===null?'_shared_':user.actor_id;},
  name(user){return user.actor_id===null?I18n.text('Fælles login / ukendt bruger'):user.actor_name||I18n.text('Tidligere bruger');},
  html(){
-  return '<section class="panel" id="settings-usage"><h2>'+ui('Brugsstatistik')+' <small>Beta</small></h2>'
+  return '<section class="panel" id="settings-usage"><h2>'+ui('Brugsstatistik')+'</h2>'
    +'<p>'+ui('Se estimeret redigeringstid for hele systemet og for hver bruger, også ud fra tidligere gemte ændringer.')+'</p>'
    +'<p class="hint">'+ui('To gemte redigeringer med højst 15 minutters mellemrum tæller som en aktiv periode. Enkeltstående handlinger og længere pauser giver ingen minutter. Læsetid, ikke-gemte ændringer og tiden før første eller efter sidste handling kan ikke genskabes.')+'</p>'
-   +'<div class="actions"><button type="button" data-usage="load" '+(this.busy?'disabled':'')+'>'+ui(this.data?'Opdater statistik':'Beregn statistik')+'</button></div>'
+   +'<div class="actions"><button type="button" data-usage="load" '+(this.busy?'disabled':'')+'>'+ui(this.data?'Opdater statistik':'Beregn statistik')+'</button><button type="button" data-work="activity">'+ui('Ændringshistorik')+'</button></div>'
    +'<div id="usageStatsResult" aria-live="polite">'+(this.data?this.results():'<p class="hint">'+ui('Tryk Beregn statistik for at analysere den gemte aktivitetslog. Ingen data ændres.')+'</p>')+'</div></section>';
  },
  results(){
