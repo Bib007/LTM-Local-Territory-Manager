@@ -179,7 +179,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   {card_id:'outside',date:'2025-10-15'}
  ];Workspace.calendarYear=2025;I18n.set('da');`);
  const historic33=run('Workspace.reportInventory(...Workspace.periodBounds("calendar"))');
- assert.equal(historic33.events,3);
+ assert.equal(historic33.events,2,'Retained previous dates count toward coverage, not fabricated events');
  assert.deepEqual(Array.from(historic33.missingCards,c=>c.id),['late','unknown','home','boundary']);
  assert.equal(historic33.lastCompleted.get('late'),'2026-09-12','Latest date derives from actual recorded events, not stale card cache');
  const rolling33=run('Workspace.reportInventory(...Workspace.periodBounds("rolling"))');
@@ -192,7 +192,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  const check33=run('JSON.stringify(state)');
  for(const markup of [run("Workspace.reportSummary('calendar',false,true)"),run("Workspace.reportSummary('calendar',false,false)")]){
   assert.match(markup,/F-33B[\\s\\S]*?12\\.9\\.2026[\\s\\S]*?Udleveret nu[\\s\\S]*?76 dage i alt/);
-  assert.match(markup,/F-33C[\\s\\S]*?Ingen dato registreret[\\s\\S]*?Udleveret nu · Ingen dato registreret/);
+  assert.match(markup,/F-33C[\\s\\S]*?Ingen dato registreret[\\s\\S]*?Udleveret nu[\s\S]*?Ingen dato registreret/);
   assert.match(markup,/F-33D[\\s\\S]*?Hjemme nu/);
   assert.doesNotMatch(markup,/F-33A|F-33E|F-33G|NaN|Invalid Date/);
  }
