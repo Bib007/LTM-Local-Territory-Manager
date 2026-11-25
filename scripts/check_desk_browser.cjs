@@ -364,8 +364,34 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  // Independent checks count the changed sides here; overdue assignments are under Publishers.
  Object.assign(state.cards.find(c=>c.id==='folder'),{area_id:null,front_revision:true,back_revision:true});Object.assign(state.loans.find(l=>l.id==='loan-one'),{assigned:'2026-01-01',cycle_start:'2026-01-01'});await page.evaluate(async()=>refresh());
  if(width<=750)await activate(page.locator('.mobileMenu'));await activate(page.locator('#nav [data-navigation="1:4"]'));await page.waitForFunction(()=>page==='Opfølgninger');assert.equal(await page.locator('.followupRow').count(),10);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'10');
- await activate(page.locator('[data-work=followup-filter][data-value=reprint]'));assert.equal(await page.locator('.followupRow').count(),3);await activate(page.locator('[data-action=approve][data-id=folder][data-side=front]'));assert.equal(writes.filter(w=>w.action==='revision.approve').length,0);await activate(page.locator('[data-action=confirm-approve]'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(await page.locator('.followupRow').count(),2);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'9');assert.equal(state.cards.find(c=>c.id==='folder').back_revision,true);assert.equal(writes.filter(w=>w.action==='revision.approve').length,1);
+ const moreFilters=page.locator('#followupMoreButton'),extraFilters=page.locator('#followupExtraFilters'),reprintFilter=page.locator('[data-work=followup-filter][data-value=reprint]');
+ const wideFilters=await page.locator('.followupFilterLayout').evaluate(n=>n.clientWidth>=48*parseFloat(getComputedStyle(document.documentElement).fontSize));
+ assert.equal(await moreFilters.isVisible(),!wideFilters);assert.equal(await extraFilters.isVisible(),wideFilters);
+ if(wideFilters){
+  const tops=await page.locator('.followupTabs [data-work=followup-filter]').evaluateAll(ns=>ns.map(n=>n.getBoundingClientRect().top));
+  assert.ok(tops.every(y=>Math.abs(y-tops[0])<2),'All six filters fit one line');
+ }else{
+  await activate(moreFilters);assert.equal(await moreFilters.getAttribute('aria-expanded'),'true');assert.equal(await extraFilters.isVisible(),true);
+  assert.ok(await extraFilters.evaluate(n=>n.scrollWidth<=n.clientWidth+1),'Expanded filter panel fits its container');
+ }
+ if(width===844){
+  // Model only the sidebar's change in content width; no navigation or rerender.
+  await page.evaluate(()=>{window.filterNode=document.querySelector('[data-work=followup-filter][data-value=reprint]');document.querySelector('main').style.marginLeft='0';});
+  assert.equal(await moreFilters.isVisible(),false);assert.equal(await extraFilters.isVisible(),true);
+  assert.ok(await reprintFilter.evaluate(n=>n===window.filterNode),'Responsive layout preserves the same controls');
+  await page.evaluate(()=>document.querySelector('main').style.removeProperty('margin-left'));
+  assert.equal(await moreFilters.isVisible(),!wideFilters);
+ }
+ await activate(reprintFilter);assert.equal(await page.locator('.followupRow').count(),3);await activate(page.locator('[data-action=approve][data-id=folder][data-side=front]'));assert.equal(writes.filter(w=>w.action==='revision.approve').length,0);await activate(page.locator('[data-action=confirm-approve]'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(await page.locator('.followupRow').count(),2);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'9');assert.equal(state.cards.find(c=>c.id==='folder').back_revision,true);assert.equal(writes.filter(w=>w.action==='revision.approve').length,1);
  await page.locator('[data-work-input=followups]').fill('1');assert.equal(await page.locator('.followupRow').count(),1);await page.evaluate(()=>window.followupSearch=document.querySelector('[data-work-input=followups]'));await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('[data-work-input=followups]').inputValue(),'1');assert.ok(await page.evaluate(()=>window.followupSearch===document.querySelector('[data-work-input=followups]')));assert.match(await page.locator('[data-followup-count]').innerText(),/Follow-up items: 1/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ if(!wideFilters){
+  assert.equal(await moreFilters.getAttribute('aria-expanded'),'true');
+  await activate(moreFilters);assert.equal(await extraFilters.isVisible(),false);assert.equal(await moreFilters.getAttribute('aria-expanded'),'false');
+  assert.match(await moreFilters.innerText(),/Reprint/i);
+  assert.equal(await page.locator('[data-work-input=followups]').inputValue(),'1');assert.equal(await page.locator('.followupRow').count(),1);
+  await moreFilters.focus();await moreFilters.press('Enter');assert.equal(await extraFilters.isVisible(),true);
+  assert.equal(await reprintFilter.getAttribute('aria-pressed'),'true');
+ }
  if(out)await page.screenshot({path:path.join(out,`followups-${width}.png`),fullPage:true});await page.locator('#navigationLanguage').selectOption('da');
  // Overlap warnings cover both cards; shared edges remain quiet and nothing is written.
  const beforeOverlapWrites=writes.length;
