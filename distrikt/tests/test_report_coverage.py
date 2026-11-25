@@ -49,7 +49,7 @@ class ReportCoverageTests(unittest.TestCase):
     def test_retained_dates_are_coverage_not_additional_events(self):
         raw={
             'today':'2026-10-16','revision':'fictional-33',
-            'cards':[{'id':'fictional-retained','last_completed':'2026-08-31'}],
+            'cards':[{'id':'fictional-retained','last_completed':None}],
             'loans':[],
             # A later-known date may survive on a manually backdated event.
             'completions':[{'card_id':'fictional-retained','date':'2025-10-15','previous_completed':'2025-10-16'}],
