@@ -9,14 +9,14 @@ for(const lang of ['da','en']){run(`I18n.set('${lang}');query='';selected='folde
 for(const id of ['a','b','c','d']){
  run(`I18n.set('da');query='';selected='${id}'`);
  const html=run('publisherReturns()');
- const highlighted=[...html.matchAll(/<tr class="cardRow selected" data-card-row="([^"]+)"[^>]*aria-selected="true"/g)];
+ const highlighted=[...html.matchAll(/<tr\b(?=[^>]*\bclass="cardRow selected")(?=[^>]*\bdata-card-row="([^"]+)")(?=[^>]*\baria-selected="true")[^>]*>/g)];
  assert.equal(highlighted.length,1,`Exactly one highlighted row for ${id}`);
  assert.equal(highlighted[0][1],id);
 }
 run("query='Fiktiv <A>';selected='b'");
 const filteredSelection=run('publisherReturns()');
 assert.equal(run('selected'),'a','A filtered list should select its first visible card');
-assert.match(filteredSelection,/<tr class="cardRow selected" data-card-row="a"[^>]*aria-selected="true"/);
+assert.match(filteredSelection,/<tr\b(?=[^>]*\bclass="cardRow selected")(?=[^>]*\bdata-card-row="a")(?=[^>]*\baria-selected="true")[^>]*>/);
 run("query='nonexistent'");
 assert.doesNotMatch(run('publisherReturns()'),/class="cardRow selected"/);
 
