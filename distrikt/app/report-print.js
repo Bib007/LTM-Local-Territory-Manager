@@ -42,13 +42,14 @@ async function inlineReportAssets(markup){
 }
 async function printReport({withoutBackground=false,s13Only=false,omitMap=false}={}){
  if(printReport.busy)return;printReport.busy=true;
- const origin=page,originalState=state,revision=state.revision,originalYear=year,originalCalendarYear=Workspace.calendarYear,map=ReportMap.map,before=Workspace.reportPeriod,language=I18n.language(),picker=el('reportPrintPeriod'),selection=s13Only?before:(picker?.value||before),showNumbers=Workspace.reportShowNumbers!==false;let owned=before,win,buildingMap=false;
+ const origin=page,originalState=state,revision=state.revision,originalYear=year,originalCalendarYear=Workspace.calendarYear,map=ReportMap.map,before=Workspace.reportPeriod,language=I18n.language(),picker=el('reportPrintPeriod'),selection=s13Only?before:(picker?.value||before),showNumbers=Workspace.reportShowNumbers!==false;let owned=before,win,buildingMap=false,restoreViewport=()=>{};
  const current=()=>page===origin&&state===originalState&&state.revision===revision&&year===originalYear&&Workspace.calendarYear===originalCalendarYear&&ReportMap.map===map&&Workspace.reportPeriod===owned&&((Workspace.reportShowNumbers!==false)===showNumbers)&&(s13Only||!picker?.value||(picker.isConnected!==false&&picker.value===selection))&&!win.closed;
  const check=()=>{if(!current())throw Error('Printgrundlaget er ændret. Åbn print igen.');};
  try{
   const modes=selection==='all'?['calendar','service','rolling']:[selection];if(!modes.every(mode=>['calendar','service','rolling'].includes(mode)))throw Error('Ugyldigt rapportperiodevalg.');
   win=PrintPreview.open(I18n.text('Forbereder den valgte rapport…'));if(!win)throw Error('Tillad et nyt vindue til rapportprint.');
   if(!win.embedded)win.document.write('<p>'+esc(I18n.text('Forbereder den valgte rapport…'))+'</p>');
+  else if(map?.getCenter&&map?.getZoom){const center=map.getCenter(),zoom=map.getZoom();let restored=false;restoreViewport=()=>{if(restored)return;restored=true;if(page===origin&&ReportMap.map===map&&year===originalYear&&Workspace.calendarYear===originalCalendarYear&&Workspace.reportPeriod===before)map.setView(center,zoom,{animate:false});};win.onClose=restoreViewport;}
   const maps={};
   if(!s13Only&&!omitMap){
    buildingMap=true;
@@ -56,9 +57,8 @@ async function printReport({withoutBackground=false,s13Only=false,omitMap=false}
    // offline vector map instead of waiting for unavailable map tiles.
    const offline=withoutBackground||!map;
    for(const mode of modes){
-    owned=Workspace.reportPeriod=mode;
-    if(!offline)ReportMap.draw();
-    maps[mode]=await ReportMap.printable({withoutBackground:offline});
+    if(!win.embedded){owned=Workspace.reportPeriod=mode;if(!offline)ReportMap.draw();}
+    maps[mode]=await ReportMap.printable({withoutBackground:offline,...(win.embedded?{mode}:{})});
     check();
    }
    buildingMap=false;
@@ -72,5 +72,5 @@ async function printReport({withoutBackground=false,s13Only=false,omitMap=false}
  }catch(error){if(win?.embedded&&win.closed)return;win?.close();if(buildingMap&&!withoutBackground&&page===origin&&state===originalState&&state.revision===revision&&typeof ReportMap.failed==='function'){
   ReportMap.failed(error,'print');return;
  }throw error;}
- finally{printReport.busy=false;if(page===origin&&ReportMap.map===map&&year===originalYear&&Workspace.reportPeriod===owned){Workspace.reportPeriod=before;ReportMap.draw();}}
+ finally{printReport.busy=false;if(win?.embedded)restoreViewport();else if(page===origin&&ReportMap.map===map&&year===originalYear&&Workspace.reportPeriod===owned){Workspace.reportPeriod=before;ReportMap.draw();}}
 }
