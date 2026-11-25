@@ -271,11 +271,20 @@ const DialogFocus={opener:null,
  prepare(dialog){const heading=dialog.querySelector?.('h2,h1,h3');if(heading?.tagName){if(!heading.id)heading.id='ltmDialogTitle-'+openDialog.generation;dialog.setAttribute?.('aria-labelledby',heading.id);dialog.removeAttribute?.('aria-label');}else{dialog.removeAttribute?.('aria-labelledby');dialog.setAttribute?.('aria-label',I18n.text('Dialog'));}
   let index=0;for(const input of dialog.querySelectorAll?.('input:not([type=hidden]),select,textarea')||[]){if(input.labels?.length)continue;const label=input.previousElementSibling;if(label?.tagName==='LABEL'&&!label.htmlFor){if(!input.id)input.id='ltmDialogField-'+openDialog.generation+'-'+index++;label.htmlFor=input.id;}}
  },
- focus(dialog){const field=dialog.querySelector?.('[autofocus]:not(:disabled):not([type=hidden])')||dialog.querySelector?.('input:not([type=hidden]):not(:disabled),select:not(:disabled),textarea:not(:disabled)');const target=field||dialog.querySelector?.('[data-action=close]');target?.focus?.({preventScroll:true});},
+ initialTarget(dialog){const field=dialog.querySelector?.('[autofocus]:not(:disabled):not([type=hidden])')||dialog.querySelector?.('input:not([type=hidden]):not(:disabled),select:not(:disabled),textarea:not(:disabled)');return field&&field.tagName!=='SELECT'?field:dialog.querySelector?.('[data-action=close]');},
+ prepareInitialFocus(dialog){
+  // WebKit may open a native select picker when a dialog programmatically focuses it.
+  // Make the close button the native autofocus target BEFORE showModal, not just afterwards.
+  const close=dialog.querySelector?.('[data-action=close]');
+  if(!close||this.initialTarget(dialog)!==close)return;
+  for(const field of dialog.querySelectorAll?.('select[autofocus]')||[]){if(field.tagName==='SELECT')field.removeAttribute?.('autofocus');}
+  close.setAttribute?.('autofocus','');
+ },
+ focus(dialog){const target=this.initialTarget(dialog);if(target!==document.activeElement)target?.focus?.({preventScroll:true});},
  keydown(event,dialog){if(event.key!=='Tab'||event.defaultPrevented||!dialog.open||dialog.dataset.backgroundSave==='yes')return;const fields=[...dialog.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=true]')].filter(node=>node.tabIndex>=0&&!node.matches(':disabled')&&!node.hidden&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');const first=fields[0],last=fields.at(-1),active=document.activeElement;if(!first){event.preventDefault();dialog.focus();return;}if(event.shiftKey&&(active===first||!dialog.contains(active))){event.preventDefault();last.focus({preventScroll:true});}else if(!event.shiftKey&&(active===last||!dialog.contains(active))){event.preventDefault();first.focus({preventScroll:true});}},
  restore(dialog){const saved=this.opener;this.opener=null;if(!saved)return;const target=saved.node?.isConnected?saved.node:(saved.id?document.getElementById(saved.id):null)||(saved.selector?document.querySelector(saved.selector):null);if(target&&target.isConnected!==false&&!dialog.contains?.(target))target.focus?.({preventScroll:true});}
 };
-function openDialog(html,language='da'){const dialog=el('dialog');if(dialog.dataset.backgroundSave==='yes'&&el('cardForm')?.dataset.id&&dialogDirty){if(!el('cardForm').reportValidity())return;saveCard(false);dialogDirty=false;}if(dialog.dataset.backgroundSave==='yes'){dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;}DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
+function openDialog(html,language='da'){const dialog=el('dialog');if(dialog.dataset.backgroundSave==='yes'&&el('cardForm')?.dataset.id&&dialogDirty){if(!el('cardForm').reportValidity())return;saveCard(false);dialogDirty=false;}if(dialog.dataset.backgroundSave==='yes'){dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;}DialogFocus.capture(dialog);openDialog.generation=(openDialog.generation||0)+1;if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase=state?.profile?.snapshot||'';frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.lang=language==='en'?'en':'da';dialog.innerHTML=`<button type="button" class="dialogClose" data-action="close" lang="${I18n.language()}" ${I18n.attribute('aria','Luk')} ${I18n.attribute('title','Luk')}>×</button>`+html;DialogFocus.prepare(dialog);DialogFocus.prepareInitialFocus(dialog);dialog.showModal();EditorBases.open();FormDrafts.capture();dialog.scrollTop=0;I18n.applyShell();DialogFocus.focus(dialog);SaveStatus.paint();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialog();}
 function closeDialog(){EditorBases.close();if(typeof ProfilesUI!=='undefined')ProfilesUI.dialogBase='';const dialog=el('dialog');frontResizeObserver?.disconnect();DistrictMap.dispose();clearTimeout(autosaveTimer);dialog.close();dialog.style.position='';dialog.style.inset='';delete dialog.dataset.backgroundSave;DialogFocus.restore(dialog);}
 function empty(message){return `<div class="empty">${message}</div>`;}
 function searchText(c){return [c.number,c.internal_number,c.name,c.internal_name,areaName(c.area_id),c.kind,...(c.addresses||[]).flatMap(a=>[a.road,a.numbers,a.type])].join(' ').toLowerCase();}
@@ -665,7 +674,8 @@ function issueBatchPicker(form,search,fromBox){
   if(!button)return;
   chosen.delete(button.dataset.issueRemove);
   update();
-  if(!picker.disabled)picker.focus();
+  // The removed button no longer exists; return focus to the batch disclosure, not the native picker.
+   search.closest('details')?.querySelector('summary')?.focus({preventScroll:true});
  });
  update();
 }
