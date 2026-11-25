@@ -47,8 +47,8 @@ async function printReport({withoutBackground=false,s13Only=false,omitMap=false}
  const check=()=>{if(!current())throw Error('Printgrundlaget er ændret. Åbn print igen.');};
  try{
   const modes=selection==='all'?['calendar','service','rolling']:[selection];if(!modes.every(mode=>['calendar','service','rolling'].includes(mode)))throw Error('Ugyldigt rapportperiodevalg.');
-  win=window.open('','_blank');if(!win)throw Error('Tillad et nyt vindue til rapportprint.');
-  win.document.write('<p>'+esc(I18n.text('Forbereder den valgte rapport…'))+'</p>');
+  win=PrintPreview.open(I18n.text('Forbereder den valgte rapport…'));if(!win)throw Error('Tillad et nyt vindue til rapportprint.');
+  if(!win.embedded)win.document.write('<p>'+esc(I18n.text('Forbereder den valgte rapport…'))+'</p>');
   const maps={};
   if(!s13Only&&!omitMap){
    buildingMap=true;
@@ -69,7 +69,7 @@ async function printReport({withoutBackground=false,s13Only=false,omitMap=false}
   if(win.closed)return;
   if(results.some(r=>r.status==='rejected')){win.document.getElementById('printAssetError').textContent=language==='en'?I18n.english['Printbilleder kunne ikke indlæses. Åbn print igen.']:'Printbilleder kunne ikke indlæses. Åbn print igen.';return;}
   button.disabled=false;button.addEventListener('click',()=>win.print());
- }catch(error){win?.close();if(buildingMap&&!withoutBackground&&page===origin&&state===originalState&&state.revision===revision&&typeof ReportMap.failed==='function'){
+ }catch(error){if(win?.embedded&&win.closed)return;win?.close();if(buildingMap&&!withoutBackground&&page===origin&&state===originalState&&state.revision===revision&&typeof ReportMap.failed==='function'){
   ReportMap.failed(error,'print');return;
  }throw error;}
  finally{printReport.busy=false;if(page===origin&&ReportMap.map===map&&year===originalYear&&Workspace.reportPeriod===owned){Workspace.reportPeriod=before;ReportMap.draw();}}
