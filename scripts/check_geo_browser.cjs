@@ -203,8 +203,18 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   const printPopupPromise=page.waitForEvent('popup');await page.locator('#printForm button.primary').click();const printPopup=await printPopupPromise;await printPopup.waitForFunction(()=>document.getElementById('print')&&!document.getElementById('print').disabled);assert.equal(await printPopup.locator('.sheet').count(),1);assert.equal(await printPopup.locator('#print').innerText(),'Print / save PDF');assert.ok(await printPopup.locator('img').evaluateAll(images=>images.every(img=>img.src.startsWith('data:')&&img.complete&&img.naturalWidth>0)));assert.equal(await page.locator('#dialog').evaluate(n=>n.open),false);
   const pdf=await printPopup.pdf({preferCSSPageSize:true});assert.match(pdf.subarray(0,8).toString(),/%PDF-/);if(out){fs.writeFileSync(path.join(out,`card-${width}.pdf`),pdf);await printPopup.screenshot({path:path.join(out,`print-preview-${width}.png`),fullPage:true});}await printPopup.close();
   await page.evaluate(()=>{printOptions('c1','back');});await page.locator('#printForm [name=remember]').uncheck();const backPopupPromise=page.waitForEvent('popup');await page.locator('#printForm button.primary').click();const backPopup=await backPopupPromise;await backPopup.waitForFunction(()=>document.getElementById('print')&&!document.getElementById('print').disabled);assert.equal(await backPopup.locator('.ibPreview').count(),1);const backPdf=await backPopup.pdf({preferCSSPageSize:true});if(out)fs.writeFileSync(path.join(out,`back-${width}.pdf`),backPdf);await backPopup.close();
-  await page.evaluate(()=>{page='Rapporter';reportTab='Rapport';Workspace.reportPeriod='service';render();});
+  await page.evaluate(()=>{page='Rapporter';reportTab='Rapport';Workspace.reportPeriod='service';Workspace.reportPreview=false;render();});
   assert.equal(await page.locator('.reportOverview').count(),0);
+  if(width===390){
+   assert.equal(await page.locator('#reportDistrictMap').count(),0,'No map viewport is mounted before preview');
+   const popupReady=page.waitForEvent('popup');
+   await page.locator('[data-action=print-report]').click();
+   const direct=await popupReady;
+   await direct.waitForFunction(()=>document.getElementById('printReport')&&!document.getElementById('printReport').disabled);
+   assert.ok(await direct.locator('.reportMapSnapshot svg polygon').count()>0,'Direct printing has offline district boundaries');
+   assert.equal(await direct.locator('.reportMapSnapshot svg image').count(),0,'Direct printing needs no tile images');
+   await direct.close();
+  }
   await page.locator('[data-work=report-view]').click();assert.equal(await page.locator('.reportScreenMap').count(),1);
   await page.locator('#reportPrintPeriod').selectOption('calendar');assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'calendar');assert.match(await page.locator('.reportScreenMap h2').innerText(),/Calendar year/);await page.locator('#calendarYear').selectOption('2026');
   await page.locator('#reportPrintPeriod').selectOption('service');

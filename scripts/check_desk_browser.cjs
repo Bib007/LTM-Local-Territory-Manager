@@ -8,8 +8,8 @@ initial.notes=[{id:'task-open',card_id:'folder',text:'Fiktiv gammel <opfølgning
  {id:'task-done',card_id:'folder',text:'FIKTIV_DONE_TASK',task:true,resolved:true,date:'2026-10-01'},
  {id:'task-general',card_id:null,text:'Fiktiv generel opgave',task:true,resolved:false,date:'2026-10-01'}];
 function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;};const x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
-(async()=>{const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{}:{args:['--no-sandbox']});try{for(const width of (touch?[390,844,768,1024]:[320,390,768,1440])){
- const height=touch?({390:844,844:390,768:1024,1024:768}[width]):900;
+(async()=>{const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{}:{args:['--no-sandbox']});try{for(const width of (touch?[360,390,844,768,1024]:[320,390,768,1440])){
+ const height=touch?({360:800,390:844,844:390,768:1024,1024:768}[width]):900;
  const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:touch}),page=await context.newPage(),state=structuredClone(initial),writes=[],errors=[];let geoReads=0,stateReads=0;page.on('pageerror',e=>errors.push(e.message));
  await context.route('**/*',async route=>{const u=new URL(route.request().url());if(u.protocol==='blob:'){assert.equal(u.origin,'http://ltm.desk.test','Only local image blobs are allowed');return route.continue();}if(u.hostname==='tile.openstreetmap.org'&&/^\/\d+\/\d+\/\d+\.png$/.test(u.pathname))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#eee"/></svg>'});assert.equal(u.hostname,'ltm.desk.test',u.href);const json=data=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
  if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
@@ -56,8 +56,76 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  const file=u.pathname==='/'?'index.html':u.pathname.slice(1);assert.ok(!file.includes('..'));return route.fulfill({path:path.join(root,file)});
  });
  const activate=locator=>touch?locator.tap():locator.click();
+ // Check actual geometry, not just hidden document overflow.
+ const assertResponsive=async(selector,label)=>{
+  if(width>1100)return;
+  const failures=await page.locator(selector).evaluate(n=>{
+   const bad=[],right=document.documentElement.clientWidth;
+   if(document.documentElement.scrollWidth>right+1)bad.push('document overflow');
+   if(n.scrollWidth>n.clientWidth+1)bad.push('container overflow');
+   for(const e of n.querySelectorAll('button,input:not([type=hidden]),select,textarea,summary')){
+    const b=e.getBoundingClientRect(),style=getComputedStyle(e);
+    if(!b.width||!b.height||style.visibility==='hidden')continue;
+    if(b.left<-1||b.right>right+1)bad.push(e.outerHTML.slice(0,150));
+   }
+   return bad;
+  });
+  assert.deepEqual(failures,[],label+' at '+width+'px');
+ };
  if(process.env.LTM_THEME)await context.addInitScript(mode=>{if(!localStorage.getItem('ltm-appearance'))localStorage.setItem('ltm-appearance',mode);},process.env.LTM_THEME);
  await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.desk.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
+
+ // Compact, left-aligned daily-mode buttons: both themes, keyboard and touch.
+ const originalDesk=await page.evaluate(()=>({page,deskTab,query,appearance:Theme.choice}));
+ await page.evaluate(()=>{page='Udlevering';deskTab='Udlever';query='';render();});
+ const modes=page.locator('.deskTabs'),issueMode=modes.locator('[data-tab=Udlever]'),returnMode=modes.locator('[data-tab=Aflever]');
+ const beforeModeWrites=writes.length;
+ for(const mode of ['dark','light']){
+  await page.evaluate(mode=>Theme.set(mode),mode);
+  assert.equal(await modes.locator('button').count(),2);
+  assert.match(await issueMode.innerText(),/↗\s*Udlever/);
+  assert.match(await returnMode.innerText(),/↙\s*Aflever/);
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+  assert.equal(await returnMode.getAttribute('aria-pressed'),'false');
+  const checkModeLayout=async()=>{
+   const layout=await modes.evaluate(n=>{
+    const container=n.getBoundingClientRect(),buttons=[...n.querySelectorAll('button')];
+    let surface=n;while(surface&&getComputedStyle(surface).backgroundColor==='rgba(0, 0, 0, 0)')surface=surface.parentElement;
+    const bg=getComputedStyle(surface||document.body).backgroundColor;
+    return {left:container.left,right:container.right,viewport:innerWidth,bg,buttons:buttons.map(b=>{const r=b.getBoundingClientRect(),s=getComputedStyle(b);return {left:r.left,right:r.right,top:r.top,height:r.height,border:s.borderTopColor,style:s.borderTopStyle,width:parseFloat(s.borderTopWidth),background:s.backgroundColor,active:b.classList.contains('active')};})};
+   });
+   const [a,b]=layout.buttons;
+   assert.ok(Math.abs(a.left-layout.left)<=1,'First mode begins at the left edge');
+   assert.ok(Math.abs(a.top-b.top)<=1&&b.left>=a.right&&b.left-a.right<=12,'Both buttons sit together on the left');
+   assert.ok(b.right<=layout.right+1&&b.right<=layout.viewport+1,'Both modes fit the viewport');
+   assert.ok(layout.right-b.right>4,'Buttons do not stretch across the entire row');
+   assert.equal(layout.buttons.filter(b=>b.active).length,1);
+   for(const button of layout.buttons){
+    assert.ok(button.height>=44&&button.width>=1&&button.style==='solid','Touch target and visible border');
+    assert.ok(contrast(button.border,layout.bg)>=3,'Border contrast against surrounding surface');
+    if(button.background!=='rgba(0, 0, 0, 0)')assert.ok(contrast(button.border,button.background)>=3,'Border contrast against button fill');
+   }
+  };
+  await checkModeLayout();
+  await issueMode.focus();await page.keyboard.press('Tab');
+  assert.ok(await returnMode.evaluate(b=>b===document.activeElement&&b.matches(':focus-visible')&&getComputedStyle(b).outlineStyle!=='none'&&parseFloat(getComputedStyle(b).outlineWidth)>=2),'Visible keyboard focus on Return');
+  await page.keyboard.press('Enter');
+  assert.equal(await returnMode.getAttribute('aria-pressed'),'true');
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'false');
+  assert.ok(await returnMode.evaluate(b=>b===document.activeElement),'Focus survives rerender');
+  assert.equal(await page.locator('.deskReturnOrder').count(),1);
+  await checkModeLayout();
+  await page.keyboard.press('Shift+Tab');
+  assert.ok(await issueMode.evaluate(b=>b===document.activeElement&&b.matches(':focus-visible')),'Reverse Tab reaches Issue');
+  await page.keyboard.press('Space');
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+  assert.ok(await issueMode.evaluate(b=>b===document.activeElement),'Focus survives Space activation');
+  assert.equal(await page.locator('.deskReturnOrder').count(),0);
+  await activate(returnMode);assert.equal(await returnMode.getAttribute('aria-pressed'),'true');
+  await activate(issueMode);assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+ }
+ assert.equal(writes.length,beforeModeWrites,'Switching daily mode never writes data');
+ await page.evaluate(original=>{Theme.set(original.appearance);page=original.page;deskTab=original.deskTab;query=original.query;render();},originalDesk);
 
  // Fictional role quotas: ensure the real responsive UI shows live, advisory-only figures.
  await page.evaluate(()=>{
@@ -126,9 +194,11 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
    return r.left>=-1&&r.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1&&
     [...n.querySelectorAll('button')].every(b=>b.getBoundingClientRect().right<=innerWidth+1);
  }), 'Long custom location names wrap within mobile/desktop width');
+ await assertResponsive('#app','Daily use with long custom names');
  await page.evaluate(()=>issue('folder'));
  assert.equal(await page.locator('#issueForm').getAttribute('data-from-box'),'true',
               'No-folder mode can issue a legacy in-folder card from home');
+ await assertResponsive('#dialog','Issue dialog');
  await page.evaluate(()=>closeDialog());
  await page.evaluate(()=>{page='Distrikter';status='Alle';render();});
  assert.equal(await page.locator('#statusFilter option[value="Kort i mappen"]').count(),0);
@@ -139,6 +209,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert.equal(await page.locator('#folderWorkflowOptions').isVisible(),false);
  assert.equal(await page.locator('[name="location_home"]').inputValue(),
               'Hjemme med en usædvanlig lang betegnelse');
+ await assertResponsive('#app','General settings');
  await page.evaluate(()=>{
   state.settings=window.__congregationSettingsBefore;delete window.__congregationSettingsBefore;
   page='Udlevering';Navigation.settingsSection='general';render();
@@ -160,6 +231,17 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert.equal(await page.locator('.territorySortControls').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;}),true,'Sort control fits desktop/mobile');
  const listed=()=>page.locator('.cardRow[data-card-row]').evaluateAll(nodes=>nodes.map(n=>n.dataset.cardRow));
  assert.deepEqual(await listed(),['folder','blocked','box','one','two','three']);
+ await assertResponsive('#app','Card inventory');
+ if(width<=900){
+  assert.equal(await page.locator('.responsiveCardTable .cardRow').first().evaluate(n=>getComputedStyle(n).display),'grid');
+  assert.equal(await page.locator('.responsiveCardTable .cardFieldLabel').first().isVisible(),true);
+  const more=page.locator('[data-card-row=folder] .cardActionMenu>summary');
+  await activate(more);
+  assert.equal(await page.locator('[data-card-row=folder] [data-action=show-map]').isVisible(),true);
+  await assertResponsive('#app','Expanded card actions');
+  await activate(more);
+ }
+
  for(const id of ['one','box']){
   const row=page.locator(`[data-card-row=${id}]`);
   await activate(row.locator('[data-action=detail]'));
@@ -205,13 +287,15 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  if(touch){const metrics=await page.locator('#dialog').evaluate(n=>({height:n.getBoundingClientRect().height,viewport:innerHeight,fields:[...n.querySelectorAll('input:not([type=checkbox]):not([type=radio]),select,textarea')].map(e=>parseFloat(getComputedStyle(e).fontSize)),close:n.querySelector('.dialogClose').getBoundingClientRect().height}));assert.ok(metrics.height<=metrics.viewport-20,'Dialog fits landscape viewport');assert.ok(metrics.fields.every(n=>n>=16),'Fields stay readable without iOS focus zoom: '+JSON.stringify(metrics));assert.ok(metrics.close>=44,'Touch close target');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`issue-${width}x${height}.png`),fullPage:true});}}
  assert.match(await page.locator('.issueTaskAlert').innerText(),/Fiktiv gammel <opfølgning>/);assert.doesNotMatch(await page.locator('.issueTaskAlert').innerText(),/FIKTIV_DONE_TASK/);assert.equal(await page.locator('.issueTaskAlert opfølgning').count(),0);assert.equal(await page.locator('#issueForm button.primary').isEnabled(),true,'Tasks add no mandatory assignment block');assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1));
  await page.locator('#issueForm [name=card_id]').selectOption('blocked');assert.equal(await page.locator('.issueTaskAlert').count(),0);await page.locator('#issueForm [name=card_id]').selectOption('folder');assert.equal(await page.locator('.issueTaskAlert').count(),1);await activate(page.locator('.dialogClose'));
- await activate(page.locator('[data-card-row=one] .returnAction'));await page.locator('#finishForm').waitFor();assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-one');assert.equal(writes.length,0);await activate(page.locator('.dialogClose'));
+ await activate(page.locator('[data-card-row=one] .returnAction'));await page.locator('#finishForm').waitFor();assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-one');
+ await assertResponsive('#dialog','Return dialog');assert.equal(writes.length,0);await activate(page.locator('.dialogClose'));
  await page.locator('[data-card-row=one] [data-action=select]').click();assert.match(await page.locator('.details').innerText(),/Fiktiv <A>/);assert.equal(await page.locator('.details [data-action=complete]').count(),1);
  await page.evaluate(()=>{page='Udlevering';render();});await page.locator('[data-action=desk-tab][data-tab=Aflever]').click();await page.locator('[data-action=desk-tab][data-tab=Forkyndere]').click();assert.equal(await page.locator('.publisherReturnGroup').count(),2);assert.match(await page.locator('.publisherReturnGroup h3').first().innerText(),/Fiktiv B[\s\S]*2 \/ 1/);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),3);assert.equal(await page.locator('.publisherReturnGroup script').count(),0);
  await page.locator('#search').fill('<A>');assert.equal(await page.locator('.publisherReturnGroup').count(),1);assert.match(await page.locator('.publisherReturnGroup h3').innerText(),/Fiktiv <A>/);await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('#search').inputValue(),'<A>');assert.match(await page.locator('[data-tab=Forkyndere]').innerText(),/^By publisher$/);await page.locator('#search').fill('');await page.locator('#navigationLanguage').selectOption('da');
  await page.locator('.publisherReturnGroup [data-card-row=three]').focus();await page.keyboard.press('Enter');assert.match(await page.locator('.details strong').first().innerText(),/6/);assert.equal(await page.locator('.details [data-action=return]').getAttribute('data-id'),'loan-three');
  for(const cls of ['issueAction','returnAction']){const button=page.locator('.'+cls+':not(:disabled)').first();if(await button.count()){const s=await button.evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(s.color,s.background)>=4.5);}}
- assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No page overflow');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`returns-${width}.png`),fullPage:true});}
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No page overflow');
+ await assertResponsive('#app','Returns by publisher');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`returns-${width}.png`),fullPage:true});}
  await activate(page.locator('.publisherReturnGroup [data-action=return][data-id=loan-two]'));await page.locator('#finishForm [name=complete]').selectOption('no');const ibChoice=page.locator('#finishForm .return-ib-checkbox'),ibCheck=page.locator('#finishForm input[name=revise_ib]');assert.equal(await ibCheck.isChecked(),false,'IB revision must default to unchecked');assert.ok((await ibChoice.boundingBox())?.height>=80,'IB choice needs a large touch target');await ibChoice.click();assert.equal(await ibCheck.isChecked(),true);await ibChoice.click();assert.equal(await ibCheck.isChecked(),false);await activate(page.locator('#finishForm button.primary'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(writes.length,1);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),2);assert.equal(state.cards.find(c=>c.id==='two').in_folder,false);assert.equal(state.completions.length,0);assert.deepEqual(errors,[]);
  await page.evaluate(()=>{page='Opgaver';Workspace.taskFilter='open';render();});assert.equal(await page.locator('[data-value=notes]').count(),0);assert.match(await page.locator('#app').innerText(),/Fiktiv gammel <opfølgning>/);assert.doesNotMatch(await page.locator('#app').innerText(),/FIKTIV_DONE_TASK/);
  await activate(page.locator('[data-work=resolve][data-id=task-open]'));await activate(page.locator('[data-work-form=complete-task] button.primary'));await page.waitForFunction(()=>state.notes.find(n=>n.id==='task-open').resolved);assert.equal(await page.locator('.navTaskCount').innerText(),'1');assert.equal(await page.locator('[data-work=resolve][data-id=task-open]').count(),0);

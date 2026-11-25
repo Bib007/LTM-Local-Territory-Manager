@@ -15,7 +15,12 @@ OverviewMap.map={latLngToLayerPoint:()=>({x:1,y:1}),fitBounds(){},layerPointToLa
 const original=run('JSON.stringify(state)'),contracts={},results={};
 for(const language of ['da','en']){
  run(`I18n.set('${language}');OverviewMap.filters.search='';OverviewMap.filters.year=2027;OverviewMap.filters.kind='Alle';OverviewMap.filters.status='Alle';OverviewMap.filters.recentMonths=6;OverviewMap.filters.months=12;OverviewMap.focus='folder'`);
- const page=run('OverviewMap.page()');contracts[language]=(page.match(/(?:data-overview-field|data-overview|value|max)="[^"]*"/g)||[]).join('\n');
+ const page=run('OverviewMap.page()');
+ const controls=page.slice(page.indexOf('class="toolbar mapBackground"'),page.indexOf('id="overviewMapBackgroundStatus"'));
+ for(const action of ['boundary','fit','focus-fit','unfocus']){assert.match(controls,new RegExp('data-overview="'+action+'"'));assert.equal((page.match(new RegExp('data-overview="'+action+'"','g'))||[]).length,1);}
+ assert.match(controls,/data-basemap="overviewMap"/);assert.match(controls,/data-map-expand="overviewMap"/);assert.doesNotMatch(controls,/data-map-fit=/);
+ assert(controls.includes(run("I18n.text('Vis hele distriktet')")));
+ contracts[language]=(page.match(/(?:data-overview-field|data-overview|value|max)="[^"]*"/g)||[]).join('\n');
  assert.match(page,/option value="Land"/);assert.match(page,/option value="Ingen dato"/);assert.match(page,/Område &lt;invented&gt;/);
  assert.match(page,language==='en'?/>Reset filters<\//:/>Nulstil filtre<\//);
   assert.match(page,/data-overview-field="recentMonths" min="1"/,'Green threshold is editable');
@@ -30,6 +35,14 @@ for(const language of ['da','en']){
  run("OverviewMap.filters.color='year';OverviewMap.draw()");assert.match(get('overviewLegend').innerHTML,language==='en'?/Completed in 2026\/2027/:/Gennemgået i 2026\/2027/);run("OverviewMap.filters.color='age'");
  assert.equal(run('JSON.stringify(state)'),original);
 }
+// View commands do not alter filters, focus, or stored territory data.
+run(`OverviewMap.map.fitBounds=(points)=>{OverviewMap.testBounds=points};GeoUI.data.main_boundary={points:[[9,54],[11,56],[11,54]]};OverviewMap.focus='folder';OverviewMap.filters.kind='Land';`);
+const viewFilters=run('JSON.stringify(OverviewMap.filters)');
+run("OverviewMap.handle('boundary')");assert.equal(run('JSON.stringify(OverviewMap.testBounds)'),JSON.stringify([[54,9],[56,11],[54,11]]));
+run("OverviewMap.handle('fit')");assert.equal(run('OverviewMap.testBounds.length'),3);
+run("OverviewMap.handle('focus-fit')");assert.equal(run('JSON.stringify(OverviewMap.testBounds)'),JSON.stringify([[55,10],[55,10.01],[55.01,10.01]]));
+run("GeoUI.data.main_boundary={points:[]};OverviewMap.handle('boundary')");assert.equal(run('OverviewMap.focus'),'folder');assert.equal(run('JSON.stringify(OverviewMap.filters)'),viewFilters);assert.equal(run('JSON.stringify(state)'),original);
+run("OverviewMap.filters.kind='Alle'");
 // Colour bands and the advanced age filter share the upper threshold, not a fixed 2:1 ratio.
 run("I18n.set('da');OverviewMap.filters.color='age';OverviewMap.change('recentMonths',4);OverviewMap.change('months',10)");
 assert.equal(run("OverviewMap.color({last_completed:'2026-09-20'})"),'#258454');
