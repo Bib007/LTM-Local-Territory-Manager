@@ -152,6 +152,56 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  run("state.cards[1].last_completed=null;state.completions=state.completions.filter(e=>e.card_id!=='c1')");
  assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).missingAssigned'),1,'An assigned district with no recorded completion remains visible in aggregate');
  c.restoreState=JSON.parse(savedForDates);run('state=restoreState');
+ // #33: real completion days, not the day of registration or the latest cache.
+ const saved33=run('JSON.stringify(state)');
+ run(`state.cards=[
+  {id:'early',number:'F-33A',last_completed:'2026-10-12'},
+  {id:'late',number:'F-33B',last_completed:'2026-09-10'},
+  {id:'unknown',number:'F-33C',last_completed:'2026-02-30'},
+  {id:'home',number:'F-33D'},
+  {id:'prior',number:'F-33E',last_completed:'2026-10-15'},
+  {id:'boundary',number:'F-33F'},
+  {id:'outside',number:'F-33G'}
+ ];state.loans=[
+  {card_id:'late',assigned:'2026-08-01',cycle_start:'2026-09-20',returned:null},
+  {card_id:'unknown',assigned:null,cycle_start:'2026-10-01',returned:null},
+  {card_id:'home',assigned:'2026-08-01',returned:'2026-09-01'}
+ ];state.completions=[
+  {card_id:'early',date:'2026-10-12'},
+  {card_id:'early',date:'2025-12-31',created:'2026-10-16'},
+  {card_id:'late',date:'2026-09-10'},
+  {card_id:'late',date:'2026-09-12',created:'2026-10-16'},
+  {card_id:'unknown',date:'2026-02-30'},
+  {card_id:'unknown',date:null},
+  {card_id:'home',date:'2026-10-17'},
+  {card_id:'prior',date:'2026-10-15',previous_completed:'2025-10-16'},
+  {card_id:'boundary',date:'2026-10-16'},
+  {card_id:'outside',date:'2025-10-15'}
+ ];Workspace.calendarYear=2025;I18n.set('da');`);
+ const historic33=run('Workspace.reportInventory(...Workspace.periodBounds("calendar"))');
+ assert.equal(historic33.events,3);
+ assert.deepEqual(Array.from(historic33.missingCards,c=>c.id),['late','unknown','home','boundary']);
+ assert.equal(historic33.lastCompleted.get('late'),'2026-09-12','Latest date derives from actual recorded events, not stale card cache');
+ const rolling33=run('Workspace.reportInventory(...Workspace.periodBounds("rolling"))');
+ assert(rolling33.completedIds.has('prior'),'Known retained start-boundary date remains evidence');
+ assert(!rolling33.completedIds.has('outside'),'Day before rolling start is excluded');
+ const service33=run('Workspace.reportInventory(...Workspace.periodBounds("service"))');
+ assert(service33.completedIds.has('boundary'),'Today is inclusive');
+ assert(!service33.completedIds.has('home'),'Future completion does not remove the card');
+ assert(!service33.completedIds.has('unknown'),'Invalid or missing date does not remove the card');
+ const check33=run('JSON.stringify(state)');
+ for(const markup of [run("Workspace.reportSummary('calendar',false,true)"),run("Workspace.reportSummary('calendar',false,false)")]){
+  assert.match(markup,/F-33B[\\s\\S]*?12\\.9\\.2026[\\s\\S]*?Udleveret nu[\\s\\S]*?76 dage i alt/);
+  assert.match(markup,/F-33C[\\s\\S]*?Ingen dato registreret[\\s\\S]*?Udleveret nu · Ingen dato registreret/);
+  assert.match(markup,/F-33D[\\s\\S]*?Hjemme nu/);
+  assert.doesNotMatch(markup,/F-33A|F-33E|F-33G|NaN|Invalid Date/);
+ }
+ run("I18n.set('en')");assert.match(run("KtmReportUI.missing('calendar',true)"),/76 days in total/);
+ run("state.profile={permissions:['cards.view','history.view']}");
+ assert.doesNotMatch(run("KtmReportUI.missing('calendar',false)"),/76 dage|Udleveret nu|Hjemme nu/);
+ run('delete state.profile');assert.equal(run('JSON.stringify(state)'),check33,'Reports never modify recorded data');
+ c.restore33=JSON.parse(saved33);run('state=restore33;Workspace.calendarYear=null');
+
  run('year=2026');const historical=run('Workspace.reportOverview(true)');assert.match(historical,/2025\/2026/);assert.match(historical,/2025-10-16|16\.10\.2025/);run('year=2027');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
  // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
