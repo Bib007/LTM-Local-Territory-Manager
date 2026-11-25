@@ -2071,6 +2071,7 @@ const I18n={
   "{count} udsnit/opslag mangler. Se fejl og fortsæt under {section}.":"{count} areas/lookups missing. Review errors and resume under {section}.",
   "{label} · kontrollér placering og hjørner, og tryk Gem samlet grænse. Importen har endnu ikke ændret den gemte grænse eller adresserne.":"{label} · check location and corners, then press Save overall boundary. The import has not changed the saved boundary or addresses yet.",
   "Tegner kort {number} · {count} punkter.":"Drawing card {number} · {count} points.",
+  "Oftest valgte forkyndere":"Most frequently selected publishers",
   "Søgningen sker kun i din lokale forkynderliste.":"Search only uses your local publisher list.",
   "{count} forslag. Brug piletasterne og Enter til at vælge.":"{count} suggestions. Use the arrow keys and Enter to choose.",
   "Ingen forslag. Et nyt navn oprettes først, når du registrerer udleveringen.":"No suggestions. A new name is only created when you save the assignment.",
