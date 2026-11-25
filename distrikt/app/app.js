@@ -647,17 +647,29 @@ function issueBatchPicker(form,search,fromBox){
   const eligible=available(),byId=new Map(eligible.map(c=>[c.id,c]));
   const needle=search.value.trim().toLocaleLowerCase('da-DK');
   const matches=eligible.filter(c=>c.id!==primary.value&&!chosen.has(c.id)&&[c.number,c.internal_number,c.name,c.internal_name,areaName(c.area_id)].join(' ').toLocaleLowerCase('da-DK').includes(needle)).sort((a,b)=>cmp(a.number,b.number));
-  picker.innerHTML=`<option value="">${ui(matches.length?'Vælg kort':'Ingen ledige kort matcher.')}</option>${issueCardOptions(matches)}`;
-  picker.disabled=chosen.size>=4||!matches.length;
+  picker.hidden=!needle||chosen.size>=4;
+  picker.innerHTML=picker.hidden?'':matches.length?matches.map(c=>`<button type="button" data-issue-add="${esc(c.id)}">${esc(issueCardLabel(c))}</button>`).join(''):`<p class="hint" role="status">${ui('Ingen ledige kort matcher.')}</p>`;
   count.textContent=I18n.format('{count} af 5 kort valgt',{count:1+chosen.size});
   selected.innerHTML=[...chosen].map(([id,c])=>`<div class="actions"><input type="hidden" name="additional_card_id" value="${esc(id)}"><span>${esc(issueCardLabel(byId.get(id)||c))}${byId.has(id)?'':' · '+ui('Kan ikke vælges')}</span><button type="button" data-issue-remove="${esc(id)}" ${I18n.attribute('aria','Fjern kort {number}',{number:c.number})}>${ui('Fjern')}</button></div>`).join('');
   el('issueTaskWarning').innerHTML=[primary.value,...chosen.keys()].map(id=>taskWarning(id)).join('');
  };
  search.addEventListener('input',update);
- picker.addEventListener('change',()=>{
-  const c=available().find(c=>c.id===picker.value);
-  if(c&&c.id!==primary.value&&!chosen.has(c.id)&&chosen.size<4)chosen.set(c.id,c);
+ search.addEventListener('keydown',event=>{
+  if(event.isComposing||!['Enter','ArrowDown'].includes(event.key))return;
+  // Enter in the search field must not submit the issuance form.
+  event.preventDefault();
+  picker.querySelector('[data-issue-add]')?.focus();
+ });
+ picker.addEventListener('click',event=>{
+  const button=event.target.closest('[data-issue-add]');
+  if(!button||picker.hidden)return;
+  const c=available().find(c=>c.id===button.dataset.issueAdd);
+  if(c&&c.id!==primary.value&&!chosen.has(c.id)&&chosen.size<4){
+   chosen.set(c.id,c);
+   search.value='';
+  }
   update();
+  search.focus();
  });
  primary.addEventListener('change',update);
  selected.addEventListener('click',event=>{
@@ -665,11 +677,11 @@ function issueBatchPicker(form,search,fromBox){
   if(!button)return;
   chosen.delete(button.dataset.issueRemove);
   update();
-  if(!picker.disabled)picker.focus();
+  search.focus();
  });
  update();
 }
-function issue(id='',initial=false){const chosen=card(id);const fromBox=!initial&&!!chosen&&(!folderEnabled()||!chosen.in_folder);const cards=state.cards.filter(c=>!loanFor(c.id)&&(initial||!folderEnabled()||(fromBox?!c.in_folder:c.in_folder))),t=value=>esc(I18n.text(value));if(!cards.length){toast(I18n.text(initial?'Opret et ledigt kort først.':folderEnabled()?'Læg et ledigt kort i mappen først.':'Der er ingen ledige kort at udlevere.'));return;}id=cards.some(item=>item.id===id)?id:cards[0].id;const c=card(id);openDialog(`<h2 tabindex="-1" autofocus>${initial?t('Registrer eksisterende udlån'):t(fromBox&&folderEnabled()?'Udlever fra kassen':'Udlever kort')+' '+esc(c.number)}</h2><form id="issueForm" data-from-box="${fromBox}"><label>${t('Kort')}</label><select name="card_id">${issueCardOptions(cards,id)}</select>${!initial&&cards.length>1?`<details class="issueBatch"><summary>${ui('Udlever flere til samme forkynder?')}</summary><label for="issueCardSearch">${ui('Søg kortnummer, navn eller område')}</label><input id="issueCardSearch" type="search" autocomplete="off"><label for="issueExtraCard">${ui('Vælg kort')}</label><select id="issueExtraCard"><option value="">${ui('Vælg kort')}</option></select><p class="hint" id="issueSelectedCount" role="status" aria-live="polite"></p><div id="issueSelectedCards"></div></details>`:''}<div id="issueTaskWarning">${taskWarning(c.id)}</div>${PublisherSearch.field()}<p id="issuePublisherGuidance" class="hint" role="status" aria-live="polite" hidden></p><label>${t('Udleveringsdato')}</label><input name="date" type="date" value="${state.today}" max="${state.today}" required>${initial?'<input type="hidden" name="initial" value="yes">':''}${formEnd('Registrer udlevering')}</form>`,I18n.language());PublisherSearch.attach(el('issuePublisherName'),state.publishers,p=>publisherGuidanceText(p),publisherIssueGuidance);
+function issue(id='',initial=false){const chosen=card(id);const fromBox=!initial&&!!chosen&&(!folderEnabled()||!chosen.in_folder);const cards=state.cards.filter(c=>!loanFor(c.id)&&(initial||!folderEnabled()||(fromBox?!c.in_folder:c.in_folder))),t=value=>esc(I18n.text(value));if(!cards.length){toast(I18n.text(initial?'Opret et ledigt kort først.':folderEnabled()?'Læg et ledigt kort i mappen først.':'Der er ingen ledige kort at udlevere.'));return;}id=cards.some(item=>item.id===id)?id:cards[0].id;const c=card(id);openDialog(`<h2 tabindex="-1" autofocus>${initial?t('Registrer eksisterende udlån'):t(fromBox&&folderEnabled()?'Udlever fra kassen':'Udlever kort')+' '+esc(c.number)}</h2><form id="issueForm" data-from-box="${fromBox}"><label>${t('Kort')}</label><select name="card_id">${issueCardOptions(cards,id)}</select>${!initial&&cards.length>1?`<details class="issueBatch"><summary>${ui('Udlever flere til samme forkynder?')}</summary><label for="issueCardSearch">${ui('Søg kortnummer, navn eller område')}</label><input id="issueCardSearch" type="search" autocomplete="off" aria-controls="issueExtraCard"><div id="issueExtraCard" class="publisherSuggestions" role="group" aria-label="${t('Vælg kort')}" hidden></div><p class="hint" id="issueSelectedCount" role="status" aria-live="polite"></p><div id="issueSelectedCards"></div></details>`:''}<div id="issueTaskWarning">${taskWarning(c.id)}</div>${PublisherSearch.field()}<p id="issuePublisherGuidance" class="hint" role="status" aria-live="polite" hidden></p><label>${t('Udleveringsdato')}</label><input name="date" type="date" value="${state.today}" max="${state.today}" required>${initial?'<input type="hidden" name="initial" value="yes">':''}${formEnd('Registrer udlevering')}</form>`,I18n.language());PublisherSearch.attach(el('issuePublisherName'),state.publishers,p=>publisherGuidanceText(p),publisherIssueGuidance);
  const form=el('issueForm'),search=el('issueCardSearch');
  const frequency=new Map();
  for(const loan of state.loans)frequency.set(loan.publisher_id,(frequency.get(loan.publisher_id)||0)+1);
