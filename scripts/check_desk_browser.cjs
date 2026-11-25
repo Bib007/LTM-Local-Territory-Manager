@@ -227,7 +227,8 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
   state.areas.push({id:'other',name:'Andet fiktivt område'});
   territorySort='number';status='Alle';query='';area='';view='Liste';render();
  });
- assert.equal(await page.locator('#territorySort').isVisible(),true);
+ if(width<=600){assert.equal(await page.locator('#territorySort').isVisible(),false);await activate(page.locator('[aria-controls=territoryFilterPanel]'));}
+  assert.equal(await page.locator('#territorySort').isVisible(),true);
  assert.equal(await page.locator('.territorySortControls').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;}),true,'Sort control fits desktop/mobile');
  const listed=()=>page.locator('.cardRow[data-card-row]').evaluateAll(nodes=>nodes.map(n=>n.dataset.cardRow));
  assert.deepEqual(await listed(),['folder','blocked','box','one','two','three']);
@@ -257,6 +258,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  await page.locator('#statusFilter').selectOption('Kort i mappen');
  await page.locator('#search').fill('fiktivt');
  assert.deepEqual(await listed(),['blocked','folder'],'Age sort works with area, status and search');
+  if(width<=600){const done=page.locator('#territoryFilterPanel [data-action=toggle-territory-filters]');assert.match(await done.textContent(),/2/);await activate(done);assert.equal(await page.locator('#territorySort').isVisible(),false);assert.deepEqual(await listed(),['blocked','folder']);assert.ok(await page.locator('.territoryFilterStatus [data-action=clear-territory-filter]').count()>=3);await activate(page.locator('[aria-controls=territoryFilterPanel]'));}
  await activate(page.locator('.territorySortControls .territoryTools > summary'));
  await activate(page.locator('[data-action=reset-territory-sort]'));
  assert.deepEqual(await listed(),['folder','blocked'],'Reset returns to number order without clearing other filters');

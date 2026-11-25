@@ -2653,6 +2653,8 @@ const I18n={
   "Alle ændringer er gemt":"All changes saved",
   "Gemmer…":"Saving…",
   "Gemning er ikke bekræftet":"Saving is not confirmed",
+  "Filtre":"Filters",
+  "Vis {count} kort":"Show {count} cards",
   "Kontrollér Wi-Fi eller VPN, og vælg Kontrollér forbindelse. Dine åbne kladder bevares. Genåbn kun appen, hvis forbindelsen stadig ikke virker, og alle kladder er sikret.":"Check Wi-Fi or VPN and choose Check connection. Your open drafts are kept. Reopen the app only if the connection still fails and all drafts are secured.",
   "Forbindelsen svarer igen. Kontrollér tidligere gemninger med Opdater, når dine kladder er sikret. Ingen ændring sendes igen automatisk.":"The connection responds again. Check earlier saves using Refresh once your drafts are secured. No change is resent automatically.",
   "Gemningen kan være gennemført. Send ikke ændringen igen. Kontrollér forbindelsen, sikr din kladde, og brug Opdater til at kontrollere resultatet.":"The save may have completed. Do not submit it again. Check the connection, secure your draft, and use Refresh to verify the result.",
