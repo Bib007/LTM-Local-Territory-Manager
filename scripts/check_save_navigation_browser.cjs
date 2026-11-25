@@ -127,6 +127,56 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     // Dismiss the explicit discard warning, then refresh after closing deliberately.
     await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));
    }
+   // LTM #4: verify the actual dialog indicator against held write receipts.
+   for(const [device,width,height] of [['mobile',390,844],['iPad',820,1180],['desktop',1440,1000]]){
+    await page.setViewportSize({width,height});
+    for(const mode of ['success','reject','lost','invalid']){
+     await page.emulateMedia({reducedMotion:'no-preference'});
+     const name='Fiktiv indikator '+device+' '+mode;
+     gate=holdNext('publisher.save',mode);
+     await page.evaluate(()=>editPublisher(''));
+     await page.locator('#publisherForm input[name=name]').fill(name);
+     await page.locator('#publisherForm button.primary').click();await waitForReceipt(gate);
+     const progress=page.locator('#dialog [data-save-progress]');
+     await progress.waitFor({state:'visible'});
+     assert.equal(await progress.count(),1);
+     assert.equal(await progress.getAttribute('role'),'status');
+     assert.equal(await progress.textContent(),'Gemmer…');
+     const measure=()=>progress.evaluate(node=>{
+      const rect=node.getBoundingClientRect(),style=getComputedStyle(node),icon=getComputedStyle(node,'::before');
+      return {x:rect.x+rect.width/2,y:rect.y+rect.height/2,width:rect.width,left:rect.left,right:rect.right,viewportWidth:innerWidth,viewportHeight:innerHeight,font:parseFloat(style.fontSize),icon:parseFloat(icon.width),animation:icon.animationName,pointerEvents:style.pointerEvents};
+     });
+     const view=await measure();
+     assert.ok(Math.abs(view.x-view.viewportWidth/2)<=2&&Math.abs(view.y-view.viewportHeight/2)<=2,device+' indicator is not centered: '+JSON.stringify(view));
+     assert.ok(view.left>=0&&view.right<=view.viewportWidth&&view.font>=20&&view.icon>=32,device+' indicator sizing');
+     assert.equal(view.animation,'dialog-save-spinner');assert.equal(view.pointerEvents,'none');
+     await page.emulateMedia({reducedMotion:'reduce'});
+     assert.equal((await measure()).animation,'none');
+     assert.equal(await progress.isVisible(),true,'reduced motion must keep the indicator visible');
+     gate.release.resolve();
+     await page.waitForFunction(mode=>PendingSaves.count===0&&SaveStatus.kind===(mode==='success'?'saved':'error'),mode);
+     assert.equal(await progress.count(),0,device+' must remove completed indicator ('+mode+')');
+     if(mode==='success'){
+      assert.equal(await page.evaluate(()=>el('dialog').open),false);
+      assert.equal(await page.evaluate(name=>state.publishers.some(p=>p.name===name),name),true);
+     }else{
+      assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),name);
+      assert.equal(await page.evaluate(()=>SaveStatus.message),mode==='reject'?'Ændringen blev afvist':'Gemning er ikke bekræftet');
+      assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode!=='reject');
+      if(mode!=='reject'){
+       const count=writes.length;
+       await page.locator('#publisherForm button.primary').click();
+       await page.waitForFunction(()=>PendingSaves.count===0);
+       assert.equal(writes.length,count,'uncertain result must not replay');
+      }
+      await page.evaluate(()=>{dialogDirty=false;closeDialog();});
+      await page.evaluate(()=>Workspace.handle('refresh',{}));
+      await page.waitForFunction(()=>!WriteGuard.uncertain&&!WriteGuard.needsReview&&PendingSaves.count===0);
+     }
+    }
+   }
+   await page.emulateMedia({reducedMotion:'no-preference'});
+   console.log('PASS save indicator: mobile, iPad and desktop sizes; success, rejection, lost/invalid receipt; reduced motion');
    assert.deepEqual(errors,[]);console.log('PASS delayed return, duplicate submit, navigation, newest autosave, settings/geo drafts, profile conflict evidence, rejection/lost/invalid receipts ('+(profiles?'profiles':'shared login')+')');
   }finally{if(browser)await browser.close();child.kill();}
  }
