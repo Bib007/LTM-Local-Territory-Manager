@@ -51,7 +51,18 @@ module.exports=async(browser,out)=>{
    return JSON.stringify(output)===JSON.stringify(input);
   });assert.equal(encrypted,true);
   await page.evaluate(()=>{closeDialog();page='Distrikter';window.approvalWrites=[];mutate=async(action,data)=>{window.approvalWrites.push({action,data});};});
-  for(const language of ['da','en']) {
+  // Exercise explicit cancellation on desktop and iPad-sized screens. The
+  // global dialog cross is deliberately not the action under test.
+  const cancelConfirmation=async language=>{
+   const cancel=page.locator('#dialog .actions button[data-action="close"]:not(.dialogClose)');
+   assert.equal(await cancel.count(),1,'Exactly one explicit cancel action');
+   assert.equal(await cancel.innerText(),language==='da'?'Annuller':'Cancel');
+   await cancel.click();
+   assert.equal(await page.locator('#dialog').evaluate(dialog=>dialog.open),false);
+  };
+  for(const viewport of [{width:1440,height:1000},{width:820,height:1180}]){
+   await page.setViewportSize(viewport);
+   for(const language of ['da','en']) {
    await page.evaluate(language=>I18n.set(language),language);
    for(const side of ['front','back']) {
     await page.evaluate(side=>{const button=document.createElement('button');button.dataset.action='approve';button.dataset.id='c101';button.dataset.side=side;document.body.append(button);button.click();button.remove();},side);
@@ -59,10 +70,12 @@ module.exports=async(browser,out)=>{
     assert.equal(await page.locator('#dialog h2').innerText(),title);
     assert.equal(await page.locator('[data-action=confirm-approve]').innerText(),language==='da'?'Ja, siden er kontrolleret og printet':'Yes, the side has been checked and printed');
     assert.equal(await page.evaluate(()=>window.approvalWrites.length),0,'Opening confirmation must not save');
-    await page.locator('#dialog [data-action=close]').click();
+    await cancelConfirmation(language);
     assert.equal(await page.evaluate(()=>window.approvalWrites.length),0,'Cancelling confirmation must not save');
    }
+   }
   }
+  await page.setViewportSize({width:1440,height:1000});
   for(const side of ['front','back']){
    const language=side==='front'?'da':'en';
    await page.evaluate(language=>I18n.set(language),language);
@@ -78,14 +91,19 @@ module.exports=async(browser,out)=>{
    if(side==='back')await popup.locator('#approvePrinted').click();
    await popup.close();
   }
-  for(const language of ['en','da']){
+  for(const viewport of [{width:1440,height:1000},{width:820,height:1180}]){
+   await page.setViewportSize(viewport);
+   for(const language of ['en','da']){
    await page.evaluate(language=>{I18n.set(language);PrintApprovals.open();},language);
    assert.equal(await page.locator('#dialog h2').innerText(),language==='da'?'Bekræft, at siderne er printet':'Confirm sides are printed');
    assert.equal(await page.locator('[data-action=confirm-printed]').innerText(),language==='da'?'Ja, de valgte sider er kontrolleret og printet':'Yes, the selected sides have been checked and printed');
    assert.equal(await page.locator('[data-printed-index]:checked').count(),4);
-   await page.locator('#dialog [data-action=close]').click();
+   await cancelConfirmation(language);
    assert.equal(await page.evaluate(()=>window.approvalWrites.length),0,'Cancelling batch confirmation must not save');
+   assert.equal(await page.evaluate(()=>PrintApprovals.entries.size),4,'Cancellation preserves pending approvals');
+   }
   }
+  await page.setViewportSize({width:1440,height:1000});
   await page.evaluate(()=>PrintApprovals.open());
   assert.equal(await page.locator('[data-printed-index]:checked').count(),4);
   await page.locator('[data-printed-index="3"]').uncheck();await page.locator('[data-action=confirm-printed]').click();

@@ -185,6 +185,11 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Bevar ny fiktiv kladde');
     assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode!=='reject');
     if(mode!=='reject'){
+     const guidance=await page.evaluate(()=>SaveStatus.guidance);
+     assert.match(guidance,/Gemningen kan være gennemført/);
+     assert.match(guidance,/Send ikke ændringen igen\./);
+     assert.match(guidance,/notér kladden et sikkert, privat sted/);
+     assert.match(guidance,/Opdater.*kontrollere de gemte data/);
      const count=writes.length;await page.locator('#publisherForm button.primary').click();await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(writes.length,count,'Uncertain writes cannot replay');
     }
     // Read-only connection check and refused refresh must preserve the draft and guard.
@@ -194,10 +199,32 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    }
    // Confirmed write / stale overview and expired login have different guidance.
     await page.evaluate(async()=>{try{await confirmedWrite('/api/mutate',{action:'publisher.save',data:{name:'Fiktiv bekræftet, forældet oversigt'}},async()=>{throw Error('Fiktiv opdateringsfejl');});}catch{}});
-    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),true);assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);assert.match(await page.evaluate(()=>SaveStatus.guidance),/Send den ikke igen/);
-    await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.evaluate(()=>WriteGuard.needsReview),false);
+    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),true);
+    assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);
+    const reviewGuidance=await page.evaluate(()=>SaveStatus.guidance);
+    assert.match(reviewGuidance,/bekræftet gemt på serveren, men oversigten er ikke opdateret/);
+    assert.match(reviewGuidance,/Send ikke ændringen igen\./);
+    assert.match(reviewGuidance,/Sikr eventuelle andre kladder privat/);
+    assert.match(reviewGuidance,/Opdater.*uden at genindlæse appen/);
+    const reviewWrites=writes.length;
+    const blocked=await page.evaluate(async()=>{
+     try{await confirmedWrite('/api/mutate',{action:'publisher.save',data:{name:'Fiktiv må ikke sendes igen'}});return null;}
+     catch(error){return error.kind;}
+    });
+    assert.equal(blocked,'blocked','A confirmed write with a stale overview must block subsequent writes');
+    assert.equal(writes.length,reviewWrites,'A blocked write must not reach the server');
+    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),true);
+    await page.evaluate(()=>Workspace.handle('refresh',{}));
+    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),false);
+    assert.equal(writes.length,reviewWrites,'Refreshing the overview must not replay a write');
     gate=holdNext('publisher.save','login');await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Fiktiv loginkladde');await page.locator('#publisherForm button.primary').click();await waitForReceipt(gate);gate.release.resolve();
-    await page.waitForFunction(()=>PendingSaves.count===0&&WriteGuard.loginExpired);assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);assert.match(await page.evaluate(()=>SaveStatus.guidance),/logger ind igen/);
+    await page.waitForFunction(()=>PendingSaves.count===0&&WriteGuard.loginExpired);
+    assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);
+    const loginGuidance=await page.evaluate(()=>SaveStatus.guidance);
+    assert.match(loginGuidance,/Vent på igangværende gemninger/);
+    assert.match(loginGuidance,/notér åbne kladder et sikkert, privat sted/);
+    assert.match(loginGuidance,/logger ind igen/);
+    assert.match(loginGuidance,/Kontrollér resultatet af tidligere gemninger efter login, før du sender noget igen/);
     const loginWrites=writes.length;await page.evaluate(()=>Workspace.checkConnection(true));await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Fiktiv loginkladde');assert.equal(writes.length,loginWrites);assert.equal(await page.evaluate(()=>WriteGuard.loginExpired),true);
     await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.evaluate(()=>WriteGuard.loginExpired),false);
     // LTM #4: verify the actual dialog indicator against held write receipts.
