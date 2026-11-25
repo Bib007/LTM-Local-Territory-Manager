@@ -257,7 +257,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
     <div class="dashboardCoverageAmount"><strong>${pct}%</strong><span>${summary}</span></div>
     ${visitEstimate?`<div class="dashboardCoverageVisits"><small>${ui('Anslåede besøg på gennemgåede kort')}</small><strong>${Number(visitEstimate.value).toLocaleString('da-DK')}</strong>${visitEstimate.unknown?`<span>${ui('Nogle kort har ukendt besøgstal og er ikke medregnet.')}</span>`:''}</div>`:''}
    </div>
-   <div class="dashboardProgressTrack" style="position:relative" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span><i class="dashboardTargetMarker" aria-hidden="true" style="position:absolute;top:0;bottom:0;left:clamp(0px,calc(${target}% - 1px),calc(100% - 2px));width:3px;background:var(--text);box-shadow:0 0 0 2px var(--surface)"></i></div>
+   <div class="dashboardProgressTrack" style="position:relative" role="progressbar" ${progressLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span aria-hidden="true" style="width:${pct}%"></span><i class="dashboardTargetMarker" aria-hidden="true" style="left:clamp(0px,calc(${target}% - 2.5px),calc(100% - 5px))"></i></div>
    <div class="dashboardCoverageFoot dashboardTargetCaption"><span>${ui('Mål i dag: {percent} %',{percent:target})}</span>${total?`<b>${paceLabel}</b>`:''}</div>
    <div class="dashboardCoverageFoot"><span>${ui('Fremdrift mod alle aktuelle distriktskort')}</span><b>${total?ui(remaining===1?'1 kort tilbage':'{remaining} kort tilbage',{remaining}):ui('Ingen distriktskort endnu')}</b></div>
    <p class="srOnly">${summary}</p>
