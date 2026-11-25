@@ -1,7 +1,7 @@
 name: Checks
 on:
   push:
-    branches: [main, develop, 'release/ltm-1.14.0-beta.3-distrikt']
+    branches: [main, develop]
   pull_request:
   workflow_dispatch:
   workflow_call:

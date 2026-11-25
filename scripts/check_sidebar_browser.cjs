@@ -26,7 +26,34 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      assert.equal(await width(),expected?104:205);
      assert.equal(await page.locator('#app').evaluate(n=>parseFloat(getComputedStyle(n).marginLeft)),expected?104:205);
     };
+    const assertLabels=async compact=>{
+     const labels=await nav.locator('.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel').evaluateAll(nodes=>nodes.map(n=>{
+      const css=getComputedStyle(n),rect=n.getBoundingClientRect();
+      return {text:n.textContent.trim(),position:css.position,width:rect.width,height:rect.height,clip:css.clip,clipPath:css.clipPath,overflow:css.overflow,ariaHidden:n.getAttribute('aria-hidden'),display:css.display,visibility:css.visibility};
+     }));
+     assert(labels.length>0);
+     for(const label of labels){
+      assert(label.text,'Navigation names must remain in the DOM');
+      assert.notEqual(label.ariaHidden,'true');
+      assert.notEqual(label.display,'none');
+      assert.notEqual(label.visibility,'hidden');
+      if(compact){
+       assert.equal(label.position,'absolute');
+       assert(label.width<=1&&label.height<=1,'Compact label must occupy at most one pixel');
+       assert.equal(label.overflow,'hidden');
+       assert(label.clipPath.startsWith('inset(50%')||label.clip!=='auto','Compact label must be clipped, not simply resized');
+      }else{
+       assert.notEqual(label.position,'absolute');
+       assert.equal(label.clipPath,'none');
+       assert.equal(label.clip,'auto');
+      }
+     }
+     assert.equal(await nav.getByRole('button',{name:compact?'Fold menu ud':'Fold menu sammen',exact:true}).count(),compact||await toggle.isVisible()?1:0);
+     assert.equal(await nav.getByRole('link',{name:'Trinvis LTM-guide',exact:true}).count(),1);
+     assert.equal(await nav.getByRole('button',{name:'Forkyndere',exact:false}).count(),1);
+    };
     await assertCompact(false);
+    await assertLabels(false);
     const initialOrder=await order();
     await activate(nav.locator('[data-navigation="1:2"]'));await page.waitForFunction(()=>page==='Forkyndere');
     await activate(nav.locator('[data-nav-group="2"] summary'));
@@ -42,7 +69,28 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      assert.equal(await nav.locator('[aria-current="page"]').getAttribute('data-navigation'),'1:2');
      assert.equal(await nav.locator('[data-navigation="2:0"]').isVisible(),true);
      assert.equal(await nav.locator('[data-navigation="2:0"]').getAttribute('title'),'Rapporter og historik');
-     assert.equal(await nav.locator('[data-navigation="2:0"] .sidebarNavLabel').isVisible(),true);
+     await assertLabels(true);
+     const report=nav.getByRole('button',{name:'Rapporter og historik',exact:true});
+     assert.equal(await report.count(),1);
+     assert.equal(await report.locator('.navIcon').isVisible(),true);
+     assert.equal(await nav.getByRole('link',{name:'Trinvis LTM-guide',exact:true}).getAttribute('title'),'Trinvis LTM-guide');
+     assert.equal(await nav.locator('[aria-current="page"]').evaluate(n=>n.classList.contains('active')),true);
+     // Inject fictional counts only while rebuilding the navigation, without writing data.
+     await page.evaluate(()=>{
+      const tasks=Workspace.actionableTasks,followups=Workspace.followupItems,loaded=GeoUI.loaded,overdue=OverdueLoans.count;
+      try{
+       Workspace.actionableTasks=()=>[{},{}];Workspace.followupItems=()=>[{},{},{}];GeoUI.loaded=true;OverdueLoans.count=()=>4;
+       Navigation.repaintSidebar();
+      }finally{Workspace.actionableTasks=tasks;Workspace.followupItems=followups;GeoUI.loaded=loaded;OverdueLoans.count=overdue;}
+     });
+     for(const [selector,count] of [['.navTaskCount','2'],['[data-navigation="1:4"] .navFollowupCount','3'],['.navOverdueCount','4']]){
+      const badge=nav.locator(selector);
+      assert.equal(await badge.textContent(),count);
+      assert.equal(await badge.isVisible(),true);
+      assert(await badge.getAttribute('aria-label'),'Badge keeps its accessible name');
+      assert.equal(await badge.evaluate(n=>getComputedStyle(n).position),'absolute');
+     }
+     await assertLabels(true);
      assert.equal(await page.locator('html').getAttribute('data-theme'),effective);
      if(touch)await page.setViewportSize({width:1366,height:1024});
      await assertCompact(true);
@@ -50,6 +98,8 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      await assertCompact(true);
      if(touch)await toggle.tap();else await toggle.press('Space');
      await assertCompact(false);
+     await assertLabels(false);
+     assert.equal(await nav.locator('[data-navigation="1:2"] .sidebarNavLabel').isVisible(),true);
      assert.equal(await nav.locator('[data-nav-group="2"]').getAttribute('open'),null);
      assert.equal(await nav.locator('#appearanceChoice').inputValue(),theme);
     }
@@ -61,10 +111,13 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await activate(page.locator('.mobileMenu'));
     assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'true');
     assert.equal(await nav.locator('[data-nav-group="1"] summary').isVisible(),true);
+    await assertLabels(false);
+    assert.equal(await nav.locator('[data-navigation="1:2"] .sidebarNavLabel').isVisible(),true);
     await activate(nav.locator('[data-navigation="1:2"]'));await page.waitForFunction(()=>page==='Forkyndere');
     assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'false');
     await page.setViewportSize(touch?{width:1024,height:1366}:{width:1440,height:1000});
     await assertCompact(true);
+    await assertLabels(true);
     assert.equal(await nav.locator('[aria-current="page"]').getAttribute('data-navigation'),'1:2');
     await activate(toggle);await assertCompact(false);
     await page.reload();await ready();await assertCompact(false);
@@ -72,6 +125,6 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await context.close();
    }finally{await browser.close();}
   }
-  console.log('Collapsible sidebar: desktop Chromium and touch WebKit, rotation, keyboard, themes, persistence and mobile drawer.');
+  console.log('Collapsible icon-only sidebar: desktop Chromium and touch WebKit, accessible names, badges, rotation, keyboard, themes, persistence and mobile drawer.');
  }finally{child.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

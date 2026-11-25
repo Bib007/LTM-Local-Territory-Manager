@@ -2,7 +2,7 @@
   "version": "1.14.0-beta.2",
   "files": {
     "shared/style.css": "d5fde8bafa2004f8bb53bff749a90dd66bbaf3dd6bd68ca3050a8caf3af6d7c9",
-    "shared/workspace.css": "f2b44f72ba56c3e23844fb1ff930f023326bcb1663d9bb874aa5e278e6f93e45",
+    "shared/workspace.css": "0fff48699375ba295a3a3b67b4a5b7dd4e521b0670f63455cac6d46289fb2fc6",
     "shared/theme.css": "ef265c8771ac8493296ab6651bb1598ce455b38f924a9f50632d75b98438dcff",
     "shared/theme.js": "96800ce8ad1608cf664ce737c0385c3a503865555d38214832a2bd11441bf265",
     "brand-logo.svg": "e33702dce7d1d8ee8769d1673ccf029fe4489fb354a74175ee57da6c0605d233",

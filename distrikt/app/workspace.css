@@ -370,7 +370,8 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  body.sidebarCompact #sidebar :is(#congregation,.localnote,.navcaption,.languageChoice,.navExternalMark){display:none}
  body.sidebarCompact #nav .navGroup{padding:4px 0}
  body.sidebarCompact #nav :is([data-navigation],.navExternal,.sidebarToggle){position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;min-height:56px;padding:7px 2px;white-space:normal}
- body.sidebarCompact #nav :is(.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel){font-size:11px;line-height:1.25;max-width:100%;overflow-wrap:anywhere}
+ /* Keep names in the accessibility tree while displaying only navigation icons. */
+ body.sidebarCompact #nav :is(.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
  body.sidebarCompact #nav :is(.navTaskCount,.navFollowupCount){position:absolute;top:2px;right:1px;margin:0;padding:1px 4px;font-size:9px;max-width:100%}
  body.sidebarCompact #sidebar .stop{width:100%;margin:12px 0 0;min-height:44px;padding:6px 3px;overflow-wrap:anywhere}
 }
