@@ -4,12 +4,44 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const read=n=>fs.readFileSync(path.join(__dirname,'../app',n),'utf8'),nodes=new Map(),listeners={},writes=[],detailCalls=[];
 const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',value:'',dataset:{},style:{},open:false,showModal(){this.open=true;},close(){this.open=false;},querySelector(){return null;},listeners:{},addEventListener(k,f){this.listeners[k]=f;}});return nodes.get(id);};
 class Fields{constructor(f){this.entries=f.fields.map(e=>e.slice());}has(k){return this.entries.some(e=>e[0]===k);}getAll(k){return this.entries.filter(e=>e[0]===k).map(e=>e[1]);}[Symbol.iterator](){return this.entries[Symbol.iterator]();}}
-const c={console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,FormData:Fields,writes,detailCalls,frontResizeObserver:null,DistrictMap:{dispose(){}},setTimeout(){},clearTimeout(){},window:{addEventListener(){}},document:{getElementById:get,querySelector:()=>({content:'FICTIONAL_TOKEN'}),querySelectorAll:()=>[],addEventListener(k,f){(listeners[k]??=[]).push(f);}},fetch(){throw Error('Network forbidden');}};
-vm.createContext(c);for(const n of ['i18n.js','workspace.js'])vm.runInContext(read(n),c);const src=read('app.js');vm.runInContext(src.slice(0,src.indexOf('(async()=>{try{await refresh();')),c);const run=s=>vm.runInContext(s,c);
-run("state={revision:'r1',cards:[{id:'c1',number:'101'}],notes:[{id:'n1',card_id:'c1',resolved:true}],settings:{}};page='Adresser';render=()=>{};detail=(...args)=>detailCalls.push(args);mutate=async(action,data)=>writes.push({action,data});I18n.set('en')");
+const c={GeoUI:{ignored:()=>new Set()},console,Date,Intl,Map,Set,Math,Number,String,JSON,Array,Object,Promise,FormData:Fields,writes,detailCalls,frontResizeObserver:null,DistrictMap:{dispose(){}},setTimeout(){},clearTimeout(){},window:{addEventListener(){}},document:{getElementById:id=>id==='ibCardSearch'?null:get(id),querySelector:()=>({content:'FICTIONAL_TOKEN'}),querySelectorAll:()=>[],addEventListener(k,f){(listeners[k]??=[]).push(f);}},fetch(){throw Error('Network forbidden');}};
+vm.createContext(c);for(const n of ['i18n.js','workspace.js','road-search.js','ib-ui.js'])vm.runInContext(read(n),c);const src=read('app.js');vm.runInContext(src.slice(0,src.indexOf('(async()=>{try{await refresh();')),c);const run=s=>vm.runInContext(s,c);
+run("state={revision:'r1',today:'2026-10-17',cards:[{id:'c1',number:'101',geo_addresses:[{id:'a1',road:'INVENTED ROAD',number:'1',postcode:'9999'}]}],ib:[],notes:[{id:'n1',card_id:'c1',resolved:true}],settings:{}};page='Adresser';render=()=>{};detail=(...args)=>detailCalls.push(args);mutate=async(action,data)=>writes.push({action,data});I18n.set('en')");
 const click=listeners.click.find(f=>String(f).includes("case 'note-resolve'")),submit=listeners.submit.find(f=>String(f).includes("case 'ibForm'"));
 const ev=action=>({target:{dataset:{action,id:'n1'},closest(s){return s==='[data-action]'?this:null;}},preventDefault(){}});
-const form=()=>({id:'ibForm',dataset:{returnCard:'yes'},fields:[['card_id','c1'],['road','INVENTED ROAD'],['number','1'],['date','2026-10-17']],isConnected:true,reportValidity:()=>true,querySelector:()=>({disabled:false})});
+const form=()=>({id:'ibForm',dataset:{},fields:[['card_id','c1'],['address_id','a1'],['road','INVENTED ROAD'],['number','1'],['postcode','9999'],['date','2026-10-17']],isConnected:true,reportValidity:()=>true,querySelector:()=>({disabled:false}),querySelectorAll(){return this.fields.map(([name,value])=>({name,value,type:'text'}));}});
+let currentForm=null;
+const dialog=get('dialog'),cardTab={dataset:{id:'c1',tab:'Adresser'}};
+dialog.contains=()=>false;
+dialog.querySelectorAll=()=>[];
+dialog.querySelector=selector=>selector==='[data-action="card-tab"].active'&&dialog.innerHTML.includes('FICTIONAL CARD ADDRESSES')?cardTab:selector==='form'&&dialog.innerHTML.includes('id="ibForm"')?currentForm:null;
+const openIB=()=>{
+ currentForm=null;
+ run("page='Adresser';selected='c1';openDialog('<section>FICTIONAL CARD ADDRESSES</section>')");
+ run("IBUI.open('','c1','a1',true)");
+ assert.match(dialog.innerHTML,/id="ibForm"/);
+ assert.equal(run('IBUI.currentReturn().id'),'c1');
+ assert.equal(run('IBUI.currentReturn().tab'),'Adresser');
+ assert.equal(run('IBUI.currentReturn().embedded'),true);
+ currentForm=form();
+ return currentForm;
+};
+// Stub only the receipt boundary. Match mutate's ownership checks and invoke
+// the real returnTo callback only after a successful receipt for the same form.
+c.ibReceipt=()=>Promise.resolve();
+c.returnCalls=[];
+run(`mutate=async(action,data,{close=true,returnTo}={})=>{
+ const generation=openDialog.generation,origin=page,dialog=el('dialog'),form=dialog.querySelector('form'),signature=form?FormDrafts.signature(form):null;
+ writes.push({action,data});
+ const result=await ibReceipt();
+ if(close&&generation===openDialog.generation&&origin===page&&dialog.open&&(!form||(form.isConnected!==false&&FormDrafts.signature(form)===signature))){
+  if(returnTo){returnCalls.push(action);if(!returnTo())closeDialog();}
+  else closeDialog();
+ }
+ return result;
+};`);
+const installIBMutation=run('mutate');
+run('mutate=async(action,data)=>writes.push({action,data})');
 const formEvent=f=>({target:f,preventDefault(){},stopImmediatePropagation(){}});
 const restructureForm=()=>({dataset:{workForm:'restructure',mode:'split',source:'c1'},fields:[['number','201 <fictional>'],['name','NEW <fictional>'],['address_ids','a1']],isConnected:true,reportValidity:()=>true});
 const preview=expected=>({json:async()=>({result:{expected,numbers:['101'],moving:1,remaining:1,warning:'Warning <fictional>'}})});
@@ -18,9 +50,40 @@ const open=()=>run("openDialog('<form>ORIGINAL FORM</form>')");
  open();await click(ev('note-resolve'));assert.deepEqual([...detailCalls.at(-1)],['c1','Noter']);
  let release;c.pending=new Promise(r=>release=r);run('mutate=()=>pending');const count=detailCalls.length,pendingNote=click(ev('note-resolve'));run("openDialog('<form>NEWER NOTE DRAFT</form>')");release();await pendingNote;assert.equal(detailCalls.length,count);assert.match(get('dialog').innerHTML,/NEWER NOTE DRAFT/);
  c.pending=new Promise(r=>release=r);const navigated=click(ev('note-resolve'));run("page='Rapporter'");release();await navigated;assert.equal(detailCalls.length,count);
- run("page='Adresser';mutate=async(action,data)=>writes.push({action,data})");open();await submit(formEvent(form()));assert.deepEqual([...detailCalls.at(-1)],['c1','Adresser']);assert.equal(writes.at(-1).action,'ib.save');
- c.pending=new Promise(r=>release=r);run('mutate=()=>pending');open();const before=detailCalls.length,pendingIB=submit(formEvent(form()));run("openDialog('<form>NEWER IB DRAFT</form>')");release();await pendingIB;assert.equal(detailCalls.length,before);assert.match(get('dialog').innerHTML,/NEWER IB DRAFT/);
- let reject;c.pending=new Promise((r,j)=>reject=j);open();const failedIB=submit(formEvent(form()));run("openDialog('<form>NEWER ERROR DRAFT</form>')");get('formError').textContent='NEWER ERROR';reject(Error('Invented old error'));await failedIB;assert.equal(get('formError').textContent,'NEWER ERROR');
+ c.installIBMutation=installIBMutation;run('mutate=installIBMutation');
+ const ibForm=openIB();await submit(formEvent(ibForm));
+ assert.deepEqual([...detailCalls.at(-1)],['c1','Adresser']);
+ assert.equal(writes.at(-1).action,'ib.save');assert.equal(writes.at(-1).data.address_id,'a1');
+ assert.equal(c.returnCalls.length,1);
+ // A delayed but still-owned successful save also returns to the card.
+ c.ibReceipt=()=>new Promise(r=>release=r);const owned=submit(formEvent(openIB()));
+ assert.equal(c.returnCalls.length,1);release();await owned;assert.equal(c.returnCalls.length,2);
+ assert.deepEqual([...detailCalls.at(-1)],['c1','Adresser']);
+ const before=detailCalls.length;
+ for(const change of ['new-dialog','navigation','changed-fields','disconnected','closed']){
+  const f=openIB(),pendingIB=submit(formEvent(f));
+  if(change==='new-dialog')run("openDialog('<form>NEWER IB DRAFT</form>')");
+  if(change==='navigation')run("page='Rapporter'");
+  if(change==='changed-fields')f.fields.find(([name])=>name==='number')[1]='2';
+  if(change==='disconnected')f.isConnected=false;
+  if(change==='closed')run('closeDialog()');
+  release();await pendingIB;
+  assert.equal(detailCalls.length,before,change+' must not restore the old card');
+  assert.equal(c.returnCalls.length,2,change+' must not invoke returnTo');
+  if(change==='new-dialog')assert.match(dialog.innerHTML,/NEWER IB DRAFT/);
+  if(change==='navigation')assert.equal(run('page'),'Rapporter');
+  if(change==='changed-fields')assert.equal(f.fields.find(([name])=>name==='number')[1],'2');
+  if(change==='closed')assert.equal(dialog.open,false);
+ }
+ let reject;c.ibReceipt=()=>new Promise((r,j)=>reject=j);
+ const failedIB=submit(formEvent(openIB()));run("openDialog('<form>NEWER ERROR DRAFT</form>')");get('formError').textContent='NEWER ERROR';reject(Error('Invented old error'));await failedIB;
+ assert.equal(get('formError').textContent,'NEWER ERROR');assert.equal(c.returnCalls.length,2);assert.equal(detailCalls.length,before);
+ c.ibReceipt=()=>new Promise((r,j)=>reject=j);
+ const rejectedForm=openIB(),rejected=submit(formEvent(rejectedForm));reject(Error('Invented rejected IB'));await rejected;
+ assert.equal(c.returnCalls.length,2);assert.equal(detailCalls.length,before);assert.equal(dialog.open,true);assert.equal(rejectedForm.fields.find(([name])=>name==='number')[1],'1');
+ assert.match(get('formError').innerHTML+get('formError').textContent,/Invented rejected IB/);
+ // Continue with the existing non-IB mutation adapters.
+ run("page='Adresser';mutate=()=>pending");
  // An outline acknowledgement cannot clear a newer drawing; deleting an area preserves newer filters.
  open();run("mapCard='c1';mapDraft=[[1,1],[2,1],[2,2]];editMap=true");c.pending=new Promise(r=>release=r);const outline=click(ev('save-outline'));run('mapDraft.push([1,2])');release();await outline;assert.equal(run('mapDraft.length'),4);assert.equal(run('editMap'),true);
  run('mutate=async()=>{}');await click(ev('save-outline'));assert.equal(run('mapDraft.length'),0);assert.equal(run('editMap'),false);
