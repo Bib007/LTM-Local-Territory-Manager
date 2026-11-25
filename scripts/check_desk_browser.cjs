@@ -59,6 +59,58 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  if(process.env.LTM_THEME)await context.addInitScript(mode=>{if(!localStorage.getItem('ltm-appearance'))localStorage.setItem('ltm-appearance',mode);},process.env.LTM_THEME);
  await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.desk.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
 
+ // Compact, left-aligned daily-mode buttons: both themes, keyboard and touch.
+ const originalDesk=await page.evaluate(()=>({page,deskTab,query,appearance:Theme.choice}));
+ await page.evaluate(()=>{page='Udlevering';deskTab='Udlever';query='';render();});
+ const modes=page.locator('.deskTabs'),issueMode=modes.locator('[data-tab=Udlever]'),returnMode=modes.locator('[data-tab=Aflever]');
+ const beforeModeWrites=writes.length;
+ for(const mode of ['dark','light']){
+  await page.evaluate(mode=>Theme.set(mode),mode);
+  assert.equal(await modes.locator('button').count(),2);
+  assert.match(await issueMode.innerText(),/↗\s*Udlever/);
+  assert.match(await returnMode.innerText(),/↙\s*Aflever/);
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+  assert.equal(await returnMode.getAttribute('aria-pressed'),'false');
+  const checkModeLayout=async()=>{
+   const layout=await modes.evaluate(n=>{
+    const container=n.getBoundingClientRect(),buttons=[...n.querySelectorAll('button')];
+    let surface=n;while(surface&&getComputedStyle(surface).backgroundColor==='rgba(0, 0, 0, 0)')surface=surface.parentElement;
+    const bg=getComputedStyle(surface||document.body).backgroundColor;
+    return {left:container.left,right:container.right,viewport:innerWidth,bg,buttons:buttons.map(b=>{const r=b.getBoundingClientRect(),s=getComputedStyle(b);return {left:r.left,right:r.right,top:r.top,height:r.height,border:s.borderTopColor,style:s.borderTopStyle,width:parseFloat(s.borderTopWidth),background:s.backgroundColor,active:b.classList.contains('active')};})};
+   });
+   const [a,b]=layout.buttons;
+   assert.ok(Math.abs(a.left-layout.left)<=1,'First mode begins at the left edge');
+   assert.ok(Math.abs(a.top-b.top)<=1&&b.left>=a.right&&b.left-a.right<=12,'Both buttons sit together on the left');
+   assert.ok(b.right<=layout.right+1&&b.right<=layout.viewport+1,'Both modes fit the viewport');
+   assert.ok(layout.right-b.right>4,'Buttons do not stretch across the entire row');
+   assert.equal(layout.buttons.filter(b=>b.active).length,1);
+   for(const button of layout.buttons){
+    assert.ok(button.height>=44&&button.width>=1&&button.style==='solid','Touch target and visible border');
+    assert.ok(contrast(button.border,layout.bg)>=3,'Border contrast against surrounding surface');
+    if(button.background!=='rgba(0, 0, 0, 0)')assert.ok(contrast(button.border,button.background)>=3,'Border contrast against button fill');
+   }
+  };
+  await checkModeLayout();
+  await issueMode.focus();await page.keyboard.press('Tab');
+  assert.ok(await returnMode.evaluate(b=>b===document.activeElement&&b.matches(':focus-visible')&&getComputedStyle(b).outlineStyle!=='none'&&parseFloat(getComputedStyle(b).outlineWidth)>=2),'Visible keyboard focus on Return');
+  await page.keyboard.press('Enter');
+  assert.equal(await returnMode.getAttribute('aria-pressed'),'true');
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'false');
+  assert.ok(await returnMode.evaluate(b=>b===document.activeElement),'Focus survives rerender');
+  assert.equal(await page.locator('.deskReturnOrder').count(),1);
+  await checkModeLayout();
+  await page.keyboard.press('Shift+Tab');
+  assert.ok(await issueMode.evaluate(b=>b===document.activeElement&&b.matches(':focus-visible')),'Reverse Tab reaches Issue');
+  await page.keyboard.press('Space');
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+  assert.ok(await issueMode.evaluate(b=>b===document.activeElement),'Focus survives Space activation');
+  assert.equal(await page.locator('.deskReturnOrder').count(),0);
+  await activate(returnMode);assert.equal(await returnMode.getAttribute('aria-pressed'),'true');
+  await activate(issueMode);assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+ }
+ assert.equal(writes.length,beforeModeWrites,'Switching daily mode never writes data');
+ await page.evaluate(original=>{Theme.set(original.appearance);page=original.page;deskTab=original.deskTab;query=original.query;render();},originalDesk);
+
  // Fictional role quotas: ensure the real responsive UI shows live, advisory-only figures.
  await page.evaluate(()=>{
    window.__publisherRoleFixture={
