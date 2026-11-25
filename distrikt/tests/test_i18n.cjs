@@ -5,11 +5,16 @@ function environment(storedLanguage,blocked=false,initialLanguage=''){
  const stored=new Map(storedLanguage?[['ltm-language',storedLanguage]]:[]),listeners={},writes=[],opened=[];
  const nodes={nav:{innerHTML:''},dialog:{open:true},title:{textContent:''},subtitle:{textContent:''},
   navigationLanguage:{focused:false,focus(){this.focused=true;}},form:{value:'UNSAVED_FICTIONAL_VALUE'},custom:{textContent:'Forside'},brand:{dataset:{ui:'Privat lokal installation'},textContent:''}};
+ // A nav tooltip precedes the main heading in document order. Setting its
+ // textContent would remove the icon and label in a real DOM.
+ const tooltip={dataset:{uiTitle:'Forside'},title:'',markup:'<span class="navIcon"><svg></svg></span><span class="sidebarNavLabel">Forside</span>',
+  setAttribute(key,value){this[key]=value;},set textContent(value){this.markup=value;}};
+ nodes.tooltip=tooltip;
  const context={console,Number,Math,Map,Set,JSON,Object,URLSearchParams,location:{search:initialLanguage?'?ltm_start_language='+initialLanguage:''},localStorage:{getItem(k){if(blocked)throw Error('blocked');return stored.get(k);},setItem(k,v){if(blocked)throw Error('blocked');stored.set(k,v);writes.push(k);}},
   state:{cards:[{id:'fictional-card',name:'Forside'}],publishers:[],loans:[]},page:'Distrikter',
   esc:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;'),el:id=>nodes[id],
   render(){throw Error('Language change must not render app forms');},
-  document:{activeElement:{id:'navigationLanguage'},addEventListener(k,f){(listeners[k]??=[]).push(f);},querySelectorAll(q){return q==='[data-ui]'?[nodes.brand]:[];},querySelector(q){return q==='[data-ui-title]'?nodes.title:q==='[data-ui-subtitle]'?nodes.subtitle:null;}},
+  document:{activeElement:{id:'navigationLanguage'},addEventListener(k,f){(listeners[k]??=[]).push(f);},querySelectorAll(q){return q==='[data-ui]'?[nodes.brand]:q==='[data-ui-title]'?[nodes.tooltip]:[];},querySelector(q){return q==='#app h1[data-ui-title]'?nodes.title:q==='[data-ui-title]'?nodes.tooltip:q==='[data-ui-subtitle]'?nodes.subtitle:null;}},
   openDialog(html){opened.push(html);},closeDialog(){}};
  vm.createContext(context);
  for(const file of ['i18n.js','navigation.js','workspace.js','onboarding.js','welcome.js','profiles-ui.js'])vm.runInContext(source(file),context);
@@ -27,11 +32,13 @@ assert.equal(environment(undefined,false,'unsupported').run('I18n.language()'),'
 const e=environment('da');assert.equal(e.run('I18n.language()'),'da');
 assert.match(e.run('Navigation.html()'),/Distriktskort/);
 assert.match(e.run('Navigation.html()'),/value="da" selected/);
-const before=JSON.stringify(e.context.state),draft=e.nodes.form;
+const before=JSON.stringify(e.context.state),draft=e.nodes.form,tooltipMarkup=e.nodes.tooltip.markup;
 e.listeners.change.forEach(fn=>fn({target:{id:'navigationLanguage',value:'en'}}));
 assert.equal(e.run('I18n.language()'),'en');assert.equal(e.run('Welcome.language()'),'en');
 assert.match(e.nodes.nav.innerHTML,/Territory cards/);assert.match(e.nodes.nav.innerHTML,/value="en" selected/);
-assert.equal(e.nodes.title.textContent,'Territory cards');assert.equal(e.nodes.brand.textContent,'Private local installation');
+assert.equal(e.nodes.title.textContent,'Territory cards');assert.equal(e.nodes.title.lang,'en');assert.equal(e.nodes.brand.textContent,'Private local installation');
+assert.equal(e.nodes.tooltip.title,'Home');assert.equal(e.nodes.tooltip.markup,tooltipMarkup,'Localizing the page title must not destroy a nav tooltip’s children');
+assert.match(e.nodes.nav.innerHTML,/<button data-navigation="0:0"[^>]*title="Home"[^>]*><span aria-hidden="true" class="navIcon"><svg[\s\S]*?<\/svg><\/span><span class="sidebarNavLabel">Home<\/span>/);
 assert.equal(e.nodes.form,draft);assert.equal(draft.value,'UNSAVED_FICTIONAL_VALUE');assert.equal(e.nodes.dialog.open,true);
 assert.equal(e.nodes.navigationLanguage.focused,true);
 assert.equal(JSON.stringify(e.context.state),before);assert.equal(e.nodes.custom.textContent,'Forside');
@@ -50,7 +57,9 @@ assert.match(e.run("I18n.errorText(new Error('Datafordeleren afviste nøglen. Ko
 assert.equal(e.run("I18n.set('<script>')"),false);assert.equal(e.run('I18n.language()'),'en');
 const englishTargets=e.run('Navigation.html().match(/data-navigation="[^"]+"/g).join()');
 e.run("I18n.set('da');Navigation.localize()");assert.equal(e.run('Navigation.html().match(/data-navigation="[^"]+"/g).join()'),englishTargets);
-assert.equal(e.nodes.title.textContent,'Distriktskort');
+assert.equal(e.nodes.title.textContent,'Distriktskort');assert.equal(e.nodes.title.lang,'da');
+assert.equal(e.nodes.tooltip.title,'Forside');assert.equal(e.nodes.tooltip.markup,tooltipMarkup);
+assert.match(e.nodes.nav.innerHTML,/<button data-navigation="0:0"[^>]*title="Forside"[^>]*><span aria-hidden="true" class="navIcon"><svg[\s\S]*?<\/svg><\/span><span class="sidebarNavLabel">Forside<\/span>/);
 e.run('Onboarding.open(2)');e.listeners.change.forEach(fn=>fn({target:{id:'onboardingLanguage',value:'en',dataset:{}}}));
 assert.equal(e.run('Onboarding.step'),2);assert.match(e.opened.at(-1),/How would you like to create cards/);assert.match(e.opened.at(-1),/lang="en"/);
 assert.match(e.nodes.nav.innerHTML,/Territory cards/);assert.equal(JSON.stringify(e.context.state),before);

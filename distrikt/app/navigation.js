@@ -99,7 +99,7 @@ const Navigation={
   if(typeof SaveStatus!=='undefined')SaveStatus.paint();
   const nav=el('nav');if(nav){nav.innerHTML=this.html();nav.lang=I18n.language();}
   if(restoreFocus)el('navigationLanguage')?.focus();
-  const title=document.querySelector('[data-ui-title]');if(title){title.textContent=this.title();title.lang=I18n.language();}
+  const title=document.querySelector('#app h1[data-ui-title]');if(title){title.textContent=this.title();title.lang=I18n.language();}
   const subtitle=document.querySelector('[data-ui-subtitle]');if(subtitle){subtitle.textContent=Workspace.subtitle(page);subtitle.lang=I18n.language();}
  },
  title(){return Workspace.title(page);},
