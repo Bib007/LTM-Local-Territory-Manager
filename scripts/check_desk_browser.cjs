@@ -289,8 +289,26 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  if(touch){const metrics=await page.locator('#dialog').evaluate(n=>({height:n.getBoundingClientRect().height,viewport:innerHeight,fields:[...n.querySelectorAll('input:not([type=checkbox]):not([type=radio]),select,textarea')].map(e=>parseFloat(getComputedStyle(e).fontSize)),close:n.querySelector('.dialogClose').getBoundingClientRect().height}));assert.ok(metrics.height<=metrics.viewport-20,'Dialog fits landscape viewport');assert.ok(metrics.fields.every(n=>n>=16),'Fields stay readable without iOS focus zoom: '+JSON.stringify(metrics));assert.ok(metrics.close>=44,'Touch close target');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`issue-${width}x${height}.png`),fullPage:true});}}
  assert.match(await page.locator('.issueTaskAlert').innerText(),/Fiktiv gammel <opfølgning>/);assert.doesNotMatch(await page.locator('.issueTaskAlert').innerText(),/FIKTIV_DONE_TASK/);assert.equal(await page.locator('.issueTaskAlert opfølgning').count(),0);assert.equal(await page.locator('#issueForm button.primary').isEnabled(),true,'Tasks add no mandatory assignment block');assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1));
  await page.locator('#issueForm [name=card_id]').selectOption('blocked');assert.equal(await page.locator('.issueTaskAlert').count(),0);await page.locator('#issueForm [name=card_id]').selectOption('folder');assert.equal(await page.locator('.issueTaskAlert').count(),1);await activate(page.locator('.dialogClose'));
+ // Observe even transient select focus during native showModal and when replacing an open card.
+ await page.evaluate(()=>{window.__fictionalSelectFocus=[];document.addEventListener('focusin',e=>{if(e.target.tagName==='SELECT'&&e.target.closest('#dialog'))window.__fictionalSelectFocus.push(e.target.name||e.target.id);});});
  await activate(page.locator('[data-card-row=one] .returnAction'));await page.locator('#finishForm').waitFor();assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-one');
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Opening Return never focuses a native select');
+ assert.ok(await page.locator('#dialog .dialogClose').evaluate(n=>n===document.activeElement),'Safe initial dialog focus');
+ if(!touch&&engine==='chromium'){
+  await page.keyboard.press('Tab');
+  assert.ok(await page.locator('#finishForm [name=complete]').evaluate(n=>n===document.activeElement),'Tab reaches the native choice');
+ }
+ await page.locator('#finishForm [name=complete]').selectOption('no');
+ assert.equal(await page.locator('#finishForm [name=complete]').inputValue(),'no','Intentional choice remains available');
  await assertResponsive('#dialog','Return dialog');assert.equal(writes.length,0);await activate(page.locator('.dialogClose'));
+ await page.evaluate(()=>{window.__fictionalSelectFocus.length=0;detail('one','Historik');});
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Opening a district card does not focus a picker');
+ await page.locator('#dialog .cardMore summary').click();
+ await activate(page.locator('#dialog .cardMore [data-action=return]'));
+ await page.locator('#finishForm').waitFor();
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Replacing an already open district card with Return does not focus a picker');
+ assert.ok(await page.locator('#dialog .dialogClose').evaluate(n=>n===document.activeElement));
+ await activate(page.locator('.dialogClose'));assert.equal(writes.length,0);
  await page.locator('[data-card-row=one] [data-action=select]').click();assert.match(await page.locator('.details').innerText(),/Fiktiv <A>/);assert.equal(await page.locator('.details [data-action=complete]').count(),1);
  await page.evaluate(()=>{page='Udlevering';render();});await page.locator('[data-action=desk-tab][data-tab=Aflever]').click();await page.locator('[data-action=desk-tab][data-tab=Forkyndere]').click();assert.equal(await page.locator('.publisherReturnGroup').count(),2);assert.match(await page.locator('.publisherReturnGroup h3').first().innerText(),/Fiktiv B[\s\S]*2 \/ 1/);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),3);assert.equal(await page.locator('.publisherReturnGroup script').count(),0);
  await page.locator('#search').fill('<A>');assert.equal(await page.locator('.publisherReturnGroup').count(),1);assert.match(await page.locator('.publisherReturnGroup h3').innerText(),/Fiktiv <A>/);await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('#search').inputValue(),'<A>');assert.match(await page.locator('[data-tab=Forkyndere]').innerText(),/^By publisher$/);await page.locator('#search').fill('');await page.locator('#navigationLanguage').selectOption('da');
