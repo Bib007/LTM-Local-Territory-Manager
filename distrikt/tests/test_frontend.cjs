@@ -241,10 +241,24 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  cards:[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},
         {id:'folder',number:'102',name:'Indlagt',area_id:'north',in_folder:true},
         {id:'issued',number:'103',name:'Udlånt',area_id:'north',in_folder:false}],
- loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true,dialog(){}};`);
+ loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true,pageAllowed:()=>true,has:()=>true,dialog(){}};`);
  const desk=run('home()');
  assert(desk.includes('data-action="folder-card-picker"'));
  assert(!desk.includes('data-action="new-card"'));
+ // The suggested-card link requires both page access and card read access.
+ const suggestionLink=()=>run("FolderSuggestions.buttons([card('available')])");
+ assert.match(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("ProfilesUI.pageAllowed=()=>false");
+ assert.equal(run('FolderSuggestions.canOpen()'),false);
+ assert.doesNotMatch(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("ProfilesUI.pageAllowed=()=>true;ProfilesUI.has=()=>false");
+ assert.equal(run('FolderSuggestions.canOpen()'),false);
+ assert.doesNotMatch(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("ProfilesUI.has=()=>true;state.profile={desk_only:true}");
+ assert.equal(run('FolderSuggestions.canOpen()'),false);
+ assert.doesNotMatch(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("delete state.profile");
+ assert.match(suggestionLink(),/data-action="folder-suggestion-detail"/);
  const filtered=run("folderCardPickerRows('fIkTiVt <test>')");
  assert(filtered.includes('data-folder-card-id="available"')&&filtered.includes('Fiktivt &lt;test&gt;'));
  assert(!filtered.includes('data-folder-card-id="folder"')&&!filtered.includes('data-folder-card-id="issued"'));
