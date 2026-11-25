@@ -19,6 +19,38 @@ let Workspace={reportPeriod:'service'},ReportMap={map:{},draw(){},printable:asyn
 c.mutate=async(action,data)=>{writes.push({action,data:JSON.parse(JSON.stringify(data))});if(pendingSave)await pendingSave;};
 const form=(remember=true)=>{const f={dataset:{id:'c1',side:'front',ids:'["c1"]'},isConnected:true,fields:Object.entries({orientation:'landscape',paper:'a4',mode:'full',width:'146',height:'94',x:'1',y:'-1',...(remember?{remember:'on'}:{})})};nodes.set('printForm',f);return f;};
 (async()=>{
+ // Server summaries carry the same revision as their containing snapshot.
+ // A profile-only save must preserve the live view, not hide changed data.
+ const profileOnly=run('PrintPreview.profileOnly.bind(PrintPreview)');
+ const previous={revision:'r1',settings:{print_profiles:{front:{x:0}},folder_minimum:30},
+  profile:{snapshot:'base-1',auth_revision:7,permissions:['cards.view','geo.view'],desk_only:false,language:'da',user:{id:'fictional'},capabilities:{actions:{}}},
+  cards:[{id:'c1',number:'101'}],notes:[],runtime_status:{available:false,value:null},
+  dashboard_summary:{revision:'r1',as_of:'2026-10-17',periods:{service:{territories:1}}},
+  report_summary:{revision:'r1',as_of:'2026-10-17',periods:{service:{territories:1}}}};
+ const copy=v=>JSON.parse(JSON.stringify(v));
+ const receipt=copy(previous);receipt.revision='r2';receipt.profile.snapshot='base-2';receipt.settings.print_profiles.front.x=1.5;
+ receipt.dashboard_summary.revision=receipt.report_summary.revision='r2';
+ assert.equal(profileOnly(previous,receipt),true,'The duplicate summary stamps alone cannot force a render');
+ assert.equal(previous.dashboard_summary.revision,'r1','Comparison does not mutate the old snapshot');
+ assert.equal(receipt.report_summary.revision,'r2','The fresh revision remains available to the app');
+ for(const [label,change] of [
+  ['dashboard totals',s=>s.dashboard_summary.periods.service.territories=2],
+  ['report totals',s=>s.report_summary.periods.service.territories=2],
+  ['summary date',s=>s.report_summary.as_of='2026-10-18'],
+  ['inconsistent summary stamp',s=>s.dashboard_summary.revision='unrelated'],
+  ['missing summary',s=>delete s.report_summary],
+  ['new card',s=>s.cards.push({id:'c2',number:'102'})],
+  ['new note',s=>s.notes.push({id:'n1'})],
+  ['runtime status',s=>s.runtime_status.value={state:'working'}],
+  ['settings',s=>s.settings.folder_minimum=31],
+  ['permissions',s=>s.profile.permissions=['cards.view']],
+  ['authorization revision',s=>s.profile.auth_revision=8],
+  ['desk-only role',s=>s.profile.desk_only=true],
+  ['language',s=>s.profile.language='en'],
+  ['account',s=>s.profile.user.id='other-fictional'],
+  ['capabilities',s=>s.profile.capabilities.actions['card.save']=['cards.edit']],
+  ['undo availability',s=>s.undo_available=true]
+ ]){const changed=copy(receipt);change(changed);assert.equal(profileOnly(previous,changed),false,label+' must still use the normal refresh path');}
  const docs={},contracts={};for(const language of ['da','en']){run(`I18n.set('${language}');printOptions('c1','front')`);const html=nodes.get('dialog').innerHTML;contracts[language]=html.match(/(?:name|value|data-side|data-ids)="[^"]*"/g);assert.match(html,/printForm/);assert.match(html,language==='en'?/Preview and print/:/Fremvis og print/);assert.equal(nodes.get('dialog').lang,language);docs[language]=run("printDocument(state.cards,'front',defaultPrintProfile('front'))");}
  assert.deepEqual(contracts.da,contracts.en);assert.equal(docs.da.split('<section class="sheet"')[1],docs.en.split('<section class="sheet"')[1]);assert.match(docs.en,/Print \/ save PDF/);assert.match(docs.en,/PRINT &lt;invented&gt;/);
  run("state.ib=Array.from({length:40},(_,i)=>({card_id:'c1',road:i<30?'Fiktiv Lang Vej':'Anden Vej',number:String(i+1),date:'2026-10-01'}))");const longBack=run("printDocument(state.cards,'back',defaultPrintProfile('back'))");assert.equal((longBack.match(/class=\"sheet ibSheet\"/g)||[]).length,1,'One source template per card; measured browser layout creates continuation sheets');assert.match(longBack,/class=\"ibPreview\"/);assert.match(longBack,/data-page=\"1\"/);const a4Back=run("printDocument(state.cards,'back',{...defaultPrintProfile('back'),paper:'a4'})");assert.match(a4Back,/width:94mm;height:146mm/,'The IB card stays 94 × 146 mm on A4 proof paper');assert.match(a4Back,/@page\{size:A4 portrait;margin:10mm\}/);assert.match(a4Back,/\.ibPrintColumn/);run('state.ib=[]');

@@ -7,7 +7,16 @@ const PrintPreview={
  // A print-profile-only save updates state without replacing the live view.
  // Do not skip a render for any concurrent data or permission change.
  profileOnly(previous,fresh){
-  const view=s=>{const {revision,settings,profile,...rest}=s,{print_profiles,...otherSettings}=settings||{}, {snapshot,...otherProfile}=profile||{};return {...rest,settings:otherSettings,profile:profile?otherProfile:profile};};
+  const view=s=>{
+   const {revision,settings,profile,...rest}=s,{print_profiles,...otherSettings}=settings||{}, {snapshot,...otherProfile}=profile||{};
+   // Both server summaries repeat the workspace revision, even when their
+   // aggregates have not changed. Ignore only that redundant matching stamp.
+   for(const key of ['dashboard_summary','report_summary']){
+    const summary=rest[key];
+    if(summary&&summary.revision===revision){const {revision:stamp,...data}=summary;rest[key]=data;}
+   }
+   return {...rest,settings:otherSettings,profile:profile?otherProfile:profile};
+  };
   return JSON.stringify(view(previous))===JSON.stringify(view(fresh));
  },
  standalone(){return window.navigator?.standalone===true||window.matchMedia?.('(display-mode: standalone)')?.matches===true;},
@@ -15,7 +24,9 @@ const PrintPreview={
   if(!this.standalone())return window.open('','_blank');
   if(this.active)throw Error(I18n.language()==='en'?'Close the current print preview first.':'Luk den aktuelle printvisning først.');
   const owner=page,generation=openDialog.generation,focused=document.activeElement,scroll=[window.scrollX,window.scrollY],positions=[];
-  for(const node of document.querySelectorAll('body *'))if(node.scrollTop||node.scrollLeft)positions.push([node,node.scrollLeft,node.scrollTop]);
+  // A zero offset is also part of the live context: modal focus or a
+  // print-media transition can move a previously unscrolled container.
+  for(const node of document.querySelectorAll('body *'))if(node.scrollTop||node.scrollLeft||node===el('dialog')||node.scrollHeight>node.clientHeight||node.scrollWidth>node.clientWidth)positions.push([node,node.scrollLeft,node.scrollTop]);
   const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd,focused.selectionDirection]:null;
   const overlay=document.createElement('dialog'),toolbar=document.createElement('div'),back=document.createElement('button'),frame=document.createElement('iframe');
   overlay.id='ltmPrintPreview';overlay.setAttribute('aria-label',I18n.language()==='en'?'Print preview':'Printvisning');

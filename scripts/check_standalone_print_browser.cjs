@@ -100,15 +100,51 @@ const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
     await back.click();await overlay.waitFor({state:'detached'});await source.evaluate(()=>window.releaseAsset());await source.evaluate(()=>window.job);await source.waitForFunction(()=>!printReport.busy);
     assert.equal(await overlay.count(),0);assert.equal(await source.evaluate(()=>Workspace.reportPeriod),'rolling');
     await source.evaluate(()=>{inlineReportAssets=window.originalInline;});
-    // The card form stays mounted, including uncommitted input and nested scroll.
-    for(const side of ['front','back']){
-     step='card '+side+' print and return';
-     await source.evaluate(({id,side})=>{page='Distrikter';selected=id;render();printOptions(id,side);const form=el('printForm');form.elements.remember.checked=side==='front';window.originTerritory=el('app').firstElementChild;form.querySelector('details').open=true;form.elements.x.value='1.5';form.elements.x.focus();el('dialog').scrollTop=80;window.originForm=form;window.originScroll=el('dialog').scrollTop;window.originCard=selected;window.job=printCard(form);},{id:fixture.cards[0],side});
+    // Record actual receipt differences, without printing state contents.
+    // Both remembered and unremembered print settings must keep the live DOM.
+    await source.evaluate(()=>{
+     const compare=PrintPreview.profileOnly;
+     const changed=(a,b)=>[...new Set([...Object.keys(a||{}),...Object.keys(b||{})])].filter(k=>JSON.stringify(a?.[k])!==JSON.stringify(b?.[k]));
+     PrintPreview.profileOnly=function(previous,fresh){
+      const allowed=compare.call(this,previous,fresh);
+      window.profileReceiptChecks.push({allowed,topLevel:changed(previous,fresh),settings:changed(previous.settings,fresh.settings),profile:changed(previous.profile,fresh.profile),
+       dashboardSummary:changed(previous.dashboard_summary,fresh.dashboard_summary),reportSummary:changed(previous.report_summary,fresh.report_summary),
+       runtimeChanged:JSON.stringify(previous.runtime_status)!==JSON.stringify(fresh.runtime_status)});
+      return allowed;
+     };
+    });
+    for(const [side,remember] of [['front',true],['back',false],['back',true]]){
+     step='card '+side+' print and return (remember='+remember+')';
+     await source.evaluate(({id,side,remember})=>{
+      window.profileReceiptChecks=[];page='Distrikter';selected=id;render();printOptions(id,side);
+      const form=el('printForm');form.elements.remember.checked=remember;window.originTerritory=el('app').firstElementChild;
+      form.querySelector('details').open=true;form.elements.x.value='1.5';form.elements.x.focus();el('dialog').scrollTop=remember?80:0;
+      window.originForm=form;window.originScroll=el('dialog').scrollTop;window.originCard=selected;window.job=printCard(form);
+     },{id:fixture.cards[0],side,remember});
      await frame.locator('.sheet').first().waitFor();
      await source.evaluate(()=>window.job);
      await source.waitForFunction(()=>!el('printForm')?.dataset.printing);
+     const receipt=await source.evaluate(({side,remember})=>({checks:window.profileReceiptChecks,saved:!remember||state.settings.print_profiles?.[side]?.x===1.5}),{side,remember});
+     console.log(name+' '+step+' receipt: '+JSON.stringify(receipt));
      await printAndReturn('#print',side==='front');
-     assert.equal(await source.evaluate(()=>el('printForm')===window.originForm&&el('printForm').elements.x.value==='1.5'&&el('dialog').open&&selected===window.originCard&&el('dialog').scrollTop===window.originScroll&&el('app').firstElementChild===window.originTerritory),true);
+     const restored=await source.evaluate(remember=>({
+      sameForm:el('printForm')===window.originForm,
+      inputX:el('printForm')?.elements.x.value,
+      dialogOpen:el('dialog').open,
+      selectedCard:selected===window.originCard,
+      scroll:{before:window.originScroll,after:el('dialog').scrollTop},
+      sameAppRoot:el('app').firstElementChild===window.originTerritory,
+      detailsOpen:!!el('printForm')?.querySelector('details')?.open,
+      remember:el('printForm')?.elements.remember.checked===remember,
+      focus:document.activeElement===el('printForm')?.elements.x
+     }),remember);
+     console.log(name+' '+step+' restored: '+JSON.stringify(restored));
+     assert.equal(receipt.checks.length,remember?1:0,step+' receipt count');
+     if(remember)assert.equal(receipt.checks[0].allowed,true,step+' profile-only classification');
+     assert.equal(receipt.saved,true,step+' confirmed profile value');
+     for(const key of ['sameForm','dialogOpen','selectedCard','sameAppRoot','detailsOpen','remember','focus'])assert.equal(restored[key],true,step+' '+key);
+     assert.equal(restored.inputX,'1.5',step+' input x');
+     assert.equal(restored.scroll.after,restored.scroll.before,step+' scroll position');
      await source.evaluate(()=>closeDialog());
     }
     step='IB print over unsent card draft';
@@ -120,18 +156,22 @@ const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
      const form=el('cardForm'),input=form.elements.name;
      window.cardDraftBefore={form,input,selected,query,area,status,view,stored:card(id).name,app:el('app').firstElementChild};
      input.value='FIKTIV USENDT KORTKLADDE';dialogDirty=true;input.focus();input.setSelectionRange(2,8);
-     window.cardDraftBefore.scroll=el('dialog').scrollTop;
+     el('dialog').scrollTop=0;window.cardDraftBefore.scroll=el('dialog').scrollTop;
      window.job=printIBOverview([{card_id:id,road:'Fiktiv vej',number:'9',date:'2026-10-01'}]);
     },fixture.cards[0]);
     await printAndReturn('#printIBOverview',true);
     await source.evaluate(()=>window.job);
-    assert.equal(await source.evaluate(()=>{
+    const ibRestored=await source.evaluate(()=>{
      const b=window.cardDraftBefore;
-     return page==='Distrikter'&&selected===b.selected&&query===b.query&&area===b.area&&status===b.status&&view===b.view&&
-      el('app').firstElementChild===b.app&&el('dialog').open&&el('cardForm')===b.form&&
-      b.input.value==='FIKTIV USENDT KORTKLADDE'&&card(selected).name===b.stored&&dialogDirty&&
-      document.activeElement===b.input&&b.input.selectionStart===2&&b.input.selectionEnd===8&&el('dialog').scrollTop===b.scroll;
-    }),true,'Returning from IB print preserves the real card editor and unsent draft');
+     return {page:page==='Distrikter',selected:selected===b.selected,query:query===b.query,area:area===b.area,status:status===b.status,view:view===b.view,
+      sameAppRoot:el('app').firstElementChild===b.app,dialogOpen:el('dialog').open,sameForm:el('cardForm')===b.form,
+      draft:b.input.value==='FIKTIV USENDT KORTKLADDE',stored:card(selected)?.name===b.stored,dirty:dialogDirty,
+      focus:document.activeElement===b.input,selection:b.input.selectionStart===2&&b.input.selectionEnd===8,
+      scroll:{before:b.scroll,after:el('dialog').scrollTop}};
+    });
+    console.log(name+' IB restored: '+JSON.stringify(ibRestored));
+    for(const [key,value] of Object.entries(ibRestored))if(key!=='scroll')assert.equal(value,true,'IB draft restoration: '+key);
+    assert.equal(ibRestored.scroll.after,ibRestored.scroll.before,'IB draft scroll');
     await source.evaluate(()=>{dialogDirty=false;closeDialog();});
     assert.equal(popups,0);assert.deepEqual(errors,[]);
     await context.close();
