@@ -1330,6 +1330,8 @@ const I18n={
   "Opgaver ændrer ikke IB automatisk og spærrer ikke udlevering. Kontrollér rettelserne på kortet.":"Tasks do not change do-not-call records automatically or block assignment. Check the corrections on the card.",
   "Aktivér kort · touch og tastatur":"Activate map · touch and keyboard",
   "Lås kortet igen":"Lock map again",
+  "Låst · Aktivér kort":"Locked · Activate map",
+  "Aktivt · Lås kortet igen":"Active · Lock map again",
   "Hold Ctrl/Command nede for at flytte eller zoome. På touch eller med tastatur: vælg Aktivér kort. Uden aktivering ruller dialogen normalt.":"Hold Ctrl/Command to pan or zoom. For touch or keyboard, choose Activate map. Without activation the dialog scrolls normally.",
   "Kortet er låst. Hold Ctrl/Command nede for at flytte eller zoome, eller vælg Aktivér kort.":"The map is locked. Hold Ctrl/Command to pan or zoom, or choose Activate map.",
   "Kortet er aktivt. Flyt eller zoom med touch, mus eller piletaster og +/−. Vælg Lås kortet igen for almindelig rulning.":"The map is active. Pan or zoom with touch, mouse or arrow keys and +/−. Choose Lock map again to scroll normally.",
