@@ -6,6 +6,9 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 // Same fictional PNG as the successful mobile report fixture; no live OSM.
 const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l6kAAAAASUVORK5CYII=','base64');
 (async()=>{
+ // Each browser needs its own disposable store: otherwise Chromium completes
+ // the printing onboarding task before WebKit can exercise that transition.
+ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
  const child=spawn(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/street_suggestions_server.py')]);
  child.stderr.pipe(process.stderr);
  try{
@@ -14,7 +17,6 @@ const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
    createInterface({input:child.stdout}).once('line',line=>{clearTimeout(timeout);resolve(JSON.parse(line));});
    child.once('exit',code=>{clearTimeout(timeout);reject(Error('Fixture exited: '+code));});
   });
-  for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
    const browser=await engine.launch({headless:true});
    let source,step='startup',tileRequests=0;
    try{
@@ -101,7 +103,9 @@ const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
     assert.equal(await overlay.count(),0);assert.equal(await source.evaluate(()=>Workspace.reportPeriod),'rolling');
     await source.evaluate(()=>{inlineReportAssets=window.originalInline;});
     // Record actual receipt differences, without printing state contents.
-    // Both remembered and unremembered print settings must keep the live DOM.
+    // Pure profile saves preserve the app root. The second saved side
+    // completes the printing setup task and must refresh the overview,
+    // without replacing the live print form or losing user input.
     await source.evaluate(()=>{
      const compare=PrintPreview.profileOnly;
      const changed=(a,b)=>[...new Set([...Object.keys(a||{}),...Object.keys(b||{})])].filter(k=>JSON.stringify(a?.[k])!==JSON.stringify(b?.[k]));
@@ -109,22 +113,40 @@ const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
       const allowed=compare.call(this,previous,fresh);
       window.profileReceiptChecks.push({allowed,topLevel:changed(previous,fresh),settings:changed(previous.settings,fresh.settings),profile:changed(previous.profile,fresh.profile),
        dashboardSummary:changed(previous.dashboard_summary,fresh.dashboard_summary),reportSummary:changed(previous.report_summary,fresh.report_summary),
-       runtimeChanged:JSON.stringify(previous.runtime_status)!==JSON.stringify(fresh.runtime_status)});
+       runtimeChanged:JSON.stringify(previous.runtime_status)!==JSON.stringify(fresh.runtime_status),
+       onboardingFields:changed(previous.settings.onboarding,fresh.settings.onboarding),
+       onboardingTasks:changed(previous.settings.onboarding?.tasks,fresh.settings.onboarding?.tasks),
+       printingBefore:previous.settings.onboarding?.tasks?.printing??null,printingAfter:fresh.settings.onboarding?.tasks?.printing??null});
       return allowed;
      };
     });
-    for(const [side,remember] of [['front',true],['back',false],['back',true]]){
-     step='card '+side+' print and return (remember='+remember+')';
-     await source.evaluate(({id,side,remember})=>{
+    const initialSetup=await source.evaluate(()=>({completed:state.settings.onboarding?.completed,printing:state.settings.onboarding?.tasks?.printing??null,sides:Object.keys(state.settings.print_profiles||{})}));
+    assert.equal(initialSetup.completed,true,'Fixture setup guide already completed');
+    assert.equal(initialSetup.printing,null,'Printing task must start unfinished in each browser');
+    assert.deepEqual(initialSetup.sides,[],'Fixture starts without saved print profiles');
+    for(const {side,remember,completesPrinting,x} of [
+     {side:'front',remember:true,completesPrinting:false,x:'1.5'},
+     {side:'back',remember:false,completesPrinting:false,x:'1.5'},
+     {side:'back',remember:true,completesPrinting:true,x:'1.5'},
+     {side:'back',remember:true,completesPrinting:false,x:'2.5'}
+    ]){
+     step='card '+side+' print and return (remember='+remember+', onboarding='+completesPrinting+')';
+     const beforeOnboarding=await source.evaluate(()=>JSON.parse(JSON.stringify(state.settings.onboarding)));
+     const expectedOnboarding=JSON.parse(JSON.stringify(beforeOnboarding));
+     if(completesPrinting){
+      assert.notEqual(beforeOnboarding.tasks?.printing,'done',step+' task must not already be complete');
+      expectedOnboarding.tasks={...expectedOnboarding.tasks,printing:'done'};
+     }
+     await source.evaluate(({id,side,remember,x})=>{
       window.profileReceiptChecks=[];page='Distrikter';selected=id;render();printOptions(id,side);
       const form=el('printForm');form.elements.remember.checked=remember;window.originTerritory=el('app').firstElementChild;
-      form.querySelector('details').open=true;form.elements.x.value='1.5';form.elements.x.focus();el('dialog').scrollTop=remember?80:0;
+      form.querySelector('details').open=true;form.elements.x.value=x;form.elements.x.focus();el('dialog').scrollTop=remember?80:0;
       window.originForm=form;window.originScroll=el('dialog').scrollTop;window.originCard=selected;window.job=printCard(form);
-     },{id:fixture.cards[0],side,remember});
+     },{id:fixture.cards[0],side,remember,x});
      await frame.locator('.sheet').first().waitFor();
      await source.evaluate(()=>window.job);
      await source.waitForFunction(()=>!el('printForm')?.dataset.printing);
-     const receipt=await source.evaluate(({side,remember})=>({checks:window.profileReceiptChecks,saved:!remember||state.settings.print_profiles?.[side]?.x===1.5}),{side,remember});
+     const receipt=await source.evaluate(({side,remember,x})=>({checks:window.profileReceiptChecks,saved:!remember||state.settings.print_profiles?.[side]?.x===Number(x)}),{side,remember,x});
      console.log(name+' '+step+' receipt: '+JSON.stringify(receipt));
      await printAndReturn('#print',side==='front');
      const restored=await source.evaluate(remember=>({
@@ -140,11 +162,30 @@ const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
      }),remember);
      console.log(name+' '+step+' restored: '+JSON.stringify(restored));
      assert.equal(receipt.checks.length,remember?1:0,step+' receipt count');
-     if(remember)assert.equal(receipt.checks[0].allowed,true,step+' profile-only classification');
+     if(remember){
+      const check=receipt.checks[0];
+      assert.equal(check.allowed,!completesPrinting,step+' profile-only classification');
+      assert.deepEqual([...check.settings].sort(),completesPrinting?['onboarding','print_profiles']:['print_profiles'],step+' exact settings changes');
+      assert.deepEqual(check.onboardingFields,completesPrinting?['tasks']:[],step+' onboarding fields');
+      assert.deepEqual(check.onboardingTasks,completesPrinting?['printing']:[],step+' onboarding task changes');
+      assert.equal(check.printingBefore,beforeOnboarding.tasks?.printing??null,step+' prior printing status');
+      assert.equal(check.printingAfter,expectedOnboarding.tasks?.printing??null,step+' new printing status');
+      assert.ok(check.topLevel.every(k=>['revision','settings','dashboard_summary','report_summary','profile'].includes(k)),step+' no unrelated state changes');
+      assert.ok(check.profile.every(k=>k==='snapshot'),step+' no authorization changes');
+      assert.ok(check.dashboardSummary.every(k=>k==='revision')&&check.reportSummary.every(k=>k==='revision'),step+' no aggregate changes');
+      assert.equal(check.runtimeChanged,false,step+' no runtime status changes');
+     }
      assert.equal(receipt.saved,true,step+' confirmed profile value');
-     for(const key of ['sameForm','dialogOpen','selectedCard','sameAppRoot','detailsOpen','remember','focus'])assert.equal(restored[key],true,step+' '+key);
-     assert.equal(restored.inputX,'1.5',step+' input x');
+     assert.equal(restored.sameAppRoot,!completesPrinting,step+' app root follows the actual state change');
+     for(const key of ['sameForm','dialogOpen','selectedCard','detailsOpen','remember','focus'])assert.equal(restored[key],true,step+' '+key);
+     assert.equal(restored.inputX,x,step+' input x');
      assert.equal(restored.scroll.after,restored.scroll.before,step+' scroll position');
+     assert.deepEqual(await source.evaluate(()=>state.settings.onboarding),expectedOnboarding,step+' live onboarding status preserved');
+     if(remember){
+      const persisted=await source.evaluate(async side=>{const fresh=await(await api('/api/state')).json();return {onboarding:fresh.settings.onboarding,x:fresh.settings.print_profiles?.[side]?.x};},side);
+      assert.deepEqual(persisted.onboarding,expectedOnboarding,step+' server onboarding status');
+      assert.equal(persisted.x,Number(x),step+' server print profile');
+     }
      await source.evaluate(()=>closeDialog());
     }
     step='IB print over unsent card draft';
@@ -193,6 +234,6 @@ const tile=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
     console.error(name+' standalone failure: '+JSON.stringify({step,tileRequests,...diagnostic}));
     throw error;
    }finally{await browser.close();}
-  }
  }finally{child.kill();}
+ }
 })().catch(error=>{console.error(error);process.exitCode=1;});
