@@ -2212,6 +2212,8 @@ const I18n={
   "Senest gennemgået fra":"Last completed from",
   "Senest gennemgået til":"Last completed to",
   "Alle forkyndere":"All publishers",
+  "Vis kun forkyndere med udleverede kort":"Show only publishers with assigned cards",
+  "Ingen forkyndere med udleverede kort matcher filtrene.":"No publishers with assigned cards match these filters.",
   "Genprint":"Reprint",
   "Afventer genprint":"Awaiting reprint",
   "Ingen ændrede sider":"No changed sides",

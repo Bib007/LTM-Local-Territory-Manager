@@ -21,6 +21,17 @@ run("state={today:'2026-11-11',settings:{},cards:[],loans:[],publishers:["
  +"{id:'d',name:'Dina Uden Gruppe',group:'',group_role:'',pioneer:false}]};"
  +"publisherGroupFilter='';query='';");
 const initial=run('publishersPage()');
+assert.match(initial,/id="publisherActiveOnly"/);
+run("publisherActiveOnly=true;state.loans=[{id:'fictional-active',publisher_id:'a',card_id:'card-a',returned:null},{id:'fictional-closed',publisher_id:'b',card_id:'card-b',returned:'2026-11-10'}]");
+assert.equal(count(run('publishersPage()'),'visible'),1);
+run("query='Berta'");
+assert.equal(count(run('publishersPage()'),'visible'),0);
+run("query='';publisherGroupFilter='group:gruppe 02'");
+assert.equal(count(run('publishersPage()'),'visible'),0);
+run("publisherGroupFilter='';state.loans[0].returned='2026-11-11'");
+assert.match(run('publishersPage()'),/Ingen forkyndere med udleverede kort matcher filtrene/);
+run("publisherActiveOnly=false;state.loans=[]");
+assert.equal(count(run('publishersPage()'),'visible'),4);
 assert.equal(count(initial,'total'),4);
 assert.equal(count(initial,'visible'),4);
 assert.match(initial,/data-publisher-group="group:gruppe 01"/);
