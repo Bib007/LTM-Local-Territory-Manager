@@ -1,5 +1,13 @@
 # Ændringslog
 
+## 1.14.0-beta.3 · 2026-11-25
+
+- **Gemning og forbindelser**. Oversigten efter en gemning frasorterer logposter tidligere. Forbindelsesstatus giver mere præcis vejledning og kan lukkes efter genoprettelse. Gemmehastigheden på installationen skal stadig måles.
+- **Daglig brug**. Søg direkte efter ekstra kort ved samlet udlevering, markér flere kort i aflevering pr. forkynder, og åbn kort fra listen over kort til mappen. Fremhævet overskrift til hyppigt valgte forkyndere. Gruppelistens midlertidige filter viser forkyndere med aktuelle udleveringer.
+- **Kort og navigation**. Sammenklappelig venstremenu, tydelig kortaktivering og nulstilling af fremhævning ved Vis hele distriktet. IB-redigering vender tilbage til den oprindelige kortvisning. Fortrydelsesbeskeden kan lukkes og vises uden for forsiden.
+- **iPad og rapporter**. Lokalt hjemmeskærmsikon, rettet fokus ved dialogåbning og tilbageknap i selvstændig printvisning. A4-kort og S-13 får justeret sideopdeling. Klare tekster for bekræftelse af printet kortforside og -bagside. Rapporten viser faktiske gennemgangsdatoer og aktuel udleveringsstatus. Fysisk iPad og udskrift skal afprøves.
+- **Opfølgninger og indstillinger**. Hurtigere indsamling af opfølgninger, filtre der tilpasser sig bredden, og tydeligere opdeling i indstillingsfanerne.
+
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
 ## 1.14.0-beta.2 · 2026-11-25
