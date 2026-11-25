@@ -356,3 +356,21 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .territoryCompact .panel{min-width:0}
  .territoryCompact .toolbar,.deskTabs,.overviewFilters{max-width:100%}
 }
+
+/* Follow-up filters respond to the actual main content, including a collapsed sidebar.
+   Narrow is also the usable fallback for browsers without container queries. */
+.followupFilterLayout{container:followup-filters / inline-size;min-width:0}
+.tabs.followupTabs{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;border-bottom:0;margin-bottom:14px}
+.tabs.followupTabs button{border:1px solid var(--muted);border-radius:6px;min-width:0;min-height:44px;padding:9px 12px;color:var(--text);background:var(--surface2);white-space:normal;overflow-wrap:anywhere}
+.tabs.followupTabs button.active{border:2px solid var(--link);border-radius:6px;padding:8px 11px;font-weight:700;background:var(--surface)}
+.tabs.followupTabs button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+#followupMoreButton{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left}
+#followupMoreButton[aria-expanded=true] .followupMoreChevron{transform:rotate(180deg)}
+.followupExtraFilters{display:none;grid-column:1 / -1;min-width:0}
+.followupExtraFilters.is-open{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+@container followup-filters (min-width:48rem){
+ .tabs.followupTabs{display:flex;flex-wrap:wrap}
+ #followupMoreButton{display:none}
+ .followupExtraFilters,.followupExtraFilters.is-open{display:flex;flex-wrap:wrap;gap:8px;padding:0;border:0;background:transparent}
+ .tabs.followupTabs button{white-space:nowrap}
+}
