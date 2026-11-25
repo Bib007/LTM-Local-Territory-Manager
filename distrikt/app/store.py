@@ -322,7 +322,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
 
     def state(self):
         with self.lock:
-            result = {m: self.all(m) for m in MODULES if m not in ('maps','geo')}
+            result = {m: self.all(m) for m in MODULES if m not in ('maps','geo','notes')}
             from geography import front_summaries
             maps=self.all('maps');print_context=self.print_context(result['ib'],result['settings'],maps)
             for c in result['cards']:
@@ -343,7 +343,14 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             number_batches=sorted((x for x in settings_rows if x.get('entity')=='territory-numbering-batch' and not x.get('undone_at')),key=lambda x:x.get('created',''),reverse=True)
             result['numbering_last_batch']=({'id':number_batches[0]['id'],'count':len(number_batches[0]['changes'])} if number_batches else None)
             result['followup_ignores'] = [x for x in settings_rows if x.get('entity') == 'followup_ignore']
-            visible_notes=[n for n in result['notes'] if n.get('entity')!='activity']
+            # A save receipt rebuilds the overview. Audit events are never
+            # included, so avoid deserializing their history into Python.
+            if self._sqlite_json:
+                visible_notes = [json.loads(row['payload']) for row in self.db.execute(
+                    "SELECT payload FROM notes.records WHERE deleted_at IS NULL "
+                    "AND json_extract(payload,'$.entity') IS NOT 'activity'")]
+            else:
+                visible_notes = [note for note in self.all('notes') if note.get('entity') != 'activity']
             # Reviews from existing installations retain their original records,
             # but are exposed exclusively through the purpose-built projection.
             result['ib_reviews']=[{'id':n['id'],'card_id':n.get('card_id'),'date':n.get('date'),
