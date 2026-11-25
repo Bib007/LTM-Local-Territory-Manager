@@ -61,10 +61,11 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await source.evaluate(()=>{inlineReportAssets=window.originalInline;});
     // The card form stays mounted, including uncommitted input and nested scroll.
     for(const side of ['front','back']){
-     await source.evaluate(({id,side})=>{page='Distrikter';selected=id;render();printOptions(id,side);const form=el('printForm');form.elements.remember.checked=false;form.querySelector('details').open=true;form.elements.x.value='1.5';form.elements.x.focus();el('dialog').scrollTop=80;window.originForm=form;window.originScroll=el('dialog').scrollTop;window.originCard=selected;window.job=printCard(form);},{id:fixture.cards[0],side});
+     await source.evaluate(({id,side})=>{page='Distrikter';selected=id;render();printOptions(id,side);const form=el('printForm');form.elements.remember.checked=side==='front';window.originTerritory=el('app').firstElementChild;form.querySelector('details').open=true;form.elements.x.value='1.5';form.elements.x.focus();el('dialog').scrollTop=80;window.originForm=form;window.originScroll=el('dialog').scrollTop;window.originCard=selected;window.job=printCard(form);},{id:fixture.cards[0],side});
      await frame.locator('.sheet').first().waitFor();
+     await source.waitForFunction(()=>!el('printForm').dataset.printing);
      await printAndReturn('#print',side==='front');
-     assert.equal(await source.evaluate(()=>el('printForm')===window.originForm&&el('printForm').elements.x.value==='1.5'&&el('dialog').open&&selected===window.originCard&&el('dialog').scrollTop===window.originScroll),true);
+     assert.equal(await source.evaluate(()=>el('printForm')===window.originForm&&el('printForm').elements.x.value==='1.5'&&el('dialog').open&&selected===window.originCard&&el('dialog').scrollTop===window.originScroll&&el('app').firstElementChild===window.originTerritory),true);
      await source.evaluate(()=>closeDialog());
     }
     await source.evaluate(()=>{window.job=printIBOverview([{card_id:state.cards[0].id,road:'Fiktiv vej',number:'9',date:'2026-10-01'}]);});
