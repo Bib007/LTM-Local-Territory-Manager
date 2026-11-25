@@ -139,7 +139,7 @@ const PendingSaves={count:0,sequence:0,commands:new Map(),
   // Preserve both positions while releasing the modal for background writes.
   const pageScroll=[window.scrollX,window.scrollY],dialogScroll=[dialog.scrollLeft,dialog.scrollTop];
   dialog.close();
-  dialog.style.position='fixed';dialog.style.inset='0';dialog.dataset.backgroundSave='yes';
+  dialog.style.position='fixed';dialog.style.inset='calc(var(--shell-height) + 12px) 0 12px';dialog.dataset.backgroundSave='yes';
   dialog.show();
   if(restore&&focused.isConnected!==false){
    focused.focus({preventScroll:true});

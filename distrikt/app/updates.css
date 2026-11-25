@@ -137,3 +137,8 @@
  html[data-theme=light] .tabs.deskTabs>button{border-color:var(--muted)}
  html[data-theme=light] .tabs.deskTabs>button.active{border-color:var(--link)}
 }
+
+/* A background-saving editor is modeless; keep its close control below the fixed header. */
+@media screen{
+ #dialog[data-background-save="yes"]{max-height:calc(100vh - var(--shell-height) - 24px);max-height:calc(100dvh - var(--shell-height) - 24px);z-index:101}
+}
