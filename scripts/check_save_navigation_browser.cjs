@@ -22,8 +22,9 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     if(body&&hold?.action===body.action){
      const gate=hold;hold=null;
      // Success/lost responses reach the real server first. Rejection does not.
-     const response=gate.mode==='reject'?null:await route.fetch();gate.arrived.resolve();await gate.release.promise;
-     if(gate.mode==='reject')return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Fiktiv afvisning'})});
+     const response=['reject','login'].includes(gate.mode)?null:await route.fetch();gate.arrived.resolve();await gate.release.promise;
+     if(gate.mode==='login')return route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({error:'Fiktivt udløbet login'})});
+      if(gate.mode==='reject')return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Fiktiv afvisning'})});
      if(gate.mode==='lost')return route.abort('connectionreset');
      if(gate.mode==='invalid')return route.fulfill({status:200,contentType:'application/json',body:'{}'});
      return route.fulfill({response});
@@ -85,6 +86,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    await page.locator('[data-navigation="2:2"]').click();await page.locator('#settingsForm input[name=congregation]').fill('Fiktiv NY KLADDE');
    await page.evaluate(()=>EditorBases.page?.ready);assert.equal(await page.evaluate(()=>EditorBases.page?.error?.message||null),null);
    const settingsBase=await page.evaluate(()=>EditorBases.page?.base);gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0);
+    const settingsDraftWrites=writes.length;await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(writes.length,settingsDraftWrites);
    assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(await page.evaluate(()=>EditorBases.page?.base),settingsBase);assert.equal(await page.evaluate(()=>SaveStatus.kind),'saved');
    // Geo preview gates stay intact; only an enqueued geographic write can leave.
    await page.evaluate(id=>{GeoUI.dirty=false;GeoUI.openCard(id);GeoUI.ids=new Set(GeoUI.addresses().map(a=>a.id));GeoUI.polygon=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];GeoUI.dirty=true;GeoUI.drawLayers();GeoUI.updatePanel();},ids.card);
@@ -124,10 +126,20 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     if(mode!=='reject'){
      const count=writes.length;await page.locator('#publisherForm button.primary').click();await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(writes.length,count,'Uncertain writes cannot replay');
     }
-    // Dismiss the explicit discard warning, then refresh after closing deliberately.
+    // Read-only connection check and refused refresh must preserve the draft and guard.
+     const draftWrites=writes.length;await page.evaluate(()=>Workspace.checkConnection(true));await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Bevar ny fiktiv kladde');assert.equal(writes.length,draftWrites);assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode!=='reject');
+     // Dismiss the explicit discard warning, then refresh after closing deliberately.
     await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));
    }
-   // LTM #4: verify the actual dialog indicator against held write receipts.
+   // Confirmed write / stale overview and expired login have different guidance.
+    await page.evaluate(async()=>{try{await confirmedWrite('/api/mutate',{action:'publisher.save',data:{name:'Fiktiv bekræftet, forældet oversigt'}},async()=>{throw Error('Fiktiv opdateringsfejl');});}catch{}});
+    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),true);assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);assert.match(await page.evaluate(()=>SaveStatus.guidance),/Send den ikke igen/);
+    await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.evaluate(()=>WriteGuard.needsReview),false);
+    gate=holdNext('publisher.save','login');await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Fiktiv loginkladde');await page.locator('#publisherForm button.primary').click();await waitForReceipt(gate);gate.release.resolve();
+    await page.waitForFunction(()=>PendingSaves.count===0&&WriteGuard.loginExpired);assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);assert.match(await page.evaluate(()=>SaveStatus.guidance),/logger ind igen/);
+    const loginWrites=writes.length;await page.evaluate(()=>Workspace.checkConnection(true));await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Fiktiv loginkladde');assert.equal(writes.length,loginWrites);assert.equal(await page.evaluate(()=>WriteGuard.loginExpired),true);
+    await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.evaluate(()=>WriteGuard.loginExpired),false);
+    // LTM #4: verify the actual dialog indicator against held write receipts.
    for(const [device,width,height] of [['mobile',390,844],['iPad',820,1180],['desktop',1440,1000]]){
     await page.setViewportSize({width,height});
     for(const mode of ['success','reject','lost','invalid']){

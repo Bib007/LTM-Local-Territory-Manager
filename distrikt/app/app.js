@@ -34,14 +34,14 @@ const folderEnabled=()=>state?.settings?.folder_enabled!==false;
 const position=c=>loanFor(c.id)?'Udleverede distriktskort':folderEnabled()&&c.in_folder?'Kort i mappen':'Kort i kassen';
 const age=c=>{const date=typeof SplitSuggestions!=='undefined'?SplitSuggestions.effectiveDate(c):c.last_completed;return date?dayDiff(state.today,date):Infinity;};
 function fourMonths(day){let d=new Date(day+'T12:00:00'),n=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+4);let max=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(n,max));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-const SaveStatus={kind:'loading',message:'Åbner dine data…',detail:'',
+const SaveStatus={kind:'loading',message:'Åbner dine data…',detail:'',guidance:'',
  paint(){
   const node=el('saveState');if(!node)return;
-  const explanation=expanded=>`<details class="saveExplanation" ${expanded?'open':''}><summary ${I18n.attribute('aria','{message} · vis hele forklaringen',{message:I18n.text(this.message)})}>${ui(this.message)}</summary><div class="saveExplanationText"><b>${ui(this.message)}</b><p>${I18n.errorHTML(this.detail)}</p><button type="button" data-save-explanation-close>${ui('Luk')}</button></div></details>`;
+  const explanation=expanded=>`<details class="saveExplanation" ${expanded?'open':''}><summary ${I18n.attribute('aria','{message} · vis hele forklaringen',{message:I18n.text(this.message)})}>${ui(this.message)}</summary><div class="saveExplanationText"><b>${ui(this.message)}</b>${this.detail?`<p>${I18n.errorHTML(this.detail)}</p>`:''}${this.guidance?`<p>${ui(this.guidance)}</p>`:''}${WriteGuard.loginExpired&&this.guidance!=='Sikr kladden, før du genåbner appen og logger ind igen. Kontrollér resultatet af tidligere gemninger efter login.'?`<p>${ui('Sikr kladden, før du genåbner appen og logger ind igen. Kontrollér resultatet af tidligere gemninger efter login.')}</p>`:''}<button type="button" data-save-explanation-close>${ui('Luk')}</button></div></details>`;
   const connection=typeof Workspace!=='undefined'?Workspace.connectionState:'connected',showConnection=!['error','review','loading','saving'].includes(this.kind)&&connection!=='connected';
   const kind=showConnection?connection:this.kind,message=showConnection?(connection==='checking'?'Kontrollerer forbindelsen…':'Forbindelsen til hovedsystemet mangler'):this.message;
   node.className=this.kind==='error'?'error':'';node.dataset.saveKind=kind;node.title=I18n.text(message)+(this.detail?' · '+I18n.errorText(this.detail):'');
-  node.innerHTML=this.detail?explanation(!!node.querySelector?.('.saveExplanation[open]')):ui(message);
+  node.innerHTML=this.detail||this.guidance?explanation(!!node.querySelector?.('.saveExplanation[open]')):ui(message);
   const dialog=el('dialog');
   if(dialog&&!dialog.open&&this.kind!=='saving')dialog.querySelector?.('[data-save-progress]')?.remove();
   if(dialog?.open&&document.createElement&&dialog.appendChild){
@@ -57,12 +57,12 @@ const SaveStatus={kind:'loading',message:'Åbner dine data…',detail:'',
     progress.innerHTML=ui(this.message);
    }else progress?.remove();
    let notice=dialog.querySelector('[data-save-feedback]');
-   if(!this.detail){notice?.remove();return;}
+   if(!this.detail&&!this.guidance){notice?.remove();return;}
    if(!notice){notice=document.createElement('section');notice.className='dialogSaveFeedback notice';notice.dataset.saveFeedback='';dialog.appendChild(notice);}
    notice.innerHTML=explanation(!!notice.querySelector('.saveExplanation[open]'));
   }
  },
- set(kind,message,detail=''){this.kind=kind;this.message=message;this.detail=detail;this.paint();}
+ set(kind,message,detail='',guidance=''){this.kind=kind;this.message=message;this.detail=detail;this.guidance=guidance;this.paint();}
 };
 class RequestError extends Error{
  constructor(key,kind='rejected',status=0,detail='',writing=false){super(I18n.text(key)+(detail?' '+detail:''));this.name='RequestError';this.uiKey=key;this.uiDetail=detail;this.kind=kind;this.status=status;this.writing=writing;}
@@ -82,7 +82,7 @@ const WriteGuard={uncertain:false,needsReview:false,loginExpired:false,error:nul
 };
 function saved(message='Alle ændringer er gemt'){if(PendingSaves.count){saving();return;}if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired){failed(WriteGuard.error);return;}SaveStatus.set('saved',message);}
 function saving(){if(!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)SaveStatus.set('saving','Gemmer…');}
-function failed(message){if(WriteGuard.uncertain){SaveStatus.set('error','Gemning er ikke bekræftet',WriteGuard.error);return;}if(WriteGuard.needsReview){SaveStatus.set('review','Ændringen er gemt · opdatér data før næste ændring',WriteGuard.error);return;}if(WriteGuard.loginExpired||message instanceof RequestError&&message.kind==='login'){SaveStatus.set('error','Login er udløbet · log ind igen.');return;}if(message instanceof RequestError){if(!message.writing)return;if(message.kind==='base'){SaveStatus.set('review','Kladden er bevaret · kontrollér redigeringens udgangspunkt',message);return;}if(message.kind==='rejected'){SaveStatus.set('error','Ændringen blev afvist',message);return;}}SaveStatus.set('error','Gemning er ikke bekræftet',message);}
+function failed(message){if(WriteGuard.uncertain){SaveStatus.set('error','Gemning er ikke bekræftet',WriteGuard.error,'Gemningen kan være gennemført. Send ikke ændringen igen. Kontrollér forbindelsen, sikr din kladde, og brug Opdater til at kontrollere resultatet.');return;}if(WriteGuard.needsReview){SaveStatus.set('review','Ændringen er gemt · opdatér data før næste ændring',WriteGuard.error,'Ændringen er gemt på serveren. Send den ikke igen. Sikr dine åbne kladder, og vælg Opdater for at hente oversigten.');return;}if(WriteGuard.loginExpired||message instanceof RequestError&&message.kind==='login'){SaveStatus.set('error','Login er udløbet · log ind igen.','','Sikr kladden, før du genåbner appen og logger ind igen. Kontrollér resultatet af tidligere gemninger efter login.');return;}if(message instanceof RequestError){if(!message.writing)return;if(message.kind==='base'){SaveStatus.set('review','Kladden er bevaret · kontrollér redigeringens udgangspunkt',message);return;}if(message.kind==='rejected'){SaveStatus.set('error','Ændringen blev afvist',message);return;}}SaveStatus.set('error','Gemning er ikke bekræftet',message);}
 function toast(message){I18n.errorContent(el('toast'),message);el('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el('toast').style.display='none',4500);}
 async function api(path,body){
  // Whole-data replacement, exports and session teardown must follow accepted
@@ -105,7 +105,7 @@ async function api(path,body){
   const data=await r.json().catch(()=>({}));
   if(writing&&(r.status>=500||r.status===408)){const failure=problem('Serveren kunne ikke bekræfte ændringen. Kontrollér de gemte data med Opdater før et nyt forsøg.','uncertain',r.status);WriteGuard.mark(failure);throw failure;}
   const key=r.status===401?'Login er udløbet · log ind igen.':typeof data?.error==='string'?data.error:'Forespørgslen kunne ikke gennemføres. Prøv igen, når forbindelsen svarer.';
-  const failure=r.status===401?problem(key,'login',r.status):RequestError.fromResponse(data,data?.code==='edit_base_unavailable'?'base':'rejected',r.status,writing);if(r.status===401){WriteGuard.loginExpired=true;WriteGuard.epoch++;clearTimeout(autosaveTimer);failed(failure);}throw failure;
+  const failure=r.status===401?problem(key,'login',r.status):RequestError.fromResponse(data,data?.code==='edit_base_unavailable'?'base':'rejected',r.status,writing);if(r.status===401){WriteGuard.loginExpired=true;if(!WriteGuard.uncertain&&!WriteGuard.needsReview)WriteGuard.error=failure;WriteGuard.epoch++;clearTimeout(autosaveTimer);failed(failure);}throw failure;
  }
  if(body||r.headers?.get?.('content-type')?.includes('application/json')){
   let payload;try{payload=await r.clone().json();if(body&&(!payload||typeof payload!=='object'||Array.isArray(payload)||(path==='/api/mutate'&&(typeof payload.revision!=='string'||!payload.revision))))throw Error('Invalid response');}
@@ -148,6 +148,7 @@ const PendingSaves={count:0,sequence:0,commands:new Map(),
   dialog.scrollLeft=dialogScroll[0];dialog.scrollTop=dialogScroll[1];
   if(typeof window.scrollTo==='function')window.scrollTo({left:pageScroll[0],top:pageScroll[1],behavior:'instant'});
  },
+ protectedDraft(){return !!el('dialog')?.open||this.protectPage()||!!(state&&typeof SettingsViewDrafts!=='undefined'&&SettingsViewDrafts.dirty(document));},
  pageStamp(){return JSON.stringify([...(el('app')?.querySelectorAll?.('form')||[])].map(form=>[form.id,FormDrafts.signature(form)]));},
  protectPage(){
   return (page==='Kortopsætning'&&GeoUI.dirty)||[...(el('app')?.querySelectorAll?.('form')||[])].some(form=>form.dataset.saving==='yes'||form.dataset.busy==='yes'||FormDrafts.forms.has(form)&&!FormDrafts.unchanged(form));
@@ -1000,7 +1001,7 @@ case 'completionForm':await mutate('completion.record',{card_id:form.dataset.id,
 }if(form.id!=='cardForm'&&confirmedSignature!==null)FormDrafts.forms.get(form).confirmed=confirmedSignature;if(settingsSignature!==null)SettingsViewDrafts.baselines.set(form,settingsSignature);}catch(e){const err=el('formError');if(err&&generation===openDialog.generation&&page===origin&&form.isConnected!==false)I18n.errorContent(err,e);else toast(e);failed(e);}finally{delete form.dataset.saving;if(submitButton)submitButton.disabled=false;}});
 el('dialog').addEventListener('keydown',e=>DialogFocus.keydown(e,el('dialog')));
 el('dialog').addEventListener('cancel',e=>{e.preventDefault();closeRequested();});
-window.addEventListener('beforeunload',e=>{if(dialogDirty||PendingSaves.count){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(dialogDirty||PendingSaves.count||PendingSaves.protectedDraft()||WriteGuard.uncertain||WriteGuard.needsReview){e.preventDefault();e.returnValue='';}});
 (async()=>{try{await refresh();year=serviceYear(state.today);if(typeof ProfilesUI==='undefined'||ProfilesUI.has('geo.view'))await GeoUI.resumeJob();render();saved();Workspace.boot();if(typeof ProfilesUI!=='undefined')ProfilesUI.boot();if(typeof Welcome!=='undefined'&&!state.profile)Welcome.auto();}catch(e){SaveStatus.set('error','Den lokale app kunne ikke åbnes',e.message);el('app').innerHTML=`<section class="panel startupError"><span class="eyebrow">LTM</span><h1>${ui('Den lokale app kunne ikke åbnes')}</h1><p lang="da">${esc(e.message)}</p><p class="hint">${ui('Kontrollér, at appen er startet på computeren eller i Home Assistant. Kontrollér også Wi-Fi eller VPN.')}</p><button class="primary" data-work="reload-app">${ui('Prøv at åbne igen')}</button></section>`;}})();
 
 document.addEventListener('click',event=>{const close=event.target.closest('[data-save-explanation-close]');if(close){const details=close.closest('details');details?.removeAttribute('open');details?.querySelector('summary')?.focus();}});
