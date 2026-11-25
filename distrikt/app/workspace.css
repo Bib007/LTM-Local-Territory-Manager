@@ -356,3 +356,19 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .territoryCompact .panel{min-width:0}
  .territoryCompact .toolbar,.deskTabs,.overviewFilters{max-width:100%}
 }
+
+/* The compact sidebar is a desktop/tablet preference, never a mobile drawer state. */
+#nav .sidebarToggle{display:none}
+@media screen and (min-width:751px){
+ #nav .sidebarToggle{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);color:var(--text);min-height:44px;margin:0 0 10px;padding:6px 4px}
+ #nav .sidebarToggle .navIcon{font-size:25px;line-height:1;color:inherit}
+ #nav .sidebarToggle:focus-visible,#nav [data-navigation]:focus-visible,#nav .navExternal:focus-visible{outline:2px solid var(--link);outline-offset:-3px}
+ body.sidebarCompact #sidebar{width:104px;padding:12px 6px;overflow-x:hidden}
+ body.sidebarCompact #app{margin-left:104px}
+ body.sidebarCompact #sidebar :is(#congregation,.localnote,.navcaption,.languageChoice,.navExternalMark){display:none}
+ body.sidebarCompact #nav .navGroup{padding:4px 0}
+ body.sidebarCompact #nav :is([data-navigation],.navExternal,.sidebarToggle){position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;min-height:56px;padding:7px 2px;white-space:normal}
+ body.sidebarCompact #nav :is(.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel){font-size:11px;line-height:1.25;max-width:100%;overflow-wrap:anywhere}
+ body.sidebarCompact #nav :is(.navTaskCount,.navFollowupCount){position:absolute;top:2px;right:1px;margin:0;padding:1px 4px;font-size:9px;max-width:100%}
+ body.sidebarCompact #sidebar .stop{width:100%;margin:12px 0 0;min-height:44px;padding:6px 3px;overflow-wrap:anywhere}
+}

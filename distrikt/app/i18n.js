@@ -2971,6 +2971,7 @@ const I18n={
   'Adresser, IB, kortgrænser og genprint':'Addresses, do-not-call records, boundaries and reprints',
   'Find distrikter geografisk':'Find territories on the map',
   'Menighed, områder, backup og deling':'Congregation, areas, backup and sharing',
+  'Fold menu sammen':'Collapse menu','Fold menu ud':'Expand menu',
   'Åbn menu':'Open menu','Privat lokal installation':'Private local installation','Log ud':'Sign out',
   'Data på den lokale server':'Data on the local server','Automatisk lagring':'Automatic saving',
   'Luk den lokale app':'Stop the local app','Appens og guidens sprog':'App and guide language',
