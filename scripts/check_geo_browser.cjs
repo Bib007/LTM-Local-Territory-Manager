@@ -147,12 +147,23 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   const lockedPosition=await mapPosition();
   const wheelConsumed=await page.locator('#districtMap').evaluate(n=>{const e=new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120});n.dispatchEvent(e);return e.defaultPrevented;});
   assert.equal(wheelConsumed,false,'A normal wheel must be left to dialog scrolling');
+   assert.equal(await page.locator('#districtMapGestureNotice').evaluate(n=>n.classList.contains('mapGestureNoticeVisible')),true);
+   assert.equal(await page.locator('#districtMapGestureNotice').evaluate(n=>getComputedStyle(n).pointerEvents),'none');
+   for(const theme of ['light','dark']){
+    await page.evaluate(t=>Theme.set(t),theme);
+    const contrast=await page.locator('#districtMapActivate').evaluate(n=>{const lum=s=>{const rgb=s.match(/\d+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];};const s=getComputedStyle(n),a=lum(s.color),b=lum(s.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);});
+    assert.ok(contrast>=4.5,'Locked activation contrast '+theme);
+   }
+   await page.locator('#districtMap').evaluate(n=>{const e=new Event('touchmove',{bubbles:true,cancelable:true});n.dispatchEvent(e);if(e.defaultPrevented)throw Error('Locked touchmove consumed');});
   await page.waitForTimeout(150);assert.deepEqual(await mapPosition(),lockedPosition);
   await page.locator('#districtMap').scrollIntoViewIfNeeded();const box=await page.locator('#districtMap').boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.wheel(0,10000);await page.waitForTimeout(200);
   assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollTop>=n.scrollHeight-n.clientHeight-2),'Normal wheel over map can reach dialog bottom');assert.deepEqual(await mapPosition(),lockedPosition);
   await page.locator('#districtMapActivate').click();assert.equal(await page.locator('#districtMapActivate').getAttribute('aria-pressed'),'true');assert.equal(await page.evaluate(()=>DistrictMap.map.keyboard.enabled()&&DistrictMap.map.touchZoom.enabled()&&DistrictMap.map.dragging.enabled()),true);
   await page.keyboard.press('ArrowRight');await page.waitForTimeout(300);assert.notDeepEqual((await mapPosition()).center,lockedPosition.center,'Explicit keyboard activation allows panning');
   const movedPosition=await mapPosition();await page.locator('#districtMapActivate').click();assert.deepEqual(await mapPosition(),movedPosition,'Relocking preserves the chosen extent');
+   assert.match(await page.locator('#districtMapGestureLabel').innerText(),/Låst/);
+   await page.locator('#districtMap').evaluate(n=>n.dispatchEvent(new Event('touchmove',{bubbles:true,cancelable:true})));
+   assert.ok(await page.locator('#districtMapGestureNotice').evaluate(n=>n.classList.contains('mapGestureNoticeVisible')),'Locked touch movement gives feedback');
   const modifierConsumed=await page.locator('#districtMap').evaluate(n=>{const e=new WheelEvent('wheel',{bubbles:true,cancelable:true,ctrlKey:true,deltaY:-120});n.dispatchEvent(e);return e.defaultPrevented;});
   assert.equal(modifierConsumed,true,'Ctrl wheel is handled by Leaflet');await page.waitForTimeout(200);assert.ok((await mapPosition()).zoom>movedPosition.zoom);await page.evaluate(()=>window.dispatchEvent(new KeyboardEvent('keyup',{key:'Control'})));assert.equal(await page.evaluate(()=>DistrictMap.gesture.enabled()),false);
   assert.equal(await page.evaluate(()=>JSON.stringify(state.cards)===window.gestureRecords),true,'View controls cannot mutate card records');await page.evaluate(()=>closeDialog());

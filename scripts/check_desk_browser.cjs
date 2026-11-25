@@ -10,7 +10,7 @@ initial.notes=[{id:'task-open',card_id:'folder',text:'Fiktiv gammel <opfølgning
 function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;};const x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
 (async()=>{const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{}:{args:['--no-sandbox']});try{for(const width of (touch?[360,390,844,768,1024]:[320,390,768,1440])){
  const height=touch?({360:800,390:844,844:390,768:1024,1024:768}[width]):900;
- const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:touch}),page=await context.newPage(),state=structuredClone(initial),writes=[],errors=[];let geoReads=0,stateReads=0;page.on('pageerror',e=>errors.push(e.message));
+ const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:touch}),page=await context.newPage(),state=structuredClone(initial),writes=[],errors=[];let geoReads=0,stateReads=0,rejectReturn=true;page.on('pageerror',e=>errors.push(e.message));
  await context.route('**/*',async route=>{const u=new URL(route.request().url());if(u.protocol==='blob:'){assert.equal(u.origin,'http://ltm.desk.test','Only local image blobs are allowed');return route.continue();}if(u.hostname==='tile.openstreetmap.org'&&/^\/\d+\/\d+\/\d+\.png$/.test(u.pathname))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#eee"/></svg>'});assert.equal(u.hostname,'ltm.desk.test',u.href);const json=data=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
  if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
  if(u.pathname==='/s12-template-en.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-E-source.png')});
@@ -52,7 +52,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action.startsWith('setup.card-import.')){const body=route.request().postDataJSON();writes.push(body);if(body.action.endsWith('.inspect'))return json({revision:state.revision,result:{width:1,rows:1,columns:[{index:0,label:'kortnummer'}],fields:[{key:'card',label:'Kortnummer',required:true}],sample:[{line:2,values:['Fiktivt kort']}],issues:[]}});if(body.action.endsWith('.preview')){assert.deepEqual(body.data.column_map,['card']);return json({revision:state.revision,result:{token:body.data.name,cards:[{number:body.data.name,name:'Fiktiv kø',area:'Fiktivt område',kind:'By',visits:1,addresses:[]}],areas:[],errors:[],addresses:1,visits:1}});}assert.equal(body.data.confirm,'IMPORTÉR KORT');state.cards.push({id:body.data.token,number:body.data.token,area_id:'a',name:'Fiktiv kø',kind:'By',addresses:[]});state.revision+='-queue';return json({revision:state.revision,result:{count:1}});}
  if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action==='revision.approve'){const body=route.request().postDataJSON();assert.deepEqual(body.data,{card_id:'folder',side:'front'});writes.push(body);state.cards.find(c=>c.id==='folder').front_revision=false;state.revision+='-approval';return json({ok:true,result:{},revision:state.revision,geo_changed:false});}
  if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action==='recovery.purge'){const body=route.request().postDataJSON();assert.equal(body.data.batch,'fictional-trash');assert.equal(body.include_state,true);writes.push(body);state.recovery=[];state.revision+='-purge';return json({ok:true,result:{},revision:state.revision,geo_changed:false,state});}
- if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();assert.equal(body.action,'loan.finish');assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(body.data.id,'loan-two');assert.equal(body.data.complete,false);assert.equal(body.data.retain,false);assert.equal(body.data.revise_ib,false,'No must not create an IB follow-up');writes.push(body);state.loans.find(l=>l.id===body.data.id).returned=body.data.date;state.cards.find(c=>c.id==='two').in_folder=false;state.revision+='-return';return json({result:{},revision:state.revision});}
+ if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();assert.equal(body.action,'loan.finish');assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(body.data.id,'loan-two');assert.equal(body.data.complete,false);assert.equal(body.data.retain,false);assert.equal(body.data.revise_ib,false,'No must not create an IB follow-up');if(rejectReturn){rejectReturn=false;return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'Fiktiv gemmefejl'})});}writes.push(body);state.loans.find(l=>l.id===body.data.id).returned=body.data.date;state.cards.find(c=>c.id==='two').in_folder=false;state.revision+='-return';return json({result:{},revision:state.revision});}
  const file=u.pathname==='/'?'index.html':u.pathname.slice(1);assert.ok(!file.includes('..'));return route.fulfill({path:path.join(root,file)});
  });
  const activate=locator=>touch?locator.tap():locator.click();
@@ -151,6 +151,20 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert(gridFits,'Role setting controls fit the desktop/mobile viewport');
  await page.evaluate(()=>{page='Udlevering';issue('folder');});
  const publisherInput=page.locator('#issuePublisherName');
+ const quickHeading=page.locator('#issueQuickPublishersHeading'),quickGroup=page.locator('.issueQuickPublishers');
+ assert.equal(await quickHeading.innerText(),'Oftest valgte forkyndere');
+ assert.equal(await quickGroup.getAttribute('aria-labelledby'),'issueQuickPublishersHeading');
+ const headingStyle=await quickHeading.evaluate(n=>{
+   const s=getComputedStyle(n),r=n.getBoundingClientRect(),group=n.nextElementSibling.getBoundingClientRect(),form=n.closest('form').getBoundingClientRect();
+   return {size:parseFloat(s.fontSize),weight:Number(s.fontWeight),color:s.color,bg:getComputedStyle(n.closest('dialog')).backgroundColor,margin:parseFloat(s.marginTop),fits:r.left>=form.left-1&&r.right<=form.right+1&&r.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1&&r.bottom<=group.top+1};
+ });
+ assert.ok(headingStyle.size>=18&&headingStyle.weight>=700&&headingStyle.margin>=16,'Quick publisher heading has clear visual hierarchy');
+ assert.ok(contrast(headingStyle.color,headingStyle.bg)>=4.5,'Quick publisher heading contrast');
+ assert.ok(headingStyle.fits,'Quick publisher heading fits above its buttons without horizontal overflow');
+ assert.deepEqual(await quickGroup.locator('button').allTextContents(),['Fiktiv B','Fiktiv <A>']);
+ await activate(quickGroup.locator('[data-issue-publisher=p2]'));
+ assert.equal(await publisherInput.inputValue(),'Fiktiv B','Quick selection still fills the publisher field');
+ assert.equal(writes.length,0,'Quick selection alone never saves');
  await publisherInput.fill('Fiktiv <A>');
  assert.match(await page.locator('#issuePublisherGuidance').innerText(),/1 \/ 4/);
  assert.match(await page.locator('#issuePublisherNames').innerText(),/1 \/ 4/,'Suggestions include live counts');
@@ -289,8 +303,26 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  if(touch){const metrics=await page.locator('#dialog').evaluate(n=>({height:n.getBoundingClientRect().height,viewport:innerHeight,fields:[...n.querySelectorAll('input:not([type=checkbox]):not([type=radio]),select,textarea')].map(e=>parseFloat(getComputedStyle(e).fontSize)),close:n.querySelector('.dialogClose').getBoundingClientRect().height}));assert.ok(metrics.height<=metrics.viewport-20,'Dialog fits landscape viewport');assert.ok(metrics.fields.every(n=>n>=16),'Fields stay readable without iOS focus zoom: '+JSON.stringify(metrics));assert.ok(metrics.close>=44,'Touch close target');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`issue-${width}x${height}.png`),fullPage:true});}}
  assert.match(await page.locator('.issueTaskAlert').innerText(),/Fiktiv gammel <opfølgning>/);assert.doesNotMatch(await page.locator('.issueTaskAlert').innerText(),/FIKTIV_DONE_TASK/);assert.equal(await page.locator('.issueTaskAlert opfølgning').count(),0);assert.equal(await page.locator('#issueForm button.primary').isEnabled(),true,'Tasks add no mandatory assignment block');assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1));
  await page.locator('#issueForm [name=card_id]').selectOption('blocked');assert.equal(await page.locator('.issueTaskAlert').count(),0);await page.locator('#issueForm [name=card_id]').selectOption('folder');assert.equal(await page.locator('.issueTaskAlert').count(),1);await activate(page.locator('.dialogClose'));
+ // Observe even transient select focus during native showModal and when replacing an open card.
+ await page.evaluate(()=>{window.__fictionalSelectFocus=[];document.addEventListener('focusin',e=>{if(e.target.tagName==='SELECT'&&e.target.closest('#dialog'))window.__fictionalSelectFocus.push(e.target.name||e.target.id);});});
  await activate(page.locator('[data-card-row=one] .returnAction'));await page.locator('#finishForm').waitFor();assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-one');
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Opening Return never focuses a native select');
+ assert.ok(await page.locator('#dialog .dialogClose').evaluate(n=>n===document.activeElement),'Safe initial dialog focus');
+ if(!touch&&engine==='chromium'){
+  await page.keyboard.press('Tab');
+  assert.ok(await page.locator('#finishForm [name=complete]').evaluate(n=>n===document.activeElement),'Tab reaches the native choice');
+ }
+ await page.locator('#finishForm [name=complete]').selectOption('no');
+ assert.equal(await page.locator('#finishForm [name=complete]').inputValue(),'no','Intentional choice remains available');
  await assertResponsive('#dialog','Return dialog');assert.equal(writes.length,0);await activate(page.locator('.dialogClose'));
+ await page.evaluate(()=>{window.__fictionalSelectFocus.length=0;detail('one','Historik');});
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Opening a district card does not focus a picker');
+ await page.locator('#dialog .cardMore summary').click();
+ await activate(page.locator('#dialog .cardMore [data-action=return]'));
+ await page.locator('#finishForm').waitFor();
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Replacing an already open district card with Return does not focus a picker');
+ assert.ok(await page.locator('#dialog .dialogClose').evaluate(n=>n===document.activeElement));
+ await activate(page.locator('.dialogClose'));assert.equal(writes.length,0);
  await page.locator('[data-card-row=one] [data-action=select]').click();assert.match(await page.locator('.details').innerText(),/Fiktiv <A>/);assert.equal(await page.locator('.details [data-action=complete]').count(),1);
  await page.evaluate(()=>{page='Udlevering';render();});await page.locator('[data-action=desk-tab][data-tab=Aflever]').click();await page.locator('[data-action=desk-tab][data-tab=Forkyndere]').click();assert.equal(await page.locator('.publisherReturnGroup').count(),2);assert.match(await page.locator('.publisherReturnGroup h3').first().innerText(),/Fiktiv B[\s\S]*2 \/ 1/);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),3);assert.equal(await page.locator('.publisherReturnGroup script').count(),0);
  await page.locator('#search').fill('<A>');assert.equal(await page.locator('.publisherReturnGroup').count(),1);assert.match(await page.locator('.publisherReturnGroup h3').innerText(),/Fiktiv <A>/);await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('#search').inputValue(),'<A>');assert.match(await page.locator('[data-tab=Forkyndere]').innerText(),/^By publisher$/);await page.locator('#search').fill('');await page.locator('#navigationLanguage').selectOption('da');
@@ -298,7 +330,27 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  for(const cls of ['issueAction','returnAction']){const button=page.locator('.'+cls+':not(:disabled)').first();if(await button.count()){const s=await button.evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(s.color,s.background)>=4.5);}}
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No page overflow');
  await assertResponsive('#app','Returns by publisher');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`returns-${width}.png`),fullPage:true});}
- await activate(page.locator('.publisherReturnGroup [data-action=return][data-id=loan-two]'));await page.locator('#finishForm [name=complete]').selectOption('no');const ibChoice=page.locator('#finishForm .return-ib-checkbox'),ibCheck=page.locator('#finishForm input[name=revise_ib]');assert.equal(await ibCheck.isChecked(),false,'IB revision must default to unchecked');assert.ok((await ibChoice.boundingBox())?.height>=80,'IB choice needs a large touch target');await ibChoice.click();assert.equal(await ibCheck.isChecked(),true);await ibChoice.click();assert.equal(await ibCheck.isChecked(),false);await activate(page.locator('#finishForm button.primary'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(writes.length,1);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),2);assert.equal(state.cards.find(c=>c.id==='two').in_folder,false);assert.equal(state.completions.length,0);assert.deepEqual(errors,[]);
+ const nextReturn=page.locator('[data-action=desk-return-next]'),mark=id=>page.locator('input[data-return-mark="'+id+'"]');
+ assert.equal(await nextReturn.isDisabled(),true);
+ await page.locator('#search').fill('Fiktiv B');
+ await activate(page.locator('[data-action=desk-return-mark-visible]'));
+ assert.equal(await page.locator('input[data-return-mark]:checked').count(),2);
+ await page.locator('#search').fill('<A>');assert.equal(await nextReturn.isDisabled(),true);
+ await page.locator('#search').fill('Fiktiv B');assert.equal(await mark('loan-two').isChecked(),true);assert.equal(await mark('loan-three').isChecked(),true);
+ await activate(nextReturn);assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-two');
+ await activate(page.locator('#dialog .dialogClose'));assert.equal(writes.length,0);
+ await mark('loan-two').uncheck();await activate(nextReturn);assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-three');
+ await activate(page.locator('#dialog .dialogClose'));await mark('loan-two').check();
+ await page.locator('#search').fill('');await activate(nextReturn);
+ assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-two');
+await page.locator('#finishForm [name=complete]').selectOption('no');const ibChoice=page.locator('#finishForm .return-ib-checkbox'),ibCheck=page.locator('#finishForm input[name=revise_ib]');assert.equal(await ibCheck.isChecked(),false,'IB revision must default to unchecked');assert.ok((await ibChoice.boundingBox())?.height>=80,'IB choice needs a large touch target');await ibChoice.click();assert.equal(await ibCheck.isChecked(),true);await ibChoice.click();assert.equal(await ibCheck.isChecked(),false);await activate(page.locator('#finishForm button.primary'));await page.waitForFunction(()=>document.getElementById('formError')?.textContent.includes('Fiktiv gemmefejl')&&!document.querySelector('#finishForm button.primary').disabled);
+ assert.equal(writes.length,0);assert.equal(await page.locator('#dialog').evaluate(n=>n.open),true);assert.equal(await page.locator('#finishForm [name=complete]').inputValue(),'no');
+ assert.equal(await page.evaluate(()=>deskReturnSelected.has('loan-two')&&deskReturnSelected.has('loan-three')),true);
+ await activate(page.locator('#finishForm button.primary'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(writes.length,1);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),2);
+ assert.equal(await mark('loan-two').count(),0);assert.equal(await mark('loan-three').isChecked(),true);
+ assert.equal(await page.evaluate(()=>deskReturnSelected.has('loan-two')),false);
+ await activate(nextReturn);assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-three');await activate(page.locator('#dialog .dialogClose'));
+ await activate(page.locator('[data-action=desk-return-clear]'));assert.equal(await nextReturn.isDisabled(),true);assert.equal(writes.length,1,'No automatic second save');assert.equal(state.cards.find(c=>c.id==='two').in_folder,false);assert.equal(state.completions.length,0);assert.deepEqual(errors,[]);
  await page.evaluate(()=>{page='Opgaver';Workspace.taskFilter='open';render();});assert.equal(await page.locator('[data-value=notes]').count(),0);assert.match(await page.locator('#app').innerText(),/Fiktiv gammel <opfølgning>/);assert.doesNotMatch(await page.locator('#app').innerText(),/FIKTIV_DONE_TASK/);
  await activate(page.locator('[data-work=resolve][data-id=task-open]'));await activate(page.locator('[data-work-form=complete-task] button.primary'));await page.waitForFunction(()=>state.notes.find(n=>n.id==='task-open').resolved);assert.equal(await page.locator('.navTaskCount').innerText(),'1');assert.equal(await page.locator('[data-work=resolve][data-id=task-open]').count(),0);
  await page.locator('[data-work=task-filter][data-value=done]').click();assert.match(await page.locator('#app').innerText(),/FIKTIV_DONE_TASK/);await page.locator('[data-work=new-task]').click();assert.equal(await page.locator('[data-work-form=note] [name=task]').count(),0);assert.equal(await page.locator('[data-work-form=note]').count(),1);await activate(page.locator('.dialogClose'));assert.deepEqual(errors,[]);
@@ -364,8 +416,34 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  // Independent checks count the changed sides here; overdue assignments are under Publishers.
  Object.assign(state.cards.find(c=>c.id==='folder'),{area_id:null,front_revision:true,back_revision:true});Object.assign(state.loans.find(l=>l.id==='loan-one'),{assigned:'2026-01-01',cycle_start:'2026-01-01'});await page.evaluate(async()=>refresh());
  if(width<=750)await activate(page.locator('.mobileMenu'));await activate(page.locator('#nav [data-navigation="1:4"]'));await page.waitForFunction(()=>page==='Opfølgninger');assert.equal(await page.locator('.followupRow').count(),10);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'10');
- await activate(page.locator('[data-work=followup-filter][data-value=reprint]'));assert.equal(await page.locator('.followupRow').count(),3);await activate(page.locator('[data-action=approve][data-id=folder][data-side=front]'));assert.equal(writes.filter(w=>w.action==='revision.approve').length,0);await activate(page.locator('[data-action=confirm-approve]'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(await page.locator('.followupRow').count(),2);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'9');assert.equal(state.cards.find(c=>c.id==='folder').back_revision,true);assert.equal(writes.filter(w=>w.action==='revision.approve').length,1);
+ const moreFilters=page.locator('#followupMoreButton'),extraFilters=page.locator('#followupExtraFilters'),reprintFilter=page.locator('[data-work=followup-filter][data-value=reprint]');
+ const wideFilters=await page.locator('.followupFilterLayout').evaluate(n=>n.clientWidth>=48*parseFloat(getComputedStyle(document.documentElement).fontSize));
+ assert.equal(await moreFilters.isVisible(),!wideFilters);assert.equal(await extraFilters.isVisible(),wideFilters);
+ if(wideFilters){
+  const tops=await page.locator('.followupTabs [data-work=followup-filter]').evaluateAll(ns=>ns.map(n=>n.getBoundingClientRect().top));
+  assert.ok(tops.every(y=>Math.abs(y-tops[0])<2),'All six filters fit one line');
+ }else{
+  await activate(moreFilters);assert.equal(await moreFilters.getAttribute('aria-expanded'),'true');assert.equal(await extraFilters.isVisible(),true);
+  assert.ok(await extraFilters.evaluate(n=>n.scrollWidth<=n.clientWidth+1),'Expanded filter panel fits its container');
+ }
+ if(width===844){
+  // Model only the sidebar's change in content width; no navigation or rerender.
+  await page.evaluate(()=>{window.filterNode=document.querySelector('[data-work=followup-filter][data-value=reprint]');document.querySelector('main').style.marginLeft='0';});
+  assert.equal(await moreFilters.isVisible(),false);assert.equal(await extraFilters.isVisible(),true);
+  assert.ok(await reprintFilter.evaluate(n=>n===window.filterNode),'Responsive layout preserves the same controls');
+  await page.evaluate(()=>document.querySelector('main').style.removeProperty('margin-left'));
+  assert.equal(await moreFilters.isVisible(),!wideFilters);
+ }
+ await activate(reprintFilter);assert.equal(await page.locator('.followupRow').count(),3);await activate(page.locator('[data-action=approve][data-id=folder][data-side=front]'));assert.equal(writes.filter(w=>w.action==='revision.approve').length,0);await activate(page.locator('[data-action=confirm-approve]'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(await page.locator('.followupRow').count(),2);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'9');assert.equal(state.cards.find(c=>c.id==='folder').back_revision,true);assert.equal(writes.filter(w=>w.action==='revision.approve').length,1);
  await page.locator('[data-work-input=followups]').fill('1');assert.equal(await page.locator('.followupRow').count(),1);await page.evaluate(()=>window.followupSearch=document.querySelector('[data-work-input=followups]'));await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('[data-work-input=followups]').inputValue(),'1');assert.ok(await page.evaluate(()=>window.followupSearch===document.querySelector('[data-work-input=followups]')));assert.match(await page.locator('[data-followup-count]').innerText(),/Follow-up items: 1/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ if(!wideFilters){
+  assert.equal(await moreFilters.getAttribute('aria-expanded'),'true');
+  await activate(moreFilters);assert.equal(await extraFilters.isVisible(),false);assert.equal(await moreFilters.getAttribute('aria-expanded'),'false');
+  assert.match(await moreFilters.innerText(),/Reprint/i);
+  assert.equal(await page.locator('[data-work-input=followups]').inputValue(),'1');assert.equal(await page.locator('.followupRow').count(),1);
+  await moreFilters.focus();await moreFilters.press('Enter');assert.equal(await extraFilters.isVisible(),true);
+  assert.equal(await reprintFilter.getAttribute('aria-pressed'),'true');
+ }
  if(out)await page.screenshot({path:path.join(out,`followups-${width}.png`),fullPage:true});await page.locator('#navigationLanguage').selectOption('da');
  // Overlap warnings cover both cards; shared edges remain quiet and nothing is written.
  const beforeOverlapWrites=writes.length;

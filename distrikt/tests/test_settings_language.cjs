@@ -28,6 +28,11 @@ const form=(id,fields,dataset={})=>({id,dataset,fields,reportValidity(){return t
   const activity=run('Workspace.activity()');assert.match(activity,language==='en'?/>Settings changed<\//:/>Indstillinger ændret<\//);assert.match(activity,/101 &lt;invented&gt;/);assert.match(activity,/>Gem</,'Unknown action identifiers stay unchanged');assert.match(activity,/, Kort</,'Unknown field identifiers stay unchanged');
   assert.match(html,/Områder &lt;invented&gt; &amp; Kort/);assert.match(html,/Menighed og mappe &lt;invented&gt;/);assert.match(html,/Gendan &lt;invented&gt;/);
   assert.match(html,/name="history_years" type="number" min="1" max="100" step="1" required value="2"/);
+  assert.match(html,/<form id="settingsForm"><section class="settingsSection">/);
+  assert.equal((html.match(/<form id="settingsForm">/g)||[]).length,1);
+  assert.match(html,/<fieldset id="folderWorkflowOptions"[^>]*><legend>/);
+  assert.match(html,/<textarea id="overdueTemplate" name="overdue_message_template" rows="11" maxlength="3000" required>/);
+  assert.match(html,/<div class="actions settingsSaveActions"><button class="primary">/);
   assert.match(html,/value="manual" selected/);assert.match(html,/name="rural_minimum"[^>]*max="30"/);
   for(const role of ['member','pioneer','assistant','overseer'])assert.match(html,new RegExp('name="guide_'+role+'"[^>]*min="0"[^>]*max="100"'));assert.match(html,language==='en'?/>Save settings<\//:/>Gem indstillinger<\//);
   assert.match(html,language==='en'?/>Card front<\//:/>Kortets forside<\//,'A print-profile front is distinct from the Home navigation label');

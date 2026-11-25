@@ -104,7 +104,8 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
     f.setAnswer(()=>mock.response);
     await assert.rejects(f.run("api('/api/mutate',{action:'card.save',data:{name:'Fictional'}})"));
     assert.equal(mock.calls.cloneJson,0);
-    assert.equal(f.run('WriteGuard.needsReview'),true);
+    assert.equal(f.run('WriteGuard.needsReview'),false);
+    assert.equal(f.run('WriteGuard.uncertain'),true,'An unvalidated stale-authority response is not a confirmed save');
   }
   // Distinct overlapping requests must never share a parsed response.
   {

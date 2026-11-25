@@ -13,7 +13,7 @@ Printbetjeningen nedenfor er klargjort på develop fra beta.22. Stabil 1.11.1 op
 3. Fjern **Husk disse indstillinger**, hvis det kun er en prøve. **Brug standardmål** viser standarderne; en profil gemmes først ved **Fremvis og print** med huskefeltet valgt.
 4. Tillad det nye printvindue. Vent på billedkontrol, og vælg **Udskriv / gem PDF**. Brug **100 %**, slå sidehoved/sidefod fra, og undgå printerens »tilpas til side«.
 5. Kontrollér mål, alle vejlinjer og eventuel QR-kode på papir. Ved for lidt plads eller manglende billeder er printknappen spærret. Ret kortet eller genåbn print.
-6. Vælg først **Godkend efter print** i appen, når den fysiske side er kontrolleret. Åbning, PDF-gemning og profilgemning godkender aldrig genprint automatisk.
+6. Vælg **Bekræft, at forsiden er printet** eller **Bekræft, at IB-bagsiden er printet** i appen. Vælg først **Ja, siden er kontrolleret og printet**, når den fysiske side er klar. Ved flere sider kan du vælge **Bekræft print i appen** og derefter **Ja, de valgte sider er kontrolleret og printet**. Åbning, udskrivning, PDF-gemning og profilgemning ændrer aldrig printstatus automatisk.
 
 Sprogskift bevarer felter, valg og mål i den åbne dialog. Printvinduets knapper følger sproget ved åbningen. Originale formularer, danske formulartekster, navne og indtastede data bevares. Et allerede åbent printvindue er en kopi fra åbningstidspunktet; genåbn efter ændringer i kortet.
 
@@ -25,7 +25,7 @@ Under **Rapporter og historik** kan du vælge **Kalenderår**, **Tjenesteår** e
 
 **Alle tre perioder bruger nu selve den originale S-13-formular** med dens baggrund, felter og kolonner. Udleveringer, seneste gennemgang før perioden og periodens gennemgange placeres direkte i formularens felter. Tjenesteår beholder **Hent original udfyldt S-13** og den uændrede direkte PDF-download. Kalenderår og seneste 12 måneder bruger den samme S-13-formular med en tydelig periodeoverskrift, men dette er et **tilpasset periodeudtræk**, ikke en officiel tjenesteårsrapport. **Print S-13-formular for perioden / PDF** viser formularen alene og kan gemmes som PDF.
 
-Rapporten bruger A4 med 15 mm margener; brede kortudsnit kan bruge liggende sider. Kontrollér den valgte periodes datoer, udleveringer, gennemgange og fortsættelsessider. Kortbaserede rapporter kræver OSM-kortfliser, men det særskilte periodeudtræk gør ikke.
+Rapporten bruger A4 med 15 mm margener; brede kortudsnit bruger liggende sider. Kortudsnittet skaleres proportionalt på én side med signaturforklaring og OSM-attribution. Hvis browseren viser din installationsadresse eller IP i sidefoden, skal du slå **Sidehoveder og sidefødder** fra i browserens printindstillinger (i Chrome/Edge under Flere indstillinger). LTM kan ikke ændre browserens egen indstilling. S-13-periodeforklaringen vises kun på første formularside i hvert udtræk; det særskilte formularprint har ingen rapportforside. Kontrollér datoer, udleveringer, gennemgange og fortsættelsessider. Hvis OSM-kortfliser ikke er tilgængelige, kan du vælge kort uden baggrund; S-13 kræver ikke OSM.
 
 Dobbeltklik starter ikke en ekstra forberedelse. Navigation eller ændringer i datagrundlaget stopper forældede printforberedelser. Ved fejl i profilgemning kontrolleres gemmestatus og eventuelt **Opdater**. Automatiske prøver bruger opdigtede data; fysisk printerkalibrering er fortsat et ejertrin.
 

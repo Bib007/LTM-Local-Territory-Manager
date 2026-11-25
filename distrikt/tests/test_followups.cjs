@@ -30,10 +30,17 @@ run(`state={today:'2026-10-23',cards:[
  for(const lang of ['da','en']){
   run(`I18n.set('${lang}');Workspace.followupFilter='all';Workspace.followupQuery=''`);
   const html=run('Workspace.followups()');assert.equal((html.match(/data-followup=/g)||[]).length,10);assert.doesNotMatch(html,/<fictional>/);assert.doesNotMatch(html,/Person &lt;fictional&gt;/);
+  assert.equal((html.match(/data-work="followup-filter"/g)||[]).length,6,'Each filter is rendered exactly once');
+  assert.match(html,/id="followupMoreButton"[^>]*aria-expanded="false"[^>]*aria-controls="followupExtraFilters"/);
+  assert.match(html,lang==='en'?/… More/:/… Mere/);
   contracts.push(html.match(/(?:data-work|data-action|data-side|data-id|data-followup)="[^"]*"/g));
   assert.match(html,lang==='en'?/Follow-up items: 10/:/Til opfølgning: 10/);
   run("Workspace.followupQuery='Street <fictional>'");assert.equal((run('Workspace.followups()').match(/data-followup=/g)||[]).length,4);
   run("Workspace.followupQuery='';Workspace.followupFilter='reprint'");assert.equal((run('Workspace.followups()').match(/data-followup=/g)||[]).length,2);
+  const selected=run('Workspace.followups()');assert.match(selected,lang==='en'?/Reprint/i:/Genprint/);assert.match(selected,/data-value="reprint" class="active" aria-pressed="true"/);
+  run("Workspace.followupFiltersExpanded=true;Workspace.followupQuery='fictional'");
+  const expanded=run('Workspace.followups()');assert.match(expanded,/aria-expanded="true"/);assert.match(expanded,/class="followupExtraFilters is-open"/);assert.match(expanded,/data-work-input="followups" value="fictional"/);assert.match(expanded,/data-value="reprint" class="active"/);
+  run("Workspace.followupFiltersExpanded=false;Workspace.followupQuery=''");
   const imports=run('SetupUI.imports()');assert.equal((imports.match(/data-history-import="open"/g)||[]).length,1);assert.equal((imports.match(/data-card-import="open"/g)||[]).length,1);assert.equal((imports.match(/data-setup="ib-open"/g)||[]).length,1);assert.doesNotMatch(imports,/data-setup="open"/);
  }
  assert.deepEqual(contracts[0],contracts[1]);

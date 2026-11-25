@@ -1,5 +1,50 @@
 'use strict';
 let frontResizeObserver=null;
+// Home-screen web apps have no browser back button. Keep the live app and
+// its editors mounted; only the temporary print document lives in the frame.
+const PrintPreview={
+ active:null,
+ // A print-profile-only save updates state without replacing the live view.
+ // Do not skip a render for any concurrent data or permission change.
+ profileOnly(previous,fresh){
+  const view=s=>{const {revision,settings,profile,...rest}=s,{print_profiles,...otherSettings}=settings||{}, {snapshot,...otherProfile}=profile||{};return {...rest,settings:otherSettings,profile:profile?otherProfile:profile};};
+  return JSON.stringify(view(previous))===JSON.stringify(view(fresh));
+ },
+ standalone(){return window.navigator?.standalone===true||window.matchMedia?.('(display-mode: standalone)')?.matches===true;},
+ open(message){
+  if(!this.standalone())return window.open('','_blank');
+  if(this.active)throw Error(I18n.language()==='en'?'Close the current print preview first.':'Luk den aktuelle printvisning først.');
+  const owner=page,generation=openDialog.generation,focused=document.activeElement,scroll=[window.scrollX,window.scrollY],positions=[];
+  for(const node of document.querySelectorAll('body *'))if(node.scrollTop||node.scrollLeft)positions.push([node,node.scrollLeft,node.scrollTop]);
+  const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd,focused.selectionDirection]:null;
+  const overlay=document.createElement('dialog'),toolbar=document.createElement('div'),back=document.createElement('button'),frame=document.createElement('iframe');
+  overlay.id='ltmPrintPreview';overlay.setAttribute('aria-label',I18n.language()==='en'?'Print preview':'Printvisning');
+  overlay.style.cssText='position:fixed;inset:0;margin:0;width:100%;height:100%;max-width:none;max-height:none;padding:0;border:0;border-radius:0;box-sizing:border-box;display:flex;flex-direction:column;background:white;overflow:hidden';
+  toolbar.style.cssText='flex:none;display:flex;align-items:center;gap:12px;padding:12px;padding-top:max(12px,env(safe-area-inset-top));background:#fff;color:#182b38;border-bottom:1px solid #ccd8df';
+  back.type='button';back.textContent=I18n.language()==='en'?'← Back to LTM':'← Tilbage til LTM';back.style.minHeight='44px';
+  const title=document.createElement('strong');title.textContent=overlay.getAttribute('aria-label');toolbar.append(back,title);
+  frame.title=title.textContent;frame.style.cssText='display:block;flex:1 1 0;min-height:0;width:100%;border:0;background:white';
+  // Never include the app's return control in the printed document.
+  const style=document.createElement('style');style.textContent='@media print{body:has(#ltmPrintPreview[open])>*{display:none!important}}';
+  overlay.append(style,toolbar,frame);document.body.append(overlay);
+  const preview={embedded:true,get closed(){return !overlay.open||!overlay.isConnected;},get document(){return frame.contentDocument;},
+   print(){if(!this.closed){frame.contentWindow.focus();frame.contentWindow.print();}},
+   close:()=>{
+    if(this.active!==preview)return;
+    this.active=null;overlay.close();overlay.remove();preview.onClose?.();
+    // Do not restore over a newer navigation or editor.
+    if(page!==owner||openDialog.generation!==generation)return;
+    if(focused?.isConnected){focused.focus({preventScroll:true});if(selection)focused.setSelectionRange?.(...selection);}
+    for(const [node,x,y] of positions)if(node.isConnected){node.scrollLeft=x;node.scrollTop=y;}
+    window.scrollTo({left:scroll[0],top:scroll[1],behavior:'instant'});
+   }};
+  this.active=preview;
+  back.addEventListener('click',preview.close);
+  overlay.addEventListener('cancel',event=>{event.preventDefault();preview.close();});
+  try{overlay.showModal();back.focus({preventScroll:true});preview.document.open();preview.document.write('<p>'+esc(message|| (I18n.language()==='en'?'Preparing print…':'Forbereder print…'))+'</p>');preview.document.close();return preview;}
+  catch(error){preview.close();throw error;}
+ }
+};
 // Print profiles belong to local settings. Opening a print view never approves a revision.
 function defaultPrintProfile(side){return {orientation:side==='back'?'portrait':'landscape',paper:'cut',mode:side==='back'?'full':'data',width:side==='back'?94:146,height:side==='back'?146:94,x:0,y:0};}
 function printSettings(fields){
@@ -8,13 +53,13 @@ function printSettings(fields){
  if(!['portrait','landscape'].includes(cfg.orientation)||!['cut','a4'].includes(cfg.paper)||!['full','data'].includes(cfg.mode))throw Error('Kontrollér retning, papir og tryk.');
  if((cfg.orientation==='portrait')!==(cfg.height>=cfg.width))throw Error('Retning og kortmål stemmer ikke overens.');if(fields.s12_title_x!==undefined)cfg.s12_layout=S12Layout.fromFields(fields);return cfg;
 }
-function configurePrintMode(side){if(!['front','back'].includes(side))return;const profile={...defaultPrintProfile(side),...(state.settings.print_profiles?.[side]||{})};openDialog(`<h2>${ui(side==='front'?'Kortets forside':'IB-bagside')} · ${ui('Indstil tryk')}</h2><p>${ui('Er papiret allerede fortrykt? Vælg kun oplysninger. På blankt papir vælger du med titler og linjer. Gemning ændrer ikke kortets godkendelse og åbner ikke print.')}</p><form id="profileModeForm" data-side="${side}"><label for="profileMode">${ui('Tryk')}</label><select id="profileMode" name="mode">${[['data','Fortrykt kort · kun oplysninger'],['full','Med titler og linjer']].map(([value,label])=>`<option value="${value}" data-ui="${esc(label)}" ${profile.mode===value?'selected':''}>${esc(I18n.text(label))}</option>`).join('')}</select>${formEnd('Gem printvalg')}</form>`,I18n.language());}
+function configurePrintMode(side){if(!['front','back'].includes(side))return;const profile={...defaultPrintProfile(side),...(state.settings.print_profiles?.[side]||{})};openDialog(`<h2>${ui(side==='front'?'Kortets forside':'IB-bagside')} · ${ui('Indstil tryk')}</h2><p>${ui('Er papiret allerede fortrykt? Vælg kun oplysninger. På blankt papir vælger du med titler og linjer. Gemning ændrer ikke kortets printstatus og åbner ikke print.')}</p><form id="profileModeForm" data-side="${side}"><label for="profileMode">${ui('Tryk')}</label><select id="profileMode" name="mode">${[['data','Fortrykt kort · kun oplysninger'],['full','Med titler og linjer']].map(([value,label])=>`<option value="${value}" data-ui="${esc(label)}" ${profile.mode===value?'selected':''}>${esc(I18n.text(label))}</option>`).join('')}</select>${formEnd('Gem printvalg')}</form>`,I18n.language());}
 function printRevisions(side){const ids=state.cards.filter(c=>c[side+'_revision']).sort((a,b)=>cmp(a.number,b.number)).map(c=>c.id);if(!ids.length){toast('Ingen sider afventer genprint.');return;}printOptions(ids[0],side,ids);}
 function printOptions(id,side,ids,defaults=false){
  const cards=(ids||[id]).map(card).filter(Boolean);if(!cards.length)return;
  const cfg=defaults?defaultPrintProfile(side):{...defaultPrintProfile(side),...(state.settings.print_profiles?.[side]||{})};
  const options=(items,value)=>items.map(([key,label])=>`<option value="${key}" data-ui="${esc(label)}" lang="${I18n.language()}" ${key===value?'selected':''}>${esc(I18n.text(label))}</option>`).join('');
- openDialog(`<h2>${ui(side==='front'?'Print forside':'Print IB-bagside')}</h2><p class="hint">${cards.length===1?ui('Kort')+' '+esc(cards[0].number):ui('{count} kort',{count:cards.length})+' · '+cards.map(c=>esc(c.number)).join(', ')} · ${ui(!defaults&&state.settings.print_profiles?.[side]?'din gemte printprofil':'standardmål')}</p><form id="printForm" data-id="${cards[0].id}" data-side="${side}" data-ids="${esc(JSON.stringify(cards.map(c=>c.id)))}"><div class="twocol"><div><label>${ui("Papir")}</label><select name="paper">${options([['cut','Forskåret kort'],['a4','A4 · prøve i rigtig størrelse']],cfg.paper)}</select></div><div><label>${ui("Tryk")}</label><select name="mode">${options([['full','Med titler og linjer'],['data','Fortrykt kort · kun oplysninger']],cfg.mode)}</select></div></div><label>${ui("Formularsprog")}</label><select name="form_language">${options([['en','English'],['da','Dansk']],cfg.form_language||I18n.language())}</select><details class="printAdjust"><summary>${ui("Mål og placering")}</summary><label>${ui("Retning")}</label><select name="orientation" id="printOrientation">${options([['portrait','Højkant · stående'],['landscape','Liggende']],cfg.orientation)}</select><div class="twocol">${[['width','Bredde, mm',50,190],['height','Højde, mm',50,277],['x','Flyt højre / venstre, mm',-10,10],['y','Flyt ned / op, mm',-10,10]].map(([key,label,min,max])=>`<div><label>${ui(label)}</label><input name="${key}" type="number" min="${min}" max="${max}" value="${cfg[key]}" step="0.1" required></div>`).join('')}</div><button type="button" data-action="print-defaults">${ui("Brug standardmål")}</button></details>${side==='front'?S12Layout.controls(cfg,cfg.form_language||I18n.language()):''}<label class="check"><input name="remember" type="checkbox" checked> ${ui(side==='front'?'Husk disse indstillinger til forsider':'Husk disse indstillinger til bagsider')}</label><p class="hint">${ui('Brug 100 % skalering uden sidehoved og sidefod. Prøv på A4 først.')} ${cards.length>1?ui('Der dannes én side pr. kort.'):''}</p><p class="hint">${ui('Originale engelske formularer')}: <a href="/forms/S-12-en.pdf" target="_blank" rel="noopener">S-12 · English PDF</a> · <a href="/forms/S-13-en.pdf" target="_blank" rel="noopener">S-13 · English PDF</a></p>${formEnd('Fremvis og print')}${PrintApprovals.entries.size?`<button type="button" data-action="approve-printed">${ui('Godkend printede sider')}</button>`:''}</form>`,I18n.language());
+ openDialog(`<h2>${ui(side==='front'?'Print forside':'Print IB-bagside')}</h2><p class="hint">${cards.length===1?ui('Kort')+' '+esc(cards[0].number):ui('{count} kort',{count:cards.length})+' · '+cards.map(c=>esc(c.number)).join(', ')} · ${ui(!defaults&&state.settings.print_profiles?.[side]?'din gemte printprofil':'standardmål')}</p><form id="printForm" data-id="${cards[0].id}" data-side="${side}" data-ids="${esc(JSON.stringify(cards.map(c=>c.id)))}"><div class="twocol"><div><label>${ui("Papir")}</label><select name="paper">${options([['cut','Forskåret kort'],['a4','A4 · prøve i rigtig størrelse']],cfg.paper)}</select></div><div><label>${ui("Tryk")}</label><select name="mode">${options([['full','Med titler og linjer'],['data','Fortrykt kort · kun oplysninger']],cfg.mode)}</select></div></div><label>${ui("Formularsprog")}</label><select name="form_language">${options([['en','English'],['da','Dansk']],cfg.form_language||I18n.language())}</select><details class="printAdjust"><summary>${ui("Mål og placering")}</summary><label>${ui("Retning")}</label><select name="orientation" id="printOrientation">${options([['portrait','Højkant · stående'],['landscape','Liggende']],cfg.orientation)}</select><div class="twocol">${[['width','Bredde, mm',50,190],['height','Højde, mm',50,277],['x','Flyt højre / venstre, mm',-10,10],['y','Flyt ned / op, mm',-10,10]].map(([key,label,min,max])=>`<div><label>${ui(label)}</label><input name="${key}" type="number" min="${min}" max="${max}" value="${cfg[key]}" step="0.1" required></div>`).join('')}</div><button type="button" data-action="print-defaults">${ui("Brug standardmål")}</button></details>${side==='front'?S12Layout.controls(cfg,cfg.form_language||I18n.language()):''}<label class="check"><input name="remember" type="checkbox" checked> ${ui(side==='front'?'Husk disse indstillinger til forsider':'Husk disse indstillinger til bagsider')}</label><p class="hint">${ui('Brug 100 % skalering uden sidehoved og sidefod. Prøv på A4 først.')} ${cards.length>1?ui('Der dannes én side pr. kort.'):''}</p><p class="hint">${ui('Originale engelske formularer')}: <a href="/forms/S-12-en.pdf" target="_blank" rel="noopener">S-12 · English PDF</a> · <a href="/forms/S-13-en.pdf" target="_blank" rel="noopener">S-13 · English PDF</a></p>${formEnd('Fremvis og print')}${PrintApprovals.entries.size?`<button type="button" data-action="approve-printed">${ui('Bekræft, at siderne er printet')}</button>`:''}</form>`,I18n.language());
 }
 // The QR corner stays fixed; the road list uses the space to its left.
 function fitFrontCard(front){
@@ -127,7 +172,7 @@ function paginateIBSheets(doc){
  return failures;
 }
 function ibOverviewDocument(items){const language=I18n.language(),t=(key,params)=>esc(I18n.format(key,params));return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><title>${t('IB-overblik')}</title><style>body{margin:0;background:#eee;color:#182b38;font:12px Arial}.bar{background:white;padding:15px;position:sticky;top:0}.page{max-width:180mm;margin:20px auto;background:white;padding:12mm;box-sizing:border-box}.page h1{margin:0 0 3mm}.page p{color:#526976}table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #ccd8df;padding:2.5mm 2mm}th{background:#edf3f6;font-size:10px}@page{size:A4 portrait;margin:15mm}@media print{body{background:white}.bar{display:none}.page{max-width:none;margin:0;padding:0}thead{display:table-header-group}tr{break-inside:avoid}}</style></head><body><div class="bar"><button id="printIBOverview">${t('Udskriv / gem PDF')}</button><p>${t('A4 · 15 mm margener · listen indeholder private IB-oplysninger.')}</p></div><main class="page"><h1>${t('IB-overblik')}</h1><p>${t('{count} IB · kun lokal udskrift',{count:items.length})}</p><table><thead><tr><th>${t('Kort')}</th><th>${t('Vej, nr.')}</th><th>${t('Dato eller datotekst')}</th></tr></thead><tbody>${items.map(i=>`<tr><td>${esc(card(i.card_id)?.number||'—')}</td><td>${esc(i.road)} ${esc(i.number)}</td><td>${i.date_text?esc(i.date_text):fmt(i.date)}</td></tr>`).join('')}</tbody></table></main></body></html>`;}
-async function printIBOverview(items){if(printIBOverview.busy)return;printIBOverview.busy=true;let win;try{win=window.open('','_blank');if(!win)throw Error('Tillad et nyt vindue til print.');win.document.open();win.document.write(ibOverviewDocument(items));win.document.close();win.document.getElementById('printIBOverview').addEventListener('click',()=>win.print());}catch(error){win?.close();throw error;}finally{printIBOverview.busy=false;}}
+async function printIBOverview(items){if(printIBOverview.busy)return;printIBOverview.busy=true;let win;try{win=PrintPreview.open();if(!win)throw Error('Tillad et nyt vindue til print.');win.document.open();win.document.write(ibOverviewDocument(items));win.document.close();win.document.getElementById('printIBOverview').addEventListener('click',()=>win.print());}catch(error){win?.close();throw error;}finally{printIBOverview.busy=false;}}
 function printDocument(cards,side,cfg){
  const language=I18n.language(),t=key=>esc(I18n.text(key));
  const {width:w,height:h,x,y,mode,paper}=cfg,formLanguage=cfg.form_language||I18n.language();
@@ -137,7 +182,7 @@ function printDocument(cards,side,cfg){
  if(side==='back')css+=`.sheet.ibSheet .content{width:100%;height:100%}.sheet.ibSheet .ibPreview{display:flex;flex-direction:column;overflow:hidden;padding:4mm;font:8pt/1.25 Arial,sans-serif}.sheet.ibSheet .ibHead{flex:none;gap:2mm;align-items:center;padding-bottom:2mm;margin-bottom:1.5mm;font-size:8pt}.sheet.ibSheet .ibHead b{overflow-wrap:anywhere}.sheet.ibSheet .ibBody{display:grid;grid-template-columns:minmax(0,1fr);column-gap:2.5mm;flex:1 1 auto;min-height:0}.sheet.ibSheet .ibPreview[data-columns="2"] .ibBody{grid-template-columns:repeat(2,minmax(0,1fr))}.sheet.ibSheet .ibPrintColumn{flex:1 1 0;min-width:0;min-height:0;height:100%}.sheet.ibSheet .ibCols,.sheet.ibSheet .ibRow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2mm;line-height:1.2;padding:.55mm 0}.sheet.ibSheet .ibCols{flex:none;font-size:7.8pt;margin-bottom:.7mm}.sheet.ibSheet .ibRow{font-size:8pt;break-inside:avoid}.sheet.ibSheet .ibRow span,.sheet.ibSheet h4{min-width:0;white-space:normal;overflow-wrap:anywhere}.sheet.ibSheet h4{font-size:8pt;line-height:1.2;margin:1.4mm 0 .45mm}.sheet.ibSheet section{break-inside:auto}`;
  const sheets=cards.flatMap(c=>side==='front'?[`<section class="sheet" data-width-mm="${w}" data-number="${esc(c.number)}"><div class="content">${frontHTML({...c,form_language:formLanguage})}</div></section>`]:[`<section class="sheet ibSheet" data-width-mm="${w}" data-number="${esc(c.number)}" data-page="1"><div class="content">${backHTML({...c,form_language:formLanguage})}</div></section>`]);
  const pages=paper==='a4'?sheets.map(markup=>`<div class="paperPage">${markup}</div>`):sheets;
- return `<!doctype html><html lang="${formLanguage}"><head><meta charset="utf-8"><title>${language==='en'?'Print territory card':'Print distriktskort'}</title><style>${css}</style></head><body><div class="bar" lang="${language}"><button id="print" disabled>${t('Udskriv / gem PDF')}</button> ${cards.length} ${t('kort')} · ${w} × ${h} mm · ${t(h>w?'højkant':'liggende')} · 100 %<p id="tooLong" role="alert"></p><button id="approvePrinted" hidden>${t('Godkend printede sider i appen')}</button><p>${t('Godkend eventuelt genprint i appen, når de fysiske sider er kontrolleret.')}</p></div>${pages.join('')}</body></html>`;
+ return `<!doctype html><html lang="${formLanguage}"><head><meta charset="utf-8"><title>${language==='en'?'Print territory card':'Print distriktskort'}</title><style>${css}</style></head><body><div class="bar" lang="${language}"><button id="print" disabled>${t('Udskriv / gem PDF')}</button> ${cards.length} ${t('kort')} · ${w} × ${h} mm · ${t(h>w?'højkant':'liggende')} · 100 %<p id="tooLong" role="alert"></p><button id="approvePrinted" hidden>${t('Bekræft print i appen')}</button><p>${t('Udskrivning eller PDF-gemning ændrer ikke kortets printstatus. Bekræft først print i appen, når de fysiske sider er kontrolleret og printet.')}</p></div>${pages.join('')}</body></html>`;
 }
 async function printCard(form){
  if(form.dataset.printing==='yes')return;form.dataset.printing='yes';
@@ -147,7 +192,7 @@ async function printCard(form){
  const language=I18n.language(),t=key=>language==='en'?(I18n.english[key]||key):key;
  const fd=new FormData(form),signature=JSON.stringify([...fd]),cfg=printSettings(Object.fromEntries(fd)),side=form.dataset.side,ids=JSON.parse(form.dataset.ids||JSON.stringify([form.dataset.id])),cards=ids.map(card).filter(Boolean).map(c=>JSON.parse(JSON.stringify(c)));
  if(!cards.length)throw Error('Kortene findes ikke længere.');
- const win=window.open('','_blank');if(!win)throw Error('Tillad et nyt vindue til print.');
+ const win=PrintPreview.open();if(!win)throw Error('Tillad et nyt vindue til print.');
  let markup=printDocument(cards,side,cfg);
  // Embed print assets before opening the layout: the print view stays self-contained.
  try{
@@ -159,7 +204,7 @@ async function printCard(form){
    markup=markup.split('src="'+source+'"').join('src="'+data+'"');
   }
   if(!current()||JSON.stringify([...new FormData(form)])!==signature)throw Error('Printgrundlaget er ændret. Åbn print igen.');
- }catch(error){win.close();throw error;}
+ }catch(error){if(win.embedded&&win.closed)return;win.close();throw error;}
 
  const loaded=(results,ibErrors=[])=>{if(win.closed)return;const overflow=[],missingQR=[];for(const sheet of win.document.querySelectorAll('.sheet')){const content=sheet.querySelector('.content'),streets=sheet.querySelector('.streets'),qr=sheet.querySelector('.cardQR'),image=qr?.querySelector('img');let collision=false;const fits=fitFrontCard(sheet.querySelector('.cardPreview'));if(streets&&qr){const a=streets.getBoundingClientRect(),b=qr.getBoundingClientRect();collision=a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;}
    const ibOverflow=[...sheet.querySelectorAll('.ibPrintColumn')].some(col=>col.clientHeight===0||col.scrollHeight>col.clientHeight+1||col.scrollWidth>col.clientWidth+1);if(!fits||(side==='front'&&!S12Layout.fits(sheet.querySelector('.cardPreview')))||ibOverflow||content.scrollHeight>sheet.clientHeight+2||content.scrollWidth>sheet.clientWidth+2||(streets&&streets.offsetTop+streets.scrollHeight>sheet.clientHeight)||collision)overflow.push(sheet.dataset.number);
@@ -168,12 +213,12 @@ async function printCard(form){
   const messages=[];if(ibErrors.length)messages.push((language==='en'?'IB entries do not fit on the printed page: ':'IB-posterne kan ikke være på udskriftssiden: ')+[...new Set(ibErrors)].join(', '));if(results.some(r=>r.status==='rejected'))messages.push(t('Printbilleder kunne ikke indlæses. Åbn print igen.'));if(overflow.length)messages.push(t('Vejlisten eller QR-koden har ikke plads på kort:')+' '+overflow.join(', ')+'. '+t('Tilpas kortet før print.'));if(missingQR.length)messages.push(t('QR-koden kunne ikke indlæses på kort:')+' '+missingQR.join(', ')+'. '+t('Genåbn kortet og kontrollér publiceringen.'));
   win.document.getElementById('tooLong').textContent=messages.join(' ');win.document.getElementById('print').disabled=messages.length>0;
  };
- win.document.write(markup);win.document.close();win.document.getElementById('print').addEventListener('click',()=>{if(win.document.getElementById('print').disabled)return;PrintApprovals.remember(cards,side);const approve=win.document.getElementById('approvePrinted');if(approve)approve.hidden=false;win.print();});
- const approve=win.document.getElementById('approvePrinted');if(approve)approve.addEventListener('click',()=>{window.focus();PrintApprovals.open();});
+ if(win.embedded)win.document.open();win.document.write(markup);win.document.close();win.document.getElementById('print').addEventListener('click',()=>{if(win.document.getElementById('print').disabled)return;PrintApprovals.remember(cards,side);const approve=win.document.getElementById('approvePrinted');if(approve)approve.hidden=false;win.print();});
+ const approve=win.document.getElementById('approvePrinted');if(approve)approve.addEventListener('click',()=>{if(win.embedded)win.close();else window.focus();PrintApprovals.open();});
  const imageTasks=Array.from(win.document.images,img=>img.decode());if(win.document.fonts?.ready)imageTasks.push(win.document.fonts.ready);
  Promise.allSettled(imageTasks).then(results=>loaded(results,side==='back'?paginateIBSheets(win.document,cfg):[]));
- if(fd.has('remember')){try{await mutate('print.profile.save',{side,profile:cfg},{close:false,message:'Printprofil gemt lokalt'});}catch(error){toast('Printvisningen er åben. Kontrollér gemmestatus for printprofilen før et nyt forsøg.');return;}}
- if(generation===openDialog.generation&&page===origin&&el('printForm')===form)closeDialog();
+ if(fd.has('remember')){try{await mutate('print.profile.save',{side,profile:cfg},{close:false,message:'Printprofil gemt lokalt',...(win.embedded?{synchronize:async(_result,snapshot)=>{const fresh=snapshot??await(await api('/api/state')).json();if(page===origin&&openDialog.generation===generation&&PrintPreview.profileOnly(state,fresh)){state=fresh;historyRevision=fresh.revision;}else await refresh({snapshot:fresh,preserveDrafts:true});}}:{})});}catch(error){toast('Printvisningen er åben. Kontrollér gemmestatus for printprofilen før et nyt forsøg.');return;}}
+ if(!win.embedded&&generation===openDialog.generation&&page===origin&&el('printForm')===form)closeDialog();
  }finally{delete form.dataset.printing;}
 }
 
@@ -273,19 +318,19 @@ const PrintApprovals={
  entries:new Map(),pending:null,busy:false,singleBusy:new Set(),
  async confirmSingle(id,side,button){
   const key=id+':'+side;if(this.singleBusy.has(key))return;this.singleBusy.add(key);button.disabled=true;
-  try{await mutate('revision.approve',{card_id:id,side},{message:I18n.text('Siden er godkendt')});}
+  try{await mutate('revision.approve',{card_id:id,side},{message:I18n.text('Print af siden er bekræftet')});}
   finally{this.singleBusy.delete(key);if(button.isConnected!==false)button.disabled=false;}
  },
  remember(cards,side){for(const c of cards){const token=c[side+'_print_token'];if(token)this.entries.set(c.id+':'+side,{card_id:c.id,side,token,number:c.number});}},
  open(){
-  const entries=[...this.entries.values()].filter(e=>card(e.card_id));if(!entries.length){toast(I18n.text('Ingen printede sider afventer godkendelse.'));return;}
+  const entries=[...this.entries.values()].filter(e=>card(e.card_id));if(!entries.length){toast(I18n.text('Ingen sider afventer printbekræftelse.'));return;}
   this.pending=entries;
-  openDialog(`<h2>${ui('Godkend printede sider')}</h2><p>${ui('Bekræft, at de valgte sider er kontrolleret og printet til de fysiske kort.')}</p><p>${ui('{count} sider',{count:entries.length})}</p><div style="max-height:45vh;overflow:auto">${entries.map((e,i)=>`<label class="check"><input type="checkbox" data-printed-index="${i}" checked> ${ui('Kort')} ${esc(e.number)} · ${ui(e.side==='front'?'Kortets forside':'IB-bagside')}</label>`).join('')}</div><div class="actions"><button class="primary" data-action="confirm-printed">${ui('Kontrolleret og printet')}</button><button data-action="close">${ui('Annuller')}</button></div>`);
+  openDialog(`<h2>${ui('Bekræft, at siderne er printet')}</h2><p>${ui('Vælg kun sider, der er kontrolleret og printet til de fysiske kort. Annuller, hvis ingen er klar.')}</p><p>${ui('{count} sider',{count:entries.length})}</p><div style="max-height:45vh;overflow:auto">${entries.map((e,i)=>`<label class="check"><input type="checkbox" data-printed-index="${i}" checked> ${ui('Kort')} ${esc(e.number)} · ${ui(e.side==='front'?'Kortets forside':'IB-bagside')}</label>`).join('')}</div><div class="actions"><button class="primary" data-action="confirm-printed">${ui('Ja, de valgte sider er kontrolleret og printet')}</button><button data-action="close">${ui('Annuller')}</button></div>`);
  },
  async confirm(){
   if(this.busy||!this.pending)return;
   const entries=[...el('dialog').querySelectorAll('[data-printed-index]:checked')].map(input=>this.pending[Number(input.dataset.printedIndex)]).filter(Boolean);
-  if(!entries.length){toast(I18n.text('Vælg de printede sider, der skal godkendes.'));return;}
-  const pending=this.pending,button=el('dialog').querySelector('[data-action=confirm-printed]');this.busy=true;if(button)button.disabled=true;try{await mutate('revision.approve_many',{entries:entries.map(({number,...e})=>e)},{message:I18n.text('De printede sider er godkendt')});for(const e of entries){const key=e.card_id+':'+e.side;if(this.entries.get(key)?.token===e.token)this.entries.delete(key);}if(this.pending===pending)this.pending=null;}finally{this.busy=false;if(button?.isConnected)button.disabled=false;}
+  if(!entries.length){toast(I18n.text('Vælg de sider, du vil bekræfte som printet.'));return;}
+  const pending=this.pending,button=el('dialog').querySelector('[data-action=confirm-printed]');this.busy=true;if(button)button.disabled=true;try{await mutate('revision.approve_many',{entries:entries.map(({number,...e})=>e)},{message:I18n.text('Print af de valgte sider er bekræftet')});for(const e of entries){const key=e.card_id+':'+e.side;if(this.entries.get(key)?.token===e.token)this.entries.delete(key);}if(this.pending===pending)this.pending=null;}finally{this.busy=false;if(button?.isConnected)button.disabled=false;}
  }
 };
