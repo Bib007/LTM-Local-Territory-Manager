@@ -151,6 +151,20 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert(gridFits,'Role setting controls fit the desktop/mobile viewport');
  await page.evaluate(()=>{page='Udlevering';issue('folder');});
  const publisherInput=page.locator('#issuePublisherName');
+ const quickHeading=page.locator('#issueQuickPublishersHeading'),quickGroup=page.locator('.issueQuickPublishers');
+ assert.equal(await quickHeading.innerText(),'Oftest valgte forkyndere');
+ assert.equal(await quickGroup.getAttribute('aria-labelledby'),'issueQuickPublishersHeading');
+ const headingStyle=await quickHeading.evaluate(n=>{
+   const s=getComputedStyle(n),r=n.getBoundingClientRect(),group=n.nextElementSibling.getBoundingClientRect(),form=n.closest('form').getBoundingClientRect();
+   return {size:parseFloat(s.fontSize),weight:Number(s.fontWeight),color:s.color,bg:getComputedStyle(n.closest('dialog')).backgroundColor,margin:parseFloat(s.marginTop),fits:r.left>=form.left-1&&r.right<=form.right+1&&r.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1&&r.bottom<=group.top+1};
+ });
+ assert.ok(headingStyle.size>=18&&headingStyle.weight>=700&&headingStyle.margin>=16,'Quick publisher heading has clear visual hierarchy');
+ assert.ok(contrast(headingStyle.color,headingStyle.bg)>=4.5,'Quick publisher heading contrast');
+ assert.ok(headingStyle.fits,'Quick publisher heading fits above its buttons without horizontal overflow');
+ assert.deepEqual(await quickGroup.locator('button').allTextContents(),['Fiktiv B','Fiktiv <A>']);
+ await activate(quickGroup.locator('[data-issue-publisher=p2]'));
+ assert.equal(await publisherInput.inputValue(),'Fiktiv B','Quick selection still fills the publisher field');
+ assert.equal(writes.length,0,'Quick selection alone never saves');
  await publisherInput.fill('Fiktiv <A>');
  assert.match(await page.locator('#issuePublisherGuidance').innerText(),/1 \/ 4/);
  assert.match(await page.locator('#issuePublisherNames').innerText(),/1 \/ 4/,'Suggestions include live counts');
