@@ -202,7 +202,7 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardSpotlight small{font-size:12px;font-weight:650;line-height:1.5;color:var(--muted)}
 .dashboardSpotlightNumber{display:block;font-size:clamp(38px,4vw,56px);letter-spacing:-.045em;line-height:1.02;font-weight:680;font-variant-numeric:tabular-nums;color:var(--text)}
 .dashboardAverageValue{display:block;font-size:clamp(29px,2.75vw,39px);letter-spacing:-.04em;line-height:1.18;font-weight:720;color:var(--dashboard-accent);overflow-wrap:break-word}
-.dashboardQueueValue{font-size:clamp(24px,2.2vw,33px)}
+.dashboardQueueValue>button.link{font:inherit;letter-spacing:inherit;max-width:100%;white-space:normal;overflow-wrap:inherit}
 .dashboardAverage .dashboardSpotlightNote,.dashboardQueue .dashboardSpotlightNote{max-width:42ch}
 .dashboardVisits .dashboardSpotlightNumber{color:var(--dashboard-accent)}
 .dashboardSpotlightNote{font-size:11px;line-height:1.55;color:var(--muted)}
