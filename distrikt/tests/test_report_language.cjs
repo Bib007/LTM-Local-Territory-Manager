@@ -189,16 +189,20 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  assert(service33.completedIds.has('boundary'),'Today is inclusive');
  assert(!service33.completedIds.has('home'),'Future completion does not remove the card');
  assert(!service33.completedIds.has('unknown'),'Invalid or missing date does not remove the card');
+ assert.equal(run('state.today'),'2026-10-16');
+ assert.equal((Date.parse('2026-10-16')-Date.parse('2026-08-01'))/86400000,76,'Physical assignment age, not cycle start or completion date');
  const check33=run('JSON.stringify(state)');
  for(const markup of [run("Workspace.reportSummary('calendar',false,true)"),run("Workspace.reportSummary('calendar',false,false)")]){
-  assert.match(markup,/F-33B[\\s\\S]*?12\\.9\\.2026[\\s\\S]*?Udleveret nu[\\s\\S]*?76 dage i alt/);
-  assert.match(markup,/F-33C[\\s\\S]*?Ingen dato registreret[\\s\\S]*?Udleveret nu[\s\S]*?Ingen dato registreret/);
-  assert.match(markup,/F-33D[\\s\\S]*?Hjemme nu/);
+  const row=number=>{const value=Array.from(markup.matchAll(/<tr>([\s\S]*?)<\/tr>/g),m=>m[1]).find(r=>r.includes('<td>'+number+'</td>'));assert(value,'Missing row '+number);return value.replace(/<[^>]*>/g,'');};
+  assert.match(row('F-33B'),/12\.9\.2026[\s\S]*?Udleveret nu · 1\.8\.2026 · 76 dage i alt/);
+  assert.match(row('F-33C'),/Ingen dato registreret[\s\S]*?Udleveret nu · Ingen dato registreret/);
+  assert.match(row('F-33D'),/Hjemme nu/);
   assert.doesNotMatch(markup,/F-33A|F-33E|F-33G|NaN|Invalid Date/);
  }
  run("I18n.set('en')");assert.match(run("KtmReportUI.missing('calendar',true)"),/76 days in total/);
  run("state.profile={permissions:['cards.view','history.view']}");
  assert.doesNotMatch(run("KtmReportUI.missing('calendar',false)"),/76 dage|Udleveret nu|Hjemme nu/);
+ assert.doesNotMatch(run("KtmReportUI.missing('calendar',true)"),/76 days|Currently assigned|Currently available/);
  run('delete state.profile');assert.equal(run('JSON.stringify(state)'),check33,'Reports never modify recorded data');
  c.restore33=JSON.parse(saved33);run('state=restore33;Workspace.calendarYear=null');
 
@@ -251,5 +255,23 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  run('state.cards=JSON.parse(savedCardsFixture);ReportMap.map=null;ReportMap.layer=null');
  const notices=[],tileErrors=[];c.notices=notices;c.L={map(){return {remove(){},attributionControl:{setPrefix(){}},on(){}};},tileLayer(){return {addTo(){return this;},on(name,fn){if(name==='tileerror')tileErrors.push(fn);}};},layerGroup(){return {addTo(){return this;}};}};
  run('savedFailed=ReportMap.failed;ReportMap.failed=function(error){notices.push(error.message);return savedFailed.call(this,error)};ReportMap.points=()=>[[10,55]];ReportMap.fit=()=>{};ReportMap.draw=()=>{};ReportMap.mount()');tileErrors[0]();tileErrors[0]();assert.equal(notices.length,1,'Repeated tile failures show one notice for the current map');run('ReportMap.mount()');tileErrors[0]();assert.equal(notices.length,1,'A removed map must not show a stale failure');tileErrors[1]();assert.equal(notices.length,2);
+ // A partially loaded map must still time out; stale timers must not affect a new map.
+ const timers=new Map();let timerId=0,events={},loading=true;
+ c.setTimeout=fn=>{timers.set(++timerId,fn);return timerId;};
+ c.clearTimeout=id=>timers.delete(id);
+ c.L.tileLayer=()=>({addTo(){return this;},on(name,fn){events[name]=fn;},isLoading:()=>loading});
+ run('ReportMap.mount()');
+ const staleTimer=timers.get(run('ReportMap.tileTimeout'));
+ run('ReportMap.mount()');
+ const currentTimer=run('ReportMap.tileTimeout');
+ staleTimer();
+ assert.equal(run('ReportMap.tileTimeout'),currentTimer,'A stale timer cannot retire the active timer');
+ events.tileload();timers.get(currentTimer)();
+ assert.equal(notices.length,3,'A single successful tile must not suppress timeout for pending tiles');
+ assert.equal(run('ReportMap.tileFailed'),true);
+ run('ReportMap.mount()');events.tileload();loading=false;events.load();
+ assert.equal(run('ReportMap.tileTimeout'),null,'A fully loaded map cancels its timeout');
+ loading=true;events.loading();assert.notEqual(run('ReportMap.tileTimeout'),null,'A new loading cycle is bounded');
+ run('ReportMap.dispose()');
  console.log('Report language: calendar/service/rolling boundaries, repeated and archived events, known dates, current assignment aggregates, chart/table equality, private-data omission and unchanged original Danish form passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
