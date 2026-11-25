@@ -91,7 +91,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
   const rolling=run("Workspace.periodBounds('rolling')");assert.equal(rolling[0],'2025-10-16');assert.equal(rolling[1],'2026-10-16');const monthly=counts(run('Workspace.reportChart(...Workspace.periodBounds("rolling"))'));assert.equal(monthly.length,13);assert.equal(monthly.reduce((a,b)=>a+b,0),4);
   for(const [tab,mode] of [['Kalender','calendar'],['Rapport','service'],['Rullende','rolling']]){
-   run(`reportTab='${tab}'`);
+   run(`reportTab='Rapport';Workspace.reportPeriod='${mode}';Workspace.reportPreview=true`);
    const screen=run('Workspace.reports()');
    assert.equal(run('Workspace.reportPeriod'),mode);
    assert.equal((screen.match(/class="metrics"/g)||[]).length,2);
@@ -103,7 +103,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    assert.equal(screen.includes('class="report s13Original s13Period"'),mode!=='service');
    assert.match(screen,mode==='service'?/Hent original udfyldt S-13|Download filled S-13/:/Print S-13-formular for perioden|Print S-13 form for selected period/);assert.match(screen,/id="reportPrintPeriod"/);assert.match(screen,new RegExp('value="'+mode+'" selected'));
   }
-  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/Kort til opfølgning|AKTUEL OPFØLGNING/);assert.match(screen,language==='en'?/s13-background-en\.jpg/:/s13-background\.jpg/,'The S-13 appendix uses the original background for the selected language');assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
+  run("reportTab='Rapport';Workspace.reportPeriod='rolling'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/Kort til opfølgning|AKTUEL OPFØLGNING/);assert.match(screen,language==='en'?/s13-background-en\.jpg/:/s13-background\.jpg/,'The S-13 appendix uses the original background for the selected language');assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);assert.match(visits,/OLD/,'Historic remarks remain visible in the visit list');contracts[language]=[formContract(visits)];
   assert.equal(run("ktmTuesday('2026-09-08')"),true);
   assert.equal(run("ktmTuesday('2026-09-11')"),false);

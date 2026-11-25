@@ -2,6 +2,13 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.14.0-beta.1 · 2026-11-25
+
+- **Daglig brug:** Tydeligere valg mellem udlevering og aflevering. Vælg visning pr. forkynder eller i kortrækkefølge. Udlever op til fem ledige kort i én handling med samme dato og modtager, og få hurtigvalg til hyppige modtagere.
+- **Kort og forside:** Kortfiltre viser antal og aktive valg. Ekstra kortværktøjer er samlet, og Kortoversigt kan zoome tilbage til hele distriktet. Forsiden har færre forklaringer og intet søgefelt.
+- **Rapporter og indstillinger:** Samlet indstillingsnavigation med ændringshistorik under Brugsstatistik. Tre rapportfaner og mulighed for rapport uden grafisk kort ved fejl i kortvisningen.
+- **Gemning og påmindelser:** Synlig gemmestatus i dialogen, hurtigere opslag ved udlevering og initialer på beskeder om gamle udleveringer for navngivne profiler.
+
 ## 1.13.0 · 2026-11-24
 
 - **Forside:** Tjenesteårets mål og dækning, besøgsestimat for de unikke gennemgåede kort, gennemsnitlig gennemgangstid for 12 måneder og ældste ledige kort med særskilt visning af ukendte datoer.

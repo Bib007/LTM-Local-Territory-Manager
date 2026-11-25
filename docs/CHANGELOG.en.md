@@ -2,6 +2,13 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.14.0-beta.1 · 2026-11-25
+
+- **Daily work:** Clear issue and return actions, with return ordering by publisher or card. Issue up to five available cards in one transaction with the same date and recipient, and use shortcuts for frequently selected recipients.
+- **Cards and home:** Card filters show counts and active selections. Additional card tools are grouped, and the overview map can zoom out to the entire district. The home page has less explanatory text and no search box.
+- **Reports and settings:** A unified settings selector with change history in usage statistics. Three report tabs and an option to continue without a map if it fails to render.
+- **Saves and reminders:** Visible dialog save status, faster issue lookup, and initials in overdue assignment reminders for named accounts.
+
 ## 1.13.0 · 2026-11-24
 
 - **Dashboard:** Service-year target and coverage, estimated visits across unique completed territories, a 12-month completion-time average and the oldest available territory, with unknown dates shown separately.

@@ -53,7 +53,8 @@ const OverdueLoans={
   const first=person.name.trim().split(/\s+/)[0]||person.name;
   const list=rows.map(r=>'• '+I18n.text('Kort')+' '+r.card.number+' – '+this.loanAge(r.loan)+' ('+I18n.text('udleveret')+' '+fmt(r.loan.assigned)+')').join('\n');
   const template=state.settings?.overdue_message_template||this.defaultTemplate();
-  return template.replace(/\{(fornavn|navn|kort|initialer)\}/g,(_,key)=>({fornavn:first,navn:person.name,kort:list,initialer:''})[key]);
+  const initials=(state.profile?.user?.name||'').trim().split(/[\s-]+/u).map(part=>Array.from(part).find(char=>/\p{L}/u.test(char))||'').join('').toLocaleUpperCase(I18n.language()==='en'?'en-GB':'da-DK');
+  return template.replace(/\{(fornavn|navn|kort|initialer)\}/g,(_,key)=>({fornavn:first,navn:person.name,kort:list,initialer:initials})[key]);
  },
  showMessage(id){
   if(!this.allowed())return;

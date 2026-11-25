@@ -247,7 +247,7 @@ keyboard({key:'k',ctrlKey:true,target:{closest(){return null;}},preventDefault()
  const usage=run('settingsPage()');
  assert.match(run('Workspace.settingsNav()'),/data-work="settings-tab" data-value="usage"[^>]*aria-current="page"/);
  assert.match(usage,/Fictional activity/);
- assert.match(run('Workspace.settingsNav()'),/class="settingsAdvanced"/);
+ assert.doesNotMatch(run('Workspace.settingsNav()'),/class="settingsAdvanced"/);
  assert.doesNotMatch(usage,/settings-general|settings-data|settingsForm/);
  assert(!source.includes('?UsageStatsUI.html():""'),'Usage statistics must not be embedded in the general settings grid');
  // Returns offer the same selected card details as the publisher view, plus
