@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8');
 const nodes=new Map(),requests=[],timers=[];
-const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',outerHTML:'',textContent:'',value:'',dataset:{},style:{},open:false,hasForm:false,showModal(){this.open=true;},close(){this.open=false;},querySelector(){return this.hasForm?{}:null;},addEventListener(){}});return nodes.get(id);};
+const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',outerHTML:'',textContent:'',value:'',dataset:{},style:{},open:false,hasForm:false,showModal(){this.open=true;},close(){this.open=false;},querySelector(selector){return selector==='form'&&this.hasForm?{}:null;},addEventListener(){}});return nodes.get(id);};
 const fixture={revision:'r1',today:'2026-10-17',cards:[],areas:[],notes:[],settings:{}};
 const response=(payload,status=200,broken=false)=>({ok:status<400,status,json:async()=>{if(broken)throw Error('Invented broken JSON');return payload;},clone(){return {json:async()=>{if(broken)throw Error('Invented broken JSON');return payload;}};}});
 let answer=async()=>response({ok:true}),confirmChoice=false;
