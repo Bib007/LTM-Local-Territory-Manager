@@ -350,6 +350,7 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
 .territories.territoryCompact{display:block}
 .territoryTools>summary{cursor:pointer;min-height:36px;padding:8px 10px}
 .territoryFilterStatus,.issueQuickPublishers{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}
+#issueForm #issueQuickPublishersHeading{font-size:1.125rem;font-weight:700;line-height:1.35;color:var(--text);margin:20px 0 8px;white-space:normal;overflow-wrap:anywhere}
 .territoryFilterStatus button{max-width:100%;overflow-wrap:anywhere}
 @media(max-width:900px){
  #issueForm select,.overviewFilters label,.overviewAdvanced label{min-width:0;max-width:100%}
