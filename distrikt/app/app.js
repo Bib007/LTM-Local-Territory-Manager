@@ -627,11 +627,11 @@ function issue(id='',initial=false){const chosen=card(id);const fromBox=!initial
  const frequency=new Map();
  for(const loan of state.loans)frequency.set(loan.publisher_id,(frequency.get(loan.publisher_id)||0)+1);
  const frequent=state.publishers.filter(person=>frequency.has(person.id))
-  .sort((a,b)=>frequency.get(b.id)-frequency.get(a.id)||cmp(a.name,b.name)).slice(0,3);
+  .sort((a,b)=>frequency.get(b.id)-frequency.get(a.id)||cmp(a.name,b.name)||cmp(a.id,b.id)).slice(0,5);
  const publisherField=el('issuePublisherName')?.closest?.('.publisherSearch');
  if(frequent.length&&publisherField){
   const field=el('issuePublisherName');
-  publisherField.insertAdjacentHTML('beforebegin',`<div class="issueQuickPublishers">${frequent.map(person=>`<button type="button" data-issue-publisher="${esc(person.id)}">${esc(person.name)}</button>`).join('')}</div>`);
+  publisherField.insertAdjacentHTML('beforebegin',`<h3 id="issueQuickPublishersHeading" class="hint">${ui('Oftest valgte forkyndere')}</h3><div class="issueQuickPublishers" role="group" aria-labelledby="issueQuickPublishersHeading">${frequent.map(person=>`<button type="button" data-issue-publisher="${esc(person.id)}">${esc(person.name)}</button>`).join('')}</div>`);
   form.querySelector('.issueQuickPublishers').addEventListener('click',event=>{
    const button=event.target.closest('[data-issue-publisher]');
    if(!button)return;
