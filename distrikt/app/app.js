@@ -845,7 +845,12 @@ case 'card-tab':detail(d.id,d.tab);break;
 case 'note-edit':editNote(d.id);break;
 case 'note-resolve':await Workspace.resolveTask(d.id,'',true);break;
 case 'record-completion':recordCompletion(d.id);break;
-case 'desk-tab':deskTab=d.tab==='Kortorden'?'Aflever':d.tab;query='';render();break;
+case 'desk-tab':{
+ const restoreFocus=target===document.activeElement&&(d.tab==='Udlever'||d.tab==='Aflever');
+ deskTab=d.tab==='Kortorden'?'Aflever':d.tab;query='';render();
+ if(restoreFocus)el('app').querySelector?.(`.deskTabs button[data-tab="${deskTab}"]`)?.focus({preventScroll:true});
+ break;
+}
 case 'desk-return-mark-visible':document.querySelectorAll('#deskReturnRows [data-return-mark]').forEach(node=>{if(state.loans.some(l=>l.id===node.dataset.returnMark&&!l.returned))deskReturnSelected.add(node.dataset.returnMark);});render();break;
 case 'desk-return-clear':deskReturnSelected.clear();render();break;
 case 'desk-return-next':{const marked=document.querySelector('#deskReturnRows input[data-return-mark]:checked')?.dataset.returnMark;if(marked&&state.loans.some(l=>l.id===marked&&!l.returned))finish(marked,false);break;}
