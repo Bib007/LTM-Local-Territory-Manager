@@ -4,6 +4,12 @@ let frontResizeObserver=null;
 // its editors mounted; only the temporary print document lives in the frame.
 const PrintPreview={
  active:null,
+ // A print-profile-only save updates state without replacing the live view.
+ // Do not skip a render for any concurrent data or permission change.
+ profileOnly(previous,fresh){
+  const view=s=>{const {revision,settings,profile,...rest}=s,{print_profiles,...otherSettings}=settings||{}, {snapshot,...otherProfile}=profile||{};return {...rest,settings:otherSettings,profile:profile?otherProfile:profile};};
+  return JSON.stringify(view(previous))===JSON.stringify(view(fresh));
+ },
  standalone(){return window.navigator?.standalone===true||window.matchMedia?.('(display-mode: standalone)')?.matches===true;},
  open(message){
   if(!this.standalone())return window.open('','_blank');
@@ -19,13 +25,13 @@ const PrintPreview={
   const title=document.createElement('strong');title.textContent=overlay.getAttribute('aria-label');toolbar.append(back,title);
   frame.title=title.textContent;frame.style.cssText='display:block;flex:1 1 0;min-height:0;width:100%;border:0;background:white';
   // Never include the app's return control in the printed document.
-  const style=document.createElement('style');style.textContent='@media print{#ltmPrintPreview{display:none!important}}';
+  const style=document.createElement('style');style.textContent='@media print{body:has(#ltmPrintPreview[open])>*{display:none!important}}';
   overlay.append(style,toolbar,frame);document.body.append(overlay);
   const preview={embedded:true,get closed(){return !overlay.open||!overlay.isConnected;},get document(){return frame.contentDocument;},
    print(){if(!this.closed){frame.contentWindow.focus();frame.contentWindow.print();}},
    close:()=>{
     if(this.active!==preview)return;
-    this.active=null;overlay.close();overlay.remove();
+    this.active=null;overlay.close();overlay.remove();preview.onClose?.();
     // Do not restore over a newer navigation or editor.
     if(page!==owner||openDialog.generation!==generation)return;
     if(focused?.isConnected){focused.focus({preventScroll:true});if(selection)focused.setSelectionRange?.(...selection);}
@@ -211,7 +217,7 @@ async function printCard(form){
  const approve=win.document.getElementById('approvePrinted');if(approve)approve.addEventListener('click',()=>{if(win.embedded)win.close();else window.focus();PrintApprovals.open();});
  const imageTasks=Array.from(win.document.images,img=>img.decode());if(win.document.fonts?.ready)imageTasks.push(win.document.fonts.ready);
  Promise.allSettled(imageTasks).then(results=>loaded(results,side==='back'?paginateIBSheets(win.document,cfg):[]));
- if(fd.has('remember')){try{await mutate('print.profile.save',{side,profile:cfg},{close:false,message:'Printprofil gemt lokalt'});}catch(error){toast('Printvisningen er åben. Kontrollér gemmestatus for printprofilen før et nyt forsøg.');return;}}
+ if(fd.has('remember')){try{await mutate('print.profile.save',{side,profile:cfg},{close:false,message:'Printprofil gemt lokalt',...(win.embedded?{synchronize:async(_result,snapshot)=>{const fresh=snapshot??await(await api('/api/state')).json();if(page===origin&&openDialog.generation===generation&&PrintPreview.profileOnly(state,fresh)){state=fresh;historyRevision=fresh.revision;}else await refresh({snapshot:fresh,preserveDrafts:true});}}:{})});}catch(error){toast('Printvisningen er åben. Kontrollér gemmestatus for printprofilen før et nyt forsøg.');return;}}
  if(!win.embedded&&generation===openDialog.generation&&page===origin&&el('printForm')===form)closeDialog();
  }finally{delete form.dataset.printing;}
 }
