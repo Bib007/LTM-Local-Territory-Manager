@@ -38,37 +38,37 @@
    Keep Leaflet gesture handling, map panes and print styles untouched. */
 .cardFieldLabel{display:none}
 @media screen and (max-width:1100px){
- #app .workspace,#app .territoryCompact,#app .settingsGrid,
- #app .workspace>*,#app .territoryCompact>*,#app .settingsGrid>*,
- #app .panel,#dialog form,#dialog fieldset{min-width:0;max-width:100%}
- #app .workspace{grid-template-columns:minmax(0,1fr)}
- #app .top,#app .between,#app .undoBar,#app .deskReturnSelect,
- #app .toolbar,#app .actions,#dialog .toolbar,#dialog .actions,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .workspace,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .territoryCompact,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .settingsGrid,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .workspace>*,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .territoryCompact>*,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .settingsGrid>*,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .panel,#dialog form,#dialog fieldset{min-width:0;max-width:100%}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .workspace{grid-template-columns:minmax(0,1fr)}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .top,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .between,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .undoBar,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .deskReturnSelect,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .toolbar,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .actions,#dialog .toolbar,#dialog .actions,
  #dialog .between,#dialog .addressRow .rowhead{flex-wrap:wrap}
- #app :is(.top,.between,.undoBar,.toolbar,.actions,.deskReturnSelect)>*,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) :is(.top,.between,.undoBar,.toolbar,.actions,.deskReturnSelect)>*,
  #dialog :is(.toolbar,.actions,.between,.rowhead)>*{
    min-width:0;max-width:100%;overflow-wrap:anywhere
  }
- #app :is(.workspace,.territoryCompact,.settingsGrid) .line,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) :is(.workspace,.territoryCompact,.settingsGrid) .line,
  #app:has(.settingsSectionNav) .line,#dialog .line{flex-wrap:wrap}
- #app :is(.workspace,.territoryCompact,.settingsGrid) .line>*,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) :is(.workspace,.territoryCompact,.settingsGrid) .line>*,
  #app:has(.settingsSectionNav) .line>*,#dialog .line>*{
    min-width:0;max-width:100%;overflow-wrap:anywhere
  }
- #app .twocol,#dialog .twocol{grid-template-columns:repeat(2,minmax(0,1fr))}
- #app .twocol>*,#dialog .twocol>*{min-width:0}
- #app :is(.toolbar,.settingsGrid) :is(input,select,textarea),
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .twocol,#dialog .twocol{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .twocol>*,#dialog .twocol>*{min-width:0}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) :is(.toolbar,.settingsGrid) :is(input,select,textarea),
  #app:has(.settingsSectionNav) :is(input,select,textarea,fieldset),
  #dialog :is(input,select,textarea,fieldset){min-width:0;max-width:100%}
- #app .territorySortControls select{min-width:0!important;max-width:100%}
- #app .territorySortControls details,#app .settingsSectionNav,
- #app .settingsSectionNav button,#dialog .cardActionMenu{
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .territorySortControls select{min-width:0!important;max-width:100%}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .territorySortControls details,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .settingsSectionNav,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .settingsSectionNav button,#dialog .cardActionMenu{
    min-width:0;max-width:100%;overflow-wrap:anywhere
  }
- #app .undoBar button,#dialog button,#app .details button{
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .undoBar button,#dialog button,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .details button{
    white-space:normal;max-width:100%;overflow-wrap:anywhere
  }
- #app .details p,#app .details strong,#dialog label,#dialog legend{
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .details p,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .details strong,#dialog label,#dialog legend{
    overflow-wrap:anywhere
  }
  #dialog{
@@ -76,7 +76,7 @@
    max-height:calc(100vh - 24px);
    max-height:calc(100dvh - 24px);
  }
- #app .responsiveCardTable,#dialog .responsiveCardTable{
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .responsiveCardTable,#dialog .responsiveCardTable{
    width:100%;min-width:0;table-layout:fixed
  }
  .responsiveCardTable :is(th,td){overflow-wrap:anywhere;white-space:normal}
@@ -86,8 +86,8 @@
  .responsiveCardTable button{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 }
 @media screen and (max-width:900px){
- #app .twocol,#dialog .twocol{grid-template-columns:minmax(0,1fr)}
- #app .responsiveCardTable,#dialog .responsiveCardTable,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .twocol,#dialog .twocol{grid-template-columns:minmax(0,1fr)}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .responsiveCardTable,#dialog .responsiveCardTable,
  .responsiveCardTable tbody{display:block;width:100%;min-width:0}
  /* Keep the real column headers available to assistive technology. */
  .responsiveCardTable thead{
@@ -108,23 +108,20 @@
  }
  .responsiveCardTable .rowActions{display:flex;flex-wrap:wrap;gap:6px}
  .responsiveCardTable .cardActionItems{min-width:0}
- #app .tablewrap:has(> .responsiveCardTable){
-   max-height:none;overflow:visible
- }
- #app .publisherReturnGroup .responsiveCardTable{table-layout:auto}
- #app .deskTabs{min-width:0}
- #app .deskReturnSelect>button{flex:1 1 145px}
- #app .areaRail{flex-wrap:wrap;overflow:visible}
- #app .areaRail button{white-space:normal;max-width:100%}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .publisherReturnGroup .responsiveCardTable{table-layout:auto}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .deskTabs{min-width:0}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .deskReturnSelect>button{flex:1 1 145px}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .areaRail{flex-wrap:wrap;overflow:visible}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .areaRail button{white-space:normal;max-width:100%}
  #dialog .dialogClose{max-width:100%}
 }
 @media screen and (max-width:480px){
- #app .panel{padding:14px}
- #app .toolbar>input,#app .toolbar>select,#app .territorySortControls,
- #app .territorySortControls select{width:100%;flex-basis:100%}
- #app .settingsSectionNav button{flex:1 1 120px}
- #app .settingsGrid .guidanceSettings{gap:7px!important}
- #app .deskReturnSelect>button,#dialog .actions>button{flex:1 1 100%}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .panel{padding:14px}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .toolbar>input,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .toolbar>select,#app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .territorySortControls,
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .territorySortControls select{width:100%;flex-basis:100%}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .settingsSectionNav button{flex:1 1 120px}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .settingsGrid .guidanceSettings{gap:7px!important}
+ #app:where(:has(.deskTabs,.territoryCompact,.settingsSectionNav)) .deskReturnSelect>button,#dialog .actions>button{flex:1 1 100%}
  #dialog{padding:16px}
  #dialog .dialogClose{margin:0 0 4px 8px}
 }
