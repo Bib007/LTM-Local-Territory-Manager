@@ -2,6 +2,23 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.14.0-beta.1 · 2026-11-25
+
+- **Daily work:** Clear issue and return actions, with return ordering by publisher or card. Issue up to five available cards in one transaction with the same date and recipient, and use shortcuts for frequently selected recipients.
+- **Cards and home:** Card filters show counts and active selections. Additional card tools are grouped, and the overview map can zoom out to the entire district. The home page has less explanatory text and no search box.
+- **Reports and settings:** A unified settings selector with change history in usage statistics. Three report tabs and an option to continue without a map if it fails to render.
+- **Saves and reminders:** Visible dialog save status, faster issue lookup, and initials in overdue assignment reminders for named accounts.
+
+## 1.13.0 · 2026-11-24
+
+- **Dashboard:** Service-year target and coverage, estimated visits across unique completed territories, a 12-month completion-time average and the oldest available territory, with unknown dates shown separately.
+- **Daily work:** Collapsible navigation, compact tables, fewer secondary buttons and draft protection when switching settings tabs. Select multiple returns to the box or by publisher and continue to the next territory after individual confirmation. Undo is tied to the displayed data revision.
+- **Reports and usage statistics:** KTM reports show visit points on current territories, one do-not-call total and the period’s missing territories within existing access limits. A dedicated settings tab estimates active editing time from historical saves.
+- **Tasks, maps and history:** Simpler task filters, unread replies, overdue assignment reminders, explicit bulk area colors, adjustable monthly intervals and optional history limits. The report map remembers territory-number visibility.
+- **Sharing and guidance:** Approved Google Drive PDFs gain searchable address lists with private do-not-call details filtered. The website guide replaces the personal guide. A limited offline converter handles individual NW Scheduler/TH boundary files.
+- **Reliability and saves:** Reuse complete DAR streets and loaded settings, show conflicts more clearly, probe connectivity with bounded backoff and skip redundant activity reads for empty recovery lists. Unconfirmed writes are never replayed automatically.
+- **Scope:** Consolidates 1.13.0-beta.1–beta.5 and preserves Stable 1.12.40 fixes. Unfinished move suggestions, full NW Scheduler/TH migration and changes outside beta.5 are excluded.
+
 ## 1.13.0-beta.5 · 2026-11-24
 
 - **Dashboard:** A linear service-year target marker and pace difference. Average completed assignment duration uses the last 12 months; the oldest available territory shows its known completion age across folder and box, with undated territories listed separately.

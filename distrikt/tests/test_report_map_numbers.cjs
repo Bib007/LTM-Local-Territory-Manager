@@ -24,7 +24,7 @@ for(const file of ['workspace.js','report-map.js','report-print.js'])vm.runInCon
 const run=source=>vm.runInContext(source,c);
 run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class=\"report\"></section>';Workspace.reportTitle=()=> 'Fiktiv periode';Workspace.periodBounds=()=>['2026-09-01','2027-08-31'];Workspace.reportInventory=()=>({total:1,assigned:0,home:1,missing:0,missingAssigned:0,missingHome:0});Workspace.reportExplanation=()=>'';");
 (async()=>{
- const before=JSON.stringify(state),toolbar=run('Workspace.detailedReports()');
+ const before=JSON.stringify(state),toolbar=run('Workspace.reportPreview=true;Workspace.detailedReports()');
  assert.match(toolbar,/id="reportPrintPeriod"/);
  assert.match(toolbar,/id="reportMapNumbers" type="checkbox" checked/);
  assert.match(toolbar,/id="reportDistrictMap"/);

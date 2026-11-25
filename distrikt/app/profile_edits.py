@@ -27,11 +27,18 @@ REVIEW_FIELDS={
  'maps':{'image','name'},
 }
 
-def capture(store,modules=None):
-    # Store.all() decodes fresh SQLite JSON objects. Copying them again here
-    # doubles work for every overview/save without improving data isolation.
-    return {'id':'workspace','records':{m:{r['id']:r for r in store.all(m)
-                   if not r.get('entity') and (m!='notes' or not is_ib_review(r))} for m in REVIEW_FIELDS if modules is None or m in modules}}
+def capture(store,modules=None,*,loaded=None):
+    # These tables go through Store.state unchanged. Use the original rows,
+    # not the permission-filtered browser payload or the enriched card rows.
+    loaded=loaded or {}
+    records={}
+    for module in REVIEW_FIELDS:
+        if modules is not None and module not in modules:
+            continue
+        rows=loaded[module] if module in ('loans','publishers','visits','ib') and module in loaded else store.all(module)
+        records[module]={row['id']:row for row in rows
+                         if not row.get('entity') and (module!='notes' or not is_ib_review(row))}
+    return {'id':'workspace','records':records}
 
 class ReviewedMutation:
     def __init__(self,base,actor,on_precommit=None):

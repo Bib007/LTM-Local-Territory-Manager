@@ -8,6 +8,7 @@ const listeners={},nodes=new Map(),get=id=>{
 };
 class TestFormData{
  constructor(form){this.values=new Map(form.fields);}
+ getAll(key){return this.values.has(key)?[this.values.get(key)]:[];}
  has(key){return this.values.has(key);}
  [Symbol.iterator](){return this.values[Symbol.iterator]();}
 }

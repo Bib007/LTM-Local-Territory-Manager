@@ -19,6 +19,24 @@ class StorageTests(unittest.TestCase):
     def issue(self,c,initial=False):
         return self.s.mutate('loan.issue',{'card_id':c,'publisher_id':self.publisher,'date':date.today().isoformat(),'initial':initial})['id']
 
+    def test_batch_issue_rolls_back_and_undo_releases_every_card(self):
+        first, second = (self.make_card(str(number)) for number in (101, 102))
+        self.s.mutate('folder.set', {'ids': [first, second], 'in_folder': True})
+        self.issue(second)
+        data = {'card_id': first, 'additional_card_ids': [second],
+                'publisher_id': self.publisher, 'date': date.today().isoformat()}
+        with self.assertRaisesRegex(ValueError, '102'):
+            self.s.mutate('loan.issue', data)
+        self.assertIsNone(self.s.active_loan(first))
+        self.assertTrue(self.s.require('cards', first)['in_folder'])
+        self.s.mutate('workflow.undo', {'expected_revision': self.s.revision})
+        result = self.s.mutate('loan.issue', data)
+        self.assertEqual(len(result['ids']), 2)
+        for ident, loan_id in zip((first, second), result['ids']):
+            self.assertEqual(self.s.active_loan(ident)['id'], loan_id)
+        self.s.mutate('workflow.undo', {'expected_revision': self.s.revision})
+        self.assertFalse(any(self.s.active_loan(ident) for ident in (first, second)))
+
     def test_empty_recovery_skips_activity_log_scan(self):
         from unittest.mock import patch
         with patch.object(self.s,'activity',side_effect=AssertionError('unnecessary activity read')):

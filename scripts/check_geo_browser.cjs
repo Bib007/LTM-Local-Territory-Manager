@@ -205,9 +205,9 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   await page.evaluate(()=>{printOptions('c1','back');});await page.locator('#printForm [name=remember]').uncheck();const backPopupPromise=page.waitForEvent('popup');await page.locator('#printForm button.primary').click();const backPopup=await backPopupPromise;await backPopup.waitForFunction(()=>document.getElementById('print')&&!document.getElementById('print').disabled);assert.equal(await backPopup.locator('.ibPreview').count(),1);const backPdf=await backPopup.pdf({preferCSSPageSize:true});if(out)fs.writeFileSync(path.join(out,`back-${width}.pdf`),backPdf);await backPopup.close();
   await page.evaluate(()=>{page='Rapporter';reportTab='Rapport';Workspace.reportPeriod='service';render();});
   assert.equal(await page.locator('.reportOverview').count(),0);
-  assert.equal(await page.locator('.reportScreenMap').count(),1);
-  await page.locator('[data-work=report-tab][data-value=Kalender]').click();assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'calendar');assert.match(await page.locator('.reportScreenMap h2').innerText(),/Calendar year/);await page.locator('#calendarYear').selectOption('2026');
-  await page.locator('[data-work=report-tab][data-value=Rapport]').click();
+  await page.locator('[data-work=report-view]').click();assert.equal(await page.locator('.reportScreenMap').count(),1);
+  await page.locator('#reportPrintPeriod').selectOption('calendar');assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'calendar');assert.match(await page.locator('.reportScreenMap h2').innerText(),/Calendar year/);await page.locator('#calendarYear').selectOption('2026');
+  await page.locator('#reportPrintPeriod').selectOption('service');
 
   assert.equal(await page.locator('.report').first().evaluate(node=>node.scrollWidth<=node.clientWidth),true);
   assert.equal(await page.locator('.report').first().locator('.metrics>div').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth)),true);
