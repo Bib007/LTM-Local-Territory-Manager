@@ -71,11 +71,24 @@ def summaries(raw):
     rolling=date(y-1,today.month,min(today.day,monthrange(y-1,today.month)[1]))
     periods={'calendar':(date(y,1,1),today),'service':(date(service-1,9,1),today),'rolling':(rolling,today)}
     cards=raw['cards'];ids={c['id'] for c in cards};assigned={l['card_id'] for l in raw['loans'] if not l.get('returned') and l['card_id'] in ids}
+    def known_day(value):
+        if not isinstance(value,str):return None
+        try:day=date.fromisoformat(value)
+        except ValueError:return None
+        return value if day.isoformat()==value and day<=today else None
+    known={c['id']:set() for c in cards}
+    for c in cards:
+        day=known_day(c.get('last_completed'))
+        if day:known[c['id']].add(day)
+    for e in raw['completions']:
+        if e['card_id'] in ids:
+            for field in ('date','previous_completed'):
+                day=known_day(e.get(field))
+                if day:known[e['card_id']].add(day)
     result={}
     for kind,(start,end) in periods.items():
-        a,b=start.isoformat(),end.isoformat();events=[e for e in raw['completions'] if a<=e.get('date','')<=b]
-        done={e['card_id'] for e in events if e['card_id'] in ids}
-        done.update(c['id'] for c in cards if a<=(c.get('last_completed') or '')<=b)
+        a,b=start.isoformat(),end.isoformat();events=[e for e in raw['completions'] if known_day(e.get('date')) and a<=e['date']<=b]
+        done={ident for ident,days in known.items() if any(a<=day<=b for day in days)}
         missing=ids-done
         result[kind]={'start':a,'end':b,'completions':len(events),'territories':len(ids),'completed_territories':len(done),'missing':len(missing),'assigned':len(assigned),'home':len(ids-assigned),'missing_assigned':len(missing&assigned),'missing_home':len(missing-assigned)}
     return {'as_of':raw['today'],'revision':raw['revision'],'periods':result,
