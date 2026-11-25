@@ -12,7 +12,6 @@ const ctx={
  document:{addEventListener(){}},
  window:{},
  el:name=>elements[name]||null,
- I18n:{language:()=> 'da',fixedLanguage:()=>true,text:text=>text},
  ui:(value,params={})=>String(value).replace(/\{(\w+)\}/g,(_,k)=>String(params[k]??'{'+k+'}')),
  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
  cmp:(a,b)=>String(a).localeCompare(String(b)),
@@ -20,14 +19,14 @@ const ctx={
  serviceYear:()=>2027,yearLabel:()=> '2026/2027',dayDiff:(a,b)=>(Date.parse(a)-Date.parse(b))/86400000,
 };
 vm.createContext(ctx);
-for(const name of ['workspace.js','profiles-ui.js','navigation.js'])
+for(const name of ['i18n.js','workspace.js','profiles-ui.js','navigation.js'])
  vm.runInContext(source(name),ctx,{filename:name});
 
 vm.runInContext(`var page='Forside',state={
  today:'2026-11-17',
  settings:{},
  profile:{
-  desk_only:true,
+  desk_only:true,language:'da',
   user:{id:'fictional-user',name:'Fiktiv bruger',onboarded:true},
   permissions:['cards.view','loans.view','loans.manage','publishers.view','dashboard.view']
  },
@@ -52,6 +51,31 @@ for(const value of ['>2</strong>','>3</strong>','>5</strong>','>60%</strong>'])
  assert.ok(html.includes(value),value);
 assert.doesNotMatch(html,/opfølgning|data-work="tasks"|data-work="followups"|taskMetric|recurringTasks|note\.save/i);
 assert.doesNotMatch(evalJS('Navigation.html()'),/Opgaver|Opfølgninger|Rapporter|Kortoversigt/);
+// The real translation module supplies tooltip attributes and accessible
+// visible names without revealing any navigation forbidden to desk users.
+for(const [language,home,desk,publishers,guide,toggle] of [
+ ['da','Forside','Ind/udlevering','Forkyndere','Trinvis LTM-guide','Fold menu sammen'],
+ ['en','Home','Check-in and check-out','Publishers','Step-by-step LTM guide','Collapse menu']
+]){
+ evalJS("state.profile.language="+JSON.stringify(language));
+ const nav=evalJS('Navigation.html()');
+ assert.equal(evalJS('I18n.language()'),language);
+ assert.equal(evalJS('I18n.fixedLanguage()'),language);
+ assert.doesNotMatch(nav,/id="navigationLanguage"/,'A profile-fixed language must not show the browser picker');
+ const buttons=Array.from(nav.matchAll(/<button data-navigation="([^"]+)"[^>]*>[\s\S]*?<\/button>/g),m=>[m[1],m[0]]);
+ assert.deepEqual(buttons.map(([id])=>id),['0:0','0:1','1:2'],'Desk role only exposes the three permitted routes');
+ for(const [id,label] of [['0:0',home],['0:1',desk],['1:2',publishers]]){
+  const button=buttons.find(([key])=>key===id)[1];
+  assert.ok(button.includes(' title="'+label+'"'),language+' translated tooltip: '+id);
+  assert.ok(button.includes('<span class="sidebarNavLabel">'+label+'</span>'),language+' accessible text: '+id);
+ }
+ assert.match(buttons[0][1],/aria-current="page"/);
+ assert.ok(nav.includes(' title="'+guide+'"'));
+ assert.ok(nav.includes('https://localterritorymanager.netlify.app/'+language+'/guide/'));
+ assert.ok(nav.includes(' title="'+toggle+'"'));
+ assert.doesNotMatch(nav,/data-navigation="(?:1:[0134]|2:[012])"/);
+}
+evalJS("state.profile.language='da'");
 assert.equal(evalJS('Workspace.myTasksWelcome(7)'),'');
 assert.equal(evalJS('ProfilesUI.welcome()').includes('Se mine opgaver'),false);
 
@@ -86,4 +110,4 @@ assert.equal(evalJS('Workspace.replyNotifications()'),'');
 assert.doesNotMatch(evalJS('Workspace.taskHistory(state.notes[0],false)'),/data-work="read-task-reply"/);
 vm.runInContext("state.profile.permissions=['dashboard.view']",ctx);
 assert.equal(evalJS('Workspace.replyNotifications()'),'');
-console.log('Restricted desk and recipient-only task reply notifications verified with fictional data.');
+console.log('Restricted desk navigation, Danish/English tooltips and accessible names, and recipient-only task reply notifications verified with fictional data.');

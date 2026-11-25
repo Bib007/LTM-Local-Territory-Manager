@@ -20,9 +20,9 @@ const c={document:{addEventListener(){}},window:{addEventListener(){}},localStor
  L:{polygon(points,opts){drawn.polygons.push({points,opts});return layer();},polyline(points){drawn.leaders.push(points);return layer();},marker(at,opts){drawn.markers.push({at,opts});return layer();},divIcon:opts=>opts},
  MapExport:{captureMap:()=>({backgroundImage:'data:image/png;base64,RklDVElPTkFM',viewBounds:[10,55,10.04,55.04]})}};
 vm.createContext(c);
-for(const file of ['workspace.js','report-map.js','report-print.js'])vm.runInContext(read(file),c);
+for(const file of ['workspace.js','printing.js','report-map.js','report-print.js'])vm.runInContext(read(file),c);
 const run=source=>vm.runInContext(source,c);
-run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class=\"report\"></section>';Workspace.reportTitle=()=> 'Fiktiv periode';Workspace.periodBounds=()=>['2026-09-01','2027-08-31'];Workspace.reportInventory=()=>({total:1,assigned:0,home:1,missing:0,missingAssigned:0,missingHome:0});Workspace.reportExplanation=()=>'';");
+run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class=\"report\"></section>';Workspace.reportTitle=()=> 'Fiktiv periode';Workspace.periodBounds=()=>['2026-09-01','2027-08-31'];Workspace.reportInventory=()=>({total:1,assigned:0,home:1,missing:0,missingAssigned:0,missingHome:0,completedIds:new Set([state.cards[0].id])});Workspace.reportExplanation=()=>'';");
 (async()=>{
  const before=JSON.stringify(state),toolbar=run('Workspace.reportPreview=true;Workspace.detailedReports()');
  assert.match(toolbar,/id="reportPrintPeriod"/);
@@ -64,9 +64,11 @@ run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class
  // A changed selection during asynchronous print preparation must invalidate that PDF.
  let releasePrint,popup;
  c.pendingPrint=new Promise(resolve=>{releasePrint=resolve;});
- c.window={open(){popup={closed:false,close(){this.closed=true;},document:{write(){},open(){},close(){}}};return popup;}};
+ c.window={navigator:{standalone:false},matchMedia:()=>({matches:false}),open(){popup={closed:false,close(){this.closed=true;},document:{write(){},open(){},close(){}}};return popup;}};
  run('ReportMap.printable=async()=>pendingPrint');
+ assert.equal(run('PrintPreview.standalone()'),false,'The fixture uses the production desktop print path');
  const job=run('printReport({withoutBackground:true})');
+ assert(popup&&!popup.closed,'The actual desktop adapter must open a popup before the selection changes');
  run('Workspace.setReportShowNumbers(false)');
  releasePrint('<svg>F-314</svg>');
  await assert.rejects(job,/Printgrundlaget er ændret/);

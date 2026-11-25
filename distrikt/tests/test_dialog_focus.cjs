@@ -18,4 +18,22 @@ const action=field('action',{id:'',dataset:{action:'detail',id:'fictional'}});c.
 dialog.fields=[];dialog.heading=null;run("I18n.set('en');DialogFocus.prepare(dialog);DialogFocus.focus(dialog)");assert.equal(c.document.activeElement,close);assert.equal(dialog.attrs['aria-labelledby'],undefined);assert.equal(dialog.attrs['aria-label'],'Dialog');
 // Missing/disconnected openers and nodes inside a closed dialog do not steal focus.
 c.document.activeElement=action;action.isConnected=true;run('DialogFocus.capture(dialog)');action.isConnected=false;selectors.clear();run('DialogFocus.restore(dialog)');assert.equal(run('DialogFocus.opener'),null);
+// Native selects must not be focused by opening or replacing a dialog.
+const picker=field('complete',{tagName:'SELECT',removeAttribute(name){if(name==='autofocus')this.autofocus=false;}});
+close.setAttribute=(name)=>{if(name==='autofocus')close.autofocus=true;};
+const queryBefore=dialog.querySelector.bind(dialog);
+dialog.querySelector=s=>s.startsWith('[autofocus]')&&close.autofocus?close:queryBefore(s);
+dialog.fields=[picker,first];close.autofocus=false;c.document.activeElement=action;
+run('DialogFocus.prepareInitialFocus(dialog);DialogFocus.focus(dialog)');
+assert.equal(close.autofocus,true,'Safe native autofocus target is set before showModal');
+assert.equal(c.document.activeElement,close);
+assert.equal(picker.value,'INVENTED UNCHANGED VALUE');
+picker.autofocus=true;close.autofocus=false;c.document.activeElement=action;
+run('DialogFocus.prepareInitialFocus(dialog);DialogFocus.focus(dialog)');
+assert.equal(picker.autofocus,false,'Explicit select autofocus is neutralized before opening');
+assert.equal(c.document.activeElement,close);
+// Explicit input autofocus remains intact.
+close.autofocus=false;dialog.fields=[picker,auto];c.document.activeElement=action;
+run('DialogFocus.prepareInitialFocus(dialog);DialogFocus.focus(dialog)');
+assert.equal(c.document.activeElement,auto);
 console.log('Dialog focus: linked labels/names/values, autofocus priority, safe confirmation focus, retained/re-rendered opener and disconnected-node guards passed.');

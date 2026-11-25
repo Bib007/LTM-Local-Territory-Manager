@@ -1,17 +1,15 @@
-# LTM 1.14.0-beta.2
+# LTM 1.14.0-beta.3
 
-- **Gemning:** Undgår unødvendig genberegning af distriktsgrænsens adressetal ved udlevering og aflevering. Tidligere prøve med 16.000 fiktive adresser: klik til bekræftelse 669 → 164 ms ved udlevering og 668 → 166 ms ved aflevering med gennemgang. Video fra den virkelige installation før rettelsen viste ca. 3,3 og 3,5 sekunder; forbedringen på den installation er endnu ikke verificeret.
-- **Synkronisering:** Særskilte forklaringer ved forbindelsesfejl, udløbet login, ubekræftet gemning og bekræftet gemning med forældet oversigt. Forbindelsesprøver gentager ikke skrivninger. Manuel opdatering/genåbning afviser at overskrive åbne kladder.
-- **Daglig brug:** Genbrug kortvælgeren ved samlet udlevering af højst fem kort, med synlige valg og fjernelse. Større centreret gemmeindikator, venstrestillede knapper med kant og op til fem hyppigt valgte forkyndere.
-- **Kort, filtre og mobil:** Større Kortoversigt med samlet betjening og direkte adgang til hele distriktet. Aktive filtre og nulstilling, sjældne valg under … Mere og et sammenklappeligt filterpanel med resultatantal på smalle skærme. Ombrydning af betjening og dialoger.
-- **Forside:** Ens tekststørrelse for gennemgangstallene og tydelig gul målmarkering med matchende forklaring.
-- **Rapportprint:** Undgår unødvendige netfliser ved direkte offlineprint, når rapportkortet ikke er åbnet. Fysisk iPad fra hjemmeskærmen og reel installationshastighed er fortsat uverificeret.
+- **Gemning og forbindelser**. Oversigten efter en gemning frasorterer logposter tidligere. Forbindelsesstatus giver mere præcis vejledning og kan lukkes efter genoprettelse. Gemmehastigheden på installationen skal stadig måles.
+- **Daglig brug**. Søg direkte efter ekstra kort ved samlet udlevering, markér flere kort i aflevering pr. forkynder, og åbn kort fra listen over kort til mappen. Fremhævet overskrift til hyppigt valgte forkyndere. Gruppelistens midlertidige filter viser forkyndere med aktuelle udleveringer.
+- **Kort og navigation**. Sammenklappelig venstremenu, tydelig kortaktivering og nulstilling af fremhævning ved Vis hele distriktet. IB-redigering vender tilbage til den oprindelige kortvisning. Fortrydelsesbeskeden kan lukkes og vises uden for forsiden.
+- **iPad og rapporter**. Lokalt hjemmeskærmsikon, rettet fokus ved dialogåbning og tilbageknap i selvstændig printvisning. A4-kort og S-13 får justeret sideopdeling. Klare tekster for bekræftelse af printet kortforside og -bagside. Rapporten viser faktiske gennemgangsdatoer og aktuel udleveringsstatus. Fysisk iPad og udskrift skal afprøves.
+- **Opfølgninger og indstillinger**. Hurtigere indsamling af opfølgninger, filtre der tilpasser sig bredden, og tydeligere opdeling i indstillingsfanerne.
 
 ## English
 
-- **Save latency:** Avoid unnecessary district boundary address-count recalculation when issuing and returning territories. Earlier test with 16,000 fictional addresses: click to confirmation 669 → 164 ms for issue and 668 → 166 ms for return with completion. A video from the real installation before the fix showed about 3.3 and 3.5 seconds; improvement on that installation remains unverified.
-- **Synchronization:** Distinct guidance for connection failures, expired sessions, unconfirmed saves and confirmed saves with a stale overview. Connectivity checks do not replay writes. Manual refresh/reopening refuses to overwrite open drafts.
-- **Daily work:** Reuse the card picker for batch issue of up to five cards, with visible selections and removal. Larger centered save indicator, left-aligned bordered actions and up to five frequently selected publishers.
-- **Maps, filters and mobile:** Larger overview map with consolidated controls and direct access to the entire district. Active filters and reset, rare choices under More, and a collapsible filter panel with result count on narrow screens. Wrapping controls and dialogs.
-- **Dashboard:** Consistent completion metric typography and a prominent yellow target marker with a matching legend.
-- **Report printing:** Avoid unnecessary online tiles for direct offline printing when the report map has not been opened. Physical iPad home-screen use and real installation latency remain unverified.
+- **Saves and connectivity**. The post-save overview filters out audit records earlier. Connectivity messages give clearer guidance and can be dismissed after recovery. Save latency still needs measurement on the installed system.
+- **Daily work**. Search directly for extra cards in batch issue, select multiple cards in the returns-by-publisher view, and open cards from the folder suggestion list. More prominent frequent-publisher heading. Temporary filter in the publisher list for current assignments.
+- **Maps and navigation**. Collapsible sidebar, clearer map-gesture activation, and selection highlighting cleared by Show whole territory. IB editing returns to the original card view. The undo notice can be dismissed and appears away from Home.
+- **iPad and reports**. Local home-screen icon, corrected dialog focus, and a Back control in standalone print preview. Revised A4 map and S-13 pagination, clearer print confirmations for both card sides, and actual completion dates and current assignment status in reports. Physical iPad and print testing are still required.
+- **Follow-ups and settings**. Faster follow-up collection, filters that adapt to available width, and clearer sections in settings tabs.

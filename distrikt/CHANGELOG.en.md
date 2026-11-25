@@ -1,5 +1,13 @@
 # Changelog (English and original historical notes)
 
+## 1.14.0-beta.3 · 2026-11-25
+
+- **Saves and connectivity**. The post-save overview filters out audit records earlier. Connectivity messages give clearer guidance and can be dismissed after recovery. Save latency still needs measurement on the installed system.
+- **Daily work**. Search directly for extra cards in batch issue, select multiple cards in the returns-by-publisher view, and open cards from the folder suggestion list. More prominent frequent-publisher heading. Temporary filter in the publisher list for current assignments.
+- **Maps and navigation**. Collapsible sidebar, clearer map-gesture activation, and selection highlighting cleared by Show whole territory. IB editing returns to the original card view. The undo notice can be dismissed and appears away from Home.
+- **iPad and reports**. Local home-screen icon, corrected dialog focus, and a Back control in standalone print preview. Revised A4 map and S-13 pagination, clearer print confirmations for both card sides, and actual completion dates and current assignment status in reports. Physical iPad and print testing are still required.
+- **Follow-ups and settings**. Faster follow-up collection, filters that adapt to available width, and clearer sections in settings tabs.
+
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
 ## 1.14.0-beta.2 · 2026-11-25

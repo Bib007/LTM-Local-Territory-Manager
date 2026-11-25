@@ -19,10 +19,11 @@ const cards=[
 const state={cards,settings:{require_revision:true},loans:[{card_id:'g'}]};
 function node(value=''){
  const handlers={};
- return {value,innerHTML:'',textContent:'',disabled:false,focused:false,
+ return {value,innerHTML:'',textContent:'',hidden:false,focused:false,
   addEventListener(type,fn){handlers[type]=fn;},
   fire(type,event={}){handlers[type](event);},
-  focus(){this.focused=true;}
+  focus(){this.focused=true;},
+  querySelector(){return this.innerHTML.includes('data-issue-add=')?{focus:()=>{this.focused=true;}}:null;}
  };
 }
 const primary=node('a'),search=node(),picker=node(),selected=node(),count=node(),warning=node();
@@ -35,24 +36,37 @@ const fixture={state,areaName:()=> 'Fiktiv område',loanFor:id=>state.loans.find
  taskWarning:id=>id==='b'?'Fiktiv opgave':''};
 const functions=new Function('f','const {state,areaName,loanFor,folderEnabled,el,esc,ui,cmp,I18n,taskWarning}=f;'+source.slice(start,end)+';return {issueBatchPicker,issueCardOptions};')(fixture);
 functions.issueBatchPicker(form,search,false);
-const includes=id=>picker.innerHTML.includes('value="'+id+'"');
+const includes=id=>picker.innerHTML.includes('data-issue-add="'+id+'"');
 const extras=()=>[...selected.innerHTML.matchAll(/name="additional_card_id" value="([^"]+)"/g)].map(m=>m[1]);
-const pick=id=>{picker.value=id;picker.fire('change');};
+const pick=id=>picker.fire('click',{target:{closest:()=>({dataset:{issueAdd:id}})}});
 const find=s=>{search.value=s;search.fire('input');};
 const remove=id=>selected.fire('click',{target:{closest:()=>({dataset:{issueRemove:id}})}});
 assert.equal(count.textContent,'1 af 5 kort valgt');
-assert(includes('b')&&includes('f')&&includes('k'));
+assert(picker.hidden&&picker.innerHTML==='','No results until a deliberate search');
+find('   ');assert(picker.hidden);
+find('Fiktiv');assert(!picker.hidden&&includes('b')&&includes('f')&&includes('k'));
 assert(!['a','g','h','i','j'].some(includes));
 assert(picker.innerHTML.includes('&lt;test&gt;'));
-assert(picker.innerHTML.includes(functions.issueCardOptions([cards[1]])),'Uses ordinary select option markup');
-find('sYD');assert(includes('b')&&!includes('c'));pick('b');
-assert.deepEqual(extras(),['b']);assert(warning.innerHTML.includes('Fiktiv opgave'));
+assert(picker.innerHTML.includes('<button type="button"'),'Results are native non-submit buttons');
+assert(functions.issueCardOptions([cards[1]]).includes('<option'),'Primary select is unchanged');
+find('no-match');assert(!picker.hidden&&picker.innerHTML.includes('Ingen ledige kort matcher.'));
+let prevented=false;
+search.fire('keydown',{key:'Enter',preventDefault(){prevented=true;}});
+assert(prevented,'No implicit form submission even with no matches');
+find('sYD');assert(includes('b')&&!includes('c'));
+prevented=false;search.fire('keydown',{key:'ArrowDown',preventDefault(){prevented=true;}});
+assert(prevented&&picker.focused,'Keyboard can move from search to a result');
+pick('b');assert.deepEqual(extras(),['b']);assert(warning.innerHTML.includes('Fiktiv opgave'));
+assert(search.value===''&&search.focused&&picker.hidden,'Click/tap resets results for the next search');
 find('I003');assert(includes('c')&&!includes('b'));pick('c');
 find('104');assert(includes('d'));pick('d');
-find('');pick('e');assert.equal(count.textContent,'5 af 5 kort valgt');assert(picker.disabled);
-pick('f');pick('b');pick('a');assert.deepEqual(extras(),['b','c','d','e']);
-remove('c');assert(!picker.disabled);assert(picker.focused);assert(includes('c'));pick('f');
-primary.value='b';primary.fire('change');assert.deepEqual(extras(),['d','e','f']);assert(!includes('b'));
-state.loans.push({card_id:'d'});find('');assert(!includes('d'));assert(extras().includes('d'),'Do not silently drop a conflicting selected card');assert(selected.innerHTML.includes('Kan ikke vælges'));
+find('105');pick('e');assert.equal(count.textContent,'5 af 5 kort valgt');
+find('106');assert(picker.hidden);pick('f');pick('b');pick('a');assert.deepEqual(extras(),['b','c','d','e']);
+remove('c');assert(!picker.hidden&&search.focused&&includes('f'));pick('f');
+primary.value='b';primary.fire('change');assert.deepEqual(extras(),['d','e','f']);find('Fiktiv');assert(!includes('b'));
+state.loans.push({card_id:'d'});find('Fiktiv');assert(!includes('d'));assert(extras().includes('d'),'Do not silently drop a conflicting selected card');assert(selected.innerHTML.includes('Kan ikke vælges'));
 remove('d');assert.deepEqual(extras(),['e','f']);
-console.log('Batch picker: shared options, filtering, escaping, removal, duplicate prevention, cap and stale selection passed.');
+find('103');assert(includes('c'));state.loans.push({card_id:'c'});pick('c');
+assert.deepEqual(extras(),['e','f'],'Recheck eligibility on click');assert(picker.innerHTML.includes('Ingen ledige kort matcher.'));
+find('Fiktiv');assert(!includes('e')&&!includes('f')&&!includes('b'));
+console.log('Batch picker: deliberate search, result buttons, keyboard, no matches, escaping, removal, cap, duplicates and stale selection passed.');
