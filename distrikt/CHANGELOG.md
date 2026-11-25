@@ -2,6 +2,15 @@
 
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
 
+## 1.14.0-beta.2 · 2026-11-25
+
+- **Gemning:** Undgår unødvendig genberegning af distriktsgrænsens adressetal ved udlevering og aflevering. Tidligere prøve med 16.000 fiktive adresser: klik til bekræftelse 669 → 164 ms ved udlevering og 668 → 166 ms ved aflevering med gennemgang. Video fra den virkelige installation før rettelsen viste ca. 3,3 og 3,5 sekunder; forbedringen på den installation er endnu ikke verificeret.
+- **Synkronisering:** Særskilte forklaringer ved forbindelsesfejl, udløbet login, ubekræftet gemning og bekræftet gemning med forældet oversigt. Forbindelsesprøver gentager ikke skrivninger. Manuel opdatering/genåbning afviser at overskrive åbne kladder.
+- **Daglig brug:** Genbrug kortvælgeren ved samlet udlevering af højst fem kort, med synlige valg og fjernelse. Større centreret gemmeindikator, venstrestillede knapper med kant og op til fem hyppigt valgte forkyndere.
+- **Kort, filtre og mobil:** Større Kortoversigt med samlet betjening og direkte adgang til hele distriktet. Aktive filtre og nulstilling, sjældne valg under … Mere og et sammenklappeligt filterpanel med resultatantal på smalle skærme. Ombrydning af betjening og dialoger.
+- **Forside:** Ens tekststørrelse for gennemgangstallene og tydelig gul målmarkering med matchende forklaring.
+- **Rapportprint:** Undgår unødvendige netfliser ved direkte offlineprint, når rapportkortet ikke er åbnet. Fysisk iPad fra hjemmeskærmen og reel installationshastighed er fortsat uverificeret.
+
 ## 1.14.0-beta.1 · 2026-11-25
 
 - **Daglig brug:** Tydeligere valg mellem udlevering og aflevering. Vælg visning pr. forkynder eller i kortrækkefølge. Udlever op til fem ledige kort i én handling med samme dato og modtager, og få hurtigvalg til hyppige modtagere.
