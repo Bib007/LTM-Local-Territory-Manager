@@ -7,13 +7,21 @@ const PrintPreview={
  // A print-profile-only save updates state without replacing the live view.
  // Do not skip a render for any concurrent data or permission change.
  profileOnly(previous,fresh){
+  const summaries=['dashboard_summary','report_summary'];
+  // api() advances the live top-level revision on receipt, before synchronize
+  // installs the fresh state. The old aggregates can still carry the old stamp.
+  // Require coherent fresh summaries, but compare old and new aggregate data
+  // independently of their redundant revision stamps.
+  for(const key of summaries){
+   const old=previous[key],next=fresh[key];
+   if(old!=null&&(typeof old.revision!=='string'||!old.revision))return false;
+   if(next!=null&&(typeof next.revision!=='string'||!next.revision||next.revision!==fresh.revision))return false;
+  }
   const view=s=>{
    const {revision,settings,profile,...rest}=s,{print_profiles,...otherSettings}=settings||{}, {snapshot,...otherProfile}=profile||{};
-   // Both server summaries repeat the workspace revision, even when their
-   // aggregates have not changed. Ignore only that redundant matching stamp.
-   for(const key of ['dashboard_summary','report_summary']){
+   for(const key of summaries){
     const summary=rest[key];
-    if(summary&&summary.revision===revision){const {revision:stamp,...data}=summary;rest[key]=data;}
+    if(summary!=null){const {revision:stamp,...data}=summary;rest[key]=data;}
    }
    return {...rest,settings:otherSettings,profile:profile?otherProfile:profile};
   };
