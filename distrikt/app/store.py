@@ -157,7 +157,10 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                         self._geo_cache=None
                         self.geo_generation=getattr(self,'geo_generation',0)+1
                     if not self._dirty_modules or untracked or 'geo' in self._dirty_modules:self._info_cache=None
-                    if not self._dirty_modules or untracked or self._dirty_modules.intersection({'geo','cards','ignored','ib'}):
+                    if self._boundary_report_cache is not None and (
+                            not self._dirty_modules or untracked
+                            or self._dirty_modules.intersection({'geo','ignored','ib'})
+                            or ('cards' in self._dirty_modules and not self._boundary_cards_unchanged())):
                         self._boundary_report_cache=None
             except Exception:
                 self.db.rollback()
@@ -187,6 +190,27 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             return True
         except Exception:
             # A post-commit cache check must never reject a committed write.
+            return False
+
+    def _boundary_cards_unchanged(self):
+        # The boundary report only reads the saved address membership and
+        # full local address copies from cards. The geo-state signature is
+        # deliberately narrower and does not detect changes such as counts.
+        def report_inputs(row):
+            if row is None or row[2] is not None:
+                return [], []
+            card=json.loads(row[1])
+            return card.get('address_ids',[]),card.get('geo_addresses',[])
+
+        try:
+            for ident,old in self._geo_card_before.items():
+                current=self.db.execute(
+                    'SELECT id,payload,deleted_at,batch FROM cards.records WHERE id=?',
+                    (ident,)).fetchone()
+                if report_inputs(old)!=report_inputs(current):
+                    return False
+            return True
+        except Exception:
             return False
 
     def _track_record_write(self,module,ident):

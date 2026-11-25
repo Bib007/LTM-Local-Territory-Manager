@@ -49,7 +49,20 @@ async function printReport({withoutBackground=false,s13Only=false,omitMap=false}
   const modes=selection==='all'?['calendar','service','rolling']:[selection];if(!modes.every(mode=>['calendar','service','rolling'].includes(mode)))throw Error('Ugyldigt rapportperiodevalg.');
   win=window.open('','_blank');if(!win)throw Error('Tillad et nyt vindue til rapportprint.');
   win.document.write('<p>'+esc(I18n.text('Forbereder den valgte rapport…'))+'</p>');
-  const maps={};if(!s13Only&&!omitMap){buildingMap=true;for(const mode of modes){owned=Workspace.reportPeriod=mode;ReportMap.draw();maps[mode]=await ReportMap.printable({withoutBackground});check();}buildingMap=false;}
+  const maps={};
+  if(!s13Only&&!omitMap){
+   buildingMap=true;
+   // Direct printing can start before any viewport exists. Use the same
+   // offline vector map instead of waiting for unavailable map tiles.
+   const offline=withoutBackground||!map;
+   for(const mode of modes){
+    owned=Workspace.reportPeriod=mode;
+    if(!offline)ReportMap.draw();
+    maps[mode]=await ReportMap.printable({withoutBackground:offline});
+    check();
+   }
+   buildingMap=false;
+  }
   const markup=await inlineReportAssets(reportPrintDocument(maps,selection,{s13Only,omitMap}));check();
   win.document.open();win.document.write(markup);win.document.close();const button=win.document.getElementById('printReport');button.disabled=true;
   const results=await Promise.allSettled(Array.from(win.document.querySelectorAll('svg image'),img=>{const test=new Image();test.src=img.getAttribute('href');return test.decode();}));
