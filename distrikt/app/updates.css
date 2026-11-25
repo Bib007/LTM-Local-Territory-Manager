@@ -33,3 +33,98 @@
  #settingsForm input:not([type=checkbox]):not([type=radio]),#settingsForm select{width:100%}
  #settingsForm label,#settingsForm p,#settings-general{overflow-wrap:anywhere}
 }
+
+/* LTM #10: responsive local controls; never suppress page overflow to hide bugs.
+   Keep Leaflet gesture handling, map panes and print styles untouched. */
+.cardFieldLabel{display:none}
+@media screen and (max-width:1100px){
+ #app .workspace,#app .territoryCompact,#app .settingsGrid,
+ #app .workspace>*,#app .territoryCompact>*,#app .settingsGrid>*,
+ #app .panel,#dialog form,#dialog fieldset{min-width:0;max-width:100%}
+ #app .workspace{grid-template-columns:minmax(0,1fr)}
+ #app .top,#app .between,#app .undoBar,#app .deskReturnSelect,
+ #app .toolbar,#app .actions,#dialog .toolbar,#dialog .actions,
+ #dialog .between,#dialog .addressRow .rowhead{flex-wrap:wrap}
+ #app :is(.top,.between,.undoBar,.toolbar,.actions,.deskReturnSelect)>*,
+ #dialog :is(.toolbar,.actions,.between,.rowhead)>*{
+   min-width:0;max-width:100%;overflow-wrap:anywhere
+ }
+ #app :is(.workspace,.territoryCompact,.settingsGrid) .line,
+ #app:has(.settingsSectionNav) .line,#dialog .line{flex-wrap:wrap}
+ #app :is(.workspace,.territoryCompact,.settingsGrid) .line>*,
+ #app:has(.settingsSectionNav) .line>*,#dialog .line>*{
+   min-width:0;max-width:100%;overflow-wrap:anywhere
+ }
+ #app .twocol,#dialog .twocol{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #app .twocol>*,#dialog .twocol>*{min-width:0}
+ #app :is(.toolbar,.settingsGrid) :is(input,select,textarea),
+ #app:has(.settingsSectionNav) :is(input,select,textarea,fieldset),
+ #dialog :is(input,select,textarea,fieldset){min-width:0;max-width:100%}
+ #app .territorySortControls select{min-width:0!important;max-width:100%}
+ #app .territorySortControls details,#app .settingsSectionNav,
+ #app .settingsSectionNav button,#dialog .cardActionMenu{
+   min-width:0;max-width:100%;overflow-wrap:anywhere
+ }
+ #app .undoBar button,#dialog button,#app .details button{
+   white-space:normal;max-width:100%;overflow-wrap:anywhere
+ }
+ #app .details p,#app .details strong,#dialog label,#dialog legend{
+   overflow-wrap:anywhere
+ }
+ #dialog{
+   max-width:calc(100vw - 24px);
+   max-height:calc(100vh - 24px);
+   max-height:calc(100dvh - 24px);
+ }
+ #app .responsiveCardTable,#dialog .responsiveCardTable{
+   width:100%;min-width:0;table-layout:fixed
+ }
+ .responsiveCardTable :is(th,td){overflow-wrap:anywhere;white-space:normal}
+ .responsiveCardTable .rowActions,.responsiveCardTable .cardActionMenu{
+   min-width:0;max-width:100%
+ }
+ .responsiveCardTable button{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+}
+@media screen and (max-width:900px){
+ #app .twocol,#dialog .twocol{grid-template-columns:minmax(0,1fr)}
+ #app .responsiveCardTable,#dialog .responsiveCardTable,
+ .responsiveCardTable tbody{display:block;width:100%;min-width:0}
+ /* Keep the real column headers available to assistive technology. */
+ .responsiveCardTable thead{
+   position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+   overflow:hidden;clip-path:inset(50%);white-space:nowrap
+ }
+ .responsiveCardTable tbody>tr{
+   display:grid;grid-template-columns:minmax(0,1fr);gap:0;
+   border:1px solid var(--line);border-radius:7px;margin:0 0 9px;padding:7px 10px
+ }
+ .responsiveCardTable tbody>tr>td{
+   display:block;width:100%;min-width:0;max-width:100%;
+   border:0;padding:6px 3px;overflow-wrap:anywhere
+ }
+ .responsiveCardTable tbody>tr>td:first-child{width:100%}
+ .responsiveCardTable .cardFieldLabel{
+   display:block;color:var(--muted);font-size:11px;margin-bottom:3px
+ }
+ .responsiveCardTable .rowActions{display:flex;flex-wrap:wrap;gap:6px}
+ .responsiveCardTable .cardActionItems{min-width:0}
+ #app .tablewrap:has(> .responsiveCardTable){
+   max-height:none;overflow:visible
+ }
+ #app .publisherReturnGroup .responsiveCardTable{table-layout:auto}
+ #app .deskTabs{min-width:0}
+ #app .deskReturnSelect>button{flex:1 1 145px}
+ #app .areaRail{flex-wrap:wrap;overflow:visible}
+ #app .areaRail button{white-space:normal;max-width:100%}
+ #dialog .dialogClose{max-width:100%}
+}
+@media screen and (max-width:480px){
+ #app .panel{padding:14px}
+ #app .toolbar>input,#app .toolbar>select,#app .territorySortControls,
+ #app .territorySortControls select{width:100%;flex-basis:100%}
+ #app .settingsSectionNav button{flex:1 1 120px}
+ #app .settingsGrid .guidanceSettings{gap:7px!important}
+ #app .deskReturnSelect>button,#dialog .actions>button{flex:1 1 100%}
+ #dialog{padding:16px}
+ #dialog .dialogClose{margin:0 0 4px 8px}
+}
