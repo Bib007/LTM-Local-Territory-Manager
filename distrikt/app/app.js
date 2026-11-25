@@ -235,7 +235,7 @@ const FormDrafts={forms:new WeakMap(),
  unchanged(form){const entry=this.forms.get(form),confirmFolder=form.id==='settingsForm'&&form.dataset.folderTouched==='yes'&&!state.settings.folder_minimum_configured;return !!entry&&!entry.pending&&!confirmFolder&&entry.confirmed===this.signature(form);},
  idle(){if(PendingSaves.count){saving();return;}if(WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)failed(WriteGuard.error);else{SaveStatus.set('unchanged','Ingen nye ændringer');const error=el('formError');if(error)error.textContent='';}}
 };
-function mutate(action,data,{close=true,message='Gemt',autosave=false,synchronize}={}){
+function mutate(action,data,{close=true,message='Gemt',autosave=false,synchronize,returnTo}={}){
  const epoch=WriteGuard.epoch,payload=JSON.parse(JSON.stringify(data||{})),generation=openDialog.generation,context=EditorBases.capture();
  const commandKey=JSON.stringify([generation,action,payload]);
  if(PendingSaves.commands.has(commandKey))return PendingSaves.commands.get(commandKey);
@@ -243,7 +243,7 @@ function mutate(action,data,{close=true,message='Gemt',autosave=false,synchroniz
  const ownsFeedback=()=>generation===openDialog.generation&&origin===page&&el('formError')===feedback;
  // Only self-contained ordinary saves release their modal. Preview/approval,
  // import, security, restore and print workflows retain their existing gates.
- if(['loan.issue','loan.finish','card.save','publisher.save','area.save','note.save','visit.save','ib.save','completion.record','filter.save'].includes(action))PendingSaves.releaseDialog(generation);
+ if(['loan.issue','loan.finish','card.save','publisher.save','area.save','note.save','visit.save','ib.save','completion.record','filter.save'].includes(action)||(action==='delete'&&payload.module==='ib'))PendingSaves.releaseDialog(generation);
  if(context)context.pending++;
  let accepted=false;
  const work=PendingSaves.enqueue(async()=>{
@@ -257,7 +257,8 @@ function mutate(action,data,{close=true,message='Gemt',autosave=false,synchroniz
   const snapshot=mutationSnapshot(result),geoChanged=(action.startsWith('geo.')||action.startsWith('ignore.')||action.startsWith('address.change.')||action.startsWith('card.restructure.')||['delete','restore','recovery.purge','workflow.undo'].includes(action))&&result?.geo_changed!==false;
   if(synchronize)await synchronize(result,snapshot);
   else{if(geoChanged)await GeoUI.load();await refresh({snapshot,preserveDrafts:true});}saved();
-  if(close&&generation===openDialog.generation&&origin===page&&el('dialog').open&&(!form||FormDrafts.signature(form)===signature))closeDialog();
+  // Optional UI-only continuation: never restore over a closed/replaced dialog or a newer draft.
+  if(close&&generation===openDialog.generation&&origin===page&&el('dialog').open&&(!form||(form.isConnected!==false&&FormDrafts.signature(form)===signature))){if(!returnTo?.())closeDialog();}
   const error=el('formError');if(error&&ownsFeedback())error.textContent='';
   if(!autosave)toast(message);
   const note=el('formSaved');if(note&&note===savedNote&&ownsFeedback()&&(!form||FormDrafts.signature(form)===signature))note.innerHTML=ui('Gemt automatisk');
@@ -735,11 +736,12 @@ function confirmPublisherDelete(id){
 function confirmDelete(module,id){const item=state[module]?.find(i=>i.id===id);if(!item)return;
  if(module==='publishers')return confirmPublisherDelete(id);
  if(module==='loans')return confirmLoanDelete(item);
+ const ibReturn=module==='ib'?IBUI.captureReturn(item.card_id):null;
  const completion=module==='completions';
  const territory=completion&&(card(item.card_id)||(state.archived_cards||[]).find(c=>c.id===item.card_id));
  const loan=completion&&state.loans.find(l=>l.id===item.loan_id);
  const details=completion?`<p><b>${ui('Kort')} ${esc(territory?.number||item.card_id)}</b>${territory?.name?' · '+esc(territory.name):''}<br>${fmt(item.date)} · ${ui(loan?'tilknyttet udlevering':'kendt gennemgang')}${loan?' · '+esc(publisherName(loan.publisher_id)):''}</p>`:'';
- openDialog(`<h2>${ui('Slet')} ${module==='cards'?ui('kort')+' '+esc(item.number):ui(module==='ib'?'IB-adressen':module==='visits'?'KTM-besøget':completion?'gennemgangen':'registreringen')}?</h2>${details}<p>${ui(module==='cards'?'Kortet og dets udlån, gennemgange og IB fjernes fra visningen.':'Registreringen fjernes fra visningen.')}</p><p class="hint">${ui(deleteRecoveryHint)}</p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="${module}" data-id="${esc(id)}"><span data-ui="Slet">Slet</span></button><button data-action="close"><span data-ui="Annuller">Annuller</span></button></div>`,I18n.language());}
+ openDialog(`<h2>${ui('Slet')} ${module==='cards'?ui('kort')+' '+esc(item.number):ui(module==='ib'?'IB-adressen':module==='visits'?'KTM-besøget':completion?'gennemgangen':'registreringen')}?</h2>${details}<p>${ui(module==='cards'?'Kortet og dets udlån, gennemgange og IB fjernes fra visningen.':'Registreringen fjernes fra visningen.')}</p><p class="hint">${ui(deleteRecoveryHint)}</p><div class="actions"><button class="danger" data-action="confirm-delete" data-module="${module}" data-id="${esc(id)}"><span data-ui="Slet">Slet</span></button><button data-action="close"><span data-ui="Annuller">Annuller</span></button></div>`,I18n.language());IBUI.bindReturn(ibReturn);}
 function compactAddressNumbers(value){
  const raw=String(value??'').trim(),note=raw.match(/\s*\((?:lige|ulige|even|odd)\)\s*$/i),body=note?raw.slice(0,note.index):raw;
  const parts=body.split(/[,;]+/).map(s=>s.trim()),key=s=>{const m=s.match(/^(\d+)\s*([A-Za-zÆØÅæøå]*)$/);return m?[Number(m[1]),m[2].toUpperCase()]:null;};
@@ -941,10 +943,12 @@ case 'visit':editVisit(d.id);break;
 case 'ib':editIB(d.id,d.card);break;
 case 'delete':confirmDelete(d.module,d.id);break;
 case 'confirm-delete':{
- if(d.module==='publishers'&&target.disabled)break;
- if(d.module==='publishers')target.disabled=true;
- try{await mutate('delete',{module:d.module,id:d.id,...(d.module==='publishers'?{confirmation:'SLET FORKYNDER',expected:JSON.parse(d.expected||'null')}:{})},{message:I18n.text("Slettet · kan gendannes i 48 timer ved fejl")});}
- catch(error){if(d.module==='publishers')target.disabled=false;throw error;}
+ const guarded=d.module==='publishers'||d.module==='ib';
+ if(guarded&&target.disabled)break;
+ if(guarded)target.disabled=true;
+ const ibReturn=d.module==='ib'?IBUI.currentReturn():null;
+ try{await mutate('delete',{module:d.module,id:d.id,...(d.module==='publishers'?{confirmation:'SLET FORKYNDER',expected:JSON.parse(d.expected||'null')}:{})},{message:I18n.text("Slettet · kan gendannes i 48 timer ved fejl"),...(ibReturn?{returnTo:()=>IBUI.restoreReturn(ibReturn)}:{})});}
+ finally{if(guarded&&target.isConnected)target.disabled=false;}
  break;}
 case 'purge-recovery':if(window.confirm(I18n.text('Slet hele denne gendannelsespost permanent? Den kan derefter ikke gendannes fra appen.')))await mutate('recovery.purge',{batch:d.id},{close:false,message:I18n.text("Posten er slettet permanent")});break;
 case 'restore':await mutate('restore',{batch:d.id},{close:false,message:I18n.text("Gendannet")});break;
@@ -975,7 +979,7 @@ case 'remove-address':target.closest('[data-address-row]').remove();scheduleCard
 case 'stop':openDialog(`<h2>${ui('Luk den lokale app?')}</h2><p>${ui('Alle gemte registreringer beholdes. Startfilen åbner appen igen.')}</p><div class="actions"><button data-action="confirm-stop">${ui('Luk appen')}</button><button data-action="close">${ui('Annuller')}</button></div>`);break;
 case 'confirm-stop':await saveQueue;await api('/api/shutdown',{});el('app').innerHTML=`<section class="panel"><h1>${ui('Appen er lukket')}</h1><p>${ui('Dine gemte registreringer er bevaret. Åbn appens startfil for at starte igen.')}</p></section>`;closeDialog();saved('Appen er lukket');break;
 }}catch(e){toast(e);}});
-document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','publisherMergeForm','areaForm','noteForm','visitForm','ibForm','settingsForm','historySettingsForm','profileModeForm','printForm','completionForm','deleteLoanForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const areaColorPicker=form.id==='areaForm'?form.querySelector('[name=map_color]'):null;const resetAreaColors=!!(areaColorPicker&&typeof areaColorPicker.value==='string'&&form.dataset.id&&areaColorPicker.value.toLowerCase()!==(form.dataset.originalColor||'#477596'));if(resetAreaColors&&!window.confirm(I18n.text('Farven ændres på alle kort i området, også dem med en tidligere særskilt farve. Vil du fortsætte?')))return;const settingsSignature=page==='Indstillinger'&&SettingsViewDrafts.baselines.has(form)?SettingsViewDrafts.signature(form):null;const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
+document.addEventListener('submit',async e=>{const form=e.target;if(!['cardForm','issueForm','finishForm','publisherForm','publisherMergeForm','areaForm','noteForm','visitForm','ibForm','settingsForm','historySettingsForm','profileModeForm','printForm','completionForm','deleteLoanForm'].includes(form.id))return;e.preventDefault();if(form.dataset.saving==='yes'||!form.reportValidity())return;if(form.id!=='cardForm'&&FormDrafts.unchanged(form)){FormDrafts.idle();if(form.id!=='settingsForm'&&!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired){if(form.id!=='ibForm'||!IBUI.restoreReturn(IBUI.currentReturn()))closeDialog();}return;}const areaColorPicker=form.id==='areaForm'?form.querySelector('[name=map_color]'):null;const resetAreaColors=!!(areaColorPicker&&typeof areaColorPicker.value==='string'&&form.dataset.id&&areaColorPicker.value.toLowerCase()!==(form.dataset.originalColor||'#477596'));if(resetAreaColors&&!window.confirm(I18n.text('Farven ændres på alle kort i området, også dem med en tidligere særskilt farve. Vil du fortsætte?')))return;const settingsSignature=page==='Indstillinger'&&SettingsViewDrafts.baselines.has(form)?SettingsViewDrafts.signature(form):null;const confirmedSignature=FormDrafts.forms.has(form)?FormDrafts.signature(form):null;const generation=openDialog.generation,origin=page;form.dataset.saving='yes';const submitButton=form.querySelector('button:not([type=button])');if(submitButton)submitButton.disabled=true;const fd=new FormData(form),fields=Object.fromEntries(fd);try{switch(form.id){
 case 'cardForm':clearTimeout(autosaveTimer);await saveCard(true);break;
 case 'issueForm':{
  const extra=fd.getAll('additional_card_id');
@@ -992,7 +996,7 @@ case 'publisherForm':await mutate('publisher.save',{id:form.dataset.id||undefine
 case 'areaForm':await mutate('area.save',{id:form.dataset.id||undefined,name:fields.name,...(fields.map_color?{map_color:fields.map_color}:{}),...(resetAreaColors?{reset_card_colors:true}:{})});break;
 case 'noteForm':await mutate('note.save',{id:form.dataset.id,...fields});break;
 case 'visitForm':if(fields.date!==state.visits.find(v=>v.id===form.dataset.id)?.date&&!ktmTuesday(fields.date))throw new Error(I18n.text('Vælg tirsdagen i KTM-ugen'));await mutate('visit.save',{id:form.dataset.id||undefined,date:fields.date});break;
-case 'ibForm':{const returnToCard=form.dataset.returnCard==='yes';await mutate('ib.save',{id:form.dataset.id||undefined,...fields},{message:'IB gemt · kun bagsiden skal genprintes'});if(returnToCard&&generation===openDialog.generation&&page===origin)detail(fields.card_id,'Adresser');break;}
+case 'ibForm':{const destination=IBUI.currentReturn();await mutate('ib.save',{id:form.dataset.id||undefined,...fields},{message:'IB gemt · kun bagsiden skal genprintes',...(destination?{returnTo:()=>IBUI.restoreReturn(destination)}:{})});break;}
 case 'settingsForm':await mutate('settings.save',{...fields,folder_minimum:Number(fields.folder_minimum??state.settings.folder_minimum??0),rural_minimum:Number(fields.rural_minimum??state.settings.rural_minimum??0),split_visit_limit:Number(fields.split_visit_limit??state.settings.split_visit_limit??50),publisher_card_guidance:Object.fromEntries(publisherGuidanceRoles.map(([role])=>[role,Number(fields['guide_'+role]??state.settings.publisher_card_guidance?.[role]??publisherGuidanceDefaults[role])])),require_revision:fd.has('require_revision'),folder_enabled:fd.has('folder_mode_present')?fd.has('folder_enabled'):state.settings.folder_enabled!==false,location_labels:Object.fromEntries(['home','folder','issued'].map(key=>[key,fields['location_'+key]??state.settings.location_labels?.[key]??''])),...(form.dataset.folderTouched==='yes'?{folder_minimum_confirmed:true}:{})},{close:false,message:I18n.text("Indstillinger gemt")});break;
 case 'historySettingsForm':await mutate('settings.save',{history_years:Number(fields.history_years)},{close:false,message:I18n.text('Indstillinger gemt')});break;
 case 'profileModeForm':{const side=form.dataset.side,profile={...defaultPrintProfile(side),...(state.settings.print_profiles?.[side]||{}),mode:fields.mode};await mutate('print.profile.save',{side,profile},{message:I18n.text('Printprofil gemt lokalt')});break;}
