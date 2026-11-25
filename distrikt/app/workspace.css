@@ -356,3 +356,60 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .territoryCompact .panel{min-width:0}
  .territoryCompact .toolbar,.deskTabs,.overviewFilters{max-width:100%}
 }
+
+/* LTM task 27: layout only, scoped to the existing settings navigation.
+   Never override hidden/disabled controls or change form ownership. */
+@media screen {
+ #app:has(>.settingsSectionNav) .panel {
+  min-width:0; padding:clamp(14px,2.5vw,24px); margin-bottom:18px;
+  border:1px solid var(--line); border-radius:10px;
+  overflow-wrap:anywhere;
+ }
+ #app:has(>.settingsSectionNav) .panel h2 {margin:0 0 12px;line-height:1.3}
+ #app:has(>.settingsSectionNav) .panel h3 {margin:0 0 10px;line-height:1.35}
+ #app:has(>.settingsSectionNav) .panel p {line-height:1.55}
+ #app:has(>.settingsSectionNav) .settingsSection,
+ #app:has(>.settingsSectionNav) :is(#runtimePanel,.connectionBackup) {
+  min-width:0; padding:18px 0; border-top:1px solid var(--line);
+ }
+ #app:has(>.settingsSectionNav) .settingsSection:first-child {border-top:0;padding-top:4px}
+ #app:has(>.settingsSectionNav) .settingsSection > :last-child {margin-bottom:0}
+ #app:has(>.settingsSectionNav) .settingsFields,
+ #app:has(>.settingsSectionNav) .settingsCards {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:14px; min-width:0;
+ }
+ #app:has(>.settingsSectionNav) .settingsField {min-width:0; max-width:38rem}
+ #app:has(>.settingsSectionNav) :is(.settingsField,form) > label:not(.check) {
+  color:var(--text); margin-bottom:6px; line-height:1.45;
+ }
+ #app:has(>.settingsSectionNav) .panel :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=color]),select,textarea) {
+  min-width:0; max-width:100%; width:min(100%,38rem);
+ }
+ #app:has(>.settingsSectionNav) .panel :is(.settingsField input,.settingsField select,.profileGrid input:not([type=checkbox]):not([type=radio]),.profileGrid select) {width:100%}
+ #app:has(>.settingsSectionNav) .panel input[type=number] {width:min(100%,12rem)}
+ #app:has(>.settingsSectionNav) #overdueTemplate {display:block;width:100%;max-width:none;min-height:13rem;resize:vertical;line-height:1.55}
+ #app:has(>.settingsSectionNav) .guidanceSettings {display:grid;grid-template-columns:minmax(0,1fr) minmax(64px,110px);align-items:center;gap:10px;max-width:38rem}
+ #app:has(>.settingsSectionNav) .guidanceSettings label {margin:0}
+ #app:has(>.settingsSectionNav) .panel fieldset {min-width:0;max-width:100%;border:1px solid var(--line);border-radius:8px;padding:14px;margin:14px 0}
+ #app:has(>.settingsSectionNav) .panel legend {color:var(--text);font-weight:600;padding:0 6px}
+ #app:has(>.settingsSectionNav) .panel .check {align-items:flex-start;line-height:1.45}
+ #app:has(>.settingsSectionNav) .panel .check input {flex:none}
+ #app:has(>.settingsSectionNav) .panel details {min-width:0;max-width:100%;margin:12px 0}
+ #app:has(>.settingsSectionNav) .panel details>summary {color:var(--text);font-weight:600;line-height:1.45;padding:8px 0}
+ #app:has(>.settingsSectionNav) .settingsCards>div {min-width:0;border:1px solid var(--line);border-radius:8px;padding:16px}
+ #app:has(>.settingsSectionNav) .panel .actions {display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+ #app:has(>.settingsSectionNav) .panel button {max-width:100%;white-space:normal;overflow-wrap:anywhere}
+ #app:has(>.settingsSectionNav) .settingsSaveActions {padding:12px 0 4px;border-top:1px solid var(--line)}
+ #app:has(>.settingsSectionNav) .panel :focus-visible {outline:2px solid var(--accent);outline-offset:2px}
+ #app:has(>.settingsSectionNav) .panel .line {min-width:0;flex-wrap:wrap;gap:8px}
+ #app:has(>.settingsSectionNav) .profileGrid {grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start;gap:14px}
+ #app:has(>.settingsSectionNav) .profileGrid>.panel {margin-bottom:0}
+ #app:has(>.settingsSectionNav) .panel .tablewrap {max-width:100%;overflow-x:auto}
+ /* The existing single live status remains in the fixed header. */
+ body:has(#app>.settingsSectionNav) header #saveState {font-size:13px;font-weight:600;line-height:1.3}
+}
+@media screen and (max-width:750px) {
+ #app:has(>.settingsSectionNav) .panel button,
+ #app:has(>.settingsSectionNav) .panel :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select) {min-height:44px}
+ body:has(#app>.settingsSectionNav) header #saveState {font-size:11px}
+}
