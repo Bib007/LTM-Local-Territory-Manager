@@ -217,7 +217,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
 
     def _get(self):
         parsed=urlsplit(self.path);path=parsed.path;q=parse_qs(parsed.query)
-        public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/api/ping')
+        public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/apple-touch-icon.png','/api/ping')
         if not self.allowed(public=public):return
         try:
             if self.profile_get(path):return
@@ -240,6 +240,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path=='/apple-touch-icon.png':return self.send((APP/'apple-touch-icon.png').read_bytes(),'image/png')
             if path=='/s12-template-en.png':return self.send((APP.parent/'templates'/'S-12-E-source.png').read_bytes(),'image/png')
             if path=='/s13-background-en.jpg':return self.send((APP.parent/'templates'/'S-13-E-background.jpg').read_bytes(),'image/jpeg')
             if path in ('/forms/S-12-en.pdf','/forms/S-13-en.pdf'):return self.send((APP.parent/'templates'/('S-12-E.pdf' if 'S-12' in path else 'S-13-E.pdf')).read_bytes(),'application/pdf')

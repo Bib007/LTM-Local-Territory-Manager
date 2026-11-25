@@ -27,6 +27,37 @@ class LANTests(unittest.TestCase):
         req=urllib.request.Request(self.server.origin+path,json.dumps(data).encode() if data is not None else None,h)
         return (client or self.client).open(req,timeout=5)
     def login(self):return self.req('/api/login',{'password':'Fiktiv-kode-12345'})
+    def test_apple_touch_icon_on_login_and_app_over_lan(self):
+        import struct
+        link=b'<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">'
+        with self.req('/') as response:
+            page=response.read()
+            self.assertIn(b'id="loginForm"',page)
+            self.assertIn(link,page)
+        with self.req('/apple-touch-icon.png') as response:
+            self.assertEqual(response.status,200)
+            self.assertEqual(response.headers.get_content_type(),'image/png')
+            icon=response.read()
+        self.assertEqual(icon[:16],b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR')
+        self.assertEqual(struct.unpack('>II',icon[16:24]),(180,180))
+        self.assertEqual(icon,(Path(__file__).resolve().parents[1]/'app'/'apple-touch-icon.png').read_bytes())
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.req('/apple-touch-icon.png',headers={'Host':'unknown.invalid'})
+        self.assertEqual(error.exception.code,403)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.req('/api/state')
+        self.assertEqual(error.exception.code,401)
+        self.login().close()
+        with self.req('/') as response:
+            page=response.read()
+            self.assertIn(link,page)
+            self.assertIn(b'<link rel="icon" type="image/svg+xml" href="/brand-mark.svg">',page)
+        with self.req('/apple-touch-icon.png') as response:
+            self.assertEqual(response.read(),icon)
+        with self.req('/brand-mark.svg') as response:
+            self.assertEqual(response.headers.get_content_type(),'image/svg+xml')
+            self.assertIn(b'<svg',response.read())
+
     def test_logout_during_preview_rejects_late_shared_login_response(self):
         from concurrent.futures import ThreadPoolExecutor
         self.login().close()
