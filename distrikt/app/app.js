@@ -43,6 +43,7 @@ const SaveStatus={kind:'loading',message:'Åbner dine data…',detail:'',
   node.className=this.kind==='error'?'error':'';node.dataset.saveKind=kind;node.title=I18n.text(message)+(this.detail?' · '+I18n.errorText(this.detail):'');
   node.innerHTML=this.detail?explanation(!!node.querySelector?.('.saveExplanation[open]')):ui(message);
   const dialog=el('dialog');
+  if(dialog&&!dialog.open&&this.kind!=='saving')dialog.querySelector?.('[data-save-progress]')?.remove();
   if(dialog?.open&&document.createElement&&dialog.appendChild){
    let progress=dialog.querySelector('[data-save-progress]');
    if(this.kind==='saving'){
