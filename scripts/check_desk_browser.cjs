@@ -102,8 +102,8 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
    assert.equal(layout.buttons.filter(b=>b.active).length,1);
    for(const button of layout.buttons){
     assert.ok(button.height>=44&&button.width>=1&&button.style==='solid','Touch target and visible border');
-    assert.ok(contrast(button.border,layout.bg)>=3,'Border contrast against surrounding surface');
-    if(button.background!=='rgba(0, 0, 0, 0)')assert.ok(contrast(button.border,button.background)>=3,'Border contrast against button fill');
+    assert.ok(contrast(button.border,layout.bg)>=3,`Border contrast against surrounding surface (${mode}, ${width}px, active=${button.active}, border=${button.border}, surface=${layout.bg})`);
+    if(button.background!=='rgba(0, 0, 0, 0)')assert.ok(contrast(button.border,button.background)>=3,`Border contrast against button fill (${mode}, ${width}px, active=${button.active}, border=${button.border}, fill=${button.background})`);
    }
   };
   await checkModeLayout();
