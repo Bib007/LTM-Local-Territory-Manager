@@ -114,4 +114,124 @@ async function main(){
   }
  }finally{await new Promise(resolve=>server.close(resolve));}
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Exercise the real application controls, not just ReportMap's isolated fixture.
+// Standalone is simulated; Linux WebKit cannot exercise native iPadOS windows/printing.
+async function checkAppControls(){
+ const {spawn}=require('node:child_process'),{createInterface}=require('node:readline');
+ const child=spawn(process.env.PYTHON||'python3',[path.join(__dirname,'fixtures/street_suggestions_server.py')]);
+ child.stderr.pipe(process.stderr);
+ try{
+  const fixture=await new Promise((resolve,reject)=>{
+   const timeout=setTimeout(()=>reject(Error('Fictional app did not start')),20000);
+   createInterface({input:child.stdout}).once('line',line=>{clearTimeout(timeout);try{resolve(JSON.parse(line));}catch(error){reject(error);}});
+   child.once('exit',code=>{clearTimeout(timeout);reject(Error('Fictional app exited: '+code));});
+   child.once('error',error=>{clearTimeout(timeout);reject(error);});
+  });
+  const browser=await webkit.launch({headless:true});
+  try{
+   for(const standalone of [false,true]){
+    const context=await browser.newContext({viewport:{width:820,height:1180},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+    try{
+     await context.addCookies([fixture.cookie]);
+     await context.addInitScript(value=>{
+      Object.defineProperty(navigator,'standalone',{configurable:true,value});
+      const original=window.matchMedia.bind(window);
+      window.matchMedia=query=>{
+       const result=original(query);
+       if(query.trim()==='(display-mode: standalone)')Object.defineProperty(result,'matches',{configurable:true,value});
+       return result;
+      };
+     },standalone);
+     let mode='success';
+     await context.route('https://tile.openstreetmap.org/**',route=>mode==='success'
+      ?route.fulfill({status:200,contentType:'image/png',headers:{'access-control-allow-origin':'*'},body:tile})
+      :route.abort(mode==='offline'?'internetdisconnected':'blockedbyclient'));
+     const source=await context.newPage(),errors=[];
+     source.on('pageerror',error=>errors.push(error.message));
+     await source.goto(fixture.origin);
+     await source.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved'&&GeoUI.loaded);
+     await source.evaluate(()=>{
+      // Add invented client-side geometry to the isolated app state only.
+      state.cards[0].geo_polygon=[[10.004,55.004],[10.023,55.004],[10.023,55.025],[10.004,55.025]];
+      GeoUI.data.main_boundary={points:[[10,55],[10.04,55],[10.04,55.03],[10,55.03]]};
+      I18n.set('da');page='Rapporter';reportTab='Rapport';render();
+     });
+     assert.equal(await source.evaluate(()=>navigator.standalone),standalone);
+     assert.equal(await source.evaluate(()=>matchMedia('(display-mode: standalone)').matches),standalone);
+     await source.locator('#reportPrintPeriod').selectOption('calendar');
+     await source.locator('#calendarYear').selectOption({label:await source.locator('#calendarYear option').first().textContent()});
+     await source.locator('#reportMapNumbers').uncheck();
+     const snapshot=()=>source.evaluate(()=>JSON.stringify({
+      cards:state.cards,settings:state.settings,period:Workspace.reportPeriod,calendarYear:Workspace.calendarYear,
+      year,numbers:Workspace.reportShowNumbers,storedNumbers:localStorage.getItem('ltm-report-map-numbers'),
+      selected:el('reportPrintPeriod').value,selectedCalendar:el('calendarYear').value,checked:el('reportMapNumbers').checked
+     }));
+     const before=await snapshot();
+     const view=()=>source.locator('[data-work="report-view"]').click();
+     const print=()=>source.locator('[data-action="print-report"]').click();
+     const loaded=()=>source.waitForFunction(()=>ReportMap.tiles&&!ReportMap.tiles.isLoading()&&!ReportMap.tileFailed,null,{timeout:10000});
+     const preview=async(click,withMap)=>{
+      const [popup]=await Promise.all([context.waitForEvent('page'),click()]);
+      try{
+       popup.on('pageerror',error=>errors.push(error.message));
+       await popup.waitForFunction(()=>document.querySelector('.printReports')&&document.getElementById('printReport')&&!document.getElementById('printReport').disabled,null,{timeout:20000});
+       assert.equal(await popup.locator('.reportMapPage').count(),withMap?1:0);
+       assert.equal(await popup.locator('.reportMapPage svg image[href^="data:image/png;base64,"]').count(),withMap?1:0);
+       assert.equal(await popup.locator('.s13Original svg image[href^="data:image/"]').count(),1);
+       assert.equal(await popup.locator('.reportchart').count(),1);
+       if(withMap)assert.match(await popup.locator('.reportMapPage').textContent(),/OpenStreetMap/);
+       // Assert the print command is wired; do not claim native print UI coverage.
+       await popup.evaluate(()=>{window.print=()=>{window.__fictionalPrintCalled=true;};});
+       await popup.locator('#printReport').click();
+       assert.equal(await popup.evaluate(()=>window.__fictionalPrintCalled),true);
+      }finally{await popup.close();}
+      assert.equal(await snapshot(),before,'Print must preserve original cards, settings and report options');
+     };
+     await view();await loaded();
+     assert.equal(await source.locator('#reportDistrictMap .leaflet-tile-loaded').count()>0,true);
+     await preview(print,true);
+     mode='blocked';await view();
+     const viewFallback=source.locator('#dialog [data-action="report-view-without-map"]');
+     await viewFallback.waitFor({state:'visible',timeout:10000});
+     await viewFallback.click();
+     assert.equal(await source.locator('.reportScreenMap').count(),0);
+     assert.equal(await source.locator('.reportchart').count(),1);
+     assert.equal(await source.locator('.s13Original').count(),1);
+     assert.equal(await snapshot(),before,'Mapless view must preserve settings');
+     // Reopen the report while the OSM endpoint is still inaccessible.
+     await view();await viewFallback.waitFor({state:'visible',timeout:10000});
+     await source.locator('#dialog [data-action="close"]').click();
+     await print();
+     const printFallback=source.locator('#dialog [data-action="report-print-without-map"]');
+     await printFallback.waitFor({state:'visible',timeout:10000});
+     await preview(()=>printFallback.click(),false);
+     // Completely offline view: no tile or local network available.
+     mode='offline';await context.setOffline(true);
+     await view();await viewFallback.waitFor({state:'visible',timeout:15000});
+     await viewFallback.click();
+     assert.equal(await source.locator('.reportScreenMap').count(),0);
+     assert.equal(await source.locator('.s13Original').count(),1);
+     assert.equal(await snapshot(),before,'Offline view must preserve settings');
+     // Restore LAN access for the local S-13/CSS assets, but keep OSM offline.
+     await context.setOffline(false);
+     await view();await viewFallback.waitFor({state:'visible',timeout:10000});
+     await source.locator('#dialog [data-action="close"]').click();
+     await print();await printFallback.waitFor({state:'visible',timeout:10000});
+     await preview(()=>printFallback.click(),false);
+     // Retry from the inline failure controls with the tile endpoint restored.
+     await view();await viewFallback.waitFor({state:'visible',timeout:10000});
+     await source.locator('#dialog [data-action="close"]').click();
+     mode='success';
+     await source.locator('[data-action="retry-report-map"]').click();
+     await loaded();
+     assert.equal(await snapshot(),before,'Retry must preserve settings');
+     assert.deepEqual(errors,[]);
+     console.log('PASS real app WebKit iPad '+(standalone?'simulated standalone':'browser')+': View, Print, mapless fallback, offline view, retry and unchanged options (synthetic tiles; native print not exercised).');
+    }finally{await context.close();}
+   }
+  }finally{await browser.close();}
+ }finally{child.kill();}
+}
+
+main().then(checkAppControls).catch(error=>{console.error(error);process.exitCode=1;});
