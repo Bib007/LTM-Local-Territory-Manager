@@ -31,13 +31,28 @@ const KtmReportUI={
   const [start,end]=Workspace.periodBounds(mode),s=Workspace.reportInventory(start,end),t=label=>this.text(label,localized);
   const heading=t('Ikke gennemgåede distriktskort i perioden');
   if(!s.missing)return '<section class="ktmMissing"><h3>'+heading+' · 0</h3><p>'+t('Alle aktuelle distriktskort er registreret gennemgået i perioden.')+'</p></section>';
+  const canViewLoans=!state.profile||state.profile.permissions?.includes('loans.view');
+  const active=new Map(canViewLoans?state.loans.filter(l=>!l.returned).map(l=>[l.card_id,l]):[]);
   const rows=s.missingCards.slice().sort((a,b)=>cmp(a.number,b.number)).map(c=>{
    const title=esc(c.number||'—')+(c.name?' · '+esc(c.name):'')+(c.internal_name?' <small>('+t('Internt navn')+': '+esc(c.internal_name)+')</small>':'');
-   return '<tr><td>'+title+'</td><td>'+esc(areaName(c.area_id))+'</td><td>'+((c.last_completed&&/^\d{4}-\d{2}-\d{2}$/.test(c.last_completed))?fmt(c.last_completed):t('Ingen dato registreret'))+'</td></tr>';
+   const last=s.lastCompleted.get(c.id),loan=active.get(c.id);
+   let status=t('Ukendt');
+   if(canViewLoans){
+    status=loan?t('Udleveret nu'):t('Hjemme nu');
+    if(loan){
+     // Physical assignment age, not the resettable completion cycle.
+     const day=loan.assigned;
+     if(Workspace.reportDay(day)){
+      const days=Math.round((Date.parse(state.today+'T00:00:00Z')-Date.parse(day+'T00:00:00Z'))/86400000);
+      status+=' · '+fmt(day)+' · '+(localized?ui('{count} dage i alt',{count:days}):days+' dage i alt');
+     }else status+=' · '+t('Ingen dato registreret');
+    }
+   }
+   return '<tr><td>'+title+'</td><td>'+esc(areaName(c.area_id))+'</td><td>'+(last?fmt(last):t('Ingen dato registreret'))+'</td><td>'+status+'</td></tr>';
   }).join('');
   return '<section class="ktmMissing"><h3>'+heading+' · '+s.missing+' / '+s.total+'</h3>'+
    '<p class="hint">'+t('Listen viser aktuelle kort uden registreret gennemgang i den valgte periode. Sidste dato kan ligge uden for perioden; arkiverede kort er ikke med i listen.')+'</p>'+
-   '<div class="tablewrap"><table><thead><tr><th>'+t('Distriktskort')+'</th><th>'+t('Område')+'</th><th>'+t('Senest gennemgået')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div></section>';
+   '<div class="tablewrap"><table><thead><tr><th>'+t('Distriktskort')+'</th><th>'+t('Område')+'</th><th>'+t('Senest gennemgået')+'</th><th>'+t('Status')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div></section>';
  },
  aggregate(summary,selected=''){
   if(!summary)return '';
