@@ -13,7 +13,7 @@ Open a card and choose **Print front** or **Print do-not-call back**. **Cards an
 3. Uncheck **Remember these settings** for a one-off test. **Use default dimensions** displays defaults; saving only happens on **Preview and print** with the remember box checked.
 4. Allow the popup, wait for image checks, and choose **Print / save PDF**. Use **100%**, disable headers/footers and turn off fit-to-page scaling.
 5. Check dimensions, every street line and any QR code on paper. Missing images or overflowing content disable printing. Adjust the card or reopen printing.
-6. Use **Approve after printing** only after checking the physical side. Opening a preview, saving PDF or saving a profile never automatically approves a reprint.
+6. Choose **Confirm front is printed** or **Confirm do-not-call back is printed** in the app. Select **Yes, the side has been checked and printed** only when the physical side is ready. For multiple sides, choose **Confirm printing in the app**, then **Yes, the selected sides have been checked and printed**. Opening a preview, printing, saving a PDF or saving a profile never changes print status automatically.
 
 Changing the app language preserves the current fields, selections and measurements. Popup controls use the language selected when opened. Original forms, Danish form text, names and stored data are preserved. An open print window is a snapshot; reopen after changing the card.
 

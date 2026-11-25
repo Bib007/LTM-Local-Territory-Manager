@@ -13,7 +13,7 @@ Printbetjeningen nedenfor er klargjort på develop fra beta.22. Stabil 1.11.1 op
 3. Fjern **Husk disse indstillinger**, hvis det kun er en prøve. **Brug standardmål** viser standarderne; en profil gemmes først ved **Fremvis og print** med huskefeltet valgt.
 4. Tillad det nye printvindue. Vent på billedkontrol, og vælg **Udskriv / gem PDF**. Brug **100 %**, slå sidehoved/sidefod fra, og undgå printerens »tilpas til side«.
 5. Kontrollér mål, alle vejlinjer og eventuel QR-kode på papir. Ved for lidt plads eller manglende billeder er printknappen spærret. Ret kortet eller genåbn print.
-6. Vælg først **Godkend efter print** i appen, når den fysiske side er kontrolleret. Åbning, PDF-gemning og profilgemning godkender aldrig genprint automatisk.
+6. Vælg **Bekræft, at forsiden er printet** eller **Bekræft, at IB-bagsiden er printet** i appen. Vælg først **Ja, siden er kontrolleret og printet**, når den fysiske side er klar. Ved flere sider kan du vælge **Bekræft print i appen** og derefter **Ja, de valgte sider er kontrolleret og printet**. Åbning, udskrivning, PDF-gemning og profilgemning ændrer aldrig printstatus automatisk.
 
 Sprogskift bevarer felter, valg og mål i den åbne dialog. Printvinduets knapper følger sproget ved åbningen. Originale formularer, danske formulartekster, navne og indtastede data bevares. Et allerede åbent printvindue er en kopi fra åbningstidspunktet; genåbn efter ændringer i kortet.
 
