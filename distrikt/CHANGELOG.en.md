@@ -2,6 +2,15 @@
 
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
 
+## 1.14.0-beta.2 · 2026-11-25
+
+- **Save latency:** Avoid unnecessary district boundary address-count recalculation when issuing and returning territories. Earlier test with 16,000 fictional addresses: click to confirmation 669 → 164 ms for issue and 668 → 166 ms for return with completion. A video from the real installation before the fix showed about 3.3 and 3.5 seconds; improvement on that installation remains unverified.
+- **Synchronization:** Distinct guidance for connection failures, expired sessions, unconfirmed saves and confirmed saves with a stale overview. Connectivity checks do not replay writes. Manual refresh/reopening refuses to overwrite open drafts.
+- **Daily work:** Reuse the card picker for batch issue of up to five cards, with visible selections and removal. Larger centered save indicator, left-aligned bordered actions and up to five frequently selected publishers.
+- **Maps, filters and mobile:** Larger overview map with consolidated controls and direct access to the entire district. Active filters and reset, rare choices under More, and a collapsible filter panel with result count on narrow screens. Wrapping controls and dialogs.
+- **Dashboard:** Consistent completion metric typography and a prominent yellow target marker with a matching legend.
+- **Report printing:** Avoid unnecessary online tiles for direct offline printing when the report map has not been opened. Physical iPad home-screen use and real installation latency remain unverified.
+
 ## 1.14.0-beta.1 · 2026-11-25
 
 - **Daily work:** Clear issue and return actions, with return ordering by publisher or card. Issue up to five available cards in one transaction with the same date and recipient, and use shortcuts for frequently selected recipients.

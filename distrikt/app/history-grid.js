@@ -74,6 +74,7 @@ const HistoryGrid={
    '<p class="hint">Se kortenes seneste udleveringer og gennemgange samlet. Åbn hele historikken på det kort, du vil undersøge.</p></div>'+
    '<div class="hg-toolbar"><label class="hg-search-label">Søg kort, område eller forkynder <input id="hg-search" type="search" value="'+esc(this.query)+'" placeholder="Kortnummer, område eller navn" autocomplete="off"></label>'+
    '<label>Vis <select id="hg-filter"><option value="all"'+(this.filter==='all'?' selected':'')+'>Alle kort</option><option value="active"'+(this.filter==='active'?' selected':'')+'>Aktuelt udleverede</option><option value="empty"'+(this.filter==='empty'?' selected':'')+'>Uden historik</option><option value="review"'+(this.filter==='review'?' selected':'')+'>Ulogisk rækkefølge</option></select></label>'+
+   '<button type="button" id="hg-reset"'+(this.query||this.filter!=='all'?'':' disabled')+'>'+ui('Nulstil filtre')+'</button>'+
    '<div class="hg-toolbar-actions"><button type="button" data-history-import="open">Importér CSV / S-13</button><button type="button" data-action="backup">Sikkerhedskopi</button>'+
    (state.undo_available&&editable?'<button type="button" data-work="undo">Fortryd sidste ændring</button>':'')+'</div></div>'+
    '<div class="hg-list" id="hg-body">'+this.rows()+'</div>'+
@@ -91,6 +92,7 @@ const HistoryGrid={
   const count=this.visible().length,status=document.getElementById('hg-count');
   if(status)status.textContent='Viser '+Math.min(count,this.limit)+' af '+count+' kort';
   const more=document.querySelector('[data-hg-more]');if(more)more.hidden=count<=this.limit;
+  const reset=document.getElementById('hg-reset');if(reset)reset.disabled=!this.query&&this.filter==='all';
  },
  openAdd(id){
   if(!this.canEdit())throw Error('Du har ikke rettighed til at ændre historikken.');
@@ -144,6 +146,8 @@ document.addEventListener('keydown',event=>{
  if(target.matches('[data-hg-date="text"]')&&event.key==='Escape'){const loan=state.loans.find(l=>l.id===target.dataset.hgId);target.value=HistoryGrid.dateText(loan?.[target.dataset.hgField]);target.blur();}
 });
 document.addEventListener('click',event=>{
+ const reset=event.target.closest('#hg-reset');
+ if(reset){event.preventDefault();HistoryGrid.query='';HistoryGrid.filter='all';HistoryGrid.limit=100;const search=document.getElementById('hg-search'),filter=document.getElementById('hg-filter');if(search)search.value='';if(filter)filter.value='all';HistoryGrid.draw();search?.focus();return;}
  const add=event.target.closest('[data-hg-add]'),more=event.target.closest('[data-hg-more]');
  if(add){event.preventDefault();try{HistoryGrid.openAdd(add.dataset.hgAdd);}catch(e){toast(e);}}
  if(more){event.preventDefault();HistoryGrid.limit+=100;HistoryGrid.draw();}

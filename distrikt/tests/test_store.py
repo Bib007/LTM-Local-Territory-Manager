@@ -37,6 +37,65 @@ class StorageTests(unittest.TestCase):
         self.s.mutate('workflow.undo', {'expected_revision': self.s.revision})
         self.assertFalse(any(self.s.active_loan(ident) for ident in (first, second)))
 
+    def test_batch_issue_validates_limit_duplicates_and_common_values(self):
+        ids = [self.make_card(str(n)) for n in range(201, 207)]
+        self.s.mutate('folder.set', {'ids': ids, 'in_folder': True})
+        day = date.today().isoformat()
+        base = {'card_id': ids[0], 'publisher_id': self.publisher, 'date': day}
+        for extras in ([ids[0]], [ids[1], ids[1]], ids[1:], [], 'invalid'):
+            with self.subTest(extras=extras):
+                with self.assertRaises(ValueError):
+                    self.s.mutate('loan.issue', {**base, 'additional_card_ids': extras})
+                self.assertFalse(any(self.s.active_loan(ident) for ident in ids))
+                self.assertTrue(all(self.s.require('cards', ident)['in_folder'] for ident in ids))
+        result = self.s.mutate('loan.issue', {**base, 'additional_card_ids': ids[1:5]})
+        self.assertEqual(len(result['ids']), 5)
+        self.assertEqual(len(set(result['ids'])), 5)
+        for ident, loan_id in zip(ids[:5], result['ids']):
+            loan = self.s.active_loan(ident)
+            self.assertEqual(loan['id'], loan_id)
+            self.assertEqual(loan['publisher_id'], self.publisher)
+            self.assertEqual(loan['assigned'], day)
+            self.assertEqual(loan['cycle_start'], day)
+            self.assertFalse(self.s.require('cards', ident)['in_folder'])
+        self.assertIsNone(self.s.active_loan(ids[5]))
+
+    def test_concurrent_overlapping_batch_issues_are_all_or_nothing(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        a, b, shared = [self.make_card(str(n)) for n in range(301, 304)]
+        self.s.mutate('folder.set', {'ids': [a, b, shared], 'in_folder': True})
+        barrier = Barrier(2)
+        day = date.today().isoformat()
+
+        def submit(first, name):
+            barrier.wait(timeout=5)
+            try:
+                result = self.s.mutate('loan.issue', {
+                    'card_id': first, 'additional_card_ids': [shared],
+                    'publisher_name': name, 'date': day})
+                return first, name, result
+            except ValueError:
+                return first, name, None
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(submit, a, 'Fiktiv A'), pool.submit(submit, b, 'Fiktiv B')]
+            results = [future.result(timeout=10) for future in futures]
+        winners = [row for row in results if row[2] is not None]
+        losers = [row for row in results if row[2] is None]
+        self.assertEqual(len(winners), 1)
+        self.assertEqual(len(losers), 1)
+        winner, winner_name, result = winners[0]
+        loser, loser_name, _ = losers[0]
+        self.assertEqual(len(result['ids']), 2)
+        self.assertEqual(self.s.active_loan(winner)['publisher_id'], self.s.active_loan(shared)['publisher_id'])
+        self.assertEqual(self.s.active_loan(shared)['assigned'], day)
+        self.assertIsNone(self.s.active_loan(loser))
+        self.assertTrue(self.s.require('cards', loser)['in_folder'])
+        names = {publisher['name'] for publisher in self.s.all('publishers')}
+        self.assertIn(winner_name, names)
+        self.assertNotIn(loser_name, names)
+
     def test_empty_recovery_skips_activity_log_scan(self):
         from unittest.mock import patch
         with patch.object(self.s,'activity',side_effect=AssertionError('unnecessary activity read')):

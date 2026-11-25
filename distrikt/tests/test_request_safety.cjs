@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8');
 const nodes=new Map(),requests=[],timers=[];
-const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',outerHTML:'',textContent:'',value:'',dataset:{},style:{},open:false,hasForm:false,showModal(){this.open=true;},close(){this.open=false;},querySelector(){return this.hasForm?{}:null;},addEventListener(){}});return nodes.get(id);};
+const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',outerHTML:'',textContent:'',value:'',dataset:{},style:{},open:false,hasForm:false,showModal(){this.open=true;},close(){this.open=false;},querySelector(selector){return selector==='form'&&this.hasForm?{}:null;},addEventListener(){}});return nodes.get(id);};
 const fixture={revision:'r1',today:'2026-10-17',cards:[],areas:[],notes:[],settings:{}};
 const response=(payload,status=200,broken=false)=>({ok:status<400,status,json:async()=>{if(broken)throw Error('Invented broken JSON');return payload;},clone(){return {json:async()=>{if(broken)throw Error('Invented broken JSON');return payload;}};}});
 let answer=async()=>response({ok:true}),confirmChoice=false;
@@ -80,7 +80,7 @@ const reset=()=>run("WriteGuard.reviewed();state=JSON.parse(JSON.stringify(fixtu
  // An old manual refresh must not discard a newer edit or release the guard.
  let releaseReview;answer=()=>new Promise(resolve=>releaseReview=resolve);const staleReview=run("Workspace.handle('refresh',{})");await new Promise(resolve=>setImmediate(resolve));run("openDialog('<form>NEWER REVIEW DRAFT</form>')");releaseReview(response({...fixture,revision:'ignored-old-read'}));await staleReview;assert.equal(run('WriteGuard.uncertain'),true);assert.equal(run('state.revision'),'r1');assert.match(get('dialog').innerHTML,/NEWER REVIEW DRAFT/);await run('closeRequested()');
  // A newer page-form edit during refresh also retains the uncertainty guard.
- const field={name:'congregation',type:'text',value:'Fiktiv original'},pageForm={id:'settingsForm',querySelectorAll:()=>[field]};
+ const field={name:'congregation',type:'text',value:'Fiktiv original'},pageForm={id:'settingsForm',dataset:{},querySelectorAll:()=>[field]};
  get('app').querySelectorAll=()=>[pageForm];
  const pageReview=run("Workspace.handle('refresh',{})");await new Promise(resolve=>setImmediate(resolve));field.value='Fiktiv nyere kladde';releaseReview(response({...fixture,revision:'ignored-page-read'}));await pageReview;
  assert.equal(run('WriteGuard.uncertain'),true);assert.equal(run('state.revision'),'r1');assert.equal(field.value,'Fiktiv nyere kladde');get('app').querySelectorAll=()=>[];
