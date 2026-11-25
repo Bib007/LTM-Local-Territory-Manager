@@ -51,17 +51,42 @@ module.exports=async(browser,out)=>{
    return JSON.stringify(output)===JSON.stringify(input);
   });assert.equal(encrypted,true);
   await page.evaluate(()=>{closeDialog();page='Distrikter';window.approvalWrites=[];mutate=async(action,data)=>{window.approvalWrites.push({action,data});};});
+  for(const language of ['da','en']) {
+   await page.evaluate(language=>I18n.set(language),language);
+   for(const side of ['front','back']) {
+    await page.evaluate(side=>{const button=document.createElement('button');button.dataset.action='approve';button.dataset.id='c101';button.dataset.side=side;document.body.append(button);button.click();button.remove();},side);
+    const title=language==='da'?(side==='front'?'Er kortets forside printet?':'Er IB-bagsiden printet?'):(side==='front'?'Has the card front been printed?':'Has the do-not-call back been printed?');
+    assert.equal(await page.locator('#dialog h2').innerText(),title);
+    assert.equal(await page.locator('[data-action=confirm-approve]').innerText(),language==='da'?'Ja, siden er kontrolleret og printet':'Yes, the side has been checked and printed');
+    assert.equal(await page.evaluate(()=>window.approvalWrites.length),0,'Opening confirmation must not save');
+    await page.locator('#dialog [data-action=close]').click();
+    assert.equal(await page.evaluate(()=>window.approvalWrites.length),0,'Cancelling confirmation must not save');
+   }
+  }
   for(const side of ['front','back']){
+   const language=side==='front'?'da':'en';
+   await page.evaluate(language=>I18n.set(language),language);
    await page.evaluate(side=>printOptions(state.cards[0].id,side,state.cards.map(c=>c.id)),side);
    await page.locator('[name=remember]').uncheck();const promise=page.waitForEvent('popup');await page.locator('#printForm').evaluate(form=>printCard(form));const popup=await promise;
    await popup.waitForFunction(()=>document.getElementById('print')&&!document.getElementById('print').disabled);
    assert.equal(await page.evaluate(()=>PrintApprovals.entries.size),side==='front'?0:2,'Preview does not approve or register a print');
    assert.equal(await popup.locator('#approvePrinted').isHidden(),true);
+   assert.equal(await popup.locator('#approvePrinted').textContent(),language==='da'?'Bekræft print i appen':'Confirm printing in the app');
+   assert.match(await popup.locator('.bar p').last().innerText(),language==='da'?/ændrer ikke kortets printstatus/:/does not change the card's print status/);
    await popup.evaluate(()=>{window.print=()=>{};});await popup.locator('#print').click();
    assert.equal(await page.evaluate(()=>window.approvalWrites.length),0,'Clicking print never approves');
    if(side==='back')await popup.locator('#approvePrinted').click();
    await popup.close();
   }
+  for(const language of ['en','da']){
+   await page.evaluate(language=>{I18n.set(language);PrintApprovals.open();},language);
+   assert.equal(await page.locator('#dialog h2').innerText(),language==='da'?'Bekræft, at siderne er printet':'Confirm sides are printed');
+   assert.equal(await page.locator('[data-action=confirm-printed]').innerText(),language==='da'?'Ja, de valgte sider er kontrolleret og printet':'Yes, the selected sides have been checked and printed');
+   assert.equal(await page.locator('[data-printed-index]:checked').count(),4);
+   await page.locator('#dialog [data-action=close]').click();
+   assert.equal(await page.evaluate(()=>window.approvalWrites.length),0,'Cancelling batch confirmation must not save');
+  }
+  await page.evaluate(()=>PrintApprovals.open());
   assert.equal(await page.locator('[data-printed-index]:checked').count(),4);
   await page.locator('[data-printed-index="3"]').uncheck();await page.locator('[data-action=confirm-printed]').click();
   const writes=await page.evaluate(()=>window.approvalWrites);assert.equal(writes.length,1);assert.equal(writes[0].action,'revision.approve_many');assert.equal(writes[0].data.entries.length,3);assert.equal(await page.evaluate(()=>PrintApprovals.entries.size),1);
