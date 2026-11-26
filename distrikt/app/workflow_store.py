@@ -43,6 +43,7 @@ class WorkflowStore:
         self._geo_cache=None
         self._info_cache=None
         self._boundary_report_cache=None
+        self._boundary_report_geometry=None
         self._setup_previews={}
         self._undo=None
         self._tracking=None

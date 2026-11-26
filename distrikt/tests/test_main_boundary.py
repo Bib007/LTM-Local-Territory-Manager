@@ -46,6 +46,27 @@ class MainBoundaryTests(unittest.TestCase):
         self.s.close();self.s=Store(self.tmp.name)
         self.assertEqual(self.s.boundary_report(),expected)
 
+    def test_ib_mutations_reuse_geometry_until_report_inputs_change(self):
+        mapped=self.address(7)
+        card=self.s.mutate('geo.assign',{'number':'121','address_ids':[mapped]})['id']
+        self.save()
+        self.assertEqual(self.s.boundary_report(),{'visits':1,'ib':0,'ib_total':0})
+        geometry=self.s._boundary_report_geometry
+        ib=self.s.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':'7','date':'2026-01-01'})['id']
+        self.assertEqual(self.s.boundary_report(),{'visits':1,'ib':1,'ib_total':1})
+        self.assertIs(self.s._boundary_report_geometry,geometry)
+        deleted=self.s.mutate('delete',{'module':'ib','id':ib})
+        self.assertEqual(self.s.boundary_report(),{'visits':1,'ib':0,'ib_total':0})
+        self.assertIs(self.s._boundary_report_geometry,geometry)
+        self.s.mutate('restore',deleted)
+        self.assertEqual(self.s.boundary_report(),{'visits':1,'ib':1,'ib_total':1})
+        with self.s.transaction():
+            self.s.put('cards',dict(self.s.require('cards',card),address_ids=[],geo_addresses=[]))
+        self.assertEqual(self.s.boundary_report(),{'visits':1,'ib':0,'ib_total':1})
+        self.assertIsNot(self.s._boundary_report_geometry,geometry)
+        self.s.mutate('ignore.save',{'address_id':mapped,'reason':'Fiktiv undtagelse'})
+        self.assertEqual(self.s.boundary_report(),{'visits':0,'ib':0,'ib_total':1})
+
     def test_many_points_and_restart_preserve_all_details(self):
         points=[[10+.01*math.cos(i*2*math.pi/5000),55+.01*math.sin(i*2*math.pi/5000)] for i in range(5000)]
         self.assertEqual(self.save(points)['points'],5000)
