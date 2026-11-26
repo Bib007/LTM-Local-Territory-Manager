@@ -29,10 +29,10 @@ c.mutate=async(action,data,options)=>{
 vm.createContext(c);vm.runInContext(source,c);
 const run=code=>vm.runInContext(code,c);
 (async()=>{
- // 0 cards: disabled action and no destructive API request.
+ // 0 cards: no bulk action or destructive API request.
  const empty=run('AdminUI.selection([state.cards[0]])');
  assert.match(empty,/0 kort valgt på tværs af filtre/);
- assert.match(empty,/data-action="folder-selection" disabled/);
+ assert.doesNotMatch(empty,/data-action="folder-selection"/);
  run('AdminUI.folderPreview()');
  assert.match(c.dialogHtml,/Ingen kort kan flyttes/);
  assert.match(c.dialogHtml,/data-admin="folder-confirm" disabled/);

@@ -99,6 +99,8 @@ jobs:
           node "$RUNNER_TEMP/ltm-browser/node_modules/playwright/cli.js" install --with-deps webkit
       - name: Navigation during delayed saves and uncertain receipts
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_save_navigation_browser.cjs
+      - name: Collapsible sidebar on desktop and touch WebKit
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_sidebar_browser.cjs
       - name: All synthetic JavaScript contracts
         run: for testfile in distrikt/tests/test_*.cjs; do node "$testfile" || exit 1; done
       - name: Fictional demo and shared product design
@@ -118,6 +120,8 @@ jobs:
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_geo_browser.cjs
       - name: Responsive S-13 and synthetic mobile OSM failures (Chromium / WebKit)
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" LTM_BROWSER_OUTPUT="$RUNNER_TEMP/ltm-visual" node scripts/check_report_mobile_browser.cjs
+      - name: Reversible standalone print previews in Chromium and WebKit
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_standalone_print_browser.cjs
       - name: Original-size IB cards, pagination and A4/cut PDF checks
         run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/ltm-browser/node_modules/playwright" node scripts/check_ib_print_browser.cjs
       - name: Unified setup and required tour browser workflows

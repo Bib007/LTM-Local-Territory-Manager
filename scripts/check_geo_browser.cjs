@@ -140,23 +140,40 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   assert.ok(await page.evaluate(()=>el('setupIBConfirm')===window.ibConfirmBefore&&el('setupIBDate')===window.ibDateBefore&&JSON.stringify(SetupUI.ib)===window.ibBefore&&el('setupIBConfirm').value==='IMPORTÉR IB'&&document.activeElement===window.ibConfirmBefore));assert.match(await page.locator('.setupIBRows').innerText(),/Private <fictional>/);assert.equal(await page.locator('.setupIBRows fictional').count(),0);
   assert.match(await page.locator('.setupIBRows').innerText(),/Dato skal være en gyldig dato/);await page.evaluate(()=>{I18n.set('en');Navigation.localize();});assert.match(await page.locator('.setupIBRows').innerText(),/Date must be a valid date/);assert.equal(await page.locator('#setupIBConfirm').inputValue(),'IMPORTÉR IB');
   assert.equal(await page.locator('[data-setup=ib-apply]').isDisabled(),true,'File errors block import');await page.locator('#setupIBDate').fill('2026-10-16');assert.ok(await page.evaluate(()=>SetupUI.ib===null),'Date changes invalidate prior review');assert.equal(writes.filter(w=>!w.action.endsWith('preview')&&!w.action.endsWith('inspect')&&!['geo.boundary','geo.main.save'].includes(w.action)).length,0,'Reviews do not add writes beyond the explicit boundary saves');
-  // Sharing uses fictional local responses and a generated test PNG; no Google account or real upload.
-  await page.evaluate(()=>{openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');window.gestureRecords=JSON.stringify(state.cards);});
+  // #20: map gestures use English explicitly, independent of earlier language switches.
+  await page.evaluate(()=>{I18n.set('en');Navigation.localize();openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');window.gestureRecords=JSON.stringify(state.cards);});
+   assert.equal(await page.evaluate(()=>I18n.language()),'en');
+   assert.equal(await page.locator('#districtMapGestureLabel').innerText(),'Locked · Activate map');
   assert.equal(await page.evaluate(()=>DistrictMap.gesture.enabled()),false);
   const mapPosition=()=>page.evaluate(()=>({zoom:DistrictMap.map.getZoom(),center:DistrictMap.map.getCenter()}));
   const lockedPosition=await mapPosition();
   const wheelConsumed=await page.locator('#districtMap').evaluate(n=>{const e=new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120});n.dispatchEvent(e);return e.defaultPrevented;});
   assert.equal(wheelConsumed,false,'A normal wheel must be left to dialog scrolling');
+   assert.equal(await page.locator('#districtMapGestureNotice').evaluate(n=>n.classList.contains('mapGestureNoticeVisible')),true);
+    assert.equal(await page.locator('#districtMapGestureNotice').innerText(),'The map is locked. Hold Ctrl/Command to pan or zoom, or choose Activate map.');
+   assert.equal(await page.locator('#districtMapGestureNotice').evaluate(n=>getComputedStyle(n).pointerEvents),'none');
+   for(const theme of ['light','dark']){
+    await page.evaluate(t=>Theme.set(t),theme);
+    const contrast=await page.locator('#districtMapActivate').evaluate(n=>{const lum=s=>{const rgb=s.match(/\d+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];};const s=getComputedStyle(n),a=lum(s.color),b=lum(s.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);});
+    assert.ok(contrast>=4.5,'Locked activation contrast '+theme);
+   }
+   await page.locator('#districtMap').evaluate(n=>{const e=new Event('touchmove',{bubbles:true,cancelable:true});n.dispatchEvent(e);if(e.defaultPrevented)throw Error('Locked touchmove consumed');});
   await page.waitForTimeout(150);assert.deepEqual(await mapPosition(),lockedPosition);
   await page.locator('#districtMap').scrollIntoViewIfNeeded();const box=await page.locator('#districtMap').boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.wheel(0,10000);await page.waitForTimeout(200);
   assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollTop>=n.scrollHeight-n.clientHeight-2),'Normal wheel over map can reach dialog bottom');assert.deepEqual(await mapPosition(),lockedPosition);
   await page.locator('#districtMapActivate').click();assert.equal(await page.locator('#districtMapActivate').getAttribute('aria-pressed'),'true');assert.equal(await page.evaluate(()=>DistrictMap.map.keyboard.enabled()&&DistrictMap.map.touchZoom.enabled()&&DistrictMap.map.dragging.enabled()),true);
-  await page.keyboard.press('ArrowRight');await page.waitForTimeout(300);assert.notDeepEqual((await mapPosition()).center,lockedPosition.center,'Explicit keyboard activation allows panning');
+  assert.equal(await page.locator('#districtMapGestureLabel').innerText(),'Active · Lock map again');
+   await page.keyboard.press('ArrowRight');await page.waitForTimeout(300);assert.notDeepEqual((await mapPosition()).center,lockedPosition.center,'Explicit keyboard activation allows panning');
   const movedPosition=await mapPosition();await page.locator('#districtMapActivate').click();assert.deepEqual(await mapPosition(),movedPosition,'Relocking preserves the chosen extent');
+   assert.equal(await page.locator('#districtMapGestureLabel').innerText(),'Locked · Activate map');
+   await page.locator('#districtMap').evaluate(n=>n.dispatchEvent(new Event('touchmove',{bubbles:true,cancelable:true})));
+   assert.ok(await page.locator('#districtMapGestureNotice').evaluate(n=>n.classList.contains('mapGestureNoticeVisible')),'Locked touch movement gives feedback');
+    assert.equal(await page.locator('#districtMapGestureNotice').innerText(),'The map is locked. Hold Ctrl/Command to pan or zoom, or choose Activate map.');
   const modifierConsumed=await page.locator('#districtMap').evaluate(n=>{const e=new WheelEvent('wheel',{bubbles:true,cancelable:true,ctrlKey:true,deltaY:-120});n.dispatchEvent(e);return e.defaultPrevented;});
   assert.equal(modifierConsumed,true,'Ctrl wheel is handled by Leaflet');await page.waitForTimeout(200);assert.ok((await mapPosition()).zoom>movedPosition.zoom);await page.evaluate(()=>window.dispatchEvent(new KeyboardEvent('keyup',{key:'Control'})));assert.equal(await page.evaluate(()=>DistrictMap.gesture.enabled()),false);
   assert.equal(await page.evaluate(()=>JSON.stringify(state.cards)===window.gestureRecords),true,'View controls cannot mutate card records');await page.evaluate(()=>closeDialog());
-  await page.evaluate(async()=>{page='Indstillinger';Navigation.settingsSection='sharing';render();await ShareUI.load();I18n.set('en');Navigation.localize();openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');window.originalMapExportBlob=MapExport.blob;MapExport.blob=async(id,kind,options)=>{if(Object.keys(options).sort().join()!=='publicCard,publicMembers')throw Error('Public recipe required');const canvas=document.createElement('canvas');canvas.width=2200;canvas.height=1560;const ctx=canvas.getContext('2d');ctx.fillStyle='#477596';ctx.fillRect(0,0,2200,1560);ctx.fillStyle='white';ctx.font='70px Arial';ctx.fillText('Fictional public preview',120,180);return new Promise(resolve=>canvas.toBlob(resolve,'image/png'));};await ShareUI.prepare('c1');});
+  // Sharing uses fictional local responses and a generated test PNG; no Google account or real upload.
+   await page.evaluate(async()=>{page='Indstillinger';Navigation.settingsSection='sharing';render();await ShareUI.load();I18n.set('en');Navigation.localize();openDialog(DistrictMap.html('c1'));DistrictMap.mount('c1');window.originalMapExportBlob=MapExport.blob;MapExport.blob=async(id,kind,options)=>{if(Object.keys(options).sort().join()!=='publicCard,publicMembers')throw Error('Public recipe required');const canvas=document.createElement('canvas');canvas.width=2200;canvas.height=1560;const ctx=canvas.getContext('2d');ctx.fillStyle='#477596';ctx.fillRect(0,0,2200,1560);ctx.fillStyle='white';ctx.font='70px Arial';ctx.fillText('Fictional public preview',120,180);return new Promise(resolve=>canvas.toBlob(resolve,'image/png'));};await ShareUI.prepare('c1');});
   assert.equal(await page.locator('#sharePublish').isDisabled(),true);await page.locator('#shareApproved').check();await page.evaluate(()=>{window.previewBefore=document.querySelector('.sharePreview');window.approvedBefore=el('shareApproved');window.pendingBefore=JSON.stringify(ShareUI.pending);I18n.set('da');Navigation.localize();});
   assert.ok(await page.evaluate(()=>document.querySelector('.sharePreview')===window.previewBefore&&el('shareApproved')===window.approvedBefore&&el('shareApproved').checked&&JSON.stringify(ShareUI.pending)===window.pendingBefore));assert.equal(await page.locator('.sharePreview').getAttribute('alt'),'Kortbilledet som bliver delt');assert.equal(writes.filter(w=>w.action==='FAKE_SHARE_PUBLISH').length,0);
   await page.locator('#sharePublish').click();await page.waitForFunction(()=>!ShareUI.publishing&&!el('dialog').open);assert.equal(writes.filter(w=>w.action==='FAKE_SHARE_PUBLISH').length,1);
@@ -203,11 +220,21 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   const printPopupPromise=page.waitForEvent('popup');await page.locator('#printForm button.primary').click();const printPopup=await printPopupPromise;await printPopup.waitForFunction(()=>document.getElementById('print')&&!document.getElementById('print').disabled);assert.equal(await printPopup.locator('.sheet').count(),1);assert.equal(await printPopup.locator('#print').innerText(),'Print / save PDF');assert.ok(await printPopup.locator('img').evaluateAll(images=>images.every(img=>img.src.startsWith('data:')&&img.complete&&img.naturalWidth>0)));assert.equal(await page.locator('#dialog').evaluate(n=>n.open),false);
   const pdf=await printPopup.pdf({preferCSSPageSize:true});assert.match(pdf.subarray(0,8).toString(),/%PDF-/);if(out){fs.writeFileSync(path.join(out,`card-${width}.pdf`),pdf);await printPopup.screenshot({path:path.join(out,`print-preview-${width}.png`),fullPage:true});}await printPopup.close();
   await page.evaluate(()=>{printOptions('c1','back');});await page.locator('#printForm [name=remember]').uncheck();const backPopupPromise=page.waitForEvent('popup');await page.locator('#printForm button.primary').click();const backPopup=await backPopupPromise;await backPopup.waitForFunction(()=>document.getElementById('print')&&!document.getElementById('print').disabled);assert.equal(await backPopup.locator('.ibPreview').count(),1);const backPdf=await backPopup.pdf({preferCSSPageSize:true});if(out)fs.writeFileSync(path.join(out,`back-${width}.pdf`),backPdf);await backPopup.close();
-  await page.evaluate(()=>{page='Rapporter';reportTab='Rapport';Workspace.reportPeriod='service';render();});
+  await page.evaluate(()=>{page='Rapporter';reportTab='Rapport';Workspace.reportPeriod='service';Workspace.reportPreview=false;render();});
   assert.equal(await page.locator('.reportOverview').count(),0);
-  assert.equal(await page.locator('.reportScreenMap').count(),1);
-  await page.locator('[data-work=report-tab][data-value=Kalender]').click();assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'calendar');assert.match(await page.locator('.reportScreenMap h2').innerText(),/Calendar year/);await page.locator('#calendarYear').selectOption('2026');
-  await page.locator('[data-work=report-tab][data-value=Rapport]').click();
+  if(width===390){
+   assert.equal(await page.locator('#reportDistrictMap').count(),0,'No map viewport is mounted before preview');
+   const popupReady=page.waitForEvent('popup');
+   await page.locator('[data-action=print-report]').click();
+   const direct=await popupReady;
+   await direct.waitForFunction(()=>document.getElementById('printReport')&&!document.getElementById('printReport').disabled);
+   assert.ok(await direct.locator('.reportMapSnapshot svg polygon').count()>0,'Direct printing has offline district boundaries');
+   assert.equal(await direct.locator('.reportMapSnapshot svg image').count(),0,'Direct printing needs no tile images');
+   await direct.close();
+  }
+  await page.locator('[data-work=report-view]').click();assert.equal(await page.locator('.reportScreenMap').count(),1);
+  await page.locator('#reportPrintPeriod').selectOption('calendar');assert.equal(await page.evaluate(()=>Workspace.reportPeriod),'calendar');assert.match(await page.locator('.reportScreenMap h2').innerText(),/Calendar year/);await page.locator('#calendarYear').selectOption('2026');
+  await page.locator('#reportPrintPeriod').selectOption('service');
 
   assert.equal(await page.locator('.report').first().evaluate(node=>node.scrollWidth<=node.clientWidth),true);
   assert.equal(await page.locator('.report').first().locator('.metrics>div').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth)),true);

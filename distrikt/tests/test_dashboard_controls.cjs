@@ -247,12 +247,16 @@ keyboard({key:'k',ctrlKey:true,target:{closest(){return null;}},preventDefault()
  const usage=run('settingsPage()');
  assert.match(run('Workspace.settingsNav()'),/data-work="settings-tab" data-value="usage"[^>]*aria-current="page"/);
  assert.match(usage,/Fictional activity/);
- assert.match(run('Workspace.settingsNav()'),/class="settingsAdvanced"/);
+ assert.doesNotMatch(run('Workspace.settingsNav()'),/class="settingsAdvanced"/);
  assert.doesNotMatch(usage,/settings-general|settings-data|settingsForm/);
  assert(!source.includes('?UsageStatsUI.html():""'),'Usage statistics must not be embedded in the general settings grid');
  // Returns offer the same selected card details as the publisher view, plus
  // explicit marking. No group action silently completes a loan.
  run(`state={today:'2026-10-16',cards:[{id:'aa',number:'01',name:'Fictional street'},{id:'bb',number:'02',name:'Fictional lane'}],loans:[{id:'one',card_id:'aa',publisher_id:'p',assigned:'2026-10-01',returned:null},{id:'two',card_id:'bb',publisher_id:'p',assigned:'2026-10-02',returned:null}],publishers:[{id:'p',name:'Fictional publisher'}],areas:[],settings:{folder_enabled:true}};deskReturnSelected.clear();query='';selected='';details=c=>c?'<aside data-selected="'+c.id+'"></aside>':'';`);
+ // Replace the settings-only stub with the real permission module for returns.
+ run('delete globalThis.ProfilesUI');
+ vm.runInContext(read('profiles-ui.js'),context);
+ run("state.profile={desk_only:true,permissions:['cards.view','loans.view','loans.return'],capabilities:{actions:{'loan.finish':['cards.view','loans.view','loans.return']}}}");
  const returns=run('deskReturns()');
  assert.match(returns,/class="cardRow deskReturnRow selected" data-card-row="aa"/);
  assert.match(returns,/data-selected="aa"/,'The selected loan renders the sidebar card details');
@@ -262,6 +266,31 @@ keyboard({key:'k',ctrlKey:true,target:{closest(){return null;}},preventDefault()
  run("deskReturnSelected.add('one')");
  assert.match(run('deskReturns()'),/data-return-mark="one" checked/);
  assert.doesNotMatch(run('deskReturns()'),/data-action="desk-return-next" disabled/);
+ // Exercise both ordering modes against the real action catalog, including an
+ // already-marked row whose permission has since been revoked.
+ for(const entry of ['deskReturns()','publisherReturns()']){
+  run("state.profile.permissions=['cards.view','loans.view','loans.return']");
+  assert.equal(run("ProfilesUI.canAction('loan.finish')"),true);
+  const allowed=run(entry);
+  assert.match(allowed,/data-return-mark="one" checked[^>]*>/);
+  assert.doesNotMatch(allowed,/data-return-mark="one"[^>]*disabled/);
+  assert.doesNotMatch(allowed,/data-action="desk-return-mark-visible" disabled/);
+  assert.doesNotMatch(allowed,/data-action="desk-return-next" disabled/);
+  run("state.profile.permissions=['cards.view','loans.view']");
+  assert.equal(run("ProfilesUI.canAction('loan.finish')"),false);
+  const denied=run(entry);
+  assert.match(denied,/data-return-mark="one" checked[^>]*disabled/);
+  assert.match(denied,/data-action="desk-return-mark-visible" disabled/);
+  assert.match(denied,/data-action="desk-return-next" disabled/);
+ }
+ run("state.profile.permissions=['cards.view','loans.view','loans.return']");
+ assert.equal(run("ProfilesUI.canAction('loan.finish',{retain:true})"),false,'Desk access cannot retain a loan');
+ assert.equal(run("ProfilesUI.canAction('loan.finish',{complete:true})"),true);
+ run("state.profile.capabilities={actions:{}}");
+ assert.equal(run("ProfilesUI.canAction('loan.finish')"),false,'Missing action capability fails closed');
+ assert.match(run('deskReturns()'),/data-action="desk-return-next" disabled/);
+ run("state.profile=null");
+ assert.equal(run('deskReturnAllowed()'),true,'Unrestricted local use remains supported');
  run("query='Fictional lane'");
  assert.match(run('deskReturns()'),/data-action="desk-return-next" disabled/,'Hidden marked loans are not returned by mistake');
  run("state.loans[0].returned='2026-10-15';query=''");

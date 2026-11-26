@@ -5,6 +5,27 @@ const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,{id,innerHTML:'',t
 const context={console,Date,Intl,Map,Set,Number,String,Math,JSON,Array,Object,requestAnimationFrame:callback=>setTimeout(callback,0),setTimeout,clearTimeout,location:{origin:'http://127.0.0.1:9999'},document:{addEventListener(){},querySelector:()=>({content:'TEST'}),querySelectorAll:()=>[],getElementById:get},window:{addEventListener(){},removeEventListener(){}},fetch:()=>{throw Error('Network forbidden in test');}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/publisher-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/i18n.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overdue-loans.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/road-search.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/map-export.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/address-source-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/geo.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s12-layout.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/printing.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/admin.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/district-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/main-boundary.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/s13-template.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/report-print.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/basemaps.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/navigation.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ib-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/transfer-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/share-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/overview-map.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/workspace.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/ktm-report-ui.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../app/setup-ui.js'),'utf8'),context);vm.runInContext(src,context);const run=s=>vm.runInContext(s,context);
 run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],completions:[],ib:[],visits:[],maps:[],recovery:[],settings:{folder_minimum:30,rural_mode:'manual',rural_minimum:5,require_revision:false,congregation:''},today:'2026-10-06',version:'1.2.0'}`);
 
+// LTM #11: advanced filter selection stays visible when its menu is closed.
+{
+ const snapshot=run('JSON.stringify({addressTab,filters:OverviewMap.filters,state})');
+ context.filterCleanupSnapshot=snapshot;
+ run("addressTab='Se bort fra'");
+ let html=run("addressFilterTabs({'Mangler på kort':[], 'Se bort fra':[{}]})");
+ assert.match(html,/id="addressMoreButton"[^>]*aria-expanded="false" aria-controls="addressExtraFilters"[^>]*>.*Mere.*Se bort fra.*<\/button>/);
+ assert.match(html,/data-tab="Se bort fra" aria-pressed="true"/);
+ assert.match(html,/id="addressExtraFilters" class="addressExtraFilters"/);
+ assert.match(html,/data-tab="IB"/);
+ run("OverviewMap.filters={...OverviewMap.filters,search:'<Fiktiv>',revision:'Afventer genprint',year:0}");
+ html=run("OverviewMap.activeFilterLabels().join(' · ')");
+ assert.match(html,/&lt;Fiktiv&gt;/);
+ assert.doesNotMatch(html,/<Fiktiv>/);
+ assert.match(html,/Afventer genprint/);
+ assert.match(run('OverviewMap.page()'),/id="overviewActiveFilters"[\s\S]*data-overview="reset"/);
+ run("I18n.set('en')");
+ assert.match(run('addressFilterTabs()'),/More/);
+ run("I18n.set('da');{const saved=JSON.parse(filterCleanupSnapshot);addressTab=saved.addressTab;OverviewMap.filters=saved.filters;state=saved.state;}");
+}
+
 // Task page keeps two independent filters in one compact control group.
 // Scheduled address checks belong below the actionable list.
 {
@@ -113,7 +134,7 @@ run(`for(let i=0;i<40;i++)state.cards.push({id:'c'+i,number:String(i),temporary:
 assert.equal(run('folderPlan().picked.length'),30);assert.equal(run("folderPlan().picked.filter(c=>c.kind==='Land').length"),5);assert.equal(run('folderPlan().need'),30);
 run("state.settings.rural_mode='auto'");assert.equal(run('folderPlan().rural'),6);
 run("state.loans.push({id:'l',card_id:'c0',publisher_id:'p',assigned:'2026-01-01',cycle_start:'2026-01-01',returned:null})");assert(!run("folderPlan().picked.some(c=>c.id==='c0')"));
-run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Ikke gennemgåede distriktskort i perioden')"));assert(run("reports().includes('2026/2027')"));
+run("state.completions.push({id:'e',card_id:'c1',date:'2026-09-14'});state.visits.push({id:'v',date:'2026-09-21'});year=2027;Workspace.reportPreview=true");assert.equal(run('eventsInYear().length'),1);assert(run("reports().includes('Ikke gennemgåede distriktskort i perioden')"));assert(run("reports().includes('2026/2027')"));
 run("mapImage='data:image/png;base64,AA==';state.cards[1].polygon=[[1,1],[40,1],[40,30]]");assert(run("mapSvg(new Set(['c1'])).includes('#52aa82')"));
 assert.equal(run("fourMonths('2026-10-31')"),'2027-02-28');assert.equal(run("serviceYear('2026-08-31')"),2026);assert.equal(run("serviceYear('2026-09-01')"),2027);
 assert(run("esc('<img onerror=alert(1)>').includes('&lt;')"));assert(!run("table(state.cards).includes('onclick=')"));
@@ -221,10 +242,24 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  cards:[{id:'available',number:'101',name:'Fiktivt <test>',area_id:'north',in_folder:false},
         {id:'folder',number:'102',name:'Indlagt',area_id:'north',in_folder:true},
         {id:'issued',number:'103',name:'Udlånt',area_id:'north',in_folder:false}],
- loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true,dialog(){}};`);
+ loans:[{id:'f-loan',card_id:'issued',publisher_id:'p1',returned:null}]};page='Udlevering';deskTab='Udlever';globalThis.ProfilesUI={canAction:()=>true,pageAllowed:()=>true,has:()=>true,dialog(){}};`);
  const desk=run('home()');
  assert(desk.includes('data-action="folder-card-picker"'));
  assert(!desk.includes('data-action="new-card"'));
+ // The suggested-card link requires both page access and card read access.
+ const suggestionLink=()=>run("FolderSuggestions.buttons([card('available')])");
+ assert.match(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("ProfilesUI.pageAllowed=()=>false");
+ assert.equal(run('FolderSuggestions.canOpen()'),false);
+ assert.doesNotMatch(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("ProfilesUI.pageAllowed=()=>true;ProfilesUI.has=()=>false");
+ assert.equal(run('FolderSuggestions.canOpen()'),false);
+ assert.doesNotMatch(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("ProfilesUI.has=()=>true;state.profile={desk_only:true}");
+ assert.equal(run('FolderSuggestions.canOpen()'),false);
+ assert.doesNotMatch(suggestionLink(),/data-action="folder-suggestion-detail"/);
+ run("delete state.profile");
+ assert.match(suggestionLink(),/data-action="folder-suggestion-detail"/);
  const filtered=run("folderCardPickerRows('fIkTiVt <test>')");
  assert(filtered.includes('data-folder-card-id="available"')&&filtered.includes('Fiktivt &lt;test&gt;'));
  assert(!filtered.includes('data-folder-card-id="folder"')&&!filtered.includes('data-folder-card-id="issued"'));
@@ -369,7 +404,12 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  // GeoUI.page() may remount the page and dispose the previous report-map mock.
  // Reinstall the synthetic map immediately before exercising the snapshot.
  run("ReportMap.map=captureMap;ReportMap.tiles={isLoading:()=>false};ReportMap.tileFailed=false");
- assert(run('Boolean(ReportMap.map&&ReportMap.tiles&&!ReportMap.tileFailed)'));
+ run("captureMap.latLngToContainerPoint=([lat,lng])=>({x:40+(lng-9.995)*900,y:78-(lat-54.995)*2400});captureMap.containerPointToLatLng=([x,y])=>({lng:9.995+(x-40)/900,lat:54.995+(78-y)/2400})");
+ const fitted=run("ReportMap.printCrop(captureMap,captureMap.getSize(),ReportMap.printFrame())");
+ assert(fitted.width<65&&fitted.height<90,'A tall district trims unused map background');
+ assert(Math.abs(fitted.width/fitted.height-720/940)<.02,'Crop matches the portrait report map area');
+ assert(run("ReportMap.points().every(([lng,lat])=>{const {x,y}=captureMap.latLngToContainerPoint([lat,lng]);const r=ReportMap.printCrop(captureMap,captureMap.getSize(),ReportMap.printFrame());return x>r.x&&x<r.x+r.width&&y>r.y&&y<r.y+r.height})"),'Card and outer boundaries fit inside the crop');
+ assert.match(run("ReportMap.blankSnapshot()"),/viewBox="0 0 720 940"/);
  const reportSnapshot=await run('ReportMap.printable()');assert(reportSnapshot.includes('data:image/png;base64,AAAA'));assert(reportSnapshot.includes('#52aa82'));assert(reportSnapshot.includes('stroke="#b83b35"'));assert(reportSnapshot.includes('stroke-dasharray="8 5"'));assert(reportSnapshot.includes('samlet distriktsgrænse'));assert(reportSnapshot.includes('openstreetmap.org/copyright'));assert(!reportSnapshot.includes('PRIVATE_NOTE'));
  context.reportSnapshotFixture=reportSnapshot;const reportWithMap=run('reportPrintDocument(reportSnapshotFixture)');assert(reportWithMap.includes('data:image/png;base64,AAAA'));assert(!reportWithMap.includes('id="reportDistrictMap"'));assert(reportWithMap.includes('s13-background.jpg'));assert(!reportWithMap.includes('PRIVATE_NOTE'));
  run("GeoUI.data.main_boundary=savedMainBoundary;ReportMap.map=null;ReportMap.tiles=null;document.createElement=originalCreateElement;state.cards=savedReportCards;state.completions=savedReportCompletions;year=savedReportYear");

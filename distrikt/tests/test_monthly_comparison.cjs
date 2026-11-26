@@ -32,7 +32,7 @@ assert.match(futureChart,/data-comparison="previous" data-month="2026-11" data-c
 assert.match(futureChart,/data-comparison="previous" data-month="2027-08" data-count="1"/);
 assert.doesNotMatch(futureChart,/data-comparison="current" data-month="2026-11"/);
 assert.doesNotMatch(futureChart,/class="hint chartEmpty"/);
-assert.match(futureChart,/Last year’s figures are shown|Sidste års tal vises/);
+assert.doesNotMatch(futureChart,/Last year’s figures are shown|Sidste års tal vises/);
 run("state.today='2026-10-19';state.completions=[]");
 months=plain(run("Workspace.monthlyComparison('2026-09-01','2027-08-31')"));assert.equal(months[0].count,0);assert.equal(months[0].previousCount,null);
 for(const language of ['da','en']){

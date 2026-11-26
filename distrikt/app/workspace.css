@@ -28,6 +28,7 @@ main{max-width:1500px;padding:30px 34px}.top{margin-bottom:22px}.top h1{font-siz
 .dashboardStart{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:18px;border:1px dashed #5a7891}.dashboardStart h3{font-size:18px;margin:0 0 8px}.dashboardStart .hint{margin:0;line-height:1.6}
 .globalSearchBar{gap:8px;align-items:stretch}.globalSearchBar button{min-height:40px;border-color:#485e7155;background:#182129}.globalSearchBar button:first-child{display:flex;align-items:center;gap:9px}.globalSearchBar kbd{margin-left:20px;font-family:inherit;font-size:10px;white-space:nowrap;border:1px solid #48607966;border-radius:4px;padding:3px 5px;color:#7f9bb0}.globalSearchBar button:hover{background:#253541;color:#d2e6f5}
 .connectionNotice{display:flex;justify-content:space-between;align-items:center;gap:20px;border:1px solid #a77e3855;background:#3c311f80;border-radius:8px;padding:15px 18px;margin:0 0 18px;color:#ead8b5}.connectionNotice.restored{background:#20372f80;border-color:#5a9b7d55;color:#c2e0d0}.connectionNotice strong{font-size:13px}.connectionNotice p{font-size:12px;line-height:1.6;margin:6px 0 0}.connectionNotice button{font-size:12px;flex-shrink:0}
+.connectionNotice.restored{position:relative;padding-right:66px}.connectionNotice .connectionDismiss{position:absolute;top:8px;right:8px;min-width:44px;min-height:44px;padding:0;font-size:24px;line-height:1;background:transparent;color:inherit;border-color:currentColor}.connectionNotice .connectionDismiss:hover{background:color-mix(in srgb,currentColor 12%,transparent)}
 #saveState{max-width:48%;line-height:1.5;overflow-wrap:anywhere}#saveState:before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#71899a;margin-right:7px;vertical-align:middle}#saveState[data-save-kind=saved]:before{background:#88b69a}#saveState[data-save-kind=saving]:before{background:#d1b268}#saveState[data-save-kind=error]:before{background:#e4a385}.saveDetail{display:block;font-size:10px;max-width:54ch;color:#d7b09a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .searchHeading h2{margin:8px 0 20px}.searchEmpty{padding:28px 6px;color:#c7d9e7}.searchEmpty strong{font-size:16px}.searchEmpty p{font-size:13px;line-height:1.7;color:#9db2c3;max-width:44ch}.searchResult>span{min-width:0;overflow-wrap:anywhere}.searchResult small{display:block;margin-top:6px;color:#9ab0c1;font-size:11px}#workspaceSearch{width:100%;min-height:45px}
 .menuBackdrop{display:none}
@@ -70,7 +71,7 @@ html{scroll-padding-top:calc(var(--shell-height) + 15px)}
 @media(max-width:750px){:root{--shell-height:60px}.brand .brandWordmark{display:none}.brand .brandCompact,.brand b{display:block}.brand .brandCompact{width:34px;height:34px}.brand{gap:8px;flex-shrink:0}.brand b{font-size:18px}.betaChannel .brand b{font-size:16px}header #saveState{max-width:none;flex:1;text-align:right}.mobileMenu{flex-shrink:0}.menuBackdrop{top:var(--shell-height)}}
 @media print{body{padding-top:0}}
 
-.districtMap.mapGestureLocked{touch-action:pan-y!important;cursor:default}.mapGestureHint{margin:8px 0;line-height:1.6}.mapGestureControls{margin:10px 0}.mapGestureControls button[aria-pressed=true]{background:#245840;border-color:#6ea98d}
+.districtMap.mapGestureLocked{touch-action:pan-y!important;cursor:default}.mapGestureHint{margin:8px 0;line-height:1.6}.mapGestureControls{margin:10px 0}.mapGestureControls button{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-weight:700;background:#285b85;color:#fff;border:2px solid #b4d7f5}.mapGestureControls button:hover{background:#204a6c;color:#fff}.mapGestureControls button[aria-pressed=true]{background:#245840;color:#fff;border-color:#8ec5a7}.mapGestureControls button:focus-visible{outline:3px solid var(--link);outline-offset:3px}.districtMapFrame{position:relative;isolation:isolate}.districtMapFrame .districtMap{position:relative;z-index:0}.mapGestureNotice{position:absolute;z-index:1;bottom:32px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);padding:10px 14px;border:1px solid #b4d7f5;border-radius:7px;background:#183650;color:#fff;font-weight:600;line-height:1.4;text-align:center;pointer-events:none;opacity:0}.mapGestureNoticeVisible{opacity:1}html[data-theme=light] .mapGestureControls button[aria-pressed=false]{background:#285b85;color:#fff;border-color:#183650}html[data-theme=light] .mapGestureNotice{background:#fff;color:#183650;border-color:#285b85}
 
 .taskAlert{display:block;margin-top:7px;background:#523b20;color:#ffe0a6;border:1px solid #ae813e;font-weight:600}.issueTaskAlert{position:static;inset:auto;transform:none;width:auto;max-width:100%;padding:14px;margin:14px 0;background:#512f2d;border:2px solid #c98068;border-radius:6px;color:#ffe3d6;box-shadow:none;overflow-wrap:anywhere}.issueTaskAlert ul{padding-left:22px}.issueTaskAlert li{white-space:pre-wrap;margin:6px 0}.issueTaskAlert p{font-size:12px;line-height:1.6}.navTaskCount,.navFollowupCount{margin-left:auto;background:#493c26;border:1px solid #997737;border-radius:10px;padding:2px 7px;font-size:11px}
 
@@ -172,6 +173,8 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardHome{
  --dashboard-accent:#9acdec;
  --dashboard-track:#3a4751;
+ --dashboard-target:#ffce33;
+ --dashboard-target-edge:#2c2100;
  --dashboard-faint:color-mix(in srgb,var(--accent) 11%,var(--surface));
  min-width:0;
 }
@@ -195,6 +198,10 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardCoverageAmount>span{font-size:12px;line-height:1.5;color:var(--text);max-width:19ch}
 .dashboardProgressTrack{height:11px;border-radius:99px;background:var(--dashboard-track);overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 45%,transparent)}
 .dashboardProgressTrack>span{display:block;height:100%;background:linear-gradient(90deg,#4e92c3,#a1d6d7);border-radius:inherit}
+.dashboardTargetMarker,.dashboardTargetCaption>span::before{width:5px;background:var(--dashboard-target);border:1px solid var(--dashboard-target-edge);border-radius:2px}
+.dashboardTargetMarker{position:absolute;top:0;bottom:0}
+.dashboardTargetCaption>span::before{content:"";display:inline-block;height:12px;vertical-align:-2px;margin-inline-end:6px}
+@media(forced-colors:active){.dashboardTargetMarker,.dashboardTargetCaption>span::before{background:CanvasText;border-color:CanvasText;forced-color-adjust:none}}
 .dashboardCoverageFoot{display:flex;gap:8px;justify-content:space-between;align-items:baseline;font-size:11px;line-height:1.45;color:var(--muted)}
 .dashboardCoverageFoot b{font-weight:650;color:var(--text);white-space:nowrap}
 .dashboardCoverage .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -202,7 +209,7 @@ button.issueAction{background:#245840;color:#e1ffef;border-color:#6ea98d}button.
 .dashboardSpotlight small{font-size:12px;font-weight:650;line-height:1.5;color:var(--muted)}
 .dashboardSpotlightNumber{display:block;font-size:clamp(38px,4vw,56px);letter-spacing:-.045em;line-height:1.02;font-weight:680;font-variant-numeric:tabular-nums;color:var(--text)}
 .dashboardAverageValue{display:block;font-size:clamp(29px,2.75vw,39px);letter-spacing:-.04em;line-height:1.18;font-weight:720;color:var(--dashboard-accent);overflow-wrap:break-word}
-.dashboardQueueValue{font-size:clamp(24px,2.2vw,33px)}
+.dashboardQueueValue>button.link{font:inherit;letter-spacing:inherit;max-width:100%;white-space:normal;overflow-wrap:inherit}
 .dashboardAverage .dashboardSpotlightNote,.dashboardQueue .dashboardSpotlightNote{max-width:42ch}
 .dashboardVisits .dashboardSpotlightNumber{color:var(--dashboard-accent)}
 .dashboardSpotlightNote{font-size:11px;line-height:1.55;color:var(--muted)}
@@ -319,4 +326,145 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  .cardRow td{padding:8px 6px}
  .tablewrap:has(>table>tbody>.cardRow){max-height:64vh}
  .dashboardQuickFacts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+.issueBatch{margin:12px 0}
+.issueBatch>summary{cursor:pointer;padding:8px 0;font-weight:600}
+.issueBatchOptions{max-height:200px;overflow:auto}
+.issueBatchOptions label:not([hidden]){display:flex;gap:8px;align-items:center;margin:0;padding:8px}
+.issueBatchOptions input{width:auto}
+.dialogSaveProgress{position:fixed;z-index:101;inset:50% auto auto 50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;box-sizing:border-box;width:max-content;max-width:min(32rem,calc(100vw - 32px));border:1px solid var(--line);border-radius:12px;padding:20px 24px;background:var(--surface);color:var(--text);font-size:1.25rem;font-weight:600;line-height:1.4;text-align:center;overflow-wrap:anywhere;pointer-events:none;box-shadow:0 4px 24px #0006}
+.dialogSaveProgress::before{content:'';box-sizing:border-box;flex:none;width:32px;height:32px;border:4px solid currentColor;border-right-color:transparent;border-radius:50%;animation:dialog-save-spinner .8s linear infinite}
+@keyframes dialog-save-spinner{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.dialogSaveProgress::before{animation:none}}
+
+.tabs.deskTabs{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:8px;border-bottom:0}
+.tabs.deskTabs>button{min-height:48px;min-width:0;padding:10px 16px;font-weight:700;border:1px solid var(--muted);border-radius:6px}
+.tabs.deskTabs>button.active{border-color:var(--link);border-radius:6px}
+.tabs.deskTabs>button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.deskTabs button span{font-size:1.2em}
+.deskReturnOrder{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.deskReturnOrder button[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:-2px}
+#app [id^="settings-"]>label:not(.check){margin-top:14px}
+#app [id^="settings-"] .actions{gap:8px;flex-wrap:wrap}
+
+.territories.territoryCompact{display:block}
+.territoryTools>summary{cursor:pointer;min-height:36px;padding:8px 10px}
+.territorySortControls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0;max-width:100%}
+.territorySortControls>label{margin:0}
+.pageFilterToolbar select{max-width:100%}
+.pageFilterToolbar :is(input,select){min-height:44px}
+.publisherToolbar .publisherAssignedFilter{align-self:center;inline-size:fit-content;max-inline-size:100%;min-height:44px;gap:6px;margin:0;cursor:pointer}
+.publisherAssignedFilter input{flex:none;inline-size:auto;margin:0}
+.territoryFilterStatus,.issueQuickPublishers{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}
+#issueForm #issueQuickPublishersHeading{font-size:1.125rem;font-weight:700;line-height:1.35;color:var(--text);margin:20px 0 8px;white-space:normal;overflow-wrap:anywhere}
+.territoryFilterStatus button{max-width:100%;overflow-wrap:anywhere}
+@media(max-width:900px){
+ #issueForm select,.overviewFilters label,.overviewAdvanced label{min-width:0;max-width:100%}
+ .territoryCompact .panel{min-width:0}
+ .territoryCompact .toolbar,.deskTabs,.overviewFilters{max-width:100%}
+}
+
+/* The compact sidebar is a desktop/tablet preference, never a mobile drawer state. */
+#nav .sidebarToggle{display:none}
+@media screen and (min-width:751px){
+ #nav .sidebarToggle{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);color:var(--text);min-height:44px;margin:0 0 10px;padding:6px 4px}
+ #nav .sidebarToggle .navIcon{font-size:25px;line-height:1;color:inherit}
+ #nav .sidebarToggle:focus-visible,#nav [data-navigation]:focus-visible,#nav .navExternal:focus-visible{outline:2px solid var(--link);outline-offset:-3px}
+ body.sidebarCompact{--compact-sidebar-width:64px}
+ body.sidebarCompact #sidebar{width:var(--compact-sidebar-width);padding:12px 6px;overflow-x:hidden}
+ body.sidebarCompact #app{margin-left:var(--compact-sidebar-width)}
+ body.sidebarCompact #sidebar :is(#congregation,.localnote,.navcaption,.languageChoice,.navExternalMark){display:none}
+ body.sidebarCompact #nav .navGroup{padding:4px 0}
+ body.sidebarCompact #nav :is([data-navigation],.navExternal,.sidebarToggle){position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;min-height:56px;padding:7px 2px;white-space:normal}
+ body.sidebarCompact #nav .sidebarToggle{width:44px;min-height:44px;margin:0 auto 8px;padding:0}
+ /* Keep names in the accessibility tree while displaying only navigation icons. */
+ body.sidebarCompact #nav :is(.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
+ body.sidebarCompact #nav :is(.navTaskCount,.navFollowupCount){position:absolute;top:2px;right:1px;margin:0;padding:1px 4px;font-size:9px;max-width:100%}
+ body.sidebarCompact #sidebar .stop{width:100%;margin:12px 0 0;min-height:44px;padding:6px 3px;overflow-wrap:anywhere}
+}
+
+/* LTM task 27: layout only, scoped to the existing settings navigation.
+   Never override hidden/disabled controls or change form ownership. */
+@media screen {
+ #app:has(>.settingsSectionNav) .panel {
+  min-width:0; padding:clamp(14px,2.5vw,24px); margin-bottom:18px;
+  border:1px solid var(--line); border-radius:10px;
+  overflow-wrap:anywhere;
+ }
+ #app:has(>.settingsSectionNav) .panel h2 {margin:0 0 12px;line-height:1.3}
+ #app:has(>.settingsSectionNav) .panel h3 {margin:0 0 10px;line-height:1.35}
+ #app:has(>.settingsSectionNav) .panel p {line-height:1.55}
+ #app:has(>.settingsSectionNav) .settingsSection,
+ #app:has(>.settingsSectionNav) :is(#runtimePanel,.connectionBackup) {
+  min-width:0; padding:18px 0; border-top:1px solid var(--line);
+ }
+ #app:has(>.settingsSectionNav) .settingsSection:first-child {border-top:0;padding-top:4px}
+ #app:has(>.settingsSectionNav) .settingsSection > :last-child {margin-bottom:0}
+ #app:has(>.settingsSectionNav) .settingsFields,
+ #app:has(>.settingsSectionNav) .settingsCards {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:14px; min-width:0;
+ }
+ #app:has(>.settingsSectionNav) .settingsField {min-width:0; max-width:38rem}
+ #app:has(>.settingsSectionNav) :is(.settingsField,form) > label:not(.check) {
+  color:var(--text); margin-bottom:6px; line-height:1.45;
+ }
+ #app:has(>.settingsSectionNav) .panel :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=color]),select,textarea) {
+  min-width:0; max-width:100%; width:min(100%,38rem);
+ }
+ #app:has(>.settingsSectionNav) .panel :is(.settingsField input,.settingsField select,.profileGrid input:not([type=checkbox]):not([type=radio]),.profileGrid select) {width:100%}
+ #app:has(>.settingsSectionNav) .panel input[type=number] {width:min(100%,12rem)}
+ #app:has(>.settingsSectionNav) #overdueTemplate {display:block;width:100%;max-width:none;min-height:13rem;resize:vertical;line-height:1.55}
+ #app:has(>.settingsSectionNav) .guidanceSettings {display:grid;grid-template-columns:minmax(0,1fr) minmax(64px,110px);align-items:center;gap:10px;max-width:38rem}
+ #app:has(>.settingsSectionNav) .guidanceSettings label {margin:0}
+ #app:has(>.settingsSectionNav) .panel fieldset {min-width:0;max-width:100%;border:1px solid var(--line);border-radius:8px;padding:14px;margin:14px 0}
+ #app:has(>.settingsSectionNav) .panel legend {color:var(--text);font-weight:600;padding:0 6px}
+ #app:has(>.settingsSectionNav) .panel .check {align-items:flex-start;line-height:1.45}
+ #app:has(>.settingsSectionNav) .panel .check input {flex:none}
+ #app:has(>.settingsSectionNav) .panel details {min-width:0;max-width:100%;margin:12px 0}
+ #app:has(>.settingsSectionNav) .panel details>summary {color:var(--text);font-weight:600;line-height:1.45;padding:8px 0}
+ #app:has(>.settingsSectionNav) .settingsCards>div {min-width:0;border:1px solid var(--line);border-radius:8px;padding:16px}
+ #app:has(>.settingsSectionNav) .panel .actions {display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+ #app:has(>.settingsSectionNav) .panel button {max-width:100%;white-space:normal;overflow-wrap:anywhere}
+ #app:has(>.settingsSectionNav) .settingsSaveActions {padding:12px 0 4px;border-top:1px solid var(--line)}
+ #app:has(>.settingsSectionNav) .panel :focus-visible {outline:2px solid var(--accent);outline-offset:2px}
+ #app:has(>.settingsSectionNav) .panel .line {min-width:0;flex-wrap:wrap;gap:8px}
+ #app:has(>.settingsSectionNav) .profileGrid {grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start;gap:14px}
+ #app:has(>.settingsSectionNav) .profileGrid>.panel {margin-bottom:0}
+ #app:has(>.settingsSectionNav) .panel .tablewrap {max-width:100%;overflow-x:auto}
+ /* The existing single live status remains in the fixed header. */
+ body:has(#app>.settingsSectionNav) header #saveState {font-size:13px;font-weight:600;line-height:1.3}
+}
+@media screen and (max-width:750px) {
+ #app:has(>.settingsSectionNav) .panel button,
+ #app:has(>.settingsSectionNav) .panel :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select) {min-height:44px}
+ body:has(#app>.settingsSectionNav) header #saveState {font-size:11px}
+}
+
+/* Follow-up filters respond to the actual main content, including a collapsed sidebar.
+   Narrow is also the usable fallback for browsers without container queries. */
+.followupFilterLayout{container:followup-filters / inline-size;min-width:0}
+.tabs.followupTabs{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;border-bottom:0;margin-bottom:14px}
+:is(.tabs.followupTabs button,.pageFilterButtons button:not(.primary),.pageFilterButtons summary,.pageFilterToolbar summary){border:1px solid var(--muted);border-radius:6px;min-width:0;min-height:44px;padding:9px 12px;color:var(--text);background:var(--surface2);white-space:normal;overflow-wrap:anywhere}
+:is(.tabs.followupTabs button.active,.pageFilterButtons button[aria-pressed=true]){border:2px solid var(--link);border-radius:6px;padding:8px 11px;font-weight:700;background:var(--surface)}
+:is(.tabs.followupTabs button,.pageFilterButtons button,.pageFilterButtons summary,.pageFilterToolbar summary):focus-visible{outline:2px solid var(--link);outline-offset:2px}
+:is(#followupMoreButton,#addressMoreButton){display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left}
+:is(#followupMoreButton,#addressMoreButton)[aria-expanded=true] :is(.followupMoreChevron,.filterChevron){transform:rotate(180deg)}
+.followupExtraFilters{display:none;grid-column:1 / -1;min-width:0}
+.followupExtraFilters.is-open{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+@container followup-filters (min-width:48rem){
+ .tabs.followupTabs{display:flex;flex-wrap:wrap}
+ #followupMoreButton{display:none}
+ .followupExtraFilters,.followupExtraFilters.is-open{display:flex;flex-wrap:wrap;gap:8px;padding:0;border:0;background:transparent}
+ .tabs.followupTabs button{white-space:nowrap}
+}
+
+/* Keep common address categories at hand and wrap advanced filters inside the available space. */
+.addressFilterLayout{container:address-filters / inline-size;min-width:0}
+.addressFilterTabs{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.addressExtraFilters{display:none}
+.addressExtraFilters.is-open{display:grid;flex:0 0 100%;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+@container address-filters (min-width:48rem){
+ #addressMoreButton{display:none}
+ .addressExtraFilters,.addressExtraFilters.is-open{display:contents}
 }

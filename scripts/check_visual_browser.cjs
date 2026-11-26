@@ -51,4 +51,5 @@ if(out)fs.mkdirSync(out,{recursive:true});
  await require('./check_partition_browser.cjs')(browser,out);
  await require('./check_share_image_browser.cjs')(browser,out);
  await require('./check_print_approval_browser.cjs')(browser,out);
+ await require('./check_settings_layout_browser.cjs')(browser,out);
 }finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

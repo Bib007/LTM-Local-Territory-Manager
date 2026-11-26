@@ -6,13 +6,49 @@ const Navigation={
   ['Administration',[['Rapporter og historik','Rapporter','Rapport'],['Kort og adresser','Adresser','Mangler på kort'],['Indstillinger','Indstillinger','general']]],
   ['Hjælp',[]]
  ],opened:{},settingsSection:'general',
+ sidebarKey:'ltm-sidebar-collapsed',sidebarCollapsed:false,sidebarMedia:null,
+ compact(){return this.sidebarCollapsed&&!!this.sidebarMedia?.matches;},
+ initSidebar(){
+  if(typeof window==='undefined'||typeof window.matchMedia!=='function')return;
+  this.sidebarMedia=window.matchMedia('(min-width:751px)');
+  try{this.sidebarCollapsed=localStorage.getItem(this.sidebarKey)==='1';}catch{}
+  document.body?.classList.toggle('sidebarCompact',this.compact());
+  const change=()=>{if(this.sidebarCollapsed)this.repaintSidebar();};
+  if(this.sidebarMedia.addEventListener)this.sidebarMedia.addEventListener('change',change);
+  else this.sidebarMedia.addListener?.(change);
+ },
+ toggleSidebar(){
+  if(!this.sidebarMedia?.matches)return;
+  this.sidebarCollapsed=!this.sidebarCollapsed;
+  try{localStorage.setItem(this.sidebarKey,this.sidebarCollapsed?'1':'0');}catch{}
+  this.repaintSidebar(true);
+  // Leaflet listens for viewport changes, but the main column also changes
+  // width when the sidebar changes without a browser resize.
+  window.dispatchEvent(new Event('resize'));
+ },
+ repaintSidebar(focusToggle=false){
+  document.body?.classList.toggle('sidebarCompact',this.compact());
+  const nav=document.getElementById('nav');if(!nav||!nav.childElementCount)return;
+  const focused=document.activeElement,inside=nav.contains(focused),index=focused?.dataset?.navigation;
+  nav.innerHTML=this.html();nav.lang=I18n.language();
+  if(focusToggle)nav.querySelector('[data-sidebar-toggle]')?.focus({preventScroll:true});
+  else if(inside){
+   if(!this.sidebarMedia.matches&&!document.body.classList.contains('menuOpen'))document.querySelector('.mobileMenu')?.focus({preventScroll:true});
+   else if(index)nav.querySelector('[data-navigation="'+index+'"]')?.focus({preventScroll:true});
+   else if(this.sidebarMedia.matches)nav.querySelector('[data-sidebar-toggle]')?.focus({preventScroll:true});
+  }
+ },
+ sidebarToggle(){
+  const compact=this.compact(),label=compact?'Fold menu ud':'Fold menu sammen';
+  return `<button type="button" class="sidebarToggle" data-sidebar-toggle aria-controls="sidebar" aria-expanded="${!compact}" title="${I18n.escape(I18n.text(label))}"><span class="navIcon" aria-hidden="true">${compact?'›':'‹'}</span><span class="sidebarToggleLabel">${esc(I18n.text(label))}</span></button>`;
+ },
  guideLink(){
   const lang=I18n.language();
-  return `<a class="navExternal" data-help-guide href="https://localterritorymanager.netlify.app/${lang}/guide/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">?</span><span class="navExternalLabel">${esc(I18n.text('Trinvis LTM-guide'))}</span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
+  return `<a class="navExternal" data-help-guide ${I18n.attribute('title','Trinvis LTM-guide')} href="https://localterritorymanager.netlify.app/${lang}/guide/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">?</span><span class="navExternalLabel">${esc(I18n.text('Trinvis LTM-guide'))}</span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
  },
  active(item){return page==='Opstart'&&item[1]==='Indstillinger'||page===item[1]||page==='Kortopsætning'&&item[1]==='Adresser';},
  html(){
-  const desk=typeof state!=='undefined'&&state?.profile?.desk_only;
+  const desk=typeof state!=='undefined'&&state?.profile?.desk_only,compact=this.compact();
   const icons={
    Forside:'<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',
    Udlevering:'<path d="M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4"/>',
@@ -35,13 +71,15 @@ const Navigation={
     const followups=!count?'':`<span class="navFollowupCount" ${I18n.attribute('aria','Til opfølgning: {count}',{count})}>${count}</span>`;
     const taskCount=item[1]==='Opgaver'?Workspace.actionableTasks().length:0;
     const tasks=taskCount?`<span class="navTaskCount" ${I18n.attribute('aria','{count} åbne opgaver',{count:taskCount})}>${taskCount}</span>`:'';
-    return `<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''}><span aria-hidden="true" class="navIcon">${icon(item[1])}</span>${esc(I18n.text(desk&&item[1]==='Udlevering'?'Ind/udlevering':item[0]))}${followups}${tasks}${item[1]==='Forkyndere'&&typeof OverdueLoans!=='undefined'?OverdueLoans.badge():''}</button>`;
+    const label=desk&&item[1]==='Udlevering'?'Ind/udlevering':item[0];
+    return `<button data-navigation="${i}:${j}" class="${this.active(item)?'active':''}" ${this.active(item)?'aria-current="page"':''} ${I18n.attribute('title',label)}><span aria-hidden="true" class="navIcon">${icon(item[1])}</span><span class="sidebarNavLabel">${esc(I18n.text(label))}</span>${followups}${tasks}${item[1]==='Forkyndere'&&typeof OverdueLoans!=='undefined'?OverdueLoans.badge():''}</button>`;
    }).join('');
+   if(compact&&name&&buttons)return `<div class="navGroup" role="group" aria-label="${I18n.escape(I18n.text(name))}">${buttons}</div>`;
    return buttons?(name?`<details class="navGroup" data-nav-group="${i}" ${this.opened[i]!==false||items.some(item=>this.active(item))?'open':''}><summary>${esc(I18n.text(name))}</summary><div>${buttons}</div></details>`:buttons):'';
   }).join('');
   const language=I18n.language();
   const choice=I18n.fixedLanguage()?'':`<label class="languageChoice" lang="${language}">${esc(I18n.text('Appens og guidens sprog'))}<select id="navigationLanguage"><option value="da" ${language==='da'?'selected':''}>Dansk</option><option value="en" ${language==='en'?'selected':''}>English</option></select><small>${esc(I18n.text('Originale printformularer og gemt brugerindhold bevarer deres sprog.'))}</small></label>`;
-  return groups+choice+(!desk&&typeof Theme!=='undefined'?Theme.html(language):'');
+  return this.sidebarToggle()+groups+choice+(!desk&&typeof Theme!=='undefined'?Theme.html(language):'');
  },
  paintFollowupCount(){
   const button=document.querySelector('#nav [data-navigation="1:4"]');if(!button||!GeoUI.loaded)return;
@@ -61,7 +99,7 @@ const Navigation={
   if(typeof SaveStatus!=='undefined')SaveStatus.paint();
   const nav=el('nav');if(nav){nav.innerHTML=this.html();nav.lang=I18n.language();}
   if(restoreFocus)el('navigationLanguage')?.focus();
-  const title=document.querySelector('[data-ui-title]');if(title){title.textContent=this.title();title.lang=I18n.language();}
+  const title=document.querySelector('#app h1[data-ui-title]');if(title){title.textContent=this.title();title.lang=I18n.language();}
   const subtitle=document.querySelector('[data-ui-subtitle]');if(subtitle){subtitle.textContent=Workspace.subtitle(page);subtitle.lang=I18n.language();}
  },
  title(){return Workspace.title(page);},
@@ -76,6 +114,7 @@ const Navigation={
  },
  selectRow(target,event){if(target.closest('button,input,select,textarea,a,label,summary,details,[data-action]'))return false;const row=target.closest('[data-card-row]');if(!row)return false;if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return false;if(event.type==='click'&&window.getSelection?.().toString())return false;event.preventDefault();selected=row.dataset.cardRow;render();if(event.type==='keydown')document.querySelector(`[data-card-row="${CSS.escape(selected)}"]`)?.focus();return true;}
 };
-document.addEventListener('toggle',e=>{if(e.target.dataset?.navGroup!==undefined)Navigation.opened[e.target.dataset.navGroup]=e.target.open;},true);
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-navigation]');if(b){e.preventDefault();try{await Navigation.go(b.dataset.navigation);}catch(err){toast(err);}return;}Navigation.selectRow(e.target,e);});
+Navigation.initSidebar();
+document.addEventListener('toggle',e=>{if(e.target.isConnected&&e.target.dataset?.navGroup!==undefined)Navigation.opened[e.target.dataset.navGroup]=e.target.open;},true);
+document.addEventListener('click',async e=>{if(e.target.closest('[data-sidebar-toggle]')){Navigation.toggleSidebar();return;}const b=e.target.closest('[data-navigation]');if(b){e.preventDefault();try{await Navigation.go(b.dataset.navigation);}catch(err){toast(err);}return;}Navigation.selectRow(e.target,e);});
 document.addEventListener('keydown',e=>Navigation.selectRow(e.target,e));

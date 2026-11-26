@@ -97,6 +97,7 @@ const {chromium, webkit} = require(process.env.PLAYWRIGHT_MODULE || 'playwright'
     assert.deepEqual(await a.evaluate(() => ({completions: state.completions, notes: state.notes})), before);
     await a.locator('[data-work="report-tab"][data-value="Rapport"]').click();
     await a.locator('#serviceYear').selectOption('2026');
+    await a.locator('[data-work=report-view]').click();
     const s13 = a.locator('.s13Original');
     assert.match(await s13.innerText(), /Fictional same-day neighbor/);
     assert.doesNotMatch(await s13.innerText(), /Fictional mistaken/);

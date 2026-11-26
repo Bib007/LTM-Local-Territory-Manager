@@ -41,7 +41,7 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.13.0'
+VERSION='1.14.0'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -217,7 +217,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
 
     def _get(self):
         parsed=urlsplit(self.path);path=parsed.path;q=parse_qs(parsed.query)
-        public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/api/ping')
+        public=path in ('/','/login.js','/style.css','/theme.js','/theme.css','/brand-mark.svg','/apple-touch-icon.png','/api/ping')
         if not self.allowed(public=public):return
         try:
             if self.profile_get(path):return
@@ -240,6 +240,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path=='/apple-touch-icon.png':return self.send((APP/'apple-touch-icon.png').read_bytes(),'image/png')
             if path=='/s12-template-en.png':return self.send((APP.parent/'templates'/'S-12-E-source.png').read_bytes(),'image/png')
             if path=='/s13-background-en.jpg':return self.send((APP.parent/'templates'/'S-13-E-background.jpg').read_bytes(),'image/jpeg')
             if path in ('/forms/S-12-en.pdf','/forms/S-13-en.pdf'):return self.send((APP.parent/'templates'/('S-12-E.pdf' if 'S-12' in path else 'S-13-E.pdf')).read_bytes(),'application/pdf')
@@ -280,7 +281,16 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path=='/api/storage':return self.send(self.server.store.storage_info())
             if path=='/api/runtime/status':return self.send(self.server.runtime_status.status())
             if path=='/api/update-check':return self.send(self.server.update_checker.check())
-            if path=='/api/activity':return self.send({'items':self.server.profiles.authors(self.server.store.activity())})
+            if path=='/api/activity':
+                items=self.server.profiles.authors(self.server.store.activity())
+                if self.profile_user:
+                    rights=self.profile_user['permissions']
+                    for item in items:
+                        if not {'cards.view','loans.view'}<=rights:item.pop('assignments',None)
+                        elif 'publishers.view' not in rights:
+                            item['assignments']=[{k:v for k,v in a.items() if k!='publisher'} for a in item.get('assignments',[])]
+                        if 'cards.view' not in rights:item.pop('changes',None)
+                return self.send({'items':items})
             if path=='/api/usage-statistics':
                 from usage_stats import summarize
                 result=summarize(self.server.store.activity(limit=None))
@@ -455,8 +465,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                         editor_snapshot=None
                         if self.server.profiles.enabled:
                             from profile_policy import mutation
-                            mutation(self.profile_user,data.get('action'),data.get('data',{}),self.server.store)
-                            if data.get('action')=='address.task.configure':result=self.server.address_schedule.configure(data.get('data',{}))
+                            if data.get('action')=='address.task.configure':
+                                mutation(self.profile_user,data.get('action'),data.get('data',{}),self.server.store)
+                                result=self.server.address_schedule.configure(data.get('data',{}))
                             else:result,editor_snapshot=self.server.profiles.mutate(self.profile_token(),self.profile_user,data.get('action'),data.get('data',{}),data.get('profile_snapshot'))
                         else:
                             if data.get('action')=='note.save' and 'assignee_id' in data.get('data',{}):

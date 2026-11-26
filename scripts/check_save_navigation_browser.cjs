@@ -22,8 +22,9 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     if(body&&hold?.action===body.action){
      const gate=hold;hold=null;
      // Success/lost responses reach the real server first. Rejection does not.
-     const response=gate.mode==='reject'?null:await route.fetch();gate.arrived.resolve();await gate.release.promise;
-     if(gate.mode==='reject')return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Fiktiv afvisning'})});
+     const response=['reject','login'].includes(gate.mode)?null:await route.fetch();gate.arrived.resolve();await gate.release.promise;
+     if(gate.mode==='login')return route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({error:'Fiktivt udløbet login'})});
+      if(gate.mode==='reject')return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Fiktiv afvisning'})});
      if(gate.mode==='lost')return route.abort('connectionreset');
      if(gate.mode==='invalid')return route.fulfill({status:200,contentType:'application/json',body:'{}'});
      return route.fulfill({response});
@@ -53,6 +54,67 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    const generation=await page.evaluate(()=>openDialog.generation);gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='saved');
    assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Ny fiktiv kladde');assert.equal(await page.evaluate(()=>openDialog.generation),generation);assert.equal(await page.locator('#dialog').evaluate(n=>n.matches(':modal')),true);
    assert.equal(await page.evaluate(id=>!!state.loans.find(l=>l.id===id).returned,ids.loan),true);await page.locator('#dialog .dialogClose').click();
+   // LTM #25: add/edit/delete consecutively on the same card's IB back.
+   await page.locator('[data-navigation="1:0"]').click();
+   await page.evaluate(id=>detail(id,'IB-bagside'),ids.card);
+   const backTab=page.locator('#dialog [data-action=card-tab][data-tab="IB-bagside"].active');
+   const waitBack=async()=>{await backTab.waitFor();await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='saved');assert.equal(await backTab.getAttribute('data-id'),ids.card);};
+   const addIB=async(number)=>{await page.locator('#dialog [data-action=ib][data-card]').click();await page.locator('#ibForm [name=road]').fill('Fiktiv IB vej');await page.locator('#ibForm [name=number]').fill(number);await page.locator('#ibForm button.primary').click();await waitBack();};
+   await page.locator('#dialog .backPreview').evaluate(n=>{n.open=true;});
+   await addIB('91');
+   assert.equal(await page.locator('#dialog .backPreview').evaluate(n=>n.open),true);
+   const ibId=await page.evaluate(id=>state.ib.find(i=>i.card_id===id&&i.number==='91').id,ids.card);
+   const editIBRow=page.locator('#dialog [data-action=ib][data-id="'+ibId+'"]');
+   await editIBRow.focus();await editIBRow.click();
+   await page.locator('#ibForm [name=number]').fill('92');await page.locator('#ibForm button.primary').click();await waitBack();
+   assert.equal(await page.evaluate(id=>state.ib.find(i=>i.id===id).number,ibId),'92');
+   assert.equal(await editIBRow.evaluate(n=>n===document.activeElement),true,'return focus to the edited IB row');
+   await page.locator('#dialog [data-action=delete][data-module=ib][data-id="'+ibId+'"]').click();
+   await page.locator('#dialog [data-action=confirm-delete]').click();await waitBack();
+   assert.equal(await page.evaluate(id=>state.ib.some(i=>i.id===id),ibId),false);
+   assert.equal(await page.locator('#dialog [data-action=ib][data-id="'+ibId+'"]').count(),0);
+   // No-op edit returns without sending a write; rejected and lost receipts retain the editor.
+   await addIB('93');
+   const retainedId=await page.evaluate(id=>state.ib.find(i=>i.card_id===id&&i.number==='93').id,ids.card);
+   const openRetained=()=>page.locator('#dialog [data-action=ib][data-id="'+retainedId+'"]').click();
+   await openRetained();let ibWrites=writes.length;
+   await page.locator('#ibForm button.primary').click();await backTab.waitFor();
+   assert.equal(writes.length,ibWrites);
+   for(const mode of ['reject','lost']){
+    await openRetained();gate=holdNext('ib.save',mode);
+    await page.locator('#ibForm [name=number]').fill(mode==='reject'?'94':'95');
+    await page.locator('#ibForm button.primary').click();await waitForReceipt(gate);gate.release.resolve();
+    await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='error');
+    assert.equal(await page.locator('#ibForm [name=number]').inputValue(),mode==='reject'?'94':'95');
+    assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode==='lost');
+    if(mode==='lost'){
+     ibWrites=writes.length;await page.locator('#ibForm button.primary').click();
+     await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(writes.length,ibWrites,'unknown outcome must not replay');
+    }
+    await page.evaluate(()=>{closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));
+    await page.waitForFunction(()=>!WriteGuard.uncertain&&!WriteGuard.needsReview);
+    await page.evaluate(id=>detail(id,'IB-bagside'),ids.card);
+   }
+   // A successful receipt after navigation cannot reopen the old card or replace a newer form.
+   await openRetained();gate=holdNext('ib.save');
+   await page.locator('#ibForm [name=number]').fill('96');await page.locator('#ibForm button.primary').click();await waitForReceipt(gate);
+   await page.locator('[data-navigation="1:2"]').click();await page.evaluate(()=>editPublisher(''));
+   await page.locator('#publisherForm input[name=name]').fill('Fiktiv nyere IB navigation');
+   const ibGeneration=await page.evaluate(()=>openDialog.generation);gate.release.resolve();
+   await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='saved');
+   assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Fiktiv nyere IB navigation');
+   assert.equal(await page.evaluate(()=>openDialog.generation),ibGeneration);
+   assert.equal(await page.evaluate(id=>state.ib.find(i=>i.id===id).number,retainedId),'96');
+   await page.locator('#dialog .dialogClose').click();
+   // A delete receipt must also respect explicit close, even without a replacement dialog.
+   await page.evaluate(id=>detail(id,'IB-bagside'),ids.card);
+   await page.locator('#dialog [data-action=delete][data-module=ib][data-id="'+retainedId+'"]').click();
+   gate=holdNext('delete');await page.locator('#dialog [data-action=confirm-delete]').click();await waitForReceipt(gate);
+   await page.locator('#dialog .dialogClose').click();gate.release.resolve();
+   await page.waitForFunction(()=>PendingSaves.count===0&&SaveStatus.kind==='saved');
+   assert.equal(await page.evaluate(()=>el('dialog').open),false);
+   assert.equal(await page.evaluate(id=>state.ib.some(i=>i.id===id),retainedId),false);
+   console.log('PASS IB back: consecutive add/edit/delete, preview/focus, no-op, lost/rejected receipt, no replay, newer navigation and explicit close');
    // Autosave captures the latest edit on navigation, without waiting for receipt 1.
    gate=holdNext('card.save');await page.evaluate(id=>editCard(id),ids.card);
    await page.locator('#cardForm details').first().evaluate(details=>{details.open=true;});
@@ -85,6 +147,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
    await page.locator('[data-navigation="2:2"]').click();await page.locator('#settingsForm input[name=congregation]').fill('Fiktiv NY KLADDE');
    await page.evaluate(()=>EditorBases.page?.ready);assert.equal(await page.evaluate(()=>EditorBases.page?.error?.message||null),null);
    const settingsBase=await page.evaluate(()=>EditorBases.page?.base);gate.release.resolve();await page.waitForFunction(()=>PendingSaves.count===0);
+    const settingsDraftWrites=writes.length;await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(writes.length,settingsDraftWrites);
    assert.equal(await page.locator('#settingsForm input[name=congregation]').inputValue(),'Fiktiv NY KLADDE');assert.equal(await page.evaluate(()=>EditorBases.page?.base),settingsBase);assert.equal(await page.evaluate(()=>SaveStatus.kind),'saved');
    // Geo preview gates stay intact; only an enqueued geographic write can leave.
    await page.evaluate(id=>{GeoUI.dirty=false;GeoUI.openCard(id);GeoUI.ids=new Set(GeoUI.addresses().map(a=>a.id));GeoUI.polygon=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];GeoUI.dirty=true;GeoUI.drawLayers();GeoUI.updatePanel();},ids.card);
@@ -122,11 +185,98 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
     assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Bevar ny fiktiv kladde');
     assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode!=='reject');
     if(mode!=='reject'){
+     const guidance=await page.evaluate(()=>SaveStatus.guidance);
+     assert.match(guidance,/Gemningen kan være gennemført/);
+     assert.match(guidance,/Send ikke ændringen igen\./);
+     assert.match(guidance,/notér kladden et sikkert, privat sted/);
+     assert.match(guidance,/Opdater.*kontrollere de gemte data/);
      const count=writes.length;await page.locator('#publisherForm button.primary').click();await page.waitForFunction(()=>PendingSaves.count===0);assert.equal(writes.length,count,'Uncertain writes cannot replay');
     }
-    // Dismiss the explicit discard warning, then refresh after closing deliberately.
+    // Read-only connection check and refused refresh must preserve the draft and guard.
+     const draftWrites=writes.length;await page.evaluate(()=>Workspace.checkConnection(true));await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Bevar ny fiktiv kladde');assert.equal(writes.length,draftWrites);assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode!=='reject');
+     // Dismiss the explicit discard warning, then refresh after closing deliberately.
     await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));
    }
+   // Confirmed write / stale overview and expired login have different guidance.
+    await page.evaluate(async()=>{try{await confirmedWrite('/api/mutate',{action:'publisher.save',data:{name:'Fiktiv bekræftet, forældet oversigt'}},async()=>{throw Error('Fiktiv opdateringsfejl');});}catch{}});
+    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),true);
+    assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);
+    const reviewGuidance=await page.evaluate(()=>SaveStatus.guidance);
+    assert.match(reviewGuidance,/bekræftet gemt på serveren, men oversigten er ikke opdateret/);
+    assert.match(reviewGuidance,/Send ikke ændringen igen\./);
+    assert.match(reviewGuidance,/Sikr eventuelle andre kladder privat/);
+    assert.match(reviewGuidance,/Opdater.*uden at genindlæse appen/);
+    const reviewWrites=writes.length;
+    const blocked=await page.evaluate(async()=>{
+     try{await confirmedWrite('/api/mutate',{action:'publisher.save',data:{name:'Fiktiv må ikke sendes igen'}});return null;}
+     catch(error){return error.kind;}
+    });
+    assert.equal(blocked,'blocked','A confirmed write with a stale overview must block subsequent writes');
+    assert.equal(writes.length,reviewWrites,'A blocked write must not reach the server');
+    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),true);
+    await page.evaluate(()=>Workspace.handle('refresh',{}));
+    assert.equal(await page.evaluate(()=>WriteGuard.needsReview),false);
+    assert.equal(writes.length,reviewWrites,'Refreshing the overview must not replay a write');
+    gate=holdNext('publisher.save','login');await page.evaluate(()=>editPublisher(''));await page.locator('#publisherForm input[name=name]').fill('Fiktiv loginkladde');await page.locator('#publisherForm button.primary').click();await waitForReceipt(gate);gate.release.resolve();
+    await page.waitForFunction(()=>PendingSaves.count===0&&WriteGuard.loginExpired);
+    assert.equal(await page.evaluate(()=>WriteGuard.uncertain),false);
+    const loginGuidance=await page.evaluate(()=>SaveStatus.guidance);
+    assert.match(loginGuidance,/Vent på igangværende gemninger/);
+    assert.match(loginGuidance,/notér åbne kladder et sikkert, privat sted/);
+    assert.match(loginGuidance,/logger ind igen/);
+    assert.match(loginGuidance,/Kontrollér resultatet af tidligere gemninger efter login, før du sender noget igen/);
+    const loginWrites=writes.length;await page.evaluate(()=>Workspace.checkConnection(true));await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),'Fiktiv loginkladde');assert.equal(writes.length,loginWrites);assert.equal(await page.evaluate(()=>WriteGuard.loginExpired),true);
+    await page.evaluate(()=>{dialogDirty=false;closeDialog();});await page.evaluate(()=>Workspace.handle('refresh',{}));assert.equal(await page.evaluate(()=>WriteGuard.loginExpired),false);
+    // LTM #4: verify the actual dialog indicator against held write receipts.
+   for(const [device,width,height] of [['mobile',390,844],['iPad',820,1180],['desktop',1440,1000]]){
+    await page.setViewportSize({width,height});
+    for(const mode of ['success','reject','lost','invalid']){
+     await page.emulateMedia({reducedMotion:'no-preference'});
+     const name='Fiktiv indikator '+device+' '+mode;
+     gate=holdNext('publisher.save',mode);
+     await page.evaluate(()=>editPublisher(''));
+     await page.locator('#publisherForm input[name=name]').fill(name);
+     await page.locator('#publisherForm button.primary').click();await waitForReceipt(gate);
+     const progress=page.locator('#dialog [data-save-progress]');
+     await progress.waitFor({state:'visible'});
+     assert.equal(await progress.count(),1);
+     assert.equal(await progress.getAttribute('role'),'status');
+     assert.equal(await progress.textContent(),'Gemmer…');
+     const measure=()=>progress.evaluate(node=>{
+      const rect=node.getBoundingClientRect(),style=getComputedStyle(node),icon=getComputedStyle(node,'::before');
+      return {x:rect.x+rect.width/2,y:rect.y+rect.height/2,width:rect.width,left:rect.left,right:rect.right,viewportWidth:innerWidth,viewportHeight:innerHeight,font:parseFloat(style.fontSize),icon:parseFloat(icon.width),animation:icon.animationName,pointerEvents:style.pointerEvents};
+     });
+     const view=await measure();
+     assert.ok(Math.abs(view.x-view.viewportWidth/2)<=2&&Math.abs(view.y-view.viewportHeight/2)<=2,device+' indicator is not centered: '+JSON.stringify(view));
+     assert.ok(view.left>=0&&view.right<=view.viewportWidth&&view.font>=20&&view.icon>=32,device+' indicator sizing');
+     assert.equal(view.animation,'dialog-save-spinner');assert.equal(view.pointerEvents,'none');
+     await page.emulateMedia({reducedMotion:'reduce'});
+     assert.equal((await measure()).animation,'none');
+     assert.equal(await progress.isVisible(),true,'reduced motion must keep the indicator visible');
+     gate.release.resolve();
+     await page.waitForFunction(mode=>PendingSaves.count===0&&SaveStatus.kind===(mode==='success'?'saved':'error'),mode);
+     assert.equal(await progress.count(),0,device+' must remove completed indicator ('+mode+')');
+     if(mode==='success'){
+      assert.equal(await page.evaluate(()=>el('dialog').open),false);
+      assert.equal(await page.evaluate(name=>state.publishers.some(p=>p.name===name),name),true);
+     }else{
+      assert.equal(await page.locator('#publisherForm input[name=name]').inputValue(),name);
+      assert.equal(await page.evaluate(()=>SaveStatus.message),mode==='reject'?'Ændringen blev afvist':'Gemning er ikke bekræftet');
+      assert.equal(await page.evaluate(()=>WriteGuard.uncertain),mode!=='reject');
+      if(mode!=='reject'){
+       const count=writes.length;
+       await page.locator('#publisherForm button.primary').click();
+       await page.waitForFunction(()=>PendingSaves.count===0);
+       assert.equal(writes.length,count,'uncertain result must not replay');
+      }
+      await page.evaluate(()=>{dialogDirty=false;closeDialog();});
+      await page.evaluate(()=>Workspace.handle('refresh',{}));
+      await page.waitForFunction(()=>!WriteGuard.uncertain&&!WriteGuard.needsReview&&PendingSaves.count===0);
+     }
+    }
+   }
+   await page.emulateMedia({reducedMotion:'no-preference'});
+   console.log('PASS save indicator: mobile, iPad and desktop sizes; success, rejection, lost/invalid receipt; reduced motion');
    assert.deepEqual(errors,[]);console.log('PASS delayed return, duplicate submit, navigation, newest autosave, settings/geo drafts, profile conflict evidence, rejection/lost/invalid receipts ('+(profiles?'profiles':'shared login')+')');
   }finally{if(browser)await browser.close();child.kill();}
  }

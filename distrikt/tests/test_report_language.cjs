@@ -91,7 +91,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
   const current=counts(run('Workspace.reportChart(...Workspace.periodBounds("service"))'));assert.equal(current.length,2,'The current service-year report stops at today');assert.equal(current.reduce((a,b)=>a+b,0),3);
   const rolling=run("Workspace.periodBounds('rolling')");assert.equal(rolling[0],'2025-10-16');assert.equal(rolling[1],'2026-10-16');const monthly=counts(run('Workspace.reportChart(...Workspace.periodBounds("rolling"))'));assert.equal(monthly.length,13);assert.equal(monthly.reduce((a,b)=>a+b,0),4);
   for(const [tab,mode] of [['Kalender','calendar'],['Rapport','service'],['Rullende','rolling']]){
-   run(`reportTab='${tab}'`);
+   run(`reportTab='Rapport';Workspace.reportPeriod='${mode}';Workspace.reportPreview=true`);
    const screen=run('Workspace.reports()');
    assert.equal(run('Workspace.reportPeriod'),mode);
    assert.equal((screen.match(/class="metrics"/g)||[]).length,2);
@@ -103,7 +103,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
    assert.equal(screen.includes('class="report s13Original s13Period"'),mode!=='service');
    assert.match(screen,mode==='service'?/Hent original udfyldt S-13|Download filled S-13/:/Print S-13-formular for perioden|Print S-13 form for selected period/);assert.match(screen,/id="reportPrintPeriod"/);assert.match(screen,new RegExp('value="'+mode+'" selected'));
   }
-  run("reportTab='Rullende'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/Kort til opfølgning|AKTUEL OPFØLGNING/);assert.match(screen,language==='en'?/s13-background-en\.jpg/:/s13-background\.jpg/,'The S-13 appendix uses the original background for the selected language');assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
+  run("reportTab='Rapport';Workspace.reportPeriod='rolling'");const screen=run('Workspace.reports()');assert.doesNotMatch(screen,/Kort til opfølgning|AKTUEL OPFØLGNING/);assert.match(screen,language==='en'?/s13-background-en\.jpg/:/s13-background\.jpg/,'The S-13 appendix uses the original background for the selected language');assert.doesNotMatch(screen,/Estimated visits|Anslåede besøg/);assert.match(screen,/<strong>4<\/strong>/);assert.doesNotMatch(screen,/>The original S-13 is included as an appendix\.</);
   run("reportTab='Besøg'");const visits=run('Workspace.reports()');assert.match(visits,/KTM-besøg &lt;invented&gt; &amp; Kort/);assert.match(visits,/data-id="v"/);assert.match(visits,/OLD/,'Historic remarks remain visible in the visit list');contracts[language]=[formContract(visits)];
   assert.equal(run("ktmTuesday('2026-09-08')"),true);
   assert.equal(run("ktmTuesday('2026-09-11')"),false);
@@ -152,6 +152,60 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  run("state.cards[1].last_completed=null;state.completions=state.completions.filter(e=>e.card_id!=='c1')");
  assert.equal(run('Workspace.reportInventory(...Workspace.periodBounds("calendar")).missingAssigned'),1,'An assigned district with no recorded completion remains visible in aggregate');
  c.restoreState=JSON.parse(savedForDates);run('state=restoreState');
+ // #33: real completion days, not the day of registration or the latest cache.
+ const saved33=run('JSON.stringify(state)');
+ run(`state.cards=[
+  {id:'early',number:'F-33A',last_completed:'2026-10-12'},
+  {id:'late',number:'F-33B',last_completed:'2026-09-10'},
+  {id:'unknown',number:'F-33C',last_completed:'2026-02-30'},
+  {id:'home',number:'F-33D'},
+  {id:'prior',number:'F-33E',last_completed:'2026-10-15'},
+  {id:'boundary',number:'F-33F'},
+  {id:'outside',number:'F-33G'}
+ ];state.loans=[
+  {card_id:'late',assigned:'2026-08-01',cycle_start:'2026-09-20',returned:null},
+  {card_id:'unknown',assigned:null,cycle_start:'2026-10-01',returned:null},
+  {card_id:'home',assigned:'2026-08-01',returned:'2026-09-01'}
+ ];state.completions=[
+  {card_id:'early',date:'2026-10-12'},
+  {card_id:'early',date:'2025-12-31',created:'2026-10-16'},
+  {card_id:'late',date:'2026-09-10'},
+  {card_id:'late',date:'2026-09-12',created:'2026-10-16'},
+  {card_id:'unknown',date:'2026-02-30'},
+  {card_id:'unknown',date:null},
+  {card_id:'home',date:'2026-10-17'},
+  {card_id:'prior',date:'2026-10-15',previous_completed:'2025-10-16'},
+  {card_id:'boundary',date:'2026-10-16'},
+  {card_id:'outside',date:'2025-10-15'}
+ ];Workspace.calendarYear=2025;I18n.set('da');`);
+ const historic33=run('Workspace.reportInventory(...Workspace.periodBounds("calendar"))');
+ assert.equal(historic33.events,2,'Retained previous dates count toward coverage, not fabricated events');
+ assert.deepEqual(Array.from(historic33.missingCards,c=>c.id),['late','unknown','home','boundary']);
+ assert.equal(historic33.lastCompleted.get('late'),'2026-09-12','Latest date derives from actual recorded events, not stale card cache');
+ const rolling33=run('Workspace.reportInventory(...Workspace.periodBounds("rolling"))');
+ assert(rolling33.completedIds.has('prior'),'Known retained start-boundary date remains evidence');
+ assert(!rolling33.completedIds.has('outside'),'Day before rolling start is excluded');
+ const service33=run('Workspace.reportInventory(...Workspace.periodBounds("service"))');
+ assert(service33.completedIds.has('boundary'),'Today is inclusive');
+ assert(!service33.completedIds.has('home'),'Future completion does not remove the card');
+ assert(!service33.completedIds.has('unknown'),'Invalid or missing date does not remove the card');
+ assert.equal(run('state.today'),'2026-10-16');
+ assert.equal((Date.parse('2026-10-16')-Date.parse('2026-08-01'))/86400000,76,'Physical assignment age, not cycle start or completion date');
+ const check33=run('JSON.stringify(state)');
+ for(const markup of [run("Workspace.reportSummary('calendar',false,true)"),run("Workspace.reportSummary('calendar',false,false)")]){
+  const row=number=>{const value=Array.from(markup.matchAll(/<tr>([\s\S]*?)<\/tr>/g),m=>m[1]).find(r=>r.includes('<td>'+number+'</td>'));assert(value,'Missing row '+number);return value.replace(/<[^>]*>/g,'');};
+  assert.match(row('F-33B'),/12\.9\.2026[\s\S]*?Udleveret nu · 1\.8\.2026 · 76 dage i alt/);
+  assert.match(row('F-33C'),/Ingen dato registreret[\s\S]*?Udleveret nu · Ingen dato registreret/);
+  assert.match(row('F-33D'),/Hjemme nu/);
+  assert.doesNotMatch(markup,/F-33A|F-33E|F-33G|NaN|Invalid Date/);
+ }
+ run("I18n.set('en')");assert.match(run("KtmReportUI.missing('calendar',true)"),/76 days in total/);
+ run("state.profile={permissions:['cards.view','history.view']}");
+ assert.doesNotMatch(run("KtmReportUI.missing('calendar',false)"),/76 dage|Udleveret nu|Hjemme nu/);
+ assert.doesNotMatch(run("KtmReportUI.missing('calendar',true)"),/76 days|Currently assigned|Currently available/);
+ run('delete state.profile');assert.equal(run('JSON.stringify(state)'),check33,'Reports never modify recorded data');
+ c.restore33=JSON.parse(saved33);run('state=restore33;Workspace.calendarYear=null');
+
  run('year=2026');const historical=run('Workspace.reportOverview(true)');assert.match(historical,/2025\/2026/);assert.match(historical,/2025-10-16|16\.10\.2025/);run('year=2027');
  run("state.today='2024-02-29'");assert.equal(run("Workspace.periodBounds('rolling')[0]"),'2023-02-28');assert.equal(counts(run("Workspace.reportChart('2023-02-28','2024-02-29')")).length,13);
  // Opdigtede høje/brede grænser: hele grænsen påvirker formatet, også uden kort.
@@ -201,5 +255,23 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  run('state.cards=JSON.parse(savedCardsFixture);ReportMap.map=null;ReportMap.layer=null');
  const notices=[],tileErrors=[];c.notices=notices;c.L={map(){return {remove(){},attributionControl:{setPrefix(){}},on(){}};},tileLayer(){return {addTo(){return this;},on(name,fn){if(name==='tileerror')tileErrors.push(fn);}};},layerGroup(){return {addTo(){return this;}};}};
  run('savedFailed=ReportMap.failed;ReportMap.failed=function(error){notices.push(error.message);return savedFailed.call(this,error)};ReportMap.points=()=>[[10,55]];ReportMap.fit=()=>{};ReportMap.draw=()=>{};ReportMap.mount()');tileErrors[0]();tileErrors[0]();assert.equal(notices.length,1,'Repeated tile failures show one notice for the current map');run('ReportMap.mount()');tileErrors[0]();assert.equal(notices.length,1,'A removed map must not show a stale failure');tileErrors[1]();assert.equal(notices.length,2);
+ // A partially loaded map must still time out; stale timers must not affect a new map.
+ const timers=new Map();let timerId=0,events={},loading=true;
+ c.setTimeout=fn=>{timers.set(++timerId,fn);return timerId;};
+ c.clearTimeout=id=>timers.delete(id);
+ c.L.tileLayer=()=>({addTo(){return this;},on(name,fn){events[name]=fn;},isLoading:()=>loading});
+ run('ReportMap.mount()');
+ const staleTimer=timers.get(run('ReportMap.tileTimeout'));
+ run('ReportMap.mount()');
+ const currentTimer=run('ReportMap.tileTimeout');
+ staleTimer();
+ assert.equal(run('ReportMap.tileTimeout'),currentTimer,'A stale timer cannot retire the active timer');
+ events.tileload();timers.get(currentTimer)();
+ assert.equal(notices.length,3,'A single successful tile must not suppress timeout for pending tiles');
+ assert.equal(run('ReportMap.tileFailed'),true);
+ run('ReportMap.mount()');events.tileload();loading=false;events.load();
+ assert.equal(run('ReportMap.tileTimeout'),null,'A fully loaded map cancels its timeout');
+ loading=true;events.loading();assert.notEqual(run('ReportMap.tileTimeout'),null,'A new loading cycle is bounded');
+ run('ReportMap.dispose()');
  console.log('Report language: calendar/service/rolling boundaries, repeated and archived events, known dates, current assignment aggregates, chart/table equality, private-data omission and unchanged original Danish form passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

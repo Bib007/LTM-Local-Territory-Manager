@@ -85,7 +85,7 @@ class ProfileRuntime:
             if 'settings.manage' in user['permissions']:modules.add('settings')
             if {'geo.view','cards.view'}<=user['permissions']:modules.add('maps')
             self.bases.limit_session(token)
-            result['profile']['snapshot']=self.bases.create(token,'workspace','workspace',capture(self.server.store,modules))
+            result['profile']['snapshot']=self.bases.create(token,'workspace','workspace',capture(self.server.store,modules,loaded=raw))
             result['profile']['conflicts']=len(self.workspace.conflicts(token))+(len(self.accounts.reviews(token)) if 'users.manage' in user['permissions'] else 0)
             from profile_policy import ACTIONS
             if ACTIONS['history.cleanup']<=permissions:

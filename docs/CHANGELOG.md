@@ -1,6 +1,51 @@
 # Ændringslog
 
+## 1.14.0 · 2026-11-26
+
+- **Daglig brug:** Udlever op til fem kort samlet med samme dato og forkynder. Søg efter ekstra kort i kortvælgeren, brug hurtigvalg til hyppige modtagere, og markér flere kort ved aflevering pr. forkynder. Kort til mappen kan åbnes direkte fra listen.
+- **Forside og navigation:** En enklere forside, tydelig gul målmarkering og en kompakt, sammenklappelig venstremenu. Beskeden om Fortryd kan lukkes og vises også uden for forsiden.
+- **Kort og filtre:** Større kortoversigt, tydelig kortaktivering og genvej til at vise hele distriktet. Kort og adresser har mere ensartede filtre og menuer. Mindre brugte valg samles under »Mere« på smalle skærme. IB-redigering vender tilbage til den oprindelige kortvisning.
+- **Forkyndere og historik:** Filtrér gruppelisten til forkyndere med aktuelle udleveringer. Ved manuel registrering af historik er gennemgang valgt som standard og kan fravælges. Uden en indleveringsdato gemmes udleveringen som aktiv.
+- **Rapporter og iPad:** A4-kortet beskæres tættere om distriktet, S-13 og rapportsider har forbedret sideopdeling, og rapporten viser faktiske gennemgangsdatoer og aktuelle udleveringer. Rapporten kan fortsætte uden kort ved kortfejl. Hjemmeskærmsikon, dialogfokus og tilbageknap i selvstændig printvisning er forbedret.
+- **Opfølgninger, indstillinger og gemning:** Opfølgninger samles hurtigere, indstillinger er opdelt tydeligere, og status ved gemning og forbindelsesfejl er mere præcis. Udlevering og aflevering undgår unødig genberegning af distriktsgrænsens adressetal. Forbindelsesprøver gentager aldrig en skrivning.
+- **Omfang:** Samler 1.14.0-beta.1 til beta.5. Yderligere optimering af IB-sletning i PR #213 afventer sin egen beta.
+
+## 1.14.0-beta.5 · 2026-11-26
+
+- Ved tilføjelse af historik for et kort er »Kortet blev gennemgået« valgt på forhånd. Valget kan slås fra. En registrering uden indleveringsdato gemmes som aktiv udlevering uden gennemgang.
+
+## 1.14.0-beta.4 · 2026-11-26
+
+- Den sammenklappede venstremenu fylder mindre, og knappen til at folde den ud har fortsat en trykflade på 44 px.
+- I gruppelisten står tjekboksen tæt på »Vis kun forkyndere med udleverede kort«, og hele etiketten kan trykkes.
+- Filtre og menuer i Distriktskort og Kort og adresser følger udtrykket fra Opfølgninger. På smalle skærme samler »Mere« de mindre brugte adressefiltre.
+- Rapportens kortside zoomer ind på distriktsgrænsen og bruger mere af A4-siden, så kortfelter og numre er lettere at læse.
+
+## 1.14.0-beta.3 · 2026-11-25
+
+- **Gemning og forbindelser**. Oversigten efter en gemning frasorterer logposter tidligere. Forbindelsesstatus giver mere præcis vejledning og kan lukkes efter genoprettelse. Gemmehastigheden på installationen skal stadig måles.
+- **Daglig brug**. Søg direkte efter ekstra kort ved samlet udlevering, markér flere kort i aflevering pr. forkynder, og åbn kort fra listen over kort til mappen. Fremhævet overskrift til hyppigt valgte forkyndere. Gruppelistens midlertidige filter viser forkyndere med aktuelle udleveringer.
+- **Kort og navigation**. Sammenklappelig venstremenu, tydelig kortaktivering og nulstilling af fremhævning ved Vis hele distriktet. IB-redigering vender tilbage til den oprindelige kortvisning. Fortrydelsesbeskeden kan lukkes og vises uden for forsiden.
+- **iPad og rapporter**. Lokalt hjemmeskærmsikon, rettet fokus ved dialogåbning og tilbageknap i selvstændig printvisning. A4-kort og S-13 får justeret sideopdeling. Klare tekster for bekræftelse af printet kortforside og -bagside. Rapporten viser faktiske gennemgangsdatoer og aktuel udleveringsstatus. Fysisk iPad og udskrift skal afprøves.
+- **Opfølgninger og indstillinger**. Hurtigere indsamling af opfølgninger, filtre der tilpasser sig bredden, og tydeligere opdeling i indstillingsfanerne.
+
 > Ændringerne vises som standard på dansk, også i Home Assistant. [English changelog](CHANGELOG.en.md) indeholder den oprindelige fulde versionshistorik. Nye udgaver skal beskrives på begge sprog.
+
+## 1.14.0-beta.2 · 2026-11-25
+
+- **Gemning:** Undgår unødvendig genberegning af distriktsgrænsens adressetal ved udlevering og aflevering. Tidligere prøve med 16.000 fiktive adresser: klik til bekræftelse 669 → 164 ms ved udlevering og 668 → 166 ms ved aflevering med gennemgang. Video fra den virkelige installation før rettelsen viste ca. 3,3 og 3,5 sekunder; forbedringen på den installation er endnu ikke verificeret.
+- **Synkronisering:** Særskilte forklaringer ved forbindelsesfejl, udløbet login, ubekræftet gemning og bekræftet gemning med forældet oversigt. Forbindelsesprøver gentager ikke skrivninger. Manuel opdatering/genåbning afviser at overskrive åbne kladder.
+- **Daglig brug:** Genbrug kortvælgeren ved samlet udlevering af højst fem kort, med synlige valg og fjernelse. Større centreret gemmeindikator, venstrestillede knapper med kant og op til fem hyppigt valgte forkyndere.
+- **Kort, filtre og mobil:** Større Kortoversigt med samlet betjening og direkte adgang til hele distriktet. Aktive filtre og nulstilling, sjældne valg under … Mere og et sammenklappeligt filterpanel med resultatantal på smalle skærme. Ombrydning af betjening og dialoger.
+- **Forside:** Ens tekststørrelse for gennemgangstallene og tydelig gul målmarkering med matchende forklaring.
+- **Rapportprint:** Undgår unødvendige netfliser ved direkte offlineprint, når rapportkortet ikke er åbnet. Fysisk iPad fra hjemmeskærmen og reel installationshastighed er fortsat uverificeret.
+
+## 1.14.0-beta.1 · 2026-11-25
+
+- **Daglig brug:** Tydeligere valg mellem udlevering og aflevering. Vælg visning pr. forkynder eller i kortrækkefølge. Udlever op til fem ledige kort i én handling med samme dato og modtager, og få hurtigvalg til hyppige modtagere.
+- **Kort og forside:** Kortfiltre viser antal og aktive valg. Ekstra kortværktøjer er samlet, og Kortoversigt kan zoome tilbage til hele distriktet. Forsiden har færre forklaringer og intet søgefelt.
+- **Rapporter og indstillinger:** Samlet indstillingsnavigation med ændringshistorik under Brugsstatistik. Tre rapportfaner og mulighed for rapport uden grafisk kort ved fejl i kortvisningen.
+- **Gemning og påmindelser:** Synlig gemmestatus i dialogen, hurtigere opslag ved udlevering og initialer på beskeder om gamle udleveringer for navngivne profiler.
 
 ## 1.13.0 · 2026-11-24
 

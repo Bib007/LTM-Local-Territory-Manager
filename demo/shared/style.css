@@ -42,7 +42,7 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .dialogClose{position:sticky;top:0;float:right;z-index:10;margin:-16px -16px 0 8px;width:32px;height:32px;padding:0;display:grid;place-items:center;font-size:24px;line-height:1;background:var(--surface);border-color:var(--line);border-radius:50%}.dialogClose:focus-visible{outline:2px solid var(--link);outline-offset:2px}
 .cardQR{position:absolute;right:2%;bottom:19%;width:14%;text-align:center;color:black;font-family:Arial,sans-serif}.cardQR span{display:block;font-size:clamp(5px,.65vw,9px);line-height:1.15;margin:0 0 1mm}.cardQR img{display:block;width:100%;height:auto;aspect-ratio:1;background:white}
 
-.overviewQuick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.overviewFilters label,.overviewAdvanced label{margin:0}.overviewFilters input{min-width:210px}.overviewAdvanced{margin:12px 0 20px}.overviewAdvanced summary{cursor:pointer;margin-bottom:16px;color:var(--link)}.overviewLayout{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:22px}.overviewMap{height:68vh;min-height:420px;max-height:800px;background:#edf1ed;border-radius:6px}.overviewSelected{background:var(--surface2);padding:18px;border-radius:6px;align-self:start;overflow-wrap:anywhere}.overviewSelected .actions{display:grid}.overviewLegend{display:flex;gap:10px 18px;flex-wrap:wrap;font-size:12px;margin-top:14px}.overviewLegend span{display:flex;align-items:center;gap:7px}.overviewLegend i{width:13px;height:13px;display:inline-block;border-radius:3px}@media(max-width:1050px){.overviewLayout{grid-template-columns:1fr}.overviewSelected{display:block}.overviewMap{height:60vh}}
+.overviewQuick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.overviewFilters label,.overviewAdvanced label{margin:0}.overviewFilters input{min-width:210px}.overviewAdvanced{margin:12px 0 20px}.overviewAdvanced summary{cursor:pointer;margin-bottom:16px;color:var(--link)}.overviewLayout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.overviewMapMain{min-width:0}.overviewMapMain .mapBackground{margin-top:8px;align-items:end}.overviewMapMain .mapBackground>*{flex:0 1 auto;min-width:0}.overviewMapMain .mapBackground button{min-height:44px;white-space:normal}.overviewMapMain .mapBackground select{max-width:100%}.overviewMap{height:72vh;height:72dvh;min-height:280px;background:#edf1ed;border-radius:6px}.overviewMap.mapExpanded{height:88vh!important;height:88dvh!important;min-height:280px}.overviewSelected{background:var(--surface2);padding:18px;border-radius:6px;align-self:start;overflow-wrap:anywhere}.overviewSelected .actions{display:flex;flex-wrap:wrap}.overviewLegend{display:flex;gap:10px 18px;flex-wrap:wrap;font-size:12px;margin-top:14px}.overviewLegend span{display:flex;align-items:center;gap:7px}.overviewLegend i{width:13px;height:13px;display:inline-block;border-radius:3px}@media(max-width:750px){.overviewMapMain .mapBackground>*{flex:1 1 calc(50% - 8px)}.overviewMapMain .mapBackground label{flex-basis:100%}.overviewMap{min-height:240px}.overviewMap.mapExpanded{min-height:240px}}
 
 .brand img{display:block;flex:none}.brand b{font-weight:650;letter-spacing:.04em}
 
@@ -135,7 +135,7 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .publisherStat small{display:block;margin-bottom:5px}
 .publisherStat strong{display:block;font-size:25px;font-variant-numeric:tabular-nums}
 .publisherToolbar{align-items:stretch}
-.publisherToolbar input{flex:1 1 190px;min-width:0}
+.publisherToolbar>input{flex:1 1 190px;min-width:0}
 .publisherToolbar select{flex:0 1 230px;min-width:0}
 .publisherGroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));align-items:start;gap:16px;margin-bottom:18px}
 .publisherGroup{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
@@ -156,7 +156,7 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 @media(max-width:600px){
  .publisherStat{max-width:none;flex-basis:calc(50% - 6px);padding:12px}
  .publisherGroup{padding:12px}
- .publisherToolbar input,.publisherToolbar select{flex:1 1 100%;width:100%}
+ .publisherToolbar>input,.publisherToolbar select{flex:1 1 100%;width:100%}
  .publisherToolbar button{flex:1 1 auto}
  .publisherGroupHeading{align-items:start}
  .publisherItemHeading{flex-wrap:wrap}

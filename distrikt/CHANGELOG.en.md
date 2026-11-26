@@ -1,6 +1,51 @@
 # Changelog (English and original historical notes)
 
+## 1.14.0 · 2026-11-26
+
+- **Daily work:** Issue up to five territories in one operation with the same date and publisher. Search for additional cards, use frequent-publisher shortcuts, and select multiple returns by publisher. Open cards directly from the folder suggestion list.
+- **Dashboard and navigation:** A simpler home page, a clearer yellow target marker, and a compact collapsible sidebar. The undo notice can be dismissed and appears away from Home.
+- **Maps and filters:** A larger map overview, clearer map activation, and a shortcut to show the whole district. Cards and addresses use consistent filters and menus, with less common options grouped under More on narrow screens. Do-not-call edits return to the original card view.
+- **Publishers and history:** Filter the group list to publishers with current assignments. New manual history entries select completion by default and allow clearing it. An entry without a return date remains active.
+- **Reports and iPad:** The A4 map is cropped closer to the district, S-13 and report pagination are improved, and reports show actual completion dates and current assignments. Reports can continue after a map failure. Home-screen icon, dialog focus and the Back control in standalone print previews are improved.
+- **Follow-ups, settings and saves:** Faster follow-up collection, clearer settings sections and more specific save and connectivity feedback. Issue and return avoid redundant boundary address counts. Connectivity probes never replay a write.
+- **Scope:** Combines 1.14.0-beta.1 through beta.5. Further optimization of do-not-call deletion in PR #213 awaits its own beta.
+
+## 1.14.0-beta.5 · 2026-11-26
+
+- When adding a historical assignment, the completion checkbox is selected by default and can be cleared. An entry without a return date remains an active assignment without a completion.
+
+## 1.14.0-beta.4 · 2026-11-26
+
+- The collapsed sidebar is narrower and its expand button keeps a 44 px touch target.
+- In the group list, the current assignments checkbox sits next to its label, and the whole label is clickable.
+- Territory cards and Cards and addresses use filter and menu styling from Follow-ups. On narrow screens, More groups less frequently used address filters.
+- The printed report map frames the territory boundary more closely and uses more of the A4 page to improve readability.
+
+## 1.14.0-beta.3 · 2026-11-25
+
+- **Saves and connectivity**. The post-save overview filters out audit records earlier. Connectivity messages give clearer guidance and can be dismissed after recovery. Save latency still needs measurement on the installed system.
+- **Daily work**. Search directly for extra cards in batch issue, select multiple cards in the returns-by-publisher view, and open cards from the folder suggestion list. More prominent frequent-publisher heading. Temporary filter in the publisher list for current assignments.
+- **Maps and navigation**. Collapsible sidebar, clearer map-gesture activation, and selection highlighting cleared by Show whole territory. IB editing returns to the original card view. The undo notice can be dismissed and appears away from Home.
+- **iPad and reports**. Local home-screen icon, corrected dialog focus, and a Back control in standalone print preview. Revised A4 map and S-13 pagination, clearer print confirmations for both card sides, and actual completion dates and current assignment status in reports. Physical iPad and print testing are still required.
+- **Follow-ups and settings**. Faster follow-up collection, filters that adapt to available width, and clearer sections in settings tabs.
+
 This preserves the complete changelog as it stood before the Danish-default migration. Older historical entries were originally written in Danish and have been preserved verbatim. New releases must be documented in both this file and the Danish changelog. The Home Assistant add-on reads the Danish `CHANGELOG.md`.
+
+## 1.14.0-beta.2 · 2026-11-25
+
+- **Save latency:** Avoid unnecessary district boundary address-count recalculation when issuing and returning territories. Earlier test with 16,000 fictional addresses: click to confirmation 669 → 164 ms for issue and 668 → 166 ms for return with completion. A video from the real installation before the fix showed about 3.3 and 3.5 seconds; improvement on that installation remains unverified.
+- **Synchronization:** Distinct guidance for connection failures, expired sessions, unconfirmed saves and confirmed saves with a stale overview. Connectivity checks do not replay writes. Manual refresh/reopening refuses to overwrite open drafts.
+- **Daily work:** Reuse the card picker for batch issue of up to five cards, with visible selections and removal. Larger centered save indicator, left-aligned bordered actions and up to five frequently selected publishers.
+- **Maps, filters and mobile:** Larger overview map with consolidated controls and direct access to the entire district. Active filters and reset, rare choices under More, and a collapsible filter panel with result count on narrow screens. Wrapping controls and dialogs.
+- **Dashboard:** Consistent completion metric typography and a prominent yellow target marker with a matching legend.
+- **Report printing:** Avoid unnecessary online tiles for direct offline printing when the report map has not been opened. Physical iPad home-screen use and real installation latency remain unverified.
+
+## 1.14.0-beta.1 · 2026-11-25
+
+- **Daily work:** Clear issue and return actions, with return ordering by publisher or card. Issue up to five available cards in one transaction with the same date and recipient, and use shortcuts for frequently selected recipients.
+- **Cards and home:** Card filters show counts and active selections. Additional card tools are grouped, and the overview map can zoom out to the entire district. The home page has less explanatory text and no search box.
+- **Reports and settings:** A unified settings selector with change history in usage statistics. Three report tabs and an option to continue without a map if it fails to render.
+- **Saves and reminders:** Visible dialog save status, faster issue lookup, and initials in overdue assignment reminders for named accounts.
 
 ## 1.13.0 · 2026-11-24
 

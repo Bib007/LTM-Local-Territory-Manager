@@ -83,6 +83,28 @@ class GeoCacheTransactionTests(unittest.TestCase):
         self.assertEqual(len(self.s.all("completions")), 1)
         self.assertEqual(self.s.geo_state()["status"]["fictional-a"]["card_id"], self.card)
 
+    def test_boundary_report_reuses_cache_after_issue_and_return(self):
+        polygon=[[9.49,55.49],[9.52,55.49],[9.52,55.52],[9.49,55.52]]
+        with self.s.transaction():
+            self.s.put('geo',{'id':'main-boundary','entity':'main-boundary','points':polygon})
+        local=fictional_address('fictional-local','7',9.503)
+        self.edit(geo_addresses=[local])
+        baseline=self.s.boundary_report()
+        self.assertEqual(baseline['visits'],3)
+        person=self.s.mutate('publisher.save',{'name':'Fiktiv person'})['id']
+        day=date.today().isoformat()
+        loan=self.s.mutate('loan.issue',{'card_id':self.card,'publisher_id':person,
+                                        'date':day,'initial':True})['id']
+        self.assertIs(self.s.boundary_report(),baseline)
+        self.s.mutate('loan.finish',{'id':loan,'date':day,'complete':True})
+        self.assertIs(self.s.boundary_report(),baseline)
+        self.edit(geo_addresses=[{**local,'count':4}])
+        recalculated=self.s.boundary_report()
+        self.assertIsNot(recalculated,baseline)
+        self.assertEqual(recalculated['visits'],6)
+        self.edit(address_ids=[])
+        self.assertIsNot(self.s.boundary_report(),recalculated)
+
     def test_loan_finish_plus_relevant_geometry_in_same_transaction_invalidates(self):
         publisher = self.s.mutate("publisher.save", {"name": "Fiktiv person"})["id"]
         day = date.today().isoformat()

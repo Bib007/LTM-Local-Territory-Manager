@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=name=>fs.readFileSync(path.join(__dirname,'../app',name),'utf8');
 const nodes=new Map(),requests=[],timers=[];
-const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',outerHTML:'',textContent:'',value:'',dataset:{},style:{},open:false,hasForm:false,showModal(){this.open=true;},close(){this.open=false;},querySelector(){return this.hasForm?{}:null;},addEventListener(){}});return nodes.get(id);};
+const get=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',outerHTML:'',textContent:'',value:'',dataset:{},style:{},open:false,hasForm:false,showModal(){this.open=true;},close(){this.open=false;},querySelector(selector){return selector==='form'&&this.hasForm?{}:null;},addEventListener(){}});return nodes.get(id);};
 const fixture={revision:'r1',today:'2026-10-17',cards:[],areas:[],notes:[],settings:{}};
 const response=(payload,status=200,broken=false)=>({ok:status<400,status,json:async()=>{if(broken)throw Error('Invented broken JSON');return payload;},clone(){return {json:async()=>{if(broken)throw Error('Invented broken JSON');return payload;}};}});
 let answer=async()=>response({ok:true}),confirmChoice=false;
@@ -80,7 +80,7 @@ const reset=()=>run("WriteGuard.reviewed();state=JSON.parse(JSON.stringify(fixtu
  // An old manual refresh must not discard a newer edit or release the guard.
  let releaseReview;answer=()=>new Promise(resolve=>releaseReview=resolve);const staleReview=run("Workspace.handle('refresh',{})");await new Promise(resolve=>setImmediate(resolve));run("openDialog('<form>NEWER REVIEW DRAFT</form>')");releaseReview(response({...fixture,revision:'ignored-old-read'}));await staleReview;assert.equal(run('WriteGuard.uncertain'),true);assert.equal(run('state.revision'),'r1');assert.match(get('dialog').innerHTML,/NEWER REVIEW DRAFT/);await run('closeRequested()');
  // A newer page-form edit during refresh also retains the uncertainty guard.
- const field={name:'congregation',type:'text',value:'Fiktiv original'},pageForm={id:'settingsForm',querySelectorAll:()=>[field]};
+ const field={name:'congregation',type:'text',value:'Fiktiv original'},pageForm={id:'settingsForm',dataset:{},querySelectorAll:()=>[field]};
  get('app').querySelectorAll=()=>[pageForm];
  const pageReview=run("Workspace.handle('refresh',{})");await new Promise(resolve=>setImmediate(resolve));field.value='Fiktiv nyere kladde';releaseReview(response({...fixture,revision:'ignored-page-read'}));await pageReview;
  assert.equal(run('WriteGuard.uncertain'),true);assert.equal(run('state.revision'),'r1');assert.equal(field.value,'Fiktiv nyere kladde');get('app').querySelectorAll=()=>[];
@@ -116,5 +116,33 @@ const reset=()=>run("WriteGuard.reviewed();state=JSON.parse(JSON.stringify(fixtu
  // A GET timeout also covers a JSON body that stalls after successful HTTP headers.
  reset();answer=async(request,options)=>({ok:true,status:200,headers:{get:()=> 'application/json'},clone:()=>({json:()=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Error('Invented stalled body'))))})});
  const stalledBody=capture(run("api('/api/state')"));await new Promise(resolve=>setImmediate(resolve));const bodyTimer=timers.at(-1);bodyTimer.fn();assert.equal((await stalledBody).kind,'response');assert.equal(bodyTimer.cleared,true);assert.equal(run('WriteGuard.uncertain'),false);
+ // A connection recovery is only liveness. Closing the entire green notice is UI-only.
+ reset();run("Workspace.connectionChanged('offline')");
+ assert.match(run('Workspace.connectionPanel()'),/Cannot reach the local server/);
+ assert.doesNotMatch(run('Workspace.connectionPanel()'),/connection-dismiss/);
+ await run("Workspace.handle('connection-dismiss',{})");assert.equal(run('Workspace.connectionIssue'),true);
+ answer=async()=>response({ok:true});await run('Workspace.checkConnection(true)');
+ assert.match(run('Workspace.connectionPanel()'),/Dismiss connection notice/);
+ assert.match(run('Workspace.connectionPanel()'),/confirms neither sign-in nor saving/);
+ const dismissalRequests=requests.length;
+ run("WriteGuard.mark(new RequestError('Invented lost receipt','uncertain',0,'',true))");
+ const previousEpoch=run('WriteGuard.epoch');
+ await run("Workspace.handle('connection-dismiss',{})");
+ assert.match(run('Workspace.connectionPanel()'),/aria-live="polite" hidden/);
+ assert.equal(run('WriteGuard.uncertain'),true);assert.equal(run('WriteGuard.epoch'),previousEpoch);
+ assert.match(get('saveState').innerHTML,/Saving is not confirmed/);
+ assert.equal(requests.length,dismissalRequests);
+ await run('Workspace.checkConnection()');assert.equal(run('Workspace.connectionIssue'),false);
+ run("Workspace.connectionChanged('offline')");assert.equal(run('Workspace.connectionIssue'),true);
+ assert.doesNotMatch(run('Workspace.connectionPanel()'),/connection-dismiss/);
+ await run('Workspace.checkConnection(true)');assert.match(run('Workspace.connectionPanel()'),/connection-dismiss/);
+ run("WriteGuard.reviewed();WriteGuard.requireRefresh(new RequestError('Invented stale overview','response'));");
+ await run("Workspace.handle('connection-dismiss',{})");assert.equal(run('WriteGuard.needsReview'),true);
+ assert.match(get('saveState').innerHTML,/The change is saved/);
+ run("WriteGuard.loginExpired=true;failed(WriteGuard.error)");
+ assert.match(get('saveState').innerHTML,/session has expired/);
+ reset();run("Workspace.connectionChanged('offline')");await run('Workspace.checkConnection(true)');
+ run("I18n.set('da')");assert.match(run('Workspace.connectionPanel()'),/Luk forbindelsesbesked/);
+ run("I18n.set('en')");
  console.log('Request safety: read-only previews, rejection/login distinction, unknown/invalid acknowledgements, cancelled queued writes, paused autosave, explicit snapshot review, known-save refresh failures and preserved newer dialogs passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
