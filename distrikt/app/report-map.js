@@ -54,8 +54,25 @@ const ReportMap={map:null,layer:null,tiles:null,resizeObserver:null,tileTimeout:
   const notice=el('reportMapLabelNotice'),overflow=labels.filter(l=>l.overflow).map(l=>l.number);if(notice){notice.hidden=!overflow.length;notice.textContent=this.overflowText(overflow);}
  },
  overflowText(numbers,localized=true){const key='Kortnumre uden plads på kortet:';return numbers.length?(localized?I18n.text(key):key)+' '+numbers.join(', '):'';},
+ printFrame(){
+  // Match the map area left by the A4 margins, heading and attribution.
+  return this.aspectRatio()>1.25?{width:1068,height:600}:{width:720,height:940};
+ },
+ printCrop(map,size,frame){
+  // Crop the loaded tiles to the district and retain the page ratio where it fits.
+  const points=this.points().map(([lng,lat])=>map.latLngToContainerPoint([lat,lng]));
+  const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+  const padding=Math.max(8,Math.round(Math.min(size.x,size.y)*.025));
+  const left=Math.max(0,Math.floor(Math.min(...xs))-padding),right=Math.min(size.x,Math.ceil(Math.max(...xs))+padding);
+  const top=Math.max(0,Math.floor(Math.min(...ys))-padding),bottom=Math.min(size.y,Math.ceil(Math.max(...ys))+padding);
+  const ratio=frame.width/frame.height,baseHeight=Math.max(bottom-top,(right-left)/ratio);
+  const width=Math.min(size.x,Math.ceil(baseHeight*ratio)),height=Math.min(size.y,Math.ceil(baseHeight));
+  const x=Math.max(0,Math.min(size.x-width,Math.floor((left+right-width)/2)));
+  const y=Math.max(0,Math.min(size.y-height,Math.floor((top+bottom-height)/2)));
+  return {x,y,width,height};
+ },
  blankSnapshot(mode){
-  const points=this.points(),wide=this.aspectRatio()>1.25,width=720,height=wide?480:850,padding=40;
+  const points=this.points(),{width,height}=this.printFrame(),padding=28;
   if(!points.length)return '<p class="hint">Ingen geografiske distriktsgrænser er registreret.</p>';
   const project=p=>[p[0]*Math.PI/180,Math.log(Math.tan(Math.PI/4+Math.max(-85,Math.min(85,p[1]))*Math.PI/360))],coords=points.map(project);
   const xs=coords.map(p=>p[0]),ys=coords.map(p=>p[1]),west=Math.min(...xs),east=Math.max(...xs),south=Math.min(...ys),north=Math.max(...ys);
@@ -64,7 +81,7 @@ const ReportMap={map:null,layer:null,tiles:null,resizeObserver:null,tileTimeout:
   const overlays=this.overlays(to,width,height,this.completedIds(mode),12,true),language=I18n.language();
   return '<div class="reportMapSnapshot"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+width+' '+height+'" role="img" aria-label="Distriktsgrænser uden baggrundskort"><rect width="'+width+'" height="'+height+'" fill="#edf1ed"/>'+overlays.markup+'</svg></div><p class="hint">'+(this.showNumbers()?(language==='en'?'No basemap: territory boundaries and numbers are preserved.':'Uden baggrundskort: distriktsgrænser og numre er bevaret.'):(language==='en'?'No basemap: territory boundaries are preserved.':'Uden baggrundskort: distriktsgrænser er bevaret.'))+' '+this.legend(true)+' '+(state.cards.length-this.cards().length)+' '+(language==='en'?'territories lack geographic boundaries.':'kort mangler geografisk grænse.')+'</p>'+(overlays.overflow.length?'<p class="hint">'+esc(this.overflowText(overlays.overflow,false))+'</p>':'');
  },
- async printable({withoutBackground=false,mode}={}){if(!this.points().length)return '<p class="hint"><span data-ui="Ingen distriktskort har en geografisk grænse endnu.">Ingen distriktskort har en geografisk grænse endnu.</span></p>';if(withoutBackground)return this.blankSnapshot(mode);const map=this.map,tiles=this.tiles;if(!map||!tiles||this.tileFailed)throw Error('OpenStreetMap-kortet er ikke klar til rapporten.');this.fit();await new Promise(r=>setTimeout(r,200));const deadline=Date.now()+this.tileTimeoutMs;while(tiles.isLoading()||map._animatingZoom||map._panAnim?._inProgress){if(this.map!==map||this.tileFailed||Date.now()>deadline)throw Error('Rapportkortet kunne ikke indlæses inden tidsgrænsen.');await new Promise(r=>setTimeout(r,100));}if(this.map!==map||this.tileFailed)throw Error('Rapportkortet er ændret eller kan ikke indlæses.');const capture=MapExport.captureMap(map,tiles),size=map.getSize(),width=720,height=width*size.y/size.x,done=this.completedIds(mode),project=p=>[p[0]*Math.PI/180,Math.log(Math.tan(Math.PI/4+p[1]*Math.PI/360))];const [w,s]=project(capture.viewBounds.slice(0,2)),[e,n]=project(capture.viewBounds.slice(2)),to=p=>{const a=project(p);return [(a[0]-w)/(e-w)*width,(n-a[1])/(n-s)*height];};
-  const landscape=this.aspectRatio()>1.25,printWidth=landscape?1010:680,printHeight=landscape?510:850,overlays=this.overlays(to,width,height,done,12/Math.min(printWidth/width,printHeight/height),true);return `<div class="reportMapSnapshot"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gennemgåede distrikter på OpenStreetMap"><image href="${capture.backgroundImage}" width="${width}" height="${height}"/>${overlays.markup}</svg></div><p class="hint">Kort: © OpenStreetMap-bidragsydere · openstreetmap.org/copyright · ${this.legend()} ${state.cards.length-this.cards().length} kort mangler geografisk grænse.</p>${overlays.overflow.length?`<p class="hint">${esc(this.overflowText(overlays.overflow,false))}</p>`:''}`;
+ async printable({withoutBackground=false,mode}={}){if(!this.points().length)return '<p class="hint"><span data-ui="Ingen distriktskort har en geografisk grænse endnu.">Ingen distriktskort har en geografisk grænse endnu.</span></p>';if(withoutBackground)return this.blankSnapshot(mode);const map=this.map,tiles=this.tiles;if(!map||!tiles||this.tileFailed)throw Error('OpenStreetMap-kortet er ikke klar til rapporten.');this.fit();await new Promise(r=>setTimeout(r,200));const deadline=Date.now()+this.tileTimeoutMs;while(tiles.isLoading()||map._animatingZoom||map._panAnim?._inProgress){if(this.map!==map||this.tileFailed||Date.now()>deadline)throw Error('Rapportkortet kunne ikke indlæses inden tidsgrænsen.');await new Promise(r=>setTimeout(r,100));}if(this.map!==map||this.tileFailed)throw Error('Rapportkortet er ændret eller kan ikke indlæses.');const frame=this.printFrame(),crop=this.printCrop(map,map.getSize(),frame),capture=MapExport.captureMap(map,tiles,crop),width=frame.width,height=width*crop.height/crop.width,done=this.completedIds(mode),project=p=>[p[0]*Math.PI/180,Math.log(Math.tan(Math.PI/4+p[1]*Math.PI/360))];const [w,s]=project(capture.viewBounds.slice(0,2)),[e,n]=project(capture.viewBounds.slice(2)),to=p=>{const a=project(p);return [(a[0]-w)/(e-w)*width,(n-a[1])/(n-s)*height];};
+  const overlays=this.overlays(to,width,height,done,12/Math.min(frame.width/width,frame.height/height),true);return `<div class="reportMapSnapshot"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gennemgåede distrikter på OpenStreetMap"><image href="${capture.backgroundImage}" width="${width}" height="${height}"/>${overlays.markup}</svg></div><p class="hint">Kort: © OpenStreetMap-bidragsydere · openstreetmap.org/copyright · ${this.legend()} ${state.cards.length-this.cards().length} kort mangler geografisk grænse.</p>${overlays.overflow.length?`<p class="hint">${esc(this.overflowText(overlays.overflow,false))}</p>`:''}`;
  }
 };

@@ -167,13 +167,14 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
    assert.equal(await row.locator('.publisherGuidance').innerText(),expected,'Publisher roles and active counts appear in the list');
  }
  const assignedLabel=page.locator('.publisherAssignedFilter span');
+ const unassignedPublisher=page.locator('.publisherItem').filter({has:page.locator('[data-action=publisher-profile][data-id=p3]')});
  const assignedGap=await assignedLabel.evaluate(n=>n.getBoundingClientRect().left-n.previousElementSibling.getBoundingClientRect().right);
  assert.ok(assignedGap>=0&&assignedGap<=8,'Publisher checkbox is adjacent to its label');
  await activate(assignedLabel);
  assert.equal(await page.locator('#publisherActiveOnly').isChecked(),true);
- assert.equal(await page.locator('[data-action=publisher-profile][data-id=p3]').count(),0);
+ assert.equal(await unassignedPublisher.count(),0);
  await activate(assignedLabel);
- assert.equal(await page.locator('[data-action=publisher-profile][data-id=p3]').count(),1);
+ assert.equal(await unassignedPublisher.count(),1);
  await page.evaluate(()=>{page='Indstillinger';render();});
  for(const [role,value] of [['member','1'],['pioneer','4'],['assistant','3'],['overseer','5']])
    assert.equal(await page.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,'Guidance settings are editable');

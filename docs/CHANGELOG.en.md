@@ -5,6 +5,7 @@
 - The collapsed sidebar is narrower and its expand button keeps a 44 px touch target.
 - In the group list, the current assignments checkbox sits next to its label, and the whole label is clickable.
 - Territory cards and Cards and addresses use filter and menu styling from Follow-ups. On narrow screens, More groups less frequently used address filters.
+- The printed report map frames the territory boundary more closely and uses more of the A4 page to improve readability.
 
 ## 1.14.0-beta.3 · 2026-11-25
 
