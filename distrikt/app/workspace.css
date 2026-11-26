@@ -366,7 +366,7 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
 }
 
 /* The compact sidebar is a desktop/tablet preference, never a mobile drawer state. */
-#nav .sidebarToggle,#sidebar .stopIcon{display:none}
+#nav .sidebarToggle{display:none}
 @media screen and (min-width:751px){
  #nav .sidebarToggle{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);color:var(--text);min-height:44px;margin:0 0 10px;padding:6px 4px}
  #nav .sidebarToggle .navIcon{font-size:25px;line-height:1;color:inherit}
@@ -379,10 +379,9 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  body.sidebarCompact #nav :is([data-navigation],.navExternal,.sidebarToggle){position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;min-height:56px;padding:7px 2px;white-space:normal}
  body.sidebarCompact #nav .sidebarToggle{width:44px;min-height:44px;margin:0 auto 8px;padding:0}
  /* Keep names in the accessibility tree while displaying only navigation icons. */
- body.sidebarCompact #nav :is(.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel),body.sidebarCompact #sidebar .stopLabel{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
+ body.sidebarCompact #nav :is(.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
  body.sidebarCompact #nav :is(.navTaskCount,.navFollowupCount){position:absolute;top:2px;right:1px;margin:0;padding:1px 4px;font-size:9px;max-width:100%}
- body.sidebarCompact #sidebar .stop{position:relative;display:block;width:44px;margin:12px auto 0;min-height:44px;padding:0}
- body.sidebarCompact #sidebar .stopIcon{display:inline;font-size:20px}
+ body.sidebarCompact #sidebar .stop{width:100%;margin:12px 0 0;min-height:44px;padding:6px 3px;overflow-wrap:anywhere}
 }
 
 /* LTM task 27: layout only, scoped to the existing settings navigation.
