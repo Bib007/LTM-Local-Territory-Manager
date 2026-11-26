@@ -1,5 +1,9 @@
 # Changelog (English and original historical notes)
 
+## 1.14.0-beta.5 · 2026-11-26
+
+- When adding a historical assignment, the completion checkbox is selected by default and can be cleared. An entry without a return date remains an active assignment without a completion.
+
 ## 1.14.0-beta.4 · 2026-11-26
 
 - The collapsed sidebar is narrower and its expand button keeps a 44 px touch target.
