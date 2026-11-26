@@ -127,6 +127,28 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert.equal(writes.length,beforeModeWrites,'Switching daily mode never writes data');
  await page.evaluate(original=>{Theme.set(original.appearance);page=original.page;deskTab=original.deskTab;query=original.query;render();},originalDesk);
 
+ // Shared address filters keep less-used categories accessible at every width.
+ const originalAddress=await page.evaluate(()=>({page,query,addressTab,addressPostcode,addressPage,addressFiltersExpanded}));
+ await page.evaluate(()=>{page='Adresser';query='';addressTab='Mangler på kort';addressPostcode='';addressPage=0;addressFiltersExpanded=false;render();});
+ const moreAddresses=page.locator('#addressMoreButton');
+ const ignoredAddresses=page.locator('[data-action=address-tab][data-tab="Se bort fra"]');
+ const narrowAddress=await moreAddresses.isVisible();
+ if(narrowAddress){
+  assert.equal(await ignoredAddresses.isVisible(),false);
+  await activate(moreAddresses);
+  assert.equal(await moreAddresses.getAttribute('aria-expanded'),'true');
+ }
+ await activate(ignoredAddresses);
+ assert.equal(await ignoredAddresses.getAttribute('aria-pressed'),'true');
+ if(narrowAddress){
+  await activate(moreAddresses);
+  assert.match(await moreAddresses.innerText(),/Se bort fra/);
+ }
+ await assertResponsive('.addressFilterLayout','Address category controls');
+ await activate(page.locator('[data-action=address-tab][data-tab=IB]'));
+ assert.equal(await page.locator('#ibSort').isVisible(),true,'IB sorting remains available');
+ await page.evaluate(old=>{({page,query,addressTab,addressPostcode,addressPage,addressFiltersExpanded}=old);render();},originalAddress);
+
  // Fictional role quotas: ensure the real responsive UI shows live, advisory-only figures.
  await page.evaluate(()=>{
    window.__publisherRoleFixture={
@@ -144,6 +166,15 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
    const row=page.locator('.publisherItem').filter({has:page.locator('[data-action=publisher-profile][data-id="'+id+'"]')});
    assert.equal(await row.locator('.publisherGuidance').innerText(),expected,'Publisher roles and active counts appear in the list');
  }
+ const assignedLabel=page.locator('.publisherAssignedFilter span');
+ const unassignedPublisher=page.locator('.publisherItem').filter({has:page.locator('[data-action=publisher-profile][data-id=p3]')});
+ const assignedGap=await assignedLabel.evaluate(n=>n.getBoundingClientRect().left-n.previousElementSibling.getBoundingClientRect().right);
+ assert.ok(assignedGap>=0&&assignedGap<=8,'Publisher checkbox is adjacent to its label');
+ await activate(assignedLabel);
+ assert.equal(await page.locator('#publisherActiveOnly').isChecked(),true);
+ assert.equal(await unassignedPublisher.count(),0);
+ await activate(assignedLabel);
+ assert.equal(await unassignedPublisher.count(),1);
  await page.evaluate(()=>{page='Indstillinger';render();});
  for(const [role,value] of [['member','1'],['pioneer','4'],['assistant','3'],['overseer','5']])
    assert.equal(await page.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,'Guidance settings are editable');

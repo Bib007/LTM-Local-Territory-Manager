@@ -135,7 +135,7 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 .publisherStat small{display:block;margin-bottom:5px}
 .publisherStat strong{display:block;font-size:25px;font-variant-numeric:tabular-nums}
 .publisherToolbar{align-items:stretch}
-.publisherToolbar input{flex:1 1 190px;min-width:0}
+.publisherToolbar>input{flex:1 1 190px;min-width:0}
 .publisherToolbar select{flex:0 1 230px;min-width:0}
 .publisherGroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));align-items:start;gap:16px;margin-bottom:18px}
 .publisherGroup{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
@@ -156,7 +156,7 @@ input[type=color]{min-width:64px;height:38px;padding:3px;cursor:pointer}
 @media(max-width:600px){
  .publisherStat{max-width:none;flex-basis:calc(50% - 6px);padding:12px}
  .publisherGroup{padding:12px}
- .publisherToolbar input,.publisherToolbar select{flex:1 1 100%;width:100%}
+ .publisherToolbar>input,.publisherToolbar select{flex:1 1 100%;width:100%}
  .publisherToolbar button{flex:1 1 auto}
  .publisherGroupHeading{align-items:start}
  .publisherItemHeading{flex-wrap:wrap}

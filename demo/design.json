@@ -1,8 +1,8 @@
 {
-  "version": "1.14.0-beta.3",
+  "version": "1.14.0-beta.4",
   "files": {
-    "shared/style.css": "d5fde8bafa2004f8bb53bff749a90dd66bbaf3dd6bd68ca3050a8caf3af6d7c9",
-    "shared/workspace.css": "0fff48699375ba295a3a3b67b4a5b7dd4e521b0670f63455cac6d46289fb2fc6",
+    "shared/style.css": "32512388dea82258cd4a02fda4cf1ee5443e3f462017136c43c7ac10739dde03",
+    "shared/workspace.css": "c64808b9c32405c990d346d8391a618f981e2e86b379b5a7fbcb6f6ac96a46c4",
     "shared/theme.css": "ef265c8771ac8493296ab6651bb1598ce455b38f924a9f50632d75b98438dcff",
     "shared/theme.js": "96800ce8ad1608cf664ce737c0385c3a503865555d38214832a2bd11441bf265",
     "brand-logo.svg": "e33702dce7d1d8ee8769d1673ccf029fe4489fb354a74175ee57da6c0605d233",

@@ -350,6 +350,12 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
 
 .territories.territoryCompact{display:block}
 .territoryTools>summary{cursor:pointer;min-height:36px;padding:8px 10px}
+.territorySortControls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0;max-width:100%}
+.territorySortControls>label{margin:0}
+.pageFilterToolbar select{max-width:100%}
+.pageFilterToolbar :is(input,select){min-height:44px}
+.publisherToolbar .publisherAssignedFilter{align-self:center;inline-size:fit-content;max-inline-size:100%;min-height:44px;gap:6px;margin:0;cursor:pointer}
+.publisherAssignedFilter input{flex:none;inline-size:auto;margin:0}
 .territoryFilterStatus,.issueQuickPublishers{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}
 #issueForm #issueQuickPublishersHeading{font-size:1.125rem;font-weight:700;line-height:1.35;color:var(--text);margin:20px 0 8px;white-space:normal;overflow-wrap:anywhere}
 .territoryFilterStatus button{max-width:100%;overflow-wrap:anywhere}
@@ -365,11 +371,13 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  #nav .sidebarToggle{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);color:var(--text);min-height:44px;margin:0 0 10px;padding:6px 4px}
  #nav .sidebarToggle .navIcon{font-size:25px;line-height:1;color:inherit}
  #nav .sidebarToggle:focus-visible,#nav [data-navigation]:focus-visible,#nav .navExternal:focus-visible{outline:2px solid var(--link);outline-offset:-3px}
- body.sidebarCompact #sidebar{width:104px;padding:12px 6px;overflow-x:hidden}
- body.sidebarCompact #app{margin-left:104px}
+ body.sidebarCompact{--compact-sidebar-width:64px}
+ body.sidebarCompact #sidebar{width:var(--compact-sidebar-width);padding:12px 6px;overflow-x:hidden}
+ body.sidebarCompact #app{margin-left:var(--compact-sidebar-width)}
  body.sidebarCompact #sidebar :is(#congregation,.localnote,.navcaption,.languageChoice,.navExternalMark){display:none}
  body.sidebarCompact #nav .navGroup{padding:4px 0}
  body.sidebarCompact #nav :is([data-navigation],.navExternal,.sidebarToggle){position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;min-height:56px;padding:7px 2px;white-space:normal}
+ body.sidebarCompact #nav .sidebarToggle{width:44px;min-height:44px;margin:0 auto 8px;padding:0}
  /* Keep names in the accessibility tree while displaying only navigation icons. */
  body.sidebarCompact #nav :is(.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
  body.sidebarCompact #nav :is(.navTaskCount,.navFollowupCount){position:absolute;top:2px;right:1px;margin:0;padding:1px 4px;font-size:9px;max-width:100%}
@@ -437,11 +445,11 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
    Narrow is also the usable fallback for browsers without container queries. */
 .followupFilterLayout{container:followup-filters / inline-size;min-width:0}
 .tabs.followupTabs{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;border-bottom:0;margin-bottom:14px}
-.tabs.followupTabs button{border:1px solid var(--muted);border-radius:6px;min-width:0;min-height:44px;padding:9px 12px;color:var(--text);background:var(--surface2);white-space:normal;overflow-wrap:anywhere}
-.tabs.followupTabs button.active{border:2px solid var(--link);border-radius:6px;padding:8px 11px;font-weight:700;background:var(--surface)}
-.tabs.followupTabs button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
-#followupMoreButton{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left}
-#followupMoreButton[aria-expanded=true] .followupMoreChevron{transform:rotate(180deg)}
+:is(.tabs.followupTabs button,.pageFilterButtons button:not(.primary),.pageFilterButtons summary,.pageFilterToolbar summary){border:1px solid var(--muted);border-radius:6px;min-width:0;min-height:44px;padding:9px 12px;color:var(--text);background:var(--surface2);white-space:normal;overflow-wrap:anywhere}
+:is(.tabs.followupTabs button.active,.pageFilterButtons button[aria-pressed=true]){border:2px solid var(--link);border-radius:6px;padding:8px 11px;font-weight:700;background:var(--surface)}
+:is(.tabs.followupTabs button,.pageFilterButtons button,.pageFilterButtons summary,.pageFilterToolbar summary):focus-visible{outline:2px solid var(--link);outline-offset:2px}
+:is(#followupMoreButton,#addressMoreButton){display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left}
+:is(#followupMoreButton,#addressMoreButton)[aria-expanded=true] :is(.followupMoreChevron,.filterChevron){transform:rotate(180deg)}
 .followupExtraFilters{display:none;grid-column:1 / -1;min-width:0}
 .followupExtraFilters.is-open{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 @container followup-filters (min-width:48rem){
@@ -449,4 +457,14 @@ html[data-theme=light] .dashboardHome button.dashboardFact:hover{background:var(
  #followupMoreButton{display:none}
  .followupExtraFilters,.followupExtraFilters.is-open{display:flex;flex-wrap:wrap;gap:8px;padding:0;border:0;background:transparent}
  .tabs.followupTabs button{white-space:nowrap}
+}
+
+/* Keep common address categories at hand and wrap advanced filters inside the available space. */
+.addressFilterLayout{container:address-filters / inline-size;min-width:0}
+.addressFilterTabs{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.addressExtraFilters{display:none}
+.addressExtraFilters.is-open{display:grid;flex:0 0 100%;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+@container address-filters (min-width:48rem){
+ #addressMoreButton{display:none}
+ .addressExtraFilters,.addressExtraFilters.is-open{display:contents}
 }

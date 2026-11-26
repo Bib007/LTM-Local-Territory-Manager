@@ -11,8 +11,9 @@ run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],compl
  context.filterCleanupSnapshot=snapshot;
  run("addressTab='Se bort fra'");
  let html=run("addressFilterTabs({'Mangler på kort':[], 'Se bort fra':[{}]})");
- assert.match(html,/<summary>.*Mere.*Se bort fra.*<\/summary>/);
- assert.match(html,/data-tab="Se bort fra" class="active" aria-pressed="true"/);
+ assert.match(html,/id="addressMoreButton"[^>]*aria-expanded="false" aria-controls="addressExtraFilters"[^>]*>.*Mere.*Se bort fra.*<\/button>/);
+ assert.match(html,/data-tab="Se bort fra" aria-pressed="true"/);
+ assert.match(html,/id="addressExtraFilters" class="addressExtraFilters"/);
  assert.match(html,/data-tab="IB"/);
  run("OverviewMap.filters={...OverviewMap.filters,search:'<Fiktiv>',revision:'Afventer genprint',year:0}");
  html=run("OverviewMap.activeFilterLabels().join(' · ')");
@@ -403,7 +404,12 @@ assert(run("GeoUI.postcodeList().includes('mindst 30 dage gamle')"));assert(run(
  // GeoUI.page() may remount the page and dispose the previous report-map mock.
  // Reinstall the synthetic map immediately before exercising the snapshot.
  run("ReportMap.map=captureMap;ReportMap.tiles={isLoading:()=>false};ReportMap.tileFailed=false");
- assert(run('Boolean(ReportMap.map&&ReportMap.tiles&&!ReportMap.tileFailed)'));
+ run("captureMap.latLngToContainerPoint=([lat,lng])=>({x:40+(lng-9.995)*900,y:78-(lat-54.995)*2400});captureMap.containerPointToLatLng=([x,y])=>({lng:9.995+(x-40)/900,lat:54.995+(78-y)/2400})");
+ const fitted=run("ReportMap.printCrop(captureMap,captureMap.getSize(),ReportMap.printFrame())");
+ assert(fitted.width<65&&fitted.height<90,'A tall district trims unused map background');
+ assert(Math.abs(fitted.width/fitted.height-720/940)<.02,'Crop matches the portrait report map area');
+ assert(run("ReportMap.points().every(([lng,lat])=>{const {x,y}=captureMap.latLngToContainerPoint([lat,lng]);const r=ReportMap.printCrop(captureMap,captureMap.getSize(),ReportMap.printFrame());return x>r.x&&x<r.x+r.width&&y>r.y&&y<r.y+r.height})"),'Card and outer boundaries fit inside the crop');
+ assert.match(run("ReportMap.blankSnapshot()"),/viewBox="0 0 720 940"/);
  const reportSnapshot=await run('ReportMap.printable()');assert(reportSnapshot.includes('data:image/png;base64,AAAA'));assert(reportSnapshot.includes('#52aa82'));assert(reportSnapshot.includes('stroke="#b83b35"'));assert(reportSnapshot.includes('stroke-dasharray="8 5"'));assert(reportSnapshot.includes('samlet distriktsgrænse'));assert(reportSnapshot.includes('openstreetmap.org/copyright'));assert(!reportSnapshot.includes('PRIVATE_NOTE'));
  context.reportSnapshotFixture=reportSnapshot;const reportWithMap=run('reportPrintDocument(reportSnapshotFixture)');assert(reportWithMap.includes('data:image/png;base64,AAAA'));assert(!reportWithMap.includes('id="reportDistrictMap"'));assert(reportWithMap.includes('s13-background.jpg'));assert(!reportWithMap.includes('PRIVATE_NOTE'));
  run("GeoUI.data.main_boundary=savedMainBoundary;ReportMap.map=null;ReportMap.tiles=null;document.createElement=originalCreateElement;state.cards=savedReportCards;state.completions=savedReportCompletions;year=savedReportYear");
