@@ -1,11 +1,11 @@
-# LTM 1.15.0-beta.1
+# LTM 1.15.0-beta.2
 
-Forsiden har knappen **Flere statistikker**. Dialogen viser antal kort, besøgspunkter og IB, gennemsnit pr. kort samt dækning for tjenesteåret, de seneste 12 måneder og kalenderåret. Små cirkeldiagrammer viser de vigtigste andele.
+- **Flere statistikker** har tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
+- **Popularitet** på forsiden viser separate tal for udleveringer og gennemgange, med perioder, gennemsnit pr. måned og sortering begge veje. Kort uden aktivitet vises også.
 
-Prøv dialogen på computer og mobil, og tjek, at kort med ukendt besøgstal ikke sænker gennemsnittet. IB-tallene kræver adgang til IB.
+Prøv begge dialoger på computer og mobil. Tjek fx et kort uden aktivitet, et kort med flere gennemgange og sortering fra mindst til mest populært.
 
 ## English
 
-The home page has a **More statistics** button. The dialog shows territory, visit-point and do-not-call totals, per-territory averages and coverage figures for the service year, the last 12 months and the calendar year. Small ring charts show the main percentages.
-
-Try the dialog on desktop and mobile. Check that territories with unknown visit counts do not lower the average. Do-not-call statistics require do-not-call access.
+- **More statistics** has clearer headings, small progress bars and assignment-to-return figures.
+- **Popularity** on Home shows separate assignment and completion totals per territory, with time periods, monthly averages and sorting in either direction. Inactive cards are included.
