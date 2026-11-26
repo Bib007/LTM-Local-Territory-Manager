@@ -1,5 +1,9 @@
 # Ændringslog
 
+## 1.14.0-beta.5 · 2026-11-26
+
+- Ved tilføjelse af historik for et kort er »Kortet blev gennemgået« valgt på forhånd. Valget kan slås fra. En registrering uden indleveringsdato gemmes som aktiv udlevering uden gennemgang.
+
 ## 1.14.0-beta.4 · 2026-11-26
 
 - Den sammenklappede venstremenu fylder mindre, og knappen til at folde den ud har fortsat en trykflade på 44 px.

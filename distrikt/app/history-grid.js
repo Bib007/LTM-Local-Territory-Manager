@@ -106,8 +106,8 @@ const HistoryGrid={
    publishers.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select></label>'+
    '<label>Udleveret <input name="assigned" required placeholder="DD.MM.ÅÅÅÅ" maxlength="10" inputmode="numeric" autocomplete="off"></label>'+
    '<label>Indleveret (valgfri) <input name="returned" placeholder="DD.MM.ÅÅÅÅ" maxlength="10" inputmode="numeric" autocomplete="off"></label>'+
-   '<label class="check"><input type="checkbox" name="completed"> Kortet blev gennemgået ved indlevering (opretter eller knytter præcis én gennemgang, besøgstal ukendt)</label>'+
-   '<p class="hint">Uden indleveringsdato bliver udleveringen aktiv. Uden markering oprettes ingen gennemgang.</p>'+
+   '<label class="check"><input type="checkbox" name="completed" checked> Kortet blev gennemgået ved indlevering (opretter eller knytter præcis én gennemgang, besøgstal ukendt)</label>'+
+   '<p class="hint">Uden indleveringsdato gemmes udleveringen som aktiv uden en gennemgang. Fjern markeringen, hvis kortet blev indleveret uden gennemgang.</p>'+
    '<div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary" type="submit">Gem udlevering</button><button type="button" data-action="close">Luk</button></div></form>',I18n.language());
  },
  async saveDate(input){
@@ -128,7 +128,7 @@ const HistoryGrid={
   const assigned=this.parseDate(data.assigned,true),returned=this.parseDate(data.returned,false);
   if(returned&&returned<assigned)throw Error('Indlevering må ikke ligge før udlevering.');
   this.busy=true;
-  try{await mutate('history.grid.add',{card_id:form.dataset.hgCard,publisher_id:data.publisher_id,assigned,returned,completed:form.querySelector('[name=completed]').checked,revision:state.revision},{message:'Udlevering registreret'});}
+  try{await mutate('history.grid.add',{card_id:form.dataset.hgCard,publisher_id:data.publisher_id,assigned,returned,completed:!!returned&&form.querySelector('[name=completed]').checked,revision:state.revision},{message:'Udlevering registreret'});}
   finally{this.busy=false;}
  }
 };

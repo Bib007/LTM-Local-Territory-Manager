@@ -85,4 +85,23 @@ assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 assert.match(css,/@media\(max-width:640px\)/);
 assert.match(css,/\.hg-fields\{grid-template-columns:1fr/,'Date fields stack on phones');
 assert.doesNotMatch(css,/min-width:970px|overflow-x:scroll/,'No forced horizontal scrolling');
-console.log('History UI: spaced assignment cards, mobile stacking, collapsed details, escaped labels and preserved editing actions passed.');
+let formMarkup;
+ctx.openDialog=markup=>{formMarkup=markup;};
+grid.openAdd('c1');
+assert.match(formMarkup,/<input type="checkbox" name="completed" checked>/,'New history defaults to a completion');
+
+ctx.FormData=function(form){return Object.entries(form.values);};
+const writes=[];
+ctx.mutate=async(action,data)=>{writes.push({action,data});};
+(async()=>{
+ for(const [returned,checked,expected] of [['01.07.2026',true,true],['01.07.2026',false,false],['',true,false]]){
+  const form={dataset:{hgCard:'c1'},values:{publisher_id:'p1',assigned:'01.06.2026',returned},
+   querySelector:()=>({checked})};
+  await grid.submit(form);
+  const write=writes.at(-1);
+  assert.equal(write.action,'history.grid.add');
+  assert.equal(write.data.completed,expected);
+  assert.equal(write.data.returned,returned?'2026-07-01':null);
+ }
+ console.log('History UI: rendering, editing and completion defaults passed.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
