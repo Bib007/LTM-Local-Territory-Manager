@@ -283,13 +283,67 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    action?`<button class="dashboardFact" data-action="${action}" data-status="${esc(status)}">${content}</button>`:
    `<div class="dashboardFact">${content}</div>`;
  },
+ moreStatsButton(){
+  return `<button type="button" class="primary dashboardStatsButton" data-work="dashboard-stats" aria-haspopup="dialog">${ui('Flere statistikker')}</button>`;
+ },
+ moreStats(){
+  const summary=state.dashboard_summary;
+  if(!summary?.periods?.service||(state.profile&&!ProfilesUI.has('dashboard.view')))return;
+  const {periods,territory_totals:totals={}}=summary,s=periods.service;
+  const nf=new Intl.NumberFormat(I18n.language()==='da'?'da-DK':'en',{maximumFractionDigits:2});
+  const number=value=>Number.isFinite(value)?nf.format(value):'–';
+  const average=(total,count)=>count>0&&Number.isFinite(total)?total/count:null;
+  const row=(label,value)=>`<div><dt>${ui(label)}</dt><dd>${number(value)}</dd></div>`;
+  const section=(title,rows,note='')=>`<section class="dashboardStatsSection"><h3>${ui(title)}</h3><dl>${rows.join('')}</dl>${note?'<p class="hint">'+ui(note)+'</p>':''}</section>`;
+  const ring=(label,part,total)=>{
+   if(!total||!Number.isFinite(part))return '';
+   const pct=Math.round(100*part/total);
+   return `<div class="dashboardStatsShare"><span class="dashboardStatsRing" style="--stats-share:${pct}%" aria-hidden="true"></span><div><strong>${number(pct)} %</strong><span>${ui(label)}</span></div></div>`;
+  };
+  const showIB=Number.isInteger(totals.ib_total)&&(!state.profile||ProfilesUI.has('ib.view'));
+  const completeCards=s.territories-totals.unknown_visit_cards;
+  const content=`
+   <div class="dashboardStatsDialog">
+    <h2>${ui('Flere statistikker')}</h2>
+    <div class="dashboardStatsShares">
+     ${ring('Kort gennemgået i tjenesteåret',s.completed_territories,s.territories)}
+     ${ring('Kort udleveret lige nu',s.assigned,s.territories)}
+     ${showIB?ring('Kort med mindst én IB',totals.cards_with_ib,s.territories):''}
+    </div>
+    ${section('Distriktskort lige nu',[
+     row('Antal distriktskort',s.territories),row('Udleverede kort',s.assigned),
+     row('Ledige kort',s.home),row('Midlertidige kort',totals.temporary_cards)
+    ])}
+    ${section('Besøgspunkter på kortene',[
+     row('Antal kendte besøgspunkter',totals.visit_points),
+     row('Gennemsnitlige besøgspunkter pr. kort',average(totals.complete_visit_points,completeCards)),
+     row('Kort med fuldt besøgstal',completeCards),row('Kort med ukendt eller delvist besøgstal',totals.unknown_visit_cards)
+    ],'Besøgspunkter er registrerede steder på kortene og inkluderer IB. Gennemsnittet bruger kun kort med fuldt besøgstal.')}
+    ${showIB?section('Ingen besøg (IB)',[
+     row('Antal IB',totals.ib_total),row('IB på aktuelle kort',totals.ib_on_current_cards),
+     row('Gennemsnitlige IB pr. aktuelt kort',average(totals.ib_on_current_cards,s.territories)),
+     row('Aktuelle kort med IB',totals.cards_with_ib),
+     row('Aktuelle kort uden IB',s.territories-totals.cards_with_ib)
+    ]):''}
+    ${[['service','Tjenesteåret indtil nu'],['rolling','Seneste 12 måneder'],['calendar','Kalenderåret indtil nu']].map(([key,label])=>{
+     const p=periods[key];
+     if(!p)return '';
+     return section(label,[
+      row('Registrerede gennemgange',p.completions),row('Forskellige aktuelle kort gennemgået',p.completed_territories),
+      row('Aktuelle kort endnu ikke gennemgået',p.missing),
+      row('Heraf udleveret nu',p.missing_assigned),row('Heraf ledige nu',p.missing_home)
+     ],'Flere gennemgange af samme kort tæller hver gang i det samlede antal.');
+    }).join('')}
+   </div>`;
+  openDialog(content,I18n.language());
+ },
  dashboardSummary(summary){
   const s=summary.periods.service,year=serviceYear(summary.as_of),canWork=ProfilesUI.pageAllowed('Udlevering');
   return `<div class="dashboardHome" data-dashboard-layout="compact-summary">
     <div class="dashboardPrimary dashboardPrimarySummary">
      ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork,summary.as_of)}
     </div>
-    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3></div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3>${this.moreStatsButton()}</div>
     <div class="dashboardQuickFacts">
       ${this.dashboardFact('Udleveret nu',s.assigned)}
       ${this.dashboardFact('Hjemme nu',s.home)}
@@ -338,7 +392,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
        <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
       </section>
     </div>
-    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><span>${ui('Aktuelle distrikter')}: ${total}</span></div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><div class="dashboardQuickActions"><span>${ui('Aktuelle distrikter')}: ${total}</span>${this.moreStatsButton()}</div></div>
     <div class="dashboardQuickFacts">
       ${this.dashboardFact('Udleveret nu',out)}
       ${state.settings.folder_enabled===false?'':this.dashboardFact('Kort i mappen',folder,{action:'stock',status:'Kort i mappen'})}
@@ -661,6 +715,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    break;
   case 'undo':if(!state.undo_available||!d.revision||d.revision!==state.revision||PendingSaves.count||WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)break;if(window.confirm(I18n.text('Fortryd seneste gemte handling?')))await mutate('workflow.undo',{expected_revision:d.revision});break;
   case 'search':this.searchDialog();break;
+  case 'dashboard-stats':if(page==='Forside')this.moreStats();break;
   case 'connection-check':await this.checkConnection(true);break;
   case 'connection-dismiss':if(this.connectionState==='connected'&&this.connectionIssue){this.connectionIssue=false;this.paintConnection();document.querySelector('[data-work="refresh"]')?.focus?.({preventScroll:true});}break;
   case 'reload-app':if(PendingSaves.count||PendingSaves.protectedDraft()){toast('Kladden er bevaret. Vent på igangværende gemninger, og afslut redigeringen, eller notér kladden et sikkert, privat sted, før du lukker den. Opdater data før et nyt gemmeforsøg. Genindlæs ikke browseren med åbne kladder.');break;}window.location.reload();break;

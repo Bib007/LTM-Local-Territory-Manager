@@ -1,5 +1,19 @@
 # Changelog (English and original historical notes)
 
+## 1.15.0-beta.1 · 2026-11-26
+
+- **Home:** Open More statistics for territory, visit-point, do-not-call and coverage totals. The dialog includes averages, small ring charts and figures for the service year, the last 12 months and the calendar year.
+
+## 1.14.0 · 2026-11-26
+
+- **Daily work:** Issue up to five territories in one operation with the same date and publisher. Search for additional cards, use frequent-publisher shortcuts, and select multiple returns by publisher. Open cards directly from the folder suggestion list.
+- **Dashboard and navigation:** A simpler home page, a clearer yellow target marker, and a compact collapsible sidebar. The undo notice can be dismissed and appears away from Home.
+- **Maps and filters:** A larger map overview, clearer map activation, and a shortcut to show the whole district. Cards and addresses use consistent filters and menus, with less common options grouped under More on narrow screens. Do-not-call edits return to the original card view.
+- **Publishers and history:** Filter the group list to publishers with current assignments. New manual history entries select completion by default and allow clearing it. An entry without a return date remains active.
+- **Reports and iPad:** The A4 map is cropped closer to the district, S-13 and report pagination are improved, and reports show actual completion dates and current assignments. Reports can continue after a map failure. Home-screen icon, dialog focus and the Back control in standalone print previews are improved.
+- **Follow-ups, settings and saves:** Faster follow-up collection, clearer settings sections and more specific save and connectivity feedback. Issue and return avoid redundant boundary address counts. Connectivity probes never replay a write.
+- **Scope:** Combines 1.14.0-beta.1 through beta.5. Further optimization of do-not-call deletion in PR #213 awaits its own beta.
+
 ## 1.14.0-beta.5 · 2026-11-26
 
 - When adding a historical assignment, the completion checkbox is selected by default and can be cleared. An entry without a return date remains an active assignment without a completion.
