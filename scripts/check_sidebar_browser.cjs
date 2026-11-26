@@ -23,8 +23,9 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     const assertCompact=async expected=>{
      await page.waitForFunction(expected=>document.body.classList.contains('sidebarCompact')===expected,expected);
      assert.equal(await toggle.getAttribute('aria-expanded'),String(!expected));
-     assert.equal(await width(),expected?104:205);
-     assert.equal(await page.locator('#app').evaluate(n=>parseFloat(getComputedStyle(n).marginLeft)),expected?104:205);
+     assert.equal(await width(),expected?64:205);
+     if(expected){const hitArea=await toggle.boundingBox();assert.equal(hitArea.width,44);assert.ok(hitArea.height>=44);}
+     assert.equal(await page.locator('#app').evaluate(n=>parseFloat(getComputedStyle(n).marginLeft)),expected?64:205);
     };
     const assertLabels=async compact=>{
      const labels=await nav.locator('.sidebarNavLabel,.navExternalLabel,.sidebarToggleLabel').evaluateAll(nodes=>nodes.map(n=>{

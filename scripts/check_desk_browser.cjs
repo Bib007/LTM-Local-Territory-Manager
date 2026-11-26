@@ -127,22 +127,7 @@ function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(N
  assert.equal(writes.length,beforeModeWrites,'Switching daily mode never writes data');
  await page.evaluate(original=>{Theme.set(original.appearance);page=original.page;deskTab=original.deskTab;query=original.query;render();},originalDesk);
 
- // Compact navigation and shared filters with the normal event handlers.
- const sidebarToggle=page.locator('[data-sidebar-toggle]');
- if(width>=751){
-  await activate(sidebarToggle);
-  assert.equal(await sidebarToggle.getAttribute('aria-expanded'),'false');
-  const sidebar=await page.locator('#sidebar').boundingBox(),toggle=await sidebarToggle.boundingBox();
-  assert.ok(sidebar.width<=64&&toggle.width===44&&toggle.height>=44,'Compact sidebar keeps a 44px toggle');
-  if(touch)await activate(sidebarToggle);
-  else{
-   assert.equal(await sidebarToggle.evaluate(n=>document.activeElement===n),true);
-   await sidebarToggle.press('Enter');
-  }
-  assert.equal(await sidebarToggle.getAttribute('aria-expanded'),'true');
- }else{
-  assert.equal(await sidebarToggle.isVisible(),false,'Phone navigation remains a drawer');
- }
+ // Shared address filters keep less-used categories accessible at every width.
  const originalAddress=await page.evaluate(()=>({page,query,addressTab,addressPostcode,addressPage,addressFiltersExpanded}));
  await page.evaluate(()=>{page='Adresser';query='';addressTab='Mangler på kort';addressPostcode='';addressPage=0;addressFiltersExpanded=false;render();});
  const moreAddresses=page.locator('#addressMoreButton');
