@@ -11,6 +11,7 @@ const elements={
 const ctx={
  document:{addEventListener(){}},
  window:{},
+ openDialog(html,language){elements.statsDialog={html,language};},
  el:name=>elements[name]||null,
  ui:(value,params={})=>String(value).replace(/\{(\w+)\}/g,(_,k)=>String(params[k]??'{'+k+'}')),
  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
@@ -31,7 +32,8 @@ vm.runInContext(`var page='Forside',state={
   permissions:['cards.view','loans.view','loans.manage','publishers.view','dashboard.view']
  },
  dashboard_summary:{as_of:'2026-11-17',revision:'fictional-revision',
-  periods:{service:{territories:5,assigned:2,home:3,completed_territories:3,completions:8}}}
+  periods:{service:{territories:5,assigned:2,home:3,completed_territories:3,completions:8,missing:2,missing_assigned:1,missing_home:1}},
+  territory_totals:{visit_points:62,unknown_visit_cards:1,complete_visit_points:60,temporary_cards:1,ib_total:4,ib_on_current_cards:3,cards_with_ib:2}}
 };`,ctx);
 
 const evalJS=s=>vm.runInContext(s,ctx);
@@ -41,6 +43,17 @@ for(const page of ['Opgaver','Opfølgninger','Rapporter','Adresser','Kortoversig
  assert.equal(evalJS(`ProfilesUI.pageAllowed('${page}')`),false,page);
 const html=evalJS('Workspace.dashboard()');
 assert.match(html,/data-dashboard-layout="compact-summary"/);
+assert.match(html,/data-work="dashboard-stats" aria-haspopup="dialog"/);
+evalJS('Workspace.moreStats()');
+assert.match(elements.statsDialog.html,/<h2>Flere statistikker<\/h2>/);
+assert.match(elements.statsDialog.html,/Gennemsnitlige besøgspunkter pr\. kort<\/dt><dd>15<\/dd>/);
+assert.match(elements.statsDialog.html,/Antal kendte besøgspunkter<\/dt><dd>62<\/dd>/);
+assert.doesNotMatch(elements.statsDialog.html,/Antal IB|Kort med mindst én IB/);
+evalJS("state.profile.permissions.push('ib.view')");
+evalJS('Workspace.moreStats()');
+assert.match(elements.statsDialog.html,/Antal IB<\/dt><dd>4<\/dd>/);
+assert.match(elements.statsDialog.html,/Gennemsnitlige IB pr\. aktuelt kort<\/dt><dd>0,6<\/dd>/);
+evalJS("state.profile.permissions.pop()");
 assert.match(html,/role="progressbar"[^>]*aria-valuenow="60"/,'Summary progress comes only from aggregate completed/current totals');
 assert.match(html,/3 af 5 forskellige kort gennemgået/);
 assert.doesNotMatch(html,/dashboardLead|dashboardVisits|data-ui="Gennemgange i tjenesteåret"/,'Summary hides redundant title and completion boxes');

@@ -1,5 +1,9 @@
 # Ændringslog
 
+## 1.15.0-beta.1 · 2026-11-26
+
+- **Forside:** Åbn Flere statistikker for at se kort, besøgspunkter, IB og distriktsdækning. Dialogen viser gennemsnit, små cirkeldiagrammer og tal for tjenesteåret, de seneste 12 måneder og kalenderåret.
+
 ## 1.14.0 · 2026-11-26
 
 - **Daglig brug:** Udlever op til fem kort samlet med samme dato og forkynder. Søg efter ekstra kort i kortvælgeren, brug hurtigvalg til hyppige modtagere, og markér flere kort ved aflevering pr. forkynder. Kort til mappen kan åbnes direkte fra listen.
