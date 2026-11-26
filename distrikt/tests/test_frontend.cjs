@@ -11,8 +11,9 @@ run("I18n.set('da')");run(`state={cards:[],areas:[],publishers:[],loans:[],compl
  context.filterCleanupSnapshot=snapshot;
  run("addressTab='Se bort fra'");
  let html=run("addressFilterTabs({'Mangler på kort':[], 'Se bort fra':[{}]})");
- assert.match(html,/<summary>.*Mere.*Se bort fra.*<\/summary>/);
- assert.match(html,/data-tab="Se bort fra" class="active" aria-pressed="true"/);
+ assert.match(html,/id="addressMoreButton"[^>]*aria-expanded="false" aria-controls="addressExtraFilters"[^>]*>.*Mere.*Se bort fra.*<\/button>/);
+ assert.match(html,/data-tab="Se bort fra" aria-pressed="true"/);
+ assert.match(html,/id="addressExtraFilters" class="addressExtraFilters"/);
  assert.match(html,/data-tab="IB"/);
  run("OverviewMap.filters={...OverviewMap.filters,search:'<Fiktiv>',revision:'Afventer genprint',year:0}");
  html=run("OverviewMap.activeFilterLabels().join(' · ')");
