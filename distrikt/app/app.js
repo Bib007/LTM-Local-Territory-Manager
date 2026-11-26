@@ -515,7 +515,7 @@ function publishersPage(){
   +'<div class="publisherStat"><small>'+ui('Forkyndere i visningen')+'</small><strong data-publisher-visible>'+people.length+'</strong></div></div>';
  const toolbar='<div class="toolbar publisherToolbar"><input id="search" '+I18n.attribute('aria','Søg forkynder')+' '+I18n.attribute('placeholder','Søg forkynder')+' value="'+esc(query)+'">'
   +'<select id="publisherGroupFilter" '+I18n.attribute('aria','Tjenestegruppe')+'>'+publisherGroupOptions(publisherGroupFilter)+'</select>'
-  +(canFilterAssigned?'<label class="check publisherAssignedFilter"><input type="checkbox" id="publisherActiveOnly" '+(publisherActiveOnly?'checked':'')+'><span>'+ui('Vis kun forkyndere med udleverede kort')+'</span></label>':'')
+  +(canFilterAssigned?'<label class="check publisherAssignedFilter"><input type="checkbox" id="publisherActiveOnly" '+(publisherActiveOnly?'checked':'')+'>'+ui('Vis kun forkyndere med udleverede kort')+'</label>':'')
   +(query||publisherGroupFilter||publisherActiveOnly?'<button type="button" data-action="reset-publisher-filters">'+ui('Nulstil filtre')+'</button>':'')
   +'<button class="primary" data-action="publisher">'+ui('Tilføj forkynder')+'</button><button data-publisher-import="open">'+ui('Importér gruppeliste')+'</button></div>';
  const content=groups.length?'<div class="publisherGroups">'+groups.map(g=>'<section class="publisherGroup" data-publisher-group="'+esc(g.key)+'" aria-label="'+esc(g.name)+'">'
