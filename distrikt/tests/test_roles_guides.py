@@ -123,8 +123,9 @@ class RolesGuidesHTTPTests(unittest.TestCase):
             'date':today,'initial':True})
         actual=self.request('/api/state',desk)
         expected=self.request('/api/state',self.admin)
-        expected['dashboard_summary']['territory_totals'].pop('ib_total',None)
-        self.assertNotIn('ib_total',actual['dashboard_summary']['territory_totals'])
+        for field in ('ib_total','ib_on_current_cards','cards_with_ib'):
+            expected['dashboard_summary']['territory_totals'].pop(field,None)
+            self.assertNotIn(field,actual['dashboard_summary']['territory_totals'])
         self.assertEqual(actual['dashboard_summary'],expected['dashboard_summary'])
         period=actual['dashboard_summary']['periods']['service']
         self.assertEqual((period['territories'],period['assigned'],period['home']),(2,1,1))
