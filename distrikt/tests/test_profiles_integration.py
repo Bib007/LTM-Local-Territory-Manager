@@ -451,11 +451,15 @@ class ProfilesIntegrationTests(unittest.TestCase):
         admin_totals=self.state(self.admin)['report_summary']['territory_totals']
         self.assertEqual(admin_totals['visit_points'],1)
         self.assertEqual(admin_totals['ib_total'],2)
+        self.assertEqual(admin_totals['complete_visit_points'],1)
+        self.assertEqual(admin_totals['ib_on_current_cards'],2)
+        self.assertEqual(admin_totals['cards_with_ib'],1)
         # Report-only access permits aggregates but never the raw card/IB data.
         self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['reports.view']},self.admin)
         report_state=self.state(reader)
         self.assertEqual(report_state['report_summary']['territory_totals']['visit_points'],1)
-        self.assertNotIn('ib_total',report_state['report_summary']['territory_totals'])
+        for field in ('ib_total','ib_on_current_cards','cards_with_ib'):
+            self.assertNotIn(field,report_state['report_summary']['territory_totals'])
         self.assertEqual(report_state['cards'],[])
         self.assertEqual(report_state['ib'],[])
 

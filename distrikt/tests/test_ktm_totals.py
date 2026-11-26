@@ -21,14 +21,16 @@ class KtmReportTotalsTests(unittest.TestCase):
              'geo':[{'entity':'address','count':12345}],
              'ib':[{'id':'ib-a','address_id':None},{'id':'ib-b','address_id':'geo-a'}]}
         self.assertEqual(current_territory_totals(raw),
-                         {'visit_points':11,'unknown_visit_cards':2,'ib_total':2})
+                         {'visit_points':11,'unknown_visit_cards':2,'complete_visit_points':11,
+                          'temporary_cards':0,'ib_total':2,'ib_on_current_cards':0,'cards_with_ib':0})
 
     def test_mixed_known_unknown_never_invents_missing_count(self):
         raw={'cards':[card('mixed',[{'count':5},{'count':0,'count_unknown':True}]),
                       card('invalid',[{'count':'123'}])],
              'ib':[]}
         self.assertEqual(current_territory_totals(raw),
-                         {'visit_points':5,'unknown_visit_cards':2,'ib_total':0})
+                         {'visit_points':5,'unknown_visit_cards':2,'complete_visit_points':0,
+                          'temporary_cards':0,'ib_total':0,'ib_on_current_cards':0,'cards_with_ib':0})
 
     def test_period_summary_is_aggregate_only_and_preserves_coverage(self):
         raw={
@@ -41,7 +43,8 @@ class KtmReportTotalsTests(unittest.TestCase):
             'loans':[],'ib':[{'id':'one','card_id':'c1'}]}
         result=summaries(raw)
         self.assertEqual(result['territory_totals'],
-                         {'visit_points':9,'unknown_visit_cards':1,'ib_total':1})
+                         {'visit_points':9,'unknown_visit_cards':1,'complete_visit_points':9,
+                          'temporary_cards':0,'ib_total':1,'ib_on_current_cards':1,'cards_with_ib':1})
         self.assertEqual(result['periods']['calendar']['missing'],2)
         self.assertEqual(result['periods']['service']['missing'],2)
         self.assertEqual(result['periods']['rolling']['missing'],2)
