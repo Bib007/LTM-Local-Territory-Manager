@@ -1,5 +1,11 @@
 # Changelog (English and original historical notes)
 
+## 1.14.0-beta.4 · 2026-11-26
+
+- The collapsed sidebar is narrower and its expand button keeps a 44 px touch target.
+- In the group list, the current assignments checkbox sits next to its label, and the whole label is clickable.
+- Territory cards and Cards and addresses use filter and menu styling from Follow-ups. On narrow screens, More groups less frequently used address filters.
+
 ## 1.14.0-beta.3 · 2026-11-25
 
 - **Saves and connectivity**. The post-save overview filters out audit records earlier. Connectivity messages give clearer guidance and can be dismissed after recovery. Save latency still needs measurement on the installed system.

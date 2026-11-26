@@ -1,5 +1,11 @@
 # Ændringslog
 
+## 1.14.0-beta.4 · 2026-11-26
+
+- Den sammenklappede venstremenu fylder mindre, og knappen til at folde den ud har fortsat en trykflade på 44 px.
+- I gruppelisten står tjekboksen tæt på »Vis kun forkyndere med udleverede kort«, og hele etiketten kan trykkes.
+- Filtre og menuer i Distriktskort og Kort og adresser følger udtrykket fra Opfølgninger. På smalle skærme samler »Mere« de mindre brugte adressefiltre.
+
 ## 1.14.0-beta.3 · 2026-11-25
 
 - **Gemning og forbindelser**. Oversigten efter en gemning frasorterer logposter tidligere. Forbindelsesstatus giver mere præcis vejledning og kan lukkes efter genoprettelse. Gemmehastigheden på installationen skal stadig måles.
