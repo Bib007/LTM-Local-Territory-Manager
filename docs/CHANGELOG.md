@@ -1,5 +1,9 @@
 # Ændringslog
 
+## 1.15.0-beta.2 · 2026-11-26
+
+- **Forside:** Popularitet viser udleveringer og gennemgange pr. kort, med valg af periode og sortering i begge retninger. Flere statistikker har tydeligere overskrifter, små målere, en forklaring på besøgstal og nye nøgletal for udlevering og aflevering.
+
 ## 1.15.0-beta.1 · 2026-11-26
 
 - **Forside:** Åbn Flere statistikker for at se kort, besøgspunkter, IB og distriktsdækning. Dialogen viser gennemsnit, små cirkeldiagrammer og tal for tjenesteåret, de seneste 12 måneder og kalenderåret.
