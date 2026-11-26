@@ -1,0 +1,143 @@
+blueprint:
+  name: LTM · driftsbeskeder
+  description: >-
+    Besked ved gentagne afbrydelser af adressekontrol, vedvarende ressourcepres,
+    manglende livstegn eller vedvarende problemer med HTTP-svar fra LTM.
+    Der udføres ingen automatisk genstart; en gemning kan stadig være i gang. Normal venten giver ingen besked.
+    Vælg kanal og telefon, og gem automationen. Send derefter en prøve fra
+    LTM under Indstillinger → Backup og vedligeholdelse.
+    Beskeder bruger Home Assistant Companion og dets valgte leveringstjeneste.
+    Ingen kortdata, IB eller navne indgår i LTM's faste driftsbeskeder.
+  domain: automation
+  input:
+    status_entity:
+      name: LTM-kanal
+      default: sensor.ltm_beta_drift
+      selector:
+        select:
+          options:
+            - label: Beta · egen installation
+              value: sensor.ltm_beta_drift
+            - label: Stabil · egen installation
+              value: sensor.ltm_stable_drift
+    phone:
+      name: Telefon med Home Assistant-appen
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+    error_note:
+      name: Egen note ved gentagne afbrydelser
+      default: ""
+      selector:
+        text: {}
+    pressure_note:
+      name: Egen note ved vedvarende ressourcepres
+      default: ""
+      selector:
+        text: {}
+    offline_note:
+      name: Egen note ved manglende livstegn
+      default: ""
+      selector:
+        text: {}
+    unresponsive_note:
+      name: Egen note ved vedvarende svarproblemer
+      default: ""
+      selector:
+        text: {}
+    recovery_note:
+      name: Egen note når den målte fejl, svarproblemer eller ressourcepres ophører
+      default: ""
+      selector:
+        text: {}
+    test_note:
+      name: Egen note ved prøve
+      default: ""
+      selector:
+        text: {}
+    recovery:
+      name: Send også besked når målt fejl, svarproblemer eller pres ophører
+      default: false
+      selector:
+        boolean: {}
+mode: queued
+max: 5
+trigger_variables:
+  watched: !input status_entity
+triggers:
+  - trigger: state
+    entity_id: !input status_entity
+    to: error
+    id: error
+  - trigger: state
+    entity_id: !input status_entity
+    to: pressure
+    id: pressure
+  - trigger: state
+    entity_id: !input status_entity
+    to: unresponsive
+    id: unresponsive
+  - trigger: template
+    value_template: >-
+      {{ states(watched) in ['stopped', 'unavailable'] or
+         as_timestamp(now()) - as_timestamp(state_attr(watched, 'updated_at'), 0) > 150 }}
+    for:
+      seconds: 60
+    id: offline
+  - trigger: state
+    entity_id: !input status_entity
+    from:
+      - error
+      - pressure
+      - unresponsive
+    to:
+      - idle
+      - working
+      - waiting
+    id: recovery
+  - trigger: event
+    event_type: ltm_status_test
+    event_data:
+      entity_id: !input status_entity
+    id: test
+variables:
+  watched: !input status_entity
+  error_note: !input error_note
+  pressure_note: !input pressure_note
+  offline_note: !input offline_note
+  unresponsive_note: !input unresponsive_note
+  recovery_note: !input recovery_note
+  test_note: !input test_note
+  send_recovery: !input recovery
+  kind: "{{ trigger.id if trigger is defined else 'test' }}"
+conditions:
+  - condition: template
+    value_template: "{{ kind != 'recovery' or send_recovery }}"
+actions:
+  - device_id: !input phone
+    domain: mobile_app
+    type: notify
+    title: "LTM {{ 'Beta' if watched == 'sensor.ltm_beta_drift' else 'Stabil' }} · drift"
+    message: >-
+      {% set messages = {
+        'error': 'Adressekontrollen er gentagne gange afbrudt. Se den private LTM-app.',
+        'pressure': 'Systemet har været under vedvarende ressourcepres i mindst to minutter.',
+        'offline': 'LTM er stoppet eller har ikke afleveret et nyt livstegn. Kontrollér appen i Home Assistant.',
+        'unresponsive': 'LTM har vedvarende svarproblemer. En gemning kan stadig være i gang. Ingen automatisk genstart udføres.',
+        'recovery': 'LTM svarer igen, og den målte fejl eller ressourcepres er ophørt.',
+        'test': 'Dette er en LTM-prøvebesked. Der er ikke fremkaldt en fejl eller overbelastning.'} %}
+      {% set notes = {'error': error_note, 'pressure': pressure_note,
+        'offline': offline_note, 'unresponsive': unresponsive_note, 'recovery': recovery_note, 'test': test_note} %}
+      {{ messages.get(kind, messages['test']) }}
+      {% if kind == 'unresponsive' %}
+        {% set diagnoses = {
+          'http_timeout': 'Den lokale HTTP-prøve overskred sin samlede svarfrist.',
+          'http_error': 'Den lokale HTTP-forbindelse mislykkedes.',
+          'http_invalid_response': 'Den lokale HTTP-prøve fik et uventet eller forældet svar.',
+          'runtime_busy': 'HTTP svarer, men data- eller kontolåsen er optaget.',
+          'status_timeout': 'HTTP-prøven svarer, men den interne statusmåling overskred sin svarfrist.',
+          'status_error': 'Den interne statusmåling mislykkedes.'} %}
+        {{ diagnoses.get(state_attr(watched, 'diagnostic'), 'Se den begrænsede driftsstatus i Home Assistant.') }}
+      {% endif %}
+      {{ notes.get(kind, '') }}

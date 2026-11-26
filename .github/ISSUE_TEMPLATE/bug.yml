@@ -1,0 +1,28 @@
+name: Bug / fejl
+description: Report a reproducible problem using fictional data only.
+body:
+  - type: markdown
+    attributes:
+      value: "Do not upload real databases, backups, publisher names, IB addresses or credentials. Use made-up examples."
+  - type: input
+    id: version
+    attributes:
+      label: App version / version
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Mac
+        - Windows
+        - Home Assistant
+        - Browser demo
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps and expected result / trin og forventet resultat
+      description: Include browser and fictional example if relevant.
+    validations:
+      required: true

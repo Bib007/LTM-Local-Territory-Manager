@@ -1,0 +1,115 @@
+'use strict';
+// IB suggestions never use a remote address service.
+const IBUI={
+ // A destination belongs to one child dialog generation, not to global selected/cardTab.
+ captureReturn(id,fallback=''){
+  const dialog=el('dialog'),tab=dialog.open?dialog.querySelector('[data-action="card-tab"].active'):null;
+  if(!tab||tab.dataset.id!==id||!['IB-bagside','Adresser'].includes(tab.dataset.tab))return fallback?{id,tab:fallback,origin:page}:null;
+  const focus=document.activeElement;
+  const focusData=dialog.contains(focus)&&focus?.dataset?Object.fromEntries(Object.entries(focus.dataset).filter(([key])=>['action','id','card','ibPick','ibEdit','ibCard','ibSuggest','ibBulkSuggest','module','tab'].includes(key))):{};
+  return {id,tab:tab.dataset.tab,origin:page,embedded:true,scroll:dialog.scrollTop,
+   preview:!!dialog.querySelector('.backPreview')?.open,more:!!dialog.querySelector('.cardMore')?.open,
+   search:el('ibCardSearch')?.value||'',tableScroll:dialog.querySelector('.ibAddressList .tablewrap')?.scrollTop||0,
+   focusId:dialog.contains(focus)?focus?.id:'',focusData,opener:DialogFocus.opener};
+ },
+ bindReturn(destination){this.returnContext=destination?{generation:openDialog.generation,destination}:null;},
+ currentReturn(){return el('dialog').open&&this.returnContext?.generation===openDialog.generation?this.returnContext.destination:null;},
+ restoreReturn(destination){
+  if(!destination||!el('dialog').open||page!==destination.origin||!card(destination.id)||(destination.embedded&&selected!==destination.id))return false;
+  if(state.profile&&(!ProfilesUI.has('cards.view',destination.tab==='Adresser'?'geo.view':'ib.view')||!ProfilesUI.pageAllowed(page)))return false;
+  detail(destination.id,destination.tab);
+  const dialog=el('dialog');
+  if(destination.embedded){
+   if(destination.opener)DialogFocus.opener=destination.opener;
+   const preview=dialog.querySelector('.backPreview'),more=dialog.querySelector('.cardMore');
+   if(preview)preview.open=destination.preview;
+   if(more)more.open=destination.more;
+   const search=el('ibCardSearch');
+   if(search){search.value=destination.search;el('ibCardRows').innerHTML=this.rows(destination.id,destination.search);I18n.applyShell();if(state.profile)ProfilesUI.dialog();}
+   const table=dialog.querySelector('.ibAddressList .tablewrap');if(table)table.scrollTop=destination.tableScroll;
+   const entries=Object.entries(destination.focusData);
+   const candidates=[...dialog.querySelectorAll('button,input')];
+   const focus=candidates.find(node=>!node.disabled&&!node.hidden&&node.getClientRects().length&&((destination.focusId&&node.id===destination.focusId)||(entries.length&&entries.every(([key,value])=>node.dataset[key]===value))));
+   (focus||dialog.querySelector('[data-action="card-tab"].active'))?.focus({preventScroll:true});
+   dialog.scrollTop=destination.scroll;
+  }
+  return true;
+ },
+ globalButton(){return (!state.profile||ProfilesUI.canAction('ib.global.preview'))?`<button data-ib-global-suggest>${ui('Godkend sikre IB-adresser på alle kort')}</button>`:'';},
+ async globalSuggest(button){
+  const before=state,revision=state.revision,origin=page,tab=addressTab;
+  button.disabled=true;
+  try{
+   const {result}=await(await api('/api/mutate',{action:'ib.global.preview',data:{}})).json();
+   if(!button.isConnected||state!==before||state.revision!==revision||page!==origin||addressTab!==tab)return;
+   const summary=result.cards.map(row=>`<tr><td>${esc(row.number)}</td><td>${row.matches}</td><td>${row.remaining}</td><td><button type="button" data-ib-global-review="${esc(row.card_id)}">${ui('Gennemgå kort')}</button></td></tr>`).join('');
+   openDialog(`<h2>${ui('Godkend sikre IB-adresser på alle kort')}</h2><p>${ui('Kun entydige DAR-match på det samme kort kan godkendes automatisk. Dubletter, ukendte adresser og tvivlstilfælde forbliver manuelle. Ingen registreringsdatoer eller besøgsantal ændres.')}</p><div class="metrics"><div><small>${ui('Sikre match')}</small><strong>${result.matches}</strong></div><div><small>${ui('Til manuel gennemgang')}</small><strong>${result.remaining}</strong></div></div><details><summary>${ui('Vis fordeling på distriktskort')}</summary><div class="tablewrap"><table><thead><tr><th>${ui('Kort')}</th><th>${ui('Sikre match')}</th><th>${ui('Til manuel gennemgang')}</th><th></th></tr></thead><tbody>${summary}</tbody></table></div></details>${result.matches?`<form id="ibGlobalForm" data-expected="${esc(result.expected)}" data-count="${result.matches}"><label class="check"><input type="checkbox" name="confirmed" required> ${ui('Jeg godkender kun de entydige match. Alle øvrige IB-linjer skal forblive uændrede.')}</label><div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary">${ui('Godkend {count} sikre match',{count:result.matches})}</button><button type="button" data-action="close">${ui('Annuller')}</button></div></form>`:`<p class="hint">${ui('Ingen sikre IB-match at godkende. Tvivlstilfælde kan gennemgås på hvert kort.')}</p><button data-action="close">${ui('Luk')}</button>`}`,I18n.language());
+  }catch(error){if(button.isConnected)toast(error);}
+  finally{if(button.isConnected)button.disabled=false;}
+ },
+ async globalApply(form){
+  const generation=openDialog.generation,origin=page,tab=addressTab,count=Number(form.dataset.count),signature=FormDrafts.signature(form);
+  const result=await mutate('ib.global.apply',{expected:form.dataset.expected,count,confirm:'GODKEND SIKRE IB'},{close:false,message:I18n.format('{count} sikre IB-match godkendt',{count})});
+  if(form.isConnected&&el('dialog').open&&openDialog.generation===generation&&page===origin&&addressTab===tab&&FormDrafts.signature(form)===signature){
+   if(typeof ibOnlyUnlinked!=='undefined'&&page==='Adresser'&&addressTab==='IB'){ibOnlyUnlinked=true;render();}
+   openDialog(`<h2>${ui('Sikre IB-match er godkendt')}</h2><p>${ui('{count} sikre IB-match godkendt',{count:result.count})}</p><p>${ui('{count} manuelle IB-linjer afventer fortsat gennemgang',{count:result.remaining})}</p><button data-action="close">${ui('Luk')}</button>`,I18n.language());
+  }
+ },
+ addresses(id){const c=card(id);if(!c)return [];return (c.geo_addresses?.length?c.geo_addresses:c.imported_addresses?.length?c.imported_addresses:GeoUI.addresses().filter(a=>c.address_ids?.includes(a.id))).slice().sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.floor,b.floor)||cmp(a.door,b.door));},
+ unit(a){return a.number+(a.floor||a.door?', '+[a.floor,a.door].filter(Boolean).join(' '):'');},
+ find(a,id){const clean=s=>String(s||'').toLowerCase().replace(/[\s.,]+/g,'');return state.ib.find(i=>i.card_id===id&&(i.address_id?i.address_id===a.id:RoadSearch.normalize(i.road)===RoadSearch.normalize(a.road)&&(clean(i.number)===clean(a.number)||clean(i.number)===clean(this.unit(a)))));},
+ roads(id){return [...new Set([...this.addresses(id).map(a=>a.road),...(card(id)?.addresses||[]).map(a=>a.road)])].filter(Boolean).sort(cmp);},
+ numbers(id,road){return [...new Set(this.addresses(id).filter(a=>RoadSearch.normalize(a.road)===RoadSearch.normalize(road)).map(a=>this.unit(a)))].sort(cmp);},
+ cleanNumber(value){return String(value||'').toLocaleLowerCase('da').replace(/[\s.,]+/g,'');},
+ suggestions(item){if(!item||item.address_id)return [];const addresses=this.addresses(item.card_id).filter(a=>!GeoUI.ignored().has(a.id)&&!a.retired),sameRoad=addresses.filter(a=>RoadSearch.normalize(a.road)===RoadSearch.normalize(item.road)),exact=sameRoad.filter(a=>this.cleanNumber(this.unit(a))===this.cleanNumber(item.number)),base=sameRoad.filter(a=>this.cleanNumber(a.number)===this.cleanNumber(item.number)),linked=new Set(state.ib.filter(i=>i.id!==item.id&&i.address_id).map(i=>i.address_id));return (exact.length?exact:base).filter(a=>!linked.has(a.id));},
+ suggest(id){const item=state.ib.find(i=>i.id===id),candidates=this.suggestions(item);if(!item||!candidates.length)return;const destination=this.captureReturn(item.card_id,'IB-bagside'),c=card(item.card_id),label=a=>`${a.road} ${this.unit(a)}${a.postcode?` · ${a.postcode}`:''}`;openDialog(`<h2>${ui('Foreslå tilknytning til adresse')}</h2><p>${ui('Den manuelle IB-vejlinje ændres ikke, før du har valgt og bekræftet en adresse.')}</p><div class="notice"><b>${esc(item.road)} ${esc(item.number)}</b><br><small>${ui('Registreret')} · ${item.date_text?esc(item.date_text):fmt(item.date)}</small></div><form id="ibLinkForm" data-id="${esc(item.id)}" data-card="${esc(item.card_id)}"><label>${ui('Adresseforslag på kort {number}',{number:c?.number||''})}<select name="address_id">${candidates.map(a=>`<option value="${esc(a.id)}">${esc(label(a))}</option>`).join('')}</select></label><p class="hint">${ui('Forslaget bruger kun gemte adresser på dette kort. IB’ens id og registreringsdato bevares. Vælg Luk for at lade vejlinjen forblive manuel.')}</p><div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary">${ui('Bekræft adressekobling')}</button><button type="button" data-action="close">${ui('Luk')}</button></div></form>`);this.bindReturn(destination);
+ },
+ async link(form){const item=state.ib.find(i=>i.id===form.dataset.id),address=this.suggestions(item).find(a=>a.id===form.elements.address_id.value);if(!item||!address)throw Error(I18n.text('Adresseforslaget er ændret. Åbn det igen og kontrollér adressen.'));const destination=this.currentReturn();await mutate('ib.save',{id:item.id,card_id:item.card_id,address_id:address.id,road:item.road,number:item.number,date:item.date||'',date_text:item.date_text||'',postcode:item.postcode||''},{message:I18n.text('IB er knyttet til den valgte adresse'),returnTo:()=>this.restoreReturn(destination)});},
+ bulkButton(id){return (!state.profile||ProfilesUI.canAction('ib.bulk.preview'))?`<button data-ib-bulk-suggest="${esc(id)}">${ui('Foreslå adresser for hele kortet')}</button>`:'';},
+ async bulkSuggest(button){
+  const id=button.dataset.ibBulkSuggest,dialog=el('dialog'),generation=openDialog.generation,destination=this.captureReturn(id,'IB-bagside');
+  const current=()=>button.isConnected&&dialog.open&&openDialog.generation===generation;
+  button.disabled=true;
+  try{
+   const {result}=await(await api('/api/mutate',{action:'ib.bulk.preview',data:{card_id:id}})).json();
+   if(!current())return;
+   const rows=result.rows.map(r=>`<tr><td>${esc(r.before)}</td><td>${r.selectable?`<label class="check"><input type="checkbox" name="selected" value="${esc(r.id)}" checked aria-label="${esc(I18n.format('Brug {after} for {before}',r))}"> ${esc(r.after)}</label>`:r.after?`${esc(r.after)} <small class="hint">· ${ui('Allerede knyttet')}</small>`:ui('Intet entydigt DAR-forslag')}</td></tr>`).join('');
+   openDialog(`<h2>${ui('Foreslå adresser for hele kortet')} · ${esc(card(id).number)}</h2><p>${ui('Forslagene bruger gemte DAR-adresser på kortet. Fjern fluebenet på de adresser, hvor du vil beholde den nuværende tekst.')}</p><form id="ibBulkForm" data-card="${esc(id)}" data-expected="${esc(result.expected)}"><table class="ibBulkTable"><thead><tr><th scope="col">${ui('Nuværende adresse')}</th><th scope="col">${ui('DAR-forslag')}</th></tr></thead><tbody>${rows}</tbody></table><div id="formError" class="formError" role="alert"></div><div class="actions"><button class="primary" ${result.rows.some(r=>r.selectable)?'':'disabled'}>${ui('Gem valgte adresser')}</button><button type="button" data-ib-bulk-back="${esc(id)}">${ui('Tilbage til IB-bagsiden')}</button></div></form>`,I18n.language());this.bindReturn(destination);
+  }catch(error){if(current())toast(error);}
+  finally{button.disabled=false;}
+ },
+ async bulkApply(form){
+  const selected=new FormData(form).getAll('selected');
+  if(!selected.length)return;
+  const card_id=form.dataset.card,destination=this.currentReturn();
+  await mutate('ib.bulk.apply',{card_id,selected,expected:form.dataset.expected},{message:I18n.format('{count} IB-adresser opdateret',{count:selected.length}),returnTo:()=>this.restoreReturn(destination)});
+ },
+ list(id){const addresses=this.addresses(id);return `<section class="ibAddressList"><h3><span data-ui="Alle adresser på kortet">Alle adresser på kortet</span></h3><p class="hint">${ui('{count} registrerede adresser. Vælg den konkrete lejlighed eller bogstavadresse, der skal være IB. Besøgsantallet på forsiden ændres ikke.',{count:addresses.length})}</p>${addresses.length?`<label><span data-ui="Søg adresse">Søg adresse</span><input id="ibCardSearch" data-card="${esc(id)}" data-ui-placeholder="Vej, husnummer, etage eller dør" placeholder="Vej, husnummer, etage eller dør" autocomplete="off"></label><div id="ibCardRows">${this.rows(id,'')}</div>`:'<p><span data-ui="Der er endnu ingen præcis adresseliste på dette kort. Tilføj adresser i korteditoren, eller registrér IB manuelt fra bagsiden.">Der er endnu ingen præcis adresseliste på dette kort. Tilføj adresser i korteditoren, eller registrér IB manuelt fra bagsiden.</span></p>'}</section>`;},
+ rows(id,query){const q=RoadSearch.normalize(query),ignored=GeoUI.ignored();return `<div class="tablewrap"><table><thead><tr><th><span data-ui="Adresse">Adresse</span></th><th><span data-ui="Status">Status</span></th><th></th></tr></thead><tbody>${this.addresses(id).filter(a=>RoadSearch.normalize(a.road+' '+this.unit(a)).includes(q)).map(a=>{const ib=this.find(a,id),skip=ignored.has(a.id)||a.retired;return `<tr><td>${esc(a.road)} <b>${esc(this.unit(a))}</b></td><td>${ib?'<span class="badge warning">'+ui('IB')+' · '+(ib.date_text?esc(ib.date_text):fmt(ib.date))+'</span>':skip?ui('Se bort fra / nedlagt'):ui('Besøg')}</td><td>${ib?`<button data-ib-edit="${esc(ib.id)}" data-ib-card="${esc(id)}"><span data-ui="Rediger IB">Rediger IB</span></button>`:`<button data-ib-pick="${esc(a.id)}" data-ib-card="${esc(id)}" ${skip?'disabled':''}><span data-ui="Markér IB">Markér IB</span></button>`}</td></tr>`;}).join('')||'<tr><td colspan="3"><span data-ui="Ingen adresser matcher.">Ingen adresser matcher.</span></td></tr>'}</tbody></table></div>`;},
+ open(id,cardId,addressId='',returnToCard=false,previousReturn=null){const i=state.ib.find(i=>i.id===id);if(!state.cards.length){toast(I18n.text('Opret et kort først.'));return;}const target=(card(i?.card_id||cardId||selected)||state.cards[0]).id,c=card(target),addresses=this.addresses(target),a=addresses.find(a=>a.id===(addressId||i?.address_id)),road=a?.road||i?.road||'',number=a?this.unit(a):i?.number||'';
+  const destination=previousReturn?.embedded?previousReturn:this.captureReturn(target,returnToCard?'Adresser':'');
+  openDialog(`<h2>${ui(i?'Rediger IB · kort':'Tilføj IB · kort')} ${esc(c.number)}</h2><form id="ibForm" data-id="${esc(id||'')}" data-return-card="${returnToCard?'yes':'no'}"><label><span data-ui="Kort">Kort</span><select ${i?'':'name="card_id"'} id="ibCardSelect" ${i?'disabled':''}>${state.cards.slice().sort((a,b)=>cmp(a.number,b.number)).map(c=>`<option value="${esc(c.id)}" ${target===c.id?'selected':''}>${esc(c.number)}</option>`).join('')}</select></label>${i?`<input name="card_id" type="hidden" value="${esc(target)}">`:''}${addresses.length?`<label><span data-ui="Vælg adresse på kortet">Vælg adresse på kortet</span><select id="ibAddressPick"><option value="" data-ui="Vælg en adresse eller skriv nedenfor">Vælg en adresse eller skriv nedenfor</option>${addresses.filter(a=>!GeoUI.ignored().has(a.id)&&!a.retired||a.id===i?.address_id).map(item=>`<option value="${esc(item.id)}" ${a?.id===item.id?'selected':''}>${esc(item.road)} ${esc(this.unit(item))}</option>`).join('')}</select></label>`:'<p class="hint"><span data-ui="Kortet har endnu ingen præcise adresser. Indtast IB manuelt.">Kortet har endnu ingen præcise adresser. Indtast IB manuelt.</span></p>'}${i&&!i.address_id?`<p class="notice">${ui('Denne IB er en manuel vejlinje og kan printes uden DAR. Vælg senere en konkret adresse fra dette kort, hvis linjen skal tilknyttes.')}</p>`:''}<input name="address_id" type="hidden" value="${esc(a?.id||'')}"><label><span data-ui="Vejnavn">Vejnavn</span><input name="road" id="ibRoad" list="ibLocalRoads" value="${esc(road)}" maxlength="120" autocomplete="off" required></label><datalist id="ibLocalRoads">${this.roads(target).map(r=>`<option value="${esc(r)}"></option>`).join('')}</datalist><label><span data-ui="Husnummer / lejlighed">Husnummer / lejlighed</span><input name="number" id="ibNumber" list="ibLocalNumbers" value="${esc(number)}" maxlength="80" autocomplete="off" required></label><datalist id="ibLocalNumbers">${this.numbers(target,road).map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist><label>${ui('Postnummer · valgfrit')}<input name="postcode" value="${esc(a?.postcode||i?.postcode||'')}" pattern="[0-9]{4}" maxlength="4" inputmode="numeric"></label>${i?.missing_fields?.includes('postcode')?'<p class="notice">'+ui('Postnummer mangler fra importen. Du kan tilføje det her. Der gættes ikke en geografisk adresse.')+'</p>':''}<label><span data-ui="Registreringsdato">Registreringsdato</span><input name="date" type="date" value="${i?.date_text?'':i?.date||state.today}" max="${state.today}"></label><label>${ui('Dato som tekst · valgfrit')}<input name="date_text" ${I18n.attribute('placeholder','Fx marts 2024 eller 2024')} type="text" value="${esc(i?.date_text||'')}" maxlength="60" autocomplete="off"></label><p class="hint">${ui('Brug tekst til et kendt år, en måned eller en formulering, når den præcise dag er ukendt. Teksten vises på IB-bagsiden; der gættes ingen dato.')}</p><p class="hint">${ui('Adresseforslag kommer kun fra dette kort og bliver på dit lokale system. Vælg en konkret adresse ovenfor for én lejlighed; husnummer alene uden etage/dør kan markere hele huset. Kun bagsiden får en ny revision; besøgstallet på forsiden ændres ikke.')}</p>${formEnd()}</form>`);this.bindReturn(destination);
+ },
+ pick(form,id){const a=this.addresses(form.elements.card_id.value).find(a=>a.id===id);const previous=form.elements.address_id.value;form.elements.address_id.value=a?.id||'';if(form.elements.postcode&&(a||previous))form.elements.postcode.value=a?.postcode||'';if(a){form.elements.road.value=a.road;form.elements.number.value=this.unit(a);this.updateNumbers(form);}},
+ updateNumbers(form){const node=el('ibLocalNumbers');if(node)node.innerHTML=this.numbers(form.elements.card_id.value,form.elements.road.value).map(n=>`<option value="${esc(n)}"></option>`).join('');},
+ matchFields(form){const a=this.addresses(form.elements.card_id.value).find(a=>RoadSearch.normalize(a.road)===RoadSearch.normalize(form.elements.road.value)&&this.unit(a).toLocaleLowerCase('da')===form.elements.number.value.trim().toLocaleLowerCase('da'));const wholeHouse=a&&!a.floor&&!a.door&&this.addresses(form.elements.card_id.value).some(other=>other.id!==a.id&&RoadSearch.normalize(other.road)===RoadSearch.normalize(a.road)&&String(other.number).toUpperCase()===String(a.number).toUpperCase());const previous=form.elements.address_id.value;form.elements.address_id.value=wholeHouse?'':a?.id||'';if(form.elements.postcode&&previous!==form.elements.address_id.value)form.elements.postcode.value=a?.postcode||'';if(el('ibAddressPick'))el('ibAddressPick').value=form.elements.address_id.value;}
+};
+document.addEventListener('input',e=>{if(e.target.id==='ibCardSearch'){el('ibCardRows').innerHTML=IBUI.rows(e.target.dataset.card,e.target.value);I18n.applyShell();return;}if(['ibRoad','ibNumber'].includes(e.target.id)){IBUI.matchFields(e.target.form);if(e.target.id==='ibRoad')IBUI.updateNumbers(e.target.form);}});
+document.addEventListener('change',e=>{if(e.target.id==='ibCardSelect')IBUI.open('',e.target.value,'',e.target.form.dataset.returnCard==='yes',IBUI.currentReturn());if(e.target.id==='ibAddressPick')IBUI.pick(e.target.form,e.target.value);});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-ib-pick],[data-ib-edit]');if(!b||b.disabled)return;e.preventDefault();IBUI.open(b.dataset.ibEdit||'',b.dataset.ibCard,b.dataset.ibPick||'',true);});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-ib-suggest]');if(!b||b.disabled)return;e.preventDefault();IBUI.suggest(b.dataset.ibSuggest);});
+document.addEventListener('click',e=>{const button=e.target.closest('[data-ib-global-suggest],[data-ib-global-review]');if(!button||button.disabled)return;e.preventDefault();if(button.dataset.ibGlobalReview)detail(button.dataset.ibGlobalReview,'IB-bagside');else IBUI.globalSuggest(button);});
+document.addEventListener('click',e=>{const button=e.target.closest('[data-ib-bulk-suggest],[data-ib-bulk-back]');if(!button||button.disabled)return;e.preventDefault();if(button.dataset.ibBulkBack){if(!IBUI.restoreReturn(IBUI.currentReturn()))detail(button.dataset.ibBulkBack,'IB-bagside');}else IBUI.bulkSuggest(button);});
+document.addEventListener('change',e=>{const form=e.target.form;if(form?.id==='ibBulkForm'&&!form.dataset.saving)form.querySelector('.primary').disabled=!form.querySelector('input:checked');});
+document.addEventListener('submit',async e=>{
+ const form=e.target;
+ if(!['ibLinkForm','ibBulkForm','ibGlobalForm'].includes(form.id))return;
+ e.preventDefault();
+ const button=form.querySelector('button:not([type=button])');
+ if(button.disabled||form.dataset.saving||!form.reportValidity())return;
+ form.dataset.saving='yes';
+ button.disabled=true;
+ try{await (form.id==='ibGlobalForm'?IBUI.globalApply(form):form.id==='ibBulkForm'?IBUI.bulkApply(form):IBUI.link(form));}
+ catch(error){I18n.errorContent(form.querySelector('#formError'),error);}
+ finally{if(form.isConnected){delete form.dataset.saving;button.disabled=form.id==='ibBulkForm'&&!form.querySelector('input:checked');}}
+});

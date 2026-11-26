@@ -1,0 +1,1187 @@
+"""The real server, temporary SQLite files, and fictional local accounts only."""
+import concurrent.futures
+import io
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import sys
+import tempfile
+import threading
+import unittest
+import urllib.error
+import urllib.request
+import zipfile
+from unittest.mock import patch
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'app'))
+from server import Server,stop_running
+from store import Store
+from profile_policy import GET,POST,PERMISSIONS,require
+from profile_recovery import export_accounts,restore_accounts
+from portable import snapshot
+
+class ProfilesIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.store=Store(self.temp.name)
+        self.card=self.store.mutate('card.save',{'number':'F101','name':'Opdigtet kort','temporary':True})['id']
+        self.note=self.store.mutate('note.save',{'text':'Opdigtet privat opgave','card_id':self.card})['id']
+        self.server=Server(('127.0.0.1',0),self.store)
+        self.server.accounts.bootstrap('Fiktiv admin','Fiktiv-password-123')
+        self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
+        self.admin=self.login('Fiktiv admin','Fiktiv-password-123')
+
+    def tearDown(self):
+        self.server.shutdown();self.server.server_close();self.thread.join();self.store.close();self.temp.cleanup()
+
+    def test_incomplete_login_body_does_not_hold_global_account_lock(self):
+        entered=threading.Event();handler_class=self.server.RequestHandlerClass
+        original_setup=handler_class.setup
+        def setup(handler):
+            original_setup(handler);stream=handler.rfile
+            class ObservedReader:
+                def read(self,length=-1):entered.set();return stream.read(length)
+                def __getattr__(self,name):return getattr(stream,name)
+            handler.rfile=ObservedReader()
+        with patch.object(handler_class,'setup',setup):
+            connection=socket.create_connection(self.server.server_address,timeout=2)
+            try:
+                request=('POST /api/login HTTP/1.0\r\nHost: '+self.server.origin.split('://')[1]+'\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{').encode()
+                connection.sendall(request);self.assertTrue(entered.wait(2))
+                self.assertEqual(self.state(self.admin)['cards'][0]['id'],self.card)
+                connection.sendall(b'}');connection.recv(4096)
+            finally:connection.close()
+
+    def request(self,path,data=None,session=None,extra=None):
+        headers={'Origin':self.server.origin}
+        if session:headers.update(Cookie=session['cookie'],**{'X-Distrikt-Token':session['csrf']})
+        if data is not None:headers['Content-Type']='application/json'
+        headers.update(extra or {})
+        req=urllib.request.Request(self.server.origin+path,data=json.dumps(data).encode() if data is not None else None,headers=headers)
+        return urllib.request.urlopen(req,timeout=10)
+
+    def value(self,path,data=None,session=None):
+        if path in ('/api/profiles/users/save','/api/profiles/roles/save') and 'edit_snapshot' not in data:
+            data={**data,'edit_snapshot':self.value('/api/profiles/admin',session=session)['edit_snapshot']}
+        with self.request(path,data,session) as response:return json.load(response)
+
+    def login(self,name,password):
+        with self.request('/api/login',{'name':name,'password':password}) as response:
+            self.assertTrue(json.load(response)['ok']);cookie=response.headers['Set-Cookie'].split(';')[0]
+        token=cookie.split('=',1)[1]
+        return {'cookie':cookie,'csrf':self.server.profiles.csrf(token),'token':token}
+
+    def reader(self,rights):
+        role=self.value('/api/profiles/roles/save',{'name':'Fiktiv rolle','permissions':rights},self.admin)['id']
+        user=self.value('/api/profiles/users/save',{'name':'Fiktiv bruger','password':'Fiktiv-password-456','roles':[role]},self.admin)['id']
+        return self.login('Fiktiv bruger','Fiktiv-password-456'),role,user
+
+    def state(self,session):return self.value('/api/state',session=session)
+
+    def change(self,session,base,action,data):
+        return self.value('/api/mutate',{'action':action,'data':data,'profile_snapshot':base['profile']['snapshot'],'include_state':True},session)
+    def test_return_only_role_cannot_issue_move_or_record_completion(self):
+        publisher=self.store.mutate('publisher.save',{'name':'Fiktiv person'})['id']
+        day=self.state(self.admin)['today']
+        loan=self.store.mutate('loan.issue',{'card_id':self.card,'publisher_id':publisher,'date':day,'initial':True})['id']
+        guest,role,_=self.reader(['cards.view','loans.view','loans.return','publishers.view'])
+        for action,data in (
+            ('loan.issue',{'card_id':self.card,'publisher_id':publisher,'date':day}),
+            ('folder.set',{'ids':[self.card],'in_folder':True}),
+            ('loan.finish',{'id':loan,'date':day,'complete':True}),
+            ('loan.finish',{'id':loan,'date':day,'note':'Fiktiv note'}),
+        ):
+            with self.subTest(action=action,data=data), self.assertRaises(urllib.error.HTTPError) as failure:
+                self.change(guest,self.state(guest),action,data)
+            self.assertEqual(failure.exception.code,403)
+        self.change(guest,self.state(guest),'loan.finish',{'id':loan,'date':day})
+        self.assertEqual(self.store.require('loans',loan)['returned'],day)
+        self.assertTrue(self.state(guest)['undo_available'])
+        self.change(guest,self.state(guest),'workflow.undo',{})
+        self.assertIsNone(self.store.require('loans',loan)['returned'])
+        self.change(guest,self.state(guest),'loan.finish',{'id':loan,'date':day})
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view','loans.view']},self.admin)
+        self.assertFalse(self.state(guest)['undo_available'])
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.change(guest,self.state(guest),'workflow.undo',{})
+        self.assertEqual(failure.exception.code,403)
+
+
+    def test_geo_preview_isolation_and_revalidation(self):
+        from geo_store import suggest_outline
+        self.store.mutate('geo.import',{'records':[{'id':'f1','entity':'address','road':'Fiktivvej','number':'1','postcode':'9999','lng':10,'lat':55,'unknown':{'keep':True}}],'source':'Test','label':'Fiktiv'})
+        with self.store.transaction():
+            row=self.store.get('geo','f1');row['unknown']={'keep':True};self.store.put('geo',row)
+            card=self.store.get('cards',self.card);card['addresses']=[{'road':'Fiktivvej','numbers':'1','count':1}];self.store.put('cards',card)
+            self.store.put('geo',{'id':'download:f','entity':'download','complete_road':{'road':'Fiktivvej','postcode':'9999'}})
+        rights=['cards.view','cards.edit','geo.view','geo.edit']
+        editor,role,user=self.reader(rights)
+        original=suggest_outline
+        for mode in ('ids','street_lines'):
+            for outcome in ('success','rejected','internal','changed','revoked','logout'):
+                with self.subTest(mode=mode,outcome=outcome):
+                    self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',rights,ident=role)
+                    editor=self.login('Fiktiv bruger','Fiktiv-password-456')
+                    entered=threading.Event();release=threading.Event()
+                    def held(*args):
+                        entered.set()
+                        if not release.wait(5):raise RuntimeError('Test did not release preview')
+                        if outcome=='rejected':raise ValueError('Fiktiv afvisning')
+                        if outcome=='internal':raise RuntimeError('FICTIONAL_PRIVATE_DIAGNOSTIC')
+                        return original(*args)
+                    before=self.store.revision
+                    with patch('geo_store.suggest_outline',held),concurrent.futures.ThreadPoolExecutor() as pool:
+                        pending=pool.submit(self.value,'/api/mutate',{'action':'geo.preview','data':{'mode':mode,'address_ids':['f1'],'suggest_outline':True,'card_id':self.card,'postcodes':['9999']}},editor)
+                        try:
+                            self.assertTrue(entered.wait(2))
+                            # Both requests must complete while calculation is held.
+                            self.assertEqual(pool.submit(self.state,self.admin).result(timeout=2)['cards'][0]['id'],self.card)
+                            if outcome=='changed':self.store.mutate('card.color',{'card_id':self.card,'map_color':'#aabbcc'})
+                            if outcome=='revoked':self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',['cards.view'],ident=role)
+                            if outcome=='logout':self.value('/api/logout',{},editor)
+                        finally:release.set()
+                        if outcome=='success':
+                            result=pending.result(timeout=2)
+                            self.assertTrue(result['result']['addresses'][0]['unknown']['keep'])
+                        else:
+                            with self.assertRaises(urllib.error.HTTPError) as caught:pending.result(timeout=2)
+                            self.assertEqual(caught.exception.code,401 if outcome=='logout' else 403 if outcome=='revoked' else 500 if outcome=='internal' else 400)
+                            message=json.load(caught.exception)['error']
+                            self.assertNotIn('FICTIONAL_PRIVATE',message)
+                            if outcome=='changed':self.assertIn('ændret',message)
+                        if outcome!='changed':self.assertEqual(self.store.revision,before)
+                        self.assertTrue(self.store.get('geo','f1')['unknown']['keep'])
+                        self.assertEqual(self.state(self.admin)['cards'][0]['id'],self.card)
+
+    def test_publisher_merge_profile_save_alias_assignment_and_actor_owned_undo(self):
+        from datetime import date
+        target=self.store.mutate('publisher.save',{'name':'Fiktiv mål','group':'Fiktiv gruppe','group_role':'assistant','pioneer':True})['id']
+        source=self.store.mutate('publisher.save',{'name':'Fiktiv alias'})['id']
+        loan=self.store.mutate('loan.issue',{'card_id':self.card,'publisher_id':source,'date':date.today().isoformat(),'initial':True})['id']
+        rights=['publishers.view','publishers.manage','loans.view','loans.manage','loans.issue','cards.view']
+        editor,role,_=self.reader(rights)
+        base=self.state(editor)
+        request={'target_id':target,'source_id':source,'name':'Fiktiv samlet'}
+        preview=self.change(editor,base,'publisher.merge.preview',request)['result']
+        merged=self.change(editor,base,'publisher.merge',{**request,'expected':preview['expected']})
+        self.assertTrue(merged['state']['undo_available'])
+        self.assertEqual(merged['state']['publishers'][0]['aliases'],['Fiktiv mål','Fiktiv alias'])
+        self.assertEqual(merged['state']['loans'][0]['publisher_id'],target)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(self.admin,self.state(self.admin),'workflow.undo',{})
+        self.assertEqual(denied.exception.code,403)
+        restored=self.change(editor,merged['state'],'workflow.undo',{})
+        self.assertEqual(len(restored['state']['publishers']),2)
+        self.assertEqual(self.store.require('loans',loan)['publisher_id'],source)
+        preview=self.change(editor,restored['state'],'publisher.merge.preview',request)['result']
+        merged=self.change(editor,restored['state'],'publisher.merge',{**request,'expected':preview['expected']})
+        # A stale profile form cannot recreate the source that was absorbed.
+        with self.assertRaises(urllib.error.HTTPError) as stale:
+            self.change(editor,base,'publisher.save',{'id':source,'name':'Fiktiv alias'})
+        self.assertEqual(stale.exception.code,400)
+        # Assignment by retained name needs no publisher-management right.
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':[r for r in rights if r!='publishers.manage']},self.admin)
+        new_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
+        result=self.change(editor,self.state(editor),'loan.issue',{'card_id':new_card,'publisher_name':'Fiktiv alias','date':date.today().isoformat(),'initial':True})
+        self.assertEqual(self.store.require('loans',result['result']['id'])['publisher_id'],target)
+        self.assertEqual(len(result['state']['publishers']),1)
+
+    def test_publisher_merge_requires_live_permissions_at_apply(self):
+        from portable import digest
+        target=self.store.mutate('publisher.save',{'name':'Fiktiv første'})['id']
+        source=self.store.mutate('publisher.save',{'name':'Fiktiv anden'})['id']
+        rights=['publishers.view','publishers.manage','loans.view','loans.manage']
+        editor,role,_=self.reader(rights)
+        request={'target_id':target,'source_id':source,'name':'Fiktiv samlet'}
+        base=self.state(editor)
+        preview=self.change(editor,base,'publisher.merge.preview',request)['result']
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights[:-1]},self.admin)
+        before=digest(self.store)
+        for action in ('publisher.merge.preview','publisher.merge'):
+            with self.subTest(action=action),self.assertRaises(urllib.error.HTTPError) as denied:
+                self.change(editor,base,action,{**request,'expected':preview['expected']})
+            self.assertEqual(denied.exception.code,403)
+        self.assertEqual(digest(self.store),before)
+
+    def test_history_excel_template_uses_history_import_permissions(self):
+        path = '/api/setup/history-template.xlsx'
+        rights = ['cards.view', 'cards.edit', 'loans.view', 'loans.manage',
+                  'history.view', 'history.edit', 'publishers.view', 'publishers.manage']
+        reader, role, _ = self.reader(rights[:-1])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.request(path, session=reader)
+        self.assertEqual(denied.exception.code, 403)
+
+        self.value('/api/profiles/roles/save', {
+            'id': role, 'name': 'Fiktiv rolle', 'permissions': rights,
+        }, self.admin)
+        from history_xlsx import template_xlsx
+        for session in (reader, self.admin):
+            with self.subTest(admin=session is self.admin), self.request(path, session=session) as result:
+                self.assertEqual(result.headers.get_content_type(),
+                                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                self.assertIn('LTM-historik-5-perioder.xlsx', result.headers['Content-Disposition'])
+                self.assertEqual(result.read(), template_xlsx())
+
+    def create_fictional_ib_review(self):
+        from datetime import date
+        day=date.today().isoformat()
+        loan=self.change(self.admin,self.state(self.admin),'loan.issue',{
+            'card_id':self.card,'publisher_name':'Fiktiv udleveringsmodtager',
+            'date':day,'initial':True})['result']['id']
+        self.change(self.admin,self.state(self.admin),'loan.finish',{
+            'id':loan,'date':day,'complete':False,'retain':False,'revise_ib':True})
+        return 'ib-review:'+loan
+
+    def test_ib_review_is_not_a_note_and_note_editor_cannot_close_it_over_http(self):
+        review_id=self.create_fictional_ib_review()
+        editor,_,_=self.reader(['cards.view','notes.view','notes.edit'])
+        projection=self.state(editor)  # GET /api/state includes the server's beta metadata
+        self.assertEqual([n['id'] for n in projection['notes']],[self.note])
+        self.assertEqual(projection['ib_reviews'],[])
+        self.assertNotIn(review_id,json.dumps(projection))
+        self.assertEqual(self.server.profiles.workspace.overview(editor['token'])['records']['notes'][0]['id'],self.note)
+        with self.assertRaises(PermissionError):
+            self.server.profiles.workspace.begin_edit(editor['token'],'notes',review_id)
+        before=self.store.require('notes',review_id)
+        for action,data in [
+            ('note.resolve',{'id':review_id,'resolved':True}),
+            ('note.save',{'id':review_id,'card_id':self.card,'text':'Fiktiv ændring'}),
+            ('note.task',{'id':review_id}),
+            ('note.complete',{'id':review_id,'due':'2026-11-17'}),
+            ('note.reply.delete',{'id':review_id,'entry_id':'opdigtet'}),
+            ('delete',{'id':review_id,'module':'notes'}),
+        ]:
+            with self.subTest(action=action):
+                with self.assertRaises(urllib.error.HTTPError) as denied:
+                    self.change(editor,self.state(editor),action,data)
+                self.assertEqual(denied.exception.code,403)
+                self.assertEqual(self.store.require('notes',review_id),before)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(editor,self.state(editor),'ib.review.resolve',{'id':review_id})
+        self.assertEqual(denied.exception.code,403)
+        # Ordinary tasks retain their own edit and resolution semantics.
+        self.change(editor,self.state(editor),'note.resolve',{'id':self.note,'resolved':True})
+        self.assertTrue(self.store.require('notes',self.note)['resolved'])
+        self.assertFalse(self.store.require('notes',review_id)['resolved'])
+
+    def test_ib_review_editor_can_complete_over_http_without_generic_note_access(self):
+        review_id=self.create_fictional_ib_review()
+        ib_editor,_,_=self.reader(['cards.view','ib.view','ib.edit'])
+        projection=self.state(ib_editor)
+        self.assertEqual(projection['notes'],[])
+        self.assertEqual([r['id'] for r in projection['ib_reviews']],[review_id])
+        self.assertFalse(projection['ib_reviews'][0]['resolved'])
+        self.change(ib_editor,projection,'ib.review.resolve',{'id':review_id})
+        self.assertTrue(self.store.require('notes',review_id)['resolved'])
+        self.assertTrue(self.state(ib_editor)['ib_reviews'][0]['resolved'])
+        self.assertEqual(self.state(self.admin)['notes'][0]['id'],self.note)
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(ib_editor,self.state(ib_editor),'ib.review.resolve',{'id':review_id})
+        self.assertEqual(denied.exception.code,400)
+
+    def test_dar_suggestion_requires_edit_rights_and_preview_preserves_data(self):
+        # This HTTP test exercises authorization and preview/save, while the
+        # geometry suite exercises the costly multicluster outline cases.
+        points = [(10,55),(10.0005,55),(10,55.0005),(10.002,55.002)]
+        records = [dict(id=f'fictional-{i}', entity='address', count=1, type='Hus',
+                        road='Fiktiv vej', number=str(i+1), postcode='9999',
+                        lng=lng, lat=lat)
+                   for i,(lng,lat) in enumerate(points)]
+        self.store.mutate('geo.import', {'records':records, 'source':'DAR / Datafordeleren'})
+        ids = [a['id'] for a in records[:3]]
+        reader, role, _ = self.reader(['cards.view','geo.view'])
+        data = {'card_id':self.card, 'address_ids':ids, 'suggest_outline':True}
+        before = self.store.state()
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.change(reader, self.state(reader), 'geo.preview', data)
+        self.assertEqual(failure.exception.code, 403)
+        self.value('/api/profiles/roles/save', {'id':role, 'name':'Fiktiv rolle',
+                   'permissions':['cards.view','geo.view','cards.edit','geo.edit']}, self.admin)
+        preview = self.change(reader, self.state(reader), 'geo.preview', data)['result']
+        self.assertEqual(preview['outline_status'], 'clear')
+        self.assertEqual(before, self.store.state())
+        self.assertEqual(len(preview['addresses']), len(ids))
+        self.change(reader, self.state(reader), 'geo.assign', {**data,
+                    'polygon':preview['outline'], 'outline_expected':preview['outline_expected']})
+        card = self.store.require('cards', self.card)
+        self.assertEqual(card['geo_polygon'], preview['outline'])
+        self.assertEqual(card['geo_outline_source'], 'suggestion')
+        self.assertEqual(card['address_ids'], ids)
+        self.assertEqual(before['notes'], self.store.state()['notes'])
+
+    def test_task_image_read_and_write_permissions(self):
+        from test_task_images import test_png
+        import base64
+        attachment={'name':'Fiktiv.png','png':base64.b64encode(test_png()).decode()}
+        task=self.change(self.admin,self.state(self.admin),'note.save',{'text':'Fiktiv',
+            'attachments':{'add':[attachment]}})['result']['id']
+        note=next(n for n in self.state(self.admin)['notes'] if n['id']==task)
+        image=note['images'][0]['id']
+        path='/task-image.png?task='+task+'&id='+image
+        reader,role,_=self.reader(['notes.view'])
+        with self.request(path,session=reader) as response:
+            self.assertEqual(response.headers.get_content_type(),'image/png')
+            self.assertEqual(response.read(),test_png())
+        self.assertNotIn('png',note['images'][0])
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.change(reader,self.state(reader),'note.save',{'id':task,'text':'Fiktiv','attachments':{'remove':[image]}})
+        self.assertEqual(failure.exception.code,403)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view']},self.admin)
+        for session,status in ((reader,403),(None,401)):
+            with self.assertRaises(urllib.error.HTTPError) as failure:
+                self.request(path,session=session)
+            self.assertEqual(failure.exception.code,status)
+        with self.assertRaises(urllib.error.HTTPError) as failure:
+            self.request(path.replace(task,self.note),session=self.admin)
+        self.assertEqual(failure.exception.code,404)
+
+    def test_bulk_folder_two_authenticated_users_and_permission_denial(self):
+        """Two different accounts race on one fictional card; only one changes it."""
+        guest, guest_role, _ = self.reader(['cards.view', 'loans.view', 'folder.manage'])
+        admin_base = self.state(self.admin)
+        guest_base = self.state(guest)
+        ready = threading.Barrier(2)
+        payload = {'ids': [self.card], 'in_folder': True,
+                   'expected_in_folder': False}
+
+        def change(session, base):
+            ready.wait(timeout=5)
+            return self.change(session, base, 'folder.set_many', payload)['result']
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(change, self.admin, admin_base)
+            second = pool.submit(change, guest, guest_base)
+            outcomes = [first.result(), second.result()]
+        self.assertEqual(sorted(item['count'] for item in outcomes), [0, 1])
+        self.assertTrue(self.store.get('cards', self.card)['in_folder'])
+        self.assertEqual(sum(len(item['skipped']) for item in outcomes), 1)
+
+        # Reuse the fictional account after revoking manage; reader() creates a
+        # same-named role and user and cannot be called twice in this fixture.
+        self.value('/api/profiles/roles/save', {
+            'id': guest_role, 'name': 'Fiktiv rolle',
+            'permissions': ['cards.view', 'loans.view']
+        }, self.admin)
+        without_manage = guest
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(without_manage, self.state(without_manage),
+                        'folder.set_many', payload)
+        self.assertEqual(error.exception.code, 403)
+
+    def test_usage_statistics_requires_settings_permission_and_exposes_only_aggregates(self):
+        start=self.store.revision
+        admin_data=self.value('/api/usage-statistics',session=self.admin)
+        self.assertGreaterEqual(admin_data['actions'],2)
+        self.assertIn('system_minutes',admin_data)
+        self.assertIn('person_minutes',admin_data)
+        self.assertNotIn('Opdigtet privat opgave',str(admin_data))
+        self.assertNotIn('F101',str(admin_data))
+        self.assertEqual(self.store.revision,start)
+        with self.assertRaises(PermissionError):
+            require({'settings.manage'},GET['/api/usage-statistics'])
+        reader,_,_=self.reader(['activity.view'])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.value('/api/usage-statistics',session=reader)
+        self.assertEqual(denied.exception.code,403)
+        # Even an authorized profile cannot obtain the raw audit payload.
+        self.assertTrue(all('fields' not in user and 'cards' not in user
+                            for user in admin_data['users']))
+
+    def test_activity_and_recovery_name_the_authenticated_actor(self):
+        before=self.state(self.admin)
+        changed=self.change(self.admin,before,'delete',{'module':'notes','id':self.note})
+        event=next(e for e in self.store.activity() if e['action']=='delete')
+        self.assertEqual(event['actor_name'],'Fiktiv admin')
+        self.assertEqual(event['actor_id'],self.server.accounts.data['users'][event['actor_id']]['id'])
+        recovered=self.state(self.admin)['recovery'][0]
+        self.assertEqual(recovered['actor_name'],'Fiktiv admin')
+        self.assertEqual(recovered['batch'],event['batches'][0])
+        self.assertNotIn('Opdigtet privat opgave',str(event))
+
+    def test_reversible_overlap_followup_is_authorized_audited_and_concurrent_safe(self):
+        second_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
+        key=json.dumps(['checks','overlap',*sorted([self.card,second_card])],separators=(',',':'))
+        reader,role,_=self.reader(['cards.view','geo.view'])
+        stale_admin=self.state(self.admin)
+        read_state=self.state(reader)
+        self.assertEqual(read_state['followup_ignores'],[])
+        with self.assertRaises(urllib.error.HTTPError) as denied:
+            self.change(reader,read_state,'followup.ignore',{'key':key,'ignored':True,'expected_token':''})
+        self.assertEqual(denied.exception.code,403)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle',
+                   'permissions':['cards.view','geo.view','geo.edit']},self.admin)
+        enabled=self.state(reader)
+        saved=self.change(reader,enabled,'followup.ignore',{'key':key,'ignored':True,
+                          'expected_token':'','_actor_name':'Forfalsket'})['state']
+        record=saved['followup_ignores'][0]
+        self.assertTrue(record['ignored'])
+        self.assertEqual(record['history'][0]['actor_name'],'Fiktiv bruger')
+        self.assertNotIn('Forfalsket',str(record))
+        with self.assertRaises(urllib.error.HTTPError) as stale:
+            self.change(self.admin,stale_admin,'followup.ignore',{'key':key,'ignored':True,'expected_token':''})
+        self.assertIn(stale.exception.code,(400,409))
+        self.assertEqual(len(self.state(reader)['followup_ignores'][0]['history']),1)
+        fresh_admin=self.state(self.admin)
+        restored=self.change(self.admin,fresh_admin,'followup.ignore',
+                             {'key':key,'ignored':False,'expected_token':record['token']})['state']
+        events=restored['followup_ignores'][0]['history']
+        self.assertEqual([event['ignored'] for event in events],[True,False])
+        self.assertEqual([event['actor_name'] for event in events],['Fiktiv bruger','Fiktiv admin'])
+        self.assertTrue(all(event['at'] for event in events))
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle',
+                   'permissions':['cards.view']},self.admin)
+        self.assertEqual(self.state(reader)['followup_ignores'],[])
+    def test_boundary_report_respects_report_geo_and_ib_permissions(self):
+        self.store.mutate('geo.main.save',{'points':[[9.99,54.99],[10.01,54.99],[10.01,55.01],[9.99,55.01]]})
+        self.store.mutate('geo.manual',{'road':'Fiktiv vej','number':'1','postcode':'9999','lng':10,'lat':55})
+        address=self.store.geo_state()['addresses'][0]['id']
+        card=self.store.mutate('geo.assign',{'number':'120','address_ids':[address]})['id']
+        self.store.mutate('ib.save',{'card_id':card,'road':'Fiktiv vej','number':'1','address_id':address,'date':'2026-01-01'})
+        self.store.mutate('ib.save',{'card_id':card,'road':'Manuelt registreret vej','number':'9B','date':'2026-01-01'})
+        self.assertEqual(self.state(self.admin)['boundary_report'],{'visits':1,'ib':1,'ib_total':2})
+        reader,role,_=self.reader(['reports.view'])
+        self.assertNotIn('boundary_report',self.state(reader))
+        rights=['reports.view','cards.view','geo.view']
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights},self.admin)
+        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1})
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':rights+['ib.view']},self.admin)
+        self.assertEqual(self.state(reader)['boundary_report'],{'visits':1,'ib':1,'ib_total':2})
+        # The new report derives points from cards and includes every active IB.
+        admin_totals=self.state(self.admin)['report_summary']['territory_totals']
+        self.assertEqual(admin_totals['visit_points'],1)
+        self.assertEqual(admin_totals['ib_total'],2)
+        # Report-only access permits aggregates but never the raw card/IB data.
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['reports.view']},self.admin)
+        report_state=self.state(reader)
+        self.assertEqual(report_state['report_summary']['territory_totals']['visit_points'],1)
+        self.assertNotIn('ib_total',report_state['report_summary']['territory_totals'])
+        self.assertEqual(report_state['cards'],[])
+        self.assertEqual(report_state['ib'],[])
+
+
+    def test_role_guidance_survives_profile_settings_save_and_real_http_refresh(self):
+        # Regression: before this fix the authenticated state stripped the four
+        # saved counts, so refreshing the Settings page reset them to defaults.
+        defaults = {'member': 1, 'pioneer': 2, 'assistant': 2, 'overseer': 3}
+        before = self.state(self.admin)
+        other = self.login('Fiktiv admin', 'Fiktiv-password-123')
+        stale = self.state(other)
+        self.assertEqual(before['settings']['publisher_card_guidance'], defaults)
+        changed = {'member': 0, 'pioneer': 4, 'assistant': 1, 'overseer': 7}
+        result = self.change(self.admin, before, 'settings.save', {
+            'congregation': 'Fiktiv menighed',
+            'folder_minimum': 0, 'rural_minimum': 0, 'rural_mode': 'auto',
+            'require_revision': False, 'publisher_card_guidance': changed,
+        })
+        self.assertEqual(result['state']['settings']['publisher_card_guidance'], changed,
+                         'A successful save must return the saved values in the write response')
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed,
+                         'A separate GET must retain saved values after rerender/reload')
+        self.assertEqual(self.store.get('settings', 'config')['publisher_card_guidance'], changed)
+
+        # A second admin saving a stale, unchanged guidance field must not
+        # reverse the newer guidance while editing the congregation name.
+        stale_payload = {
+            'congregation': 'Ny fiktiv menighed',
+            'folder_minimum': 0, 'rural_minimum': 0, 'rural_mode': 'auto',
+            'require_revision': False, 'publisher_card_guidance': defaults,
+        }
+        second = self.change(other, stale, 'settings.save', stale_payload)
+        self.assertEqual(second['state']['settings']['publisher_card_guidance'], changed)
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed)
+        self.assertEqual(self.state(self.admin)['settings']['congregation'], 'Ny fiktiv menighed')
+
+        # A publisher-list reader can display the same advisory numbers but may
+        # neither edit them nor see unrelated settings.
+        reader, role, _ = self.reader(['publishers.view', 'loans.view'])
+        visible = self.state(reader)
+        self.assertEqual(visible['settings']['publisher_card_guidance'], changed)
+        self.assertNotIn('print_profiles', visible['settings'])
+        with self.assertRaises(urllib.error.HTTPError) as rejected:
+            self.change(reader, visible, 'settings.save', {'publisher_card_guidance': defaults})
+        self.assertEqual(rejected.exception.code, 403)
+        self.assertEqual(self.state(self.admin)['settings']['publisher_card_guidance'], changed)
+
+        self.value('/api/profiles/roles/save', {'id': role, 'name': 'Fiktiv rolle',
+                   'permissions': ['cards.view']}, self.admin)
+        self.assertNotIn('publisher_card_guidance', self.state(reader)['settings'])
+
+    def test_group_fields_merge_under_profiles_and_import_requires_current_rights(self):
+        ident=self.store.mutate('publisher.save',{'name':'Fiktiv gruppeperson'})['id']
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'publisher.save',{'id':ident,'name':'Fiktiv nyt navn','group':'','group_role':'','pioneer':False})
+        result=self.change(second,b,'publisher.save',{'id':ident,'name':'Fiktiv gruppeperson','group':'G01','group_role':'assistant','pioneer':True})
+        person=self.store.require('publishers',ident)
+        self.assertEqual(person['name'],'Fiktiv nyt navn');self.assertEqual(person['group'],'G01');self.assertTrue(person['pioneer'])
+        self.assertEqual(self.value('/api/profiles/conflicts',session=self.admin),[])
+        reader,role,user=self.reader(['publishers.view','publishers.manage'])
+        state=self.state(reader);self.assertEqual(state['publishers'][0]['group_role'],'assistant')
+        with self.request('/api/setup/publisher-template.xlsx',session=reader) as response:self.assertTrue(response.read().startswith(b'PK'))
+        plan=self.change(reader,state,'setup.publisher-import.preview',{'name':'fiktiv.csv','content':'navn;tjenestegruppe\nFiktiv B;G02'})['result']
+        role_value=next(r for r in self.value('/api/profiles/admin',session=self.admin)['roles'] if r['id']==role)
+        self.value('/api/profiles/roles/save',{**role_value,'permissions':['publishers.view']},self.admin)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(reader,self.state(reader),'setup.publisher-import.apply',{'token':plan['token'],'confirm':'IMPORTÉR GRUPPER'})
+        self.assertEqual(error.exception.code,403);self.assertEqual(len(self.store.all('publishers')),1)
+
+    def test_different_group_edits_preserve_evidence_and_do_not_grant_account_access(self):
+        ident=self.store.mutate('publisher.save',{'name':'Fiktiv gruppeperson','group':'G01'})['id']
+        a=self.state(self.admin);second=self.login('Fiktiv admin','Fiktiv-password-123');b=self.state(second)
+        self.change(self.admin,a,'publisher.save',{'id':ident,'name':'Fiktiv gruppeperson','group':'G02'})
+        self.change(second,b,'publisher.save',{'id':ident,'name':'Fiktiv gruppeperson','group':'G03'})
+        reviews=self.value('/api/profiles/conflicts',session=self.admin)
+        rows=reviews['rows'] if isinstance(reviews,dict) else reviews
+        row=next(r for r in rows if r['module']=='publishers' and r['field']=='group')
+        self.assertEqual(row['base']['value'],'G01');self.assertEqual(row['saved']['value'],'G02');self.assertEqual(row['incoming']['value'],'G03')
+        self.assertEqual(len(self.server.accounts.data['users']),1)
+
+    def test_public_date_preview_requires_source_read_rights_and_is_read_only(self):
+        import base64
+        from test_publication_dates import plain_png
+        from test_sharing import FakeDrive
+        self.server.sharing.drive=FakeDrive()
+        with self.store.transaction():
+            card=self.store.require('cards',self.card);card['geo_polygon']=[[10,55],[10.1,55],[10.1,55.1]];self.store.put('cards',card)
+        reader,_,_=self.reader(['cards.view','geo.view','sharing.manage'])
+        with self.assertRaises(urllib.error.HTTPError) as error:self.value('/api/share/prepare',{'card_id':self.card},reader)
+        self.assertEqual(error.exception.code,403)
+        recipe=self.value('/api/share/prepare',{'card_id':self.card},self.admin);before=self.store.revision
+        data={'card_id':self.card,'fingerprint':recipe['fingerprint'],'date_fingerprint':recipe['date_fingerprint'],'png':'data:image/png;base64,'+base64.b64encode(plain_png()).decode()}
+        result=self.value('/api/share/date-preview',data,self.admin)
+        self.assertTrue(result['png'].startswith('data:image/png;base64,'))
+        self.assertEqual(self.store.revision,before);self.assertFalse(self.server.sharing.images.directory.exists())
+        self.value('/api/share/publish',{**data,'png':result['png'],'render_revision':7,'date_updates':True},self.admin)
+        self.assertTrue(self.store.require('maps','publication:'+self.card)['date_updates'])
+        self.assertNotIn('Fiktiv admin',str(recipe))
+
+    def test_normal_app_login_and_every_sensitive_route_is_denied_to_card_reader(self):
+        reader,_,_=self.reader(['cards.view']);state=self.state(reader)
+        self.assertEqual(state['cards'][0]['name'],'Opdigtet kort')
+        self.assertEqual(state['notes'],[]);self.assertEqual(state['ib'],[])
+        for path in GET:
+            if not GET[path]:continue
+            with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,session=reader)
+            self.assertEqual(error.exception.code,403)
+        for path in POST:
+            if not POST[path]:continue
+            with self.subTest(path=path),self.assertRaises(urllib.error.HTTPError) as error:self.request(path,{},reader)
+            self.assertEqual(error.exception.code,403)
+        for action,data in [('card.save',{'id':self.card,'number':'bad'}),('delete',{'module':'cards','id':self.card}),('geo.token',{'token':'Fictional'}),('unknown.future.action',{})]:
+            with self.subTest(action=action),self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,state,action,data)
+            self.assertEqual(error.exception.code,403)
+
+    def test_runtime_test_uses_current_settings_permission_and_no_private_payload(self):
+        from runtime_status import RuntimeStatus
+        sent=[]
+        self.server.runtime_status=RuntimeStatus(self.server.address_schedule,'fictional',True,enabled=True,token='fictional-secret',
+            pressure=lambda:{'available':True,'high':False},transport=lambda *args:sent.append(args))
+        self.server.runtime_status.publish()
+        reader,role,_=self.reader(['settings.manage'])
+        self.assertTrue(self.state(reader)['runtime_status']['available'])
+        self.assertTrue(self.value('/api/runtime/test',{},reader)['ok'])
+        self.assertEqual(sent[-1],('events/ltm_status_test',{'entity_id':'sensor.ltm_beta_drift'},'fictional-secret'))
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view']},self.admin)
+        self.assertNotIn('runtime_status',self.state(reader))
+        for path,data in [('/api/runtime/status',None),('/api/runtime/test',{})]:
+            with self.assertRaises(urllib.error.HTTPError) as error:self.request(path,data,reader)
+            self.assertEqual(error.exception.code,403)
+        self.assertEqual(len(sent),2,'Revoked access cannot send another event')
+
+    def test_excel_ib_template_manual_import_and_postcode_merge_use_current_rights(self):
+        with self.request('/api/setup/ib-template.xlsx',session=self.admin) as response:
+            self.assertTrue(response.read().startswith(b'PK'))
+        base=self.state(self.admin)
+        preview=self.change(self.admin,base,'setup.ib.preview',{'content':'kortnummer;vejnavn;husnummer\nF101;Fiktiv vej;2'})['result']
+        with self.assertRaises(urllib.error.HTTPError):self.change(self.admin,base,'setup.ib.apply',{'token':preview['token'],'confirm':'IMPORTÉR IB'})
+        self.change(self.admin,self.state(self.admin),'setup.ib.apply',{'token':preview['token'],'confirm':'IMPORTÉR IB','acknowledge':True})
+        other=self.login('Fiktiv admin','Fiktiv-password-123');initial=self.state(self.admin);other_initial=self.state(other);ib=initial['ib'][0]
+        self.assertEqual(ib['missing_fields'],['postcode'])
+        self.change(self.admin,initial,'ib.save',{**ib,'postcode':'9999'})
+        self.change(other,other_initial,'ib.save',{**ib,'date':'2026-10-02','postcode':''})
+        merged=self.state(self.admin);saved=merged['ib'][0]
+        self.assertEqual((saved['postcode'],saved['date']),('9999','2026-10-02'))
+        self.assertEqual(saved['missing_fields'],[]);self.assertEqual(merged['profile']['conflicts'],0)
+        # Conflicting edits retain both postcodes and their true observed base.
+        other_merged=self.state(other)
+        self.change(self.admin,merged,'ib.save',{**saved,'postcode':'9998'})
+        self.change(other,other_merged,'ib.save',{**saved,'postcode':'9997'})
+        review=self.value('/api/profiles/conflicts',session=self.admin)
+        self.assertTrue(any(r['field']=='postcode' for r in review))
+
+    def test_management_permission_does_not_grant_data_or_backup(self):
+        manager,_,_=self.reader(['users.manage'])
+        state=self.state(manager)
+        for name in ('cards','loans','publishers','notes','ib','visits','completions','recovery'):self.assertEqual(state[name],[])
+        self.assertNotIn('Opdigtet',json.dumps(state))
+        self.assertTrue(self.value('/api/profiles/admin',session=manager)['users'])
+        with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/export/backup',session=manager)
+        self.assertEqual(error.exception.code,403)
+
+    def test_backup_notice_is_separate_from_settings_and_export_and_changes_in_session(self):
+        reader,role,_=self.reader(['settings.manage'])
+        state=self.state(reader)
+        self.assertIsNone(state['backup_status']);self.assertIsNone(state['backup_last_day'])
+        for key in ('last_backup','backup_snoozed_until','backup_history'):self.assertNotIn(key,state['settings'])
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['backup.notify']},self.admin)
+        state=self.state(reader)
+        self.assertIsInstance(state['backup_status'],dict)
+        self.assertEqual(state['cards'],[])
+        with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/export/backup',session=reader)
+        self.assertEqual(error.exception.code,403)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':[]},self.admin)
+        self.assertIsNone(self.state(reader)['backup_status'])
+
+    def test_connection_and_sharing_permissions_expose_only_their_own_status(self):
+        reader,role,_=self.reader(['connections.manage'])
+        with patch.object(self.server.sharing,'status',return_value={'connected':True,'account':'Fiktiv konto','cards':[{'card_id':self.card,'number':'F101'}]}):
+            self.assertEqual(self.value('/api/connections/drive',session=reader),{'connected':True,'account':'Fiktiv konto'})
+            with self.assertRaises(urllib.error.HTTPError):self.request('/api/share/status',session=reader)
+            self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['sharing.manage','cards.view']},self.admin)
+            status=self.value('/api/share/status',session=reader)
+            self.assertNotIn('account',status);self.assertEqual(len(status['cards']),1)
+            with self.assertRaises(urllib.error.HTTPError):self.request('/api/connections/drive',session=reader)
+
+    def test_desktop_updater_stops_profiles_without_a_browser_session(self):
+        # run.json is an OS-owner-only local file, not a profile/data credential.
+        for path,headers in [('/api/shutdown',{'X-Distrikt-Token':'fictional-wrong-token'}),
+                             ('/api/state',{'X-Distrikt-Token':self.server.token}),
+                             ('/api/shutdown',{'X-Distrikt-Token':self.server.token,'Origin':'https://example.invalid'})]:
+            with self.subTest(path=path,headers=tuple(headers)),self.assertRaises(urllib.error.HTTPError) as error:
+                self.request(path,{} if path.endswith('shutdown') else None,extra=headers)
+            self.assertIn(error.exception.code,(401,403))
+        (self.store.root/'run.json').write_text(json.dumps({'url':self.server.origin,'token':self.server.token}))
+        with patch.dict(os.environ,{'http_proxy':'http://127.0.0.1:1','HTTP_PROXY':'http://127.0.0.1:1','no_proxy':'','NO_PROXY':''}):
+            self.assertTrue(stop_running(self.store.root))
+        self.thread.join(timeout=5)
+        self.assertFalse(self.thread.is_alive())
+
+    def test_desk_role_limits_an_account_with_other_roles_and_fixes_its_language(self):
+        reader, role, account = self.reader(['settings.manage','geo.view','cards.view'])
+        role_data = self.value('/api/profiles/admin',session=self.admin)['roles']
+        admin_role = next(row['id'] for row in role_data if 'users.manage' in row['permissions'])
+        desk = self.value('/api/profiles/roles/save',{'name':'Fiktiv udlevering',
+                          'permissions':[], 'desk_only':True, 'language':'da'},self.admin)['id']
+        self.value('/api/profiles/users/save',{'id':account,'name':'Fiktiv bruger',
+                   'roles':[role,admin_role,desk]},self.admin)
+        base = self.state(reader)
+        self.assertTrue(base['profile']['desk_only'])
+        self.assertEqual(base['profile']['language'],'da')
+        self.assertEqual(set(base['profile']['permissions']),
+                         {'cards.view','loans.view','loans.manage','loans.issue','loans.return','publishers.view','dashboard.view'})
+        self.assertEqual(self.value('/api/profiles/heartbeat',{},reader)['language'],'da')
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.value('/api/geo',session=reader)
+        self.assertEqual(forbidden.exception.code,403)
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.change(reader,base,'folder.set',{'card_id':self.card,'in_folder':True})
+        self.assertEqual(forbidden.exception.code,403)
+        publisher = self.store.mutate('publisher.save',{'name':'Fiktiv Forkynder'})['id']
+        base = self.state(reader)
+        issued = self.change(reader,base,'loan.issue',{'card_id':self.card,'publisher_id':publisher,
+                             'date':base['today'],'initial':True})
+        loan = issued['result']['id']
+        active = self.state(reader)
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.change(reader,active,'loan.finish',{'id':loan,'date':base['today'],'complete':True,'retain':True})
+        self.assertEqual(forbidden.exception.code,403)
+        self.change(reader,active,'loan.finish',{'id':loan,'date':base['today'],'complete':True})
+        self.assertFalse(self.store.active_loan(self.card))
+        backup = self.value('/api/profiles/backup',session=self.admin)
+        self.assertEqual(backup['accounts']['roles'][desk]['language'],'da')
+
+    def test_loan_manager_can_select_existing_name_but_cannot_create_publishers(self):
+        publisher=self.store.mutate('publisher.save',{'name':'Fiktiv Forkynder'})['id']
+        second_card=self.store.mutate('card.save',{'number':'F102','temporary':True})['id']
+        reader,_,_=self.reader(['cards.view','loans.view','loans.issue','publishers.view'])
+        base=self.state(reader)
+        data={'card_id':self.card,'publisher_name':'  FIKTIV FORKYNDER  ','date':base['today'],'initial':True}
+        self.change(reader,base,'loan.issue',data)
+        self.assertEqual(self.store.active_loan(self.card)['publisher_id'],publisher)
+        base=self.state(reader)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,base,'loan.issue',{**data,'card_id':second_card,'publisher_name':'Fiktiv ny person'})
+        self.assertEqual(error.exception.code,403)
+        self.assertEqual(len(self.store.all('publishers')),1)
+        self.change(reader,base,'loan.issue',{'card_id':second_card,'publisher_id':publisher,'date':base['today'],'initial':True})
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,self.state(reader),'loan.issue',data)
+        self.assertEqual(error.exception.code,400)
+
+    def test_two_real_http_sessions_merge_independent_card_changes_and_keep_conflicts(self):
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        a=self.state(self.admin);b=self.state(second);initial=a['cards'][0]
+        barrier=threading.Barrier(2)
+        def save(session,base,changes):
+            barrier.wait();return self.change(session,base,'card.save',{**initial,**changes})
+        with concurrent.futures.ThreadPoolExecutor(2) as pool:
+            futures=[pool.submit(save,self.admin,a,{'name':'Første rettelse'}),pool.submit(save,second,b,{'kind':'By'})]
+            for f in futures:f.result()
+        saved=self.store.require('cards',self.card)
+        self.assertEqual((saved['name'],saved['kind']),('Første rettelse','By'))
+        self.assertEqual(self.value('/api/profiles/conflicts',session=second),[])
+        a=self.state(self.admin);b=self.state(second);current=a['cards'][0]
+        self.change(self.admin,a,'card.save',{**current,'name':'Forslag A'})
+        result=self.change(second,b,'card.save',{**current,'name':'Forslag B'})
+        self.assertTrue(self.store.require('cards',self.card)['front_revision'])
+        self.assertEqual(result['state']['profile']['conflicts'],1)
+        rows=self.value('/api/profiles/conflicts',session=second)
+        self.assertEqual((rows[0]['base']['value'],rows[0]['saved']['value'],rows[0]['incoming']['value']),('Første rettelse','Forslag A','Forslag B'))
+        self.assertTrue(self.value('/api/profiles/conflicts/acknowledge',{'id':rows[0]['id']},second)['changed'])
+        self.assertEqual(self.value('/api/profiles/conflicts',session=second),[])
+        self.assertEqual(self.store.require('cards',self.card)['name'],'Forslag B')
+
+    def make_card_conflict(self):
+        second=self.login('Fiktiv admin','Fiktiv-password-123');a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'card.save',{**a['cards'][0],'name':'Fiktiv A'})
+        self.change(second,b,'card.save',{**b['cards'][0],'name':'Fiktiv B'})
+        return self.value('/api/profiles/conflicts',session=self.admin)[0]
+
+    def test_choose_earlier_conflict_runs_normal_validation_and_keeps_all_evidence(self):
+        row=self.make_card_conflict()
+        data={'id':row['id'],'choice':'saved','review_snapshot':row['review_snapshot']}
+        self.assertTrue(self.value('/api/profiles/conflicts/resolve',data,self.admin)['ok'])
+        self.assertEqual(self.store.require('cards',self.card)['name'],'Fiktiv A')
+        self.assertTrue(self.store.require('cards',self.card)['front_revision'])
+        evidence=self.store.require('settings',row['id'])
+        self.assertTrue(evidence['resolved']);self.assertEqual(evidence['selected'],'saved')
+        self.assertEqual((evidence['base']['value'],evidence['saved']['value'],evidence['incoming']['value']),('Opdigtet kort','Fiktiv A','Fiktiv B'))
+        self.assertEqual(self.value('/api/profiles/conflicts',session=self.admin),[])
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',data,self.admin)
+
+    def test_conflict_choice_does_not_overwrite_a_later_change_or_other_session(self):
+        row=self.make_card_conflict();data={'id':row['id'],'choice':'saved','review_snapshot':row['review_snapshot']}
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',data,second)
+        base=self.state(self.admin);self.change(self.admin,base,'card.save',{**base['cards'][0],'name':'Fiktiv nyere'})
+        with self.assertRaises(urllib.error.HTTPError) as error:self.value('/api/profiles/conflicts/resolve',data,self.admin)
+        self.assertEqual(error.exception.code,400)
+        self.assertEqual(self.store.require('cards',self.card)['name'],'Fiktiv nyere')
+        self.assertFalse(self.store.require('settings',row['id'])['resolved'])
+
+    def test_conflict_choice_rechecks_rights_and_ack_failure_rolls_back_the_choice(self):
+        row=self.make_card_conflict();editor,role,_=self.reader(['cards.view','cards.edit'])
+        edit=self.value('/api/profiles/conflicts',session=editor)[0]
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view']},self.admin)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.value('/api/profiles/conflicts/resolve',{'id':edit['id'],'choice':'saved','review_snapshot':edit['review_snapshot']},editor)
+        self.assertEqual(error.exception.code,403)
+        before=list(self.store.activity());put=self.store.put
+        def fail(module,value):
+            if value.get('id')==row['id'] and value.get('resolved'):raise OSError('Fictional disk failure')
+            return put(module,value)
+        data={'id':row['id'],'choice':'saved','review_snapshot':row['review_snapshot']}
+        with patch.object(self.store,'put',side_effect=fail),self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',data,self.admin)
+        self.assertEqual(self.store.require('cards',self.card)['name'],'Fiktiv B')
+        self.assertEqual(self.store.activity(),before);self.assertFalse(self.store.require('settings',row['id'])['resolved'])
+        self.value('/api/profiles/conflicts/resolve',data,self.admin)
+
+    def test_account_backup_restore_has_password_preview_lease_and_keeps_territory_data(self):
+        with self.request('/api/profiles/backup',session=self.admin) as response:
+            backup=json.load(response);self.assertIn('attachment',response.headers['Content-Disposition'])
+        self.assertEqual(backup['format'],'ltm-account-backup');self.assertNotIn('Fiktiv-password-123',json.dumps(backup))
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/preview',{'backup':backup,'password':'Fiktiv-forkert-password'},self.admin)
+        preview=self.value('/api/profiles/backup/preview',{'backup':backup,'password':'Fiktiv-password-123'},self.admin)
+        self.assertEqual((preview['users'],preview['roles']),(1,1))
+        data={'snapshot':preview['snapshot'],'confirmation':'GENDAN KONTI'}
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/apply',data,second)
+        self.value('/api/profiles/roles/save',{'name':'Fiktiv ekstra rolle','permissions':['cards.view']},self.admin)
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/apply',data,self.admin)
+        preview=self.value('/api/profiles/backup/preview',{'backup':backup,'password':'Fiktiv-password-123'},self.admin)
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/backup/apply',{'snapshot':preview['snapshot'],'confirmation':'Forkert'},self.admin)
+        result=self.value('/api/profiles/backup/apply',{'snapshot':preview['snapshot'],'confirmation':'GENDAN KONTI'},self.admin)
+        self.assertTrue(result['login_required'])
+        for session in (self.admin,second):
+            with self.assertRaises(urllib.error.HTTPError):self.state(session)
+        self.admin=self.login('Fiktiv admin','Fiktiv-password-123')
+        self.assertEqual(len(self.server.accounts.data['roles']),1)
+        self.assertEqual(self.state(self.admin)['cards'][0]['number'],'F101')
+        self.assertEqual(len(list(self.store.root.glob('accounts-before-restore-*.json'))),1)
+
+    def test_conflict_failure_rolls_back_normal_write_and_its_activity(self):
+        second=self.login('Fiktiv admin','Fiktiv-password-123');a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'note.save',{'id':self.note,'card_id':self.card,'text':'Første'})
+        before=list(self.store.activity());original=self.store.put
+        def fail(module,row):
+            if row.get('entity')=='edit-conflict':raise OSError('Fictional disk failure')
+            return original(module,row)
+        with patch.object(self.store,'put',side_effect=fail):
+            with self.assertRaises(urllib.error.HTTPError) as error:self.change(second,b,'note.save',{'id':self.note,'card_id':self.card,'text':'Anden'})
+        self.assertEqual(error.exception.code,500)
+        self.assertEqual(self.store.require('notes',self.note)['text'],'Første');self.assertEqual(self.store.activity(),before)
+        result=self.change(second,b,'note.save',{'id':self.note,'card_id':self.card,'text':'Anden'})
+        self.assertEqual(result['state']['profile']['conflicts'],1)
+
+    def test_stale_unchanged_number_is_not_revalidated_as_a_new_number(self):
+        second=self.login('Fiktiv admin','Fiktiv-password-123');a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'card.save',{**a['cards'][0],'number':'F102'})
+        self.store.mutate('card.save',{'number':'F101','temporary':True})
+        result=self.change(second,b,'card.save',{**b['cards'][0],'name':'Fiktiv samtidig rettelse'})
+        saved=self.store.require('cards',self.card)
+        self.assertEqual((saved['number'],saved['name']),('F102','Fiktiv samtidig rettelse'))
+        self.assertEqual(result['state']['profile']['conflicts'],0)
+
+    def test_geographic_save_preserves_an_independent_color_and_boundary(self):
+        addresses=[{'id':'fictional-'+str(i),'road':'Fiktivvej','number':str(i),'postcode':'9999','lng':10+i*.001,'lat':55,'count':1} for i in (1,2)]
+        self.store.mutate('geo.import',{'records':addresses,'source':'Fictional test'})
+        polygon=[[10,54.99],[10.02,54.99],[10.02,55.02],[10,55.02]]
+        self.store.mutate('geo.assign',{'card_id':self.card,'address_ids':['fictional-1'],'polygon':polygon,'map_color':'#123456'})
+        second=self.login('Fiktiv admin','Fiktiv-password-123');a=self.state(self.admin);b=self.state(second)
+        self.change(self.admin,a,'card.color',{'card_id':self.card,'map_color':'#abcdef'})
+        a=self.state(self.admin);new_polygon=[[9.99,54.99],[10.02,54.99],[10.02,55.03],[9.99,55.03]]
+        self.change(self.admin,a,'geo.boundary',{'card_id':self.card,'polygon':new_polygon})
+        result=self.change(second,b,'geo.assign',{'card_id':self.card,'address_ids':['fictional-1','fictional-2'],'polygon':polygon,'map_color':'#123456'})
+        actual=self.store.require('cards',self.card)
+        self.assertEqual(actual['map_color'],'#abcdef');self.assertEqual(actual['geo_polygon'],new_polygon)
+        self.assertEqual(set(actual['address_ids']),{'fictional-1','fictional-2'})
+        self.assertEqual(result['state']['profile']['conflicts'],0)
+
+    def test_snapshot_capacity_failure_cannot_commit_an_unacknowledgeable_write(self):
+        state=self.state(self.admin);before=self.store.require('cards',self.card)
+        self.server.profiles.bases.capacity=len(self.server.profiles.bases._items)
+        with self.assertRaises(urllib.error.HTTPError):self.change(self.admin,state,'card.save',{**state['cards'][0],'name':'Må ikke gemmes'})
+        self.assertEqual(self.store.require('cards',self.card),before)
+
+    def test_account_admin_forms_merge_and_preserve_access_conflicts_without_granting_them(self):
+        reader,role,user=self.reader(['cards.view'])
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        a=self.value('/api/profiles/admin',session=self.admin);b=self.value('/api/profiles/admin',session=second)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Nyt fiktivt rollenavn','permissions':['cards.view'],'edit_snapshot':a['edit_snapshot']},self.admin)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view','notes.view'],'edit_snapshot':b['edit_snapshot']},second)
+        self.assertEqual(self.server.accounts.data['roles'][role]['name'],'Nyt fiktivt rollenavn')
+        self.assertIn('notes.view',self.server.accounts.data['roles'][role]['permissions'])
+        a=self.value('/api/profiles/admin',session=self.admin);b=self.value('/api/profiles/admin',session=second)
+        for session,base,rights in [(self.admin,a,['cards.view']), (second,b,['cards.view','ib.view'])]:
+            self.value('/api/profiles/roles/save',{'id':role,'name':'Nyt fiktivt rollenavn','permissions':rights,'edit_snapshot':base['edit_snapshot']},session)
+        self.assertEqual(self.server.accounts.data['roles'][role]['permissions'],['cards.view'])
+        rows=self.value('/api/profiles/conflicts',session=self.admin)
+        self.assertEqual(len(rows),1);self.assertEqual(rows[0]['module'],'roles')
+        self.assertEqual(self.value('/api/profiles/conflicts',session=reader),[])
+        self.value('/api/profiles/conflicts/acknowledge',{'id':rows[0]['id']},self.admin)
+        self.assertEqual(self.value('/api/profiles/conflicts',session=self.admin),[])
+
+    def test_conflicting_password_resets_never_return_credential_material(self):
+        _,role,user=self.reader(['cards.view']);second=self.login('Fiktiv admin','Fiktiv-password-123')
+        a=self.value('/api/profiles/admin',session=self.admin);b=self.value('/api/profiles/admin',session=second)
+        for session,base,password in [(self.admin,a,'Fiktiv-password-AAA'),(second,b,'Fiktiv-password-BBB')]:
+            self.value('/api/profiles/users/save',{'id':user,'name':'Fiktiv bruger','roles':[role],'password':password,'edit_snapshot':base['edit_snapshot']},session)
+        rows=self.value('/api/profiles/conflicts',session=self.admin)
+        self.assertEqual(rows[0]['field'],'credential')
+        public=json.dumps(rows)
+        private=self.server.accounts.data['users'][user]
+        self.assertNotIn(private['hash'],public);self.assertNotIn(private['salt'],public)
+        self.login('Fiktiv bruger','Fiktiv-password-AAA')
+        with self.assertRaises(urllib.error.HTTPError):self.login('Fiktiv bruger','Fiktiv-password-BBB')
+        self.value('/api/profiles/conflicts/resolve',{'id':rows[0]['id'],'choice':'incoming','review_snapshot':rows[0]['review_snapshot']},self.admin)
+        self.login('Fiktiv bruger','Fiktiv-password-BBB')
+        with self.assertRaises(urllib.error.HTTPError):self.login('Fiktiv bruger','Fiktiv-password-AAA')
+
+    def test_conflict_choice_cannot_remove_the_last_administrator(self):
+        second=self.login('Fiktiv admin','Fiktiv-password-123')
+        a=self.value('/api/profiles/admin',session=self.admin);b=self.value('/api/profiles/admin',session=second)
+        role=a['roles'][0]['id']
+        for session,base,rights in [(self.admin,a,['users.manage','cards.view']),(second,b,['cards.view'])]:
+            self.value('/api/profiles/roles/save',{'id':role,'name':'Administrator','permissions':rights,'edit_snapshot':base['edit_snapshot']},session)
+        row=self.value('/api/profiles/conflicts',session=self.admin)[0]
+        before=self.server.accounts.path.read_bytes()
+        with self.assertRaises(urllib.error.HTTPError):self.value('/api/profiles/conflicts/resolve',{'id':row['id'],'choice':'incoming','review_snapshot':row['review_snapshot']},self.admin)
+        self.assertEqual(self.server.accounts.path.read_bytes(),before)
+        self.assertTrue(self.value('/api/profiles/admin',session=self.admin)['users'])
+
+    def test_session_bound_bases_and_csrf_and_current_rights(self):
+        reader,role,user=self.reader(['cards.view','cards.edit'])
+        other=self.login('Fiktiv bruger','Fiktiv-password-456');base=self.state(reader)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(other,base,'card.save',base['cards'][0])
+        self.assertEqual(error.exception.code,400)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/state',session=reader,extra={'X-Distrikt-Token':self.admin['csrf']})
+        self.assertEqual(error.exception.code,403)
+        self.value('/api/profiles/roles/save',{'id':role,'name':'Fiktiv rolle','permissions':['cards.view']},self.admin)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,base,'card.save',{**base['cards'][0],'name':'Afvist'})
+        self.assertEqual(error.exception.code,403)
+        self.value('/api/profiles/users/save',{'id':user,'name':'Fiktiv bruger','roles':[role],'disabled':True},self.admin)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.request('/api/state',session=reader)
+        self.assertEqual(error.exception.code,401)
+
+    def test_real_backup_keeps_conflicts_but_not_accounts_and_data_restore_keeps_login(self):
+        before=self.state(self.admin)
+        with self.request('/api/export/backup',session=self.admin) as response:payload=response.read()
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:self.assertNotIn('profiles.json',archive.namelist())
+        preview=self.server.restores.preview(payload)
+        self.server.restores.apply(preview['token'])
+        self.assertEqual(self.state(self.admin)['profile']['user'],before['profile']['user'])
+        path=Path(self.temp.name)/'fictional-account-backup.json'
+        export_accounts(self.server.accounts,path)
+        ident=self.server.accounts.recover_admin('Fiktiv gendannelse','Fiktiv-password-789')
+        self.assertIn(ident,self.server.accounts.data['users'])
+        restore_accounts(self.server.accounts,path)
+        self.assertNotIn(ident,self.server.accounts.data['users'])
+        with self.assertRaises(urllib.error.HTTPError):self.request('/api/state',session=self.admin)
+        self.admin=self.login('Fiktiv admin','Fiktiv-password-123')
+        self.assertEqual(len(self.state(self.admin)['cards']),1)
+
+    def assign_task(self,owner,before=None,**extra):
+        return self.change(self.admin,self.state(self.admin),'note.save',{'id':self.note,'card_id':self.card,'text':'Fictional assigned task','assignee_id':owner,'assignee_before':before,**extra})
+
+
+    def test_home_personal_task_count_heartbeat_rights_and_live_changes(self):
+        """Real HTTP with fictional users; never expose colleagues' task counts."""
+        from datetime import date, timedelta
+        from profile_features import personal_open_task_count
+        viewer, role, owner = self.reader(['notes.view', 'notes.edit'])
+        admin_id = self.state(self.admin)['profile']['user']['id']
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 0)
+        self.assign_task(owner)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 1)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, self.admin)['my_open_tasks'], 0)
+
+        other_id = self.server.accounts.save_user(self.admin['token'], 'Fiktiv kollega',
+                    [role], password='Fiktiv-password-789')
+        other = self.login('Fiktiv kollega', 'Fiktiv-password-789')
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, other)['my_open_tasks'], 0)
+        self.assertNotIn(owner, json.dumps(self.value('/api/profiles/heartbeat', {}, other)))
+        self.assertNotIn(other_id, json.dumps(self.value('/api/profiles/heartbeat', {}, viewer)))
+
+        self.change(viewer, self.state(viewer), 'note.resolve', {'id': self.note, 'resolved': True})
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 0)
+        self.change(viewer, self.state(viewer), 'note.resolve', {'id': self.note, 'resolved': False})
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 1)
+
+        # Another user's reassignment is visible on the next heartbeat.
+        self.assign_task(admin_id, before=owner)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, viewer)['my_open_tasks'], 0)
+        self.assertEqual(self.value('/api/profiles/heartbeat', {}, self.admin)['my_open_tasks'], 1)
+        self.value('/api/profiles/roles/save', {'id': role, 'name': 'Fiktiv rolle',
+                    'permissions': ['cards.view']}, self.admin)
+        restricted = self.value('/api/profiles/heartbeat', {}, viewer)
+        self.assertNotIn('my_open_tasks', restricted)
+
+        now = date.today().isoformat()
+        future = (date.today() + timedelta(days=7)).isoformat()
+        sample = [
+            {'assignee_id': owner, 'text': 'active', 'task': True, 'resolved': False},
+            {'assignee_id': owner, 'text': 'closed', 'task': True, 'resolved': True},
+            {'assignee_id': owner, 'text': 'ignored', 'task': True, 'ignored': True},
+            {'assignee_id': owner, 'text': 'future', 'task': True, 'recurrence': {'next_due': future}},
+            {'assignee_id': owner, 'text': 'due', 'task': True, 'recurrence': {'next_due': now}},
+            {'assignee_id': owner, 'text': 'not a task', 'task': False},
+            {'assignee_id': admin_id, 'text': 'another user', 'task': True},
+            {'assignee_id': owner, 'text': 'activity', 'entity': 'activity'},
+        ]
+        self.assertEqual(personal_open_task_count(sample, now, owner), 2)
+        self.assertEqual(personal_open_task_count(sample, now, admin_id), 1)
+
+    def test_task_ownership_directory_and_private_self_label(self):
+        session,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        self.assign_task(user)
+        admin=self.state(self.admin)
+        self.assertTrue(all(set(u)=={'id','name'} for u in admin['task_users']))
+        own=self.state(session);note=next(n for n in own['notes'] if n['id']==self.note)
+        self.assertTrue(note['assigned']);self.assertTrue(note['assignee_self'])
+        self.assertNotIn('assignee_id',note);self.assertNotIn('task_users',own)
+        self.assertNotIn('users.manage',own['profile']['permissions'])
+        self.assertEqual(own['loans'],[]);self.assertEqual(own['ib'],[])
+        # Another reader may know that the task is assigned, not who owns it.
+        other_id=self.server.accounts.save_user(self.admin['token'],'Fictional other',[role],password='Fictional-password-789')
+        other=self.login('Fictional other','Fictional-password-789')
+        state=self.state(other);other_note=next(n for n in state['notes'] if n['id']==self.note)
+        self.assertTrue(other_note['assigned']);self.assertFalse(other_note['assignee_self'])
+        self.assertNotIn(user,json.dumps(state));self.assertNotIn('Fiktiv bruger',json.dumps(state))
+
+    def test_task_ownership_rejects_unauthorized_and_invalid_assignments(self):
+        session,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        revision=self.store.revision
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(session,self.state(session),'note.save',{'id':self.note,'card_id':self.card,'text':'Forbidden','assignee_id':user,'assignee_before':None})
+        self.assertEqual(error.exception.code,403);self.assertEqual(self.store.revision,revision)
+        for owner in ['user-'+'0'*32,['invalid']]:
+            with self.assertRaises(urllib.error.HTTPError) as error:self.assign_task(owner)
+            self.assertEqual(error.exception.code,400)
+        self.assertNotIn('assignee_id',self.store.require('notes',self.note))
+        self.assertEqual(self.store.require('notes',self.note)['text'],'Opdigtet privat opgave')
+
+    def test_task_ownership_explicit_change_cannot_overwrite_new_owner(self):
+        session,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        second=self.login('Fiktiv admin','Fiktiv-password-123');stale=self.state(second)
+        self.assign_task(user)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(second,stale,'note.save',{'id':self.note,'card_id':self.card,'text':'Stale owner change','assignee_id':self.server.accounts.authorize(self.admin['token'],'users.manage'),'assignee_before':None})
+        self.assertEqual(error.exception.code,400)
+        self.assertEqual(self.store.require('notes',self.note)['assignee_id'],user)
+        # Ordinary note edits omit ownership and preserve the current owner.
+        self.change(session,self.state(session),'note.save',{'id':self.note,'card_id':self.card,'text':'Edited by assigned reader'})
+        self.change(second,self.state(second),'note.save',{'id':self.note,'card_id':self.card,'text':'Ordinary edit'})
+        self.assertEqual(self.store.require('notes',self.note)['assignee_id'],user)
+
+    def test_task_ownership_disabled_account_and_clear(self):
+        session,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        self.assign_task(user)
+        self.server.accounts.save_user(self.admin['token'],'Fiktiv bruger',[role],ident=user,disabled=True)
+        self.assertNotIn(user,[u['id'] for u in self.state(self.admin)['task_users']])
+        self.change(self.admin,self.state(self.admin),'note.save',{'id':self.note,'card_id':self.card,'text':'Retains inactive owner'})
+        self.assign_task(None,before=user)
+        with self.assertRaises(urllib.error.HTTPError) as error:self.assign_task(user)
+        self.assertEqual(error.exception.code,400)
+        note=next(n for n in self.state(self.admin)['notes'] if n['id']==self.note)
+        self.assertFalse(note['assigned']);self.assertIsNone(note['assignee_id'])
+
+    def test_task_ownership_followup_is_unique_and_completion_keeps_assignment(self):
+        session,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        key=json.dumps(['checks',self.card,'area'])
+        self.assign_task(user,followup_key=key,recurrence={'frequency':'weekly','weekday':__import__('datetime').date.today().weekday()})
+        before=len(self.store.state()['notes'])
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(self.admin,self.state(self.admin),'note.save',{'text':'Duplicate follow-up','followup_key':key})
+        self.assertEqual(error.exception.code,400);self.assertEqual(len(self.store.state()['notes']),before)
+        note=self.store.require('notes',self.note)
+        self.change(session,self.state(session),'note.complete',{'id':self.note,'due':note['recurrence']['next_due']})
+        note=self.store.require('notes',self.note)
+        self.assertEqual(note['assignee_id'],user);self.assertEqual(note['followup_key'],key)
+        self.assertEqual(len(note['task_history']),1)
+        self.assertTrue(self.store.require('cards',self.card)['temporary'])
+        # No account identity escapes through a note edit-base response.
+        base=self.server.profiles.workspace.begin_edit(session['token'],'notes',self.note)
+        self.assertNotIn(user,json.dumps(base))
+
+    def test_task_reply_uses_authenticated_users_and_requires_task_edit_to_delete(self):
+        editor,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        self.assign_task(user)
+        def task(session):
+            return next(n for n in self.state(session)['notes'] if n['id']==self.note)
+        old_target=task(editor)['reply_target']
+        self.assign_task(None,before=user)
+        with self.assertRaises(urllib.error.HTTPError) as stale:
+            self.change(editor,self.state(editor),'note.resolve',{'id':self.note,'resolved':True,
+                'reply':'Forkert modtager','reply_target':old_target})
+        self.assertEqual(stale.exception.code,400)
+        self.assertFalse(task(editor)['resolved'])
+        self.assign_task(user)
+        self.change(editor,self.state(editor),'note.resolve',{
+            'id':self.note,'resolved':True,'reply':'Fiktivt svar','reply_target':task(editor)['reply_target'],
+            '_task_actor_name':'Forkert afsender','_task_actor_id':'fake'})
+        entry=task(self.admin)['task_history'][0]
+        self.assertEqual(entry['author'],'Fiktiv bruger')
+        self.assertEqual(entry['recipient'],'Fiktiv admin')
+        self.assertTrue(entry['recipient_self'])
+        self.assertNotIn('recipient_id',entry)
+        self.assertNotIn('recipient_self',task(editor)['task_history'][0])
+        self.server.accounts.save_role(self.admin['token'],'Fiktiv rolle',['cards.view','notes.view'],ident=role)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(editor,self.state(editor),'note.reply.delete',{'id':self.note,'entry_id':entry['id']})
+        self.assertEqual(error.exception.code,403)
+        self.change(self.admin,self.state(self.admin),'note.reply.delete',{'id':self.note,'entry_id':entry['id']})
+        self.assertTrue(task(self.admin)['resolved'])
+        self.assertNotIn('reply',task(self.admin)['task_history'][0])
+
+    def test_task_reply_unread_notification_can_only_be_read_by_recipient(self):
+        editor,role,user=self.reader(['notes.view','notes.edit'])
+        self.assign_task(user)
+        def task(session):
+            return next(n for n in self.state(session)['notes'] if n['id']==self.note)
+        self.change(editor,self.state(editor),'note.resolve',{
+            'id':self.note,'resolved':True,'reply':'Fiktivt svar til opgavefordeleren',
+            'reply_target':task(editor)['reply_target']})
+        history=task(self.admin)['task_history']
+        entry=history[0]
+        self.assertTrue(entry['recipient_self'])
+        self.assertFalse(entry['read'])
+        self.assertNotIn('read_at',entry)
+        self.assertNotIn('read',task(editor)['task_history'][0])
+        self.assertNotIn('read_at',task(editor)['task_history'][0])
+        with self.assertRaises(urllib.error.HTTPError) as forbidden:
+            self.change(editor,self.state(editor),'note.reply.read',{
+                'id':self.note,'entry_id':entry['id'],
+                '_task_actor_id':self.state(self.admin)['profile']['user']['id']})
+        self.assertEqual(forbidden.exception.code,403)
+        self.assertNotIn('read_at',self.store.require('notes',self.note)['task_history'][0])
+        self.change(self.admin,self.state(self.admin),'note.reply.read',{
+            'id':self.note,'entry_id':entry['id'],'_task_actor_id':'forged'})
+        self.assertTrue(task(self.admin)['task_history'][0]['read'])
+        self.assertIn('read_at',self.store.require('notes',self.note)['task_history'][0])
+        self.assertTrue(task(self.login('Fiktiv admin','Fiktiv-password-123'))['task_history'][0]['read'])
+        # Repeated marking is harmless and cannot revive the notification.
+        self.change(self.admin,self.state(self.admin),'note.reply.read',{'id':self.note,'entry_id':entry['id']})
+        self.assertTrue(task(self.admin)['task_history'][0]['read'])
+        with self.assertRaises(urllib.error.HTTPError) as missing:
+            self.change(self.admin,self.state(self.admin),'note.reply.read',{'id':self.note,'entry_id':'missing'})
+        self.assertEqual(missing.exception.code,400)
+
+    def test_task_ownership_directory_requires_note_access(self):
+        session,role,user=self.reader(['users.manage'])
+        state=self.state(session)
+        self.assertNotIn('task_users',state);self.assertEqual(state['notes'],[])
+
+
+    def test_task_ownership_undo_rechecks_account_management(self):
+        session,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        admin_id=self.server.accounts.authorize(self.admin['token'],'users.manage')
+        roles=self.server.accounts.data['users'][admin_id]['roles']
+        self.server.accounts.save_user(self.admin['token'],'Fiktiv bruger',roles,ident=user)
+        self.assign_task(user)
+        self.server.accounts.save_user(session['token'],'Fiktiv admin',[role],ident=admin_id)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.change(self.admin,self.state(self.admin),'workflow.undo',{})
+        self.assertEqual(error.exception.code,403)
+        self.assertEqual(self.store.require('notes',self.note)['assignee_id'],user)
+
+
+    def test_task_ownership_text_conflict_choice_retains_private_assignment(self):
+        session,role,user=self.reader(['cards.view','notes.view','notes.edit'])
+        self.assign_task(user)
+        a=self.state(self.admin);b=self.state(session)
+        for who,base,text in [(self.admin,a,'Fictional text A'),(session,b,'Fictional text B')]:
+            self.change(who,base,'note.save',{'id':self.note,'card_id':self.card,'text':text})
+        rows=self.value('/api/profiles/conflicts',session=session)
+        row=next(r for r in rows if r['module']=='notes' and r['field']=='text')
+        self.assertNotIn('assignee_id',json.dumps(rows))
+        self.value('/api/profiles/conflicts/resolve',{'id':row['id'],'choice':'saved','review_snapshot':row['review_snapshot']},session)
+        note=self.store.require('notes',self.note)
+        self.assertEqual(note['text'],'Fictional text A');self.assertEqual(note['assignee_id'],user)
+
+
+    def test_redistribution_profiles_preserve_history_and_hide_new_membership_metadata(self):
+        from test_geography import address
+        area=self.store.mutate('area.save',{'name':'Fictional area'})['id']
+        rows=[address('move'+str(i),str(i+1),lng=10+i*.001) for i in range(6)]
+        self.store.mutate('geo.import',{'records':rows,'source':'Fictional','label':'Fictional local test'})
+        self.store.mutate('geo.assign',{'card_id':self.card,'address_ids':[r['id'] for r in rows[:4]]})
+        target=self.store.mutate('geo.assign',{'number':'F102','address_ids':[r['id'] for r in rows[4:]]})['id']
+        for ident,day in [(self.card,'2026-03-02'),(target,'2026-01-02')]:
+            self.store.mutate('card.save',{**self.store.require('cards',ident),'area_id':area})
+            self.store.mutate('completion.record',{'card_id':ident,'date':day})
+        data={'mode':'transfer','ids':[self.card,target],'address_ids':[rows[0]['id']],'number':'F102'}
+        p=self.change(self.admin,self.state(self.admin),'card.restructure.preview',data)['result']
+        self.change(self.admin,self.state(self.admin),'card.restructure.apply',{**data,'expected':p['expected'],'confirm':'ÆNDR KORT'})
+        reader,role,user=self.reader(['cards.view'])
+        state=self.state(reader);card=next(c for c in state['cards'] if c['id']==target)
+        self.assertEqual(card['planning_date'],'2026-03-02');self.assertEqual(card['last_completed'],'2026-01-02')
+        self.assertNotIn('membership',card['planning_reference']);self.assertEqual(state['completions'],[])
+        before=self.store.revision
+        with self.assertRaises(urllib.error.HTTPError) as error:self.change(reader,state,'card.restructure.preview',data)
+        self.assertEqual(error.exception.code,403);self.assertEqual(self.store.revision,before)
+
+
+class ProfileActivationTests(unittest.TestCase):
+    def test_existing_lan_login_must_authorize_activation_and_data_is_unchanged(self):
+        with tempfile.TemporaryDirectory() as root:
+            store=Store(root);store.mutate('card.save',{'number':'F201','temporary':True})
+            server=Server(('127.0.0.1',0),store,access_host='127.0.0.1',password='Fiktiv-old-password')
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            def request(path,data,cookie=''):
+                return urllib.request.urlopen(urllib.request.Request(server.origin+path,data=json.dumps(data).encode(),headers={'Content-Type':'application/json','Origin':server.origin,'Cookie':cookie,'X-Distrikt-Token':server.token}),timeout=10)
+            try:
+                data={'name':'Fiktiv ejer','password':'Fiktiv-new-password','confirmation':'AKTIVÉR PROFILER'}
+                with self.assertRaises(urllib.error.HTTPError):request('/api/profiles/activate',data)
+                with request('/api/login',{'password':'Fiktiv-old-password'}) as response:cookie=response.headers['Set-Cookie'].split(';')[0]
+                with urllib.request.urlopen(urllib.request.Request(server.origin+'/api/connections/drive',headers={'Origin':server.origin,'Cookie':cookie,'X-Distrikt-Token':server.token}),timeout=10) as response:
+                    self.assertEqual(set(json.load(response)),{'connected','account'})
+                with request('/api/profiles/activate',data,cookie) as response:self.assertTrue(json.load(response)['ok'])
+                self.assertEqual(store.all('cards')[0]['number'],'F201')
+                with self.assertRaises(urllib.error.HTTPError):request('/api/login',{'password':'Fiktiv-old-password'})
+                # A run.json stop secret must not bypass profile login on LAN/HA.
+                with self.assertRaises(urllib.error.HTTPError) as error:request('/api/shutdown',{})
+                self.assertEqual(error.exception.code,401)
+                with request('/api/login',{'name':'Fiktiv ejer','password':'Fiktiv-new-password'}) as response:self.assertTrue(json.load(response)['ok'])
+            finally:server.shutdown();server.server_close();thread.join();store.close()
+
+
+
+if __name__=='__main__':unittest.main()

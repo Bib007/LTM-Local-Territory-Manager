@@ -1,0 +1,511 @@
+// Real production UI, fictional local API only; no accounts, map requests or private records.
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.resolve(__dirname,'../distrikt/app'),touch=process.env.LTM_TOUCH==='1',engine=process.env.LTM_BROWSER_ENGINE||'chromium',out=process.env.LTM_BROWSER_OUTPUT?(touch?path.join(process.env.LTM_BROWSER_OUTPUT,engine+'-touch'):process.env.LTM_BROWSER_OUTPUT):null;
+const cards=['folder','blocked','box','one','two','three'].map((id,i)=>({id,number:String(i+1),name:'Fiktivt kort',kind:'By',area_id:'a',in_folder:i<2,addresses:[],front_revision:id==='blocked',back_revision:false,last_completed:'2026-09-01'}));
+const initial={revision:'fictional',today:'2026-10-17',version:'fictional',cards,areas:[{id:'a',name:'Fiktivt område'}],publishers:[{id:'p1',name:'Fiktiv <A>'},{id:'p2',name:'Fiktiv B'}],loans:['one','two','three'].map((card_id,i)=>({id:'loan-'+card_id,card_id,publisher_id:i?'p2':'p1',assigned:'2026-10-01',cycle_start:'2026-10-01',returned:null})),completions:[],ib:[],ignored:[],notes:[],tasks:[],visits:[],recovery:[],maps:[],settings:{onboarding:{completed:true},congregation:'Fiktiv menighed',require_revision:true,folder_minimum:1,rural_mode:'manual',rural_minimum:0},public_maps:[]};
+initial.notes=[{id:'task-open',card_id:'folder',text:'Fiktiv gammel <opfølgning>',task:false,resolved:false,date:'2026-10-01'},
+ {id:'task-done',card_id:'folder',text:'FIKTIV_DONE_TASK',task:true,resolved:true,date:'2026-10-01'},
+ {id:'task-general',card_id:null,text:'Fiktiv generel opgave',task:true,resolved:false,date:'2026-10-01'}];
+function contrast(a,b){const l=c=>{const rgb=c.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;};const x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
+(async()=>{const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{}:{args:['--no-sandbox']});try{for(const width of (touch?[360,390,844,768,1024]:[320,390,768,1440])){
+ const height=touch?({360:800,390:844,844:390,768:1024,1024:768}[width]):900;
+ const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:touch}),page=await context.newPage(),state=structuredClone(initial),writes=[],errors=[];let geoReads=0,stateReads=0,rejectReturn=true;page.on('pageerror',e=>errors.push(e.message));
+ await context.route('**/*',async route=>{const u=new URL(route.request().url());if(u.protocol==='blob:'){assert.equal(u.origin,'http://ltm.desk.test','Only local image blobs are allowed');return route.continue();}if(u.hostname==='tile.openstreetmap.org'&&/^\/\d+\/\d+\/\d+\.png$/.test(u.pathname))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#eee"/></svg>'});assert.equal(u.hostname,'ltm.desk.test',u.href);const json=data=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
+ if(u.pathname==='/s12-template.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-source.png')});
+ if(u.pathname==='/s12-template-en.png')return route.fulfill({path:path.resolve(root,'../templates/S-12-E-source.png')});
+ if(u.pathname==='/api/photo/status')return json({available:true,languages:['dan','eng']});
+ if(u.pathname==='/api/photo/read'){const data=route.request().postDataJSON();assert.deepEqual(Object.keys(data),['png']);assert.ok(data.png.length<8000000);return json({id:'fictional-photo-job',status:'running'});}
+ if(u.pathname==='/api/photo/job')return json({status:'done',text:'IB <fictional heading>\nFiktivvej 8 - 24.10.2026'});
+ if(u.pathname==='/api/photo/cancel')return json({ok:true});
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action.startsWith('setup.ib.')){
+  const body=route.request().postDataJSON();writes.push(body);
+  if(body.action==='setup.ib.preview'){assert.match(body.data.content,/"1";"Fiktivvej";"8";"9999"/);assert.match(body.data.content,/2026-10-24/);return json({result:{token:'fictional-ib-token',new:1,existing:0,errors:0,rows:[{status:'new',label:'Fiktivvej 8',date:'2026-10-24'}]},revision:state.revision});}
+  assert.equal(body.data.token,'fictional-ib-token');assert.equal(body.data.confirm,'IMPORTÉR IB');state.cards.find(c=>c.id==='folder').back_revision=true;state.ib.push({id:'fictional-photo-ib',card_id:'folder',address_id:'photo-a'});state.revision+='-photo';return json({result:{count:1},revision:state.revision,state});
+ }
+ if(u.pathname==='/api/state'){stateReads++;return json(state);}if(u.pathname==='/api/geo'){geoReads++;return json({addresses:[],buildings:[],roads:[],info:{},status:{},main_boundary:null});}if(u.pathname==='/api/geo/job')return json({status:'idle'});if(u.pathname==='/api/update-check')return json(null);if(u.pathname==='/api/ping')return json({ok:true});if(u.pathname==='/api/connections/drive')return json({connected:false,account:''});if(u.pathname==='/api/share/status')return json({connected:false,cards:[]});
+ if(u.pathname==='/api/export/backup')return route.fulfill({contentType:'application/zip',body:Buffer.from('fictional-backup-bytes')});
+ if(u.pathname==='/api/address-source/status')return json({configured:true,checked_at:'2026-10-24T10:00:00Z'});
+ if(u.pathname==='/api/address-source/connect'){assert.deepEqual(route.request().postDataJSON(),{api_key:'FICTIONAL_CONNECTION_KEY'});return json({configured:true,checked_at:'2026-10-24T10:00:00Z'});}
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action.startsWith('setup.history-import.')){
+  const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);writes.push(body);
+  if(body.action.endsWith('.preview')){const allocation=body.data.content.includes('forkynder'),bad=body.data.content.includes('missing'),rows=allocation?[{line:2,number:'3',publisher:'Fiktiv <import>',publisher_action:'new',assigned:'2026-09-02',returned:'',date:'',kind:'loan',loan_state:'active',status:'ready',message:''}]:[{line:2,number:bad?'missing <script>':'1',date:'2026-09-02',status:bad?'error':'ready',message:bad?'Kortnummeret mangler eller er ikke entydigt. Opret eller ret kortet først.':''},{line:3,number:'1',date:'2026-09-01',status:'duplicate',message:'Allerede kendt eller gentaget; medtages ikke.'}];state.fictionalAllocationPreview=allocation;return json({result:{token:'fictional-history-token',csv:body.data.content,rows,count:allocation||bad?0:1,loan_count:allocation?1:0,publisher_count:allocation?1:0,errors:bad?1:0,cutoff:'2024-10-17',today:state.today},revision:state.revision});}
+  assert.equal(body.data.token,'fictional-history-token');assert.equal(body.data.confirm,'IMPORTÉR HISTORIK');const allocation=state.fictionalAllocationPreview;
+  if(allocation){state.publishers.push({id:'fictional-imported-person',name:'Fiktiv <import>'});state.loans.push({id:'fictional-active-import',card_id:'box',publisher_id:'fictional-imported-person',assigned:'2026-09-02',cycle_start:'2026-09-02',returned:null});}else state.completions.push({id:'fictional-import',card_id:'folder',date:'2026-09-02',visits:0,visits_unknown:true});state.revision+='-history';return json({result:{count:allocation?0:1,loans:allocation?1:0,publishers:allocation?1:0},revision:state.revision});
+ }
+ if(u.pathname==='/api/mutate'&&['note.save','note.complete'].includes(route.request().postDataJSON().action)){
+  const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);writes.push(body);const day=new Date(state.today+'T00:00:00Z'),weekday=(day.getUTCDay()+6)%7;
+  if(body.action==='note.save'){
+   const note=state.notes.find(n=>n.id===body.data.id)||{id:'recurring-fictional',date:state.today,created:state.today,resolved:false};note.text=body.data.text;note.card_id=body.data.card_id;
+   if(body.data.recurrence){const delta=(body.data.recurrence.weekday-weekday+7)%7;day.setUTCDate(day.getUTCDate()+delta);note.recurrence={...body.data.recurrence,next_due:day.toISOString().slice(0,10)};}else delete note.recurrence;
+   if(!state.notes.includes(note))state.notes.push(note);
+  }else{const note=state.notes.find(n=>n.id===body.data.id);assert.equal(body.data.due,note.recurrence.next_due);note.task_history=[...(note.task_history||[]),{due:body.data.due,date:state.today}];day.setUTCDate(day.getUTCDate()+((note.recurrence.weekday-weekday+7)%7||7));note.recurrence.next_due=day.toISOString().slice(0,10);}
+  state.revision+='-weekly';return json({result:{},revision:state.revision});
+ }
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action.startsWith('backup.')){
+  const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);writes.push(body);
+  if(body.action==='backup.snooze'){const day=new Date(state.today+'T00:00:00Z');day.setUTCDate(day.getUTCDate()+1);state.settings.backup_snoozed_until=day.toISOString().slice(0,10);}
+  else{const entry={id:body.data.id,status:body.data.status,at:state.today+'T12:00:00Z'};state.settings.backup_history=[entry];if(entry.status!=='created'){state.settings.last_backup=entry.at;delete state.settings.backup_snoozed_until;}}
+  state.revision+='-backup';return json({result:{},revision:state.revision});
+ }
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action==='note.resolve'){const body=route.request().postDataJSON();assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(body.data.id,'task-open');writes.push(body);state.notes.find(n=>n.id===body.data.id).resolved=body.data.resolved;state.revision+='-task';return json({result:{},revision:state.revision});}
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action.startsWith('setup.card-import.')){const body=route.request().postDataJSON();writes.push(body);if(body.action.endsWith('.inspect'))return json({revision:state.revision,result:{width:1,rows:1,columns:[{index:0,label:'kortnummer'}],fields:[{key:'card',label:'Kortnummer',required:true}],sample:[{line:2,values:['Fiktivt kort']}],issues:[]}});if(body.action.endsWith('.preview')){assert.deepEqual(body.data.column_map,['card']);return json({revision:state.revision,result:{token:body.data.name,cards:[{number:body.data.name,name:'Fiktiv kø',area:'Fiktivt område',kind:'By',visits:1,addresses:[]}],areas:[],errors:[],addresses:1,visits:1}});}assert.equal(body.data.confirm,'IMPORTÉR KORT');state.cards.push({id:body.data.token,number:body.data.token,area_id:'a',name:'Fiktiv kø',kind:'By',addresses:[]});state.revision+='-queue';return json({revision:state.revision,result:{count:1}});}
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action==='revision.approve'){const body=route.request().postDataJSON();assert.deepEqual(body.data,{card_id:'folder',side:'front'});writes.push(body);state.cards.find(c=>c.id==='folder').front_revision=false;state.revision+='-approval';return json({ok:true,result:{},revision:state.revision,geo_changed:false});}
+ if(u.pathname==='/api/mutate'&&route.request().postDataJSON().action==='recovery.purge'){const body=route.request().postDataJSON();assert.equal(body.data.batch,'fictional-trash');assert.equal(body.include_state,true);writes.push(body);state.recovery=[];state.revision+='-purge';return json({ok:true,result:{},revision:state.revision,geo_changed:false,state});}
+ if(u.pathname==='/api/mutate'){const body=route.request().postDataJSON();assert.equal(body.action,'loan.finish');assert.equal(Object.hasOwn(body.data,'_revision'),false);assert.equal(body.data.id,'loan-two');assert.equal(body.data.complete,false);assert.equal(body.data.retain,false);assert.equal(body.data.revise_ib,false,'No must not create an IB follow-up');if(rejectReturn){rejectReturn=false;return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'Fiktiv gemmefejl'})});}writes.push(body);state.loans.find(l=>l.id===body.data.id).returned=body.data.date;state.cards.find(c=>c.id==='two').in_folder=false;state.revision+='-return';return json({result:{},revision:state.revision});}
+ const file=u.pathname==='/'?'index.html':u.pathname.slice(1);assert.ok(!file.includes('..'));return route.fulfill({path:path.join(root,file)});
+ });
+ const activate=locator=>touch?locator.tap():locator.click();
+ // Check actual geometry, not just hidden document overflow.
+ const assertResponsive=async(selector,label)=>{
+  if(width>1100)return;
+  const failures=await page.locator(selector).evaluate(n=>{
+   const bad=[],right=document.documentElement.clientWidth;
+   if(document.documentElement.scrollWidth>right+1)bad.push('document overflow');
+   if(n.scrollWidth>n.clientWidth+1)bad.push('container overflow');
+   for(const e of n.querySelectorAll('button,input:not([type=hidden]),select,textarea,summary')){
+    const b=e.getBoundingClientRect(),style=getComputedStyle(e);
+    if(!b.width||!b.height||style.visibility==='hidden')continue;
+    if(b.left<-1||b.right>right+1)bad.push(e.outerHTML.slice(0,150));
+   }
+   return bad;
+  });
+  assert.deepEqual(failures,[],label+' at '+width+'px');
+ };
+ if(process.env.LTM_THEME)await context.addInitScript(mode=>{if(!localStorage.getItem('ltm-appearance'))localStorage.setItem('ltm-appearance',mode);},process.env.LTM_THEME);
+ await context.addInitScript(()=>{if(!localStorage.getItem('ltm-language'))localStorage.setItem('ltm-language','da');});await page.goto('http://ltm.desk.test/');await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');
+
+ // Compact, left-aligned daily-mode buttons: both themes, keyboard and touch.
+ const originalDesk=await page.evaluate(()=>({page,deskTab,query,appearance:Theme.choice}));
+ await page.evaluate(()=>{page='Udlevering';deskTab='Udlever';query='';render();});
+ const modes=page.locator('.deskTabs'),issueMode=modes.locator('[data-tab=Udlever]'),returnMode=modes.locator('[data-tab=Aflever]');
+ const beforeModeWrites=writes.length;
+ for(const mode of ['dark','light']){
+  await page.evaluate(mode=>Theme.set(mode),mode);
+  assert.equal(await modes.locator('button').count(),2);
+  assert.match(await issueMode.innerText(),/↗\s*Udlever/);
+  assert.match(await returnMode.innerText(),/↙\s*Aflever/);
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+  assert.equal(await returnMode.getAttribute('aria-pressed'),'false');
+  const checkModeLayout=async()=>{
+   const layout=await modes.evaluate(n=>{
+    const container=n.getBoundingClientRect(),buttons=[...n.querySelectorAll('button')];
+    let surface=n;while(surface&&getComputedStyle(surface).backgroundColor==='rgba(0, 0, 0, 0)')surface=surface.parentElement;
+    const bg=getComputedStyle(surface||document.body).backgroundColor;
+    return {left:container.left,right:container.right,viewport:innerWidth,bg,buttons:buttons.map(b=>{const r=b.getBoundingClientRect(),s=getComputedStyle(b);return {left:r.left,right:r.right,top:r.top,height:r.height,border:s.borderTopColor,style:s.borderTopStyle,width:parseFloat(s.borderTopWidth),background:s.backgroundColor,active:b.classList.contains('active')};})};
+   });
+   const [a,b]=layout.buttons;
+   assert.ok(Math.abs(a.left-layout.left)<=1,'First mode begins at the left edge');
+   assert.ok(Math.abs(a.top-b.top)<=1&&b.left>=a.right&&b.left-a.right<=12,'Both buttons sit together on the left');
+   assert.ok(b.right<=layout.right+1&&b.right<=layout.viewport+1,'Both modes fit the viewport');
+   assert.ok(layout.right-b.right>4,'Buttons do not stretch across the entire row');
+   assert.equal(layout.buttons.filter(b=>b.active).length,1);
+   for(const button of layout.buttons){
+    assert.ok(button.height>=44&&button.width>=1&&button.style==='solid','Touch target and visible border');
+    assert.ok(contrast(button.border,layout.bg)>=3,`Border contrast against surrounding surface (${mode}, ${width}px, active=${button.active}, border=${button.border}, surface=${layout.bg})`);
+    if(button.background!=='rgba(0, 0, 0, 0)')assert.ok(contrast(button.border,button.background)>=3,`Border contrast against button fill (${mode}, ${width}px, active=${button.active}, border=${button.border}, fill=${button.background})`);
+   }
+  };
+  await checkModeLayout();
+  await issueMode.focus();await page.keyboard.press('Tab');
+  assert.ok(await returnMode.evaluate(b=>b===document.activeElement&&b.matches(':focus-visible')&&getComputedStyle(b).outlineStyle!=='none'&&parseFloat(getComputedStyle(b).outlineWidth)>=2),'Visible keyboard focus on Return');
+  await page.keyboard.press('Enter');
+  assert.equal(await returnMode.getAttribute('aria-pressed'),'true');
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'false');
+  assert.ok(await returnMode.evaluate(b=>b===document.activeElement),'Focus survives rerender');
+  assert.equal(await page.locator('.deskReturnOrder').count(),1);
+  await checkModeLayout();
+  await page.keyboard.press('Shift+Tab');
+  assert.ok(await issueMode.evaluate(b=>b===document.activeElement&&b.matches(':focus-visible')),'Reverse Tab reaches Issue');
+  await page.keyboard.press('Space');
+  assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+  assert.ok(await issueMode.evaluate(b=>b===document.activeElement),'Focus survives Space activation');
+  assert.equal(await page.locator('.deskReturnOrder').count(),0);
+  await activate(returnMode);assert.equal(await returnMode.getAttribute('aria-pressed'),'true');
+  await activate(issueMode);assert.equal(await issueMode.getAttribute('aria-pressed'),'true');
+ }
+ assert.equal(writes.length,beforeModeWrites,'Switching daily mode never writes data');
+ await page.evaluate(original=>{Theme.set(original.appearance);page=original.page;deskTab=original.deskTab;query=original.query;render();},originalDesk);
+
+ // Shared address filters keep less-used categories accessible at every width.
+ const originalAddress=await page.evaluate(()=>({page,query,addressTab,addressPostcode,addressPage,addressFiltersExpanded}));
+ await page.evaluate(()=>{page='Adresser';query='';addressTab='Mangler på kort';addressPostcode='';addressPage=0;addressFiltersExpanded=false;render();});
+ const moreAddresses=page.locator('#addressMoreButton');
+ const ignoredAddresses=page.locator('[data-action=address-tab][data-tab="Se bort fra"]');
+ const narrowAddress=await moreAddresses.isVisible();
+ if(narrowAddress){
+  assert.equal(await ignoredAddresses.isVisible(),false);
+  await activate(moreAddresses);
+  assert.equal(await moreAddresses.getAttribute('aria-expanded'),'true');
+ }
+ await activate(ignoredAddresses);
+ assert.equal(await ignoredAddresses.getAttribute('aria-pressed'),'true');
+ if(narrowAddress){
+  await activate(moreAddresses);
+  assert.match(await moreAddresses.innerText(),/Se bort fra/);
+ }
+ await assertResponsive('.addressFilterLayout','Address category controls');
+ await activate(page.locator('[data-action=address-tab][data-tab=IB]'));
+ assert.equal(await page.locator('#ibSort').isVisible(),true,'IB sorting remains available');
+ await page.evaluate(old=>{({page,query,addressTab,addressPostcode,addressPage,addressFiltersExpanded}=old);render();},originalAddress);
+
+ // Fictional role quotas: ensure the real responsive UI shows live, advisory-only figures.
+ await page.evaluate(()=>{
+   window.__publisherRoleFixture={
+     publishers:structuredClone(state.publishers),loans:structuredClone(state.loans),
+     settings:structuredClone(state.settings),page,query,area,status
+   };
+   state.settings.publisher_card_guidance={member:1,pioneer:4,assistant:3,overseer:5};
+   state.publishers[0].pioneer=true;
+   state.publishers[1].group='Fiktiv gruppe';
+   state.publishers[1].group_role='assistant';
+   state.publishers.push({id:'p3',name:'Fiktiv dobbelttjeneste',group:'Anden gruppe',group_role:'overseer',pioneer:true});
+   page='Forkyndere';query='';render();
+ });
+ for(const [id,expected] of [['p1','1 / 4'],['p2','2 / 3'],['p3','0 / 5']]){
+   const row=page.locator('.publisherItem').filter({has:page.locator('[data-action=publisher-profile][data-id="'+id+'"]')});
+   assert.equal(await row.locator('.publisherGuidance').innerText(),expected,'Publisher roles and active counts appear in the list');
+ }
+ const assignedLabel=page.locator('.publisherAssignedFilter span');
+ const assignedGap=await assignedLabel.evaluate(n=>n.getBoundingClientRect().left-n.previousElementSibling.getBoundingClientRect().right);
+ assert.ok(assignedGap>=0&&assignedGap<=8,'Publisher checkbox is adjacent to its label');
+ await activate(assignedLabel);
+ assert.equal(await page.locator('#publisherActiveOnly').isChecked(),true);
+ assert.equal(await page.locator('[data-action=publisher-profile][data-id=p3]').count(),0);
+ await activate(assignedLabel);
+ assert.equal(await page.locator('[data-action=publisher-profile][data-id=p3]').count(),1);
+ await page.evaluate(()=>{page='Indstillinger';render();});
+ for(const [role,value] of [['member','1'],['pioneer','4'],['assistant','3'],['overseer','5']])
+   assert.equal(await page.locator('#settingsForm [name="guide_'+role+'"]').inputValue(),value,'Guidance settings are editable');
+ const gridFits=await page.locator('.guidanceSettings').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;});
+ assert(gridFits,'Role setting controls fit the desktop/mobile viewport');
+ await page.evaluate(()=>{page='Udlevering';issue('folder');});
+ const publisherInput=page.locator('#issuePublisherName');
+ const quickHeading=page.locator('#issueQuickPublishersHeading'),quickGroup=page.locator('.issueQuickPublishers');
+ assert.equal(await quickHeading.innerText(),'Oftest valgte forkyndere');
+ assert.equal(await quickGroup.getAttribute('aria-labelledby'),'issueQuickPublishersHeading');
+ const headingStyle=await quickHeading.evaluate(n=>{
+   const s=getComputedStyle(n),r=n.getBoundingClientRect(),group=n.nextElementSibling.getBoundingClientRect(),form=n.closest('form').getBoundingClientRect();
+   return {size:parseFloat(s.fontSize),weight:Number(s.fontWeight),color:s.color,bg:getComputedStyle(n.closest('dialog')).backgroundColor,margin:parseFloat(s.marginTop),fits:r.left>=form.left-1&&r.right<=form.right+1&&r.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1&&r.bottom<=group.top+1};
+ });
+ assert.ok(headingStyle.size>=18&&headingStyle.weight>=700&&headingStyle.margin>=16,'Quick publisher heading has clear visual hierarchy');
+ assert.ok(contrast(headingStyle.color,headingStyle.bg)>=4.5,'Quick publisher heading contrast');
+ assert.ok(headingStyle.fits,'Quick publisher heading fits above its buttons without horizontal overflow');
+ assert.deepEqual(await quickGroup.locator('button').allTextContents(),['Fiktiv B','Fiktiv <A>']);
+ await activate(quickGroup.locator('[data-issue-publisher=p2]'));
+ assert.equal(await publisherInput.inputValue(),'Fiktiv B','Quick selection still fills the publisher field');
+ assert.equal(writes.length,0,'Quick selection alone never saves');
+ await publisherInput.fill('Fiktiv <A>');
+ assert.match(await page.locator('#issuePublisherGuidance').innerText(),/1 \/ 4/);
+ assert.match(await page.locator('#issuePublisherNames').innerText(),/1 \/ 4/,'Suggestions include live counts');
+ assert.equal(await page.locator('#issueForm button:not([type="button"])').last().isDisabled(),false,'Guidance never prevents issuing');
+ await page.evaluate(()=>closeDialog());
+ await page.evaluate(()=>{
+   const old=window.__publisherRoleFixture;state.publishers=old.publishers;state.loans=old.loans;
+   state.settings=old.settings;page=old.page;query=old.query;area=old.area;status=old.status;delete window.__publisherRoleFixture;render();
+ });
+ assert.equal(writes.length,0,'Role guidance checks never write or create user data');
+
+
+
+ // A rejected write keeps a readable, scrollable explanation on real touch layouts.
+ await page.evaluate(()=>SaveStatus.set('error','Ændringen blev afvist','Fiktiv forklaring om en afvist ændring. '.repeat(35)+'SLUT_FIKTIV_FORKLARING'));
+ await activate(page.locator('.saveExplanation>summary'));
+ const explanation=page.locator('.saveExplanationText');assert.match(await explanation.innerText(),/SLUT_FIKTIV_FORKLARING/);
+ assert.ok(await explanation.evaluate(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1&&n.scrollWidth<=n.clientWidth+1&&getComputedStyle(n).whiteSpace!=='nowrap';}),'Complete error stays inside phone/tablet viewport');
+ await page.evaluate(()=>{I18n.set('en');Navigation.localize();});assert.equal(await page.locator('.saveExplanation').getAttribute('open'),'');
+ assert.match(await page.locator('.saveExplanation>summary').innerText(),/rejected/);
+ if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`save-explanation-${width}.png`),fullPage:false});}
+ await activate(page.locator('[data-save-explanation-close]'));assert.equal(await page.locator('.saveExplanation').getAttribute('open'),null);
+ await page.evaluate(()=>{I18n.set('da');Navigation.localize();saved();});assert.equal(writes.length,0);
+
+ if(touch&&width<=750){await page.locator('.mobileMenu').tap();assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'true');await page.locator('.mobileMenu').tap();assert.equal(await page.locator('.mobileMenu').getAttribute('aria-expanded'),'false');}
+ // Congregations with no carry folder must be able to assign every unloaned card,
+ // including legacy cards previously marked in_folder, without changing records.
+ await page.evaluate(()=>{
+  window.__congregationSettingsBefore=structuredClone(state.settings);
+  state.settings={...state.settings,folder_enabled:false,
+   location_labels:{home:'Hjemme med en usædvanlig lang betegnelse',
+                    folder:'I menighedens transportmappe',
+                    issued:'Ude ved forkynderne og deres grupper'}};
+  page='Udlevering';deskTab='Udlever';query='';render();
+ });
+ assert.equal(await page.locator('.deskCounts button').count(),2,'No folder means just home and out');
+ assert.equal(await page.locator('.folderSummary').count(),0,'Do not show replenishment when no folder exists');
+ assert.match((await page.locator('.deskCounts').innerText()),/Hjemme med en usædvanlig lang betegnelse/);
+ assert.ok(await page.locator('.deskCounts').evaluate(n=>{
+   const r=n.getBoundingClientRect();
+   return r.left>=-1&&r.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1&&
+    [...n.querySelectorAll('button')].every(b=>b.getBoundingClientRect().right<=innerWidth+1);
+ }), 'Long custom location names wrap within mobile/desktop width');
+ await assertResponsive('#app','Daily use with long custom names');
+ await page.evaluate(()=>issue('folder'));
+ assert.equal(await page.locator('#issueForm').getAttribute('data-from-box'),'true',
+              'No-folder mode can issue a legacy in-folder card from home');
+ await assertResponsive('#dialog','Issue dialog');
+ await page.evaluate(()=>closeDialog());
+ await page.evaluate(()=>{page='Distrikter';status='Alle';render();});
+ assert.equal(await page.locator('#statusFilter option[value="Kort i mappen"]').count(),0);
+ assert.equal(await page.locator('[data-card-row="folder"]').first().getAttribute('data-location'),'box');
+ assert.ok(await page.locator('#statusFilter').evaluate(n=>n.getBoundingClientRect().right<=innerWidth+1));
+ await page.evaluate(()=>{page='Indstillinger';Navigation.settingsSection='general';render();});
+ assert.equal(await page.locator('#settingsFolderEnabled').isChecked(),false);
+ assert.equal(await page.locator('#folderWorkflowOptions').isVisible(),false);
+ assert.equal(await page.locator('[name="location_home"]').inputValue(),
+              'Hjemme med en usædvanlig lang betegnelse');
+ await assertResponsive('#app','General settings');
+ await page.evaluate(()=>{
+  state.settings=window.__congregationSettingsBefore;delete window.__congregationSettingsBefore;
+  page='Udlevering';Navigation.settingsSection='general';render();
+  window.scrollTo({top:0,left:0,behavior:'instant'});
+ });
+ assert.equal(writes.length,0,'Congregation-only UI test must never write real data');
+
+ await page.evaluate(()=>{page='Distrikter';render();});
+
+ // Real desktop/mobile UI: fake data only, no writes, existing filters retained.
+ await page.evaluate(()=>{
+  window.__territorySortRestore={cards:state.cards.map(c=>({...c})),areas:state.areas.map(a=>({...a})),query,area,status,territorySort,page,view};
+  const dates={folder:'2026-09-01',blocked:null,box:'2024-01-01',one:null,two:'2025-04-01',three:'2026-01-01'};
+  state.cards.forEach(c=>{c.last_completed=dates[c.id];if(c.id==='three')c.area_id='other';});
+  state.areas.push({id:'other',name:'Andet fiktivt område'});
+  territorySort='number';status='Alle';query='';area='';view='Liste';render();
+ });
+ if(width<=600){assert.equal(await page.locator('#territorySort').isVisible(),false);await activate(page.locator('[aria-controls=territoryFilterPanel]'));}
+  assert.equal(await page.locator('#territorySort').isVisible(),true);
+ assert.equal(await page.locator('.territorySortControls').evaluate(n=>{const b=n.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;}),true,'Sort control fits desktop/mobile');
+ const listed=()=>page.locator('.cardRow[data-card-row]').evaluateAll(nodes=>nodes.map(n=>n.dataset.cardRow));
+ assert.deepEqual(await listed(),['folder','blocked','box','one','two','three']);
+ await assertResponsive('#app','Card inventory');
+ if(width<=900){
+  assert.equal(await page.locator('.responsiveCardTable .cardRow').first().evaluate(n=>getComputedStyle(n).display),'grid');
+  assert.equal(await page.locator('.responsiveCardTable .cardFieldLabel').first().isVisible(),true);
+  const more=page.locator('[data-card-row=folder] .cardActionMenu>summary');
+  await activate(more);
+  assert.equal(await page.locator('[data-card-row=folder] [data-action=show-map]').isVisible(),true);
+  await assertResponsive('#app','Expanded card actions');
+  await activate(more);
+ }
+
+ for(const id of ['one','box']){
+  const row=page.locator(`[data-card-row=${id}]`);
+  await activate(row.locator('[data-action=detail]'));
+  await activate(page.locator('.dialogClose'));
+  assert.equal(await row.getAttribute('aria-selected'),'true');
+  if(!touch)assert.equal(await row.locator('[data-action=detail]').evaluate(button=>document.activeElement===button),true);
+  assert.deepEqual(await page.locator('.cardRow.selected').evaluateAll(rows=>rows.map(n=>n.dataset.cardRow)),[id]);
+ }
+
+ await page.locator('#territorySort').selectOption('oldest');
+ assert.deepEqual(await listed(),['blocked','one','box','two','three','folder'],'Unknown completions first, then oldest');
+ await page.locator('#areaFilter').selectOption('a');
+ await page.locator('#statusFilter').selectOption('Kort i mappen');
+ await page.locator('#search').fill('fiktivt');
+ assert.deepEqual(await listed(),['blocked','folder'],'Age sort works with area, status and search');
+  if(width<=600){const done=page.locator('#territoryFilterPanel [data-action=toggle-territory-filters]');assert.match(await done.textContent(),/2/);await activate(done);assert.equal(await page.locator('#territorySort').isVisible(),false);assert.deepEqual(await listed(),['blocked','folder']);assert.ok(await page.locator('.territoryFilterStatus [data-action=clear-territory-filter]').count()>=3);await activate(page.locator('[aria-controls=territoryFilterPanel]'));}
+ await activate(page.locator('.territorySortControls .territoryTools > summary'));
+ await activate(page.locator('[data-action=reset-territory-sort]'));
+ assert.deepEqual(await listed(),['folder','blocked'],'Reset returns to number order without clearing other filters');
+ assert.equal(await page.locator('#territorySort').inputValue(),'number');
+ assert.equal(await page.locator('#areaFilter').inputValue(),'a');
+ assert.equal(await page.locator('#statusFilter').inputValue(),'Kort i mappen');
+ assert.equal(await page.locator('#search').inputValue(),'fiktivt');
+ await page.locator('#search').fill('ingen-fiktive-kort');
+ assert.equal(await page.locator('.cardRow[data-card-row]').count(),0);
+ await page.locator('#territorySort').selectOption('oldest');
+ assert.equal(await page.locator('.cardRow[data-card-row]').count(),0,'No cards does not break sorting');
+ await activate(page.locator('.territorySortControls .territoryTools > summary'));
+ await activate(page.locator('[data-action=reset-territory-sort]'));
+ assert.equal(await page.locator('#search').inputValue(),'ingen-fiktive-kort');
+ await page.evaluate(()=>{
+  const saved=window.__territorySortRestore;
+  state.cards=saved.cards;state.areas=saved.areas;query=saved.query;area=saved.area;status=saved.status;territorySort=saved.territorySort;page=saved.page;view=saved.view;
+  delete window.__territorySortRestore;render();
+ });
+ await page.evaluate(()=>{page='Udlevering';render();});
+ assert.equal(await page.locator('.oldestCards').count(),0,'The old Daily use table is removed after replacing it with the inventory sort');
+ await page.evaluate(()=>{page='Distrikter';render();});
+
+ for(const name of ['issued','folder','box']){assert.ok(await page.locator('.statusBadge.'+name).count());const style=await page.locator('.statusBadge.'+name).first().evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(style.color,style.background)>=4.5,name+' contrast');}
+ for(const cls of ['issueAction','returnAction']){const s=await page.locator('.'+cls+':not(:disabled)').first().evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(s.color,s.background)>=4.5,cls+' contrast');}
+ assert.equal(await page.locator('[data-card-row=blocked] .issueAction').isDisabled(),true);assert.match(await page.locator('[data-card-row=folder] .taskAlert').innerText(),/1/);assert.equal(await page.locator('[data-card-row=box] .taskAlert').count(),0);assert.equal(await page.locator('.navTaskCount').innerText(),'2');
+ await activate(page.locator('[data-card-row=folder] .issueAction'));await page.locator('#issueForm').waitFor();assert.equal(await page.locator('#issueForm [name=card_id]').inputValue(),'folder');assert.equal(writes.length,0);
+ if(touch){const metrics=await page.locator('#dialog').evaluate(n=>({height:n.getBoundingClientRect().height,viewport:innerHeight,fields:[...n.querySelectorAll('input:not([type=checkbox]):not([type=radio]),select,textarea')].map(e=>parseFloat(getComputedStyle(e).fontSize)),close:n.querySelector('.dialogClose').getBoundingClientRect().height}));assert.ok(metrics.height<=metrics.viewport-20,'Dialog fits landscape viewport');assert.ok(metrics.fields.every(n=>n>=16),'Fields stay readable without iOS focus zoom: '+JSON.stringify(metrics));assert.ok(metrics.close>=44,'Touch close target');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`issue-${width}x${height}.png`),fullPage:true});}}
+ assert.match(await page.locator('.issueTaskAlert').innerText(),/Fiktiv gammel <opfølgning>/);assert.doesNotMatch(await page.locator('.issueTaskAlert').innerText(),/FIKTIV_DONE_TASK/);assert.equal(await page.locator('.issueTaskAlert opfølgning').count(),0);assert.equal(await page.locator('#issueForm button.primary').isEnabled(),true,'Tasks add no mandatory assignment block');assert.ok(await page.locator('#dialog').evaluate(n=>n.scrollWidth<=n.clientWidth+1));
+ await page.locator('#issueForm [name=card_id]').selectOption('blocked');assert.equal(await page.locator('.issueTaskAlert').count(),0);await page.locator('#issueForm [name=card_id]').selectOption('folder');assert.equal(await page.locator('.issueTaskAlert').count(),1);await activate(page.locator('.dialogClose'));
+ // Observe even transient select focus during native showModal and when replacing an open card.
+ await page.evaluate(()=>{window.__fictionalSelectFocus=[];document.addEventListener('focusin',e=>{if(e.target.tagName==='SELECT'&&e.target.closest('#dialog'))window.__fictionalSelectFocus.push(e.target.name||e.target.id);});});
+ await activate(page.locator('[data-card-row=one] .returnAction'));await page.locator('#finishForm').waitFor();assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-one');
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Opening Return never focuses a native select');
+ assert.ok(await page.locator('#dialog .dialogClose').evaluate(n=>n===document.activeElement),'Safe initial dialog focus');
+ if(!touch&&engine==='chromium'){
+  await page.keyboard.press('Tab');
+  assert.ok(await page.locator('#finishForm [name=complete]').evaluate(n=>n===document.activeElement),'Tab reaches the native choice');
+ }
+ await page.locator('#finishForm [name=complete]').selectOption('no');
+ assert.equal(await page.locator('#finishForm [name=complete]').inputValue(),'no','Intentional choice remains available');
+ await assertResponsive('#dialog','Return dialog');assert.equal(writes.length,0);await activate(page.locator('.dialogClose'));
+ await page.evaluate(()=>{window.__fictionalSelectFocus.length=0;detail('one','Historik');});
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Opening a district card does not focus a picker');
+ await page.locator('#dialog .cardMore summary').click();
+ await activate(page.locator('#dialog .cardMore [data-action=return]'));
+ await page.locator('#finishForm').waitFor();
+ assert.deepEqual(await page.evaluate(()=>window.__fictionalSelectFocus),[],'Replacing an already open district card with Return does not focus a picker');
+ assert.ok(await page.locator('#dialog .dialogClose').evaluate(n=>n===document.activeElement));
+ await activate(page.locator('.dialogClose'));assert.equal(writes.length,0);
+ await page.locator('[data-card-row=one] [data-action=select]').click();assert.match(await page.locator('.details').innerText(),/Fiktiv <A>/);assert.equal(await page.locator('.details [data-action=complete]').count(),1);
+ await page.evaluate(()=>{page='Udlevering';render();});await page.locator('[data-action=desk-tab][data-tab=Aflever]').click();await page.locator('[data-action=desk-tab][data-tab=Forkyndere]').click();assert.equal(await page.locator('.publisherReturnGroup').count(),2);assert.match(await page.locator('.publisherReturnGroup h3').first().innerText(),/Fiktiv B[\s\S]*2 \/ 1/);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),3);assert.equal(await page.locator('.publisherReturnGroup script').count(),0);
+ await page.locator('#search').fill('<A>');assert.equal(await page.locator('.publisherReturnGroup').count(),1);assert.match(await page.locator('.publisherReturnGroup h3').innerText(),/Fiktiv <A>/);await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('#search').inputValue(),'<A>');assert.match(await page.locator('[data-tab=Forkyndere]').innerText(),/^By publisher$/);await page.locator('#search').fill('');await page.locator('#navigationLanguage').selectOption('da');
+ await page.locator('.publisherReturnGroup [data-card-row=three]').focus();await page.keyboard.press('Enter');assert.match(await page.locator('.details strong').first().innerText(),/6/);assert.equal(await page.locator('.details [data-action=return]').getAttribute('data-id'),'loan-three');
+ for(const cls of ['issueAction','returnAction']){const button=page.locator('.'+cls+':not(:disabled)').first();if(await button.count()){const s=await button.evaluate(n=>({color:getComputedStyle(n).color,background:getComputedStyle(n).backgroundColor}));assert.ok(contrast(s.color,s.background)>=4.5);}}
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No page overflow');
+ await assertResponsive('#app','Returns by publisher');if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`returns-${width}.png`),fullPage:true});}
+ const nextReturn=page.locator('[data-action=desk-return-next]'),mark=id=>page.locator('input[data-return-mark="'+id+'"]');
+ assert.equal(await nextReturn.isDisabled(),true);
+ await page.locator('#search').fill('Fiktiv B');
+ await activate(page.locator('[data-action=desk-return-mark-visible]'));
+ assert.equal(await page.locator('input[data-return-mark]:checked').count(),2);
+ await page.locator('#search').fill('<A>');assert.equal(await nextReturn.isDisabled(),true);
+ await page.locator('#search').fill('Fiktiv B');assert.equal(await mark('loan-two').isChecked(),true);assert.equal(await mark('loan-three').isChecked(),true);
+ await activate(nextReturn);assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-two');
+ await activate(page.locator('#dialog .dialogClose'));assert.equal(writes.length,0);
+ await mark('loan-two').uncheck();await activate(nextReturn);assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-three');
+ await activate(page.locator('#dialog .dialogClose'));await mark('loan-two').check();
+ await page.locator('#search').fill('');await activate(nextReturn);
+ assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-two');
+await page.locator('#finishForm [name=complete]').selectOption('no');const ibChoice=page.locator('#finishForm .return-ib-checkbox'),ibCheck=page.locator('#finishForm input[name=revise_ib]');assert.equal(await ibCheck.isChecked(),false,'IB revision must default to unchecked');assert.ok((await ibChoice.boundingBox())?.height>=80,'IB choice needs a large touch target');await ibChoice.click();assert.equal(await ibCheck.isChecked(),true);await ibChoice.click();assert.equal(await ibCheck.isChecked(),false);await activate(page.locator('#finishForm button.primary'));await page.waitForFunction(()=>document.getElementById('formError')?.textContent.includes('Fiktiv gemmefejl')&&!document.querySelector('#finishForm button.primary').disabled);
+ assert.equal(writes.length,0);assert.equal(await page.locator('#dialog').evaluate(n=>n.open),true);assert.equal(await page.locator('#finishForm [name=complete]').inputValue(),'no');
+ assert.equal(await page.evaluate(()=>deskReturnSelected.has('loan-two')&&deskReturnSelected.has('loan-three')),true);
+ await activate(page.locator('#finishForm button.primary'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(writes.length,1);assert.equal(await page.locator('.publisherReturnGroup [data-action=return]').count(),2);
+ assert.equal(await mark('loan-two').count(),0);assert.equal(await mark('loan-three').isChecked(),true);
+ assert.equal(await page.evaluate(()=>deskReturnSelected.has('loan-two')),false);
+ await activate(nextReturn);assert.equal(await page.locator('#finishForm').getAttribute('data-id'),'loan-three');await activate(page.locator('#dialog .dialogClose'));
+ await activate(page.locator('[data-action=desk-return-clear]'));assert.equal(await nextReturn.isDisabled(),true);assert.equal(writes.length,1,'No automatic second save');assert.equal(state.cards.find(c=>c.id==='two').in_folder,false);assert.equal(state.completions.length,0);assert.deepEqual(errors,[]);
+ await page.evaluate(()=>{page='Opgaver';Workspace.taskFilter='open';render();});assert.equal(await page.locator('[data-value=notes]').count(),0);assert.match(await page.locator('#app').innerText(),/Fiktiv gammel <opfølgning>/);assert.doesNotMatch(await page.locator('#app').innerText(),/FIKTIV_DONE_TASK/);
+ await activate(page.locator('[data-work=resolve][data-id=task-open]'));await activate(page.locator('[data-work-form=complete-task] button.primary'));await page.waitForFunction(()=>state.notes.find(n=>n.id==='task-open').resolved);assert.equal(await page.locator('.navTaskCount').innerText(),'1');assert.equal(await page.locator('[data-work=resolve][data-id=task-open]').count(),0);
+ await page.locator('[data-work=task-filter][data-value=done]').click();assert.match(await page.locator('#app').innerText(),/FIKTIV_DONE_TASK/);await page.locator('[data-work=new-task]').click();assert.equal(await page.locator('[data-work-form=note] [name=task]').count(),0);assert.equal(await page.locator('[data-work-form=note]').count(),1);await activate(page.locator('.dialogClose'));assert.deepEqual(errors,[]);
+ // Dashboard reminder is local and calendar-based; ordinary download is never called a disk save.
+ await page.evaluate(()=>{page='Forside';render();});await page.locator('#backupReminder').waitFor();const beforeBackup=writes.length;
+ await page.evaluate(()=>{state.loans.push({id:'fictional-metric-loan',card_id:'folder',publisher_id:'p1',assigned:'2026-09-01',cycle_start:'2026-09-01',returned:'2026-10-02'});state.completions=[{id:'interval-one',card_id:'folder',date:'2026-09-01'},{id:'interval-two',loan_id:'fictional-metric-loan',card_id:'folder',date:'2026-10-02'}];render();});
+ for(const language of ['da','en']){
+  await page.evaluate(language=>{I18n.set(language);Navigation.localize();},language);
+  assert.equal(await page.locator('.dashboardHero,.dashboardRing').count(),0,'The former tall hero and decorative rings must not return');
+  assert.equal(await page.locator('.dashboardAverage .dashboardAverageValue').innerText(),language==='da'?'1 måned og 1 dag':'1 month and 1 day','Average uses a completed issue-to-return interval');
+  assert.equal(await page.locator('.dashboardQueue .dashboardQueueValue').count(),1,'Queue age is a separate visible figure');
+  assert.equal(await page.locator('.dashboardProgressTrack[role=progressbar]').count(),1);
+  assert.match(await page.locator('.dashboardProgressTrack').getAttribute('aria-valuenow'),/^\d+$/);
+  assert.equal(await page.locator('.dashboardAverage .dashboardSpotlightNote').count(),1,'Average explains its issue-to-return definition');
+  assert.equal(await page.locator('.dashboardQueue .dashboardSpotlightNote').count(),1,'Queue age explains the next available card');
+  const geometry=await page.evaluate(()=>{
+   const rect=selector=>{const node=document.querySelector(selector);if(!node)return null;const box=node.getBoundingClientRect();return {top:box.top,bottom:box.bottom,left:box.left,right:box.right};};
+   return {primary:rect('.dashboardPrimary'),quick:rect('.dashboardQuickFacts'),chart:rect('.dashboardLower'),below:rect('.dashboardBelow')};
+  });
+  assert(geometry.primary&&geometry.quick&&geometry.chart&&geometry.below,'Compact dashboard no longer requires a separate lead banner');
+  assert(geometry.primary.bottom<=geometry.quick.top+1&&geometry.quick.bottom<=geometry.chart.top+1&&geometry.chart.bottom<=geometry.below.top+1,'Dashboard hierarchy must put KPIs and actions before detailed reports and reminders');
+  if(width===1440)assert(geometry.quick.bottom<height-40,'Desktop should show all primary metrics and shortcuts without scrolling');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Compact dashboard fits the viewport without horizontal scrolling');
+ }
+ await page.evaluate(()=>{state.loans=state.loans.filter(l=>l.id!=='fictional-metric-loan');state.completions=[{id:'fictional-september',card_id:'folder',date:'2026-09-02'},{id:'fictional-current',card_id:'folder',date:'2026-10-17'},{id:'fictional-future',card_id:'folder',date:'2026-10-18'},{id:'fictional-previous',card_id:'folder',date:'2025-10-17'},{id:'fictional-too-late',card_id:'folder',date:'2025-10-18'}];I18n.set('da');render();});
+ assert.equal(await page.locator('[data-comparison=current][data-month="2026-10"]').getAttribute('data-count'),'1');
+ assert.equal(await page.locator('[data-comparison=previous][data-month="2026-10"]').getAttribute('data-count'),'1');
+ assert.equal(await page.locator('[data-comparison=previous][data-month="2026-09"]').count(),0);
+ assert.equal(await page.locator('[data-comparison=current][data-month="2026-11"]').count(),0);
+ await page.locator('.monthlyComparison .chartData summary').click();assert.match(await page.locator('[data-comparison-row="2026-10"]').innerText(),/17\.10\.2025/);assert.match(await page.locator('[data-comparison-row="2026-09"]').innerText(),/Ingen registreringer/);
+ await page.locator('#navigationLanguage').selectOption('en');assert.match(await page.locator('.comparisonLegend').innerText(),/Same month last year/);assert.match(await page.locator('[data-comparison-row="2026-09"]').innerText(),/No records/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Comparison table stays inside the mobile page');
+ await page.evaluate(()=>{state.completions=[];I18n.set('da');render();});
+
+ await page.locator('[data-action=backup-snooze]').click();await page.waitForFunction(()=>!document.getElementById('backupReminder'));assert.equal(writes.length,beforeBackup+1);assert.equal(writes.at(-1).action,'backup.snooze');
+ await page.reload();await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');assert.equal(await page.locator('#backupReminder').count(),0);
+ state.today='2026-10-18';await page.reload();await page.locator('#backupReminder').waitFor();await page.locator('#navigationLanguage').selectOption('en');assert.match(await page.locator('#backupReminder').innerText(),/private backup/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ const downloadEvent=page.waitForEvent('download');await page.locator('#backupReminder [data-action=backup]').click();const downloaded=await downloadEvent;assert.match(downloaded.suggestedFilename(),/Distrikt-sikkerhedskopi-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-\d{3}\.zip/);await page.waitForFunction(()=>!document.getElementById('backupReminder'));
+ assert.deepEqual(writes.slice(-2).map(w=>w.data.status),['created','download_started']);assert.equal(writes.at(-1).data.id,writes.at(-2).data.id);
+ await page.evaluate(()=>{page='Indstillinger';Navigation.settingsSection='data';render();});await page.locator('#backupHistory > summary').click();assert.match(await page.locator('#backupHistory').innerText(),/Browser download started/);assert.doesNotMatch(await page.locator('#backupHistory').innerText(),/File write confirmed/);assert.deepEqual(errors,[]);
+ await page.evaluate(()=>{page='Opgaver';Workspace.taskFilter='open';render();});await page.locator('[data-work=new-task]').click();await page.locator('[data-work-form=note] [name=text]').fill('Fiktiv ugentlig <opgave>');await page.locator('[name=repeat_weekday]').selectOption('6');await page.locator('#navigationLanguage').selectOption('da');assert.equal(await page.locator('[name=repeat_weekday]').inputValue(),'6');assert.equal(await page.locator('[data-work-form=note] [name=text]').inputValue(),'Fiktiv ugentlig <opgave>');await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('[name=repeat_weekday] option:checked').innerText(),'Sunday');await page.locator('[data-work-form=note] button.primary').click();await page.waitForFunction(()=>!document.getElementById('dialog').open);
+ await page.evaluate(()=>{page='Forside';render();});await page.locator('#recurringTasks').waitFor();assert.match(await page.locator('#recurringTasks').innerText(),/Fiktiv ugentlig <opgave>/);assert.equal(await page.locator('#recurringTasks opgave').count(),0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ await page.locator('#recurringTasks [data-work=resolve]').click();await page.locator('[data-work-form=complete-task] button.primary').click();await page.waitForFunction(()=>!document.getElementById('recurringTasks'));const weekly=state.notes.find(n=>n.id==='recurring-fictional');assert.equal(weekly.recurrence.next_due,'2026-10-25');assert.equal(weekly.task_history.length,1);assert.equal(weekly.resolved,false);assert.equal(await page.locator('.navTaskCount').innerText(),String(state.notes.filter(n=>!n.resolved&&(!n.recurrence||n.recurrence.next_due<=state.today)).length),'Future weekly occurrence does not inflate navigation count');await page.reload();await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');assert.equal(await page.locator('#recurringTasks').count(),0);
+ await page.evaluate(()=>{page='Opgaver';render();});assert.equal(await page.locator('[data-work=resolve][data-id=recurring-fictional]').isDisabled(),true);await page.locator('[data-work=edit-note][data-id=recurring-fictional]').click();assert.match(await page.locator('#dialog').innerText(),/Completion history/);await page.locator('[name=repeat_weekday]').selectOption('');await page.locator('[data-work-form=note] button.primary').click();await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(weekly.recurrence,undefined);assert.equal(weekly.task_history.length,1);assert.deepEqual(errors,[]);
+ // History import keeps the editable draft through language changes and requires a fresh review.
+ await page.evaluate(()=>{page='Indstillinger';Navigation.settingsSection='import';render();});
+ const historyBefore=writes.length;await page.locator('[data-history-import=open]').click();
+ await page.locator('#historyImportFile').setInputFiles({name:'fictional.csv',mimeType:'text/csv',buffer:Buffer.from('kortnummer;dato\n1;2026-09-02\n1;2026-09-01')});
+ await page.locator('[data-history-import=apply]').waitFor();assert.equal(writes.length,historyBefore+1);assert.equal(state.completions.some(e=>e.id==='fictional-import'),false);
+ const draft=await page.locator('#historyImportText').inputValue();await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('#historyImportText').inputValue(),draft);assert.match(await page.locator('#dialog h2').innerText(),/Import history/);
+ await page.locator('#historyImportText').fill('kortnummer;dato\nmissing <script>;2026-09-02');assert.equal(await page.locator('[data-history-import=apply]').count(),0);await page.locator('[data-history-import=check]').click();await page.waitForFunction(()=>HistoryImportUI.preview?.errors===1);assert.equal(await page.locator('[data-history-import=apply]').isDisabled(),true);assert.equal(await page.locator('#historyImportConfirm').isEnabled(),true,'A rejected preview must not disable the text field');await page.locator('#historyImportConfirm').fill('IMPORTÉR HISTORIK');assert.match(await page.locator('#historyImportBlockReason').innerText(),/Ret fejlene|Fix the errors/);assert.equal(writes.filter(w=>w.action==='setup.history-import.apply').length,0,'Typing cannot bypass preview errors');assert.equal(await page.locator('#dialog script').count(),0);
+ await page.evaluate(()=>{const p=HistoryImportUI.preview;HistoryImportUI.preview={...p,errors:0,count:0,loan_count:0,linked_count:0,rows:p.rows.map(row=>({...row,status:'duplicate'}))};HistoryImportUI.paint();});
+ assert.equal(await page.locator('#historyImportConfirm').isEnabled(),true,'An empty preview must not disable text entry');await page.locator('#historyImportConfirm').fill('IMPORTÉR HISTORIK');assert.equal(await page.locator('[data-history-import=apply]').isDisabled(),true,'Empty imports remain blocked');assert.match(await page.locator('#historyImportBlockReason').innerText(),/Ingen nye gennemgange|No new completions/);assert.equal(writes.filter(w=>w.action==='setup.history-import.apply').length,0);
+ await page.locator('#historyImportText').fill(draft);await page.locator('[data-history-import=check]').click();await page.waitForFunction(()=>HistoryImportUI.preview?.count===1);await page.locator('#historyImportConfirm').fill('IMPORTÉR HISTORIK');await page.locator('[data-history-import=apply]').click();await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(writes.filter(w=>w.action==='setup.history-import.apply').length,1);assert.equal(state.completions.filter(e=>e.id==='fictional-import').length,1);
+ await page.locator('[data-history-import=open]').click();assert.equal(await page.locator('#historyImportText').inputValue(),'');
+ await page.locator('#historyImportText').fill('kortnummer;dato;forkynder;udleveret;afleveret\n3;;Fiktiv <import>;2026-09-02;');await page.locator('[data-history-import=check]').click();await page.waitForFunction(()=>HistoryImportUI.preview?.loan_count===1);
+ assert.equal(await page.locator('[data-history-import=apply]').isDisabled(),false,'An active-only import can be approved with zero completions');assert.match(await page.locator('#historyImportPreview').innerText(),/Fiktiv <import>/);assert.match(await page.locator('#historyImportPreview').innerText(),/Active loan/);assert.equal(await page.locator('#historyImportPreview script').count(),0);assert.equal(state.loans.some(l=>l.id==='fictional-active-import'),false);
+ await page.locator('#navigationLanguage').selectOption('da');assert.match(await page.locator('#historyImportPreview').innerText(),/Aktivt udlån/);await page.locator('#historyImportConfirm').fill('IMPORTÉR HISTORIK');await page.locator('[data-history-import=apply]').click();await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(state.loans.filter(l=>l.id==='fictional-active-import').length,1);assert.equal(writes.filter(w=>w.action==='setup.history-import.apply').length,2);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);
+ await page.evaluate(()=>{page='Distrikter';render();});assert.equal(await page.locator('.savedViews').count(),0);await page.evaluate(()=>{page='Adresser';render();});assert.equal(await page.locator('.savedViews').count(),0);
+ // All three import entry points live together and still open their original reviewed workflows.
+ if(width<=750)await activate(page.locator('.mobileMenu'));await activate(page.locator('#nav [data-navigation="2:2"]'));if(await page.locator('.settingsAdvanced:not([open])').count())await page.locator('.settingsAdvanced>summary').click();await page.locator('[data-work=settings-tab][data-value=import]').click();assert.equal(await page.locator('#settings-import').isVisible(),true);assert.equal(await page.locator('[data-work=settings-tab][data-value=advanced]').count(),0);assert.equal(await page.locator('#settings-data').isVisible(),false);
+ const beforeOpeningImports=writes.length;await page.locator('[data-card-import=open]').click();await page.locator('#cardImportFile').waitFor();await page.locator('#dialog .dialogClose').click();await page.locator('[data-setup=ib-open]').click();await page.locator('#setupIBFile').waitFor();await page.locator('[data-setup=back]').click();assert.equal(await page.locator('#settings-import').isVisible(),true);assert.equal(writes.length,beforeOpeningImports,'Opening import choices creates no records');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ if(out){fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,`import-${width}.png`),fullPage:true});}
+ // Independent checks count the changed sides here; overdue assignments are under Publishers.
+ Object.assign(state.cards.find(c=>c.id==='folder'),{area_id:null,front_revision:true,back_revision:true});Object.assign(state.loans.find(l=>l.id==='loan-one'),{assigned:'2026-01-01',cycle_start:'2026-01-01'});await page.evaluate(async()=>refresh());
+ if(width<=750)await activate(page.locator('.mobileMenu'));await activate(page.locator('#nav [data-navigation="1:4"]'));await page.waitForFunction(()=>page==='Opfølgninger');assert.equal(await page.locator('.followupRow').count(),10);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'10');
+ const moreFilters=page.locator('#followupMoreButton'),extraFilters=page.locator('#followupExtraFilters'),reprintFilter=page.locator('[data-work=followup-filter][data-value=reprint]');
+ const wideFilters=await page.locator('.followupFilterLayout').evaluate(n=>n.clientWidth>=48*parseFloat(getComputedStyle(document.documentElement).fontSize));
+ assert.equal(await moreFilters.isVisible(),!wideFilters);assert.equal(await extraFilters.isVisible(),wideFilters);
+ if(wideFilters){
+  const tops=await page.locator('.followupTabs [data-work=followup-filter]').evaluateAll(ns=>ns.map(n=>n.getBoundingClientRect().top));
+  assert.ok(tops.every(y=>Math.abs(y-tops[0])<2),'All six filters fit one line');
+ }else{
+  await activate(moreFilters);assert.equal(await moreFilters.getAttribute('aria-expanded'),'true');assert.equal(await extraFilters.isVisible(),true);
+  assert.ok(await extraFilters.evaluate(n=>n.scrollWidth<=n.clientWidth+1),'Expanded filter panel fits its container');
+ }
+ if(width===844){
+  // Model only the sidebar's change in content width; no navigation or rerender.
+  await page.evaluate(()=>{window.filterNode=document.querySelector('[data-work=followup-filter][data-value=reprint]');document.querySelector('main').style.marginLeft='0';});
+  assert.equal(await moreFilters.isVisible(),false);assert.equal(await extraFilters.isVisible(),true);
+  assert.ok(await reprintFilter.evaluate(n=>n===window.filterNode),'Responsive layout preserves the same controls');
+  await page.evaluate(()=>document.querySelector('main').style.removeProperty('margin-left'));
+  assert.equal(await moreFilters.isVisible(),!wideFilters);
+ }
+ await activate(reprintFilter);assert.equal(await page.locator('.followupRow').count(),3);await activate(page.locator('[data-action=approve][data-id=folder][data-side=front]'));assert.equal(writes.filter(w=>w.action==='revision.approve').length,0);await activate(page.locator('[data-action=confirm-approve]'));await page.waitForFunction(()=>!document.getElementById('dialog').open);assert.equal(await page.locator('.followupRow').count(),2);assert.equal(await page.locator('#nav [data-navigation="1:4"] .navFollowupCount').innerText(),'9');assert.equal(state.cards.find(c=>c.id==='folder').back_revision,true);assert.equal(writes.filter(w=>w.action==='revision.approve').length,1);
+ await page.locator('[data-work-input=followups]').fill('1');assert.equal(await page.locator('.followupRow').count(),1);await page.evaluate(()=>window.followupSearch=document.querySelector('[data-work-input=followups]'));await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('[data-work-input=followups]').inputValue(),'1');assert.ok(await page.evaluate(()=>window.followupSearch===document.querySelector('[data-work-input=followups]')));assert.match(await page.locator('[data-followup-count]').innerText(),/Follow-up items: 1/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ if(!wideFilters){
+  assert.equal(await moreFilters.getAttribute('aria-expanded'),'true');
+  await activate(moreFilters);assert.equal(await extraFilters.isVisible(),false);assert.equal(await moreFilters.getAttribute('aria-expanded'),'false');
+  assert.match(await moreFilters.innerText(),/Reprint/i);
+  assert.equal(await page.locator('[data-work-input=followups]').inputValue(),'1');assert.equal(await page.locator('.followupRow').count(),1);
+  await moreFilters.focus();await moreFilters.press('Enter');assert.equal(await extraFilters.isVisible(),true);
+  assert.equal(await reprintFilter.getAttribute('aria-pressed'),'true');
+ }
+ if(out)await page.screenshot({path:path.join(out,`followups-${width}.png`),fullPage:true});await page.locator('#navigationLanguage').selectOption('da');
+ // Overlap warnings cover both cards; shared edges remain quiet and nothing is written.
+ const beforeOverlapWrites=writes.length;
+ await page.evaluate(()=>{state.cards.find(c=>c.id==='folder').geo_polygon=[[10,55],[10.01,55],[10.01,55.01],[10,55.01]];state.cards.find(c=>c.id==='box').geo_polygon=[[10.005,55],[10.015,55],[10.015,55.01],[10.005,55.01]];Workspace.followupFilter='checks';Workspace.followupQuery='';render();});
+ const overlapRow=page.locator('.followupRow').filter({hasText:'Grænsen overlapper'});assert.equal(await overlapRow.count(),1);assert.equal(await overlapRow.locator('[data-action=detail]').count(),2);
+ await activate(overlapRow.locator('[data-id=box]'));await page.locator('#dialog .dialogClose').click();await activate(overlapRow.locator('[data-id=folder]'));await page.locator('#dialog .dialogClose').click();
+ await page.locator('#navigationLanguage').selectOption('en');assert.equal(await page.locator('.followupRow').filter({hasText:'The boundary overlaps'}).count(),1);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ if(out)await page.screenshot({path:path.join(out,`boundary-overlap-${width}.png`),fullPage:true});
+ await page.evaluate(()=>{state.cards.find(c=>c.id==='box').geo_polygon=[[10.01,55],[10.02,55],[10.02,55.01],[10.01,55.01]];render();});assert.equal(await page.locator('.followupRow').filter({hasText:'The boundary overlaps'}).count(),0);assert.equal(writes.length,beforeOverlapWrites);
+ await page.evaluate(()=>{delete state.cards.find(c=>c.id==='folder').geo_polygon;delete state.cards.find(c=>c.id==='box').geo_polygon;});await page.locator('#navigationLanguage').selectOption('da');
+ // Permanently deleting a fictional note updates recovery without downloading the map again.
+ state.recovery=[{batch:'fictional-trash',module:'notes',label:'Fiktiv slettet note',count:1,at:'2026-10-17T12:00:00Z'}];
+ await page.evaluate(async()=>{await refresh();page='Indstillinger';Navigation.settingsSection='data';render();});const readsBeforePurge=geoReads,statesBeforePurge=stateReads;page.once('dialog',dialog=>dialog.accept());await activate(page.locator('[data-action=purge-recovery]').first());await page.waitForFunction(()=>!state.recovery.length);await page.evaluate(()=>saveQueue);assert.equal(await page.locator('[data-action=purge-recovery]').count(),0);assert.equal(await page.evaluate(()=>SaveStatus.kind),'saved');assert.equal(writes.filter(w=>w.action==='recovery.purge').length,1);assert.equal(geoReads,readsBeforePurge);assert.equal(stateReads,statesBeforePurge,'Deletion finishes on the same page without another overview request');assert.deepEqual(errors,[]);
+ // Multiple local files require independent previews and confirmations, with no automatic next write.
+ if(await page.locator('.settingsAdvanced:not([open])').count())await page.locator('.settingsAdvanced>summary').click();await activate(page.locator('[data-work=settings-tab][data-value=connections]'));await page.waitForFunction(()=>document.getElementById('addressSourceStatus').textContent.includes('Nøgle gemt'));
+ assert.equal(await page.locator('#addressSourceForm:visible').count(),1);assert.equal(await page.locator('#addressSourceKey').inputValue(),'');
+ await page.evaluate(()=>{window.connectionInvalids=0;document.getElementById('addressSourceKey').addEventListener('invalid',()=>window.connectionInvalids++);});await page.locator('#addressSourceKey').fill('FICTIONAL_CONNECTION_KEY');await page.locator('#addressSourceForm button[type=submit]').click();await page.waitForFunction(()=>!AddressSourceUI.busy);assert.equal(await page.locator('#addressSourceKey').inputValue(),'');assert.equal(await page.evaluate(()=>window.connectionInvalids),0,'No second validation after the private key has been cleared');assert.doesNotMatch(await page.locator('#addressSourceStatus').innerText(),/FICTIONAL_CONNECTION_KEY/);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+ if(out)await page.screenshot({path:path.join(out,`connections-${width}.png`),fullPage:true});
+ await page.locator('#navigationLanguage').selectOption('en');assert.match(await page.locator('[data-work=settings-tab][data-value=connections]').innerText(),/Connections/);await page.locator('#navigationLanguage').selectOption('da');
+ // The download dialog offers the same connection settings without a second key form.
+ await page.evaluate(()=>GeoUI.dataDialog());assert.equal(await page.locator('#dialog #addressSourceForm').count(),0);await activate(page.locator('#dialog [data-work=connections]'));assert.equal(await page.locator('#dialog').evaluate(n=>n.open),false);assert.equal(await page.locator('#settings-connections').isVisible(),true);
+ await page.evaluate(()=>{page='Indstillinger';Navigation.settingsSection='import';render();});await page.locator('[data-card-import=open]').click();await page.locator('#cardImportFile').setInputFiles([{name:'queue-1.csv',mimeType:'text/csv',buffer:Buffer.from('fictional')},{name:'queue-2.csv',mimeType:'text/csv',buffer:Buffer.from('fictional')}]);await page.locator('[data-column-change=field][data-column-index="0"]').selectOption('card');await page.locator('[data-column-preview]').click();await page.locator('#cardImportConfirm').waitFor();assert.equal(writes.filter(w=>w.action==='setup.card-import.preview').length,1);assert.equal(writes.filter(w=>w.action==='setup.card-import.apply').length,0);await page.locator('#cardImportConfirm').fill('IMPORTÉR KORT');await page.locator('[data-card-import=apply]').click();await page.locator('[data-card-import=next]').waitFor();assert.equal(writes.filter(w=>w.action==='setup.card-import.apply').length,1);assert.equal(writes.filter(w=>w.action==='setup.card-import.preview').length,1);await page.locator('[data-card-import=next]').click();await page.locator('[data-column-change=field][data-column-index="0"]').selectOption('card');await page.locator('[data-column-preview]').click();await page.locator('#cardImportConfirm').waitFor();assert.equal(await page.locator('#cardImportConfirm').inputValue(),'');await page.locator('#cardImportConfirm').fill('IMPORTÉR KORT');await page.locator('[data-card-import=apply]').click();await page.waitForFunction(()=>!CardImportUI.busy&&CardImportUI.queueIndex===2);assert.equal(writes.filter(w=>w.action==='setup.card-import.apply').length,2);assert.equal(await page.locator('[data-card-import=next]').count(),0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);
+ if(process.env.LTM_THEME){const pairs=await page.evaluate(()=>['#nav button','#nav .navcaption','#settings-data .hint','#settings-data button','header #saveState'].map(selector=>{const node=document.querySelector(selector);if(!node)return null;let parent=node,bg;while(parent){bg=getComputedStyle(parent).backgroundColor;if(!bg.endsWith(', 0)')&&bg!=='transparent')break;parent=parent.parentElement;}return {selector,text:getComputedStyle(node).color,bg};}).filter(Boolean));for(const pair of pairs)assert.ok(contrast(pair.text,pair.bg)>=4.5,pair.selector+' light contrast');assert.equal(await page.evaluate(()=>document.documentElement.dataset.theme),process.env.LTM_THEME);await page.locator('#dialog .dialogClose').click();await page.evaluate(()=>Workspace.noteForm());await page.locator('[data-work-form=note] [name=text]').fill('UNSAVED THEME DRAFT');const beforeThemeWrites=writes.length;await page.evaluate(()=>{window.appearanceDraft=document.querySelector('[data-work-form=note] [name=text]');Theme.set('dark');Theme.set('light');});assert.equal(await page.locator('[data-work-form=note] [name=text]').inputValue(),'UNSAVED THEME DRAFT');assert.ok(await page.evaluate(()=>window.appearanceDraft===document.querySelector('[data-work-form=note] [name=text]')));assert.equal(writes.length,beforeThemeWrites);await page.evaluate(()=>closeDialog());await page.reload();await page.waitForFunction(()=>state!==null&&SaveStatus.kind==='saved');assert.equal(await page.evaluate(()=>document.documentElement.dataset.theme),'light');assert.match(await page.locator('.brandWordmark').getAttribute('src'),/brand-logo-light/);}
+ // Local photo queue: exact card address, explicit review, edit invalidation and one write.
+ await page.evaluate(()=>{closeDialog();page='Indstillinger';Navigation.settingsSection='import';render();});await activate(page.locator('[data-photo=open]'));await page.waitForFunction(()=>document.getElementById('photoFiles')?.disabled===false);
+ await page.evaluate(()=>{state.cards.find(c=>c.id==='folder').imported_addresses=[{id:'photo-a',road:'Fiktivvej',number:'8',postcode:'9999',floor:'',door:''}];});
+ const photo=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64');
+ await page.locator('#photoFiles').setInputFiles([{name:'fictional-1.png',mimeType:'image/png',buffer:photo},{name:'fictional-2.png',mimeType:'image/png',buffer:photo}]);await page.waitForFunction(()=>!PhotoImportUI.reading&&document.getElementById('photoText').value.includes('Fiktivvej'));
+ await page.locator('#photoCard').selectOption('folder');await activate(page.locator('[data-photo=parse]'));assert.equal(await page.locator('.photoRow').count(),2);assert.equal(await page.locator('[data-photo-field=address][data-index="1"]').inputValue(),'photo-a');
+ await activate(page.locator('[data-photo=preview]'));assert.match(await page.locator('#formError').innerText(),/Vælg adresse og dato/);assert.equal(writes.filter(w=>w.action==='setup.ib.preview').length,0);
+ await activate(page.locator('[data-photo=skip-row][data-index="0"]'));await activate(page.locator('[data-photo=preview]'));await page.locator('#photoConfirm').waitFor();assert.equal(writes.filter(w=>w.action==='setup.ib.apply').length,0);
+ await page.locator('[data-photo-field=date]').fill('2026-10-23');assert.equal(await page.locator('#photoConfirm').count(),0);await page.locator('[data-photo-field=date]').fill('2026-10-24');await activate(page.locator('[data-photo=preview]'));await page.locator('#photoConfirm').fill('IMPORTÉR IB');await activate(page.locator('[data-photo=apply]'));await page.waitForFunction(()=>PhotoImportUI.index===1&&!PhotoImportUI.applying);assert.equal(writes.filter(w=>w.action==='setup.ib.apply').length,1);assert.equal(await page.locator('#photoBody').isVisible(),false);assert.equal(await page.evaluate(()=>PhotoImportUI.queue[0]),null);
+ await activate(page.locator('[data-photo=next]'));await page.waitForFunction(()=>!PhotoImportUI.reading&&document.getElementById('photoText').value.includes('Fiktivvej'));assert.equal(await page.locator('#photoCard').inputValue(),'');await page.locator('#navigationLanguage').selectOption('en');assert.match(await page.locator('#photoImport h2').innerText(),/from photos/);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));if(out)await page.screenshot({path:path.join(out,`photo-import-${width}.png`),fullPage:true});await activate(page.locator('[data-photo=skip]'));assert.equal(writes.filter(w=>w.action==='setup.ib.apply').length,1);await page.locator('#dialog .dialogClose').click();await page.waitForFunction(()=>PhotoImportUI.queue.length===0);assert.deepEqual(errors,[]);
+ await context.close();console.log(`${engine}${touch?' touch':''} desk ${width}px: task-only flows, calendar backup snooze/receipts, weekly draft-preserving form, dashboard completion, imports and independent follow-up/reprint counts passed.`);
+}}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

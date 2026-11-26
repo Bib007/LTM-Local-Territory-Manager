@@ -1,0 +1,292 @@
+"""Local workflow tools. Activity stores summaries only; undo payloads stay in RAM."""
+import copy
+import json
+import re
+import time
+import uuid
+from datetime import date, timedelta
+from geography import enclosing_outline, street_rows, point_in_polygon, valid_coordinate
+from admin_store import signature
+
+
+IB_REVIEW_PREFIX='ib-review:'
+
+
+def is_ib_review_id(ident):
+    """Reserved ID, not mutable note text/metadata, identifies system follow-ups."""
+    return isinstance(ident,str) and ident.startswith(IB_REVIEW_PREFIX)
+
+
+def is_ib_review(item):
+    return isinstance(item,dict) and is_ib_review_id(item.get('id'))
+
+
+def task_reply_target(item):
+    return signature([item['id'],item.get('assignee_id'),item.get('assigned_by')])
+
+
+class WorkflowStore:
+    def task_configure(self,item,recurrence):
+        if recurrence is None:
+            item.pop('recurrence',None);return
+        if not isinstance(recurrence,dict) or recurrence.get('frequency')!='weekly' or type(recurrence.get('weekday')) is not int or not 0<=recurrence['weekday']<=6:
+            raise ValueError('Vælg ingen gentagelse eller en ugedag.')
+        previous=item.get('recurrence') or {};weekday=recurrence['weekday']
+        due=previous.get('next_due') if previous.get('frequency')=='weekly' and previous.get('weekday')==weekday else None
+        if not due:
+            day=date.today();due=(day+timedelta(days=(weekday-day.weekday())%7)).isoformat()
+        item['recurrence']={'frequency':'weekly','weekday':weekday,'next_due':due}
+        item['resolved']=False
+
+    def workflow_init(self):
+        self.revision=uuid.uuid4().hex
+        self._geo_cache=None
+        self._info_cache=None
+        self._boundary_report_cache=None
+        self._setup_previews={}
+        self._undo=None
+        self._tracking=None
+        self._dirty_modules=set()
+
+    def workflow_track(self,module,ident):
+        if self._tracking is not None and (module,ident) not in self._tracking:
+            row=self.db.execute('SELECT id,payload,deleted_at,batch FROM '+self.record_table(module)+' WHERE id=?',(ident,)).fetchone()
+            self._tracking[module,ident]=tuple(row) if row else None
+
+    def activity(self,limit=200):
+        with self.lock:
+            return sorted([r for r in self.all('notes') if r.get('entity')=='activity'],key=lambda r:r['at'],reverse=True)[:limit]
+
+    def record_task_completion(self, item, data, day, due=None):
+        from store import clean_text, new_id, now
+        raw = data.get('reply', '')
+        if not isinstance(raw, str):
+            from ui_errors import UIError
+            raise UIError('Skriv et gyldigt svar på opgaven.')
+        reply = clean_text(raw, 1000)
+        entry = {'id': new_id(), 'date': day, 'at': now()}
+        if due:
+            entry['due'] = due
+        if reply:
+            if 'reply_target' in data and data['reply_target']!=task_reply_target(item):
+                from ui_errors import UIError
+                raise UIError('Opgavens tildeling er ændret. Åbn opgaven igen før du svarer.')
+            entry['reply'] = reply
+            if data.get('_task_actor_name'):
+                entry['author'] = data['_task_actor_name']
+            recipient = item.get('assigned_by')
+            if recipient:
+                entry.update(recipient_id=recipient['id'], recipient=recipient['name'])
+        item['task_history'] = [*(item.get('task_history') or []), entry]
+
+
+    def address_outside_review(self):
+        """Read-only preview: only unambiguously outside pending DAR changes.
+
+        Coordinates on the saved boundary count as inside. A moved address
+        that used to be inside (or has uncertain coordinates) requires a
+        person to review it; never silently dismiss that change.
+        """
+        boundary=self.main_boundary()
+        if not boundary:raise ValueError('Gem den samlede distriktsgrænse før du afviser adresseændringer.')
+        polygon=boundary['points']
+        west=min(p[0] for p in polygon);east=max(p[0] for p in polygon)
+        south=min(p[1] for p in polygon);north=max(p[1] for p in polygon)
+        def location(row):
+            if not isinstance(row,dict):return None
+            try:return valid_coordinate([row['lng'],row['lat']])
+            except (ValueError,KeyError,TypeError,OverflowError):return None
+        def within(row):
+            point=location(row)
+            if point is None:return None
+            x,y=point
+            return west<=x<=east and south<=y<=north and point_in_polygon(point,polygon)
+        changes=sorted((r for r in self.all('geo') if r.get('entity')=='address_change'),key=lambda r:r['id'])
+        ids=[];examples=[];uncertain=0;protected=0
+        for entry in changes:
+            if entry.get('kind') not in ('new','changed','retired'):
+                uncertain+=1;continue
+            after=entry.get('after')
+            if not isinstance(after,dict):
+                uncertain+=1;continue
+            outside=within(after)
+            if outside is None:
+                uncertain+=1;continue
+            if outside:continue
+            before=entry.get('before')
+            if before is not None:
+                old_inside=within(before)
+                if old_inside is None:
+                    uncertain+=1;continue
+                if old_inside:
+                    protected+=1;continue
+            elif entry.get('kind')!='new':
+                uncertain+=1;continue
+            ids.append(entry['id'])
+            if len(examples)<30:
+                label=after.get('label') or ' '.join(str(after.get(k) or '').strip() for k in ('road','number','postcode')).strip()
+                examples.append({'id':entry['id'],'label':str(label)[:240],'kind':entry['kind']})
+        fingerprint=signature([boundary,[(r['id'],r.get('kind'),r.get('before'),r.get('after')) for r in changes]])
+        return {'count':len(ids),'ids':ids,'examples':examples,'protected':protected,'uncertain':uncertain,
+                'remaining':len(changes)-len(ids),'expected':fingerprint}
+
+    def workflow_mutate(self,action,data):
+        from store import clean_text, now
+        if action=='note.complete':
+            item=self.require('notes',data.get('id'));recurrence=item.get('recurrence') or {}
+            if item.get('entity')=='activity' or recurrence.get('frequency')!='weekly':raise ValueError('Vælg en tilbagevendende opgave.')
+            if item.get('card_id'):self.require('cards',item['card_id'])
+            due=recurrence['next_due'];day=date.today()
+            if data.get('due')!=due or due>day.isoformat():raise ValueError('Opgaven er ikke forfalden eller er allerede håndteret. Opdater oversigten.')
+            self.record_task_completion(item,data,day.isoformat(),due)
+            delta=(recurrence['weekday']-day.weekday())%7 or 7
+            item.update(resolved=False,resolved_at=now(),recurrence={**recurrence,'next_due':(day+timedelta(days=delta)).isoformat()})
+            self.put('notes',item);return {'id':item['id']}
+        if action=='note.reply.read':
+            from ui_errors import UIError
+            item=self.require('notes',data.get('id'))
+            entry=next((h for h in item.get('task_history',[]) if h.get('id')==data.get('entry_id') and h.get('reply')),None)
+            if entry is None:
+                raise UIError('Svaret findes ikke længere.')
+            actor=data.get('_task_actor_id')
+            if not actor or entry.get('recipient_id')!=actor:
+                raise PermissionError('Kun modtageren kan markere svaret som læst.')
+            if not entry.get('read_at'):
+                entry['read_at']=now()
+                self.put('notes',item)
+            return {'id':item['id']}
+        if action=='note.reply.delete':
+            from ui_errors import UIError
+            item=self.require('notes',data.get('id'))
+            entry=next((h for h in item.get('task_history',[]) if h.get('id')==data.get('entry_id') and h.get('reply')),None)
+            if entry is None:
+                raise UIError('Svaret findes ikke længere.')
+            for key in ('reply','author','recipient_id','recipient'):
+                entry.pop(key,None)
+            self.put('notes',item)
+            return {'id':item['id']}
+        if action=='filter.save':
+            config=dict(self.require('settings','config'));views=list(config.get('saved_views',[]))
+            name=clean_text(data.get('name'),60,True)
+            allowed={'query','area','status','kind','page','addressTab','addressPostcode','filters'}
+            raw=data.get('view')
+            if not isinstance(raw,dict) or len(json.dumps(raw))>4000:raise ValueError('Ugyldig filtervisning.')
+            view={k:v for k,v in raw.items() if k in allowed}
+            views=[v for v in views if v['name']!=name]
+            if len(views)>=30:raise ValueError('Der kan gemmes højst 30 visninger.')
+            views.append({'id':uuid.uuid4().hex,'name':name,'view':view});config['saved_views']=views;self.put('settings',config);return {}
+        if action=='filter.delete':
+            config=dict(self.require('settings','config'));config['saved_views']=[v for v in config.get('saved_views',[]) if v['id']!=data.get('id')];self.put('settings',config);return {}
+        if action=='backup.record':
+            status=data.get('status','download_started');ident=data.get('id') or uuid.uuid4().hex
+            if status not in ('created','download_started','file_saved') or not isinstance(ident,str) or not re.fullmatch(r'[A-Za-z0-9-]{1,64}',ident):
+                raise ValueError('Ugyldig backupregistrering.')
+            config=dict(self.require('settings','config'));history=list(config.get('backup_history') or [])
+            existing=next((entry for entry in history if entry['id']==ident),None)
+            if existing:
+                if existing['status']==status:return {}
+                if existing['status']!='created' or status=='created':raise ValueError('Ugyldig backupregistrering.')
+                entry={**existing,'status':status,'at':now()};history=[entry if item['id']==ident else item for item in history]
+            else:
+                if data.get('id') and status!='created':raise ValueError('Ugyldig backupregistrering.')
+                entry={'id':ident,'created':now(),'at':now(),'status':status};history.append(entry)
+            config['backup_history']=history[-100:]
+            if status!='created':
+                config['last_backup']=entry['at'];config.pop('backup_snoozed_until',None)
+            self.put('settings',config);return {}
+        if action=='backup.snooze':
+            config=dict(self.require('settings','config'))
+            config['backup_snoozed_until']=(date.today()+timedelta(days=1)).isoformat()
+            self.put('settings',config);return {}
+        if action=='workflow.undo':
+            entry=self._undo
+            if not entry or ('expected_revision' in data and data['expected_revision']!=self.revision) or entry['until']<time.monotonic() or entry['revision']!=self.revision:raise ValueError('Fortryd er udløbet, eller data er ændret siden handlingen.')
+            for (module,ident),row in entry['rows'].items():
+                self._dirty_modules.add(module)
+                self.workflow_track(module,ident)
+                self.db.execute('DELETE FROM '+self.record_table(module)+' WHERE id=?',(ident,))
+                if row:self.db.execute('INSERT INTO '+self.record_table(module)+'(id,payload,deleted_at,batch) VALUES(?,?,?,?)',row)
+            return {'undone':entry['action']}
+        if action in ('card.restructure.preview','card.restructure.apply'):
+            return self.restructure(action,data)
+        if action=='note.task':
+            n=self.require('notes',data.get('id'))
+            if n.get('entity')=='activity':raise ValueError('Vælg en opgave.')
+            n['task']=True;n['resolved']=False;self.put('notes',n);return {'id':n['id']}
+        if action in ('address.change.outside.preview','address.change.outside.reject'):
+            preview=self.address_outside_review()
+            if action.endswith('.preview'):
+                return {k:v for k,v in preview.items() if k!='ids'}
+            if data.get('confirm')!='AFVIS UDENFOR':
+                raise ValueError('Skriv AFVIS UDENFOR for at bekræfte.')
+            if not preview['expected'] or data.get('expected')!=preview['expected']:
+                raise ValueError('Distriktsgrænsen eller adresseændringerne er ændret. Vis en ny forhåndsvisning.')
+            if not preview['count']:
+                raise ValueError('Ingen sikre adresseændringer uden for den samlede grænse at afvise.')
+            self._dirty_modules.add('geo')
+            for ident in preview['ids']:
+                self.workflow_track('geo',ident)
+                self.db.execute('DELETE FROM geo.records WHERE id=?',(ident,))
+            return {'count':preview['count'],'remaining':preview['remaining']}
+        if action=='address.change.review':
+            self._dirty_modules.add('geo')
+            pending=self.require('geo',data.get('id'))
+            if pending.get('entity')!='address_change':raise ValueError('Vælg en adresseændring.')
+            if data.get('decision') not in ('accept','reject'):raise ValueError('Vælg godkend eller afvis.')
+            if data['decision']=='accept':
+                after=pending['after'];current=self.get('geo',after['id'])
+                if current!=pending.get('before'):raise ValueError('Adressen er ændret. Genindlæs kontrollen.')
+                self.put('geo',after)
+                self.db.execute('UPDATE geo.records SET deleted_at=NULL,batch=NULL WHERE id=?',(after['id'],))
+            self.workflow_track('geo',pending['id'])
+            self.db.execute('DELETE FROM geo.records WHERE id=?',(pending['id'],));return {}
+        raise ValueError('Ukendt arbejdsgang.')
+
+    def restructure(self,action,data):
+        from store import clean_text,now
+        mode=data.get('mode');ids=data.get('ids',[])
+        if mode in ('transfer','interim','finalize'):
+            from redistribution import redistribute
+            return redistribute(self,action,data)
+        if mode not in ('split','merge') or not isinstance(ids,list) or len(set(ids))!=len(ids):raise ValueError('Vælg opdel eller sammenlæg.')
+        if (mode=='split' and len(ids)!=1) or (mode=='merge' and not 2<=len(ids)<=20):raise ValueError('Vælg ét kort til opdeling eller 2–20 til sammenlægning.')
+        cards=[self.require('cards',i) for i in ids]
+        if any(c.get('interim_transfer') for c in cards) or any((c.get('interim_transfer') or {}).get('status')=='pending' and c['interim_transfer'].get('target_id') in ids for c in self.all('cards')):
+            raise ValueError('Afslut den midlertidige flytning først.')
+        if any(self.active_loan(c['id']) for c in cards):raise ValueError('Aflever kortene før opdeling eller sammenlægning.')
+        if any(c.get('archived') or c.get('temporary') for c in cards):raise ValueError('Vælg færdige aktive kort med adresser.')
+        number=clean_text(data.get('number'),30,True)
+        if any(c['number'].casefold()==number.casefold() for c in self.all('cards')+self.all('cards',deleted=True)):raise ValueError('Det nye kortnummer findes allerede.')
+        members=[]
+        for c in cards:
+            rows=c.get('geo_addresses') or [self.require('geo',i) for i in c.get('address_ids',[])]
+            if not rows:raise ValueError('Kortet skal have geografisk valgte adresser før opdeling/sammenlægning.')
+            members.extend(rows)
+        if len({a['id'] for a in members})!=len(members):raise ValueError('Kortene indeholder dublerede adresser. Ret kortkontrollen først.')
+        moving=set(data.get('address_ids',[])) if mode=='split' else {a['id'] for a in members}
+        if not moving or not moving<{a['id'] for a in members} and mode=='split':raise ValueError('Vælg nogle, men ikke alle, adresser til det nye kort.')
+        if not moving<={a['id'] for a in members}:raise ValueError('Adressevalget er ikke på kortet.')
+        chosen=[a for a in members if a['id'] in moving]
+        ib=self.all('ib');notes=[n for n in self.all('notes') if n.get('card_id') in ids]
+        # Text-only IB may refer to several units. Never guess which new card owns it.
+        if mode=='split' and any(i['card_id'] in ids and not i.get('address_id') for i in ib):raise ValueError('IB uden adressekobling skal knyttes til kortets adresseliste før opdeling.')
+        expected=signature([cards,ib,notes,{'mode':mode,'ids':ids,'address_ids':sorted(moving),'number':number,'name':clean_text(data.get('name'),100)}])
+        result={'expected':expected,'mode':mode,'numbers':[c['number'] for c in cards],'number':number,'moving':len(chosen),'remaining':len(members)-len(chosen),'warning':'Historik bevares på de oprindelige kort. Nye kort får ingen opdigtet gennemgang. Grænser er forslag og skal kontrolleres. Forsider og IB-bagsider skal genprintes.'}
+        if action.endswith('preview'):return result
+        if data.get('expected')!=expected or data.get('confirm')!='ÆNDR KORT':raise ValueError('Kontrollér forhåndsvisningen og skriv ÆNDR KORT for at bekræfte.')
+        source=cards[0];ident=self._mutate('card.save',dict(number=number,name=clean_text(data.get('name'),100),area_id=source.get('area_id',''),kind=source.get('kind','Ukendt'),temporary=True))['id']
+        def assign(c,addresses):
+            c.update(address_ids=[a['id'] for a in addresses],geo_addresses=addresses,addresses=street_rows(addresses),geo_polygon=enclosing_outline([[a['lng'],a['lat']] for a in addresses]),geo_outline_source='suggestion',temporary=False,front_revision=True,back_revision=True)
+            self.put('cards',c)
+        assign(self.require('cards',ident),chosen)
+        if mode=='split':assign(source,[a for a in members if a['id'] not in moving])
+        else:
+            for c in cards:
+                c.update(archived=True,in_folder=False,replaced_by=ident)
+                self.put('cards',c)
+        for i in ib:
+            if i['card_id'] in ids and (mode=='merge' or i.get('address_id') in moving):i['card_id']=ident;self.put('ib',i)
+        if mode=='merge':
+            for n in notes:n['card_id']=ident;self.put('notes',n)
+        self.put('notes',{'id':uuid.uuid4().hex,'card_id':ident,'date':now()[:10],'created':now(),'text':'Kontrollér den foreslåede grænse og genprint efter '+('opdeling' if mode=='split' else 'sammenlægning')+'. Historik: kort '+', '.join(c['number'] for c in cards)+'.','task':True,'resolved':False})
+        return {'id':ident,'count':len(chosen)}

@@ -1,0 +1,152 @@
+name: Stable release tracks
+
+# Publishing is deliberately manual. A normal merge never creates or changes a
+# release. Select exactly one track; it waits for shared checks and only that
+# track's own platform controls.
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Package to release from the selected main commit
+        required: true
+        type: choice
+        options:
+          - home-assistant
+          - macos-app
+          - macos-server
+          - windows-app
+          - windows-server
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stable-release-${{ inputs.track }}
+  cancel-in-progress: false
+
+jobs:
+  common:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/check.yml
+
+  home-assistant:
+    if: inputs.track == 'home-assistant'
+    needs: common
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Build Home Assistant image
+        run: docker build --build-arg BUILD_VERSION=release --build-arg BUILD_ARCH=amd64 --tag ltm-ha-release distrikt
+      - name: Check Home Assistant program start
+        run: docker run --rm --entrypoint python3 ltm-ha-release /opt/distrikt/app/server.py --help
+      - name: Publish Home Assistant track
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/publish_release_track.sh home-assistant
+
+  macos-app:
+    if: inputs.track == 'macos-app'
+    needs: common
+    runs-on: macos-15-intel
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check macOS local app package
+        run: |
+          python -m unittest discover -s distrikt/tests -p test_portable.py -v
+          python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+          python -m unittest discover -s distrikt/tests -p test_start_guide.py -v
+      - name: Publish macOS app track
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/publish_release_track.sh macos-app
+
+  macos-server:
+    # AFK-002: fail closed. Set this repository variable to the exact tested
+    # main commit SHA only after physical Apple Silicon, LAN/VPN and restart tests.
+    # An Intel CI runner is not a substitute for the owner's physical test.
+    if: inputs.track == 'macos-server' && vars.LTM_MAC_SERVER_PHYSICAL_TEST_SHA == github.sha
+    needs: common
+    runs-on: macos-15-intel
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check macOS private-server package
+        run: |
+          python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+          python -m unittest discover -s distrikt/tests -p test_lan.py -v
+      - name: Publish macOS server track
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/publish_release_track.sh macos-server
+
+  windows-app:
+    if: inputs.track == 'windows-app'
+    needs: common
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check Windows local app package
+        run: |
+          python -m unittest discover -s distrikt/tests -p test_portable.py -v
+          python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+          python -m unittest discover -s distrikt/tests -p test_start_guide.py -v
+      - name: Publish Windows app track
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/publish_release_track.sh windows-app
+
+  windows-server:
+    if: inputs.track == 'windows-server'
+    needs: common
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check Windows private-server package
+        run: |
+          python -m unittest discover -s distrikt/tests -p test_launcher.py -v
+          python -m unittest discover -s distrikt/tests -p test_lan.py -v
+      - name: Publish Windows server track
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/publish_release_track.sh windows-server

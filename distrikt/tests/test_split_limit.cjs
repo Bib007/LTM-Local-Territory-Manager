@@ -1,0 +1,25 @@
+'use strict';
+// Isolated, fictional live-count and suppression behavior.
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const read=n=>fs.readFileSync(path.join(__dirname,'../app',n),'utf8');
+const c={console,Date,Intl,Math,Map,Set,Array,Object,Number,String,JSON,document:{addEventListener(){},querySelector:()=>({content:''})},window:{addEventListener(){}}};
+vm.createContext(c);
+vm.runInContext(read('i18n.js'),c);
+const app=read('app.js');vm.runInContext(app.slice(0,app.indexOf('const SaveStatus=')),c);
+vm.runInContext(read('split-suggestions.js'),c);
+const run=s=>vm.runInContext(s,c);
+run(`const fictive={id:'fictional',number:'101',addresses:[{road:'Testvej',count:8}],address_ids:['a','b'],geo_addresses:[{id:'a',road:'Testvej',postcode:'9999',number:'1',count:4},{id:'b',road:'Testvej',postcode:'9999',number:'3',count:4}],area_id:'test',kind:'By',in_folder:false};
+state={revision:'r1',cards:[fictive],loans:[],settings:{split_visit_limit:5}};`);
+assert.equal(run('SplitSuggestions.plan(state.cards,[],5,false).total'),1);
+const finger=run('SplitSuggestions.fingerprint(fictive,5)');
+c.ignored={fictional:{fingerprint:finger,reason:'Fiktiv vurdering'}};
+assert.equal(run('SplitSuggestions.plan(state.cards,[],5,false,ignored).total'),0);
+assert.equal(run('SplitSuggestions.plan(state.cards,[],5,false,ignored).ignored'),1);
+assert.equal(run('SplitSuggestions.plan(state.cards,[],4,false,ignored).total'),1);
+run('fictive.addresses[0].count=9');
+assert.equal(run('SplitSuggestions.plan(state.cards,[],5,false,ignored).total'),1);
+run("I18n.set('da');state.settings.split_suggestion_ignored=ignored;state.settings.split_visit_limit=5");
+assert.match(run('SplitSuggestions.entry()'),/1 distriktskort overstiger/);
+run('state.settings.split_visit_limit=9');
+assert.match(run('SplitSuggestions.entry()'),/0 distriktskort overstiger/);
+console.log('Fictional live threshold and per-proposal dismissal tests passed.');

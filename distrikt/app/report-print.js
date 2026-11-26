@@ -1,0 +1,76 @@
+'use strict';
+function s13OriginalPages(rows,{mode='service',start='',end=''}={}){
+ const english=I18n.language()==='en',t=english&&typeof S13TemplateEn!=='undefined'?S13TemplateEn:S13Template,pages=[];
+ const adapted=mode!=='service';
+ if(adapted&&(!['calendar','rolling'].includes(mode)||!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||start>end))throw Error('Ugyldig S-13-periode.');
+ const periodYear=mode==='calendar'?start.slice(0,4):mode==='rolling'?start.slice(5,7)+'/'+start.slice(2,4)+'–'+end.slice(5,7)+'/'+end.slice(2,4):yearLabel(year);
+ const periodHeading=adapted?(mode==='calendar'?I18n.text('Kalenderår')+' '+start.slice(0,4):I18n.text('Seneste 12 måneder')):'';
+ const periodNote=adapted?'<div class="s13PeriodBanner"><strong>'+esc(I18n.text('S-13-periodeudtræk'))+' · '+esc(periodHeading)+'</strong> · '+esc(fmt(start))+' – '+esc(fmt(end))+' · '+esc(I18n.text('S-13-formular med periodedata, ikke en officiel tjenesteårsrapport.'))+'</div>':'';
+ for(let offset=0;offset<Math.max(1,rows.length);offset+=20){const values={service_year:periodYear,territory_type:'Hus til hus'};
+  rows.slice(offset,offset+20).forEach((r,i)=>{const prefix='row_'+String(i+1).padStart(2,'0')+'.';values[prefix+'number']=r.number;values[prefix+'previous_completed']=r.previous?fmt(r.previous):'';r.allocations.forEach((a,j)=>{for(const k of ['person','assigned','completed'])values[prefix+'assignment_'+(j+1)+'.'+k]=k==='person'?a[k]:(a[k]?fmt(a[k]):'');});});
+  const labels=Object.entries(values).filter(([name])=>t.fields[name]).map(([name,value])=>{const [x,y,right,bottom]=t.fields[name],base=['service_year','territory_type'].includes(name)?9:7,font=Math.min(base,(right-x-2)/Math.max(1,String(value).length*.8));return `<text x="${x+1}" y="${y+Math.min(bottom-y-2,10)}" font-family="Arial,Helvetica,sans-serif" font-size="${font}" fill="black">${esc(value)}</text>`;}).join('');
+  pages.push(`<section class="report s13Original${adapted?' s13Period':''}"${adapted?' data-s13-period="'+mode+'"':''} lang="${english?'en':'da'}">${offset===0?periodNote:''}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t.width} ${t.height}" preserveAspectRatio="xMidYMin meet" role="img" aria-label="${esc(adapted?I18n.text('S-13-periodeudtræk')+' · '+periodHeading:'Register over distriktstildelinger · udfyldt original S-13')}, side ${pages.length+1}"><image href="${location.origin}/${english?'s13-background-en.jpg':'s13-background.jpg'}" x="0" y="${t.background_y??20.452}" width="${t.width}" height="${t.background_height??800.986}"/>${labels}</svg></section>`);
+ }return pages.join('');
+}
+// Reuse the original S-13 background and field coordinates for every period.
+function s13PeriodPages(rows,mode,start,end){
+ return s13OriginalPages(rows,{mode,start,end});
+}
+function reportDetails(localized=false){const t=key=>localized?ui(key):key,[start,end]=Workspace.periodBounds(),s=Workspace.reportInventory(start,end);return `<section class="report"><h1>${t('Aktuelle distrikter og udlevering')}</h1><p>${t('Status den')} ${fmt(state.today)}</p><div class="tablewrap"><table><thead><tr><th>${t('Distrikter')}</th><th>${t('I alt')}</th><th>${t('Udleveret nu')}</th><th>${t('Hjemme nu')}</th></tr></thead><tbody><tr><th>${t('Aktuelle distrikter')}</th><td>${s.total}</td><td>${s.assigned}</td><td>${s.home}</td></tr><tr><th>${t('Ikke registreret gennemgået i perioden')}</th><td>${s.missing}</td><td>${s.missingAssigned}</td><td>${s.missingHome}</td></tr></tbody></table></div><p>${t('Periode:')} ${fmt(start)}–${fmt(end)}.</p><p class="hint">${Workspace.reportExplanation(localized)}</p></section>`;}
+function reportCover(){
+ const name=state.report_congregation||state.settings?.congregation;
+ return `<section class="reportCover" lang="${I18n.language()}"><p class="reportCoverBrand">Local Territory Manager</p><h1>${esc(name||I18n.text('Distriktsrapport'))}</h1>${name?`<p class="reportCoverSubtitle">${esc(I18n.text('Distriktsrapport'))}</p>`:''}<p>${esc(I18n.text('Rapport udarbejdet den'))} ${fmt(state.today)}</p></section>`;
+}
+function reportPrintDocument(mapMarkup=null,selection=Workspace.reportPeriod,{s13Only=false,omitMap=false}={}){
+ const language=I18n.language(),t=key=>esc(I18n.text(key));
+ const modes=selection==='all'?['calendar','service','rolling']:[selection];if(!modes.every(mode=>['calendar','service','rolling'].includes(mode)))throw Error('Ugyldigt rapportperiodevalg.');
+ const before=Workspace.reportPeriod;let markup;try{
+  const period=mode=>{Workspace.reportPeriod=mode;const [start,end]=Workspace.periodBounds(mode),title=Workspace.reportTitle(mode),snapshot=mapMarkup?.[mode]??(typeof mapMarkup==='string'?mapMarkup:'<p>Kortbillede ikke forberedt.</p>');
+   return `<section class="report reportMapPage${ReportMap.points().length&&ReportMap.aspectRatio()>1.25?' reportMapLandscape':''}"><div class="eyebrow">${esc(state.settings.congregation||'DISTRIKT')}</div><h2>Gennemgåede distrikter · ${title}</h2><p>${fmt(start)} – ${fmt(end)}</p>${snapshot}</section>`;
+  };markup=s13Only?'':reportCover()+Workspace.boundaryReport(true);
+  for(const mode of modes){Workspace.reportPeriod=mode;if(!s13Only)markup+=Workspace.reportSummary(mode,false)+(omitMap?'':period(mode));markup+=s13Appendix(mode);}
+ }finally{Workspace.reportPeriod=before;}
+ return `<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${language==='en'?'Territory report':'Distriktsrapport'} ${esc(selection==='all'?I18n.text('Alle tre perioder'):Workspace.reportTitle(selection))}</title><link rel="stylesheet" href="${location.origin}/style.css"><style>:root{color-scheme:light}body{margin:0;background:white;color:#2c475b;font:12px Arial}.bar{padding:15px;background:white;border-bottom:1px solid #ddd}.printReports{max-width:180mm;margin:20px auto}.printReports>.tabs,.printReports>.toolbar{display:none}.report{border:0;border-radius:0;box-shadow:none;padding:0;margin:0 0 10mm;width:100%;background:white}.report table{table-layout:fixed}.report td,.report th{overflow-wrap:anywhere;padding:7px 4px}.report .metrics{gap:8px}.report .metrics strong{font-size:25px}.s13Original{padding:0!important}.s13Original svg{display:block;width:100%;height:auto}.reportMapPage{break-inside:avoid}.reportMapPage .reportMapSnapshot svg{width:100%;height:auto}.reportMapLandscape{page:reportMapLandscape}.reportMapPage h2{font-size:20px;margin:0 0 3mm}.reportMapPage .hint{font-size:9px}.reportOverview .reportPeriod{border-top:1px solid #dfe8ee;padding-top:2mm;margin-top:2mm;break-inside:avoid}.reportOverview h1{font-size:22px}.reportOverview h2{font-size:17px;margin:0}.reportOverview p{margin:2mm 0}.reportOverview .metrics{margin:2mm 0;gap:6px}.reportOverview .metrics>div{padding:4px}.reportOverview .metrics strong{font-size:23px;margin-top:2px}.reportOverview .reportchart{padding:3px;margin:1mm 0}.reportOverview .reportchart h3{font-size:12px;margin:0}.reportOverview .reportchart svg{width:100%;height:27mm}.reportOverview .metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}.reportOverview .metrics small{font-size:9px}.reportOverview .metrics strong{font-size:19px}.reportOverview .reportPeriod{break-inside:avoid}.reportOverview .hint{font-size:9px;line-height:1.4}.reportchart{break-inside:avoid} .s13Original{break-inside:avoid}.s13Period{break-inside:avoid}.s13PeriodBanner{font:9px Arial,Helvetica,sans-serif;line-height:1.25;color:#233847;padding:1mm 0;break-after:avoid}@page{size:A4 portrait;margin:15mm}@page reportMapLandscape{size:A4 landscape;margin:15mm}@media print{body{background:white}.bar{display:none}.printReports{width:auto;max-width:none;margin:0}.report{break-after:page;margin-bottom:0}.report:last-child,.boundaryReport{break-after:auto}.boundaryReport{break-inside:avoid;margin-bottom:4mm}.report th,.report td{font-size:9px}.report h1{font-size:24px}.report-context{font-size:9px}.report table tr{break-inside:avoid}.s13Original{break-before:page;box-sizing:border-box;height:266mm;display:flex;flex-direction:column}.s13Original svg{flex:1 1 0;min-height:0;height:0}.s13PeriodBanner{flex:0 0 auto}.reportMapPage:has(.reportMapSnapshot){box-sizing:border-box;height:266mm;display:flex;flex-direction:column;break-before:page}.reportMapLandscape:has(.reportMapSnapshot){height:179mm}.reportMapPage>.reportMapSnapshot{flex:1 1 0;min-height:0;width:100%}.reportMapPage .reportMapSnapshot svg{width:100%;height:100%}.reportMapPage>:not(.reportMapSnapshot){flex:0 0 auto;overflow-wrap:anywhere}.reportMapPage>p{margin:1mm 0}.reportMapPage>.hint:last-child{margin-bottom:0}}</style></head><body><div class="bar" lang="${language}"><button id="printReport">${t('Udskriv / gem PDF')}</button><p>${t('A4 · 15 mm margener. Vælg 100 % og slå browserens sidehoved og sidefod fra.')}</p><p>${esc(language==='en'?'If your print preview shows the installation address or URL, disable Headers and footers in the browser print settings. LTM cannot change that browser option.':'Hvis printvisningen viser installationsadressen eller URL’en, skal du slå Sidehoveder og sidefødder fra i browserens printindstillinger. LTM kan ikke ændre browserens valg.')}</p><p id="printAssetError" role="alert"></p></div><div class="printReports">${markup}</div></body></html>`;
+}
+async function inlineReportAssets(markup){
+ const css=await(await api('/style.css')).text(),source=I18n.language()==='en'?'/s13-background-en.jpg':'/s13-background.jpg',url=location.origin+source;
+ const document=markup.replace(`<link rel="stylesheet" href="${location.origin}/style.css">`,`<style>${css}</style>`);
+ if(!document.includes(url))return document;
+ const blob=await(await api(source)).blob();
+ const image=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});
+ return document.split(url).join(image);
+}
+async function printReport({withoutBackground=false,s13Only=false,omitMap=false}={}){
+ if(printReport.busy)return;printReport.busy=true;
+ const origin=page,originalState=state,revision=state.revision,originalYear=year,originalCalendarYear=Workspace.calendarYear,map=ReportMap.map,before=Workspace.reportPeriod,language=I18n.language(),picker=el('reportPrintPeriod'),selection=s13Only?before:(picker?.value||before),showNumbers=Workspace.reportShowNumbers!==false;let owned=before,win,buildingMap=false,restoreViewport=()=>{};
+ const current=()=>page===origin&&state===originalState&&state.revision===revision&&year===originalYear&&Workspace.calendarYear===originalCalendarYear&&ReportMap.map===map&&Workspace.reportPeriod===owned&&((Workspace.reportShowNumbers!==false)===showNumbers)&&(s13Only||!picker?.value||(picker.isConnected!==false&&picker.value===selection))&&!win.closed;
+ const check=()=>{if(!current())throw Error('Printgrundlaget er ændret. Åbn print igen.');};
+ try{
+  const modes=selection==='all'?['calendar','service','rolling']:[selection];if(!modes.every(mode=>['calendar','service','rolling'].includes(mode)))throw Error('Ugyldigt rapportperiodevalg.');
+  win=PrintPreview.open(I18n.text('Forbereder den valgte rapport…'));if(!win)throw Error('Tillad et nyt vindue til rapportprint.');
+  if(!win.embedded)win.document.write('<p>'+esc(I18n.text('Forbereder den valgte rapport…'))+'</p>');
+  else if(map?.getCenter&&map?.getZoom){const center=map.getCenter(),zoom=map.getZoom();let restored=false;restoreViewport=()=>{if(restored)return;restored=true;if(page===origin&&ReportMap.map===map&&year===originalYear&&Workspace.calendarYear===originalCalendarYear&&Workspace.reportPeriod===before)map.setView(center,zoom,{animate:false});};win.onClose=restoreViewport;}
+  const maps={};
+  if(!s13Only&&!omitMap){
+   buildingMap=true;
+   // Direct printing can start before any viewport exists. Use the same
+   // offline vector map instead of waiting for unavailable map tiles.
+   const offline=withoutBackground||!map;
+   for(const mode of modes){
+    if(!win.embedded){owned=Workspace.reportPeriod=mode;if(!offline)ReportMap.draw();}
+    maps[mode]=await ReportMap.printable({withoutBackground:offline,...(win.embedded?{mode}:{})});
+    check();
+   }
+   buildingMap=false;
+  }
+  const markup=await inlineReportAssets(reportPrintDocument(maps,selection,{s13Only,omitMap}));check();
+  win.document.open();win.document.write(markup);win.document.close();const button=win.document.getElementById('printReport');button.disabled=true;
+  const results=await Promise.allSettled(Array.from(win.document.querySelectorAll('svg image'),img=>{const test=new Image();test.src=img.getAttribute('href');return test.decode();}));
+  if(win.closed)return;
+  if(results.some(r=>r.status==='rejected')){win.document.getElementById('printAssetError').textContent=language==='en'?I18n.english['Printbilleder kunne ikke indlæses. Åbn print igen.']:'Printbilleder kunne ikke indlæses. Åbn print igen.';return;}
+  button.disabled=false;button.addEventListener('click',()=>win.print());
+ }catch(error){if(win?.embedded&&win.closed)return;win?.close();if(buildingMap&&!withoutBackground&&page===origin&&state===originalState&&state.revision===revision&&typeof ReportMap.failed==='function'){
+  ReportMap.failed(error,'print');return;
+ }throw error;}
+ finally{printReport.busy=false;if(win?.embedded)restoreViewport();else if(page===origin&&ReportMap.map===map&&year===originalYear&&Workspace.reportPeriod===owned){Workspace.reportPeriod=before;ReportMap.draw();}}
+}
