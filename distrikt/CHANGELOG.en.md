@@ -1,5 +1,9 @@
 # Changelog (English and original historical notes)
 
+## 1.15.0-beta.2 · 2026-11-26
+
+- **Home:** Territory popularity shows assignments and completions per card, with period selection and sorting in either direction. More statistics has clearer headings, small progress bars, clearer visit-count labels and additional assignment and return metrics.
+
 ## 1.15.0-beta.1 · 2026-11-26
 
 - **Home:** Open More statistics for territory, visit-point, do-not-call and coverage totals. The dialog includes averages, small ring charts and figures for the service year, the last 12 months and the calendar year.
