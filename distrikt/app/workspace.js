@@ -468,15 +468,15 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   return `<div class="dashboardHome" data-dashboard-layout="compact">
     <div class="dashboardPrimary">
       ${this.dashboardCoverage(covered,total,this.coverageVisitEstimate(s.events,state.cards),true)}
+      <section class="panel dashboardSpotlight dashboardQueue">
+       <small>${ui('Ældste kort i rækken')}</small>
+       <strong class="dashboardAverageValue dashboardQueueValue">${oldest.card?`<button class="link" data-action="show-oldest-cards" data-id="${esc(oldest.card.id)}" ${I18n.attribute('aria','Vis ældste ledige kort')}>${oldest.value}</button>`:oldest.value}</strong>
+       <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato. Tallet hjælper dig med at vurdere, hvor ofte distriktet bliver gennemgået.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
+      </section>
       <section class="panel dashboardSpotlight dashboardAverage">
-       <small>${ui('Gennemsnitlig gennemgangstid')}</small>
+       <small>${ui('Hvor længe en forkynder gennemsnitligt har kortet')}</small>
        <strong class="dashboardAverageValue">${avg}</strong>
        <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering med gennemgang · seneste 12 måneder.')}</span>
-      </section>
-      <section class="panel dashboardSpotlight dashboardQueue">
-       <small>${ui('Ældste kort i gennemgangskøen')}</small>
-       <strong class="dashboardAverageValue dashboardQueueValue">${oldest.card?`<button class="link" data-action="show-oldest-cards" data-id="${esc(oldest.card.id)}" ${I18n.attribute('aria','Vis ældste ledige kort')}>${oldest.value}</button>`:oldest.value}</strong>
-       <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
       </section>
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3>${this.dashboardStatsActions()}</div>

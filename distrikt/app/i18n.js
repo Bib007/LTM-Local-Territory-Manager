@@ -3,6 +3,9 @@
 const I18n={
  current:'en',
  english:{
+  "Hvor længe en forkynder gennemsnitligt har kortet":"How long a publisher keeps a territory on average",
+  "Ældste kort i rækken":"Oldest territory in the queue",
+  "Tid siden sidste gennemgang af det ældste ledige kort med kendt dato. Tallet hjælper dig med at vurdere, hvor ofte distriktet bliver gennemgået.":"Time since the oldest available territory with a known date was last completed. This helps you assess how often the district is covered.",
   "Popularitet":"Popularity",
   "Popularitet af distriktskort":"Territory popularity",
   "{rate} pr. måned":"{rate} per month",

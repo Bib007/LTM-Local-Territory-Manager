@@ -1,5 +1,13 @@
 # Changelog (English and original historical notes)
 
+## 1.14.2 · 2026-11-27
+
+- **Home:** The oldest territory appears first, with a note explaining what the figure tells you about coverage. The second card now reads “How long a publisher keeps a territory on average”.
+
+## 1.14.2-beta.1 · 2026-11-27
+
+- **Home:** The oldest territory appears first, with a note explaining what the figure tells you about coverage. The second card now reads “How long a publisher keeps a territory on average”.
+
 ## 1.14.1 · 2026-11-27
 
 - **Report maps:** Territory numbers and their callout lines are off by default in previews and PDFs. Enable them with “Show territory numbers on the report map”.
