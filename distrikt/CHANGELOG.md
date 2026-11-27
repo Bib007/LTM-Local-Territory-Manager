@@ -1,5 +1,32 @@
 # Ændringslog
 
+## 1.15.0-beta.3 · 2026-11-27
+
+- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
+- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
+- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
+
+
+## 1.14.3-beta.1 · 2026-11-27
+
+- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
+- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
+- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
+
+## 1.14.2 · 2026-11-27
+
+- **Forside:** Ældste kort i rækken vises først og har en forklaring på, hvad tallet fortæller om distriktets gennemgang. Det andet felt hedder nu »Hvor længe en forkynder gennemsnitligt har kortet«.
+
+## 1.14.2-beta.1 · 2026-11-27
+
+- **Forside:** Ældste kort i rækken vises først og har en forklaring på, hvad tallet fortæller om distriktets gennemgang. Det andet felt hedder nu »Hvor længe en forkynder gennemsnitligt har kortet«.
+
+## 1.14.1 · 2026-11-27
+
+- **Rapportkort:** Distriktsnumre og deres stregmarkeringer er slået fra som standard i forhåndsvisning og PDF. De kan slås til med »Vis distriktsnumre på rapportkortet«.
+- **Flere statistikker:** Se kort, besøg, IB og distriktsdækning med tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
+- **Popularitet:** Se udleveringer og gennemgange pr. kort, også for kort uden aktivitet. Vælg periode, se månedsgennemsnit, og sortér i begge retninger.
+
 ## 1.15.0-beta.2 · 2026-11-26
 
 - **Forside:** Popularitet viser udleveringer og gennemgange pr. kort, med valg af periode og sortering i begge retninger. Flere statistikker har tydeligere overskrifter, små målere, en forklaring på besøgstal og nye nøgletal for udlevering og aflevering.

@@ -42,7 +42,7 @@ const BoundaryOverlap={
  }
 };
 const REPORT_MAP_NUMBERS_KEY='ltm-report-map-numbers';
-const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:(()=>{try{return localStorage.getItem(REPORT_MAP_NUMBERS_KEY)!=='false';}catch{return true;}})(),calendarYear:null,
+const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:(()=>{try{return localStorage.getItem(REPORT_MAP_NUMBERS_KEY)==='true';}catch{return false;}})(),calendarYear:null,
  setReportShowNumbers(enabled){this.reportShowNumbers=!!enabled;try{localStorage.setItem(REPORT_MAP_NUMBERS_KEY,String(this.reportShowNumbers));}catch{}},
  restructureStamp(form){return JSON.stringify([form.dataset.mode,form.dataset.source,[...new FormData(form)]]);},
  async previewRestructure(form,payload){
@@ -453,7 +453,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   // The district-wide queue includes available cards in both the box and
   // folder. Undated cards are reported separately, not assigned a fake age.
   const active=new Set(state.loans.filter(l=>!l.returned).map(l=>l.card_id));
-  const queue=state.cards.filter(c=>!active.has(c.id));
+  const queue=state.cards.filter(c=>!c.planned&&!active.has(c.id));
   const known=queue.filter(c=>typeof c.last_completed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.last_completed)&&Number.isFinite(dayDiff(state.today,c.last_completed))&&c.last_completed<=state.today);
   known.sort((a,b)=>a.last_completed.localeCompare(b.last_completed)||cmp(a.number,b.number)||cmp(a.id,b.id));
   const next=known[0];
@@ -468,15 +468,15 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   return `<div class="dashboardHome" data-dashboard-layout="compact">
     <div class="dashboardPrimary">
       ${this.dashboardCoverage(covered,total,this.coverageVisitEstimate(s.events,state.cards),true)}
+      <section class="panel dashboardSpotlight dashboardQueue">
+       <small>${ui('Ældste kort i rækken')}</small>
+       <strong class="dashboardAverageValue dashboardQueueValue">${oldest.card?`<button class="link" data-action="show-oldest-cards" data-id="${esc(oldest.card.id)}" ${I18n.attribute('aria','Vis ældste ledige kort')}>${oldest.value}</button>`:oldest.value}</strong>
+       <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato. Tallet hjælper dig med at vurdere, hvor ofte distriktet bliver gennemgået.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
+      </section>
       <section class="panel dashboardSpotlight dashboardAverage">
-       <small>${ui('Gennemsnitlig gennemgangstid')}</small>
+       <small>${ui('Hvor længe en forkynder gennemsnitligt har kortet')}</small>
        <strong class="dashboardAverageValue">${avg}</strong>
        <span class="dashboardSpotlightNote">${ui('Fra udlevering til aflevering med gennemgang · seneste 12 måneder.')}</span>
-      </section>
-      <section class="panel dashboardSpotlight dashboardQueue">
-       <small>${ui('Ældste kort i gennemgangskøen')}</small>
-       <strong class="dashboardAverageValue dashboardQueueValue">${oldest.card?`<button class="link" data-action="show-oldest-cards" data-id="${esc(oldest.card.id)}" ${I18n.attribute('aria','Vis ældste ledige kort')}>${oldest.value}</button>`:oldest.value}</strong>
-       <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
       </section>
     </div>
     <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3>${this.dashboardStatsActions()}</div>
@@ -606,8 +606,8 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   for(const c of cards.values()){
    const extra={card:c};
    if(!c.area_id)add('checks',[c.id,'area'],'Mangler område',extra);
-   if(c.temporary)add('checks',[c.id,'addresses'],'Midlertidigt kort · vejliste mangler',extra);
-   if(!c.temporary&&!c.geo_polygon?.length&&(state.profile||state.settings.onboarding?.answers?.mode!=='desk'))add('checks',[c.id,'boundary'],'Mangler geografisk grænse',extra);
+   if(c.temporary&&!c.planned)add('checks',[c.id,'addresses'],'Midlertidigt kort · vejliste mangler',extra);
+   if(!c.temporary&&!c.planned&&!c.geo_polygon?.length&&(state.profile||state.settings.onboarding?.answers?.mode!=='desk'))add('checks',[c.id,'boundary'],'Mangler geografisk grænse',extra);
    for(const id of new Set(c.address_ids||[])){
     if(owners.get(id).length>1)add('checks',[c.id,'duplicate',id],'Adresse valgt på flere kort: {address}',{...extra,params:{address:addresses.get(id)?.label||id}});
     if(ignored.has(id))add('checks',[c.id,'ignored',id],'Valgt adresse er også markeret Se bort fra: {address}',{...extra,params:{address:addresses.get(id)?.label||id}});

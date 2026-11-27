@@ -12,11 +12,12 @@ const AdminUI={
  },
  folderReason(c){
   if(!c)return 'Kortet findes ikke længere.';
+  if(c.planned)return 'Kortet er under opbygning og kan ikke lægges i mappen.';
   if(loanFor(c.id))return 'Et udlånt kort kan ikke lægges i mappen.';
   if(c.in_folder)return 'Kortet er allerede i mappen.';
   return '';
  },
- folderIds(cards,inFolder){return cards.filter(c=>c&&this.selected.has(c.id)&&!loanFor(c.id)&&!!c.in_folder!==inFolder).map(c=>c.id);},
+ folderIds(cards,inFolder){return cards.filter(c=>c&&this.selected.has(c.id)&&!loanFor(c.id)&&(!inFolder||!c.planned)&&!!c.in_folder!==inFolder).map(c=>c.id);},
  selection(cards){
   this.visible=cards.map(c=>c.id);
   const chosen=this.selectedCards(),toFolder=this.folderIds(chosen,true),toBox=this.folderIds(chosen,false),excluded=chosen.length-toFolder.length,canMove=typeof ProfilesUI==='undefined'||ProfilesUI.canAction('folder.set');

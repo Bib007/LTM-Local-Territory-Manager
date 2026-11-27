@@ -44,9 +44,11 @@ class GeoStore(MainBoundaryStore):
                 if len(poly)>=3 and not c.get('_deleted_at'):
                     polygons.append((c,poly,(min(p[0] for p in poly),min(p[1] for p in poly),max(p[0] for p in poly),max(p[1] for p in poly))))
             ignored={i['address_id']:i for i in self.all('ignored')};statuses={}
+            tracking={r['address_id']:r['status'] for r in rows if r.get('entity')=='address_tracking' and r.get('status') in ('construction','other')}
             for a in addresses:
                 owner=owners.get(a['id']) or owners.get(address_key(a));item=dict(owner or {})
                 if a['id'] in ignored:item['ignored_id']=ignored[a['id']]['id']
+                if a['id'] in tracking:item['tracking']=tracking[a['id']]
                 item['within']=[]
                 if not owner and not item.get('ignored_id') and not a.get('retired'):
                     x,y=a['lng'],a['lat']
@@ -160,6 +162,15 @@ class GeoStore(MainBoundaryStore):
             record=dict(data,entity='address',source='Manuelt indtastet',verified=False)
             record['id']=data.get('id') or 'manual:'+uuid.uuid4().hex
             return self.geo_mutate('geo.import',{'records':[record],'label':'Manuel adresse','source':'Manuelt indtastet'})
+        if action=='geo.address_tracking':
+            address=self.require('geo',data['address_id'])
+            status=data.get('status')
+            if address.get('entity')!='address' or status not in ('','construction','other'):
+                raise ValueError('Ugyldig adressemarkering.')
+            # Manual tracking survives source updates and approved address changes.
+            self.put('geo',{'id':'tracking:'+address['id'],'entity':'address_tracking',
+                            'address_id':address['id'],'status':status})
+            return {}
         if action=='geo.type':
             item=self.require('geo',data['id']);typ=data.get('type')
             if item.get('entity')!='address' or typ not in ('Hus','Lejlighed','Lejlighedskompleks','Butik','Kontor','Virksomhed','Andet'):raise ValueError('Ugyldig adressetype.')
@@ -168,6 +179,16 @@ class GeoStore(MainBoundaryStore):
         if action=='geo.preview':
             return self.geo_preview(data)
         if action=='geo.assign':
+            if 'planned' in data and type(data['planned']) is not bool:
+                raise ValueError('Ugyldig status for distriktskort.')
+            if not data.get('card_id') and data.get('planned') is True and data.get('address_ids')==[]:
+                polygon=valid_polygon(data.get('polygon'),limit=5000)
+                values={key:data[key] for key in ('number','name','area_id','kind','map_color') if key in data}
+                result=self._mutate('card.save',dict(values,temporary=True,planned=True))
+                card=self.require('cards',result['id'])
+                card.update(address_ids=[],geo_addresses=[],geo_polygon=polygon,geo_outline_source='manual',geo_updated=stamp())
+                self.put('cards',card)
+                return {'id':card['id'],'count':0,'visits':0,'rows':[]}
             if data.get('street_expected'):
                 from street_suggestions import suggest
                 current=suggest(self,data)
@@ -198,7 +219,7 @@ class GeoStore(MainBoundaryStore):
             ident=data.get('card_id')
             if ident:c=self.require('cards',ident)
             else:
-                result=self._mutate('card.save',{'number':data.get('number'),'name':data.get('name',''),'area_id':data.get('area_id',''),'kind':data.get('kind','Ukendt'),'temporary':True})
+                result=self._mutate('card.save',{'number':data.get('number'),'name':data.get('name',''),'area_id':data.get('area_id',''),'kind':data.get('kind','Ukendt'),'temporary':True,**({'planned':True} if data.get('planned') else {})})
                 c=self.require('cards',result['id'])
             rows=street_rows(members)
             self._mutate('card.save',dict(c,temporary=False,addresses=rows,map_color=data.get('map_color',c.get('map_color','#477596'))),geographic=True)
