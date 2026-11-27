@@ -1,5 +1,12 @@
 # Changelog (English and original historical notes)
 
+## 1.15.0-beta.3 · 2026-11-27
+
+- Create territories under construction, even with just a drawn boundary. Clear the mark when they are ready for assignment.
+- Mark addresses as Under construction or Other and manage them under Addresses → More → Marked addresses.
+- Use Ignore in the map address panel, including on the congregation boundary map.
+
+
 ## 1.14.3-beta.1 · 2026-11-27
 
 - Create territories under construction, even with just a drawn boundary. Clear the mark when they are ready for assignment.

@@ -1,5 +1,12 @@
 # Ændringslog
 
+## 1.15.0-beta.3 · 2026-11-27
+
+- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
+- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
+- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
+
+
 ## 1.14.3-beta.1 · 2026-11-27
 
 - Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
