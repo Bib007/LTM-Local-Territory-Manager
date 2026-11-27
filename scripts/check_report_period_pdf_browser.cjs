@@ -111,25 +111,31 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     }
    }finally{await context.setOffline(false);await printed.close();}
   }
-  // The real vector fallback must print without requesting OSM tiles.
-  const fallback=await source.evaluate(async()=>{
-   const before={cards:state.cards,points:ReportMap.points};
+  // The real vector fallback stays printable without OSM tiles in both number modes.
+  assert.equal(await source.evaluate(()=>Workspace.reportShowNumbers),false);
+  for(const showNumbers of [false,true]){
+   const fallback=await source.evaluate(async showNumbers=>{
+    const before={cards:state.cards,numbers:Workspace.reportShowNumbers};
+    try{
+     Workspace.reportShowNumbers=showNumbers;
+     state.cards=[{...before.cards[0],number:'OFFLINE-101',geo_polygon:[[10,55],[10.01,55],[10.01,55.02],[10,55.02]]}];
+     const map=await ReportMap.printable({withoutBackground:true});
+     return await inlineReportAssets(reportPrintDocument(map,'calendar'));
+    }finally{state.cards=before.cards;Workspace.reportShowNumbers=before.numbers;}
+   },showNumbers);
+   const offline=await context.newPage();
    try{
-    state.cards=[{...before.cards[0],number:'OFFLINE-101',geo_polygon:[[10,55],[10.01,55],[10.01,55.02],[10,55.02]]}];
-    const map=await ReportMap.printable({withoutBackground:true});
-    return await inlineReportAssets(reportPrintDocument(map,'calendar'));
-   }finally{state.cards=before.cards;ReportMap.points=before.points;}
-  });
-  const offline=await context.newPage();
-  try{
-   await context.setOffline(true);await offline.setContent(fallback,{waitUntil:'load'});
-   assert.equal(await offline.locator('.reportMapSnapshot polygon').count()>0,true);
-   const pdf=await offline.pdf({format:'A4',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:false});
-   const result=spawnSync('pdftotext',['-','-'],{input:pdf,encoding:'utf8'});assert.equal(result.status,0,result.stderr);
-   assert(result.stdout.split('\f').some(p=>p.includes('OFFLINE-101')&&p.includes('Uden baggrundskort')));
-  }finally{await context.setOffline(false);await offline.close();}
+    await context.setOffline(true);await offline.setContent(fallback,{waitUntil:'load'});
+    assert.equal(await offline.locator('.reportMapSnapshot polygon').count()>0,true);
+    const pdf=await offline.pdf({format:'A4',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:false});
+    const result=spawnSync('pdftotext',['-','-'],{input:pdf,encoding:'utf8'});assert.equal(result.status,0,result.stderr);
+    const mapPages=result.stdout.split('\f').filter(p=>p.includes('Uden baggrundskort'));
+    assert.equal(mapPages.length,1,'The offline map must stay on its own PDF page');
+    assert.equal(mapPages[0].includes('OFFLINE-101'),showNumbers);
+   }finally{await context.setOffline(false);await offline.close();}
+  }
   assert.deepEqual(errors,[]);
   await context.close();
-  console.log('PASS 12 real Chromium A4 PDF scenarios: portrait/landscape maps with attribution, period scope, multi-page S-13 and offline rendering.');
+  console.log('PASS 13 real Chromium A4 PDF scenarios: portrait/landscape maps with attribution, period scope, multi-page S-13 and offline rendering.');
  }finally{await browser?.close();child.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
