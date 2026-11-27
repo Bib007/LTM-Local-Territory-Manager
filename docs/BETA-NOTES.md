@@ -1,11 +1,11 @@
-# LTM 1.15.0-beta.2
+# LTM 1.14.3-beta.1
 
-- **Flere statistikker** har tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
-- **Popularitet** på forsiden viser separate tal for udleveringer og gennemgange, med perioder, gennemsnit pr. måned og sortering begge veje. Kort uden aktivitet vises også.
-
-Prøv begge dialoger på computer og mobil. Tjek fx et kort uden aktivitet, et kort med flere gennemgange og sortering fra mindst til mest populært.
+- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
+- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
+- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
 
 ## English
 
-- **More statistics** has clearer headings, small progress bars and assignment-to-return figures.
-- **Popularity** on Home shows separate assignment and completion totals per territory, with time periods, monthly averages and sorting in either direction. Inactive cards are included.
+- Create territories under construction, even with just a drawn boundary. Clear the mark when they are ready for assignment.
+- Mark addresses as Under construction or Other and manage them under Addresses → More → Marked addresses.
+- Use Ignore in the map address panel, including on the congregation boundary map.

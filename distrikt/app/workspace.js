@@ -453,7 +453,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   // The district-wide queue includes available cards in both the box and
   // folder. Undated cards are reported separately, not assigned a fake age.
   const active=new Set(state.loans.filter(l=>!l.returned).map(l=>l.card_id));
-  const queue=state.cards.filter(c=>!active.has(c.id));
+  const queue=state.cards.filter(c=>!c.planned&&!active.has(c.id));
   const known=queue.filter(c=>typeof c.last_completed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.last_completed)&&Number.isFinite(dayDiff(state.today,c.last_completed))&&c.last_completed<=state.today);
   known.sort((a,b)=>a.last_completed.localeCompare(b.last_completed)||cmp(a.number,b.number)||cmp(a.id,b.id));
   const next=known[0];
@@ -606,8 +606,8 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   for(const c of cards.values()){
    const extra={card:c};
    if(!c.area_id)add('checks',[c.id,'area'],'Mangler område',extra);
-   if(c.temporary)add('checks',[c.id,'addresses'],'Midlertidigt kort · vejliste mangler',extra);
-   if(!c.temporary&&!c.geo_polygon?.length&&(state.profile||state.settings.onboarding?.answers?.mode!=='desk'))add('checks',[c.id,'boundary'],'Mangler geografisk grænse',extra);
+   if(c.temporary&&!c.planned)add('checks',[c.id,'addresses'],'Midlertidigt kort · vejliste mangler',extra);
+   if(!c.temporary&&!c.planned&&!c.geo_polygon?.length&&(state.profile||state.settings.onboarding?.answers?.mode!=='desk'))add('checks',[c.id,'boundary'],'Mangler geografisk grænse',extra);
    for(const id of new Set(c.address_ids||[])){
     if(owners.get(id).length>1)add('checks',[c.id,'duplicate',id],'Adresse valgt på flere kort: {address}',{...extra,params:{address:addresses.get(id)?.label||id}});
     if(ignored.has(id))add('checks',[c.id,'ignored',id],'Valgt adresse er også markeret Se bort fra: {address}',{...extra,params:{address:addresses.get(id)?.label||id}});
