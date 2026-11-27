@@ -42,7 +42,7 @@ const BoundaryOverlap={
  }
 };
 const REPORT_MAP_NUMBERS_KEY='ltm-report-map-numbers';
-const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:(()=>{try{return localStorage.getItem(REPORT_MAP_NUMBERS_KEY)!=='false';}catch{return true;}})(),calendarYear:null,
+const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:(()=>{try{return localStorage.getItem(REPORT_MAP_NUMBERS_KEY)==='true';}catch{return false;}})(),calendarYear:null,
  setReportShowNumbers(enabled){this.reportShowNumbers=!!enabled;try{localStorage.setItem(REPORT_MAP_NUMBERS_KEY,String(this.reportShowNumbers));}catch{}},
  restructureStamp(form){return JSON.stringify([form.dataset.mode,form.dataset.source,[...new FormData(form)]]);},
  async previewRestructure(form,payload){

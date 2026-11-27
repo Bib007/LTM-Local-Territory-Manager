@@ -1,5 +1,11 @@
 # Ændringslog
 
+## 1.14.1 · 2026-11-27
+
+- **Rapportkort:** Distriktsnumre og deres stregmarkeringer er slået fra som standard i forhåndsvisning og PDF. De kan slås til med »Vis distriktsnumre på rapportkortet«.
+- **Flere statistikker:** Se kort, besøg, IB og distriktsdækning med tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
+- **Popularitet:** Se udleveringer og gennemgange pr. kort, også for kort uden aktivitet. Vælg periode, se månedsgennemsnit, og sortér i begge retninger.
+
 ## 1.15.0-beta.2 · 2026-11-26
 
 - **Forside:** Popularitet viser udleveringer og gennemgange pr. kort, med valg af periode og sortering i begge retninger. Flere statistikker har tydeligere overskrifter, små målere, en forklaring på besøgstal og nye nøgletal for udlevering og aflevering.
