@@ -260,7 +260,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         return None
 
     def put(self, module, item):
-        if module=='loans' and not item.get('returned'):
+        if module=='loans' and item.get('card_id') and not item.get('returned'):
             card=self.get('cards',item['card_id'])
             if card and card.get('planned'):
                 raise ValueError('Kortet er under opbygning og kan ikke udleveres endnu.')
