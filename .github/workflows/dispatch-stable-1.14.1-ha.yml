@@ -1,0 +1,29 @@
+name: Dispatch Home Assistant Stable 1.14.1
+on:
+  push:
+    branches: [release/dispatch-stable-1.14.1-ha]
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: dispatch-stable-1.14.1-ha
+  cancel-in-progress: false
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      EXPECTED_MAIN: '4797dc5bcc3017b874611f88b9895e680cb584ae'
+      EXPECTED_BETA: '2a8d1f6a506231820e0037af3fe36891d99e8c4d'
+    steps:
+      - name: Dispatch the existing Stable workflow for the checked commit
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')" == "$EXPECTED_MAIN" ]]
+          [[ "$(gh release view v1.14.1-beta.1 --json targetCommitish,isDraft,isPrerelease --jq 'select(.isPrerelease and (.isDraft | not)) | .targetCommitish')" == "$EXPECTED_BETA" ]]
+          if gh release view v1.14.1 >/dev/null 2>&1; then
+            echo 'Stable 1.14.1 already exists.'
+            exit 1
+          fi
+          gh workflow run release.yml --ref main -f track=home-assistant
