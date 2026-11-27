@@ -49,8 +49,12 @@ def current_territory_totals(raw):
     flagged. A temporary card without streets does not invent visit points.
     """
     visits=0
+    complete_visits=0
     incomplete=0
-    for card in raw['cards']:
+    cards=raw['cards']
+    card_ids={card['id'] for card in cards}
+    for card in cards:
+        card_visits=0
         rows=card.get('addresses') or []
         unknown=not bool(rows)
         for row in rows:
@@ -59,10 +63,19 @@ def current_territory_totals(raw):
                     or type(count) is not int or count<0):
                 unknown=True
             else:
-                visits+=count
-        if unknown:incomplete+=1
+                card_visits+=count
+        visits+=card_visits
+        if unknown:
+            incomplete+=1
+        else:
+            complete_visits+=card_visits
+    ib=raw.get('ib') or []
+    ib_card_ids=[row.get('card_id') for row in ib if row.get('card_id') in card_ids]
     return {'visit_points':visits,'unknown_visit_cards':incomplete,
-            'ib_total':len(raw.get('ib') or [])}
+            'complete_visit_points':complete_visits,
+            'temporary_cards':sum(bool(card.get('temporary')) for card in cards),
+            'ib_total':len(ib),'ib_on_current_cards':len(ib_card_ids),
+            'cards_with_ib':len(set(ib_card_ids))}
 
 
 def summaries(raw):

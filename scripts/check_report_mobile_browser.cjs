@@ -170,7 +170,10 @@ async function checkAppControls(){
      assert.equal(await source.evaluate(()=>matchMedia('(display-mode: standalone)').matches),standalone);
      await source.locator('#reportPrintPeriod').selectOption('calendar');
      await source.locator('#calendarYear').selectOption({label:await source.locator('#calendarYear option').first().textContent()});
-     await source.locator('#reportMapNumbers').uncheck();
+     const numberOption=source.locator('#reportMapNumbers');
+     assert.equal(await numberOption.isChecked(),false,'A new report defaults to hidden numbers');
+     await numberOption.check();
+     await numberOption.uncheck();
      const snapshot=()=>source.evaluate(()=>JSON.stringify({
       cards:state.cards,settings:state.settings,period:Workspace.reportPeriod,calendarYear:Workspace.calendarYear,
       year,numbers:Workspace.reportShowNumbers,storedNumbers:localStorage.getItem('ltm-report-map-numbers'),

@@ -226,6 +226,7 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  assert.doesNotMatch(run('reportPrintDocument()'),/class="report reportMapPage reportMapLandscape"/);
  run('GeoUI.data.main_boundary={points:[]}');
  // Narrow and concave districts retain readable numbers anchored to their own polygon.
+ run('Workspace.setReportShowNumbers(true)');
  const concave=[[0,0],[100,0],[100,20],[20,20],[20,100],[0,100]];
  c.concaveFixture=concave;
  assert(run("ReportMap.inside([ReportMap.label(concaveFixture,'120').x,ReportMap.label(concaveFixture,'120').y],concaveFixture)"));

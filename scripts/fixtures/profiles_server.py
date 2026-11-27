@@ -17,6 +17,8 @@ with tempfile.TemporaryDirectory(prefix='ltm-fictional-profiles-') as root:
     card=store.mutate('card.save',{'number':'F101','name':'Fiktivt kort','temporary':True})['id']
     store.mutate('setup.onboarding.save',{'answers':{'mode':'desk','boundary':'later','cards':'numbers','ib':'later'},'tour_completed':True})
     server=Server(('127.0.0.1',0),store)
+    # Profile tests must not depend on current public release notifications.
+    server.update_checker.fetcher=lambda:[]
     server.runtime_status=RuntimeStatus(server.address_schedule,'fictional',True,enabled=True,token='fictional',
         pressure=lambda:{'available':True,'high':False},transport=lambda *args:None)
     server.runtime_status.publish()

@@ -26,14 +26,21 @@ run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class
 (async()=>{
  const before=JSON.stringify(state),toolbar=run('Workspace.reportPreview=true;Workspace.detailedReports()');
  assert.match(toolbar,/id="reportPrintPeriod"/);
- assert.match(toolbar,/id="reportMapNumbers" type="checkbox" checked/);
+ assert.match(toolbar,/id="reportMapNumbers" type="checkbox"/);
+ assert.doesNotMatch(toolbar,/id="reportMapNumbers" type="checkbox" checked/);
  assert.match(toolbar,/id="reportDistrictMap"/);
  assert.equal(prefs.size,0,'The default does not write a browser preference');
  assert.match(read('app.js'),/Workspace\.setReportShowNumbers\(e\.target\.checked\)/,'The checkbox handler must persist changes');
  const restartedPreference=()=>{const fresh={...c};vm.createContext(fresh);vm.runInContext(read('workspace.js'),fresh);return vm.runInContext('Workspace.reportShowNumbers',fresh);};
  run('ReportMap.map=mapMock;ReportMap.layer={clearLayers(){}};ReportMap.tiles={isLoading:()=>false};ReportMap.fit=()=>{};');
  reset();run('ReportMap.draw()');
- assert.equal(drawn.markers.length,1,'Preview should initially show the number marker');
+ assert.equal(drawn.markers.length,0,'Preview starts without district numbers');
+ assert.equal(drawn.leaders.length,0,'Preview starts without number callouts');
+ assert.doesNotMatch(await run('ReportMap.printable({withoutBackground:true})'),/F-314/,'Print starts without district numbers');
+ run('Workspace.setReportShowNumbers(true)');
+ assert.match(run('Workspace.detailedReports()'),/id="reportMapNumbers" type="checkbox" checked/);
+ reset();run('ReportMap.draw()');
+ assert.equal(drawn.markers.length,1,'Preview shows the number marker after opting in');
  assert.match(drawn.markers[0].opts.icon.html,/>F-314</);
  assert.match(drawn.tooltips[0],/F-314/);
  const onFallback=await run('ReportMap.printable({withoutBackground:true})');
@@ -79,6 +86,6 @@ run("Workspace.boundaryReport=()=>'';Workspace.reportSummary=()=>'<section class
  run('Workspace.setReportShowNumbers(true)');
  assert.equal(run('Workspace.reportShowNumbers'),true,'Blocked writes must not break the switch');
  c.localStorage.getItem=()=>{throw Error('storage is blocked');};
- assert.equal(restartedPreference(),true,'Blocked reads use the original enabled default');
+ assert.equal(restartedPreference(),false,'Blocked reads use the disabled default');
  console.log('Report map numbers: switch persistence, restart, blocked storage, live map, PDF and stale-print guard passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

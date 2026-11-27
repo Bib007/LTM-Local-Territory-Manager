@@ -1,5 +1,19 @@
 # Changelog (English and original historical notes)
 
+## 1.14.1 · 2026-11-27
+
+- **Report maps:** Territory numbers and their callout lines are off by default in previews and PDFs. Enable them with “Show territory numbers on the report map”.
+- **More statistics:** See territory, visit, do-not-call and coverage figures, with clearer headings, small progress bars and assignment-to-return metrics.
+- **Popularity:** See assignments and completions per territory, including inactive territories. Choose a period, see monthly averages, and sort in either direction.
+
+## 1.15.0-beta.2 · 2026-11-26
+
+- **Home:** Territory popularity shows assignments and completions per card, with period selection and sorting in either direction. More statistics has clearer headings, small progress bars, clearer visit-count labels and additional assignment and return metrics.
+
+## 1.15.0-beta.1 · 2026-11-26
+
+- **Home:** Open More statistics for territory, visit-point, do-not-call and coverage totals. The dialog includes averages, small ring charts and figures for the service year, the last 12 months and the calendar year.
+
 ## 1.14.0 · 2026-11-26
 
 - **Daily work:** Issue up to five territories in one operation with the same date and publisher. Search for additional cards, use frequent-publisher shortcuts, and select multiple returns by publisher. Open cards directly from the folder suggestion list.

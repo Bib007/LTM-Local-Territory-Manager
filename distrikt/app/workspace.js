@@ -42,7 +42,7 @@ const BoundaryOverlap={
  }
 };
 const REPORT_MAP_NUMBERS_KEY='ltm-report-map-numbers';
-const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:(()=>{try{return localStorage.getItem(REPORT_MAP_NUMBERS_KEY)!=='false';}catch{return true;}})(),calendarYear:null,
+const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',activityData:[],historyQuery:'',historyLimit:100,checkLimit:100,followupFilter:'all',followupQuery:'',followupLimit:100,followupBusy:false,outsideBusy:false,outsidePreviewSequence:0,outsideReview:null,outsideReviewContext:null,searchQuery:'',restructure:null,restructureContext:null,restructureSequence:0,restructureBusy:false,lastPage:'',scroll:0,reportPeriod:'service',reportShowNumbers:(()=>{try{return localStorage.getItem(REPORT_MAP_NUMBERS_KEY)==='true';}catch{return false;}})(),calendarYear:null,
  setReportShowNumbers(enabled){this.reportShowNumbers=!!enabled;try{localStorage.setItem(REPORT_MAP_NUMBERS_KEY,String(this.reportShowNumbers));}catch{}},
  restructureStamp(form){return JSON.stringify([form.dataset.mode,form.dataset.source,[...new FormData(form)]]);},
  async previewRestructure(form,payload){
@@ -283,13 +283,136 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    action?`<button class="dashboardFact" data-action="${action}" data-status="${esc(status)}">${content}</button>`:
    `<div class="dashboardFact">${content}</div>`;
  },
+ dashboardStatsActions(){
+  return `<div class="dashboardQuickActions">
+   <button type="button" class="primary dashboardStatsButton" data-work="dashboard-stats" aria-haspopup="dialog">${ui('Flere statistikker')}</button>
+   ${this.canSeePopularity()?'<button type="button" class="dashboardStatsButton" data-work="dashboard-popularity" aria-haspopup="dialog">'+ui('Popularitet')+'</button>':''}
+  </div>`;
+ },
+ canSeePopularity(){
+  return !state.profile||ProfilesUI.has('dashboard.view','cards.view','loans.view','history.view');
+ },
+ popularityRows(start,end){
+  const rows=new Map(state.cards.map(card=>[card.id,{card,issues:0,completions:0}]));
+  for(const loan of state.loans){
+   const row=rows.get(loan.card_id);
+   if(row&&this.reportDay(loan.assigned)&&loan.assigned>=start&&loan.assigned<=end)row.issues++;
+  }
+  for(const event of this.reportEvents(start,end)){
+   const row=rows.get(event.card_id);
+   if(row)row.completions++;
+  }
+  return [...rows.values()];
+ },
+ popularityResults(mode,metric,order){
+  if(!this.canSeePopularity())return '';
+  const periods=state.dashboard_summary?.periods;
+  const period=periods?.[mode]||periods?.rolling;
+  if(!period)return '';
+  const {start,end}=period;
+  const months=mode==='rolling'?12:(dayDiff(end,start)+1)/30.4375;
+  const sortKey=metric==='issues'?'issues':'completions',direction=order==='least'?1:-1;
+  const nf=new Intl.NumberFormat(I18n.language()==='da'?'da-DK':'en',{maximumFractionDigits:2});
+  const rate=count=>nf.format(count/months);
+  const rows=this.popularityRows(start,end).sort((a,b)=>direction*(a[sortKey]-b[sortKey])||cmp(a.card.number,b.card.number)||cmp(a.card.id,b.card.id));
+  const heading=(label,key)=>`<th scope="col"${sortKey===key?' aria-sort="'+(direction===1?'ascending':'descending')+'"':''}>${ui(label)}</th>`;
+  return `<p class="hint popularityPeriod">${fmt(start)} – ${fmt(end)}</p>
+   ${rows.length?`<div class="tablewrap"><table class="popularityTable"><thead><tr>
+    <th scope="col">${ui('Kort')}</th>${heading('Udleveringer','issues')}${heading('Gennemgange','completions')}
+   </tr></thead><tbody>${rows.map(({card,issues,completions})=>`<tr>
+    <th scope="row">${esc(card.number)}${card.name?`<small>${esc(card.name)}</small>`:''}</th>
+    <td><strong>${nf.format(issues)}</strong><small>${ui('{rate} pr. måned',{rate:rate(issues)})}</small></td>
+    <td><strong>${nf.format(completions)}</strong><small>${ui('{rate} pr. måned',{rate:rate(completions)})}</small></td>
+   </tr>`).join('')}</tbody></table></div>`:`<p>${ui('Ingen distriktskort endnu.')}</p>`}`;
+ },
+ openPopularity(){
+  if(page!=='Forside'||!this.canSeePopularity())return;
+  const picker=(id,label,options)=>`<label for="${id}">${ui(label)}<select id="${id}" data-work-select="popularity">${options.map(([value,text])=>`<option value="${value}">${ui(text)}</option>`).join('')}</select></label>`;
+  openDialog(`<div class="dashboardStatsDialog popularityDialog">
+   <h2>${ui('Popularitet af distriktskort')}</h2>
+   <p class="hint">${ui('Udleveringer og registrerede gennemgange tælles hver for sig. Gennemsnittet pr. måned dækker hele den valgte periode.')}</p>
+   <div class="popularityFilters">
+    ${picker('popularityPeriod','Periode',[['rolling','Seneste 12 måneder'],['service','Tjenesteåret indtil nu'],['calendar','Kalenderåret indtil nu']])}
+    ${picker('popularityMetric','Sortér efter',[['completions','Gennemgange'],['issues','Udleveringer']])}
+    ${picker('popularityOrder','Rækkefølge',[['most','Mest populære først'],['least','Mindst populære først']])}
+   </div>
+   <div id="popularityResults">${this.popularityResults('rolling','completions','most')}</div>
+  </div>`,I18n.language());
+ },
+ updatePopularity(){
+  const result=el('popularityResults');
+  if(result)result.innerHTML=this.popularityResults(el('popularityPeriod').value,el('popularityMetric').value,el('popularityOrder').value);
+ },
+ moreStats(){
+  const summary=state.dashboard_summary;
+  if(!summary?.periods?.service||(state.profile&&!ProfilesUI.has('dashboard.view')))return;
+  const {periods,territory_totals:totals={}}=summary,s=periods.service;
+  const nf=new Intl.NumberFormat(I18n.language()==='da'?'da-DK':'en',{maximumFractionDigits:2});
+  const number=value=>Number.isFinite(value)?nf.format(value):'–';
+  const average=(total,count)=>count>0&&Number.isFinite(total)?total/count:null;
+  const share=(part,total)=>Number.isFinite(part)&&total>0?Math.round(100*part/total):null;
+  const row=(label,value,pct=null)=>`<div><dt>${ui(label)}${pct===null?'':`<span class="dashboardStatsTrack" aria-hidden="true"><i style="width:${pct}%"></i></span>`}</dt><dd>${typeof value==='string'?value:number(value)}${pct===null?'':`<small>${number(pct)} %</small>`}</dd></div>`;
+  const section=(title,rows,note='')=>`<section class="dashboardStatsSection"><h3>${ui(title)}</h3><dl>${rows.join('')}</dl>${note?'<p class="hint">'+ui(note)+'</p>':''}</section>`;
+  const ring=(label,part,total)=>{
+   const pct=share(part,total);
+   if(pct===null)return '';
+   return `<div class="dashboardStatsShare"><span class="dashboardStatsRing" style="--stats-share:${pct}%" aria-hidden="true"></span><div><strong>${number(pct)} %</strong><span>${ui(label)}</span></div></div>`;
+  };
+  const showIB=Number.isInteger(totals.ib_total)&&(!state.profile||ProfilesUI.has('ib.view'));
+  const completeCards=s.territories-totals.unknown_visit_cards;
+  const loans=(!state.profile||ProfilesUI.has('loans.view'))?this.dashboardLoanStats():null;
+  const showCompletionTime=!state.profile||ProfilesUI.has('loans.view','history.view');
+  const duration=value=>value===null?null:ui('{count} dage i gennemsnit',{count:number(value)});
+  const content=`
+   <div class="dashboardStatsDialog">
+    <h2>${ui('Flere statistikker')}</h2>
+    <div class="dashboardStatsShares">
+     ${ring('Kort gennemgået i tjenesteåret',s.completed_territories,s.territories)}
+     ${ring('Kort udleveret lige nu',s.assigned,s.territories)}
+     ${showIB?ring('Kort med mindst én IB',totals.cards_with_ib,s.territories):''}
+    </div>
+    ${section('Distriktskort lige nu',[
+     row('Antal distriktskort',s.territories),row('Udleverede kort',s.assigned),
+     row('Ledige kort',s.home,share(s.home,s.territories)),row('Midlertidige kort',totals.temporary_cards)
+    ])}
+    ${section('Besøg på kortene',[
+     row('Antal kendte besøg',totals.visit_points),
+     row('Gennemsnitligt antal besøg pr. kort',average(totals.complete_visit_points,completeCards)),
+     row('Kort med manglende besøgstal',totals.unknown_visit_cards,share(totals.unknown_visit_cards,s.territories))
+    ],'Besøg er steder registreret på kortene, inklusive IB. Kort medregnes kun i gennemsnittet, når alle vejlinjer har et antal besøg.')}
+    ${showIB?section('Ingen besøg (IB)',[
+     row('Antal IB',totals.ib_total),row('IB på aktuelle kort',totals.ib_on_current_cards),
+     row('Gennemsnitlige IB pr. aktuelt kort',average(totals.ib_on_current_cards,s.territories)),
+     row('Aktuelle kort med IB',totals.cards_with_ib,share(totals.cards_with_ib,s.territories)),
+     row('Aktuelle kort uden IB',s.territories-totals.cards_with_ib)
+    ]):''}
+    ${loans?section('Udlevering og aflevering',[
+     row('Udleveringer de seneste 12 måneder',loans.issued),
+     row('Afleveringer de seneste 12 måneder',loans.returned),
+     row('Tid fra udlevering til aflevering',duration(loans.returnAverage)),
+     ...(showCompletionTime?[row('Tid fra udlevering til aflevering med gennemgang',duration(this.completedReturnAverage()))]:[]),
+     row('Tid ude for aktive udleveringer',duration(loans.activeAverage)),
+     row('Aktive udleveringer til opfølgning',loans.overdue,share(loans.overdue,loans.active))
+    ],'Tider for afleverede kort er beregnet ud fra de seneste 12 måneder.') : ''}
+    ${[['service','Tjenesteåret indtil nu'],['rolling','Seneste 12 måneder'],['calendar','Kalenderåret indtil nu']].map(([key,label])=>{
+     const p=periods[key];
+     if(!p)return '';
+     return section(label,[
+      row('Registrerede gennemgange',p.completions),row('Forskellige aktuelle kort gennemgået',p.completed_territories,share(p.completed_territories,p.territories)),
+      row('Aktuelle kort endnu ikke gennemgået',p.missing),
+      row('Heraf udleveret nu',p.missing_assigned),row('Heraf ledige nu',p.missing_home)
+     ],'Flere gennemgange af samme kort tæller hver gang i det samlede antal.');
+    }).join('')}
+   </div>`;
+  openDialog(content,I18n.language());
+ },
  dashboardSummary(summary){
   const s=summary.periods.service,year=serviceYear(summary.as_of),canWork=ProfilesUI.pageAllowed('Udlevering');
   return `<div class="dashboardHome" data-dashboard-layout="compact-summary">
     <div class="dashboardPrimary dashboardPrimarySummary">
      ${this.dashboardCoverage(s.completed_territories,s.territories,null,canWork,summary.as_of)}
     </div>
-    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3></div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3>${this.dashboardStatsActions()}</div>
     <div class="dashboardQuickFacts">
       ${this.dashboardFact('Udleveret nu',s.assigned)}
       ${this.dashboardFact('Hjemme nu',s.home)}
@@ -297,6 +420,24 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
     </div>
     ${this.backupReminder()}
    </div>`;
+ },
+ dashboardLoanStats(){
+  const cutoff=this.rollingCompletionStart(state.today),returnedDays=[],activeDays=[];
+  let issued=0,returned=0,active=0,overdue=0;
+  for(const loan of state.loans){
+   const assigned=this.reportDay(loan.assigned);
+   if(assigned&&loan.assigned>=cutoff)issued++;
+   if(!loan.returned){
+    active++;
+    if(assigned)activeDays.push(dayDiff(state.today,loan.assigned));
+    if(this.reportDay(loan.cycle_start)&&fourMonths(loan.cycle_start)<state.today)overdue++;
+   }else if(this.reportDay(loan.returned)&&loan.returned>=cutoff){
+    returned++;
+    if(assigned&&loan.returned>=loan.assigned)returnedDays.push(dayDiff(loan.returned,loan.assigned));
+   }
+  }
+  const mean=days=>days.length?days.reduce((sum,value)=>sum+value,0)/days.length:null;
+  return {issued,returned,active,overdue,returnAverage:mean(returnedDays),activeAverage:mean(activeDays)};
  },
  completedReturnAverage(){
   // Only a return explicitly completed on the same date is a finished
@@ -338,7 +479,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
        <span class="dashboardSpotlightNote">${ui('Tid siden sidste gennemgang af det ældste ledige kort med kendt dato.')}${oldest.unknown?` <br>${ui(oldest.unknown===1?'1 ledigt kort uden kendt gennemgangsdato.':'{count} ledige kort uden kendt gennemgangsdato.',{count:oldest.unknown})}`:''}</span>
       </section>
     </div>
-    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3><span>${ui('Aktuelle distrikter')}: ${total}</span></div>
+    <div class="dashboardQuickHeader"><h3>${ui('Kortenes placering')}</h3>${this.dashboardStatsActions()}</div>
     <div class="dashboardQuickFacts">
       ${this.dashboardFact('Udleveret nu',out)}
       ${state.settings.folder_enabled===false?'':this.dashboardFact('Kort i mappen',folder,{action:'stock',status:'Kort i mappen'})}
@@ -661,6 +802,8 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    break;
   case 'undo':if(!state.undo_available||!d.revision||d.revision!==state.revision||PendingSaves.count||WriteGuard.uncertain||WriteGuard.needsReview||WriteGuard.loginExpired)break;if(window.confirm(I18n.text('Fortryd seneste gemte handling?')))await mutate('workflow.undo',{expected_revision:d.revision});break;
   case 'search':this.searchDialog();break;
+  case 'dashboard-stats':if(page==='Forside')this.moreStats();break;
+  case 'dashboard-popularity':this.openPopularity();break;
   case 'connection-check':await this.checkConnection(true);break;
   case 'connection-dismiss':if(this.connectionState==='connected'&&this.connectionIssue){this.connectionIssue=false;this.paintConnection();document.querySelector('[data-work="refresh"]')?.focus?.({preventScroll:true});}break;
   case 'reload-app':if(PendingSaves.count||PendingSaves.protectedDraft()){toast('Kladden er bevaret. Vent på igangværende gemninger, og afslut redigeringen, eller notér kladden et sikkert, privat sted, før du lukker den. Opdater data før et nyt gemmeforsøg. Genindlæs ikke browseren med åbne kladder.');break;}window.location.reload();break;
@@ -751,7 +894,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-work]');if(!b)return;e.preventDefault();const generation=openDialog.generation,origin=page;try{await Workspace.handle(b.dataset.work,b.dataset);}catch(error){toast(error);const node=el('formError');if(node&&generation===openDialog.generation&&page===origin)I18n.errorContent(node,error);}});
 document.addEventListener('submit',async e=>{const f=e.target;if(!f.dataset?.workForm)return;e.preventDefault();e.stopImmediatePropagation();if(f.dataset.busy==='yes'||!f.reportValidity())return;if(FormDrafts.unchanged(f)){FormDrafts.idle();if(!WriteGuard.uncertain&&!WriteGuard.needsReview&&!WriteGuard.loginExpired)closeDialog();return;}const generation=openDialog.generation,origin=page;f.dataset.busy='yes';try{await Workspace.submit(f);}catch(error){const n=el('formError');if(n&&generation===openDialog.generation&&page===origin&&f.isConnected!==false)I18n.errorContent(n,error);toast(error);}finally{f.dataset.busy='no';}});
 document.addEventListener('input',e=>{const kind=e.target.dataset?.workInput;if(!kind)return;const q=e.target.value;if(kind==='global-search'){Workspace.searchResults(q);return;}if(kind==='split-search'){document.querySelectorAll('[data-split-label]').forEach(n=>n.hidden=!n.textContent.toLowerCase().includes(q.toLowerCase()));return;}if(kind==='followups'){Workspace.followupQuery=q;Workspace.followupLimit=100;}if(kind==='tasks')Workspace.taskQuery=q;if(kind==='history')Workspace.historyQuery=q;const pos=e.target.selectionStart;render();const n=document.querySelector('[data-work-input="'+kind+'"]');n?.focus();n?.setSelectionRange(pos,pos);});
-document.addEventListener('change',e=>{const kind=e.target.dataset?.workSelect;if(kind==='view')Workspace.applyView(e.target.value);if(kind==='task-owner-filter')Workspace.handle('task-owner-filter',{value:e.target.value});});
+document.addEventListener('change',e=>{const kind=e.target.dataset?.workSelect;if(kind==='view')Workspace.applyView(e.target.value);if(kind==='task-owner-filter')Workspace.handle('task-owner-filter',{value:e.target.value});if(kind==='popularity')Workspace.updatePopularity();});
 
 document.addEventListener('keydown',event=>{
  if(event.key==='Escape'&&document.body?.classList.contains('menuOpen')&&!el('dialog').open){event.preventDefault();Workspace.menu(false,true);return;}
