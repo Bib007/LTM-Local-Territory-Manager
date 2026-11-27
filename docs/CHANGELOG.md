@@ -1,6 +1,6 @@
 # Ændringslog
 
-## 1.14.1 · 2026-11-27
+## 1.14.1-beta.1 · 2026-11-27
 
 - **Rapportkort:** Distriktsnumre og deres stregmarkeringer er slået fra som standard i forhåndsvisning og PDF. De kan slås til med »Vis distriktsnumre på rapportkortet«.
 - **Flere statistikker:** Se kort, besøg, IB og distriktsdækning med tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.

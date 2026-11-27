@@ -1,6 +1,6 @@
 # Changelog (English and original historical notes)
 
-## 1.14.1 · 2026-11-27
+## 1.14.1-beta.1 · 2026-11-27
 
 - **Report maps:** Territory numbers and their callout lines are off by default in previews and PDFs. Enable them with “Show territory numbers on the report map”.
 - **More statistics:** See territory, visit, do-not-call and coverage figures, with clearer headings, small progress bars and assignment-to-return metrics.

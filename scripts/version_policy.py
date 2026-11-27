@@ -61,13 +61,19 @@ def tagged_versions(tags):
     return result
 
 
-def validate(channel,current,stable_baseline,tags,tag_shas,head,main_synced=True,source_matches=True):
+def validate(channel,current,stable_baseline,tags,tag_shas,head,main_synced=True,source_matches=True,
+             isolated_patch_beta=False):
     """Fail closed on stale, reused, skipped, or wrongly based release numbers."""
     current=parse(str(current)) if not isinstance(current,Version) else current
     stable_baseline=parse(str(stable_baseline)) if not isinstance(stable_baseline,Version) else stable_baseline
     if channel=="beta" and current.beta is None:raise ValueError("Beta must use X.Y.Z-beta.N.")
     if channel=="stable" and current.beta is not None:raise ValueError("Stable must use X.Y.Z without -beta.")
     known=tagged_versions(tags)
+    if isolated_patch_beta and (
+        channel!="beta" or str(current)!="1.14.1-beta.1" or str(stable_baseline)!="1.14.0"
+        or "v1.15.0-beta.2" not in known
+    ):
+        raise ValueError("The isolated release is limited to 1.14.1-beta.1 alongside 1.15.0-beta.2.")
     current_tag="v"+str(current)
     if current_tag in known and tag_shas.get(current_tag)!=head:
         raise ValueError("Version already tagged for different code: "+current_tag)
@@ -80,7 +86,9 @@ def validate(channel,current,stable_baseline,tags,tag_shas,head,main_synced=True
             raise ValueError("Beta must target the next fix, feature or breaking version after origin/main: "+str(stable_baseline))
         if not main_synced:
             raise ValueError("Beta is missing the latest main/Stable changes: merge main into develop first.")
-        other=[v for v in known.values() if v.beta is not None and v.base>current.base]
+        permitted_newer={"v1.15.0-beta.1","v1.15.0-beta.2"} if isolated_patch_beta else set()
+        other=[v for tag,v in known.items()
+               if v.beta is not None and v.base>current.base and tag not in permitted_newer]
         if other:raise ValueError("An already published Beta uses a newer version base.")
         same=[v.beta for v in known.values() if v.beta is not None and v.base==current.base]
         if current_tag not in known and current.beta!=(max(same,default=0)+1):
@@ -132,7 +140,7 @@ def stable_source_matches_beta(beta_tag):
     return True
 
 
-def verify(channel):
+def verify(channel,isolated_patch_beta=False):
     import build_release
     version=parse(build_release.version())
     baseline=git_version("refs/remotes/origin/main")
@@ -148,7 +156,12 @@ def verify(channel):
     matches=[(tag,v) for tag,v in relevant.items() if v.beta is not None and v.base==version.base]
     newest=max(matches,key=lambda entry:entry[1].beta)[0] if matches else None
     parity=stable_source_matches_beta(newest) if channel=="stable" and newest and version.base!=LEGACY_STABLE else True
-    validate(channel,version,baseline,tags,shas,sha,main_synced=synced,source_matches=parity)
+    validate(channel,version,baseline,tags,shas,sha,main_synced=synced,source_matches=parity,
+             isolated_patch_beta=isolated_patch_beta)
+    if isolated_patch_beta and subprocess.run(
+        ["git","merge-base","--is-ancestor","refs/tags/v1.15.0-beta.2","HEAD"],cwd=ROOT,check=False,
+    ).returncode:
+        raise ValueError("The isolated release must include the published 1.15.0-beta.2 commit.")
     print(f"Version policy OK: {channel} {version}; main {baseline}; git {sha[:10]}")
 
 
@@ -157,6 +170,8 @@ def main():
     sub=parser.add_subparsers(dest="command",required=True)
     check=sub.add_parser("verify",help="Validate against fetched Git tags and origin/main before publication")
     check.add_argument("--channel",choices=("beta","stable"),required=True)
+    check.add_argument("--isolated-patch-beta",action="store_true",
+                       help="Validate 1.14.1-beta.1 for publication outside the active HA beta channel")
     next_cmd=sub.add_parser("next",help="Print next Beta number from a Stable version")
     next_cmd.add_argument("--stable",required=True)
     next_cmd.add_argument("--change",choices=("fix","feature","breaking"),required=True)
@@ -166,7 +181,7 @@ def main():
         if stable.beta is not None:parser.error("--stable requires an X.Y.Z Stable version")
         print(next_version(stable,args.change))
     else:
-        try:verify(args.channel)
+        try:verify(args.channel,args.isolated_patch_beta)
         except (ValueError,subprocess.CalledProcessError) as exc:
             print("Version policy failed:",exc,file=sys.stderr)
             sys.exit(1)

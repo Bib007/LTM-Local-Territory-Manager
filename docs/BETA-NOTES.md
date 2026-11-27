@@ -1,11 +1,15 @@
-# LTM 1.15.0-beta.2
+# LTM 1.14.1-beta.1
 
-- **Flere statistikker** har tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
-- **Popularitet** på forsiden viser separate tal for udleveringer og gennemgange, med perioder, gennemsnit pr. måned og sortering begge veje. Kort uden aktivitet vises også.
+Prøveudgivelse til 1.14.1 Stable. Installeres særskilt til test uden at skifte den aktive Home Assistant-beta.
 
-Prøv begge dialoger på computer og mobil. Tjek fx et kort uden aktivitet, et kort med flere gennemgange og sortering fra mindst til mest populært.
+## Nyt
 
-## English
+- **Rapportkort:** Distriktsnumre og deres stregmarkeringer er slået fra som standard i forhåndsvisning og PDF. De kan slås til med »Vis distriktsnumre på rapportkortet«.
+- **Flere statistikker:** Se kort, besøg, IB og distriktsdækning med tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
+- **Popularitet:** Se udleveringer og gennemgange pr. kort, også for kort uden aktivitet. Vælg periode, se månedsgennemsnit, og sortér i begge retninger.
 
-- **More statistics** has clearer headings, small progress bars and assignment-to-return figures.
-- **Popularity** on Home shows separate assignment and completion totals per territory, with time periods, monthly averages and sorting in either direction. Inactive cards are included.
+## What’s new
+
+- **Report maps:** Territory numbers and their callout lines are off by default in previews and PDFs. Enable them with “Show territory numbers on the report map”.
+- **More statistics:** See territory, visit, do-not-call and coverage figures, with clearer headings, small progress bars and assignment-to-return metrics.
+- **Popularity:** See assignments and completions per territory, including inactive territories. Choose a period, see monthly averages, and sort in either direction.

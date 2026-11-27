@@ -38,6 +38,23 @@ class VersionPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"newer version base"):
             validate("beta","1.12.36-beta.2","1.12.35",tags,{},"sha")
 
+    def test_isolated_patch_beta_has_one_allowed_version_and_keeps_normal_gates(self):
+        tags=["v1.14.0","v1.15.0-beta.1","v1.15.0-beta.2"]
+        self.assertEqual(str(validate("beta","1.14.1-beta.1","1.14.0",tags,{},"sha",
+                                      isolated_patch_beta=True)),"1.14.1-beta.1")
+        for channel, version, baseline, release_tags, synced in (
+            ("beta","1.14.1-beta.2","1.14.0",tags,True),
+            ("beta","1.14.1-beta.1","1.13.0",tags,True),
+            ("beta","1.14.1-beta.1","1.14.0",tags[:-1],True),
+            ("beta","1.14.1-beta.1","1.14.0",tags+["v1.15.0-beta.3"],True),
+            ("beta","1.14.1-beta.1","1.14.0",tags,False),
+            ("stable","1.14.1","1.14.1",tags+["v1.14.1-beta.1"],True),
+        ):
+            with self.subTest(channel=channel,version=version,tags=release_tags,synced=synced):
+                with self.assertRaises(ValueError):
+                    validate(channel,version,baseline,release_tags,{},"sha",main_synced=synced,
+                             isolated_patch_beta=True)
+
     def test_tagged_release_must_use_same_commit(self):
         tags=["v1.12.34","v1.12.36-beta.1"]
         with self.assertRaisesRegex(ValueError,"different code"):
