@@ -536,7 +536,7 @@ function monthlyChart(){let events=eventsInYear(),visits=state.visits.filter(v=>
 function allocationRows(start=`${year-1}-09-01`,end=`${year}-08-31`){
   const rows=[];
   const loanIds=new Set(state.loans.map(l=>l.id));
-  for(const c of [...state.cards,...(state.archived_cards||[])].sort((a,b)=>cmp(a.number,b.number))){
+  for(const c of [...state.cards,...(state.archived_cards||[])].filter(c=>!c.planned).sort((a,b)=>cmp(a.number,b.number))){
     const allocations=[];
     for(const l of state.loans.filter(l=>l.card_id===c.id).sort((a,b)=>cmp(a.assigned,b.assigned))){
       const finished=state.completions.filter(e=>e.loan_id===l.id).sort((a,b)=>cmp(a.date,b.date));
