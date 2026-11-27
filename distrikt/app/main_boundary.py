@@ -13,6 +13,38 @@ class MainBoundaryStore:
         """Report mapped visits and IB, plus all active IB records including manual lines."""
         if self._boundary_report_cache is not None:
             return self._boundary_report_cache
+        if self._boundary_report_geometry is None:
+            self._boundary_report_geometry=self._prepare_boundary_report_geometry()
+        if self._boundary_report_geometry is None:
+            return None
+        by_id, known_keys, inside, visits, card_members=self._boundary_report_geometry
+
+        def normalize(value):
+            return re.sub(r'[\s.,]+','',str(value or '').casefold())
+
+        # Count every active IB row for the report total, including manual lines
+        # with no unique mapped DAR address. Keep the geographic subset separate.
+        ib_records=self.all('ib')
+        ib_count=0
+        for record in ib_records:
+            key=by_id.get(record.get('address_id'))
+            if not record.get('address_id'):
+                members=card_members.get(record['card_id'],())
+                road=normalize(record.get('road'))
+                number=normalize(record.get('number'))
+                matches=[unit for unit in members if unit in known_keys and normalize(unit[1])==road
+                         and number in (normalize(unit[2]),normalize(' '.join(unit[2:])))]
+                if len(matches)==1:
+                    key=matches[0]
+            if key in inside:
+                ib_count+=1
+
+        self._boundary_report_cache={'visits':visits,
+                                     'ib':ib_count,'ib_total':len(ib_records)}
+        return self._boundary_report_cache
+
+    def _prepare_boundary_report_geometry(self):
+        """Cache the address work shared by successive IB reports."""
         boundary=self.main_boundary()
         if not boundary:
             return None
@@ -47,31 +79,12 @@ class MainBoundaryStore:
             if west<=lng<=east and south<=lat<=north and point_in_polygon((lng,lat),polygon):
                 inside[key]=address
 
-        def normalize(value):
-            return re.sub(r'[\s.,]+','',str(value or '').casefold())
-
-        # Count every active IB row for the report total, including manual lines
-        # with no unique mapped DAR address. Keep the geographic subset separate.
-        ib_records=self.all('ib')
-        ib_count=0
-        for record in ib_records:
-            key=by_id.get(record.get('address_id'))
-            if not record.get('address_id'):
-                card=cards.get(record['card_id'],{})
-                members={by_id.get(ident) for ident in card.get('address_ids',[])}
-                members.update(by_id.get(a['id']) for a in card.get('geo_addresses',[]))
-                road=normalize(record.get('road'))
-                number=normalize(record.get('number'))
-                matches=[unit for unit in members if unit in by_key and normalize(unit[1])==road
-                         and number in (normalize(unit[2]),normalize(' '.join(unit[2:])))]
-                if len(matches)==1:
-                    key=matches[0]
-            if key in inside:
-                ib_count+=1
-
-        self._boundary_report_cache={'visits':sum(a.get('count',1) for a in inside.values()),
-                                     'ib':ib_count,'ib_total':len(ib_records)}
-        return self._boundary_report_cache
+        card_members={
+            ident: {by_id.get(aid) for aid in card.get('address_ids',[])}
+                   | {by_id.get(a['id']) for a in card.get('geo_addresses',[])}
+            for ident,card in cards.items() if card.get('address_ids') or card.get('geo_addresses')
+        }
+        return by_id, frozenset(by_key), frozenset(inside), sum(a.get('count',1) for a in inside.values()), card_members
 
     def main_boundary_preview(self):
         from geo_store import address_key

@@ -157,10 +157,13 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                         self._geo_cache=None
                         self.geo_generation=getattr(self,'geo_generation',0)+1
                     if not self._dirty_modules or untracked or 'geo' in self._dirty_modules:self._info_cache=None
-                    if self._boundary_report_cache is not None and (
+                    if self._boundary_report_geometry is not None and (
                             not self._dirty_modules or untracked
-                            or self._dirty_modules.intersection({'geo','ignored','ib'})
+                            or self._dirty_modules.intersection({'geo','ignored'})
                             or ('cards' in self._dirty_modules and not self._boundary_cards_unchanged())):
+                        self._boundary_report_geometry=None
+                        self._boundary_report_cache=None
+                    if 'ib' in self._dirty_modules:
                         self._boundary_report_cache=None
             except Exception:
                 self.db.rollback()
