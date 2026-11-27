@@ -1,13 +1,9 @@
-# LTM 1.14.1
+# LTM 1.14.2
 
 ## Nyt i Stable
 
-- **Rapportkort:** Distriktsnumre og deres stregmarkeringer er slået fra som standard i forhåndsvisning og PDF. De kan slås til med »Vis distriktsnumre på rapportkortet«.
-- **Flere statistikker:** Se kort, besøg, IB og distriktsdækning med tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
-- **Popularitet:** Se udleveringer og gennemgange pr. kort, også for kort uden aktivitet. Vælg periode, se månedsgennemsnit, og sortér i begge retninger.
+- **Forside:** Ældste kort i rækken vises først og har en forklaring på, hvad tallet fortæller om distriktets gennemgang. Det andet felt hedder nu »Hvor længe en forkynder gennemsnitligt har kortet«.
 
 ## What’s new
 
-- **Report maps:** Territory numbers and their callout lines are off by default in previews and PDFs. Enable them with “Show territory numbers on the report map”.
-- **More statistics:** See territory, visit, do-not-call and coverage figures, with clearer headings, small progress bars and assignment-to-return metrics.
-- **Popularity:** See assignments and completions per territory, including inactive territories. Choose a period, see monthly averages, and sort in either direction.
+- **Home:** The oldest territory appears first, with a note explaining what the figure tells you about coverage. The second card now reads “How long a publisher keeps a territory on average”.

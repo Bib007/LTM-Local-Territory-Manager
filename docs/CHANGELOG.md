@@ -1,5 +1,13 @@
 # Ændringslog
 
+## 1.14.2 · 2026-11-27
+
+- **Forside:** Ældste kort i rækken vises først og har en forklaring på, hvad tallet fortæller om distriktets gennemgang. Det andet felt hedder nu »Hvor længe en forkynder gennemsnitligt har kortet«.
+
+## 1.14.2-beta.1 · 2026-11-27
+
+- **Forside:** Ældste kort i rækken vises først og har en forklaring på, hvad tallet fortæller om distriktets gennemgang. Det andet felt hedder nu »Hvor længe en forkynder gennemsnitligt har kortet«.
+
 ## 1.14.1 · 2026-11-27
 
 - **Rapportkort:** Distriktsnumre og deres stregmarkeringer er slået fra som standard i forhåndsvisning og PDF. De kan slås til med »Vis distriktsnumre på rapportkortet«.
