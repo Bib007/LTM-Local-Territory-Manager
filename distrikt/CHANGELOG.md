@@ -1,5 +1,9 @@
 # Ændringslog
 
+## 1.14.4 · 2026-11-27
+
+- Distriktskort under opbygning udelades fra rapporttal, rapportkort og S-13.
+
 ## 1.14.3 · 2026-11-27
 
 - Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.

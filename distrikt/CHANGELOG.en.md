@@ -1,5 +1,9 @@
 # Changelog (English and original historical notes)
 
+## 1.14.4 · 2026-11-27
+
+- Territories under construction are excluded from report totals, report maps, and S-13.
+
 ## 1.14.3 · 2026-11-27
 
 - Create territories under construction, even with just a drawn boundary. Clear the mark when they are ready for assignment.
