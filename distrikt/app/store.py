@@ -260,6 +260,10 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
         return None
 
     def put(self, module, item):
+        if module=='loans' and item.get('card_id') and not item.get('returned'):
+            card=self.get('cards',item['card_id'])
+            if card and card.get('planned'):
+                raise ValueError('Kortet er under opbygning og kan ikke udleveres endnu.')
         if module=='notes' and item.get('entity')!='activity':item=dict(item,task=True)
         self._dirty_modules.add(module)
         self._track_record_write(module,item['id'])
@@ -546,6 +550,14 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                         internal_name=clean_text(data.get('internal_name',card.get('internal_name','')),160),
                         name=clean_text(data.get('name'), 100), area_id=data.get('area_id') or '',
                         kind=data.get('kind', 'Ukendt'), temporary=bool(data.get('temporary', True)))
+            if 'planned' in data:
+                planned=data['planned']
+                if type(planned) is not bool:
+                    raise ValueError('Ugyldig status for distriktskort.')
+                if planned and old and not old.get('planned') and self.active_loan(card['id']):
+                    raise ValueError('Aflever kortet, før det sættes under opbygning.')
+                if planned:card['in_folder']=False
+                card['planned']=planned
             # A new or reassigned card inherits the destination area's colour unless
             # the caller explicitly supplies a card-specific override.
             area = self.get('settings', card['area_id']) if card['area_id'] else None
@@ -575,6 +587,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                     raise ValueError('Ugyldig adressetype.')
                 normalized.append({'road': clean_text(a.get('road'), 120, True), 'numbers': clean_text(a.get('numbers'), 100, True), 'count': count, 'type': typ})
                 if unknown:normalized[-1]['count_unknown']=True
+            if card.get('planned') and not normalized:card['temporary']=True
             if not card['temporary'] and not normalized:
                 raise ValueError('Tilføj en vejliste eller behold kortet som midlertidigt.')
             if old and (old.get('address_ids') or old.get('geo_addresses')) and normalized != old.get('addresses', []) and not geographic:
@@ -625,6 +638,7 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 return {'id': results[0], 'ids': results}
             c = self.require('cards', data['card_id'])
             if c.get('archived'):raise ValueError('Kortet er arkiveret efter sammenlægning.')
+            if c.get('planned'):raise ValueError('Kortet er under opbygning og kan ikke udleveres endnu.')
             if self.active_loan(c['id']):
                 raise ValueError('Kortet er allerede udleveret.')
             config = self.require('settings', 'config')
@@ -775,6 +789,8 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             # moved or issued one since the picker was opened.
             cards = [self.require('cards', ident) for ident in ids]
             for c in cards:
+                if data.get('in_folder') and c.get('planned'):
+                    raise ValueError('Kortet er under opbygning og kan ikke lægges i mappen.')
                 if self.active_loan(c['id']):
                     raise ValueError('Et udlånt kort kan ikke lægges i mappen.')
                 if 'expected_in_folder' in data and bool(c.get('in_folder')) != expected:

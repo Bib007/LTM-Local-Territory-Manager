@@ -1,5 +1,18 @@
 # Ændringslog
 
+## 1.14.3 · 2026-11-27
+
+- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
+- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
+- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
+
+
+## 1.14.3-beta.1 · 2026-11-27
+
+- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
+- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
+- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
+
 ## 1.14.2 · 2026-11-27
 
 - **Forside:** Ældste kort i rækken vises først og har en forklaring på, hvad tallet fortæller om distriktets gennemgang. Det andet felt hedder nu »Hvor længe en forkynder gennemsnitligt har kortet«.

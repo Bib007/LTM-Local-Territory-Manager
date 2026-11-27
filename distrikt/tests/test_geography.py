@@ -120,6 +120,37 @@ class GeoStorageTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.s.mutate('geo.assign',{'number':'120','address_ids':['a']})
         item=self.s.all('ignored')[0];deletion=self.s.mutate('delete',{'module':'ignored','id':item['id']});self.assertEqual(self.s.all('ignored'),[])
         self.s.mutate('restore',deletion);self.assertEqual(len(self.s.all('ignored')),1)
+    def test_address_tracking_survives_refresh_and_can_be_changed_or_cleared(self):
+        self.add([address()])
+        self.s.mutate('geo.address_tracking',{'address_id':'a','status':'construction'})
+        self.assertEqual(self.s.geo_state()['status']['a']['tracking'],'construction')
+        self.add([address(lat=55.001)])
+        self.assertEqual(self.s.geo_state()['status']['a']['tracking'],'construction')
+        self.s.mutate('geo.address_tracking',{'address_id':'a','status':'other'})
+        with self.assertRaisesRegex(ValueError,'Ugyldig adressemarkering'):
+            self.s.mutate('geo.address_tracking',{'address_id':'a','status':'invalid'})
+        self.assertEqual(self.s.geo_state()['status']['a']['tracking'],'other')
+        self.s.mutate('geo.address_tracking',{'address_id':'a','status':''})
+        self.assertNotIn('tracking',self.s.geo_state()['status']['a'])
+
+    def test_planned_territory_can_start_with_only_a_boundary(self):
+        ident=self.s.mutate('geo.assign',{'number':'120','address_ids':[],'polygon':POLYGON,'planned':True})['id']
+        planned=self.s.get('cards',ident)
+        self.assertTrue(planned['planned'])
+        self.assertEqual(planned['geo_polygon'],POLYGON)
+        self.assertEqual(planned['addresses'],[])
+        with self.assertRaisesRegex(ValueError,'under opbygning'):
+            self.s.mutate('loan.issue',{'card_id':ident,'publisher_name':'Fiktiv forkynder','date':'2026-11-01','from_box':True})
+        with self.assertRaisesRegex(ValueError,'under opbygning'):
+            self.s.mutate('folder.set',{'ids':[ident],'in_folder':True})
+        self.add([address()])
+        assigned=self.s.mutate('geo.assign',{'card_id':ident,'address_ids':['a'],'polygon':POLYGON})
+        self.assertEqual(assigned['id'],ident)
+        ready=self.s.get('cards',ident)
+        self.assertTrue(ready['planned'])
+        self.s.mutate('card.save',dict(ready,planned=False))
+        self.s.mutate('loan.issue',{'card_id':ident,'publisher_name':'Fiktiv forkynder','date':'2026-11-01','from_box':True})
+
     def test_csv_geojson_validation_is_atomic(self):
         self.s.mutate('geo.import_file',{'content':'road;number;postcode;lng;lat;floor;door\nEksempelvej;1;9999;10;55;st;tv\n','name':'Test.csv'})
         self.assertEqual(self.s.geo_info()['addresses'],1)
