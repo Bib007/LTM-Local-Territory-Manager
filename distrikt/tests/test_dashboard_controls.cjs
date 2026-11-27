@@ -145,10 +145,12 @@ assert.match(run("Workspace.dashboardCoverage(23,100,null,false,'2026-11-24')"),
 assert.doesNotMatch(run("Workspace.dashboardCoverage(0,0,null,false,'2026-11-24')"),/procentpoint bag årets mål/);
 run("state.loans=state.loans.filter(l=>!['old-completed','boundary-completed','future-completed'].includes(l.id));state.completions=state.completions.filter(e=>!['old-completed','boundary-completed','future-completed'].includes(e.loan_id))");
 
-assert.match(run('Workspace.dashboard()'),/Gennemsnitlig gennemgangstid/);
+const spotlightHtml=run('Workspace.dashboard()');
+assert.match(spotlightHtml,/Hvor længe en forkynder gennemsnitligt har kortet/);
+assert.ok(spotlightHtml.indexOf('dashboardSpotlight dashboardQueue')<spotlightHtml.indexOf('dashboardSpotlight dashboardAverage'),'The oldest territory comes before the average holding time');
 assert.match(run('Workspace.dashboard()'),/Fra udlevering til aflevering/);
-assert.match(run('Workspace.dashboard()'),/Ældste kort i gennemgangskøen/);
-assert.match(run('Workspace.dashboard()'),/Tid siden sidste gennemgang af det ældste ledige kort med kendt dato/);
+assert.match(run('Workspace.dashboard()'),/Ældste kort i rækken/);
+assert.match(run('Workspace.dashboard()'),/Tallet hjælper dig med at vurdere, hvor ofte distriktet bliver gennemgået/);
 run("state.completions=state.completions.filter(e=>e.loan_id!=='done-20'&&e.loan_id!=='done-10')");
 assert.equal(run('Workspace.completedReturnAverage()'),null,'No completed returns should never turn into a misleading zero duration');
 run(`state.cards=[

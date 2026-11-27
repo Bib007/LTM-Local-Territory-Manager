@@ -1,0 +1,48 @@
+name: Isolated 1.14.2 beta release
+on:
+  push:
+    branches: [release/isolated-1.14.2-beta.1]
+permissions:
+  contents: read
+concurrency:
+  group: isolated-1.14.2-beta-release
+  cancel-in-progress: false
+jobs:
+  common:
+    uses: ./.github/workflows/check.yml
+  publish:
+    needs: common
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verify exact isolated beta version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --tags origin
+          git fetch origin main:refs/remotes/origin/main
+          gh release view v1.15.0-beta.2 --json isPrerelease,isDraft --jq '.isPrerelease and (.isDraft | not)' | grep -Fx true
+          python scripts/version_policy.py verify --channel beta --isolated-patch-beta
+      - name: Build and smoke-test the separate Home Assistant beta package
+        run: |
+          python scripts/build_beta.py --output "$RUNNER_TEMP/isolated-ha-beta"
+          docker build --build-arg BUILD_VERSION=1.14.2-beta.1 --build-arg BUILD_ARCH=amd64 --tag isolated-ha-beta "$RUNNER_TEMP/isolated-ha-beta/distrikt"
+          docker run --rm --entrypoint python3 isolated-ha-beta /opt/distrikt/app/server.py --help
+          docker run --rm --env LTM_CHANNEL=beta --entrypoint python3 isolated-ha-beta -c "import sys,tempfile; sys.path.insert(0, '/opt/distrikt/app'); from access import Access,LOGIN; assert 'Beta' in LOGIN; d=tempfile.TemporaryDirectory(); assert Access(d.name,'Fictional-pass-123').cookie_name=='distrikt_beta_session'"
+      - name: Publish the isolated prerelease with immutable assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=1.14.2-beta.1
+          python scripts/build_release.py
+          gh release create "v$version" "dist/LTM-HA-v$version.zip" "dist/LTM-HA-v$version.zip.sha256" "dist/LTM-v$version.zip" "dist/LTM-v$version.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "LTM $version · isolated beta" --notes-file docs/BETA-NOTES.md

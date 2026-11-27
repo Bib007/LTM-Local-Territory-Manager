@@ -1,11 +1,9 @@
-# LTM 1.15.0-beta.2
+# LTM 1.14.2-beta.1
 
-- **Flere statistikker** har tydeligere overskrifter, små målere og nøgletal for tiden fra udlevering til aflevering.
-- **Popularitet** på forsiden viser separate tal for udleveringer og gennemgange, med perioder, gennemsnit pr. måned og sortering begge veje. Kort uden aktivitet vises også.
+- **Forside:** Ældste kort i rækken vises først og har en forklaring på, hvad tallet fortæller om distriktets gennemgang. Det andet felt hedder nu »Hvor længe en forkynder gennemsnitligt har kortet«.
 
-Prøv begge dialoger på computer og mobil. Tjek fx et kort uden aktivitet, et kort med flere gennemgange og sortering fra mindst til mest populært.
+Kontrollér rækkefølgen og teksten på forsiden på mobil og computer.
 
 ## English
 
-- **More statistics** has clearer headings, small progress bars and assignment-to-return figures.
-- **Popularity** on Home shows separate assignment and completion totals per territory, with time periods, monthly averages and sorting in either direction. Inactive cards are included.
+- **Home:** The oldest territory appears first, with a note explaining what the figure tells you about coverage. The second card now reads “How long a publisher keeps a territory on average”.
