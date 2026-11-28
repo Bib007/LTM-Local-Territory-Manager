@@ -1,6 +1,6 @@
 # Install LTM on Home Assistant
 
-[Website](https://localterritorymanager.netlify.app) · [Full English guide](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.en.md) · [Dansk](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md)
+[Website](https://localterritorymanager.com) · [Full English guide](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.en.md) · [Dansk](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md)
 
 ## Install the stable repository
 
