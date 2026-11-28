@@ -15,11 +15,11 @@ run(`state={today:'2026-10-23',cards:[
  render=()=>{};Workspace.menu=()=>{};page='Opfølgninger';`);
 (async()=>{
  const before=run('JSON.stringify(state)');
- assert.equal(run('Workspace.followupItems().length'),10);
- assert.equal(run("Workspace.followupItems().filter(r=>r.category==='checks').length"),7);
+ assert.equal(run('Workspace.followupItems().length'),9);
+ assert.equal(run("Workspace.followupItems().filter(r=>r.category==='checks').length"),6);
  assert.equal(run("Workspace.followupItems().filter(r=>r.side).length"),2);
  assert.equal(run("Workspace.followupItems().filter(r=>r.text==='Udleveret fysisk kort · IB-bagsiden skal ajourføres').length"),1,'An assigned changed back is one reprint item, not a second check');
- assert.equal(run('new Set(Workspace.followupItems().map(r=>r.key)).size'),10);
+ assert.equal(run('new Set(Workspace.followupItems().map(r=>r.key)).size'),9);
  assert.equal(run('JSON.stringify(state)'),before,'Collecting follow-ups never writes task/card records');
  run("state.cards[1].geo_polygon=[];state.settings.onboarding={answers:{mode:'desk'}}");
  assert.equal(run("Workspace.followupItems().some(r=>r.text==='Mangler geografisk grænse')"),false);
@@ -29,12 +29,12 @@ run(`state={today:'2026-10-23',cards:[
  const contracts=[];
  for(const lang of ['da','en']){
   run(`I18n.set('${lang}');Workspace.followupFilter='all';Workspace.followupQuery=''`);
-  const html=run('Workspace.followups()');assert.equal((html.match(/data-followup=/g)||[]).length,10);assert.doesNotMatch(html,/<fictional>/);assert.doesNotMatch(html,/Person &lt;fictional&gt;/);
+  const html=run('Workspace.followups()');assert.equal((html.match(/data-followup=/g)||[]).length,9);assert.doesNotMatch(html,/<fictional>/);assert.doesNotMatch(html,/Person &lt;fictional&gt;/);
   assert.equal((html.match(/data-work="followup-filter"/g)||[]).length,6,'Each filter is rendered exactly once');
   assert.match(html,/id="followupMoreButton"[^>]*aria-expanded="false"[^>]*aria-controls="followupExtraFilters"/);
   assert.match(html,lang==='en'?/… More/:/… Mere/);
   contracts.push(html.match(/(?:data-work|data-action|data-side|data-id|data-followup)="[^"]*"/g));
-  assert.match(html,lang==='en'?/Follow-up items: 10/:/Til opfølgning: 10/);
+  assert.match(html,lang==='en'?/Follow-up items: 9/:/Til opfølgning: 9/);
   run("Workspace.followupQuery='Street <fictional>'");assert.equal((run('Workspace.followups()').match(/data-followup=/g)||[]).length,4);
   run("Workspace.followupQuery='';Workspace.followupFilter='reprint'");assert.equal((run('Workspace.followups()').match(/data-followup=/g)||[]).length,2);
   const selected=run('Workspace.followups()');assert.match(selected,lang==='en'?/Reprint/i:/Genprint/);assert.match(selected,/data-value="reprint" class="active" aria-pressed="true"/);
@@ -44,7 +44,7 @@ run(`state={today:'2026-10-23',cards:[
   const imports=run('SetupUI.imports()');assert.equal((imports.match(/data-history-import="open"/g)||[]).length,1);assert.equal((imports.match(/data-card-import="open"/g)||[]).length,1);assert.equal((imports.match(/data-setup="ib-open"/g)||[]).length,1);assert.doesNotMatch(imports,/data-setup="open"/);
  }
  assert.deepEqual(contracts[0],contracts[1]);
- run('state.cards[0].front_revision=false');assert.equal(run('Workspace.followupItems().length'),9);assert.equal(run("Workspace.followupItems().filter(r=>r.side==='back').length"),1,'Approving a front leaves its changed back pending');
+ run('state.cards[0].front_revision=false');assert.equal(run('Workspace.followupItems().length'),8);assert.equal(run("Workspace.followupItems().filter(r=>r.side==='back').length"),1,'Approving a front leaves its changed back pending');
  run("mutate=async(action,data)=>{writes.push({action,data});GeoUI.data.changes=[];};");await run("Workspace.handle('accept-address',{id:'change'})");assert.equal(writes.length,1);assert.deepEqual(JSON.parse(JSON.stringify(writes[0])),{action:'address.change.review',data:{id:'change',decision:'accept'}});assert.equal(get('dialog').open,false,'Review on the page stays on the page');
  // One issue per overlapping pair, with independent duplicate-address checks.
  run("state.cards[0].geo_polygon=[[10,55],[10.01,55],[10,55.01]];state.cards[1].name='Related <fictional>';Workspace.followupFilter='checks';Workspace.followupQuery='';");

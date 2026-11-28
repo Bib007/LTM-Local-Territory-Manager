@@ -8,6 +8,7 @@
 - Approve cards with invalid rows, correct the original values in Follow-ups, and resume setup during a partial import. Suggest DAR addresses from imported coordinates and see whether a territory boundary is saved.
 - See which CSV row or KML boundary needs review and what LTM found in the export. Match KML using territory ID, territory name and folder type, or one matching known boundary.
 - Automatically select addresses within all saved territory boundaries in one action. Preserve existing address selections and skip new addresses within multiple boundaries. Dismiss all known boundary overlaps together under Follow-ups.
+- Suggest DAR addresses from imported coordinates across all territories. Save only unambiguous, complete matches, preserve saved selections and boundaries, and review uncertain territories individually.
 
 ## 1.15.0-beta.5 · 2026-11-28
 

@@ -2039,6 +2039,8 @@ const I18n={
   "Indsæt hjørne på kanten":"Insert corner on edge",
   "Auto huse inden for grænsen":"Select houses inside boundary",
   "Auto huse inden for grænsen på alle kort":"Select houses inside boundaries on all territories",
+  "Foreslå DAR-adresser fra koordinater på alle kort":"Suggest DAR addresses from coordinates on all territories",
+  "Gem entydige koordinatforslag på {count} kort? {skipped} kort springes over og kan kontrolleres enkeltvis. Eksisterende adressevalg, grænser, IB og historik beholdes.":"Save unambiguous coordinate matches on {count} territories? {skipped} territories are skipped for individual review. Existing address selections, boundaries, DNC and history are preserved.",
   "Kort behandlet: {done} / {total}":"Territories processed: {done} / {total}",
   "Find adresser inden for grænsen på {count} kort? Vejlisterne opdateres, men gemte adressevalg, IB og historik beholdes. Kort uden entydige nye adresser springes over.":"Find addresses within the boundaries of {count} territories? Street lists are updated, but saved address selections, DNC and history are preserved. Territories without unambiguous new addresses are skipped.",
   "{updated} kort opdateret · {skipped} sprunget over · {remaining} ikke behandlet.":"{updated} territories updated · {skipped} skipped · {remaining} not processed.",
