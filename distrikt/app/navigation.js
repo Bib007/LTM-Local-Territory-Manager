@@ -46,6 +46,10 @@ const Navigation={
   const lang=I18n.language();
   return `<a class="navExternal" data-help-guide ${I18n.attribute('title','Trinvis LTM-guide')} href="https://localterritorymanager.com/${lang}/guide/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">?</span><span class="navExternalLabel">${esc(I18n.text('Trinvis LTM-guide'))}</span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
  },
+ feedbackLink(){
+  const lang=I18n.language(),label='Idéer og feedback';
+  return `<a class="navExternal" data-help-feedback ${I18n.attribute('title',label)} href="https://localterritorymanager.com/${lang}/feedback/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">✉</span><span class="navExternalLabel">${esc(I18n.text(label))}</span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
+ },
  active(item){return page==='Opstart'&&item[1]==='Indstillinger'||page===item[1]||page==='Kortopsætning'&&item[1]==='Adresser';},
  html(){
   const desk=typeof state!=='undefined'&&state?.profile?.desk_only,compact=this.compact();
@@ -64,7 +68,7 @@ const Navigation={
   const icon=key=>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+icons[key]+'</svg>';
   const allowed=name=>typeof ProfilesUI==='undefined'||ProfilesUI.pageAllowed(name);
   const groups=this.groups.map(([name,items],i)=>{
-   if(name==='Hjælp')return `<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>${this.guideLink()}`;
+   if(name==='Hjælp')return `<div class="navcaption">${esc(I18n.text(name).toUpperCase())}</div>${this.guideLink()}${this.feedbackLink()}`;
    const buttons=items.map((item,j)=>{
     if(!allowed(item[1]))return '';
     const count=item[1]==='Opfølgninger'&&typeof GeoUI!=='undefined'&&GeoUI.loaded?Workspace.followupItems().length:null;
