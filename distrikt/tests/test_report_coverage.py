@@ -60,5 +60,31 @@ class ReportCoverageTests(unittest.TestCase):
         self.assertEqual(rolling['missing'],0)
 
 
+    def test_planned_territories_are_excluded_from_reports_and_s13(self):
+        from pdf_export import allocation_rows
+
+        raw={
+            'today':'2026-10-16','revision':'fictional',
+            'cards':[
+                {'id':'ready','number':'10','addresses':[{'count':12}]},
+                {'id':'planned','number':'20','planned':True,'addresses':[{'count':40}]},
+            ],
+            'archived_cards':[{'id':'archived','number':'30'}],
+            'publishers':[],'loans':[],
+            'completions':[
+                {'card_id':'planned','date':'2026-10-01'},
+                {'card_id':'archived','date':'2026-10-01'},
+            ],
+        }
+        report=summaries(raw,exclude_planned=True)
+        for period in report['periods'].values():
+            self.assertEqual((period['territories'],period['completions'],period['missing']),(1,1,1))
+        self.assertEqual(report['territory_totals']['visit_points'],12)
+        self.assertEqual(summaries(raw)['periods']['service']['territories'],2)
+        self.assertEqual([row['number'] for row in allocation_rows(raw,2027)],['10','30'])
+        raw['cards'][1]['planned']=False
+        self.assertEqual(summaries(raw,exclude_planned=True)['periods']['service']['territories'],2)
+
+
 if __name__=='__main__':
     unittest.main()

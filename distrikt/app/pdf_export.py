@@ -68,7 +68,8 @@ def allocation_rows(state, year, language='da'):
     names={p['id']:p['name'] for p in state['publishers']}
     loan_ids={l['id'] for l in state['loans']}
     rows=[]
-    for card in sorted(state['cards']+state.get('archived_cards',[]),key=lambda c:[(0,int(part)) if part.isdigit() else (1,part.casefold()) for part in re.split(r'(\d+)',c['number'])]):
+    cards=(card for card in state['cards']+state.get('archived_cards',[]) if not card.get('planned'))
+    for card in sorted(cards,key=lambda c:[(0,int(part)) if part.isdigit() else (1,part.casefold()) for part in re.split(r'(\d+)',c['number'])]):
         assignments=[]
         for loan in sorted((l for l in state['loans'] if l['card_id']==card['id']),key=lambda l:l['assigned']):
             finished=sorted((e for e in state['completions'] if e.get('loan_id')==loan['id']),key=lambda e:e['date'])

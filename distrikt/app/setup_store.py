@@ -81,11 +81,13 @@ class SetupStore:
     def setup_remember(self,kind,payload):
         now=time.monotonic();self._setup_previews={k:v for k,v in self._setup_previews.items() if v['until']>now}
         if len(self._setup_previews)>=6:self._setup_previews.pop(next(iter(self._setup_previews)))
-        token=uuid.uuid4().hex;self._setup_previews[token]={'kind':kind,'until':now+1800,'expected':signature(self.all('publishers')) if kind=='publishers' else self.setup_signature(ib=kind=='ib'),'payload':payload}
+        expected=None if kind=='territory-helper' else signature(self.all('publishers')) if kind=='publishers' else self.setup_signature(ib=kind=='ib')
+        token=uuid.uuid4().hex;self._setup_previews[token]={'kind':kind,'until':now+1800,'expected':expected,'payload':payload}
         return token
     def setup_require_preview(self,data,kind):
         p=self._setup_previews.get(data.get('token'))
         if not p or p['kind']!=kind or p['until']<=time.monotonic():raise ValueError('Forhåndsvisningen er udløbet. Lav et nyt forslag.')
+        if kind=='territory-helper':return p['payload']
         if kind=='publishers':
             if signature(self.all('publishers'))!=p['expected']:raise ValueError('Forkynderlisten er ændret. Lav en ny forhåndsvisning før gruppeimport.')
         elif self.setup_signature(ib=kind=='ib')!=p['expected']:raise ValueError('Kort, adresser, veje, områder eller IB er ændret. Lav en ny forhåndsvisning.')
@@ -169,6 +171,12 @@ class SetupStore:
             return preview(self,data)
         if action=='setup.publisher-import.apply':
             from publisher_import import apply
+            return apply(self,data)
+        if action=='setup.territory-helper.preview':
+            from territory_helper_import import preview
+            return preview(self,data)
+        if action=='setup.territory-helper.apply':
+            from territory_helper_import import apply
             return apply(self,data)
         if action=='setup.history-import.preview':
             from history_import import preview

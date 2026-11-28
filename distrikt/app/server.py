@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local desktop or authenticated private LAN server. Only approved PNGs leave it."""
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -41,7 +42,11 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.15.0-beta.3'
+VERSION='1.15.0-beta.4'
+# Preview installers can share a version number. Do not reuse a server from
+# an earlier installer when its packaged import screen is different.
+IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes()).hexdigest()[:16]
+              if '-beta.' in VERSION and (APP/'territory-helper-ui.js').is_file() else None)
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -114,7 +119,8 @@ class Server(ThreadingHTTPServer):
                 if profile_token is None:raise PermissionError('Profile session required')
                 return self.profiles.state(profile_token,result)
             from profile_features import summaries
-            result['dashboard_summary']=summaries(result);result['report_summary']=result['dashboard_summary']
+            result['dashboard_summary']=summaries(result)
+            result['report_summary']=summaries(result,exclude_planned=True)
             result['boundary_report']=self.store.boundary_report()
             result['profiles_available']=True
             return result
@@ -185,7 +191,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         # profile write or state snapshot. Preserve the usual host/LAN checks.
         if path=='/api/ping':
             if self.allowed(public=True):
-                try:self.send({'app':'Distrikt','version':VERSION})
+                try:self.send({'app':'Distrikt','version':VERSION,**({'import_build':IMPORT_BUILD} if IMPORT_BUILD else {})})
                 except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
             return
         # This machine-only route must precede profile_scope (accounts lock).
@@ -235,7 +241,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if self.server.beta and '<b>LTM</b>' in html:html=html.replace('<b>LTM</b>','<b>LTM Beta</b>').replace('<body>','<body class="betaChannel">')
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/overdue-loans.js','/usage-stats.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/ktm-report-ui.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/overdue-loans.js','/usage-stats.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/territory-helper-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/ktm-report-ui.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -386,6 +392,15 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
             if self.path=='/api/mutate' and data.get('action')=='geo.preview':
                 return self.prepare_geo_preview(data.get('data',{}))
+            if self.path=='/api/mutate' and data.get('action') in (
+                    'setup.territory-helper.preview','setup.territory-helper.apply'):
+                if not self.server.beta or (self.profile_user and self.profile_user.get('desk_only')):
+                    raise PermissionError()
+                payload=data.get('data')
+                if not isinstance(payload,dict):raise ValueError('Ugyldige data.')
+                identity=self.profile_token() if self.server.profiles.enabled else self.headers.get('Cookie','')
+                owner=hmac.new(self.server.token.encode(),identity.encode(),hashlib.sha256).hexdigest()
+                data['data']={**payload,'_owner':owner}
             if self.profile_post(self.path,data):return
             if self.path=='/api/runtime/test':return self.send(self.server.runtime_status.test_notification())
             if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))
@@ -507,7 +522,7 @@ def running(data):
         req=urllib.request.Request(url+'/api/ping')
         with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req,timeout=1) as r:
             ping=json.load(r)
-        if ping.get('app')=='Distrikt':return dict(info,version=ping['version'])
+        if ping.get('app')=='Distrikt':return dict(info,version=ping['version'],import_build=ping.get('import_build'))
     except Exception:pass
     return None
 
@@ -550,7 +565,7 @@ def _main(argv=None):
     if args.stop:stop_running(data);return
     info=running(data)
     if not args.serve:
-        if info and info['version']!=VERSION:
+        if info and (info['version']!=VERSION or (IMPORT_BUILD and info.get('import_build')!=IMPORT_BUILD)):
             stop_running(data)
             for _ in range(30):
                 if not running(data):break

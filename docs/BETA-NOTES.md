@@ -1,11 +1,9 @@
-# LTM 1.15.0-beta.3
+# LTM 1.15.0-beta.4
 
-- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
-- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
-- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
+- Hent eksportfiler fra Territory Helper og slip dem samlet i **Opsætningsguide → Kort → Importér fra Territory Helper**.
+- Kontrollér grænse, lokationer, IB og tildelinger, og godkend de enkelte kort. Importen kører lokalt.
 
 ## English
 
-- Create territories under construction, even with just a drawn boundary. Clear the mark when they are ready for assignment.
-- Mark addresses as Under construction or Other and manage them under Addresses → More → Marked addresses.
-- Use Ignore in the map address panel, including on the congregation boundary map.
+- Download exports from Territory Helper and drop them together in **Setup guide → Cards → Import from Territory Helper**.
+- Review boundaries, locations, do-not-call entries and assignments, then approve each territory. The import runs locally.

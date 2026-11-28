@@ -78,8 +78,14 @@ def current_territory_totals(raw):
             'cards_with_ib':len(set(ib_card_ids))}
 
 
-def summaries(raw):
+def summaries(raw, *, exclude_planned=False):
     """No raw identifiers/text/addresses leave this projection."""
+    if exclude_planned:
+        planned_ids={card['id'] for card in raw['cards']+raw.get('archived_cards',[]) if card.get('planned')}
+        if planned_ids:
+            raw={**raw,
+                 'cards':[card for card in raw['cards'] if card['id'] not in planned_ids],
+                 'completions':[event for event in raw['completions'] if event['card_id'] not in planned_ids]}
     today=date.fromisoformat(raw['today']);y=today.year;service=y+1 if today.month>=9 else y
     rolling=date(y-1,today.month,min(today.day,monthrange(y-1,today.month)[1]))
     periods={'calendar':(date(y,1,1),today),'service':(date(service-1,9,1),today),'rolling':(rolling,today)}

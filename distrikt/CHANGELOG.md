@@ -1,6 +1,21 @@
 # Ændringslog
 
+## 1.15.0-beta.4 · 2026-11-28
+
+- Importér Territory Helper-eksporter i opsætningsguiden. Kontrollér og gem hvert kort med grænse, lokationer, IB og tildelinger.
+
 ## 1.15.0-beta.3 · 2026-11-27
+
+- Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
+- Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.
+- Brug Se bort fra i adressepanelet på kortet, også fra visningen af den samlede distriktsgrænse.
+
+
+## 1.14.4 · 2026-11-27
+
+- Distriktskort under opbygning udelades fra rapporttal, rapportkort og S-13.
+
+## 1.14.3 · 2026-11-27
 
 - Opret distriktskort under opbygning, også med kun en tegnet grænse. Fjern markeringen, når kortet er klar til udlevering.
 - Markér adresser som Under opbygning eller Andet, og redigér markeringen under Adresser → Mere → Markerede adresser.

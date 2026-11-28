@@ -71,6 +71,14 @@ class VersionPolicyTests(unittest.TestCase):
             validate("stable","1.12.35","1.12.35",
                      ["v1.12.34","v1.12.35"],{"v1.12.35":"elsewhere"},"sha")
 
+    def test_only_the_authorized_report_hotfix_can_ship_without_its_beta(self):
+        tags=["v1.14.3","v1.15.0-beta.3"]
+        self.assertEqual(str(validate("stable","1.14.4","1.14.4",tags,{},"sha")),"1.14.4")
+        with self.assertRaisesRegex(ValueError,"latest Beta source"):
+            validate("stable","1.14.4","1.14.4",tags+["v1.14.4-beta.1"],{},"sha",source_matches=False)
+        with self.assertRaisesRegex(ValueError,"published Beta"):
+            validate("stable","1.14.5","1.14.5",tags+["v1.14.4"],{},"sha")
+
     def test_unrelated_tags_ignored(self):
         self.assertEqual(set(tagged_versions(["v1.12.34","other","v1.12.36-beta.1","v1.12.36-rc.1"])),
                          {"v1.12.34","v1.12.36-beta.1"})

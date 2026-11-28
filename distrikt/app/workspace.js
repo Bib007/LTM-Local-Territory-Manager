@@ -68,8 +68,13 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   const parsed=new Date(day+'T00:00:00Z');
   return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===day&&day<=state.today;
  },
- reportEvents(start,end){return state.completions.filter(e=>this.reportDay(e.date)&&e.date>=start&&e.date<=end);},
+ plannedReportIds(){return new Set([...state.cards,...(state.archived_cards||[])].filter(c=>c.planned).map(c=>c.id));},
+ reportEvents(start,end,{includePlanned=false}={}){
+  const planned=includePlanned?new Set():this.plannedReportIds();
+  return state.completions.filter(e=>!planned.has(e.card_id)&&this.reportDay(e.date)&&e.date>=start&&e.date<=end);
+ },
  reportInventory(start,end,cards=state.cards){
+  cards=cards.filter(c=>!c.planned);
   const ids=new Set(cards.map(c=>c.id)),events=this.reportEvents(start,end),done=new Set(),lastCompleted=new Map(),assigned=new Set(state.loans.filter(l=>!l.returned&&ids.has(l.card_id)).map(l=>l.card_id));
   // A dated historical completion can be entered after a more recent one.
   // Preserve both dates; the latest known date alone cannot establish period coverage.
@@ -100,7 +105,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(raw)return tabs+this.detailedReports();
   return tabs+`<div class="toolbar">${this.printPeriodPicker()}<button data-profile="print-summary">${ui('Print rapportoversigt / PDF')}</button></div>`+this.boundaryReport()+ProfilesUI.summaryHTML(state.report_summary,true,this.reportPeriod);
  },
- detailedReports(){const calendarYears=[...new Set([Number(state.today.slice(0,4)),this.calendarYear??Number(state.today.slice(0,4)),...state.completions.flatMap(e=>[e.date,e.previous_completed]).concat(state.cards.map(c=>c.last_completed)).filter(d=>this.reportDay(d)).map(d=>Number(d.slice(0,4)))])].sort((a,b)=>b-a);return `<div class="toolbar">${(this.reportPeriod==='calendar'||this.reportPeriod==='all')?`<label>${ui('Kalenderår')} <select id="calendarYear">${calendarYears.map(y=>`<option value="${y}" ${y===(this.calendarYear??Number(state.today.slice(0,4)))?'selected':''}>${y}</option>`).join('')}</select></label>`:''}${this.printPeriodPicker()}<label class="check"><input id="reportMapNumbers" type="checkbox" ${this.reportShowNumbers?'checked':''}>${ui('Vis distriktsnumre på rapportkortet')}</label><button data-work="report-view">${ui('Vis rapport')}</button><button class="primary" data-action="print-report">${ui('Print samlet rapport / PDF')}</button><button data-action="s13">${ui(this.reportPeriod==='service'&&(typeof PrintPreview==='undefined'||!PrintPreview.standalone())?'Hent original udfyldt S-13':'Print S-13-formular for perioden / PDF')}</button></div>`+(this.reportPreview?this.boundaryReport()+this.reportSummary(this.reportPeriod==='all'?'service':this.reportPeriod,false,true)+(!this.reportWithoutMap&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('cards.view','geo.view'))?this.reportMapPage(this.reportPeriod==='all'?'service':this.reportPeriod,true):'')+s13Appendix(this.reportPeriod==='all'?'service':this.reportPeriod):'');},
+ detailedReports(){const planned=this.plannedReportIds(),calendarYears=[...new Set([Number(state.today.slice(0,4)),this.calendarYear??Number(state.today.slice(0,4)),...state.completions.filter(e=>!planned.has(e.card_id)).flatMap(e=>[e.date,e.previous_completed]).concat(state.cards.filter(c=>!c.planned).map(c=>c.last_completed)).filter(d=>this.reportDay(d)).map(d=>Number(d.slice(0,4)))])].sort((a,b)=>b-a);return `<div class="toolbar">${(this.reportPeriod==='calendar'||this.reportPeriod==='all')?`<label>${ui('Kalenderår')} <select id="calendarYear">${calendarYears.map(y=>`<option value="${y}" ${y===(this.calendarYear??Number(state.today.slice(0,4)))?'selected':''}>${y}</option>`).join('')}</select></label>`:''}${this.printPeriodPicker()}<label class="check"><input id="reportMapNumbers" type="checkbox" ${this.reportShowNumbers?'checked':''}>${ui('Vis distriktsnumre på rapportkortet')}</label><button data-work="report-view">${ui('Vis rapport')}</button><button class="primary" data-action="print-report">${ui('Print samlet rapport / PDF')}</button><button data-action="s13">${ui(this.reportPeriod==='service'&&(typeof PrintPreview==='undefined'||!PrintPreview.standalone())?'Hent original udfyldt S-13':'Print S-13-formular for perioden / PDF')}</button></div>`+(this.reportPreview?this.boundaryReport()+this.reportSummary(this.reportPeriod==='all'?'service':this.reportPeriod,false,true)+(!this.reportWithoutMap&&(typeof ProfilesUI==='undefined'||ProfilesUI.has('cards.view','geo.view'))?this.reportMapPage(this.reportPeriod==='all'?'service':this.reportPeriod,true):'')+s13Appendix(this.reportPeriod==='all'?'service':this.reportPeriod):'');},
  reportMapPage(mode,localized=false){const t=key=>localized?ui(key):key,[start,end]=this.periodBounds(mode);return `<section class="report reportScreenMap"><h2>${t('Gennemgåede distrikter')} · ${this.reportTitle(mode,localized)}</h2><p>${fmt(start)} – ${fmt(end)}</p>${ReportMap.html(localized)}</section>`;},
  visitList(){return `<section class="panel"><div class="between"><h2>${ui('KTM-besøg')}</h2><button class="primary" data-action="visit">${ui('Tilføj besøg')}</button></div>${state.visits.slice().sort((a,b)=>cmp(b.date,a.date)).map(v=>`<div class="line"><span><b>${fmt(v.date)}</b><br><small>${esc(v.note)}</small></span><div><button data-action="visit" data-id="${v.id}">${ui('Rediger')}</button> <button class="danger" data-action="delete" data-module="visits" data-id="${v.id}">${ui('Slet')}</button></div></div>`).join('')||empty(ui('Ingen besøg registreret.'))}</section>`;},
  reportChart(start,end){
@@ -298,7 +303,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
    const row=rows.get(loan.card_id);
    if(row&&this.reportDay(loan.assigned)&&loan.assigned>=start&&loan.assigned<=end)row.issues++;
   }
-  for(const event of this.reportEvents(start,end)){
+  for(const event of this.reportEvents(start,end,{includePlanned:true})){
    const row=rows.get(event.card_id);
    if(row)row.completions++;
   }
