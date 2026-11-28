@@ -130,6 +130,9 @@ for(const [language,home,desk,publishers,guide,toggle] of [
  assert.match(buttons[0][1],/aria-current="page"/);
  assert.ok(nav.includes(' title="'+guide+'"'));
  assert.ok(nav.includes('https://localterritorymanager.com/'+language+'/guide/'));
+ assert.ok(nav.includes('https://localterritorymanager.com/'+language+'/feedback/'));
+ assert.ok(nav.includes(' title="'+(language==='da'?'Idéer og feedback':'Ideas and feedback')+'"'));
+ assert.match(nav,/data-help-feedback[^>]*target="_blank" rel="noopener noreferrer"/);
  assert.ok(nav.includes(' title="'+toggle+'"'));
  assert.doesNotMatch(nav,/data-navigation="(?:1:[0134]|2:[012])"/);
 }
