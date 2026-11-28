@@ -44,7 +44,7 @@ const Navigation={
  },
  guideLink(){
   const lang=I18n.language();
-  return `<a class="navExternal" data-help-guide ${I18n.attribute('title','Trinvis LTM-guide')} href="https://localterritorymanager.netlify.app/${lang}/guide/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">?</span><span class="navExternalLabel">${esc(I18n.text('Trinvis LTM-guide'))}</span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
+  return `<a class="navExternal" data-help-guide ${I18n.attribute('title','Trinvis LTM-guide')} href="https://localterritorymanager.com/${lang}/guide/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" class="navIcon">?</span><span class="navExternalLabel">${esc(I18n.text('Trinvis LTM-guide'))}</span><span class="navExternalMark" aria-hidden="true">↗</span></a>`;
  },
  active(item){return page==='Opstart'&&item[1]==='Indstillinger'||page===item[1]||page==='Kortopsætning'&&item[1]==='Adresser';},
  html(){
