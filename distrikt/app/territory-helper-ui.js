@@ -111,6 +111,36 @@ const TerritoryHelperUI = {
     return `<details><summary>${ui(label)} · ${rows.length}</summary>
       ${rows.length ? '<ul>' + rows.map(row => '<li>' + renderer(row) + '</li>').join('') + '</ul>' : ''}</details>`;
   },
+  diagnostic(row) {
+    const c = row.context || {};
+    const types = {locations: 'Lokationer', ib: 'IB', assignments: 'Tildelinger', number: 'Kortnummer',
+      name: 'Kortnavn', note: 'Importeret kortnotat', boundary: 'Distriktsgrænse'};
+    const parts = [
+      row.file && esc(I18n.text(row.file)),
+      c.row && ui('CSV-række {row}', {row: c.row}),
+      c.kml_index && ui('KML-element {number}', {number: c.kml_index}),
+      c.folder && ui('KML-mappe: {name}', {name: c.folder}),
+      c.kml_name && ui('KML-navn: {name}', {name: c.kml_name}),
+      c.card_number && ui('Kortnummer i eksporten: {number}', {number: c.card_number}),
+      c.card_id && ui('Kort-id i eksporten: {id}', {id: c.card_id})
+    ].filter(Boolean);
+    const address = [c.address, [c.road, c.post].filter(Boolean).join(' · '),
+      [c.floor, c.door].filter(Boolean).join(' '), c.lat && c.lng && `${c.lat}, ${c.lng}`].filter(Boolean).join(' · ');
+    if (address) parts.push(esc(address));
+    if (Object.hasOwn(c, 'house')) parts.push(c.house
+      ? ui('Husnummer i eksporten: “{value}”', {value: c.house})
+      : ui('Husnummer i eksporten: tomt'));
+    if (c.publisher) parts.push(esc([c.publisher, c.assigned, c.returned].filter(Boolean).join(' · ')));
+    if (c.number || c.name) parts.push(esc(c.number || c.name));
+    const prior = {
+      'Rækker uden entydigt kort': 'LTM fandt ikke ét sikkert distriktskort til denne række. Sammenlign kortnummer eller KML-navn med distriktslisten.',
+      'Kontrollér kortets grænse i eksportfilerne.': 'LTM kunne ikke bruge grænsen direkte. En ny forhåndsvisning af eksportfilerne viser den konkrete årsag.',
+      'Brug et husnummer som 42 eller 42B.': 'Husnummerfeltet skal indeholde ét husnummer, fx 42 eller 42B. Et interval eller flere numre kræver separate adresser.'
+    };
+    return `<strong>${ui(types[row.kind] || 'Import')} · ${ui(prior[row.message] || row.message, row.params)}</strong>
+      ${parts.length ? `<div>${parts.join(' · ')}</div>` : ''}
+      ${row.detail ? `<p>${esc(I18n.text(row.detail))}</p>` : ''}`;
+  },
   show() {
     const session = this.session, card = session.cards[session.index];
     const finished = session.bulkDone || session.saved.size === session.cards.length;
@@ -123,7 +153,10 @@ const TerritoryHelperUI = {
       <p>${ui('Godkendte kort')} · ${session.saved.size} / ${session.cards.length}</p>
       ${session.skipped?.length ? `<p class="hint">${ui('Kort sprunget over på grund af ugyldige eller optagede kortnumre: {count}', {count: session.skipped.length})}</p>` : ''}
       ${sources ? `<details><summary>${ui('Genkendte eksportfiler')}</summary><ul>${sources}</ul></details>` : ''}
-      ${warnings ? `<details><summary>${ui('Rækker uden entydigt kort')}</summary><ul>${warnings}</ul></details>` : ''}
+      ${warnings ? `<details><summary>${ui('Rækker og KML-grænser, som LTM ikke kunne knytte til et kort')}</summary>
+        <p>${ui('Se den konkrete række nedenfor. Når du godkender importen, kan du vælge kortet under Opfølgninger.')}</p><ul>${warnings}</ul>
+        ${session.unmatched_details?.length ? `<ol>${session.unmatched_details.map(row => `<li>${this.diagnostic(row)}</li>`).join('')}</ol>` : ''}
+        ${Object.values(session.unmatched).reduce((sum, count) => sum + count, 0) > 100 ? `<p>${ui('Forhåndsvisningen viser de første 100. Alle rækker gemmes under Opfølgninger.')}</p>` : ''}</details>` : ''}
       <label for="thReviewCard">${ui('Distriktskort')}</label>
       <select id="thReviewCard">${session.cards.map((item, i) =>
         `<option value="${i}"${i === session.index ? ' selected' : ''}>${esc(item.number)} ${esc(item.name)}${session.saved.has(i) ? ' ✓' : session.skipped?.some(row => row.index === i) ? ' · ' + esc(I18n.text('Sprunget over')) : ''}</option>`).join('')}</select>
@@ -134,7 +167,8 @@ const TerritoryHelperUI = {
       ${this.list('Tildelinger', card.assignments, row => esc([row.publisher, row.assigned, row.returned].filter(Boolean).join(' · ')) +
         (row.completed ? ' · ' + ui('Gennemgået') : ''))}
       ${card.loan_review.some(row => row.status === 'outside') ? `<p class="hint">${ui('Tildelinger uden for LTM’s historikperiode springes over.')}</p>` : ''}
-      ${card.errors.length ? `<ul>${card.errors.map(error => `<li>${esc(I18n.text(error))}</li>`).join('')}</ul>` : ''}
+      ${card.diagnostics?.length ? `<details open><summary>${ui('Rækker med fejl på dette kort')}</summary><ol>${card.diagnostics.map(row => `<li>${this.diagnostic(row)}</li>`).join('')}</ol></details>` : ''}
+      ${card.errors.some(error => !card.diagnostics?.some(row => row.message === error)) ? `<ul>${card.errors.filter(error => !card.diagnostics?.some(row => row.message === error)).map(error => `<li>${esc(I18n.text(error))}</li>`).join('')}</ul>` : ''}
       <p id="formError" role="alert"></p>
       <div class="actions"><button type="button" data-th-import="previous" ${session.index === 0 ? 'disabled' : ''}>${ui('Forrige')}</button>
         <button type="button" data-th-import="next" ${session.index === session.cards.length - 1 ? 'disabled' : ''}>${ui('Næste')}</button>
@@ -208,15 +242,11 @@ const TerritoryHelperUI = {
   },
   showReview(entry) {
     const review = this.review;
-    const types = {locations: 'Lokationer', ib: 'IB', assignments: 'Tildelinger', number: 'Kortnummer',
-      name: 'Kortnavn', note: 'Importeret kortnotat', boundary: 'Distriktsgrænse'};
     const labels = {road: 'Vejnavn', house: 'Husnummer', address: 'Adresse', post: 'Postnummer',
       floor: 'Etage', door: 'Dør', lat: 'Breddegrad', lng: 'Længdegrad', notes: 'Notat',
       date: 'Dato', publisher: 'Forkynder', assigned: 'Udleveringsdato', returned: 'Afleveringsdato',
       complete_date: 'Gennemgangsdato', completed: 'Gennemgået', number: 'Kortnummer',
       name: 'Kortnavn', boundary: 'Distriktsgrænse (GeoJSON)'};
-    const summary = row => [row.fields.road, row.fields.house, row.fields.address, row.fields.publisher,
-      row.fields.number, row.fields.name, row.source.distriktsnummer || row.source.territorynumber].filter(Boolean).join(' · ');
     const inputs = entry ? Object.entries(entry.fields).map(([key, value]) => {
       const input = key==='completed'
         ? `<select name="${key}"><option value="">${ui('Nej')}</option><option value="1" ${value ? 'selected' : ''}>${ui('Ja')}</option></select>`
@@ -229,11 +259,11 @@ const TerritoryHelperUI = {
       ? `<label>${ui('Distriktskort')}<select name="card_id" required><option value="">${ui('Vælg et kort')}</option>${state.cards.filter(card => !card.archived).map(card =>
         `<option value="${esc(card.id)}">${esc(card.number)} ${esc(card.name)}</option>`).join('')}</select></label>` : '';
     openDialog(`<h2>${ui('Ret importerede rækker')}</h2>${entry
-      ? `<p>${esc(I18n.text(entry.message))}</p><form id="thRepairForm" data-issue="${esc(entry.id)}">${cards}${inputs}
+      ? `<div class="notice">${this.diagnostic(entry)}</div><form id="thRepairForm" data-issue="${esc(entry.id)}">${cards}${inputs}
         <p id="formError" role="alert"></p><div class="actions"><button class="primary">${ui('Gem rettelse')}</button>
         <button type="button" data-th-import="review-list">${ui('Tilbage')}</button></div></form>`
-      : review.issues.length ? `<ul>${review.issues.map(row => `<li>${ui(types[row.kind])} · ${esc(summary(row))}
-        <p>${esc(I18n.text(row.message))}</p><button type="button" data-th-import="review-edit" data-id="${esc(row.id)}">${ui('Redigér')}</button></li>`).join('')}</ul>`
+      : review.issues.length ? `<ul>${review.issues.map(row => `<li>${this.diagnostic(row)}
+        <button type="button" data-th-import="review-edit" data-id="${esc(row.id)}">${ui('Redigér')}</button></li>`).join('')}</ul>`
         : `<p>${ui('Ingen ugyldige importrækker tilbage.')}</p>`}
       <button type="button" data-action="close">${ui('Luk')}</button>`);
   },

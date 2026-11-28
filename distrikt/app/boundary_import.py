@@ -49,7 +49,7 @@ def _kml_coordinates(ring, limit):
     return points
 
 
-def _kml(content, limit, max_boundaries):
+def _kml(content, limit, max_boundaries, include_source):
     if re.search(r'<!\s*(DOCTYPE|ENTITY)\b', content, re.I):
         raise ValueError('KML med DTD eller XML-entiteter understøttes ikke. Eksporter en almindelig KML-fil.')
     try:root = ET.fromstring(content)
@@ -58,21 +58,35 @@ def _kml(content, limit, max_boundaries):
     nodes = list(root.iter())
     if len(nodes) > 20000:raise ValueError('KML-filen indeholder for mange elementer. Eksporter kun grænserne.')
     boundaries, skipped = [], 0
-    stack = [(root, '', '', 0, False)]
+    stack = [(root, '', '', {}, 0, False)]
     while stack:
-        node, folder, placemark, depth, in_polygon = stack.pop()
+        node, folder, placemark, metadata, depth, in_polygon = stack.pop()
         if depth > 50:raise ValueError('KML-filen er for dybt indlejret.')
         tag = _tag(node)
         if tag in ('Document', 'Folder', 'Placemark'):
             names = _children(node, 'name')
             name = ''.join(names[0].itertext()).strip()[:200] if names else ''
-            if tag == 'Placemark':placemark = name
+            if tag == 'Placemark':
+                placemark = name
+                metadata = {}
+                if include_source:
+                    for extra in _children(node, 'ExtendedData'):
+                        for field in extra.iter():
+                            if _tag(field) not in ('Data', 'SimpleData') or not field.get('name'):
+                                continue
+                            values = _children(field, 'value')
+                            value = ''.join(values[0].itertext() if values else field.itertext()).strip()
+                            if value:
+                                metadata[field.get('name')[:120]] = value[:240]
             elif name:folder = name
         is_boundary = tag == 'Polygon' or tag in ('LinearRing', 'LineString') and not in_polygon
         if is_boundary:
             if len(boundaries) >= max_boundaries:
                 raise ValueError(f'Filen må højst indeholde {max_boundaries} grænser. Eksporter et mindre udvalg.')
             item = {'index':len(boundaries), 'name':placemark or folder or f'Grænse {len(boundaries)+1}'}
+            if include_source:
+                item.update(placemark=placemark, folder=folder, metadata=metadata)
+            raw = None
             try:
                 if tag == 'Polygon':
                     if _children(node, 'innerBoundaryIs'):raise ValueError('Grænsen har huller. Importer én sammenhængende ydergrænse uden huller.')
@@ -83,15 +97,20 @@ def _kml(content, limit, max_boundaries):
                 else:
                     raw = _kml_coordinates(node, limit)
                     if not raw or raw[0] != raw[-1]:raise ValueError('Linjen er ikke lukket. Eksporter en polygon eller en lukket grænselinje.')
+                if include_source:
+                    raw = [point for index, point in enumerate(raw) if index == 0 or point != raw[index - 1]]
                 item['points'] = _points(raw, limit)
-            except (ValueError, TypeError, OverflowError) as error:item['error'] = str(error)
+            except (ValueError, TypeError, OverflowError) as error:
+                item['error'] = str(error)
+                if include_source and raw is not None:
+                    item['raw_points'] = raw
             boundaries.append(item)
             # The ring inside a polygon is part of that polygon, never an extra boundary.
             continue
         if tag in ('Point', 'NetworkLink', 'Model', 'Track'):skipped += 1
-        stack.extend((child, folder, placemark, depth+1, in_polygon or tag == 'Polygon') for child in reversed(list(node)))
+        stack.extend((child, folder, placemark, metadata, depth+1, in_polygon or tag == 'Polygon') for child in reversed(list(node)))
     if not boundaries:raise ValueError('KML-filen indeholder ingen polygoner eller lukkede grænselinjer. Markører og netværkslinks kan ikke bruges som grænse.')
-    if not any('points' in b for b in boundaries):raise ValueError(boundaries[0]['name']+': '+boundaries[0]['error'])
+    if not include_source and not any('points' in b for b in boundaries):raise ValueError(boundaries[0]['name']+': '+boundaries[0]['error'])
     return {'format':'KML', 'boundaries':boundaries, 'skipped':skipped}
 
 
@@ -117,12 +136,12 @@ def _geojson(content, limit):
     return {'format':'GeoJSON', 'boundaries':[{'index':0, 'name':name, 'points':_points(rings[0], limit)}], 'skipped':0}
 
 
-def preview_boundary(content, scope='main', *, max_boundaries=100):
+def preview_boundary(content, scope='main', *, max_boundaries=100, include_source=False):
     if not isinstance(content, str) or len(content.encode('utf-8')) > MAX_BYTES:raise ValueError('Grænsefilen er for stor (maks. 2 MB).')
     if scope not in ('main', 'card'):raise ValueError('Vælg samlet grænse eller distriktskort.')
     content = content.lstrip('\ufeff \t\r\n')
     if not content:raise ValueError('Grænsefilen er tom.')
     limit = 5000
-    result = _kml(content, limit, max_boundaries) if content.startswith('<') else _geojson(content, limit)
-    if len(result['boundaries']) == 1:result['points'] = result['boundaries'][0]['points']
+    result = _kml(content, limit, max_boundaries, include_source) if content.startswith('<') else _geojson(content, limit)
+    if len(result['boundaries']) == 1 and 'points' in result['boundaries'][0]:result['points'] = result['boundaries'][0]['points']
     return dict(result, limit=limit)

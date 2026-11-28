@@ -181,7 +181,7 @@ class TerritoryHelperImportTests(unittest.TestCase):
             'ib': 'TerritoryId,Street,HouseNumber,PostalCode\nb,Testvej,3/5,1234',
         }
         preview = self.store.mutate(self.preview_action, {'files': files})
-        self.assertIn('Husnummeret mangler', preview['cards'][0]['errors'][0])
+        self.assertIn('tomt husnummerfelt', preview['cards'][0]['errors'][0])
         saved = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})['saved']
         first, second = saved
         self.assertEqual(self.store.require('cards', second['id'])['addresses'][0]['numbers'], '8')
@@ -245,6 +245,67 @@ class TerritoryHelperImportTests(unittest.TestCase):
         result = self.store.geo_preview_snapshot()[0].geo_preview(data)
         self.assertFalse(result['addresses'])
         self.assertEqual(result['unmatched_points'], 1)
+
+    def test_kml_matches_extended_id_folder_labels_and_known_geometry(self):
+        def mark(name, x, *, data='', folder=''):
+            polygon = f'<Polygon><outerBoundaryIs><LinearRing><coordinates>{x},55 {x + 0.01},55 {x + 0.01},55.01 {x},55</coordinates></LinearRing></outerBoundaryIs></Polygon>'
+            return f'<Folder><name>{folder}</name><Placemark><name>{name}</name>{data}{polygon}</Placemark></Folder>'
+
+        marks = [
+            mark('01', 10, folder='By'),
+            mark('01', 11, folder='Land'),
+            mark('Kort 02 — Midtbyen', 12),
+            mark('', 13, data='<ExtendedData><Data name="TerritoryId"><value>d</value></Data></ExtendedData>'),
+            mark('', 14),
+            mark('Ukendt navn', 15),
+        ]
+        cards = 'TerritoryId,Number,TerritoryType,Label\na,01,By,A\nb,01,Land,B\nc,02,By,Midtbyen\nd,03,By,D\ne,04,By,E'
+        boundary = [[14, 55], [14.01, 55], [14.01, 55.01], [14, 55]]
+        geometry = json.dumps([{'Id': 'e', 'Number':'04', 'Boundary': json.dumps(boundary)}])
+        preview = self.store.mutate(self.preview_action, {'files': {
+            'cards': cards, 'geometry': geometry, 'kml': '<kml>' + ''.join(marks) + '</kml>',
+        }})
+        self.assertEqual([c['polygon'][0][0] for c in preview['cards']], [10, 11, 12, 13, 14])
+        self.assertEqual(preview['unmatched'], {'kml': 1})
+        warning, = preview['unmatched_details']
+        self.assertEqual(warning['context']['kml_name'], 'Ukendt navn')
+        self.assertEqual(warning['context']['kml_index'], '6')
+
+    def test_invalid_kml_and_address_show_source_and_exact_reason(self):
+        cards = 'TerritoryId,Number\na,57'
+        locations = 'TerritoryId,Street,HouseNumber,PostalCode,Address\na,Testvej,,1234,Testvej ved stien\nx,Andenvej,42,1234,'
+        kml = '<kml><Placemark><name>57</name><LineString><coordinates>10,55 10.01,55 10.01,55.01</coordinates></LineString></Placemark></kml>'
+        preview = self.store.mutate(self.preview_action, {'files': {'cards': cards, 'locations': locations, 'kml': kml}})
+        boundary, location = preview['cards'][0]['diagnostics']
+        self.assertIn('ikke lukket', boundary['detail'])
+        self.assertEqual(boundary['context']['kml_name'], '57')
+        self.assertEqual(location['context']['row'], '2')
+        self.assertEqual(location['context']['road'], 'Testvej')
+        self.assertEqual(location['context']['house'], '')
+        self.assertEqual(location['context']['address'], 'Testvej ved stien')
+        unmatched, = preview['unmatched_details']
+        self.assertEqual(unmatched['context']['card_id'], 'x')
+        self.assertEqual(unmatched['params']['id'], 'x')
+        self.assertEqual(unmatched['context']['road'], 'Andenvej')
+
+    def test_reimport_recovers_newly_matched_boundary_and_closes_old_followup(self):
+        kml = '<kml><Placemark><name>Kort 57</name><Polygon><outerBoundaryIs><LinearRing><coordinates>10,55 10.01,55 10.01,55.01 10,55</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></kml>'
+        files = {'cards': 'TerritoryId,Number\na,57', 'kml': kml}
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        plan = self.store.setup_require_preview({'token': preview['token']}, 'territory-helper')
+        source = plan['cards'][0]
+        source['polygon'] = []
+        plan['kml_matches'].clear()
+        plan['unlinked'].append({'id':'old', 'kind':'boundary', 'fields':{'boundary':'[]'},
+                                  'message':'Rækker uden entydigt kort', 'source':{'index':0, 'name':'Kort 57'}})
+        old = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})['saved'][0]
+        self.assertFalse(self.store.require('cards', old['id']).get('geo_polygon'))
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        saved = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})['saved'][0]
+        self.assertEqual(saved['id'], old['id'])
+        self.assertEqual(self.store.require('cards', saved['id'])['geo_polygon'], self.polygon[:-1])
+        note, = [note for note in self.store.all('notes') if note.get('task')]
+        self.assertTrue(note['resolved'])
 
     def test_outer_boundary_preview_encloses_district_corners_without_saving(self):
         from geography import point_in_polygon

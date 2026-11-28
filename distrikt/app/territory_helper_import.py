@@ -146,7 +146,7 @@ def read_csv(content):
             if line > 15001 or len(values) != len(names):
                 raise ValueError()
             if any(v.strip() for v in values):
-                result.append(dict(zip(names, (v.strip() for v in values))))
+                result.append({**dict(zip(names, (v.strip() for v in values))), '_row': line})
         return result
     except (StopIteration, csv.Error, ValueError):
         raise UIError('CSV-filen har ugyldige kolonner eller rækker.') from None
@@ -223,8 +223,10 @@ def address(row):
             road, house = road or match[1], house or match[2]
     if not road or len(road) > 120:
         raise UIError('Vejnavnet mangler eller er for langt.')
-    if not house or len(house) > 80:
-        raise UIError('Husnummeret mangler eller er for langt.')
+    if not house:
+        raise UIError('Eksporten har et tomt husnummerfelt for denne adresse.')
+    if len(house) > 80:
+        raise UIError('Husnummerfeltet har {count} tegn. LTM kan gemme op til 80 tegn.', count=len(house))
     floor, door = get(row, 'floor'), get(row, 'door')
     post = text_field(get(row, 'post'), 4)
     if post and not re.fullmatch(r'\d{4}', post):
@@ -256,6 +258,10 @@ def polygon(value):
                     p.get('lat', p.get('latitude'))] for p in points]
         elif isinstance(raw[0], list) and len(raw[0]) == 2 and isinstance(raw[0][0], (int, float)) and 54 <= raw[0][0] <= 58.5:
             raw = [[x, y] for y, x in raw]
+    if isinstance(raw, list):
+        # Consecutive duplicate vertices do not change the shape. Leave other
+        # repeats to the polygon validator.
+        raw = [point for index, point in enumerate(raw) if index == 0 or point != raw[index - 1]]
     return _points(raw, 5000)
 
 
@@ -297,7 +303,10 @@ def parse_entry(kind, fields):
                 'returned': returned, 'completed': bool(completed) or bool(returned and fields['completed'] == '1')}
     row = {FIELDS[field].split()[0]: value for field, value in fields.items()}
     record = {**address(row), 'note': text_field(fields['notes'], 500)}
-    number_key(record['number'])
+    try:
+        number_key(record['number'])
+    except ValueError:
+        raise UIError('Husnummerfeltet skal indeholde ét husnummer, fx 42 eller 42B. Et interval eller flere numre kræver separate adresser.') from None
     if kind == 'ib':
         record['date'] = date_field(fields['date'])
         if record['date'] and record['date'] > date.today().isoformat():
@@ -307,8 +316,44 @@ def parse_entry(kind, fields):
     return record
 
 
-def issue(kind, fields, message, source=None):
-    return {'id': uuid.uuid4().hex, 'kind': kind, 'fields': fields, 'message': str(message), 'source': source or {}}
+def issue(kind, fields, message, source=None, *, file='', reason=None):
+    result = {'id': uuid.uuid4().hex, 'kind': kind, 'fields': fields, 'message': str(message),
+              'source': source or {}, 'file': file, 'params': getattr(message, 'ui_params', {})}
+    if isinstance(message, UIError):
+        result['message'] = message.ui_key
+    if reason:
+        result['detail'] = str(reason)
+    return result
+
+
+def diagnostic(entry):
+    source, fields = entry.get('source', {}), entry['fields']
+    context = {key: value for key, value in fields.items()
+               if key in ('road', 'house', 'address', 'post', 'floor', 'door', 'lat', 'lng', 'publisher',
+                          'assigned', 'returned', 'date', 'number', 'name')}
+    context.update(card_number=get(source, 'number') if 'number' not in source and 'nummer' not in source else
+                   get({key: value for key, value in source.items() if key not in ('number', 'nummer')}, 'number'),
+                   card_id=get(source, 'card_id'), kml_name=source.get('placemark', source.get('name', '') if 'index' in source else ''),
+                   folder=source.get('folder', ''), row=source.get('_row'),
+                   kml_index=source.get('kml_index', source.get('index', -1) + 1 if 'index' in source else None))
+    entry = {k: entry[k] for k in ('id', 'kind', 'message', 'params', 'file', 'detail') if k in entry}
+    entry['context'] = {key: str(value)[:200] for key, value in context.items() if value or key == 'house'}
+    return entry
+
+
+def polygon_key(points):
+    """Canonical ring, ignoring the starting corner, closing point and winding."""
+    if not points:
+        return ()
+    ring = [tuple(p) for p in points]
+    index = ring.index(min(ring))
+    rotated = tuple(ring[index:] + ring[:index])
+    return min(rotated, (rotated[0], *reversed(rotated[1:])))
+
+
+def label_key(value):
+    return norm(re.sub(r'\s*[-–—:·]\s*', ' ', value))
+
 
 
 def loan_plan(store, card, assignments):
@@ -374,7 +419,8 @@ def preview(store, data):
         raise UIError(f'Vælg en eksport med 1–{MAX_DISTRICTS} distrikter.')
     issues = Counter()
     unlinked = []
-    cards, identity, numbers = [], defaultdict(list), defaultdict(list)
+    kml_matches = {}
+    cards, identity, numbers = [], defaultdict(dict), defaultdict(dict)
     repeated = Counter(norm(card_number(row)) for row in source_cards)
     source_occurrences = Counter()
     for row in source_cards:
@@ -386,7 +432,8 @@ def preview(store, data):
         source_occurrences[source_key] += 1
         import_id = hashlib.sha256(json.dumps([source_key, source_occurrences[source_key]]).encode()).hexdigest()
         card = {'index': len(cards), 'number': number, 'name': get(row, 'name')[:100],
-                'type': card_type, 'note': '', 'polygon': [], 'locations': [], 'ib': [], 'assignments': [], 'errors': [], 'pending': [], 'import_id': import_id}
+                'type': card_type, 'source_number': source_number, 'raw_number': get(row, 'number'),
+                'note': '', 'polygon': [], 'boundary_file': '', 'locations': [], 'ib': [], 'assignments': [], 'errors': [], 'pending': [], 'import_id': import_id}
         if not number or len(number) > 30:
             card['errors'].append('Kortnummeret skal indeholde 1–30 tegn.')
         if len(get(row, 'name')) > 100:
@@ -396,70 +443,121 @@ def preview(store, data):
         except ValueError:
             card['pending'].append(issue('note', {'notes': get(row, 'notes')}, 'Det eksporterede kortnotat er for langt.'))
         cards.append(card)
-        for label in {number, get(row, 'number')}:
-            numbers[norm(label)].append(card)
+        for label in {number, source_number, get(row, 'number')} - {''}:
+            numbers[norm(label)][card['index']] = card
         if get(row, 'id'):
-            identity[norm(get(row, 'id'))].append(card)
+            identity[norm(get(row, 'id'))][card['index']] = card
 
     def match(row, id_fields=('card_id',), *, geometry_file=False):
         ident = next((get(row, f) for f in id_fields if get(row, f)), '')
         number = card_number(row if geometry_file else {k: v for k, v in row.items() if k not in ('number', 'nummer')})
-        if ident and identity:
-            candidates = identity.get(norm(ident), [])
-            if number and candidates and not any(c in numbers.get(norm(number), []) for c in candidates):
-                return None
-        else:
-            candidates = numbers.get(norm(number), [])
+        number_matches = numbers.get(norm(number), {})
         card_type = norm(get(row, 'type'))
-        if card_type:
-            candidates = [card for card in candidates if not card['type'] or norm(card['type']) == card_type]
-        return candidates[0] if len(candidates) == 1 else None
+        if ident and identity:
+            candidates = identity.get(norm(ident), {})
+            if not candidates:
+                return None, UIError('Kort-id {id} findes ikke i distriktslisten.', id=ident)
+            if number and not (candidates.keys() & number_matches.keys()):
+                return None, UIError('Kort-id {id} stemmer ikke med kortnummer {number} i distriktslisten.', id=ident, number=number)
+        elif number:
+            candidates = number_matches
+        else:
+            return None, 'Rækken har hverken et kortnummer eller et kort-ID, der kan bruges.'
+        matches = [c for c in candidates.values() if not card_type or not c['type'] or norm(c['type']) == card_type]
+        if len(matches) == 1:
+            return matches[0], ''
+        if len(matches) > 1:
+            return None, UIError('Rækken passer på flere distrikter: {cards}.',
+                                 cards=', '.join(c['number'] for c in matches))
+        return None, UIError('Fandt intet distrikt med kortnummer {number} og den angivne distriktstype.',
+                             number=number or ident)
 
-    def put_boundary(card, value):
+    def file_label(kind):
+        return source_names.get(kind) or {'cards': 'Distrikter · CSV', 'locations': 'Lokationer · CSV',
+            'ib': 'IB · CSV', 'assignments': 'Tildelinger · CSV', 'geometry': 'Distrikter · JSON',
+            'kml': 'Distrikter · KML'}[kind]
+
+    def put_boundary(card, value, source, kind):
         if not value:
             return
+        fields = {'boundary': value if isinstance(value, str) else json.dumps(value)}
+        file = file_label(kind)
         try:
             points = polygon(value)
-            if card['polygon'] and {tuple(p) for p in points} != {tuple(p) for p in card['polygon']}:
-                raise UIError('Eksportfilerne har forskellige grænser for kortet.')
-            if not card['polygon']:
-                card['polygon'] = points
-        except (ValueError, TypeError, AttributeError, OverflowError, RecursionError):
-            card['pending'].append(issue('boundary', {'boundary': value if isinstance(value, str) else json.dumps(value)},
-                                         'Kontrollér kortets grænse i eksportfilerne.'))
+        except (ValueError, TypeError, AttributeError, OverflowError, RecursionError) as error:
+            detail = 'Koordinaterne kan ikke læses som JSON.' if isinstance(error, json.JSONDecodeError) else str(error)
+            card['pending'].append(issue('boundary', fields, 'Grænsen er ugyldig.', source, file=file, reason=detail))
+            return
+        if not card['polygon']:
+            card.update(polygon=points, boundary_file=file)
+        elif polygon_key(points) != polygon_key(card['polygon']):
+            message = UIError('Grænserne i {first} og {second} har forskellige hjørner. LTM beholdt grænsen fra {first}.',
+                              first=card['boundary_file'], second=file)
+            card['pending'].append(issue('boundary', fields, message, source, file=file))
 
     for row, value in geometry:
-        card = match(row, ('id', 'card_id'), geometry_file=True)
+        card, reason = match(row, ('id', 'card_id'), geometry_file=True)
         if card is None:
             issues['geometry'] += 1
             unlinked.append(issue('boundary', {'boundary': value if isinstance(value, str) else json.dumps(value)},
-                                  'Rækker uden entydigt kort', row))
+                                  reason, row, file=file_label('geometry')))
         else:
-            put_boundary(card, value)
+            put_boundary(card, value, row, 'geometry')
             if not card['note'] and get(row, 'notes'):
                 try:
                     card['note'] = note_text(get(row, 'notes'))
                 except ValueError:
                     card['pending'].append(issue('note', {'notes': get(row, 'notes')}, 'Det eksporterede kortnotat er for langt.'))
     for card, row in zip(cards, source_cards):
-        put_boundary(card, get(row, 'boundary'))
+        put_boundary(card, get(row, 'boundary'), row, 'cards' if csv_rows['cards'] else 'geometry')
     if files.get('kml'):
-        labels = defaultdict(list)
+        labels, rings = defaultdict(dict), defaultdict(dict)
         for card in cards:
-            labels[norm(card['number'])].append(card)
+            for number in {card['number'], card['source_number'], card['raw_number']} - {''}:
+                for alias in (number, f"Kort {number}", f"{card['type']} {number}", f"{number} {card['name']}",
+                              f"{card['type']} {number} {card['name']}", f"Kort {number} {card['name']}",
+                              f"Territory {number} {card['name']}", f"{card['name']} {number}"):
+                    labels[label_key(alias)][card['index']] = card
             if card['name']:
-                labels[norm(card['number'] + ' - ' + card['name'])].append(card)
-        for boundary in preview_boundary(files['kml'], 'card', max_boundaries=MAX_DISTRICTS)['boundaries']:
-            matches = labels.get(norm(boundary['name']), [])
-            if len(matches) != 1:
-                issues['kml'] += 1
-                unlinked.append(issue('boundary', {'boundary': json.dumps(boundary.get('points', []))},
-                                      'Rækker uden entydigt kort', boundary))
-            elif 'points' in boundary:
-                put_boundary(matches[0], boundary['points'])
+                labels[label_key(card['name'])][card['index']] = card
+            if card['polygon']:
+                rings[polygon_key(card['polygon'])][card['index']] = card
+        for boundary in preview_boundary(files['kml'], 'card', max_boundaries=MAX_DISTRICTS, include_source=True)['boundaries']:
+            metadata = {key(k): v for k, v in boundary.pop('metadata').items()}
+            name, folder = boundary['placemark'], boundary['folder']
+            boundary['kml_index'] = boundary['index'] + 1
+            points = boundary.pop('raw_points', None) or boundary.pop('points', [])
+            if any(get(metadata, f) for f in ('card_id', 'id', 'number')):
+                card, reason = match(metadata, ('card_id', 'id'), geometry_file=True)
             else:
-                matches[0]['pending'].append(issue('boundary', {'boundary': ''},
-                    'Kontrollér kortets grænse i eksportfilerne.', boundary))
+                candidates = labels.get(label_key(name), {})
+                if candidates and folder:
+                    by_folder = [c for c in candidates.values() if norm(c['type']) == norm(folder)]
+                    if by_folder:
+                        candidates = {c['index']: c for c in by_folder}
+                same_shape = rings.get(polygon_key(points), {}) if points and not boundary.get('error') else {}
+                if same_shape:
+                    candidates = ({i: c for i, c in candidates.items() if i in same_shape}
+                                  if candidates else same_shape) or candidates
+                card = next(iter(candidates.values())) if len(candidates) == 1 else None
+                if len(candidates) > 1:
+                    reason = UIError('KML-navnet passer på flere distrikter: {cards}.',
+                                     cards=', '.join(c['number'] for c in candidates.values()))
+                elif name:
+                    reason = 'KML-navnet matcher ikke et kortnummer eller kortnavn i distriktslisten.'
+                else:
+                    reason = 'KML-elementet har intet navn, kortnummer eller kort-ID, og grænsen matcher ingen unik kendt grænse.'
+            if card is None:
+                issues['kml'] += 1
+                unlinked.append(issue('boundary', {'boundary': json.dumps(points)}, reason, boundary,
+                                      file=file_label('kml'), reason=boundary.get('error')))
+            elif boundary.get('error'):
+                card['pending'].append(issue('boundary', {'boundary': json.dumps(points)}, 'Grænsen er ugyldig.',
+                                             boundary, file=file_label('kml'), reason=boundary['error']))
+            else:
+                put_boundary(card, points, boundary, 'kml')
+                if polygon_key(card['polygon']) == polygon_key(points):
+                    kml_matches[boundary['index']] = card['import_id']
 
     people = defaultdict(list)
     for row in csv_rows['publishers']:
@@ -470,11 +568,11 @@ def preview(store, data):
     for kind in ('locations', 'ib', 'assignments'):
         seen = defaultdict(set)
         for row in csv_rows[kind]:
-            card = match(row)
+            card, reason = match(row)
             fields = entry_fields(kind, row, people)
             if card is None:
                 issues[kind] += 1
-                unlinked.append(issue(kind, fields, 'Rækker uden entydigt kort', row))
+                unlinked.append(issue(kind, fields, reason, row, file=file_label(kind)))
                 continue
             try:
                 if kind == 'assignments':
@@ -488,7 +586,7 @@ def preview(store, data):
                     card[kind].append(record)
                     seen[card['index']].add(fingerprint)
             except (ValueError, TypeError, OverflowError) as error:
-                card['pending'].append(issue(kind, fields, error, row))
+                card['pending'].append(issue(kind, fields, error, row, file=file_label(kind)))
 
 
     duplicates = Counter(norm(c['number']) for c in cards)
@@ -503,10 +601,12 @@ def preview(store, data):
         card['errors'] = list(dict.fromkeys(card['errors'] + [entry['message'] for entry in card['pending'] + rejected]))
     batch_id = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
     token = store.setup_remember('territory-helper', {'owner': data.get('_owner'), 'cards': cards, 'unlinked': unlinked,
-                                                     'batch_id': batch_id})
+                                                     'batch_id': batch_id, 'kml_matches': kml_matches})
     # Recovery payloads remain server-side until a user opens the follow-up.
-    public = [{key: value for key, value in card.items() if key not in ('pending', 'import_id')} for card in cards]
-    return {'token': token, 'cards': public, 'unmatched': dict(issues), 'sources': source_names}
+    public = [{**{key: value for key, value in card.items() if key not in ('pending', 'import_id')},
+               'diagnostics': [diagnostic(entry) for entry in card['pending'][:20]]} for card in cards]
+    return {'token': token, 'cards': public, 'unmatched': dict(issues), 'sources': source_names,
+            'unmatched_details': [diagnostic(entry) for entry in unlinked[:100]]}
 
 
 def ib_number(address):
@@ -541,7 +641,7 @@ def save_followup(store, ident, import_id, pending, warnings):
     if not (pending or warnings):
         return
     key = json.dumps(['checks', ident or import_id, 'territory-helper'], separators=(',', ':'))
-    text = '\n'.join(dict.fromkeys([*warnings, *(entry['message'] for entry in pending)]))
+    text = '\n'.join(dict.fromkeys([*warnings, *(entry['message'].format(**entry.get('params', {})) if entry.get('params') else entry['message'] for entry in pending)]))
     existing = next((row for row in store.all('notes') if row.get('followup_key') == key), None)
     saved = store._mutate('note.save', {'id': existing['id'] if existing else None, 'card_id': ident,
                                        'followup_key': key, 'text': text[:1000]})
@@ -596,6 +696,8 @@ def apply(store, data):
     active = store.all('cards')
     existing = active + store.all('cards', deleted=True)
     active_by_number = {norm(c['number']): c for c in active}
+    active_ids = {c['id'] for c in active}
+    kml_import_ids = set(plan['kml_matches'].values())
     occupied = {norm(c['number']) for c in existing}
     requested_numbers = {norm(c['number']) for c in plan['cards']}
     imported_numbers = {norm(number) for note in store.all('notes')
@@ -605,7 +707,11 @@ def apply(store, data):
     saved = []
     for card in plan['cards'] if bulk else [plan['cards'][index]]:
         if card['import_id'] in by_import:
-            saved.append({'index': card['index'], 'id': by_import[card['import_id']]['id'], 'number': by_import[card['import_id']]['number']})
+            old = by_import[card['import_id']]
+            if (card['import_id'] in kml_import_ids and old['id'] in active_ids
+                    and not old.get('archived') and not old.get('geo_polygon') and not old.get('geo_updated')):
+                store.put('cards', dict(old, geo_polygon=card['polygon'], geo_outline_source='manual'))
+            saved.append({'index': card['index'], 'id': old['id'], 'number': old['number']})
             continue
         number = card['number']
         old = active_by_number.get(norm(number))
@@ -620,11 +726,47 @@ def apply(store, data):
                 number = f'TH-{card["index"] + 1}-{suffix}'
         saved.append({'index': card['index'], **save_card(store, card, number)})
         occupied.add(norm(number))
-    if plan['unlinked']:
-        key = json.dumps(['checks', plan['batch_id'], 'territory-helper'], separators=(',', ':'))
-        if not any(note.get('followup_key') == key for note in store.all('notes') + store.all('notes', deleted=True)):
-            save_followup(store, None, plan['batch_id'], plan['unlinked'], [])
+    key = json.dumps(['checks', plan['batch_id'], 'territory-helper'], separators=(',', ':'))
+    prior = next((note for note in store.all('notes') if note.get('followup_key') == key), None)
+    if prior and not prior.get('resolved'):
+        refresh_unlinked(store, plan, prior, saved)
+    elif not prior and plan['unlinked'] and not any(note.get('followup_key') == key for note in store.all('notes', deleted=True)):
+        save_followup(store, None, plan['batch_id'], plan['unlinked'], [])
     return {'saved': saved, 'skipped': []} if bulk else saved[0]
+
+
+def refresh_unlinked(store, plan, note, saved):
+    """Refresh outstanding diagnostics for the same files without reopening fixed rows."""
+    pending = note.get('territory_helper_issues') or []
+    current_by_kml_index = {entry['source']['index']: entry for entry in plan['unlinked']
+                            if 'index' in entry['source']}
+    source_cards = {card['import_id']: card for card in plan['cards']}
+    applied = {plan['cards'][row['index']]['import_id']: store.get('cards', row['id']) for row in saved}
+    remaining = []
+    for entry in pending:
+        index = entry.get('source', {}).get('index')
+        if entry['kind'] != 'boundary' or index is None:
+            remaining.append(entry)
+            continue
+        if index in current_by_kml_index:
+            remaining.append(dict(current_by_kml_index[index], id=entry['id']))
+            continue
+        linked = plan['kml_matches'].get(index)
+        card = applied.get(linked)
+        if not card or polygon_key(card.get('geo_polygon')) != polygon_key(source_cards[linked]['polygon']):
+            remaining.append(entry)
+    if remaining != pending:
+        update_followup(store, note, remaining)
+
+
+def update_followup(store, note, pending):
+    warnings = note.get('territory_helper_warnings', [])
+    note = dict(note, territory_helper_issues=pending, resolved=not pending and not warnings)
+    if pending or warnings:
+        messages = [entry['message'].format(**entry.get('params', {})) if entry.get('params') else entry['message']
+                    for entry in pending]
+        note['text'] = '\n'.join(dict.fromkeys([*warnings, *messages]))[:1000]
+    store.put('notes', note)
 
 
 def save_card(store, card, number):
@@ -670,7 +812,7 @@ def review(store, data, *, repair=False):
     if pending is None:
         raise UIError('Vælg en opfølgning fra Territory Helper.')
     if not repair:
-        return {'card_id': note.get('card_id'), 'issues': pending}
+        return {'card_id': note.get('card_id'), 'issues': [{**entry, **diagnostic(entry)} for entry in pending]}
     entry = next((item for item in pending if item['id'] == data.get('issue_id')), None)
     if entry is None:
         raise UIError('Rækken er allerede behandlet. Åbn opfølgningen igen.')
@@ -726,9 +868,5 @@ def review(store, data, *, repair=False):
                 raise UIError(rows[0]['message'])
             save_assignments(store, planner)
     pending = [item for item in pending if item['id'] != entry['id']]
-    warnings = note.get('territory_helper_warnings', [])
-    note.update(territory_helper_issues=pending, resolved=not pending and not warnings)
-    if pending or warnings:
-        note['text'] = '\n'.join(dict.fromkeys([*warnings, *(item['message'] for item in pending)]))[:1000]
-    store.put('notes', note)
+    update_followup(store, note, pending)
     return {'remaining': len(pending)}
