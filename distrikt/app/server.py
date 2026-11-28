@@ -533,6 +533,9 @@ def stop_running(data):
         with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req,timeout=3) as r:r.read()
     return bool(info)
 
+def current_desktop_build(info):
+    return bool(info and info['version']==VERSION and (not IMPORT_BUILD or info.get('import_build')==IMPORT_BUILD))
+
 def acquire_lock(path):
     stream=open(path,'a+b')
     try:
@@ -565,21 +568,21 @@ def _main(argv=None):
     if args.stop:stop_running(data);return
     info=running(data)
     if not args.serve:
-        if info and (info['version']!=VERSION or (IMPORT_BUILD and info.get('import_build')!=IMPORT_BUILD)):
+        if info and not current_desktop_build(info):
             stop_running(data)
             for _ in range(30):
                 if not running(data):break
                 time.sleep(.1)
             info=None
         if not info:
-            log=open(data/'start.log','a')
             command=([sys.executable] if getattr(sys,'frozen',False) else [sys.executable,str(APP/'server.py')])
-            subprocess.Popen(command+['--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
+            with open(data/'start.log','a') as log:
+                subprocess.Popen(command+['--serve','--data-dir',str(data)],cwd=str(APP),stdin=subprocess.DEVNULL,stdout=log,stderr=log,**({'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS} if sys.platform=='win32' else {'start_new_session':True}))
             for _ in range(60):
                 info=running(data)
-                if info:break
+                if current_desktop_build(info):break
                 time.sleep(.1)
-        if not info:raise RuntimeError('Appen kunne ikke starte. Se start.log i datamappen.')
+        if not current_desktop_build(info):raise RuntimeError('Appen kunne ikke starte. Se start.log i datamappen.')
         if not args.no_browser:webbrowser.open(info['url']+('?ltm_start_language='+args.language if args.language else ''))
         print('Distrikt er startet: '+info['url']);return
     if info:return

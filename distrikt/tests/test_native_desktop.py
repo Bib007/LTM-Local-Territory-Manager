@@ -33,7 +33,7 @@ class NativeDesktopTests(unittest.TestCase):
     def test_installer_language_is_used_only_as_first_browser_hint(self):
         import server
         with tempfile.TemporaryDirectory() as folder:
-            already_running = {'url': 'http://127.0.0.1:8787', 'version': server.VERSION}
+            already_running = {'url': 'http://127.0.0.1:8787', 'version': server.VERSION, 'import_build': server.IMPORT_BUILD}
             with patch.object(server, 'running', return_value=already_running), patch.object(server.webbrowser, 'open') as browser:
                 server.main(['--data-dir', folder, '--language', 'da'])
                 browser.assert_called_with('http://127.0.0.1:8787?ltm_start_language=da')
@@ -41,6 +41,21 @@ class NativeDesktopTests(unittest.TestCase):
                 browser.assert_called_with('http://127.0.0.1:8787?ltm_start_language=en')
                 server.main(['--data-dir', folder])
                 browser.assert_called_with('http://127.0.0.1:8787')
+
+    def test_local_preview_restarts_server_with_older_import_build(self):
+        import server
+        url = 'http://127.0.0.1:8787'
+        old = {'version': server.VERSION, 'url': url}
+        new = {**old, 'import_build': 'current-import-build'}
+        with tempfile.TemporaryDirectory() as folder, patch.object(server, 'IMPORT_BUILD', new['import_build']), \
+                patch.object(server, 'running', side_effect=[old, None, new]), \
+                patch.object(server, 'stop_running') as stop, \
+                patch.object(server.subprocess, 'Popen') as start, \
+                patch.object(server.webbrowser, 'open') as browser:
+            server.main(['--data-dir', folder])
+            stop.assert_called_once_with(Path(folder).resolve())
+            start.assert_called_once()
+            browser.assert_called_once_with(url)
 
     def test_beta_installation_identity_stays_separate_and_stable_id_is_preserved(self):
         setup=(APP.parents[1]/'scripts/LTM.iss').read_text()
