@@ -616,7 +616,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   for(const c of cards.values())for(const id of new Set(c.address_ids||[])){if(!owners.has(id))owners.set(id,[]);owners.get(id).push(c.id);}
   for(const c of cards.values()){
    const extra={card:c};
-   if(!c.area_id)add('checks',[c.id,'area'],'Mangler område',extra);
+   if(state.areas?.length&&!c.area_id&&!(c.geo_polygon?.length>=3))add('checks',[c.id,'area'],'Mangler områdegruppe',extra);
    if(c.temporary&&!c.planned)add('checks',[c.id,'addresses'],'Midlertidigt kort · vejliste mangler',extra);
    if(!c.temporary&&!c.planned&&!c.geo_polygon?.length&&(state.profile||state.settings.onboarding?.answers?.mode!=='desk'))add('checks',[c.id,'boundary'],'Mangler geografisk grænse',extra);
    for(const id of new Set(c.address_ids||[])){
@@ -644,7 +644,7 @@ const Workspace={memory:{},taskFilter:'open',taskOwnerFilter:'all',taskQuery:'',
   if(item.side)return item.side==='back'&&item.card&&loanFor(item.card.id)?'Aftal ajourføring med kortholderen. Bekræft først print af den rettede IB-bagside, når det fysiske kort er opdateret.':'Åbn kortet, kontrollér oplysningerne, og print den viste side. Bekræft først print, når det fysiske kort er klar.';
   if(item.relatedCard)return 'Åbn begge kort, og sammenlign deres grænser. Ret et utilsigtet overlap i korteditoren; der ændres intet automatisk.';
   const kind=JSON.parse(item.key)[2];
-  return ({area:'Åbn kortet, vælg det rigtige område, og gem.',addresses:'Åbn kortet, og tilføj den korrekte vejliste, når den er kendt. Kortnummer og udlån kan bruges imens.',boundary:'Åbn kortets geografiske visning, og tegn den korrekte grænse i korteditoren.',duplicate:'Undersøg begge kort. Vælg hvilket kort adressen hører til på, og ret adressevalget i korteditoren.',ignored:'Kontrollér om adressen skal bruges eller fortsat springes over. Ret adressevalget eller markeringen Se bort fra.',retired:'Kontrollér den nedlagte adresse. Fjern den ikke fra kortet, før ændringen og eventuel IB er gennemgået.'})[kind]||'Åbn kortet, kontrollér forholdet, og gem den relevante rettelse.';
+  return ({area:'Redigér kortet, vælg en områdegruppe, og gem.',addresses:'Åbn kortet, og tilføj den korrekte vejliste, når den er kendt. Kortnummer og udlån kan bruges imens.',boundary:'Åbn kortets geografiske visning, og tegn den korrekte grænse i korteditoren.',duplicate:'Undersøg begge kort. Vælg hvilket kort adressen hører til på, og ret adressevalget i korteditoren.',ignored:'Kontrollér om adressen skal bruges eller fortsat springes over. Ret adressevalget eller markeringen Se bort fra.',retired:'Kontrollér den nedlagte adresse. Fjern den ikke fra kortet, før ændringen og eventuel IB er gennemgået.'})[kind]||'Åbn kortet, kontrollér forholdet, og gem den relevante rettelse.';
  },
  followupAudit(item){
   if(!item.ignored)return '';

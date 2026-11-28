@@ -44,8 +44,8 @@ from connection_backup import export as export_connections,restore as restore_co
 APP=app_dir()
 VERSION='1.15.0-beta.6'
 # Preview installers can share a version number. Do not reuse a server from
-# an earlier installer when its packaged import screen is different.
-IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes()).hexdigest()[:16]
+# an earlier installer when its import or follow-up UI differs.
+IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes() + (APP/'workspace.js').read_bytes()).hexdigest()[:16]
               if '-beta.' in VERSION and (APP/'territory-helper-ui.js').is_file() else None)
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 

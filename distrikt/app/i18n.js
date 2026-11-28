@@ -3,6 +3,8 @@
 const I18n={
  current:'en',
  english:{
+  "Mangler områdegruppe":"Missing area group",
+  "Redigér kortet, vælg en områdegruppe, og gem.":"Edit the card, choose an area group and save.",
   "KML-elementet har intet navn, kortnummer eller kort-ID, og grænsen matcher ingen unik kendt grænse.":"This KML feature has no name, territory number or territory ID, and the boundary does not match one known territory.",
   "KML-navnet matcher ikke et kortnummer eller kortnavn i distriktslisten.":"The KML name does not match a territory number or name in the territory list.",
   "KML-navnet passer på flere distrikter: {cards}.":"The KML name matches several territories: {cards}.",
