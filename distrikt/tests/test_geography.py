@@ -118,6 +118,26 @@ class GeoStorageTests(unittest.TestCase):
             self.s.mutate('geo.assign',data)
         self.assertEqual(self.s.get('cards',ident),after)
 
+    def test_bulk_coordinate_assignment_keeps_original_points_without_creating_boundary(self):
+        self.add([address('dar','1')])
+        ident=self.s.mutate('card.save',{'number':'120','temporary':True})['id']
+        before=self.s.get('cards',ident)
+        original=[dict(address('f'*32,'1'),road='Tidligere vejnavn',numbers='1',type='Hus',count=1)]
+        before['imported_addresses']=original
+        before['addresses']=[{'road':'Tidligere vejnavn','numbers':'1','type':'Hus','count':1}]
+        with self.s.transaction():self.s.put('cards',before)
+        expected={'polygon':[],'address_ids':[],'addresses':before['addresses'],'imported_addresses':original}
+        data={'card_id':ident,'polygon':[],'address_ids':['dar'],'auto_expected':expected}
+        stale=dict(expected,imported_addresses=[])
+        with self.assertRaisesRegex(ValueError,'Kortet er ændret'):
+            self.s.mutate('geo.assign',dict(data,auto_expected=stale))
+        self.s.mutate('geo.assign',data)
+        after=self.s.get('cards',ident)
+        self.assertEqual(after['imported_addresses'],original)
+        self.assertEqual(after['geo_polygon'],[])
+        self.assertEqual(after['address_ids'],['dar'])
+        self.assertEqual(after['addresses'][0]['road'],'Eksempelvej')
+
     def test_range_new_card_and_conflict_reservation(self):
         self.add([address('a42','42'),address('a42b','42B'),address('a43','43'),address('a58','58')])
         p=self.s.mutate('geo.preview',{'mode':'range','road':'Eksempelvej','postcode':'9999','from':'42','to':'58','parity':'even'})

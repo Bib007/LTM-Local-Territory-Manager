@@ -272,6 +272,9 @@ class GeoStore(MainBoundaryStore):
                 c['geo_outline_source']='suggestion' if automatic or not polygon else 'manual'
             else:
                 c['geo_polygon']=data['auto_expected']['polygon']
+                # The imported export coordinates are provenance, not disposable
+                # street-list rows; a DAR road-name correction must not erase them.
+                if 'imported_addresses' in current:c['imported_addresses']=current['imported_addresses']
                 if current.get('geo_outline_source') is not None:c['geo_outline_source']=current['geo_outline_source']
             c['geo_updated']=stamp()
             if data.get('street_expected'):c['front_revision']=True
