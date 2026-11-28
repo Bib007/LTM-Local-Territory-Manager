@@ -205,10 +205,13 @@ def state_for(raw,user):
                 if isinstance(card.get(field),dict):card[field].pop(key,None)
     source_notes={note['id']:note for note in raw['notes']} if result['notes'] else {}
     from workflow_store import task_reply_target
+    import_review = not user.get('desk_only') and set(ACTIONS['setup.territory-helper.review']).issubset(p)
     for note in result['notes']:
         note['assigned']=bool(note.get('assignee_id'))
         note['assignee_self']=note.get('assignee_id')==user['id']
         source=source_notes[note['id']]
+        if import_review and 'territory_helper_diagnostics' in source:
+            note['territory_helper_diagnostics']=deepcopy(source['territory_helper_diagnostics'])
         assigned_by=source.get('assigned_by')
         if assigned_by and note['assigned']:note['assigned_by_name']=assigned_by['name']
         note['reply_target']=task_reply_target(source)

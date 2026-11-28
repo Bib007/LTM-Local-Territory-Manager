@@ -3,6 +3,9 @@
 const I18n={
  current:'en',
  english:{
+  "{count} flere rækker under Ret importerede rækker.":"{count} more rows under Correct imported rows.",
+  "Udlån, der overlapper denne række":"Loans that overlap this row",
+  "I gendannelse":"In recovery",
   "Mangler områdegruppe":"Missing area group",
   "Redigér kortet, vælg en områdegruppe, og gem.":"Edit the card, choose an area group and save.",
   "KML-elementet har intet navn, kortnummer eller kort-ID, og grænsen matcher ingen unik kendt grænse.":"This KML feature has no name, territory number or territory ID, and the boundary does not match one known territory.",

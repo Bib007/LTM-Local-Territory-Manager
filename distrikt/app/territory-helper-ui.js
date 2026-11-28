@@ -141,6 +141,23 @@ const TerritoryHelperUI = {
       ${parts.length ? `<div>${parts.join(' · ')}</div>` : ''}
       ${row.detail ? `<p>${esc(I18n.text(row.detail))}</p>` : ''}`;
   },
+  taskDiagnostics(note) {
+    const details = note.territory_helper_diagnostics;
+    if (!details?.rows.length) return '';
+    const remaining = details.total - details.rows.length;
+    return `<ul>${details.rows.map(row => `<li>${this.diagnostic(row)}</li>`).join('')}</ul>
+      ${remaining ? `<p class="hint">${ui('{count} flere rækker under Ret importerede rækker.', {count: remaining})}</p>` : ''}`;
+  },
+  overlappingLoans(entry) {
+    if (!entry.overlapping_loans?.length) return '';
+    return `<section class="notice">
+      <h3>${ui('Udlån, der overlapper denne række')}</h3><ul>
+      ${entry.overlapping_loans.map(loan => `<li><strong>${esc(loan.publisher || I18n.text('Ukendt'))}</strong> ·
+        ${ui('Udleveret')} ${esc(fmt(loan.assigned))} ·
+        ${loan.returned ? ui('Afleveret') + ' ' + esc(fmt(loan.returned)) : ui('Stadig udleveret')}
+        ${loan.deleted ? ' · ' + ui('I gendannelse') : ''}</li>`).join('')}
+      </ul></section>`;
+  },
   show() {
     const session = this.session, card = session.cards[session.index];
     const finished = session.bulkDone || session.saved.size === session.cards.length;
@@ -259,7 +276,7 @@ const TerritoryHelperUI = {
       ? `<label>${ui('Distriktskort')}<select name="card_id" required><option value="">${ui('Vælg et kort')}</option>${state.cards.filter(card => !card.archived).map(card =>
         `<option value="${esc(card.id)}">${esc(card.number)} ${esc(card.name)}</option>`).join('')}</select></label>` : '';
     openDialog(`<h2>${ui('Ret importerede rækker')}</h2>${entry
-      ? `<div class="notice">${this.diagnostic(entry)}</div><form id="thRepairForm" data-issue="${esc(entry.id)}">${cards}${inputs}
+      ? `<div class="notice">${this.diagnostic(entry)}</div>${this.overlappingLoans(entry)}<form id="thRepairForm" data-issue="${esc(entry.id)}">${cards}${inputs}
         <p id="formError" role="alert"></p><div class="actions"><button class="primary">${ui('Gem rettelse')}</button>
         <button type="button" data-th-import="review-list">${ui('Tilbage')}</button></div></form>`
       : review.issues.length ? `<ul>${review.issues.map(row => `<li>${this.diagnostic(row)}
@@ -273,8 +290,8 @@ const TerritoryHelperUI = {
     const {card_id, ...fields} = Object.fromEntries(new FormData(form));
     button.disabled = true;
     try {
-      await mutate('setup.territory-helper.repair', {id: review.id, issue_id: form.dataset.issue, card_id, fields}, {close: false});
-      review.issues = review.issues.filter(row => row.id !== form.dataset.issue);
+      const result = await mutate('setup.territory-helper.repair', {id: review.id, issue_id: form.dataset.issue, card_id, fields}, {close: false});
+      review.issues = result.issues;
       if (generation === openDialog.generation && form.isConnected && el('dialog').open) this.showReview();
     } catch {
       // mutate displays the validation error in the open form.

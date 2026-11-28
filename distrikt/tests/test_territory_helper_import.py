@@ -307,6 +307,34 @@ class TerritoryHelperImportTests(unittest.TestCase):
         note, = [note for note in self.store.all('notes') if note.get('task')]
         self.assertTrue(note['resolved'])
 
+    def test_task_shows_address_on_saved_issue_and_ignores_blank_lines(self):
+        files = {'cards': 'TerritoryId,Number\na,118',
+                 'locations': 'TerritoryId,Street,HouseNumber,PostalCode\n\na,Eksempelvej,,1234\n'}
+        result = self.store.mutate(self.preview_action, {'files': files})
+        self.store.mutate(self.apply_action, {'token': result['token'], 'all': True})
+        note, = [n for n in self.store.state()['notes'] if n.get('task')]
+        row, = note['territory_helper_diagnostics']['rows']
+        self.assertEqual(row['context']['road'], 'Eksempelvej')
+        self.assertEqual(row['context']['row'], '3')
+        self.assertEqual(row['context']['house'], '')
+        self.assertNotIn('territory_helper_issues', note)
+
+    def test_review_shows_existing_loan_dates_for_import_overlap(self):
+        earlier = self.today - timedelta(days=5)
+        files = {
+            'cards': 'TerritoryId,Number\na,118',
+            'assignments': ('TerritoryId,Publisher,DateAssigned,DateReturned\n'
+                            f'a,Eksempel Første,{earlier},\n'
+                            f'a,Eksempel Anden,{self.earlier},{self.yesterday}'),
+        }
+        result = self.store.mutate(self.preview_action, {'files': files})
+        self.store.mutate(self.apply_action, {'token': result['token'], 'all': True})
+        task, = [n for n in self.store.all('notes') if n.get('task')]
+        issue, = self.store.mutate('setup.territory-helper.review', {'id': task['id']})['issues']
+        self.assertEqual(issue['overlapping_loans'], [
+            {'publisher': 'Eksempel Første', 'assigned': earlier.isoformat(), 'returned': None, 'deleted': False}
+        ])
+
     def test_outer_boundary_preview_encloses_district_corners_without_saving(self):
         from geography import point_in_polygon
 

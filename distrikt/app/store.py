@@ -367,6 +367,12 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 and n['id']=='ib-review:'+n['loan_id']
                 and n.get('followup_key')==json.dumps(['ib-review',n['loan_id']],ensure_ascii=False,separators=(',',':'))]
             result['notes']=[n for n in visible_notes if not is_ib_review(n)]
+            from territory_helper_import import diagnostic
+            for note in result['notes']:
+                pending = note.pop('territory_helper_issues', None)
+                if pending:
+                    note['territory_helper_diagnostics'] = {'total': len(pending),
+                                                            'rows': [diagnostic(entry) for entry in pending[:3]]}
             from redistribution import planning_date
             for c in result['cards']:
                 if c.get('planning_reference'):c['planning_date']=planning_date(c)

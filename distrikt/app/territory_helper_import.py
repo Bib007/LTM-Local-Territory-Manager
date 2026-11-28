@@ -13,7 +13,7 @@ from html.parser import HTMLParser
 from boundary_import import _points, preview_boundary
 from geography import number_key, street_rows, valid_coordinate
 from history_import import day
-from history_loans import LoanPreview, apply_loans
+from history_loans import LoanPreview, apply_loans, overlaps
 from ui_errors import UIError
 
 
@@ -143,10 +143,13 @@ def read_csv(content):
             raise ValueError()
         result = []
         for line, values in enumerate(rows, 2):
-            if line > 15001 or len(values) != len(names):
+            if line > 15001:
                 raise ValueError()
-            if any(v.strip() for v in values):
-                result.append({**dict(zip(names, (v.strip() for v in values))), '_row': line})
+            if not any(v.strip() for v in values):
+                continue
+            if len(values) != len(names):
+                raise ValueError()
+            result.append({**dict(zip(names, (v.strip() for v in values))), '_row': line})
         return result
     except (StopIteration, csv.Error, ValueError):
         raise UIError('CSV-filen har ugyldige kolonner eller rækker.') from None
@@ -806,13 +809,42 @@ def save_card(store, card, number):
     return {'id': ident, 'number': number, 'ib': len(ib_keys), 'loans': loans}
 
 
+def review_details(store, card_id, pending):
+    card_issues = [{**entry, **diagnostic(entry)} for entry in pending]
+    assignments = [entry for entry in card_issues if entry['kind'] == 'assignments']
+    if not card_id or not assignments:
+        return card_issues
+    loans = [(loan, deleted) for deleted in (False, True) for loan in store.all('loans', deleted=deleted)
+             if loan['card_id'] == card_id]
+    people = {person['id']: person['name'] for deleted in (False, True)
+              for person in store.all('publishers', deleted=deleted)}
+    for entry in assignments:
+        try:
+            proposed = parse_entry('assignments', entry['fields'])
+        except ValueError:
+            continue
+        if not proposed['assigned'] or (proposed['returned'] and proposed['returned'] < proposed['assigned']):
+            continue
+        conflicts = []
+        for loan, deleted in loans:
+            name = people.get(loan['publisher_id'], '')
+            same_loan = (norm(name) == norm(proposed['publisher']) and
+                         all(loan.get(field) == proposed[field] for field in ('assigned', 'returned')))
+            if (overlaps(proposed, loan) and (deleted or not same_loan)
+                    or deleted and proposed['assigned'] == loan['assigned']):
+                conflicts.append({'publisher': name, 'assigned': loan['assigned'],
+                                  'returned': loan.get('returned'), 'deleted': deleted})
+        entry['overlapping_loans'] = sorted(conflicts, key=lambda row: row['assigned'])
+    return card_issues
+
+
 def review(store, data, *, repair=False):
     note = dict(store.require('notes', data.get('id')))
     pending = note.get('territory_helper_issues')
     if pending is None:
         raise UIError('Vælg en opfølgning fra Territory Helper.')
     if not repair:
-        return {'card_id': note.get('card_id'), 'issues': [{**entry, **diagnostic(entry)} for entry in pending]}
+        return {'card_id': note.get('card_id'), 'issues': review_details(store, note.get('card_id'), pending)}
     entry = next((item for item in pending if item['id'] == data.get('issue_id')), None)
     if entry is None:
         raise UIError('Rækken er allerede behandlet. Åbn opfølgningen igen.')
@@ -869,4 +901,4 @@ def review(store, data, *, repair=False):
             save_assignments(store, planner)
     pending = [item for item in pending if item['id'] != entry['id']]
     update_followup(store, note, pending)
-    return {'remaining': len(pending)}
+    return {'remaining': len(pending), 'issues': review_details(store, note.get('card_id'), pending)}
