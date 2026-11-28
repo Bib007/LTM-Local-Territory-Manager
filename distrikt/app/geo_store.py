@@ -218,7 +218,9 @@ class GeoStore(MainBoundaryStore):
                 current=self.require('cards',data.get('card_id'))
                 expected=data['auto_expected']
                 actual={'polygon':current.get('geo_polygon') or [],'address_ids':current.get('address_ids') or [],'addresses':current.get('addresses') or []}
-                if expected!=actual or current.get('archived') or data.get('polygon')!=actual['polygon'] or not isinstance(data.get('address_ids'),list) or not set(actual['address_ids']).issubset(data['address_ids']):
+                if isinstance(expected,dict) and 'imported_addresses' in expected:
+                    actual['imported_addresses']=current.get('imported_addresses') or []
+                if expected!=actual or current.get('archived') or (data.get('polygon') or [])!=actual['polygon'] or not isinstance(data.get('address_ids'),list) or not set(actual['address_ids']).issubset(data['address_ids']):
                     raise ValueError('Kortet er ændret. Opdater oversigten og prøv igen.')
             if 'planned' in data and type(data['planned']) is not bool:
                 raise ValueError('Ugyldig status for distriktskort.')
@@ -265,8 +267,16 @@ class GeoStore(MainBoundaryStore):
             rows=street_rows(members)
             self._mutate('card.save',dict(c,temporary=False,addresses=rows,map_color=data.get('map_color',c.get('map_color','#477596'))),geographic=True)
             c=self.require('cards',c['id']);c['address_ids']=[a['id'] for a in members];c['geo_addresses']=members
-            c['geo_polygon']=valid_polygon(polygon,limit=5000) if polygon else enclosing_outline([[a['lng'],a['lat']] for a in members])
-            c['geo_outline_source']='suggestion' if automatic or not polygon else 'manual';c['geo_updated']=stamp()
+            if 'auto_expected' not in data:
+                c['geo_polygon']=valid_polygon(polygon,limit=5000) if polygon else enclosing_outline([[a['lng'],a['lat']] for a in members])
+                c['geo_outline_source']='suggestion' if automatic or not polygon else 'manual'
+            else:
+                c['geo_polygon']=data['auto_expected']['polygon']
+                # The imported export coordinates are provenance, not disposable
+                # street-list rows; a DAR road-name correction must not erase them.
+                if 'imported_addresses' in current:c['imported_addresses']=current['imported_addresses']
+                if current.get('geo_outline_source') is not None:c['geo_outline_source']=current['geo_outline_source']
+            c['geo_updated']=stamp()
             if data.get('street_expected'):c['front_revision']=True
             self.put('cards',c)
             return {'id':c['id'],'count':len(members),'visits':sum(a['count'] for a in members),'rows':rows}
