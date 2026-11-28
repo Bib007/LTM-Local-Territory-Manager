@@ -1,4 +1,4 @@
-"""Local file migration. Join explicitly and write only the approved card."""
+"""Preview and import local Territory Helper exports."""
 import csv
 import io
 import json
@@ -10,13 +10,26 @@ from datetime import date, datetime
 from html.parser import HTMLParser
 
 from boundary_import import _points, preview_boundary
-from geography import valid_coordinate
+from geography import street_rows, valid_coordinate
 from history_import import day
 from history_loans import LoanPreview, apply_loans
 from ui_errors import UIError
 
 
 MAX_DISTRICTS = 500
+
+
+def grouped_import_addresses(card):
+    """Recognize unedited address rows written by the first migration beta."""
+    members = card.get('imported_addresses') or []
+    if not members or any(not re.fullmatch(r'[a-f0-9]{32}', a.get('id', '')) for a in members):
+        return None
+    original = [{key: a[key] for key in ('road', 'numbers', 'count', 'type')} for a in members
+                if all(key in a for key in ('road', 'numbers', 'count', 'type'))]
+    if len(original) != len(members) or original != card.get('addresses'):
+        return None
+    rows = street_rows(members)
+    return rows if len(rows) <= 300 else None
 
 
 FIELDS = {
@@ -268,7 +281,38 @@ def loan_plan(store, card, assignments):
     return planner, rows
 
 
+def note_roads(store, note):
+    """Match complete road-list lines against names in the local DAR download."""
+    from street_suggestions import ranges
+
+    names = defaultdict(dict)
+    for address in store.all('geo'):
+        if (address.get('entity') == 'address' and not address.get('retired')
+                and address.get('source', '').startswith('DAR') and address.get('postcode')):
+            names[norm(address['road'])][address['postcode']] = address['road']
+
+    matches = {}
+    for line in note.splitlines():
+        match = re.fullmatch(r'\s*[•*\-]?\s*(.+?)\s+(\d.*|hele vejen)\s*', line, re.I)
+        if not match:
+            continue
+        possible = names.get(norm(match[1].rstrip(':')))
+        if not possible or len(possible) != 1:
+            continue
+        numbers = match[2].strip()
+        try:
+            ranges(numbers)
+        except ValueError:
+            continue
+        postcode, road = next(iter(possible.items()))
+        matches[road, postcode, numbers] = {'road': road, 'postcode': postcode, 'numbers': numbers}
+    return list(matches.values())[:50]
+
+
 def preview(store, data):
+    if data.get('note_card_id'):
+        card = store.require('cards', data['note_card_id'])
+        return {'roads': note_roads(store, card.get('import_note', ''))}
     files, source_names = upload_files(data) if 'uploads' in data else (data.get('files'), {})
     if not isinstance(files, dict) or set(files) - set(KINDS) or any(
             not isinstance(v, str) or len(v.encode('utf-8')) > 2_000_000 for v in files.values()):
@@ -285,10 +329,12 @@ def preview(store, data):
     for row in source_cards:
         source_number = card_number(row)
         card_type = get(row, 'type')
-        number = text_field(f'{card_type}-{source_number}' if source_number and card_type and
-                            repeated[norm(source_number)] > 1 else source_number, 30, required=True)
+        number = (f'{card_type}-{source_number}' if source_number and card_type and
+                  repeated[norm(source_number)] > 1 else source_number)
         card = {'index': len(cards), 'number': number, 'name': text_field(get(row, 'name'), 100),
                 'type': card_type, 'note': '', 'polygon': [], 'locations': [], 'ib': [], 'assignments': [], 'errors': []}
+        if not number or len(number) > 30:
+            card['errors'].append('Kortnummeret skal indeholde 1–30 tegn.')
         try:
             card['note'] = note_text(get(row, 'notes'))
         except ValueError:
@@ -388,6 +434,10 @@ def preview(store, data):
                     record = {**address(row), 'note': text_field(get(row, 'notes'), 500)}
                     if kind == 'ib':
                         record['date'] = date_field(get(row, 'date'))
+                        if record['date'] and record['date'] > date.today().isoformat():
+                            raise UIError('En IB-dato ligger i fremtiden.')
+                        if len(ib_number(record)) > 80:
+                            raise UIError('En IB-adresse har et for langt husnummer, etage eller dør.')
                 fingerprint = tuple(record.items())
                 if fingerprint not in seen[card['index']]:
                     card[kind].append(record)
@@ -400,8 +450,6 @@ def preview(store, data):
     for card in cards:
         if duplicates[norm(card['number'])] != 1 or norm(card['number']) in occupied:
             card['errors'].append('Kortnummeret findes allerede eller er ikke entydigt.')
-        if len(card['locations']) > 300:
-            card['errors'].append('Kortet har over 300 lokationer.')
         ib_addresses = {(norm(a['road']), norm(a['number']), a['postcode'], norm(a['floor']), norm(a['door'])) for a in card['ib']}
         if len(ib_addresses) < len(card['ib']):
             card['errors'].append('Flere forskellige IB-rækker har samme adresse.')
@@ -415,34 +463,55 @@ def preview(store, data):
     return {'token': token, 'cards': cards, 'unmatched': dict(issues), 'sources': source_names}
 
 
+def ib_number(address):
+    unit = ' '.join(filter(None, (address['floor'], address['door'])))
+    return f"{address['number']}, {unit}" if unit else address['number']
+
+
 def apply(store, data):
     plan = store.setup_require_preview(data, 'territory-helper')
     if plan['owner'] != data.get('_owner'):
         raise PermissionError()
+    if data.get('all') is True:
+        occupied = {norm(c['number']) for c in store.all('cards') + store.all('cards', deleted=True)}
+        saved, skipped = [], []
+        for index, card in enumerate(plan['cards']):
+            if not card['number'] or len(card['number']) > 30 or norm(card['number']) in occupied:
+                skipped.append({'index': index, 'number': card['number']})
+                continue
+            saved.append({'index': index, **save_card(store, card)})
+            occupied.add(norm(card['number']))
+        return {'saved': saved, 'skipped': skipped}
     index = data.get('index')
     if type(index) is not int or not 0 <= index < len(plan['cards']):
         raise UIError('Vælg et kort i forhåndsvisningen.')
     card = plan['cards'][index]
     if card['errors']:
         raise UIError('Ret kortets importfejl før du godkender.')
-    addresses = [{'road': a['road'], 'numbers': a['number'] + (', ' + ' '.join(filter(None, (a['floor'], a['door']))) if a['floor'] or a['door'] else ''),
-                  'count': 1, 'type': 'Lejlighed' if a['floor'] or a['door'] else 'Hus'} for a in card['locations']]
+    return save_card(store, card)
+
+
+def save_card(store, card):
+    warnings = list(card['errors'])
+    members = [dict(a, numbers=a['number'], count=1, type='Lejlighed' if a['floor'] or a['door'] else 'Hus')
+               for a in card['locations']]
+    addresses = street_rows(members)
+    if len(addresses) > 300:
+        warnings.append('Hele vejlisten kunne ikke vises på ét kort. Kontrollér de importerede adresser.')
+        addresses = addresses[:300]
     kind = {'city': 'By', 'by': 'By', 'rural': 'Land', 'land': 'Land'}.get(norm(card['type']), 'Ukendt')
     ident = store._mutate('card.save', {'number': card['number'], 'name': card['name'], 'kind': kind,
                                       'temporary': not addresses, 'addresses': addresses})['id']
     item = dict(store.require('cards', ident))
     if card['note']:
         item['import_note'] = card['note']
-    item['imported_addresses'] = [dict(a, **{k: v for k, v in line.items() if k != 'road'}, id=uuid.uuid4().hex)
-                                  for a, line in zip(card['locations'], addresses)]
+    item['imported_addresses'] = [dict(a, id=uuid.uuid4().hex) for a in members]
     if card['polygon']:
         item.update(geo_polygon=card['polygon'], geo_outline_source='manual')
-    if addresses or card['polygon']:
-        item.update(front_revision=True, back_revision=True)
     store.put('cards', item)
     ib_keys = set()
     for a in card['ib']:
-        number = a['number'] + (', ' + ' '.join(filter(None, (a['floor'], a['door']))) if a['floor'] or a['door'] else '')
+        number = ib_number(a)
         key_ = (norm(a['road']), norm(number), a['postcode'])
         if key_ in ib_keys:
             continue
@@ -452,7 +521,13 @@ def apply(store, data):
                                         'date_text': '' if a['date'] else 'Ukendt'})
         if a['note']:
             store.put('ib', dict(store.require('ib', saved['id']), import_note=a['note']))
-    planner, _ = loan_plan(store, item, card['assignments'])
+    item = dict(store.require('cards', ident), front_revision=False, back_revision=False)
+    store.put('cards', item)
+    try:
+        planner, _ = loan_plan(store, item, card['assignments'])
+    except ValueError as error:
+        warnings.append(str(error))
+        planner, _ = loan_plan(store, item, [])
     allocation = planner.payload()
     apply_loans(store, allocation)
     for row in sorted(planner.events.values(), key=lambda row: row['date']):
@@ -460,4 +535,8 @@ def apply(store, data):
         stored = dict(store.require('cards', ident))
         entry = store.create_completion(stored, row['date'], row['loan_id'])
         store.put('completions', dict(entry, visits=0, visits_unknown=True, source='history-import'))
+    if warnings:
+        description = '\n'.join(dict.fromkeys(warnings))
+        key_ = json.dumps(['checks', ident, 'territory-helper'], separators=(',', ':'))
+        store._mutate('note.save', {'card_id': ident, 'followup_key': key_, 'text': description[:1000]})
     return {'id': ident, 'number': card['number'], 'ib': len(ib_keys), 'loans': len(allocation['loans'])}

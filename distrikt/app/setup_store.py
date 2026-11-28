@@ -44,6 +44,7 @@ class SetupStore:
             'publisher.save':('publisher',),'setup.publisher-import.apply':('publisher',),
             'card.save':('cards',),'card.bulk.create':('cards',),
             'setup.card-import.apply':('cards',),'setup.apply':('cards',),
+            'setup.territory-helper.apply':('cards','publisher','ib'),
             'geo.main.save':('boundary',),'setup.ib.apply':('ib',),
             'backup.record':('backup',),
             'setup.onboarding.save':('congregation','folder','printing','publisher','cards','boundary','ib','backup'),

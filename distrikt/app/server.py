@@ -42,7 +42,7 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.15.0-beta.5'
+VERSION='1.15.0-beta.6'
 # Preview installers can share a version number. Do not reuse a server from
 # an earlier installer when its packaged import screen is different.
 IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes()).hexdigest()[:16]
@@ -246,6 +246,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path=='/territory-helper-icon.webp':return self.send((APP/path[1:]).read_bytes(),'image/webp')
             if path=='/apple-touch-icon.png':return self.send((APP/'apple-touch-icon.png').read_bytes(),'image/png')
             if path=='/s12-template-en.png':return self.send((APP.parent/'templates'/'S-12-E-source.png').read_bytes(),'image/png')
             if path=='/s13-background-en.jpg':return self.send((APP.parent/'templates'/'S-13-E-background.jpg').read_bytes(),'image/jpeg')

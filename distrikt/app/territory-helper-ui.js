@@ -5,9 +5,10 @@ const TerritoryHelperUI = {
     return !!state?.beta && (!state.profile || (!state.profile.desk_only &&
       ProfilesUI.canAction('setup.territory-helper.preview')));
   },
-  button() {
+  button(fromGuide = false) {
+    const icon = fromGuide ? '<img src="/territory-helper-icon.webp" width="24" height="24" alt="" style="vertical-align:middle;margin-inline-end:8px">' : '';
     return this.allowed()
-      ? '<button type="button" data-th-import="open">' + ui('Importér fra Territory Helper') + '</button>'
+      ? '<button type="button" data-th-import="open"' + (fromGuide ? ' data-guide="yes"' : '') + '>' + icon + ui('Importér fra Territory Helper') + '</button>'
       : '';
   },
   fields: [
@@ -19,9 +20,10 @@ const TerritoryHelperUI = {
     ['geometry', 'Distrikter · JSON', '.json,.geojson'],
     ['kml', 'Distrikter · KML', '.kml']
   ],
-  open() {
+  open(fromGuide) {
     if (!this.allowed()) return;
     this.session = null;
+    this.guideStep = fromGuide ? Onboarding.step : null;
     this.uploads = [];
     openDialog(`<h2>${ui('Importér fra Territory Helper')}</h2>
       <ol><li>${ui('Åbn Importér / Eksportér i Territory Helper.')}</li>
@@ -111,6 +113,7 @@ const TerritoryHelperUI = {
   },
   show() {
     const session = this.session, card = session.cards[session.index];
+    const finished = session.bulkDone || session.saved.size === session.cards.length;
     const address = row => esc([row.road, row.number, row.floor, row.door, row.postcode, row.date, row.note].filter(Boolean).join(' · '));
     const warnings = this.fields.filter(([name]) => session.unmatched[name]).map(([name, label]) =>
       `<li>${ui(label)} · ${session.unmatched[name]}</li>`).join('');
@@ -118,11 +121,12 @@ const TerritoryHelperUI = {
       `<li>${ui(label)} · ${esc(session.sources[name])}</li>`).join('');
     openDialog(`<h2>${ui('Gennemgå importen kort for kort')}</h2>
       <p>${ui('Godkendte kort')} · ${session.saved.size} / ${session.cards.length}</p>
+      ${session.skipped?.length ? `<p class="hint">${ui('Kort sprunget over på grund af ugyldige eller optagede kortnumre: {count}', {count: session.skipped.length})}</p>` : ''}
       ${sources ? `<details><summary>${ui('Genkendte eksportfiler')}</summary><ul>${sources}</ul></details>` : ''}
       ${warnings ? `<details><summary>${ui('Rækker uden entydigt kort')}</summary><ul>${warnings}</ul></details>` : ''}
       <label for="thReviewCard">${ui('Distriktskort')}</label>
       <select id="thReviewCard">${session.cards.map((item, i) =>
-        `<option value="${i}"${i === session.index ? ' selected' : ''}>${esc(item.number)} ${esc(item.name)}${session.saved.has(i) ? ' ✓' : ''}</option>`).join('')}</select>
+        `<option value="${i}"${i === session.index ? ' selected' : ''}>${esc(item.number)} ${esc(item.name)}${session.saved.has(i) ? ' ✓' : session.skipped?.some(row => row.index === i) ? ' · ' + esc(I18n.text('Sprunget over')) : ''}</option>`).join('')}</select>
       <h3>${esc(card.number)} ${esc(card.name)}</h3>${this.outline(card.polygon, card.locations)}
       ${card.note ? `<details><summary>${ui('Importeret kortnotat')}</summary><p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(card.note)}</p></details>` : ''}
       ${this.list('Lokationer', card.locations, address)}
@@ -135,6 +139,11 @@ const TerritoryHelperUI = {
       <div class="actions"><button type="button" data-th-import="previous" ${session.index === 0 ? 'disabled' : ''}>${ui('Forrige')}</button>
         <button type="button" data-th-import="next" ${session.index === session.cards.length - 1 ? 'disabled' : ''}>${ui('Næste')}</button>
         <button type="button" class="primary" data-th-import="save" ${card.errors.length || session.saved.has(session.index) ? 'disabled' : ''}>${ui('Godkend og gem dette kort')}</button>
+        <button type="button" class="primary" data-th-import="save-all" ${finished ? 'disabled' : ''}>${ui('Godkend alle kort')}</button>
+        ${this.guideStep !== null && finished ? `<button type="button" data-th-import="continue">${ui('Fortsæt opsætningsguiden')}</button>` : ''}
+        ${finished && session.saved.size && state.cards.some(item => !item.archived && item.geo_polygon?.length >= 3)
+          && ProfilesUI.canAction('geo.main.suggest.preview')
+          ? `<button type="button" data-th-import="boundary">${ui('Foreslå ydergrænse ud fra distriktskort')}</button>` : ''}
         <button type="button" data-action="close">${ui('Luk')}</button></div>`);
   },
   async save(button) {
@@ -149,6 +158,70 @@ const TerritoryHelperUI = {
       if (index < session.cards.length - 1) session.index++;
       this.show();
     } catch {
+      if (button.isConnected) button.disabled = false;
+    }
+  },
+  async saveAll(button) {
+    if (button.disabled) return;
+    const session = this.session, generation = openDialog.generation;
+    el('dialog').querySelectorAll('[data-th-import],#thReviewCard').forEach(control => { control.disabled = true; });
+    try {
+      const result = await mutate('setup.territory-helper.apply', {token: session.token, all: true}, {close: false});
+      result.saved.forEach(row => session.saved.add(row.index));
+      session.skipped = result.skipped.filter(row => !session.saved.has(row.index));
+      session.bulkDone = true;
+      if (this.session === session && openDialog.generation === generation && el('dialog').open) this.show();
+    } catch {
+      if (this.session === session && openDialog.generation === generation && el('dialog').open) {
+        const error = el('formError')?.textContent;
+        this.show();
+        if (error) el('formError').textContent = error;
+      }
+    }
+  },
+  continueGuide() {
+    Onboarding.answers.mode = 'map';
+    Onboarding.answers.cards = 'manual';
+    Onboarding.remember();
+    Onboarding.open(1);
+  },
+  async openBoundary(button) {
+    const generation = openDialog.generation;
+    button.disabled = true;
+    try {
+      if (!GeoUI.loaded) await GeoUI.load();
+      if (generation !== openDialog.generation || !button.isConnected || !el('dialog').open || !GeoUI.canLeave()) return;
+      closeDialog();
+      MainBoundaryUI.open();
+      await MainBoundaryUI.suggest();
+    } catch (error) {
+      toast(error);
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  },
+  noteButton(card) {
+    return this.allowed() && card.temporary && !card.imported_addresses?.length
+      ? `<button type="button" data-th-import="note-roads" data-card="${esc(card.id)}">${ui('Find vejlinjer i notatet')}</button>`
+      : '';
+  },
+  async showNoteRoads(button) {
+    const generation = openDialog.generation;
+    button.disabled = true;
+    try {
+      const response = await api('/api/mutate', {action: 'setup.territory-helper.preview', data: {note_card_id: button.dataset.card}});
+      const {result} = await response.json();
+      if (generation !== openDialog.generation || !button.isConnected) return;
+      const content = result.roads.length
+        ? '<ul>' + result.roads.map(row => `<li>${esc(row.road)} ${esc(row.numbers)} · ${esc(row.postcode)}</li>`).join('') + '</ul>'
+        : `<p>${ui('Ingen entydige vejlinjer fundet. Hent DAR-adresser for området, og kontrollér vejnavne og husnumre i notatet.')}</p>`;
+      openDialog(`<h2>${ui('Vejlinjer fra notatet')}</h2>
+        ${content}<p class="hint">${ui('Kontrollér forslagene, og tilføj de rigtige vejlinjer på kortet.')}</p>
+        <div class="actions"><button type="button" data-action="detail" data-id="${esc(button.dataset.card)}">${ui('Åbn kort')}</button>
+        <button type="button" data-action="close">${ui('Luk')}</button></div>`);
+    } catch (error) {
+      if (button.isConnected) toast(error);
+    } finally {
       if (button.isConnected) button.disabled = false;
     }
   }
@@ -181,12 +254,16 @@ document.addEventListener('click', event => {
   const button = event.target.closest('[data-th-import]');
   if (!button || button.disabled) return;
   const action = button.dataset.thImport;
-  if (action === 'open') return TerritoryHelperUI.open();
+  if (action === 'open') return TerritoryHelperUI.open(button.dataset.guide === 'yes');
   if (action === 'remove') {
     TerritoryHelperUI.uploads.splice(Number(button.dataset.index), 1);
     return TerritoryHelperUI.showFiles();
   }
   if (action === 'save') return TerritoryHelperUI.save(button);
+  if (action === 'save-all') return TerritoryHelperUI.saveAll(button);
+  if (action === 'continue') return TerritoryHelperUI.continueGuide();
+  if (action === 'boundary') return TerritoryHelperUI.openBoundary(button);
+  if (action === 'note-roads') return TerritoryHelperUI.showNoteRoads(button);
   TerritoryHelperUI.session.index += action === 'next' ? 1 : -1;
   TerritoryHelperUI.show();
 });

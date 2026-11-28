@@ -5,7 +5,7 @@ import re
 import uuid
 from admin_store import signature
 from address_checkpoint import GRAPHQL_SOURCE
-from geography import valid_polygon, point_in_polygon
+from geography import enclosing_outline, valid_polygon, point_in_polygon
 
 class MainBoundaryStore:
     def main_boundary(self):return self.get('geo','main-boundary')
@@ -96,6 +96,12 @@ class MainBoundaryStore:
         return {'removable':removable,'protected':protected,'outside':len(outside),'expected':signature([boundary,outside,cards,ignored,ibs]),'roads':[{'road':road,'count':count} for road,count in sorted(Counter(a['road'] for a in removable).items())]}
     def main_boundary_mutate(self,action,data):
         from geo_store import stamp
+        if action=='geo.main.suggest.preview':
+            polygons = [c['geo_polygon'] for c in self.all('cards')
+                        if not c.get('archived') and c.get('geo_polygon')]
+            if not polygons:
+                raise ValueError('Der er ingen distriktsgrænser at lave et forslag ud fra.')
+            return {'points': enclosing_outline([point for polygon in polygons for point in polygon])}
         if action=='geo.main.import.preview':
             from boundary_import import preview_boundary
             return preview_boundary(data.get('content',''),data.get('scope','main'))

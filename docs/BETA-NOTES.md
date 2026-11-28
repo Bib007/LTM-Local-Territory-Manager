@@ -1,11 +1,11 @@
-# LTM 1.15.0-beta.5
+# LTM 1.15.0-beta.6
 
-- Hent eksportfiler fra Territory Helper og slip dem samlet i **Opsætningsguide → Kort → Importér fra Territory Helper**.
-- Kontrollér grænse, lokationer, IB og tildelinger, og godkend de enkelte kort. Importen kører lokalt.
-- Du kan importere op til 500 distriktsgrænser fra samme KML-fil.
+- Start Territory Helper-importen på opsætningsguidens første trin, godkend alle kort, og fortsæt guiden bagefter. Kontrollér importadvarsler under Opfølgninger.
+- Saml importerede lokationer i vejlisten med de enkelte adresser bevaret. Første import opretter ingen genprintopgaver.
+- Foreslå en redigerbar ydergrænse ud fra distriktskortene, hent DAR-adresser inden for grænsen, og find vejlinjer i kortnotater med hentede DAR-data.
 
 ## English
 
-- Download exports from Territory Helper and drop them together in **Setup guide → Cards → Import from Territory Helper**.
-- Review boundaries, locations, do-not-call entries and assignments, then approve each territory. The import runs locally.
-- You can import up to 500 territory boundaries from one KML file.
+- Start the Territory Helper import from the first step of setup, approve all territories, and continue the guide. Review import warnings under Follow-ups.
+- Group imported locations in the road list and keep individual addresses. The first import creates no reprint tasks.
+- Suggest an editable outer boundary from territory cards, download DAR addresses within it, and find road lines in territory notes using downloaded DAR data.

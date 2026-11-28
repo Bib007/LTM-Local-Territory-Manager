@@ -127,3 +127,64 @@ class TerritoryHelperImportTests(unittest.TestCase):
             self.store.mutate(self.apply_action, {'token': result['token'], 'index': 0})
         self.assertEqual(self.store.require('cards', existing['id'])['name'], 'Før import')
         self.assertFalse(self.store.all('ib'))
+
+    def test_bulk_keeps_warnings_and_groups_locations_without_print_tasks(self):
+        files = {
+            'cards': 'TerritoryId,Number,Notes\na,01,Testnotat\nb,02,',
+            'locations': ('TerritoryId,Street,HouseNumber,PostalCode,Latitude,Longitude\n'
+                          'a,Testvej,1,1234,55.0,10.0\na,Testvej,3,1234,55.0,10.001\na,Testvej,,1234,55.0,10.002'),
+            'ib': 'TerritoryId,Street,HouseNumber,PostalCode\na,Testvej,3,1234',
+        }
+        occupied = self.store.mutate('card.save', {'number': '02', 'name': 'Eksisterende'})
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        result = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})
+        saved, = result['saved']
+        self.assertEqual(result['skipped'], [{'number': '02', 'index': 1}])
+        card = self.store.require('cards', saved['id'])
+        self.assertEqual(self.store.require('cards', occupied['id'])['name'], 'Eksisterende')
+        self.assertEqual(len(card['addresses']), 1)
+        self.assertEqual(card['addresses'][0]['count'], 2)
+        self.assertEqual(len(card['imported_addresses']), 2)
+        self.assertFalse(card['front_revision'])
+        self.assertFalse(card['back_revision'])
+        warning, = [note for note in self.store.all('notes') if note.get('task')]
+        self.assertEqual(json.loads(warning['followup_key']), ['checks', card['id'], 'territory-helper'])
+        self.assertTrue(warning['text'])
+        self.assertEqual(len(self.store.all('ib')), 1)
+
+    def test_bulk_continues_after_invalid_card_number_and_ib_rows(self):
+        future = self.today + timedelta(days=1)
+        files = {
+            'cards': 'TerritoryId,Number\na,01\nb,\nc,03\nd,04',
+            'ib': ('TerritoryId,Street,HouseNumber,Floor,Date\n'
+                   f'a,Testvej,1,,{future}\na,Testvej,{"1" * 80},1,\na,Testvej,2,,{self.today}'),
+        }
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        result = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})
+        self.assertEqual([row['number'] for row in result['saved']], ['01', '03', '04'])
+        self.assertEqual([row['index'] for row in result['skipped']], [1])
+        self.assertEqual([row['number'] for row in self.store.all('ib')], ['2'])
+        warning, = [note for note in self.store.all('notes') if note.get('task')]
+        self.assertIn('IB-dato ligger i fremtiden', warning['text'])
+        self.assertIn('for langt husnummer', warning['text'])
+
+    def test_outer_boundary_preview_encloses_district_corners_without_saving(self):
+        from geography import point_in_polygon
+
+        source = self.store.mutate(self.preview_action, {'files': self.example()})
+        self.store.mutate(self.apply_action, {'token': source['token'], 'all': True})
+        result = self.store.mutate('geo.main.suggest.preview', {})
+        self.assertIsNone(self.store.main_boundary())
+        self.assertTrue(all(point_in_polygon(point, result['points']) for point in self.polygon))
+
+    def test_note_suggestions_use_only_locally_downloaded_dar_road_names(self):
+        from territory_helper_import import note_roads
+
+        self.store.put('geo', {'id': 'test-dar', 'entity': 'address', 'road': 'Testvej',
+                              'postcode': '1234', 'number': '1', 'lat': 55.0, 'lng': 10.0, 'source': 'DAR / Adressevælger'})
+        self.assertEqual(note_roads(self.store, 'Testvej 1–5\nAnden vej 1–2\nTestvej 3 er lukket'), [
+            {'road': 'Testvej', 'postcode': '1234', 'numbers': '1–5'}
+        ])
+        self.store.put('geo', {'id': 'test-dar-2', 'entity': 'address', 'road': 'Testvej', 'postcode': '5678',
+                              'number': '1', 'lat': 55.0, 'lng': 10.0, 'source': 'DAR / Adressevælger'})
+        self.assertEqual(note_roads(self.store, 'Testvej 1–5'), [])

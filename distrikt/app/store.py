@@ -114,12 +114,16 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
             # Repair old lossy labels from their exact geographic membership.
             # Manual/imported lines have no authoritative geographic snapshot.
             from geography import street_rows
+            from territory_helper_import import grouped_import_addresses
             for c in self.all('cards'):
                 if c.get('geo_addresses'):
                     rows=street_rows(c['geo_addresses'])
                     if rows!=c.get('addresses'):
                         c['addresses']=rows;c['front_revision']=True
                         self.put('cards',c)
+                elif (rows := grouped_import_addresses(c)) is not None and rows!=c.get('addresses'):
+                    c['addresses']=rows
+                    self.put('cards',c)
             # Remove the credential belonging to the retired aerial-photo feature only.
             self.db.execute("DELETE FROM geo.records WHERE id = ?",('basemap-config',))
             if not self.get('settings', 'config'):
@@ -594,8 +598,19 @@ class Store(TerritoryNumbering,SetupStore,WorkflowStore,AdminStore,GeoStore,Foll
                 raise ValueError('Vejlisten følger de valgte huse. Brug Tegn og vælg adresser for at ændre den.')
             if old and old.get('imported_addresses') and normalized!=old.get('addresses',[]):
                 by_unit={(a['road'],a['numbers']):a for a in normalized}
+                from street_suggestions import includes, ranges
+                specs=[]
+                for line in normalized:
+                    try:specs.append((line, ranges(line['numbers'])))
+                    except ValueError:continue
                 card['imported_addresses']=[]
                 for a in old['imported_addresses']:
+                    if re.fullmatch(r'[a-f0-9]{32}', a.get('id','')):
+                        if any(line['road']==a['road'] and line['type']==a['type'] and
+                               (line['numbers']==a['numbers'] or any(includes(a['number'], part) for part in parts))
+                               for line, parts in specs):
+                            card['imported_addresses'].append(a)
+                        continue
                     edited=by_unit.get((a['road'],a['numbers']))
                     if edited is None:continue
                     updated=dict(a,count=edited['count'],type=edited['type'])

@@ -1,12 +1,17 @@
 'use strict';
 // Private maps use saved visit points. Public images use the separate sharing recipe.
 const MapExport={
-  boundsPoints(id){const c=card(id);return c?.geo_polygon?.length?c.geo_polygon:(c?.geo_addresses?.length?c.geo_addresses:GeoUI.addresses().filter(a=>c?.address_ids?.includes(a.id))).map(a=>[a.lng,a.lat]);},
+  boundsPoints(id){const c=card(id);return c?.geo_polygon?.length?c.geo_polygon:this.savedMembers(c).map(a=>[a.lng,a.lat]);},
+  savedMembers(c){
+    if(!c)return [];
+    const selected=GeoUI.addresses().filter(a=>c.address_ids?.includes(a.id));
+    const members=c.geo_addresses?.length?c.geo_addresses:selected.length?selected:(c.imported_addresses||[]);
+    return members.filter(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lng));
+  },
   members(id){
     const c=card(id);if(!c)return [];
     const ignored=GeoUI.ignored(),retired=new Set(GeoUI.addresses().filter(a=>a.retired).map(a=>a.id));
-    const members=c.geo_addresses?.length?c.geo_addresses:GeoUI.addresses().filter(a=>c.address_ids?.includes(a.id));
-    return members.filter(a=>!ignored.has(a.id)&&!a.retired&&!retired.has(a.id));
+    return this.savedMembers(c).filter(a=>!ignored.has(a.id)&&!a.retired&&!retired.has(a.id));
   },
   coversViewport(rectangles,width,height){
     const bands=[...new Set([0,height,...rectangles.flatMap(r=>[Math.max(0,r.y),Math.min(height,r.y+r.height)])])].filter(y=>y>=0&&y<=height).sort((a,b)=>a-b);
