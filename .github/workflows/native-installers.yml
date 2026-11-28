@@ -51,7 +51,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install free packaging dependencies
-        run: python -m pip install pyinstaller==6.22.3 pillow==11.3.0 qrcode==8.2 pypdf==6.21.4 typing_extensions==4.16.0
+        run: python -m pip install pyinstaller==6.22.3 pillow==11.3.0 qrcode==8.2 pypdf==6.21.4 typing_extensions==4.16.0 certifi==2026.11.20
       - name: Check native entry and paths
         run: python -m unittest discover -s distrikt/tests -p test_native_desktop.py -v
       - name: Build self-contained LTM
@@ -62,6 +62,7 @@ jobs:
           if [ "$RUNNER_OS" = "Windows" ]; then
             python scripts/check_native_desktop.py --executable dist-native/LTM/LTM.exe
           else
+            python -c "import ssl; from pathlib import Path; bundle = next(Path('dist-native/LTM.app/Contents').rglob('certifi/cacert.pem')); assert ssl.create_default_context(cafile=str(bundle)).cert_store_stats()['x509_ca'] > 0"
             python scripts/check_native_desktop.py --executable dist-native/LTM.app/Contents/MacOS/LTM
           fi
       - name: Create styled macOS installer DMG
