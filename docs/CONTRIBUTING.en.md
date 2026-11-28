@@ -2,7 +2,7 @@
 
 [Dansk](../.github/CONTRIBUTING.md)
 
-Use the [website feedback form](https://localterritorymanager.netlify.app/en/feedback/), [Issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) or a pull request. Describe the changed behaviour and verification using fictional examples. Keep Danish and English controls and guides current. User-entered names, notes and values retain their language.
+Use the [website feedback form](https://localterritorymanager.com/en/feedback/), [Issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) or a pull request. Describe the changed behaviour and verification using fictional examples. Keep Danish and English controls and guides current. User-entered names, notes and values retain their language.
 
 Use temporary test directories and fictional cards, addresses and accounts. Preserve existing data, file formats, previews and approvals when updating the application.
 

@@ -28,7 +28,7 @@ Workflowet `Native desktop installers (preview)` bygger på de relevante operati
 
 ## LTM installationer og opdateringer
 
-**Mac:** Åbn den nye DMG og træk LTM over i Programmer igen. Finder tilbyder at erstatte den eksisterende app. Luk den tidligere LTM-instans før udskiftning. DMG'en har en grafisk installationsbaggrund med træk-pil og et klikbart link til [første åbning på LTM-hjemmesiden](https://localterritorymanager.netlify.app/da/guide/#mac-first-open).
+**Mac:** Åbn den nye DMG og træk LTM over i Programmer igen. Finder tilbyder at erstatte den eksisterende app. Luk den tidligere LTM-instans før udskiftning. DMG'en har en grafisk installationsbaggrund med træk-pil og et klikbart link til [første åbning på LTM-hjemmesiden](https://localterritorymanager.com/da/guide/#mac-first-open).
 
 **Windows:** Kør den nye Setup.exe med samme AppId og installationsmappe. Den opdaterer programfilerne uden at afinstallere brugerdata. Når man vælger dansk eller engelsk i installationsguiden, bruges dette sprog ved den første åbning i en browser uden gemt LTM-sprogvalg. Et senere manuelt valg i appen vinder altid over installationssproget.
 
