@@ -1,5 +1,9 @@
 # Changelog (English and original historical notes)
 
+## 1.15.0-beta.5 · 2026-11-28
+
+- The Territory Helper import supports up to 500 territory boundaries in one KML file.
+
 ## 1.15.0-beta.4 · 2026-11-28
 
 - Import Territory Helper exports in the setup guide. Review and save each territory with its boundary, locations, do-not-call entries and assignments.
