@@ -42,7 +42,7 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.15.0-beta.4'
+VERSION='1.15.0-beta.5'
 # Preview installers can share a version number. Do not reuse a server from
 # an earlier installer when its packaged import screen is different.
 IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes()).hexdigest()[:16]

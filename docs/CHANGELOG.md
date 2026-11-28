@@ -1,5 +1,9 @@
 # Ændringslog
 
+## 1.15.0-beta.5 · 2026-11-28
+
+- Territory Helper-importen kan læse op til 500 distriktsgrænser fra samme KML-fil.
+
 ## 1.15.0-beta.4 · 2026-11-28
 
 - Importér Territory Helper-eksporter i opsætningsguiden. Kontrollér og gem hvert kort med grænse, lokationer, IB og tildelinger.
