@@ -16,6 +16,9 @@ from history_loans import LoanPreview, apply_loans
 from ui_errors import UIError
 
 
+MAX_DISTRICTS = 500
+
+
 FIELDS = {
     'id': 'id territoryid territoryidentifier publisherid publisheridentifier distriktsid forkynderid',
     'card_id': 'territoryid territoryidentifier cardid distriktsid',
@@ -274,8 +277,8 @@ def preview(store, data):
     csv_rows = {k: read_csv(files.get(k, '')) for k in KINDS[:5]}
     geometry = geometry_rows(files['geometry']) if files.get('geometry') else []
     source_cards = csv_rows['cards'] or [r for r, _ in geometry]
-    if not source_cards or len(source_cards) > 500:
-        raise UIError('Vælg en eksport med 1–500 distrikter.')
+    if not source_cards or len(source_cards) > MAX_DISTRICTS:
+        raise UIError(f'Vælg en eksport med 1–{MAX_DISTRICTS} distrikter.')
     issues = Counter()
     cards, identity, numbers = [], defaultdict(list), defaultdict(list)
     repeated = Counter(norm(card_number(row)) for row in source_cards)
@@ -341,7 +344,7 @@ def preview(store, data):
             labels[norm(card['number'])].append(card)
             if card['name']:
                 labels[norm(card['number'] + ' - ' + card['name'])].append(card)
-        for boundary in preview_boundary(files['kml'], 'card')['boundaries']:
+        for boundary in preview_boundary(files['kml'], 'card', max_boundaries=MAX_DISTRICTS)['boundaries']:
             matches = labels.get(norm(boundary['name']), [])
             if len(matches) != 1:
                 issues['kml'] += 1

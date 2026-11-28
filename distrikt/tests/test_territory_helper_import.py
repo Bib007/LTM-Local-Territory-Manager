@@ -75,6 +75,24 @@ class TerritoryHelperImportTests(unittest.TestCase):
         self.assertEqual(result['unmatched'], {'locations': 1})
         self.assertFalse(result['cards'][0]['locations'])
 
+    def test_kml_preview_accepts_500_boundaries_and_rejects_501(self):
+        def kml(count):
+            placemarks = ''.join(
+                f'<Placemark><name>{index}</name><Polygon><outerBoundaryIs><LinearRing>'
+                '<coordinates>10,55 10.01,55 10.01,55.01 10,55</coordinates>'
+                '</LinearRing></outerBoundaryIs></Polygon></Placemark>'
+                for index in range(1, count + 1)
+            )
+            return '<kml><Document>' + placemarks + '</Document></kml>'
+
+        cards = 'TerritoryId,Number\n' + '\n'.join(f'test-{number},{number}' for number in range(1, 501))
+        result = self.store.mutate(self.preview_action, {'files': {'cards': cards, 'kml': kml(500)}})
+        self.assertEqual(len(result['cards']), 500)
+        self.assertTrue(all(card['polygon'] == self.polygon[:-1] for card in result['cards']))
+        self.assertEqual(result['unmatched'], {})
+        with self.assertRaisesRegex(ValueError, '500 grænser'):
+            self.store.mutate(self.preview_action, {'files': {'cards': cards, 'kml': kml(501)}})
+
     def test_danish_exports_are_sorted_and_joined_by_type_and_number(self):
         def upload(name, content):
             return {'name': 'Test - ' + name + '.csv', 'content': content}

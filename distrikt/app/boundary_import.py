@@ -49,7 +49,7 @@ def _kml_coordinates(ring, limit):
     return points
 
 
-def _kml(content, limit):
+def _kml(content, limit, max_boundaries):
     if re.search(r'<!\s*(DOCTYPE|ENTITY)\b', content, re.I):
         raise ValueError('KML med DTD eller XML-entiteter understøttes ikke. Eksporter en almindelig KML-fil.')
     try:root = ET.fromstring(content)
@@ -70,7 +70,8 @@ def _kml(content, limit):
             elif name:folder = name
         is_boundary = tag == 'Polygon' or tag in ('LinearRing', 'LineString') and not in_polygon
         if is_boundary:
-            if len(boundaries) >= 100:raise ValueError('Filen må højst indeholde 100 grænser. Eksporter et mindre udvalg.')
+            if len(boundaries) >= max_boundaries:
+                raise ValueError(f'Filen må højst indeholde {max_boundaries} grænser. Eksporter et mindre udvalg.')
             item = {'index':len(boundaries), 'name':placemark or folder or f'Grænse {len(boundaries)+1}'}
             try:
                 if tag == 'Polygon':
@@ -116,12 +117,12 @@ def _geojson(content, limit):
     return {'format':'GeoJSON', 'boundaries':[{'index':0, 'name':name, 'points':_points(rings[0], limit)}], 'skipped':0}
 
 
-def preview_boundary(content, scope='main'):
+def preview_boundary(content, scope='main', *, max_boundaries=100):
     if not isinstance(content, str) or len(content.encode('utf-8')) > MAX_BYTES:raise ValueError('Grænsefilen er for stor (maks. 2 MB).')
     if scope not in ('main', 'card'):raise ValueError('Vælg samlet grænse eller distriktskort.')
     content = content.lstrip('\ufeff \t\r\n')
     if not content:raise ValueError('Grænsefilen er tom.')
     limit = 5000
-    result = _kml(content, limit) if content.startswith('<') else _geojson(content, limit)
+    result = _kml(content, limit, max_boundaries) if content.startswith('<') else _geojson(content, limit)
     if len(result['boundaries']) == 1:result['points'] = result['boundaries'][0]['points']
     return dict(result, limit=limit)
