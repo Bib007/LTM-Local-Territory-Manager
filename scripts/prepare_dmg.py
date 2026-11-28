@@ -10,7 +10,7 @@ import argparse
 import html
 
 ROOT = Path(__file__).resolve().parents[1]
-SITE = "https://localterritorymanager.netlify.app/da/guide/#mac-first-open"
+SITE = "https://localterritorymanager.com/da/guide/#mac-first-open"
 # Finder uses the image's raw pixel dimensions, not logical Retina points.
 # A 1800×1100 PNG inside a 900×550 window is cropped, not downscaled.
 WIDTH, HEIGHT, SCALE = 900, 550, 1
