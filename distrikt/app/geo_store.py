@@ -214,6 +214,12 @@ class GeoStore(MainBoundaryStore):
         if action=='geo.preview':
             return self.geo_preview(data)
         if action=='geo.assign':
+            if 'auto_expected' in data:
+                current=self.require('cards',data.get('card_id'))
+                expected=data['auto_expected']
+                actual={'polygon':current.get('geo_polygon') or [],'address_ids':current.get('address_ids') or [],'addresses':current.get('addresses') or []}
+                if expected!=actual or current.get('archived') or data.get('polygon')!=actual['polygon'] or not isinstance(data.get('address_ids'),list) or not set(actual['address_ids']).issubset(data['address_ids']):
+                    raise ValueError('Kortet er ændret. Opdater oversigten og prøv igen.')
             if 'planned' in data and type(data['planned']) is not bool:
                 raise ValueError('Ugyldig status for distriktskort.')
             if not data.get('card_id') and data.get('planned') is True and data.get('address_ids')==[]:
