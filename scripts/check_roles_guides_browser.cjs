@@ -23,13 +23,13 @@ const assert=require('node:assert/strict'),{chromium}=require(process.env.PLAYWR
   const guide=p.locator('#nav [data-help-guide]');
   for(const lang of ['da','en']){
    await p.locator('#navigationLanguage').selectOption(lang);
-   assert.equal(await guide.getAttribute('href'),'https://localterritorymanager.netlify.app/'+lang+'/guide/');
+   assert.equal(await guide.getAttribute('href'),'https://localterritorymanager.com/'+lang+'/guide/');
    assert.match(await guide.innerText(),lang==='da'?/Trinvis LTM-guide/:/Step-by-step LTM guide/);
   }
   await p.locator('#navigationLanguage').selectOption('da');
  }
  const {c:newContext,p:n}=await context();await n.goto(f.url);await n.locator('#loginName').fill('Fiktiv læser');await n.locator('#loginPassword').fill('Fiktiv-password-456');await n.locator('#loginForm button').click();
  await n.locator('.dashboardLead').waitFor();assert.equal(await n.locator('#personalGuideTour').count(),0,'New logins must not show an introductory tour');
- const publicGuide=n.locator('#nav [data-help-guide]');assert.equal(await publicGuide.getAttribute('href'),'https://localterritorymanager.netlify.app/da/guide/');
+ const publicGuide=n.locator('#nav [data-help-guide]');assert.equal(await publicGuide.getAttribute('href'),'https://localterritorymanager.com/da/guide/');
  assert.deepEqual(errors,[]);console.log('PASS real HTTP/browser: restored full/aggregate home layouts; no personal tour or release news; website guide for both languages and independent login; summary-only permissions; onboarding tour preserved.');await readerContext.close();await adminContext.close();await newContext.close();
  }finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});
