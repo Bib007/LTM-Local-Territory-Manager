@@ -3,6 +3,7 @@
 const I18n={
  current:'en',
  english:{
+  "Distriktsgrænse":"Territory boundary",
   "Importér fra Territory Helper":"Import from Territory Helper",
   "Hent nummer, navn og grænse for ét distriktskort.":"Retrieve the number, name and boundary for one territory.",
   "Menigheds-id i Territory Helper":"Congregation ID in Territory Helper",

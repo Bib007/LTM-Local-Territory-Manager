@@ -4,8 +4,8 @@ Piloten henter ét dansk distriktskort ad gangen i den lokale desktop-beta. Den 
 
 ## Forbered live-testen
 
-1. Få Territory Helper til at oprette en OAuth-klient til LTM Beta med **Authorization Code (PKCE)** og **S256**. Registrér `http://127.0.0.1:8787/territory-helper-return` eller den tilsvarende returadresse med den port, betaen bruger lokalt.
-2. Sæt miljøvariablen `LTM_TERRITORY_HELPER_CLIENT_ID` til det tildelte klient-id, og start betaen lokalt. Åbn den på `127.0.0.1`.
+1. Få Territory Helper til at oprette en OAuth-klient til LTM Beta med **Authorization Code (PKCE)** og **S256**. Registrér `http://127.0.0.1:8788/territory-helper-return` eller den tilsvarende returadresse med den port, betaen bruger lokalt.
+2. Sæt miljøvariablen `LTM_TERRITORY_HELPER_CLIENT_ID` til det tildelte klient-id, og start betaen lokalt. På Mac kan den installerede beta startes fra Terminal med `LTM_TERRITORY_HELPER_CLIENT_ID=DIT_KLIENT_ID "/Applications/LTM Beta.app/Contents/MacOS/LTM"`. Luk en allerede åben beta først, og åbn appen på `127.0.0.1`.
 3. Brug en Territory Helper-testmenighed og en bruger med adgang til distrikterne. Med LTM-profiler kræver piloten adgang til at administrere forbindelser og læse og redigere kort og geodata.
 4. Åbn **Distriktskort → Kortværktøjer → Importér fra Territory Helper**. Indtast testmenighedens id og et entydigt kortnummer. Godkend login i Territory Helpers eget vindue, og sammenlign forhåndsvisningen med testkortet.
 5. Gem kortet. Åbn det i LTM, kontrollér grænsen og prøv samme import igen for at kontrollere, at eksisterende kortnummer bevares.
