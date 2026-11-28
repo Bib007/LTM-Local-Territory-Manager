@@ -5,6 +5,7 @@
 - Start Territory Helper-importen på opsætningsguidens første trin, godkend alle kort, og fortsæt guiden bagefter. Kontrollér importadvarsler under Opfølgninger.
 - Saml importerede lokationer i vejlisten med de enkelte adresser bevaret. Første import opretter ingen genprintopgaver.
 - Foreslå en redigerbar ydergrænse ud fra distriktskortene, hent DAR-adresser inden for grænsen, og find vejlinjer i kortnotater med hentede DAR-data.
+- Godkend kort med ugyldige rækker, ret de oprindelige værdier i Opfølgninger, og fortsæt guiden under en delvis import. Foreslå DAR-adresser fra importerede koordinater og se, om en distriktsgrænse er gemt.
 
 ## 1.15.0-beta.5 · 2026-11-28
 

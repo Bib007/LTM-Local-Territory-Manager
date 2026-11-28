@@ -176,6 +176,9 @@ class SetupStore:
         if action=='setup.territory-helper.preview':
             from territory_helper_import import preview
             return preview(self,data)
+        if action in ('setup.territory-helper.review', 'setup.territory-helper.repair'):
+            from territory_helper_import import review
+            return review(self,data,repair=action.endswith('.repair'))
         if action=='setup.territory-helper.apply':
             from territory_helper_import import apply
             return apply(self,data)

@@ -394,7 +394,8 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if self.path=='/api/mutate' and data.get('action')=='geo.preview':
                 return self.prepare_geo_preview(data.get('data',{}))
             if self.path=='/api/mutate' and data.get('action') in (
-                    'setup.territory-helper.preview','setup.territory-helper.apply'):
+                    'setup.territory-helper.preview','setup.territory-helper.apply',
+                    'setup.territory-helper.review','setup.territory-helper.repair'):
                 if not self.server.beta or (self.profile_user and self.profile_user.get('desk_only')):
                     raise PermissionError()
                 payload=data.get('data')

@@ -138,12 +138,10 @@ const TerritoryHelperUI = {
       <p id="formError" role="alert"></p>
       <div class="actions"><button type="button" data-th-import="previous" ${session.index === 0 ? 'disabled' : ''}>${ui('Forrige')}</button>
         <button type="button" data-th-import="next" ${session.index === session.cards.length - 1 ? 'disabled' : ''}>${ui('Næste')}</button>
-        <button type="button" class="primary" data-th-import="save" ${card.errors.length || session.saved.has(session.index) ? 'disabled' : ''}>${ui('Godkend og gem dette kort')}</button>
+        <button type="button" class="primary" data-th-import="save" ${session.saved.has(session.index) ? 'disabled' : ''}>${ui('Godkend og gem dette kort')}</button>
         <button type="button" class="primary" data-th-import="save-all" ${finished ? 'disabled' : ''}>${ui('Godkend alle kort')}</button>
-        ${this.guideStep !== null && finished ? `<button type="button" data-th-import="continue">${ui('Fortsæt opsætningsguiden')}</button>` : ''}
-        ${finished && session.saved.size && state.cards.some(item => !item.archived && item.geo_polygon?.length >= 3)
-          && ProfilesUI.canAction('geo.main.suggest.preview')
-          ? `<button type="button" data-th-import="boundary">${ui('Foreslå ydergrænse ud fra distriktskort')}</button>` : ''}
+        ${(this.guideStep !== null || !Onboarding.completed()) && ProfilesUI.has('settings.manage') ? `<button type="button" data-th-import="continue">${ui('Fortsæt opsætningsguiden')}</button>` : ''}
+        ${this.boundaryButton()}
         <button type="button" data-action="close">${ui('Luk')}</button></div>`);
   },
   async save(button) {
@@ -180,10 +178,84 @@ const TerritoryHelperUI = {
     }
   },
   continueGuide() {
+    if (!Onboarding.answers || !this.session.saved.size) {
+      Onboarding.open(this.guideStep ?? 0);
+      return;
+    }
     Onboarding.answers.mode = 'map';
     Onboarding.answers.cards = 'manual';
     Onboarding.remember();
-    Onboarding.open(1);
+    Onboarding.open(Math.max(1, this.guideStep ?? 1));
+  },
+  reviewButton(id) {
+    return this.allowed() && ProfilesUI.canAction('setup.territory-helper.review')
+      ? `<button type="button" data-th-import="review" data-id="${esc(id)}">${ui('Ret importerede rækker')}</button>` : '';
+  },
+  async openReview(button) {
+    const id = button.dataset.id, origin = page, generation = openDialog.generation;
+    button.disabled = true;
+    try {
+      const response = await api('/api/mutate', {action: 'setup.territory-helper.review', data: {id}});
+      const {result} = await response.json();
+      if (page !== origin || generation !== openDialog.generation || !button.isConnected) return;
+      this.review = {...result, id};
+      this.showReview();
+    } catch (error) {
+      toast(error);
+    } finally {
+      button.disabled = false;
+    }
+  },
+  showReview(entry) {
+    const review = this.review;
+    const types = {locations: 'Lokationer', ib: 'IB', assignments: 'Tildelinger', number: 'Kortnummer',
+      name: 'Kortnavn', note: 'Importeret kortnotat', boundary: 'Distriktsgrænse'};
+    const labels = {road: 'Vejnavn', house: 'Husnummer', address: 'Adresse', post: 'Postnummer',
+      floor: 'Etage', door: 'Dør', lat: 'Breddegrad', lng: 'Længdegrad', notes: 'Notat',
+      date: 'Dato', publisher: 'Forkynder', assigned: 'Udleveringsdato', returned: 'Afleveringsdato',
+      complete_date: 'Gennemgangsdato', completed: 'Gennemgået', number: 'Kortnummer',
+      name: 'Kortnavn', boundary: 'Distriktsgrænse (GeoJSON)'};
+    const summary = row => [row.fields.road, row.fields.house, row.fields.address, row.fields.publisher,
+      row.fields.number, row.fields.name, row.source.distriktsnummer || row.source.territorynumber].filter(Boolean).join(' · ');
+    const inputs = entry ? Object.entries(entry.fields).map(([key, value]) => {
+      const input = key==='completed'
+        ? `<select name="${key}"><option value="">${ui('Nej')}</option><option value="1" ${value ? 'selected' : ''}>${ui('Ja')}</option></select>`
+        : ['boundary', 'notes'].includes(key)
+          ? `<textarea name="${key}" rows="4">${esc(value)}</textarea>`
+          : `<input name="${key}" value="${esc(value)}">`;
+      return `<label>${ui(labels[key])}${input}</label>`;
+    }).join('') : '';
+    const cards = !review.card_id && entry
+      ? `<label>${ui('Distriktskort')}<select name="card_id" required><option value="">${ui('Vælg et kort')}</option>${state.cards.filter(card => !card.archived).map(card =>
+        `<option value="${esc(card.id)}">${esc(card.number)} ${esc(card.name)}</option>`).join('')}</select></label>` : '';
+    openDialog(`<h2>${ui('Ret importerede rækker')}</h2>${entry
+      ? `<p>${esc(I18n.text(entry.message))}</p><form id="thRepairForm" data-issue="${esc(entry.id)}">${cards}${inputs}
+        <p id="formError" role="alert"></p><div class="actions"><button class="primary">${ui('Gem rettelse')}</button>
+        <button type="button" data-th-import="review-list">${ui('Tilbage')}</button></div></form>`
+      : review.issues.length ? `<ul>${review.issues.map(row => `<li>${ui(types[row.kind])} · ${esc(summary(row))}
+        <p>${esc(I18n.text(row.message))}</p><button type="button" data-th-import="review-edit" data-id="${esc(row.id)}">${ui('Redigér')}</button></li>`).join('')}</ul>`
+        : `<p>${ui('Ingen ugyldige importrækker tilbage.')}</p>`}
+      <button type="button" data-action="close">${ui('Luk')}</button>`);
+  },
+  async repair(form) {
+    const review = this.review, generation = openDialog.generation, button = form.querySelector('.primary');
+    if (button.disabled) return;
+    const {card_id, ...fields} = Object.fromEntries(new FormData(form));
+    button.disabled = true;
+    try {
+      await mutate('setup.territory-helper.repair', {id: review.id, issue_id: form.dataset.issue, card_id, fields}, {close: false});
+      review.issues = review.issues.filter(row => row.id !== form.dataset.issue);
+      if (generation === openDialog.generation && form.isConnected && el('dialog').open) this.showReview();
+    } catch {
+      // mutate displays the validation error in the open form.
+    } finally {
+      button.disabled = false;
+    }
+  },
+  boundaryButton() {
+    return this.allowed() && ProfilesUI.canAction('geo.main.suggest.preview')
+      && state.cards.some(card => !card.archived && card.geo_polygon?.length >= 3)
+      ? `<button type="button" data-th-import="boundary">${ui('Foreslå ydergrænse ud fra distriktskort')}</button>` : '';
   },
   async openBoundary(button) {
     const generation = openDialog.generation;
@@ -228,6 +300,11 @@ const TerritoryHelperUI = {
 };
 
 document.addEventListener('submit', event => {
+  if (event.target.id === 'thRepairForm') {
+    event.preventDefault();
+    TerritoryHelperUI.repair(event.target);
+    return;
+  }
   if (event.target.id !== 'thFilesForm') return;
   event.preventDefault();
   TerritoryHelperUI.preview(event.target);
@@ -262,6 +339,9 @@ document.addEventListener('click', event => {
   if (action === 'save') return TerritoryHelperUI.save(button);
   if (action === 'save-all') return TerritoryHelperUI.saveAll(button);
   if (action === 'continue') return TerritoryHelperUI.continueGuide();
+  if (action === 'review') return TerritoryHelperUI.openReview(button);
+  if (action === 'review-list') return TerritoryHelperUI.showReview();
+  if (action === 'review-edit') return TerritoryHelperUI.showReview(TerritoryHelperUI.review.issues.find(row => row.id === button.dataset.id));
   if (action === 'boundary') return TerritoryHelperUI.openBoundary(button);
   if (action === 'note-roads') return TerritoryHelperUI.showNoteRoads(button);
   TerritoryHelperUI.session.index += action === 'next' ? 1 : -1;

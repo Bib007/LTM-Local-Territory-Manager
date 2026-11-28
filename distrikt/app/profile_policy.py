@@ -104,7 +104,7 @@ GROUPS={
  ('backup.export',):'backup.record backup.snooze',
  ('cards.view','cards.edit','geo.view'):'setup.card-import.inspect setup.card-import.preview setup.card-import.apply',
  HISTORY_IMPORT_PERMISSIONS:'setup.history-import.preview setup.history-import.apply',
- HISTORY_IMPORT_PERMISSIONS+('geo.view','geo.edit','ib.view','ib.edit','notes.view','notes.edit','settings.manage'):'setup.territory-helper.preview setup.territory-helper.apply',
+ HISTORY_IMPORT_PERMISSIONS+('geo.view','geo.edit','ib.view','ib.edit','notes.view','notes.edit','settings.manage'):'setup.territory-helper.preview setup.territory-helper.apply setup.territory-helper.review setup.territory-helper.repair',
 }
 ACTIONS={action:frozenset(rights) for rights,actions in GROUPS.items() for action in actions.split()}
 CASCADE=frozenset(('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','ib.view','ib.edit','notes.view','notes.edit','geo.view','geo.edit'))
