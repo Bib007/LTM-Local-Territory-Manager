@@ -22,18 +22,34 @@ const TerritoryHelperUI = {
   open() {
     if (!this.allowed()) return;
     this.session = null;
+    this.uploads = [];
     openDialog(`<h2>${ui('Importér fra Territory Helper')}</h2>
       <ol><li>${ui('Åbn Importér / Eksportér i Territory Helper.')}</li>
         <li>${ui('Hent distrikter, lokationer, IB, forkyndere og Tildelinger → Altid som CSV.')}</li>
         <li>${ui('Hent også distrikter som JSON eller KML, hvis du vil have kortgrænserne med.')}</li>
-        <li>${ui('Vælg filerne nedenfor. Gennemgå og godkend ét kort ad gangen.')}</li></ol>
+        <li>${ui('Slip alle filerne i feltet. LTM sorterer dem efter type.')}</li></ol>
       <form id="thFilesForm">
-        ${this.fields.map(([name, label, accept]) =>
-          `<label for="thFile-${name}">${ui(label)}</label><input id="thFile-${name}" name="${name}" type="file" accept="${accept}">`).join('')}
+        <div id="thDropZone" class="panel" style="border-style:dashed">
+          <label for="thFiles">${ui('Træk eksportfiler hertil, eller vælg filer')}</label>
+          <input id="thFiles" type="file" accept=".csv,.json,.geojson,.kml" multiple>
+          <ul id="thFileList" aria-live="polite"></ul>
+        </div>
         <p class="hint">${ui('Vælg mindst distrikternes CSV eller JSON. Tilføj de øvrige filer, hvis du vil have deres data med.')}</p>
         <p id="formError" role="alert"></p>
         <div class="actions"><button class="primary">${ui('Forhåndsvis kort')}</button><button type="button" data-action="close">${ui('Annuller')}</button></div>
       </form>`);
+  },
+  addFiles(files) {
+    for (const file of files) {
+      if (!this.uploads.some(old => old.name === file.name && old.size === file.size && old.lastModified === file.lastModified))
+        this.uploads.push(file);
+    }
+    this.showFiles();
+  },
+  showFiles() {
+    const list = el('thFileList');
+    list.innerHTML = this.uploads.map((file, index) =>
+      `<li>${esc(file.name)} <button type="button" data-th-import="remove" data-index="${index}">${ui('Fjern')}</button></li>`).join('');
   },
   async preview(form) {
     if (!this.allowed()) return;
@@ -42,27 +58,31 @@ const TerritoryHelperUI = {
     button.disabled = true;
     const active = () => form.isConnected && el('dialog').open;
     try {
-      const files = {};
-      for (const [name] of this.fields) {
-        const file = form.elements[name].files[0];
-        if (!file) continue;
+      const selected = this.uploads.slice();
+      if (!selected.length || selected.length > this.fields.length)
+        throw Error('Vælg én eksportfil på højst 2 MB pr. filtype.');
+      const uploads = [];
+      for (const file of selected) {
         if (file.size > 2000000) throw Error('Vælg én eksportfil på højst 2 MB pr. filtype.');
         const bytes = new Uint8Array(await file.arrayBuffer());
+        let content;
         if (bytes[0] === 255 && bytes[1] === 254 || bytes[0] === 254 && bytes[1] === 255)
-          files[name] = new TextDecoder(bytes[0] === 255 ? 'utf-16le' : 'utf-16be').decode(bytes);
+          content = new TextDecoder(bytes[0] === 255 ? 'utf-16le' : 'utf-16be').decode(bytes);
         else {
-          try { files[name] = new TextDecoder('utf-8', {fatal: true}).decode(bytes); }
-          catch { files[name] = new TextDecoder('windows-1252').decode(bytes); }
+          try { content = new TextDecoder('utf-8', {fatal: true}).decode(bytes); }
+          catch { content = new TextDecoder('windows-1252').decode(bytes); }
         }
+        uploads.push({name: file.name, content});
       }
       if (!active()) return;
-      const response = await api('/api/mutate', {action: 'setup.territory-helper.preview', data: {files}});
+      const response = await api('/api/mutate', {action: 'setup.territory-helper.preview', data: {uploads}});
       const {result} = await response.json();
       if (!active()) return;
       this.session = {...result, saved: new Set(), index: 0};
       this.show();
     } catch (error) {
-      if (active()) I18n.errorContent(el('formError'), error);
+      if (active()) I18n.errorContent(el('formError'), error.status === 404
+        ? 'Denne server har ikke filimporten. Luk LTM Beta helt, og start den nye beta igen.' : error);
     } finally {
       if (active()) button.disabled = false;
     }
@@ -94,8 +114,11 @@ const TerritoryHelperUI = {
     const address = row => esc([row.road, row.number, row.floor, row.door, row.postcode, row.date, row.note].filter(Boolean).join(' · '));
     const warnings = this.fields.filter(([name]) => session.unmatched[name]).map(([name, label]) =>
       `<li>${ui(label)} · ${session.unmatched[name]}</li>`).join('');
+    const sources = this.fields.filter(([name]) => session.sources?.[name]).map(([name, label]) =>
+      `<li>${ui(label)} · ${esc(session.sources[name])}</li>`).join('');
     openDialog(`<h2>${ui('Gennemgå importen kort for kort')}</h2>
       <p>${ui('Godkendte kort')} · ${session.saved.size} / ${session.cards.length}</p>
+      ${sources ? `<details><summary>${ui('Genkendte eksportfiler')}</summary><ul>${sources}</ul></details>` : ''}
       ${warnings ? `<details><summary>${ui('Rækker uden entydigt kort')}</summary><ul>${warnings}</ul></details>` : ''}
       <label for="thReviewCard">${ui('Distriktskort')}</label>
       <select id="thReviewCard">${session.cards.map((item, i) =>
@@ -137,15 +160,32 @@ document.addEventListener('submit', event => {
   TerritoryHelperUI.preview(event.target);
 });
 document.addEventListener('change', event => {
+  if (event.target.id === 'thFiles') {
+    TerritoryHelperUI.addFiles(event.target.files);
+    event.target.value = '';
+    return;
+  }
   if (event.target.id !== 'thReviewCard') return;
   TerritoryHelperUI.session.index = Number(event.target.value);
   TerritoryHelperUI.show();
+});
+document.addEventListener('dragover', event => {
+  if (event.target.closest?.('#thDropZone')) event.preventDefault();
+});
+document.addEventListener('drop', event => {
+  if (!event.target.closest?.('#thDropZone')) return;
+  event.preventDefault();
+  if (event.dataTransfer?.files.length) TerritoryHelperUI.addFiles(event.dataTransfer.files);
 });
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-th-import]');
   if (!button || button.disabled) return;
   const action = button.dataset.thImport;
   if (action === 'open') return TerritoryHelperUI.open();
+  if (action === 'remove') {
+    TerritoryHelperUI.uploads.splice(Number(button.dataset.index), 1);
+    return TerritoryHelperUI.showFiles();
+  }
   if (action === 'save') return TerritoryHelperUI.save(button);
   TerritoryHelperUI.session.index += action === 'next' ? 1 : -1;
   TerritoryHelperUI.show();

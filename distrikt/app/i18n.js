@@ -3,6 +3,14 @@
 const I18n={
  current:'en',
  english:{
+  "Slip alle filerne i feltet. LTM sorterer dem efter type.":"Drop all the files in the area. LTM sorts them by type.",
+  "Træk eksportfiler hertil, eller vælg filer":"Drop your export files here, or choose files",
+  "Genkendte eksportfiler":"Recognized export files",
+  "Importen understøtter CSV, JSON og KML.":"The import supports CSV, JSON and KML.",
+  "Filtypen kunne ikke genkendes for {file}. Brug filnavnet fra Territory Helper.":"Could not identify {file}. Keep the original Territory Helper filename.",
+  "Der er valgt flere filer af samme type. Fjern en af filerne.":"Multiple files have the same type. Remove one of them.",
+  "Vælg en eksportfil fra Territory Helper.":"Choose an export file from Territory Helper.",
+  "Denne server har ikke filimporten. Luk LTM Beta helt, og start den nye beta igen.":"This server does not have the file import. Quit LTM Beta completely, then start the new beta again.",
   "Importeret kortnotat":"Imported territory note",
   "Det eksporterede kortnotat er for langt.":"The exported territory note is too long.",
   "Importér fra Territory Helper":"Import from Territory Helper",

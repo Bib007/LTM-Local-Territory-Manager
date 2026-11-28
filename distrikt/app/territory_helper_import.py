@@ -22,7 +22,7 @@ FIELDS = {
     'number': 'territorynumber cardnumber kortnummer distriktsnummer distrikt territory number nummer',
     'type': 'territorytype territorytypename distriktstype type',
     'code': 'territorytypecode typecode distriktskode code',
-    'name': 'label territorylabel territoryname cardname navn distriktsnavn etiket name',
+    'name': 'label territorylabel territoryname cardname navn distriktsnavn etiket mærke distriktsmærke name',
     'person': 'publisher publishername forkynder forkyndernavn assignedto tildelttil name navn',
     'person_id': 'publisherid publisheridentifier forkynderid',
     'first': 'firstname fornavn',
@@ -32,18 +32,25 @@ FIELDS = {
     'address': 'address formattedaddress locationaddress adresse adressebetegnelse',
     'post': 'postcode postalcode zip zipcode postnummer',
     'floor': 'floor etage',
-    'door': 'door apartment unit side dør lejlighed',
+    'door': 'door apartment unit side dør lejlighed enhed',
     'lat': 'latitude lat breddegrad',
     'lng': 'longitude lng lon længdegrad',
     'assigned': 'assigned dateassigned assigneddate assignmentdate udleveret udleveringsdato tildelt tildelingsdato',
-    'returned': 'returned datereturned returneddate returndate afleveret afleveringsdato returneret',
+    'returned': 'returned datereturned returneddate returndate afleveret afleveringsdato returneret indleveret',
     'complete': 'completed iscompleted worked gennemgået fuldført',
     'complete_date': 'datecompleted completeddate completiondate gennemgangsdato',
-    'date': 'date datecreated created createddate dato oprettet registreringsdato',
-    'notes': 'notes note description kommentar bemærkning noter',
+    'date': 'date datecreated created createddate dato datooprettet oprettet registreringsdato',
+    'notes': 'notes note description kommentar bemærkning noter notater',
     'boundary': 'boundary coordinates grænse polygon',
 }
 KINDS = ('cards', 'locations', 'ib', 'publishers', 'assignments', 'geometry', 'kml')
+CSV_NAMES = {
+    'cards': ('distrikter', 'territories'),
+    'locations': ('lokationer', 'locations'),
+    'ib': ('ib', 'dnc', 'do not calls', 'do not call'),
+    'publishers': ('forkyndere', 'publishers'),
+    'assignments': ('tildelinger', 'assignments'),
+}
 
 
 def key(value):
@@ -56,6 +63,56 @@ def norm(value):
 
 def get(row, field):
     return next((row[k] for k in FIELDS[field].split() if row.get(k)), '')
+
+
+def classify(filename, content):
+    name, _, extension = filename.casefold().rpartition('.')
+    if extension in ('json', 'geojson', 'kml'):
+        return 'kml' if extension == 'kml' else 'geometry'
+    if extension != 'csv':
+        raise UIError('Importen understøtter CSV, JSON og KML.')
+    header = set()
+    if content.strip():
+        # Read only the header for classification. The same CSV parser later handles quoted records.
+        try:
+            first = content.lstrip('\ufeff').splitlines()[0]
+            dialect = csv.Sniffer().sniff(first, delimiters=',;\t')
+            header = {key(value) for value in next(csv.reader([first], dialect))}
+        except (csv.Error, IndexError, StopIteration):
+            pass
+    has = lambda field: bool(header.intersection(FIELDS[field].split()))
+    if has('assigned') and has('returned') and has('number'):
+        return 'assignments'
+    if has('first') and has('last'):
+        return 'publishers'
+    if has('number') and (has('boundary') or (has('id') and has('name'))):
+        return 'cards'
+    # The two Territory Helper address exports have the same columns.
+    # Use their export filenames to tell them apart.
+    stem = re.sub(r'\s*\(\d+\)$', '', name).strip()
+    for kind, aliases in CSV_NAMES.items():
+        if any(re.search(r'(?:^|[\s_-])' + re.escape(alias).replace(' ', '[ _-]+') + r'$', stem) for alias in aliases):
+            return kind
+    raise UIError('Filtypen kunne ikke genkendes for {file}. Brug filnavnet fra Territory Helper.', file=filename)
+
+
+def upload_files(data):
+    uploads = data.get('uploads')
+    if not isinstance(uploads, list) or not 1 <= len(uploads) <= len(KINDS):
+        raise UIError('Vælg én eksportfil på højst 2 MB pr. filtype.')
+    files, names = {}, {}
+    for upload in uploads:
+        if not isinstance(upload, dict):
+            raise UIError('Vælg en eksportfil fra Territory Helper.')
+        filename, content = upload.get('name'), upload.get('content')
+        if (not isinstance(filename, str) or not 1 <= len(filename) <= 240
+                or not isinstance(content, str) or len(content.encode('utf-8')) > 2_000_000):
+            raise UIError('Vælg én eksportfil på højst 2 MB pr. filtype.')
+        kind = classify(filename, content)
+        if kind in files:
+            raise UIError('Der er valgt flere filer af samme type. Fjern en af filerne.')
+        files[kind], names[kind] = content, filename
+    return files, names
 
 
 def read_csv(content):
@@ -126,8 +183,9 @@ def date_field(value):
     if not value:
         return None
     try:
-        return (datetime.fromisoformat(value.replace('Z', '+00:00')).date().isoformat()
-                if re.match(r'^\d{4}-\d{2}-\d{2}[T ]', value) else day(value))
+        if re.match(r'^\d{4}-\d{2}-\d{2}[T ]', value):
+            return datetime.fromisoformat(value.replace('Z', '+00:00')).date().isoformat()
+        return day(re.sub(r'\s+\d{1,2}:\d{2}(?::\d{2})?$', '', value))
     except ValueError:
         raise UIError('Eksporten indeholder en ugyldig dato.') from None
 
@@ -208,7 +266,7 @@ def loan_plan(store, card, assignments):
 
 
 def preview(store, data):
-    files = data.get('files')
+    files, source_names = upload_files(data) if 'uploads' in data else (data.get('files'), {})
     if not isinstance(files, dict) or set(files) - set(KINDS) or any(
             not isinstance(v, str) or len(v.encode('utf-8')) > 2_000_000 for v in files.values()):
         raise UIError('Vælg én eksportfil på højst 2 MB pr. filtype.')
@@ -220,10 +278,14 @@ def preview(store, data):
         raise UIError('Vælg en eksport med 1–500 distrikter.')
     issues = Counter()
     cards, identity, numbers = [], defaultdict(list), defaultdict(list)
+    repeated = Counter(norm(card_number(row)) for row in source_cards)
     for row in source_cards:
-        number = text_field(card_number(row), 30, required=True)
+        source_number = card_number(row)
+        card_type = get(row, 'type')
+        number = text_field(f'{card_type}-{source_number}' if source_number and card_type and
+                            repeated[norm(source_number)] > 1 else source_number, 30, required=True)
         card = {'index': len(cards), 'number': number, 'name': text_field(get(row, 'name'), 100),
-                'type': get(row, 'type'), 'note': '', 'polygon': [], 'locations': [], 'ib': [], 'assignments': [], 'errors': []}
+                'type': card_type, 'note': '', 'polygon': [], 'locations': [], 'ib': [], 'assignments': [], 'errors': []}
         try:
             card['note'] = note_text(get(row, 'notes'))
         except ValueError:
@@ -243,6 +305,9 @@ def preview(store, data):
                 return None
         else:
             candidates = numbers.get(norm(number), [])
+        card_type = norm(get(row, 'type'))
+        if card_type:
+            candidates = [card for card in candidates if not card['type'] or norm(card['type']) == card_type]
         return candidates[0] if len(candidates) == 1 else None
 
     def put_boundary(card, value):
@@ -310,8 +375,10 @@ def preview(store, data):
                     if completed and completed != returned:
                         raise UIError('Gennemgangsdato og afleveringsdato skal stemme overens.')
                     person = names[0] if names else name
+                    incomplete = key(row.get('ikkegennemgået') or row.get('notcompleted'))
+                    explicitly_completed = key(get(row, 'complete')) in ('true', 'yes', 'ja', '1') or incomplete in ('false', 'no', 'nej', '0')
                     record = {'publisher': text_field(person, 100, required=True), 'assigned': assigned,
-                              'returned': returned, 'completed': bool(completed) or key(get(row, 'complete')) in ('true', 'yes', 'ja', '1')}
+                              'returned': returned, 'completed': bool(completed) or bool(returned and explicitly_completed)}
                     if record['completed'] and not returned:
                         raise UIError('En gennemgang mangler en afleveringsdato.')
                 else:
@@ -342,7 +409,7 @@ def preview(store, data):
             card['loan_review'] = []
         card['errors'] = list(dict.fromkeys(card['errors']))
     token = store.setup_remember('territory-helper', {'owner': data.get('_owner'), 'cards': cards})
-    return {'token': token, 'cards': cards, 'unmatched': dict(issues)}
+    return {'token': token, 'cards': cards, 'unmatched': dict(issues), 'sources': source_names}
 
 
 def apply(store, data):

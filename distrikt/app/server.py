@@ -43,6 +43,10 @@ from connection_backup import export as export_connections,restore as restore_co
 
 APP=app_dir()
 VERSION='1.15.0-beta.4'
+# Preview installers can share a version number. Do not reuse a server from
+# an earlier installer when its packaged import screen is different.
+IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes()).hexdigest()[:16]
+              if '-beta.' in VERSION and (APP/'territory-helper-ui.js').is_file() else None)
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -187,7 +191,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         # profile write or state snapshot. Preserve the usual host/LAN checks.
         if path=='/api/ping':
             if self.allowed(public=True):
-                try:self.send({'app':'Distrikt','version':VERSION})
+                try:self.send({'app':'Distrikt','version':VERSION,**({'import_build':IMPORT_BUILD} if IMPORT_BUILD else {})})
                 except (BrokenPipeError,ConnectionResetError,TimeoutError):pass
             return
         # This machine-only route must precede profile_scope (accounts lock).
@@ -518,7 +522,7 @@ def running(data):
         req=urllib.request.Request(url+'/api/ping')
         with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req,timeout=1) as r:
             ping=json.load(r)
-        if ping.get('app')=='Distrikt':return dict(info,version=ping['version'])
+        if ping.get('app')=='Distrikt':return dict(info,version=ping['version'],import_build=ping.get('import_build'))
     except Exception:pass
     return None
 
@@ -561,7 +565,7 @@ def _main(argv=None):
     if args.stop:stop_running(data);return
     info=running(data)
     if not args.serve:
-        if info and info['version']!=VERSION:
+        if info and (info['version']!=VERSION or (IMPORT_BUILD and info.get('import_build')!=IMPORT_BUILD)):
             stop_running(data)
             for _ in range(30):
                 if not running(data):break
