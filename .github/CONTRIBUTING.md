@@ -2,7 +2,7 @@
 
 [English](../docs/CONTRIBUTING.en.md)
 
-Brug [hjemmesidens feedbackformular](https://localterritorymanager.netlify.app/da/feedback/), [Issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) eller en pull request. Beskriv den ændrede adfærd og kontrollen med fiktive eksempler. Hold dansk og engelsk betjening og vejledning ajour. Navne, noter og andre brugerindtastninger bevarer deres sprog.
+Brug [hjemmesidens feedbackformular](https://localterritorymanager.com/da/feedback/), [Issues](https://github.com/Bib007/LTM-Local-Territory-Manager/issues) eller en pull request. Beskriv den ændrede adfærd og kontrollen med fiktive eksempler. Hold dansk og engelsk betjening og vejledning ajour. Navne, noter og andre brugerindtastninger bevarer deres sprog.
 
 Test i en midlertidig mappe. Brug fiktive kort, adresser og konti. Bevar eksisterende data, filformater, forhåndsvisninger og godkendelser ved opdatering.
 

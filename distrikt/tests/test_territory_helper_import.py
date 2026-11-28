@@ -59,8 +59,7 @@ class TerritoryHelperImportTests(unittest.TestCase):
         self.assertTrue(event['visits_unknown'])
         self.assertEqual(len(self.store.all('loans')), 1)
 
-        with self.assertRaises(ValueError):
-            self.store.mutate(self.apply_action, payload)
+        self.assertEqual(self.store.mutate(self.apply_action, payload)['id'], card['id'])
         self.store.mutate(self.apply_action, {**payload, 'index': 1})
         self.assertEqual({card['number'] for card in self.store.all('cards')}, {'01', '02'})
         self.assertEqual(len(self.store.all('loans')), 2)
@@ -119,11 +118,240 @@ class TerritoryHelperImportTests(unittest.TestCase):
         self.assertEqual((rural['ib'][0]['number'], rural['ib'][0]['floor'], rural['ib'][0]['door']), ('4', '1', 'th'))
         self.assertEqual(rural['assignments'], [])
 
-    def test_existing_or_invalid_card_is_not_written(self):
+    def test_number_collision_keeps_existing_card_and_imports_under_temporary_number(self):
         existing = self.store.mutate('card.save', {'number': '01', 'name': 'Før import'})
         result = self.store.mutate(self.preview_action, {'files': self.example()})
         self.assertTrue(result['cards'][0]['errors'])
-        with self.assertRaises(ValueError):
-            self.store.mutate(self.apply_action, {'token': result['token'], 'index': 0})
+        saved = self.store.mutate(self.apply_action, {'token': result['token'], 'index': 0})
         self.assertEqual(self.store.require('cards', existing['id'])['name'], 'Før import')
+        self.assertEqual(saved['number'], 'TH-1')
+        self.assertEqual(self.store.all('ib')[0]['card_id'], saved['id'])
+        task, = [row for row in self.store.all('notes') if row.get('card_id') == saved['id'] and row.get('task')]
+        issue, = task['territory_helper_issues']
+        self.assertEqual(issue['fields'], {'number': '01'})
+        self.store.mutate('setup.territory-helper.repair',
+                          {'id': task['id'], 'issue_id': issue['id'], 'fields': {'number': '99'}})
+        self.assertEqual(self.store.require('cards', saved['id'])['number'], '99')
+
+    def test_bulk_keeps_warnings_and_groups_locations_without_print_tasks(self):
+        files = {
+            'cards': 'TerritoryId,Number,Notes\na,01,Testnotat\nb,02,',
+            'locations': ('TerritoryId,Street,HouseNumber,PostalCode,Latitude,Longitude\n'
+                          'a,Testvej,1,1234,55.0,10.0\na,Testvej,3,1234,55.0,10.001\na,Testvej,,1234,55.0,10.002'),
+            'ib': 'TerritoryId,Street,HouseNumber,PostalCode\na,Testvej,3,1234',
+        }
+        occupied = self.store.mutate('card.save', {'number': '02', 'name': 'Eksisterende'})
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        result = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})
+        saved, collision = result['saved']
+        self.assertEqual(result['skipped'], [])
+        self.assertEqual(collision['number'], 'TH-2')
+        card = self.store.require('cards', saved['id'])
+        self.assertEqual(self.store.require('cards', occupied['id'])['name'], 'Eksisterende')
+        self.assertEqual(len(card['addresses']), 1)
+        self.assertEqual(card['addresses'][0]['count'], 2)
+        self.assertEqual(len(card['imported_addresses']), 2)
+        self.assertFalse(card['front_revision'])
+        self.assertFalse(card['back_revision'])
+        warning, = [note for note in self.store.all('notes') if note.get('task') and note['card_id'] == saved['id']]
+        self.assertEqual(json.loads(warning['followup_key']), ['checks', card['id'], 'territory-helper'])
+        self.assertTrue(warning['text'])
+        self.assertEqual(len(self.store.all('ib')), 1)
+
+    def test_bulk_continues_after_invalid_card_number_and_ib_rows(self):
+        future = self.today + timedelta(days=1)
+        files = {
+            'cards': 'TerritoryId,Number\na,01\nb,\nc,03\nd,04',
+            'ib': ('TerritoryId,Street,HouseNumber,Floor,Date\n'
+                   f'a,Testvej,1,,{future}\na,Testvej,{"1" * 80},1,\na,Testvej,2,,{self.today}'),
+        }
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        result = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})
+        self.assertEqual([row['number'] for row in result['saved']], ['01', 'TH-2', '03', '04'])
+        self.assertFalse(result['skipped'])
+        self.assertEqual([row['number'] for row in self.store.all('ib')], ['2'])
+        warning, = [note for note in self.store.all('notes') if note.get('task') and note['card_id'] == result['saved'][0]['id']]
+        self.assertIn('IB-dato ligger i fremtiden', warning['text'])
+        self.assertIn('for langt husnummer', warning['text'])
+
+    def test_invalid_locations_and_ib_can_be_repaired_after_bulk_approval(self):
+        files = {
+            'cards': 'TerritoryId,Number\na,57\nb,70',
+            'locations': 'TerritoryId,Street,HouseNumber,PostalCode\na,Testvej,,1234\nb,Testvej,2-6,1234\nb,Testvej,8,1234',
+            'ib': 'TerritoryId,Street,HouseNumber,PostalCode\nb,Testvej,3/5,1234',
+        }
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        self.assertIn('tomt husnummerfelt', preview['cards'][0]['errors'][0])
+        saved = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})['saved']
+        first, second = saved
+        self.assertEqual(self.store.require('cards', second['id'])['addresses'][0]['numbers'], '8')
         self.assertFalse(self.store.all('ib'))
+        tasks = {note['card_id']: note for note in self.store.all('notes') if note.get('task')}
+        for card in (first, second):
+            task = tasks[card['id']]
+            data = {'id': task['id']}
+            entries = self.store.mutate('setup.territory-helper.review', data)['issues']
+            self.assertEqual(entries[0]['fields']['house'], '' if card is first else '2-6')
+            self.assertIn('housenumber', entries[0]['source'])
+            for entry, number in zip(entries, ('4', '5')):
+                self.store.mutate('setup.territory-helper.repair', {
+                    **data, 'issue_id': entry['id'], 'fields': {**entry['fields'], 'house': number},
+                })
+            self.assertTrue(self.store.require('notes', task['id'])['resolved'])
+        self.assertEqual(self.store.all('ib')[0]['number'], '5')
+        self.assertEqual(len(self.store.require('cards', second['id'])['imported_addresses']), 2)
+        again = self.store.mutate(self.preview_action, {'files': files})
+        result = self.store.mutate(self.apply_action, {'token': again['token'], 'all': True})
+        self.assertEqual([row['id'] for row in result['saved']], [first['id'], second['id']])
+        self.assertEqual(len(self.store.all('cards')), 2)
+        self.assertEqual(len(self.store.all('ib')), 1)
+
+    def test_reimport_reuses_legacy_card_and_preserves_existing_history(self):
+        files = self.example()
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        ident = self.store.mutate(self.apply_action, {'token': preview['token'], 'index': 0})['id']
+        legacy = dict(self.store.require('cards', ident))
+        legacy.pop('territory_helper_import_id')
+        with self.store.transaction():
+            self.store.put('cards', legacy)
+        files['locations'] += '\na,Testvej,4-10,1234,,'
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        saved = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})['saved']
+        self.assertEqual(saved[0]['id'], ident)
+        self.assertEqual(len(self.store.all('cards')), 2)
+        self.assertEqual(len(self.store.all('loans')), 2)
+        self.assertEqual(len(self.store.all('ib')), 1)
+        note, = [row for row in self.store.all('notes') if row.get('card_id') == ident and row.get('task')]
+        self.assertEqual(note['territory_helper_issues'][0]['fields']['house'], '4-10')
+
+    def test_dar_suggestions_use_imported_coordinates_and_keep_kml_boundary(self):
+        files = self.example()
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        ident = self.store.mutate(self.apply_action, {'token': preview['token'], 'index': 0})['id']
+        boundary = self.store.require('cards', ident)['geo_polygon']
+        dar = {'entity': 'address', 'type': 'Hus', 'count': 1, 'postcode': '1234', 'road': 'Nyt vejnavn',
+               'number': '4A', 'lat': 55.00101, 'lng': 10.003, 'source': 'DAR / Adressevælger'}
+        with self.store.transaction():
+            self.store.put('geo', dict(dar, id='near'))
+            self.store.put('geo', dict(dar, id='far', lat=55.01))
+            self.store.put('geo', dict(dar, id='wrong-number', number='4B'))
+        data = {'mode': 'imported_points', 'card_id': ident}
+        result = self.store.geo_preview_snapshot()[0].geo_preview(data)
+        self.assertEqual([a['id'] for a in result['addresses']], ['near'])
+        self.assertEqual(result['unmatched_points'], 0)
+        self.assertEqual(self.store.require('cards', ident)['geo_polygon'], boundary)
+        with self.store.transaction():
+            self.store.put('geo', dict(dar, id='apartment', floor='1', door='th'))
+        result = self.store.geo_preview_snapshot()[0].geo_preview(data)
+        self.assertFalse(result['addresses'])
+        self.assertEqual(result['unmatched_points'], 1)
+
+    def test_kml_matches_extended_id_folder_labels_and_known_geometry(self):
+        def mark(name, x, *, data='', folder=''):
+            polygon = f'<Polygon><outerBoundaryIs><LinearRing><coordinates>{x},55 {x + 0.01},55 {x + 0.01},55.01 {x},55</coordinates></LinearRing></outerBoundaryIs></Polygon>'
+            return f'<Folder><name>{folder}</name><Placemark><name>{name}</name>{data}{polygon}</Placemark></Folder>'
+
+        marks = [
+            mark('01', 10, folder='By'),
+            mark('01', 11, folder='Land'),
+            mark('Kort 02 — Midtbyen', 12),
+            mark('', 13, data='<ExtendedData><Data name="TerritoryId"><value>d</value></Data></ExtendedData>'),
+            mark('', 14),
+            mark('Ukendt navn', 15),
+        ]
+        cards = 'TerritoryId,Number,TerritoryType,Label\na,01,By,A\nb,01,Land,B\nc,02,By,Midtbyen\nd,03,By,D\ne,04,By,E'
+        boundary = [[14, 55], [14.01, 55], [14.01, 55.01], [14, 55]]
+        geometry = json.dumps([{'Id': 'e', 'Number':'04', 'Boundary': json.dumps(boundary)}])
+        preview = self.store.mutate(self.preview_action, {'files': {
+            'cards': cards, 'geometry': geometry, 'kml': '<kml>' + ''.join(marks) + '</kml>',
+        }})
+        self.assertEqual([c['polygon'][0][0] for c in preview['cards']], [10, 11, 12, 13, 14])
+        self.assertEqual(preview['unmatched'], {'kml': 1})
+        warning, = preview['unmatched_details']
+        self.assertEqual(warning['context']['kml_name'], 'Ukendt navn')
+        self.assertEqual(warning['context']['kml_index'], '6')
+
+    def test_invalid_kml_and_address_show_source_and_exact_reason(self):
+        cards = 'TerritoryId,Number\na,57'
+        locations = 'TerritoryId,Street,HouseNumber,PostalCode,Address\na,Testvej,,1234,Testvej ved stien\nx,Andenvej,42,1234,'
+        kml = '<kml><Placemark><name>57</name><LineString><coordinates>10,55 10.01,55 10.01,55.01</coordinates></LineString></Placemark></kml>'
+        preview = self.store.mutate(self.preview_action, {'files': {'cards': cards, 'locations': locations, 'kml': kml}})
+        boundary, location = preview['cards'][0]['diagnostics']
+        self.assertIn('ikke lukket', boundary['detail'])
+        self.assertEqual(boundary['context']['kml_name'], '57')
+        self.assertEqual(location['context']['row'], '2')
+        self.assertEqual(location['context']['road'], 'Testvej')
+        self.assertEqual(location['context']['house'], '')
+        self.assertEqual(location['context']['address'], 'Testvej ved stien')
+        unmatched, = preview['unmatched_details']
+        self.assertEqual(unmatched['context']['card_id'], 'x')
+        self.assertEqual(unmatched['params']['id'], 'x')
+        self.assertEqual(unmatched['context']['road'], 'Andenvej')
+
+    def test_reimport_recovers_newly_matched_boundary_and_closes_old_followup(self):
+        kml = '<kml><Placemark><name>Kort 57</name><Polygon><outerBoundaryIs><LinearRing><coordinates>10,55 10.01,55 10.01,55.01 10,55</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></kml>'
+        files = {'cards': 'TerritoryId,Number\na,57', 'kml': kml}
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        plan = self.store.setup_require_preview({'token': preview['token']}, 'territory-helper')
+        source = plan['cards'][0]
+        source['polygon'] = []
+        plan['kml_matches'].clear()
+        plan['unlinked'].append({'id':'old', 'kind':'boundary', 'fields':{'boundary':'[]'},
+                                  'message':'Rækker uden entydigt kort', 'source':{'index':0, 'name':'Kort 57'}})
+        old = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})['saved'][0]
+        self.assertFalse(self.store.require('cards', old['id']).get('geo_polygon'))
+        preview = self.store.mutate(self.preview_action, {'files': files})
+        saved = self.store.mutate(self.apply_action, {'token': preview['token'], 'all': True})['saved'][0]
+        self.assertEqual(saved['id'], old['id'])
+        self.assertEqual(self.store.require('cards', saved['id'])['geo_polygon'], self.polygon[:-1])
+        note, = [note for note in self.store.all('notes') if note.get('task')]
+        self.assertTrue(note['resolved'])
+
+    def test_task_shows_address_on_saved_issue_and_ignores_blank_lines(self):
+        files = {'cards': 'TerritoryId,Number\na,118',
+                 'locations': 'TerritoryId,Street,HouseNumber,PostalCode\n\na,Eksempelvej,,1234\n'}
+        result = self.store.mutate(self.preview_action, {'files': files})
+        self.store.mutate(self.apply_action, {'token': result['token'], 'all': True})
+        note, = [n for n in self.store.state()['notes'] if n.get('task')]
+        row, = note['territory_helper_diagnostics']['rows']
+        self.assertEqual(row['context']['road'], 'Eksempelvej')
+        self.assertEqual(row['context']['row'], '3')
+        self.assertEqual(row['context']['house'], '')
+        self.assertNotIn('territory_helper_issues', note)
+
+    def test_review_shows_existing_loan_dates_for_import_overlap(self):
+        earlier = self.today - timedelta(days=5)
+        files = {
+            'cards': 'TerritoryId,Number\na,118',
+            'assignments': ('TerritoryId,Publisher,DateAssigned,DateReturned\n'
+                            f'a,Eksempel Første,{earlier},\n'
+                            f'a,Eksempel Anden,{self.earlier},{self.yesterday}'),
+        }
+        result = self.store.mutate(self.preview_action, {'files': files})
+        self.store.mutate(self.apply_action, {'token': result['token'], 'all': True})
+        task, = [n for n in self.store.all('notes') if n.get('task')]
+        issue, = self.store.mutate('setup.territory-helper.review', {'id': task['id']})['issues']
+        self.assertEqual(issue['overlapping_loans'], [
+            {'publisher': 'Eksempel Første', 'assigned': earlier.isoformat(), 'returned': None, 'deleted': False}
+        ])
+
+    def test_outer_boundary_preview_encloses_district_corners_without_saving(self):
+        from geography import point_in_polygon
+
+        source = self.store.mutate(self.preview_action, {'files': self.example()})
+        self.store.mutate(self.apply_action, {'token': source['token'], 'all': True})
+        result = self.store.mutate('geo.main.suggest.preview', {})
+        self.assertIsNone(self.store.main_boundary())
+        self.assertTrue(all(point_in_polygon(point, result['points']) for point in self.polygon))
+
+    def test_note_suggestions_use_only_locally_downloaded_dar_road_names(self):
+        from territory_helper_import import note_roads
+
+        self.store.put('geo', {'id': 'test-dar', 'entity': 'address', 'road': 'Testvej',
+                              'postcode': '1234', 'number': '1', 'lat': 55.0, 'lng': 10.0, 'source': 'DAR / Adressevælger'})
+        self.assertEqual(note_roads(self.store, 'Testvej 1–5\nAnden vej 1–2\nTestvej 3 er lukket'), [
+            {'road': 'Testvej', 'postcode': '1234', 'numbers': '1–5'}
+        ])
+        self.store.put('geo', {'id': 'test-dar-2', 'entity': 'address', 'road': 'Testvej', 'postcode': '5678',
+                              'number': '1', 'lat': 55.0, 'lng': 10.0, 'source': 'DAR / Adressevælger'})
+        self.assertEqual(note_roads(self.store, 'Testvej 1–5'), [])

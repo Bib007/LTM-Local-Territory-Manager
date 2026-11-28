@@ -1,5 +1,14 @@
 # Ændringslog
 
+## 1.15.0-beta.6 · 2026-11-28
+
+- Start Territory Helper-importen på opsætningsguidens første trin, godkend alle kort, og fortsæt guiden bagefter. Kontrollér importadvarsler under Opfølgninger.
+- Saml importerede lokationer i vejlisten med de enkelte adresser bevaret. Første import opretter ingen genprintopgaver.
+- Foreslå en redigerbar ydergrænse ud fra distriktskortene, hent DAR-adresser inden for grænsen, og find vejlinjer i kortnotater med hentede DAR-data.
+- Godkend kort med ugyldige rækker, ret de oprindelige værdier i Opfølgninger, og fortsæt guiden under en delvis import. Foreslå DAR-adresser fra importerede koordinater og se, om en distriktsgrænse er gemt.
+- Se hvilken CSV-række eller KML-grænse der kræver kontrol, og hvad LTM fandt i eksporten. Match KML efter kort-id, kortnavn og distriktstype i mappen eller en entydig eksisterende grænse.
+- Vælg automatisk adresser inden for alle gemte kortgrænser med én handling. Bevar eksisterende adressevalg, og spring nye adresser i flere kortgrænser over. Ignorér alle kendte kortoverlap samlet under Opfølgninger.
+
 ## 1.15.0-beta.5 · 2026-11-28
 
 - Territory Helper-importen kan læse op til 500 distriktsgrænser fra samme KML-fil.

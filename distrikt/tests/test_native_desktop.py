@@ -3,6 +3,9 @@ import sys
 import os
 import tempfile
 import unittest
+import ssl
+import urllib.request
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -24,6 +27,20 @@ class NativeDesktopTests(unittest.TestCase):
                 self.assertEqual(resource_paths.app_dir(), Path(directory) / 'app')
                 self.assertEqual(resource_paths.templates_dir(), Path(directory) / 'templates')
                 self.assertEqual(resource_paths.vendor_dir(), Path(directory) / 'app' / 'vendor_py')
+
+    def test_frozen_macos_dar_uses_packaged_certificate_roots(self):
+        from address_source import datafordeler_opener
+        runtime_context = ssl.create_default_context()
+        bundle = '/fictional/certifi/cacert.pem'
+        with patch.object(sys, 'frozen', True, create=True), patch.object(sys, 'platform', 'darwin'), \
+                patch.dict(sys.modules, {'certifi': SimpleNamespace(where=lambda: bundle)}), \
+                patch('ssl.create_default_context', return_value=runtime_context), \
+                patch.object(runtime_context, 'load_verify_locations') as load:
+            opener = datafordeler_opener()
+        load.assert_called_once_with(cafile=bundle)
+        handler = next(h for h in opener.handlers if isinstance(h, urllib.request.HTTPSHandler))
+        self.assertTrue(handler._context.check_hostname)
+        self.assertEqual(handler._context.verify_mode, ssl.CERT_REQUIRED)
 
     def test_local_start(self):
         with patch.object(desktop_entry.server, 'main') as start:

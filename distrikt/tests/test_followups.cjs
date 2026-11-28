@@ -56,6 +56,12 @@ run(`state={today:'2026-10-23',cards:[
  // Only explicitly selected, non-critical overlaps can be dismissed.
  const overlapKey=run('Workspace.followupItems().find(r=>r.relatedCard).key');
  const initial=run('Workspace.followupItems().length');
+ run("Workspace.followupQuery='';Workspace.followupFilter='checks'");
+ assert.match(run('Workspace.followups()'),/data-work="followup-ignore-all"/);
+ const beforeBulk=writes.length;
+ await run("Workspace.handle('followup-ignore-all',{})");
+ assert.equal(writes.length,beforeBulk+1,'Bulk ignore writes only the known boundary overlap, never duplicate addresses');
+ assert.deepEqual(JSON.parse(JSON.stringify(writes.at(-1).data)),{key:overlapKey,ignored:true,expected_token:''});
  const criticalHTML=run("Workspace.followupItems().filter(r=>r.side||r.change||r.loan).map(r=>Workspace.followupRow(r)).join('')");
  assert.doesNotMatch(criticalHTML,/data-work="followup-ignore"/,'Critical reprint and address items cannot be dismissed');
  await run(`Workspace.handle('followup-ignore',{key:${JSON.stringify(overlapKey)},value:'ignore'})`);

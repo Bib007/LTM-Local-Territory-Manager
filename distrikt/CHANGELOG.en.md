@@ -1,5 +1,14 @@
 # Changelog (English and original historical notes)
 
+## 1.15.0-beta.6 · 2026-11-28
+
+- Start the Territory Helper import from the first step of setup, approve all territories, and continue the guide. Review import warnings under Follow-ups.
+- Group imported locations in the road list and keep individual addresses. The first import creates no reprint tasks.
+- Suggest an editable outer boundary from territory cards, download DAR addresses within it, and find road lines in territory notes using downloaded DAR data.
+- Approve cards with invalid rows, correct the original values in Follow-ups, and resume setup during a partial import. Suggest DAR addresses from imported coordinates and see whether a territory boundary is saved.
+- See which CSV row or KML boundary needs review and what LTM found in the export. Match KML using territory ID, territory name and folder type, or one matching known boundary.
+- Automatically select addresses within all saved territory boundaries in one action. Preserve existing address selections and skip new addresses within multiple boundaries. Dismiss all known boundary overlaps together under Follow-ups.
+
 ## 1.15.0-beta.5 · 2026-11-28
 
 - The Territory Helper import supports up to 500 territory boundaries in one KML file.

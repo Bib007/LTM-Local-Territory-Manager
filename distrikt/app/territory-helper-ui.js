@@ -5,9 +5,10 @@ const TerritoryHelperUI = {
     return !!state?.beta && (!state.profile || (!state.profile.desk_only &&
       ProfilesUI.canAction('setup.territory-helper.preview')));
   },
-  button() {
+  button(fromGuide = false) {
+    const icon = fromGuide ? '<img src="/territory-helper-icon.webp" width="24" height="24" alt="" style="vertical-align:middle;margin-inline-end:8px">' : '';
     return this.allowed()
-      ? '<button type="button" data-th-import="open">' + ui('Importér fra Territory Helper') + '</button>'
+      ? '<button type="button" data-th-import="open"' + (fromGuide ? ' data-guide="yes"' : '') + '>' + icon + ui('Importér fra Territory Helper') + '</button>'
       : '';
   },
   fields: [
@@ -19,9 +20,10 @@ const TerritoryHelperUI = {
     ['geometry', 'Distrikter · JSON', '.json,.geojson'],
     ['kml', 'Distrikter · KML', '.kml']
   ],
-  open() {
+  open(fromGuide) {
     if (!this.allowed()) return;
     this.session = null;
+    this.guideStep = fromGuide ? Onboarding.step : null;
     this.uploads = [];
     openDialog(`<h2>${ui('Importér fra Territory Helper')}</h2>
       <ol><li>${ui('Åbn Importér / Eksportér i Territory Helper.')}</li>
@@ -109,8 +111,56 @@ const TerritoryHelperUI = {
     return `<details><summary>${ui(label)} · ${rows.length}</summary>
       ${rows.length ? '<ul>' + rows.map(row => '<li>' + renderer(row) + '</li>').join('') + '</ul>' : ''}</details>`;
   },
+  diagnostic(row) {
+    const c = row.context || {};
+    const types = {locations: 'Lokationer', ib: 'IB', assignments: 'Tildelinger', number: 'Kortnummer',
+      name: 'Kortnavn', note: 'Importeret kortnotat', boundary: 'Distriktsgrænse'};
+    const parts = [
+      row.file && esc(I18n.text(row.file)),
+      c.row && ui('CSV-række {row}', {row: c.row}),
+      c.kml_index && ui('KML-element {number}', {number: c.kml_index}),
+      c.folder && ui('KML-mappe: {name}', {name: c.folder}),
+      c.kml_name && ui('KML-navn: {name}', {name: c.kml_name}),
+      c.card_number && ui('Kortnummer i eksporten: {number}', {number: c.card_number}),
+      c.card_id && ui('Kort-id i eksporten: {id}', {id: c.card_id})
+    ].filter(Boolean);
+    const address = [c.address, [c.road, c.post].filter(Boolean).join(' · '),
+      [c.floor, c.door].filter(Boolean).join(' '), c.lat && c.lng && `${c.lat}, ${c.lng}`].filter(Boolean).join(' · ');
+    if (address) parts.push(esc(address));
+    if (Object.hasOwn(c, 'house')) parts.push(c.house
+      ? ui('Husnummer i eksporten: “{value}”', {value: c.house})
+      : ui('Husnummer i eksporten: tomt'));
+    if (c.publisher) parts.push(esc([c.publisher, c.assigned, c.returned].filter(Boolean).join(' · ')));
+    if (c.number || c.name) parts.push(esc(c.number || c.name));
+    const prior = {
+      'Rækker uden entydigt kort': 'LTM fandt ikke ét sikkert distriktskort til denne række. Sammenlign kortnummer eller KML-navn med distriktslisten.',
+      'Kontrollér kortets grænse i eksportfilerne.': 'LTM kunne ikke bruge grænsen direkte. En ny forhåndsvisning af eksportfilerne viser den konkrete årsag.',
+      'Brug et husnummer som 42 eller 42B.': 'Husnummerfeltet skal indeholde ét husnummer, fx 42 eller 42B. Et interval eller flere numre kræver separate adresser.'
+    };
+    return `<strong>${ui(types[row.kind] || 'Import')} · ${ui(prior[row.message] || row.message, row.params)}</strong>
+      ${parts.length ? `<div>${parts.join(' · ')}</div>` : ''}
+      ${row.detail ? `<p>${esc(I18n.text(row.detail))}</p>` : ''}`;
+  },
+  taskDiagnostics(note) {
+    const details = note.territory_helper_diagnostics;
+    if (!details?.rows.length) return '';
+    const remaining = details.total - details.rows.length;
+    return `<ul>${details.rows.map(row => `<li>${this.diagnostic(row)}</li>`).join('')}</ul>
+      ${remaining ? `<p class="hint">${ui('{count} flere rækker under Ret importerede rækker.', {count: remaining})}</p>` : ''}`;
+  },
+  overlappingLoans(entry) {
+    if (!entry.overlapping_loans?.length) return '';
+    return `<section class="notice">
+      <h3>${ui('Udlån, der overlapper denne række')}</h3><ul>
+      ${entry.overlapping_loans.map(loan => `<li><strong>${esc(loan.publisher || I18n.text('Ukendt'))}</strong> ·
+        ${ui('Udleveret')} ${esc(fmt(loan.assigned))} ·
+        ${loan.returned ? ui('Afleveret') + ' ' + esc(fmt(loan.returned)) : ui('Stadig udleveret')}
+        ${loan.deleted ? ' · ' + ui('I gendannelse') : ''}</li>`).join('')}
+      </ul></section>`;
+  },
   show() {
     const session = this.session, card = session.cards[session.index];
+    const finished = session.bulkDone || session.saved.size === session.cards.length;
     const address = row => esc([row.road, row.number, row.floor, row.door, row.postcode, row.date, row.note].filter(Boolean).join(' · '));
     const warnings = this.fields.filter(([name]) => session.unmatched[name]).map(([name, label]) =>
       `<li>${ui(label)} · ${session.unmatched[name]}</li>`).join('');
@@ -118,11 +168,15 @@ const TerritoryHelperUI = {
       `<li>${ui(label)} · ${esc(session.sources[name])}</li>`).join('');
     openDialog(`<h2>${ui('Gennemgå importen kort for kort')}</h2>
       <p>${ui('Godkendte kort')} · ${session.saved.size} / ${session.cards.length}</p>
+      ${session.skipped?.length ? `<p class="hint">${ui('Kort sprunget over på grund af ugyldige eller optagede kortnumre: {count}', {count: session.skipped.length})}</p>` : ''}
       ${sources ? `<details><summary>${ui('Genkendte eksportfiler')}</summary><ul>${sources}</ul></details>` : ''}
-      ${warnings ? `<details><summary>${ui('Rækker uden entydigt kort')}</summary><ul>${warnings}</ul></details>` : ''}
+      ${warnings ? `<details><summary>${ui('Rækker og KML-grænser, som LTM ikke kunne knytte til et kort')}</summary>
+        <p>${ui('Se den konkrete række nedenfor. Når du godkender importen, kan du vælge kortet under Opfølgninger.')}</p><ul>${warnings}</ul>
+        ${session.unmatched_details?.length ? `<ol>${session.unmatched_details.map(row => `<li>${this.diagnostic(row)}</li>`).join('')}</ol>` : ''}
+        ${Object.values(session.unmatched).reduce((sum, count) => sum + count, 0) > 100 ? `<p>${ui('Forhåndsvisningen viser de første 100. Alle rækker gemmes under Opfølgninger.')}</p>` : ''}</details>` : ''}
       <label for="thReviewCard">${ui('Distriktskort')}</label>
       <select id="thReviewCard">${session.cards.map((item, i) =>
-        `<option value="${i}"${i === session.index ? ' selected' : ''}>${esc(item.number)} ${esc(item.name)}${session.saved.has(i) ? ' ✓' : ''}</option>`).join('')}</select>
+        `<option value="${i}"${i === session.index ? ' selected' : ''}>${esc(item.number)} ${esc(item.name)}${session.saved.has(i) ? ' ✓' : session.skipped?.some(row => row.index === i) ? ' · ' + esc(I18n.text('Sprunget over')) : ''}</option>`).join('')}</select>
       <h3>${esc(card.number)} ${esc(card.name)}</h3>${this.outline(card.polygon, card.locations)}
       ${card.note ? `<details><summary>${ui('Importeret kortnotat')}</summary><p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(card.note)}</p></details>` : ''}
       ${this.list('Lokationer', card.locations, address)}
@@ -130,11 +184,15 @@ const TerritoryHelperUI = {
       ${this.list('Tildelinger', card.assignments, row => esc([row.publisher, row.assigned, row.returned].filter(Boolean).join(' · ')) +
         (row.completed ? ' · ' + ui('Gennemgået') : ''))}
       ${card.loan_review.some(row => row.status === 'outside') ? `<p class="hint">${ui('Tildelinger uden for LTM’s historikperiode springes over.')}</p>` : ''}
-      ${card.errors.length ? `<ul>${card.errors.map(error => `<li>${esc(I18n.text(error))}</li>`).join('')}</ul>` : ''}
+      ${card.diagnostics?.length ? `<details open><summary>${ui('Rækker med fejl på dette kort')}</summary><ol>${card.diagnostics.map(row => `<li>${this.diagnostic(row)}</li>`).join('')}</ol></details>` : ''}
+      ${card.errors.some(error => !card.diagnostics?.some(row => row.message === error)) ? `<ul>${card.errors.filter(error => !card.diagnostics?.some(row => row.message === error)).map(error => `<li>${esc(I18n.text(error))}</li>`).join('')}</ul>` : ''}
       <p id="formError" role="alert"></p>
       <div class="actions"><button type="button" data-th-import="previous" ${session.index === 0 ? 'disabled' : ''}>${ui('Forrige')}</button>
         <button type="button" data-th-import="next" ${session.index === session.cards.length - 1 ? 'disabled' : ''}>${ui('Næste')}</button>
-        <button type="button" class="primary" data-th-import="save" ${card.errors.length || session.saved.has(session.index) ? 'disabled' : ''}>${ui('Godkend og gem dette kort')}</button>
+        <button type="button" class="primary" data-th-import="save" ${session.saved.has(session.index) ? 'disabled' : ''}>${ui('Godkend og gem dette kort')}</button>
+        <button type="button" class="primary" data-th-import="save-all" ${finished ? 'disabled' : ''}>${ui('Godkend alle kort')}</button>
+        ${(this.guideStep !== null || !Onboarding.completed()) && ProfilesUI.has('settings.manage') ? `<button type="button" data-th-import="continue">${ui('Fortsæt opsætningsguiden')}</button>` : ''}
+        ${this.boundaryButton()}
         <button type="button" data-action="close">${ui('Luk')}</button></div>`);
   },
   async save(button) {
@@ -151,10 +209,149 @@ const TerritoryHelperUI = {
     } catch {
       if (button.isConnected) button.disabled = false;
     }
+  },
+  async saveAll(button) {
+    if (button.disabled) return;
+    const session = this.session, generation = openDialog.generation;
+    el('dialog').querySelectorAll('[data-th-import],#thReviewCard').forEach(control => { control.disabled = true; });
+    try {
+      const result = await mutate('setup.territory-helper.apply', {token: session.token, all: true}, {close: false});
+      result.saved.forEach(row => session.saved.add(row.index));
+      session.skipped = result.skipped.filter(row => !session.saved.has(row.index));
+      session.bulkDone = true;
+      if (this.session === session && openDialog.generation === generation && el('dialog').open) this.show();
+    } catch {
+      if (this.session === session && openDialog.generation === generation && el('dialog').open) {
+        const error = el('formError')?.textContent;
+        this.show();
+        if (error) el('formError').textContent = error;
+      }
+    }
+  },
+  continueGuide() {
+    if (!Onboarding.answers || !this.session.saved.size) {
+      Onboarding.open(this.guideStep ?? 0);
+      return;
+    }
+    Onboarding.answers.mode = 'map';
+    Onboarding.answers.cards = 'manual';
+    Onboarding.remember();
+    Onboarding.open(Math.max(1, this.guideStep ?? 1));
+  },
+  reviewButton(id) {
+    return this.allowed() && ProfilesUI.canAction('setup.territory-helper.review')
+      ? `<button type="button" data-th-import="review" data-id="${esc(id)}">${ui('Ret importerede rækker')}</button>` : '';
+  },
+  async openReview(button) {
+    const id = button.dataset.id, origin = page, generation = openDialog.generation;
+    button.disabled = true;
+    try {
+      const response = await api('/api/mutate', {action: 'setup.territory-helper.review', data: {id}});
+      const {result} = await response.json();
+      if (page !== origin || generation !== openDialog.generation || !button.isConnected) return;
+      this.review = {...result, id};
+      this.showReview();
+    } catch (error) {
+      toast(error);
+    } finally {
+      button.disabled = false;
+    }
+  },
+  showReview(entry) {
+    const review = this.review;
+    const labels = {road: 'Vejnavn', house: 'Husnummer', address: 'Adresse', post: 'Postnummer',
+      floor: 'Etage', door: 'Dør', lat: 'Breddegrad', lng: 'Længdegrad', notes: 'Notat',
+      date: 'Dato', publisher: 'Forkynder', assigned: 'Udleveringsdato', returned: 'Afleveringsdato',
+      complete_date: 'Gennemgangsdato', completed: 'Gennemgået', number: 'Kortnummer',
+      name: 'Kortnavn', boundary: 'Distriktsgrænse (GeoJSON)'};
+    const inputs = entry ? Object.entries(entry.fields).map(([key, value]) => {
+      const input = key==='completed'
+        ? `<select name="${key}"><option value="">${ui('Nej')}</option><option value="1" ${value ? 'selected' : ''}>${ui('Ja')}</option></select>`
+        : ['boundary', 'notes'].includes(key)
+          ? `<textarea name="${key}" rows="4">${esc(value)}</textarea>`
+          : `<input name="${key}" value="${esc(value)}">`;
+      return `<label>${ui(labels[key])}${input}</label>`;
+    }).join('') : '';
+    const cards = !review.card_id && entry
+      ? `<label>${ui('Distriktskort')}<select name="card_id" required><option value="">${ui('Vælg et kort')}</option>${state.cards.filter(card => !card.archived).map(card =>
+        `<option value="${esc(card.id)}">${esc(card.number)} ${esc(card.name)}</option>`).join('')}</select></label>` : '';
+    openDialog(`<h2>${ui('Ret importerede rækker')}</h2>${entry
+      ? `<div class="notice">${this.diagnostic(entry)}</div>${this.overlappingLoans(entry)}<form id="thRepairForm" data-issue="${esc(entry.id)}">${cards}${inputs}
+        <p id="formError" role="alert"></p><div class="actions"><button class="primary">${ui('Gem rettelse')}</button>
+        <button type="button" data-th-import="review-list">${ui('Tilbage')}</button></div></form>`
+      : review.issues.length ? `<ul>${review.issues.map(row => `<li>${this.diagnostic(row)}
+        <button type="button" data-th-import="review-edit" data-id="${esc(row.id)}">${ui('Redigér')}</button></li>`).join('')}</ul>`
+        : `<p>${ui('Ingen ugyldige importrækker tilbage.')}</p>`}
+      <button type="button" data-action="close">${ui('Luk')}</button>`);
+  },
+  async repair(form) {
+    const review = this.review, generation = openDialog.generation, button = form.querySelector('.primary');
+    if (button.disabled) return;
+    const {card_id, ...fields} = Object.fromEntries(new FormData(form));
+    button.disabled = true;
+    try {
+      const result = await mutate('setup.territory-helper.repair', {id: review.id, issue_id: form.dataset.issue, card_id, fields}, {close: false});
+      review.issues = result.issues;
+      if (generation === openDialog.generation && form.isConnected && el('dialog').open) this.showReview();
+    } catch {
+      // mutate displays the validation error in the open form.
+    } finally {
+      button.disabled = false;
+    }
+  },
+  boundaryButton() {
+    return this.allowed() && ProfilesUI.canAction('geo.main.suggest.preview')
+      && state.cards.some(card => !card.archived && card.geo_polygon?.length >= 3)
+      ? `<button type="button" data-th-import="boundary">${ui('Foreslå ydergrænse ud fra distriktskort')}</button>` : '';
+  },
+  async openBoundary(button) {
+    const generation = openDialog.generation;
+    button.disabled = true;
+    try {
+      if (!GeoUI.loaded) await GeoUI.load();
+      if (generation !== openDialog.generation || !button.isConnected || !el('dialog').open || !GeoUI.canLeave()) return;
+      closeDialog();
+      MainBoundaryUI.open();
+      await MainBoundaryUI.suggest();
+    } catch (error) {
+      toast(error);
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  },
+  noteButton(card) {
+    return this.allowed() && card.temporary && !card.imported_addresses?.length
+      ? `<button type="button" data-th-import="note-roads" data-card="${esc(card.id)}">${ui('Find vejlinjer i notatet')}</button>`
+      : '';
+  },
+  async showNoteRoads(button) {
+    const generation = openDialog.generation;
+    button.disabled = true;
+    try {
+      const response = await api('/api/mutate', {action: 'setup.territory-helper.preview', data: {note_card_id: button.dataset.card}});
+      const {result} = await response.json();
+      if (generation !== openDialog.generation || !button.isConnected) return;
+      const content = result.roads.length
+        ? '<ul>' + result.roads.map(row => `<li>${esc(row.road)} ${esc(row.numbers)} · ${esc(row.postcode)}</li>`).join('') + '</ul>'
+        : `<p>${ui('Ingen entydige vejlinjer fundet. Hent DAR-adresser for området, og kontrollér vejnavne og husnumre i notatet.')}</p>`;
+      openDialog(`<h2>${ui('Vejlinjer fra notatet')}</h2>
+        ${content}<p class="hint">${ui('Kontrollér forslagene, og tilføj de rigtige vejlinjer på kortet.')}</p>
+        <div class="actions"><button type="button" data-action="detail" data-id="${esc(button.dataset.card)}">${ui('Åbn kort')}</button>
+        <button type="button" data-action="close">${ui('Luk')}</button></div>`);
+    } catch (error) {
+      if (button.isConnected) toast(error);
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
   }
 };
 
 document.addEventListener('submit', event => {
+  if (event.target.id === 'thRepairForm') {
+    event.preventDefault();
+    TerritoryHelperUI.repair(event.target);
+    return;
+  }
   if (event.target.id !== 'thFilesForm') return;
   event.preventDefault();
   TerritoryHelperUI.preview(event.target);
@@ -181,12 +378,19 @@ document.addEventListener('click', event => {
   const button = event.target.closest('[data-th-import]');
   if (!button || button.disabled) return;
   const action = button.dataset.thImport;
-  if (action === 'open') return TerritoryHelperUI.open();
+  if (action === 'open') return TerritoryHelperUI.open(button.dataset.guide === 'yes');
   if (action === 'remove') {
     TerritoryHelperUI.uploads.splice(Number(button.dataset.index), 1);
     return TerritoryHelperUI.showFiles();
   }
   if (action === 'save') return TerritoryHelperUI.save(button);
+  if (action === 'save-all') return TerritoryHelperUI.saveAll(button);
+  if (action === 'continue') return TerritoryHelperUI.continueGuide();
+  if (action === 'review') return TerritoryHelperUI.openReview(button);
+  if (action === 'review-list') return TerritoryHelperUI.showReview();
+  if (action === 'review-edit') return TerritoryHelperUI.showReview(TerritoryHelperUI.review.issues.find(row => row.id === button.dataset.id));
+  if (action === 'boundary') return TerritoryHelperUI.openBoundary(button);
+  if (action === 'note-roads') return TerritoryHelperUI.showNoteRoads(button);
   TerritoryHelperUI.session.index += action === 'next' ? 1 : -1;
   TerritoryHelperUI.show();
 });

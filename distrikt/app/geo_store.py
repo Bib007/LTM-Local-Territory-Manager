@@ -5,6 +5,8 @@ import json
 import re
 import uuid
 from datetime import datetime, timezone
+from collections import defaultdict
+from math import cos, hypot, radians
 from geography import valid_coordinate, valid_polygon, point_in_polygon, enclosing_outline, street_rows, in_number_range
 from main_boundary import MainBoundaryStore
 from admin_store import signature
@@ -18,6 +20,39 @@ def text(value,limit=120,required=False):
     return value
 
 def address_key(a):return tuple(str(a.get(k,'')).casefold().strip() for k in ('postcode','road','number','floor','door'))
+
+def imported_point_matches(card, addresses):
+    # DAR points must be close to the exported point and match the house number.
+    # Never resolve an ambiguous entrance or apartment by proximity alone.
+    cells = defaultdict(list)
+    scale = 1000
+    for address in addresses:
+        if address.get('retired') or not address.get('source', '').startswith('DAR'):
+            continue
+        cells[int(address['lng'] * scale), int(address['lat'] * scale)].append(address)
+    matches, missed = [], 0
+    for point in card.get('imported_addresses', []):
+        if point.get('lng') is None or point.get('lat') is None:
+            continue
+        x, y = point['lng'], point['lat']
+        i, j = int(x * scale), int(y * scale)
+        same = lambda field, candidate: str(point.get(field, '')).casefold().strip() == str(candidate.get(field, '')).casefold().strip()
+        candidates = {}
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for a in cells.get((i + dx, j + dy), ()):
+                    metres = 111_320 * hypot((a['lng'] - x) * cos(radians(y)), a['lat'] - y)
+                    if (metres <= 25 and same('number', a)
+                            and all(not point.get(f) or same(f, a) for f in ('postcode', 'floor', 'door'))):
+                        candidates.setdefault(address_key(a), a)
+        if len(candidates) > 1:
+            candidates = {key: a for key, a in candidates.items() if same('road', a)}
+        if len(candidates) == 1:
+            matches.append(next(iter(candidates.values())))
+        else:
+            missed += 1
+    return matches, missed
+
 
 class GeoStore(MainBoundaryStore):
     def geo_info(self, rows=None):
@@ -179,6 +214,12 @@ class GeoStore(MainBoundaryStore):
         if action=='geo.preview':
             return self.geo_preview(data)
         if action=='geo.assign':
+            if 'auto_expected' in data:
+                current=self.require('cards',data.get('card_id'))
+                expected=data['auto_expected']
+                actual={'polygon':current.get('geo_polygon') or [],'address_ids':current.get('address_ids') or [],'addresses':current.get('addresses') or []}
+                if expected!=actual or current.get('archived') or data.get('polygon')!=actual['polygon'] or not isinstance(data.get('address_ids'),list) or not set(actual['address_ids']).issubset(data['address_ids']):
+                    raise ValueError('Kortet er ændret. Opdater oversigten og prøv igen.')
             if 'planned' in data and type(data['planned']) is not bool:
                 raise ValueError('Ugyldig status for distriktskort.')
             if not data.get('card_id') and data.get('planned') is True and data.get('address_ids')==[]:
@@ -272,6 +313,9 @@ class GeoStore(MainBoundaryStore):
             if data.get('planning_only'):return result
             preview=self.geo_preview({'card_id':data.get('card_id'),'address_ids':result['address_ids'],'suggest_outline':True})
             return dict(preview,**{k:v for k,v in result.items() if k!='address_ids'})
+        elif mode=='imported_points':
+            card = self.require('cards', data.get('card_id'))
+            selected, unmatched_points = imported_point_matches(card, all_addresses)
         elif mode=='ids':
             ids=data.get('address_ids',[])
             if not isinstance(ids,list) or len(ids)>10000:raise ValueError('For mange adresser.')
@@ -296,6 +340,8 @@ class GeoStore(MainBoundaryStore):
         retired=[a['id'] for a in selected if a.get('retired')]
         result={'addresses':selected,'conflicts':conflicts,'ignored':excluded,'retired':retired,
                 'visits':sum(a['count'] for a in selected),'rows':street_rows(selected)}
+        if mode=='imported_points':
+            result['unmatched_points'] = unmatched_points
         if mode=='range' or data.get('suggest_outline') is True:
             blocked={c['id'] for c in conflicts}|set(excluded)|set(retired)
             eligible=[a for a in selected if a['id'] not in blocked]

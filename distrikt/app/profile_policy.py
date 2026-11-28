@@ -82,7 +82,7 @@ def route(permissions,path,post=False):
 GROUPS={
  ('cards.view','cards.edit'):'card.save card.color card.bulk.preview card.bulk.create card.bulk.edit.preview card.bulk.edit card.numbering.preview card.numbering.apply card.numbering.undo.preview card.numbering.undo',
  ('cards.view','geo.view','geo.edit','cards.edit'):'geo.assign geo.boundary geo.preview map.save map.outline card.restructure.preview card.restructure.apply',
- ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune address.change.outside.preview address.change.outside.reject geo.main.download.save geo.main.download.tile geo.main.import.preview ignore.save address.change.review',
+ ('geo.view','geo.edit','cards.view','ib.view'):'geo.manual geo.type geo.import geo.import_file geo.postcode.save geo.postcode.road geo.main.save geo.main.prune.preview geo.main.prune address.change.outside.preview address.change.outside.reject geo.main.download.save geo.main.download.tile geo.main.import.preview geo.main.suggest.preview ignore.save address.change.review',
  ('cards.view','geo.view','geo.edit'):'followup.ignore geo.address_tracking',
  ('connections.manage',):'geo.token',
  ('cards.view','loans.view','folder.manage'):'folder.set folder.set_many',
@@ -104,7 +104,7 @@ GROUPS={
  ('backup.export',):'backup.record backup.snooze',
  ('cards.view','cards.edit','geo.view'):'setup.card-import.inspect setup.card-import.preview setup.card-import.apply',
  HISTORY_IMPORT_PERMISSIONS:'setup.history-import.preview setup.history-import.apply',
- HISTORY_IMPORT_PERMISSIONS+('geo.view','geo.edit','ib.view','ib.edit','notes.view','notes.edit','settings.manage'):'setup.territory-helper.preview setup.territory-helper.apply',
+ HISTORY_IMPORT_PERMISSIONS+('geo.view','geo.edit','ib.view','ib.edit','notes.view','notes.edit','settings.manage'):'setup.territory-helper.preview setup.territory-helper.apply setup.territory-helper.review setup.territory-helper.repair',
 }
 ACTIONS={action:frozenset(rights) for rights,actions in GROUPS.items() for action in actions.split()}
 CASCADE=frozenset(('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','ib.view','ib.edit','notes.view','notes.edit','geo.view','geo.edit'))
@@ -205,10 +205,13 @@ def state_for(raw,user):
                 if isinstance(card.get(field),dict):card[field].pop(key,None)
     source_notes={note['id']:note for note in raw['notes']} if result['notes'] else {}
     from workflow_store import task_reply_target
+    import_review = not user.get('desk_only') and set(ACTIONS['setup.territory-helper.review']).issubset(p)
     for note in result['notes']:
         note['assigned']=bool(note.get('assignee_id'))
         note['assignee_self']=note.get('assignee_id')==user['id']
         source=source_notes[note['id']]
+        if import_review and 'territory_helper_diagnostics' in source:
+            note['territory_helper_diagnostics']=deepcopy(source['territory_helper_diagnostics'])
         assigned_by=source.get('assigned_by')
         if assigned_by and note['assigned']:note['assigned_by_name']=assigned_by['name']
         note['reply_target']=task_reply_target(source)

@@ -42,10 +42,11 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.15.0-beta.5'
+VERSION='1.15.0-beta.6'
 # Preview installers can share a version number. Do not reuse a server from
-# an earlier installer when its packaged import screen is different.
-IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes()).hexdigest()[:16]
+# an earlier installer with a different import UI or DAR connection code.
+IMPORT_BUILD=(hashlib.sha256((APP/'territory-helper-ui.js').read_bytes() + (APP/'workspace.js').read_bytes() +
+                            (APP/'address_source.py').read_bytes()).hexdigest()[:16]
               if '-beta.' in VERSION and (APP/'territory-helper-ui.js').is_file() else None)
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
@@ -246,6 +247,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/brand-mark.svg','/brand-logo.svg','/brand-logo-light.svg'):return self.send((APP/path[1:]).read_bytes(),'image/svg+xml')
+            if path=='/territory-helper-icon.webp':return self.send((APP/path[1:]).read_bytes(),'image/webp')
             if path=='/apple-touch-icon.png':return self.send((APP/'apple-touch-icon.png').read_bytes(),'image/png')
             if path=='/s12-template-en.png':return self.send((APP.parent/'templates'/'S-12-E-source.png').read_bytes(),'image/png')
             if path=='/s13-background-en.jpg':return self.send((APP.parent/'templates'/'S-13-E-background.jpg').read_bytes(),'image/jpeg')
@@ -393,7 +395,8 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if self.path=='/api/mutate' and data.get('action')=='geo.preview':
                 return self.prepare_geo_preview(data.get('data',{}))
             if self.path=='/api/mutate' and data.get('action') in (
-                    'setup.territory-helper.preview','setup.territory-helper.apply'):
+                    'setup.territory-helper.preview','setup.territory-helper.apply',
+                    'setup.territory-helper.review','setup.territory-helper.repair'):
                 if not self.server.beta or (self.profile_user and self.profile_user.get('desk_only')):
                     raise PermissionError()
                 payload=data.get('data')

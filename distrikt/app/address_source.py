@@ -7,6 +7,7 @@ import json
 import re
 import socket
 import ssl
+import sys
 import threading
 import urllib.error
 import urllib.parse
@@ -48,6 +49,16 @@ def reject_graphql(result,query):
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args):return None
 
+def datafordeler_opener():
+    if sys.platform == 'darwin' and getattr(sys, 'frozen', False):
+        # The standalone Mac app's OpenSSL can point to certificates on the build runner.
+        import certifi
+        context = ssl.create_default_context()
+        context.load_verify_locations(cafile=certifi.where())
+        return urllib.request.build_opener(NoRedirect(), urllib.request.HTTPSHandler(context=context))
+    return urllib.request.build_opener(NoRedirect())
+
+
 class Datafordeler:
     def __init__(self,root):
         self.path=Path(root)/'datafordeler-auth.json'
@@ -70,7 +81,7 @@ class Datafordeler:
         if payload is not None:headers['Content-Type']='application/json'
         request=urllib.request.Request(url,data=payload,headers=headers)
         try:
-            with urllib.request.build_opener(NoRedirect()).open(request,timeout=20) as response:
+            with datafordeler_opener().open(request,timeout=20) as response:
                 raw=response.read(MAX_SCHEMA+1)
             if len(raw)>MAX_SCHEMA:raise ValueError('Datafordeleren gav et for stort svar. Nøglen er ikke ændret.')
             return raw

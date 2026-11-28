@@ -2,7 +2,7 @@
 /* Public data stored locally; online backgrounds are optional. */
 const GeoUI={
   data:{addresses:[],buildings:[],roads:[],dividers:[],info:{}},loaded:false,map:null,layers:null,markers:[],draftLayer:null,
-  session:0,suggestedOutline:null,previewSequence:0,saveBusy:false,loadSequence:0,noticeEpoch:0,jobNoticeEpoch:0,
+  bulkAutoBusy:false,bulkAutoProgress:null,session:0,suggestedOutline:null,previewSequence:0,saveBusy:false,loadSequence:0,noticeEpoch:0,jobNoticeEpoch:0,
   drawColor:'#477596',whole:false,target:'',ids:new Set(),polygon:[],mode:'choose',dirty:false,focus:[],view:null,job:null,jobTimer:null,busy:false,notice:'',rangeRoad:'',rangePost:'',pendingRange:null,
   // Capture values, not references: a late response must never replace a newer draft.
   draftStamp(includeRevision=true){const form=el('geoRangeForm'),range=form?.elements?[...form.elements].filter(e=>e.name).map(e=>[e.name,e.value,e.checked]):null;return JSON.stringify([page,this.session,this.whole,this.target,[...this.ids].sort(),this.polygon,this.drawColor,this.mode,this.dirty,includeRevision?state.revision:null,range]);},
@@ -91,7 +91,7 @@ const GeoUI={
   pointInside(p,poly){if(poly.length<3)return false;const[x,y]=p;let inside=false;for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],cross=(x-a[0])*(b[1]-a[1])-(y-a[1])*(b[0]-a[0]);if(Math.abs(cross)<1e-12&&x>=Math.min(a[0],b[0])-1e-10&&x<=Math.max(a[0],b[0])+1e-10&&y>=Math.min(a[1],b[1])-1e-10&&y<=Math.max(a[1],b[1])+1e-10)return true;if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])inside=!inside;}return inside;},
   page(){if(this.whole)return MainBoundaryUI.page();
     const info=this.data.info||{},c=card(this.target),roads=[...new Set(this.addresses().map(a=>a.road))].sort(cmp);
-    return `<section class="panel geoIntro"><div class="between"><div><h2>${ui("Tegn og vælg adresser")}</h2><p class="hint">${ui('{addresses} lokale adresser · {buildings} bygninger · {roads} vejstykker. Kortvalg og grænser gemmes på dit lokale system.',{addresses:info.addresses||0,buildings:info.buildings||0,roads:info.roads||0})}</p></div><button data-main="open">${ui("Samlet distriktsgrænse")}</button><button data-geo="data">${ui("Hent / importer kortdata")}</button></div><div class="toolbar"><label>${ui("Kort")} <select id="geoTarget"><option value="" data-ui="Opret et nyt kort fra valget">${esc(I18n.text("Opret et nyt kort fra valget"))}</option>${state.cards.slice().sort((a,b)=>cmp(a.number,b.number)).map(c=>`<option value="${c.id}" ${c.id===this.target?'selected':''}>${esc(c.number)} · ${esc(areaName(c.area_id))}</option>`).join('')}</select></label><label>${ui("Grænsefarve")} <input id="geoColor" type="color" value="${this.drawColor}"></label><span class="hint">${ui(c?'Farven gemmes automatisk.':'Farven gemmes med det nye kort.')}</span>${c?`<button data-action="detail" data-id="${c.id}">${ui('Kort {number} og print',{number:c.number})}</button>`:''}</div><div class="toolbar geoModes"><button data-geo="import-boundary">${ui("Importér KML / GeoJSON")}</button><button data-geo="auto">${ui("Auto huse inden for grænsen")}</button><button data-geo="manual">${ui("Tilføj adresse manuelt")}</button></div><div class="geoWorkspace"><div class="geoMapColumn">${MapBackground.toolbar('geographicEditor')}<div id="geographicEditor" class="geographicEditor" ${I18n.attribute('aria',"Interaktivt lokalt kort")}></div>${this.editorTools()}<p class="hint" id="geoModeHint">${ui(this.modeHint())}</p><p class="hint geoAttribution">${ui("Veje og bygninger: © OpenStreetMap-bidragsydere, ODbL. Adresser og officielle vejlinjer: DAR · øvrige veje og bygninger: OpenStreetMap. Kortbaggrunden vælges ovenfor. PNG kan gemmes med lokale kortdata eller det viste OpenStreetMap-udsnit.")}</p><div class="notice" id="geoNotice" ${!this.notice?'hidden':''}>${this.noticeHTML()}</div><details class="geoRange" open><summary>${ui("Vælg ud fra vej og husnumre")}</summary><form id="geoRangeForm"><div class="geoRangeFields"><div><label>${ui("Vejnavn")}</label>${RoadSearch.field('geoRangeRoad',this.rangeRoad)}</div><div><label>${ui("Postnummer")}</label><input name="postcode" value="${esc(this.rangePost)}" pattern="[0-9]{4}" maxlength="4" ${I18n.attribute('placeholder',"Postnummer")} required></div><div><label>${ui("Fra")}</label><input name="from" ${I18n.attribute('placeholder',"Fra")} required></div><div><label>${ui("Til")}</label><input name="to" ${I18n.attribute('placeholder',"Til")} required></div><div><label>${ui("Numre")}</label><select name="parity"><option value="all" data-ui="Alle">${esc(I18n.text("Alle"))}</option><option value="even" data-ui="Lige">${esc(I18n.text("Lige"))}</option><option value="odd" data-ui="Ulige">${esc(I18n.text("Ulige"))}</option></select></div></div><label class="check"><input type="checkbox" data-online-search ${RoadSearch.online?'checked':''}> ${ui("Online vejforslag fra DAR")}</label><div class="actions"><button class="primary">${ui("Vis og vælg adresserne")}</button><button type="button" data-geo="road">${ui("Hent en vej fra DAR")}</button></div><p class="hint">${ui("Valget omfatter alle kendte lejligheder.")} ${ui("Grænseforslaget holder andre indlæste adresseprikker udenfor og tager hensyn til nabodistrikter.")}</p></form></details></div><section class="geoChosen"><div id="geoSelection"></div><div id="geoHouse"></div></section></div></section><details class="panel"><summary>${ui("Eget baggrundskort")}</summary>${legacyMapSetup()}</details>`;
+    return `<section class="panel geoIntro"><div class="between"><div><h2>${ui("Tegn og vælg adresser")}</h2><p class="hint">${ui('{addresses} lokale adresser · {buildings} bygninger · {roads} vejstykker. Kortvalg og grænser gemmes på dit lokale system.',{addresses:info.addresses||0,buildings:info.buildings||0,roads:info.roads||0})}</p></div><button data-main="open">${ui("Samlet distriktsgrænse")}</button><button data-geo="data">${ui("Hent / importer kortdata")}</button></div><div class="toolbar"><label>${ui("Kort")} <select id="geoTarget"><option value="" data-ui="Opret et nyt kort fra valget">${esc(I18n.text("Opret et nyt kort fra valget"))}</option>${state.cards.slice().sort((a,b)=>cmp(a.number,b.number)).map(c=>`<option value="${c.id}" ${c.id===this.target?'selected':''}>${esc(c.number)} · ${esc(areaName(c.area_id))}</option>`).join('')}</select></label><label>${ui("Grænsefarve")} <input id="geoColor" type="color" value="${this.drawColor}"></label><span class="hint">${ui(c?'Farven gemmes automatisk.':'Farven gemmes med det nye kort.')}</span>${c?`<button data-action="detail" data-id="${c.id}">${ui('Kort {number} og print',{number:c.number})}</button>`:''}</div><div class="toolbar geoModes"><button data-geo="import-boundary">${ui("Importér KML / GeoJSON")}</button><button data-geo="auto">${ui("Auto huse inden for grænsen")}</button><button data-geo="auto-all" ${this.bulkAutoBusy||this.dirty||!state.cards.some(c=>!c.archived&&c.geo_polygon?.length>=3)?'disabled':''}>${ui("Auto huse inden for grænsen på alle kort")}</button>${this.bulkAutoProgress?`<span role="status">${ui("Kort behandlet: {done} / {total}",this.bulkAutoProgress)}</span>`:''}<button data-geo="manual">${ui("Tilføj adresse manuelt")}</button></div><div class="geoWorkspace"><div class="geoMapColumn">${MapBackground.toolbar('geographicEditor')}<div id="geographicEditor" class="geographicEditor" ${I18n.attribute('aria',"Interaktivt lokalt kort")}></div>${this.editorTools()}<p class="hint" id="geoModeHint">${ui(this.modeHint())}</p><p class="hint geoAttribution">${ui("Veje og bygninger: © OpenStreetMap-bidragsydere, ODbL. Adresser og officielle vejlinjer: DAR · øvrige veje og bygninger: OpenStreetMap. Kortbaggrunden vælges ovenfor. PNG kan gemmes med lokale kortdata eller det viste OpenStreetMap-udsnit.")}</p><div class="notice" id="geoNotice" ${!this.notice?'hidden':''}>${this.noticeHTML()}</div><details class="geoRange" open><summary>${ui("Vælg ud fra vej og husnumre")}</summary><form id="geoRangeForm"><div class="geoRangeFields"><div><label>${ui("Vejnavn")}</label>${RoadSearch.field('geoRangeRoad',this.rangeRoad)}</div><div><label>${ui("Postnummer")}</label><input name="postcode" value="${esc(this.rangePost)}" pattern="[0-9]{4}" maxlength="4" ${I18n.attribute('placeholder',"Postnummer")} required></div><div><label>${ui("Fra")}</label><input name="from" ${I18n.attribute('placeholder',"Fra")} required></div><div><label>${ui("Til")}</label><input name="to" ${I18n.attribute('placeholder',"Til")} required></div><div><label>${ui("Numre")}</label><select name="parity"><option value="all" data-ui="Alle">${esc(I18n.text("Alle"))}</option><option value="even" data-ui="Lige">${esc(I18n.text("Lige"))}</option><option value="odd" data-ui="Ulige">${esc(I18n.text("Ulige"))}</option></select></div></div><label class="check"><input type="checkbox" data-online-search ${RoadSearch.online?'checked':''}> ${ui("Online vejforslag fra DAR")}</label><div class="actions"><button class="primary">${ui("Vis og vælg adresserne")}</button><button type="button" data-geo="road">${ui("Hent en vej fra DAR")}</button></div><p class="hint">${ui("Valget omfatter alle kendte lejligheder.")} ${ui("Grænseforslaget holder andre indlæste adresseprikker udenfor og tager hensyn til nabodistrikter.")}</p></form></details></div><section class="geoChosen"><div id="geoSelection"></div><div id="geoHouse"></div></section></div></section><details class="panel"><summary>${ui("Eget baggrundskort")}</summary>${legacyMapSetup()}</details>`;
   },
   // Keep real buttons outside Leaflet so map gestures and keyboard focus stay independent.
   editorTools(whole=false){
@@ -182,7 +182,7 @@ const GeoUI={
   toggleHouse(group){this.clearStaleFeedback();const ignored=this.ignored(),eligible=group.filter(a=>this.available(a,ignored)),all=eligible.length&&eligible.every(a=>this.ids.has(a.id));for(const a of eligible)all?this.ids.delete(a.id):this.ids.add(a.id);this.dirty=true;this.drawLayers();this.updatePanel();if(!eligible.length)toast(I18n.text('Adresserne er allerede på et andet kort eller markeret Se bort fra.'));},
   updatePanel(){if(this.whole){MainBoundaryUI.panel();this.updateAddressPanel();return;}this.syncEditorTools();
     const node=el('geoSelection');if(!node)return;const chosen=this.chosen(),visits=chosen.reduce((n,a)=>n+a.count,0),c=card(this.target),outside=this.polygon.length>=3?chosen.filter(a=>!this.pointInside([a.lng,a.lat],this.polygon)).length:0;
-    node.innerHTML=`<h2>${ui('{count} adresser valgt',{count:chosen.length})}</h2><div class="geoTotal">${visits}<small>${ui("besøg inkl. IB")}</small></div><p class="hint">${ui('{count} hjørner',{count:this.polygon.length})}${outside?' · '+ui('{count} valgte adresser uden for grænsen',{count:outside}):''} · ${ui(this.dirty?'valg endnu ikke gemt':'gemt valg / intet nyt valg')}</p><div class="actions"><button data-geo="save" class="primary" ${!chosen.length&&(c||this.polygon.length<3)?'disabled':''}>${c?ui('Gem adresser på kort {number}',{number:c.number}):ui(chosen.length?'Opret kort fra valget':'Opret kort under opbygning')}</button>${c?`<button data-geo="boundary" `+(this.polygon.length<3||this.outlineApproval()?'disabled':'')+`>${ui('Gem kun grænse')}</button>`:''}<button data-geo="suggest-outline" ${!chosen.length?'disabled':''}>${ui('Foreslå grænse')}</button><button data-geo="clear" ${!chosen.length?'disabled':''}>${ui("Ryd valget")}</button></div>${c?.addresses?.length?`<div class="actions"><button data-geo="street-lines">${ui('Foreslå DAR-adresser fra vejlisten')}</button></div>`:''}${c&&!c.temporary?`<div class="actions"><button data-action="print-options" data-id="${c.id}" data-side="front">${ui("Print forside")}</button><button data-action="print-options" data-id="${c.id}" data-side="back">${ui("Print IB-bagside")}</button><button data-geo="export-map-osm" data-osm-export data-id="${c.id}" ${MapBackground.mode!=='road'?'disabled':''}>${ui("Gem PNG · OpenStreetMap")}</button><button data-geo="export-map" data-id="${c.id}">${ui("Gem PNG · lokale kortdata")}</button></div>`:''}<div class="geoSelectedList">${chosen.slice().sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.floor,b.floor)).map(a=>`<div><button class="link" data-geo="focus" data-id="${esc(a.id)}">${esc(a.road)} ${esc(a.number)}${a.floor||a.door?' · '+esc([a.floor,a.door].filter(Boolean).join(' ')):''}</button><button data-geo="remove" data-id="${esc(a.id)}" ${I18n.attribute('aria',"Fravælg adresse")}>×</button></div>`).join('')||`<p class="hint">${ui("Hent en vej eller et mindre kortudsnit for at vælge huse.")}</p>`}</div>`;
+    node.innerHTML=`<h2>${ui('{count} adresser valgt',{count:chosen.length})}</h2><div class="geoTotal">${visits}<small>${ui("besøg inkl. IB")}</small></div><p class="hint">${ui('{count} hjørner',{count:this.polygon.length})}${outside?' · '+ui('{count} valgte adresser uden for grænsen',{count:outside}):''} · ${ui(this.dirty?'valg endnu ikke gemt':'gemt valg / intet nyt valg')}</p><div class="actions"><button data-geo="save" class="primary" ${!chosen.length&&(c||this.polygon.length<3)?'disabled':''}>${c?ui('Gem adresser på kort {number}',{number:c.number}):ui(chosen.length?'Opret kort fra valget':'Opret kort under opbygning')}</button>${c?`<button data-geo="boundary" `+(this.polygon.length<3||this.outlineApproval()?'disabled':'')+`>${ui('Gem kun grænse')}</button>`:''}<button data-geo="suggest-outline" ${!chosen.length?'disabled':''}>${ui('Foreslå grænse')}</button><button data-geo="clear" ${!chosen.length?'disabled':''}>${ui("Ryd valget")}</button></div>${c?.addresses?.length||c?.imported_addresses?.some(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lng))?`<div class="actions">${c?.addresses?.length?`<button data-geo="street-lines">${ui('Foreslå DAR-adresser fra vejlisten')}</button>`:''}${c?.imported_addresses?.some(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lng))?`<button data-geo="imported-points">${ui('Foreslå DAR-adresser fra koordinater')}</button>`:''}</div>`:''}${c&&!c.temporary?`<div class="actions"><button data-action="print-options" data-id="${c.id}" data-side="front">${ui("Print forside")}</button><button data-action="print-options" data-id="${c.id}" data-side="back">${ui("Print IB-bagside")}</button><button data-geo="export-map-osm" data-osm-export data-id="${c.id}" ${MapBackground.mode!=='road'?'disabled':''}>${ui("Gem PNG · OpenStreetMap")}</button><button data-geo="export-map" data-id="${c.id}">${ui("Gem PNG · lokale kortdata")}</button></div>`:''}<div class="geoSelectedList">${chosen.slice().sort((a,b)=>cmp(a.road,b.road)||cmp(a.number,b.number)||cmp(a.floor,b.floor)).map(a=>`<div><button class="link" data-geo="focus" data-id="${esc(a.id)}">${esc(a.road)} ${esc(a.number)}${a.floor||a.door?' · '+esc([a.floor,a.door].filter(Boolean).join(' ')):''}</button><button data-geo="remove" data-id="${esc(a.id)}" ${I18n.attribute('aria',"Fravælg adresse")}>×</button></div>`).join('')||`<p class="hint">${ui("Hent en vej eller et mindre kortudsnit for at vælge huse.")}</p>`}</div>`;
     this.updateAddressPanel();
     const hint=el('geoModeHint');if(hint)hint.innerHTML=ui(this.modeHint());const notice=el('geoNotice');if(notice){notice.hidden=!this.notice;notice.innerHTML=this.noticeHTML();}
   },
@@ -215,7 +215,24 @@ const GeoUI={
     if(data.suggest_outline&&result.outline_status==='unavailable'){
       this.setNotice(this.outlineNotice(result));this.updatePanel();return false;
     }
-    this.ids=new Set(result.addresses.filter(a=>!blocked.has(a.id)).map(a=>a.id));
+    const selected=result.addresses.filter(a=>!blocked.has(a.id));
+    if(data.mode==='imported_points'){
+      const params={count:selected.length, unmatched:result.unmatched_points, blocked:blocked.size};
+      const notice='{count} DAR-adresser foreslået fra koordinater. {unmatched} uden entydigt match, {blocked} blokeret.';
+      if(!selected.length){
+        this.setNotice(notice,params,'Hent DAR-adresser for området, og prøv igen.');
+        this.updatePanel();
+        return false;
+      }
+      this.streetApproval=null;
+      this.clearStaleFeedback();
+      this.ids=new Set(selected.map(a=>a.id));
+      this.dirty=true;this.mode='choose';
+      this.setNotice(notice,params,'Kontrollér forslaget på kortet, og gem adressevalget.');
+      this.drawLayers();this.updatePanel();
+      return true;
+    }
+    this.ids=new Set(selected.map(a=>a.id));
     if(data.mode==='range'||data.suggest_outline)this.useSuggestedOutline(result);
     if(data.mode==='range')this.streetApproval=null;
     this.dirty=true;this.mode='choose';
@@ -291,9 +308,50 @@ const GeoUI={
   }},
   boundsForDownload(){if(!this.map)throw Error(I18n.text('Åbn Kortopsætning, og vælg et kortudsnit først.'));return this.map.getBounds();},
   async confirmIgnore(id,reason){const stamp=this.draftStamp(false);await mutate('ignore.save',{address_id:id,reason});if(stamp!==this.draftStamp(false))return;if(this.ids.delete(id))this.dirty=true;render();},
+  async autoAll(){
+    if(this.bulkAutoBusy||this.dirty||this.saveBusy||this.busy)return;
+    if(typeof ProfilesUI!=='undefined'&&!ProfilesUI.canAction('geo.assign'))throw Error(I18n.text('Du har ikke rettighed til denne handling.'));
+    const cards=state.cards.filter(c=>!c.archived&&c.geo_polygon?.length>=3).sort((a,b)=>cmp(a.number,b.number));
+    if(!cards.length)return;
+    if(!window.confirm(I18n.format('Find adresser inden for grænsen på {count} kort? Vejlisterne opdateres, men gemte adressevalg, IB og historik beholdes. Kort uden entydige nye adresser springes over.',{count:cards.length})))return;
+    const origin=page,session=this.session;
+    this.bulkAutoBusy=true;this.bulkAutoProgress={done:0,total:cards.length};
+    let updated=0,skipped=0;
+    const expected=c=>({polygon:c.geo_polygon,address_ids:c.address_ids||[],addresses:c.addresses||[]});
+    const active=()=>page===origin&&this.session===session&&!this.dirty;
+    try{
+      render();
+      for(const original of cards){
+        if(!active())break;
+        const current=card(original.id);
+        if(!current||JSON.stringify(expected(current))!==JSON.stringify(expected(original)))break;
+        const preview=await this.preview({mode:'polygon',polygon:current.geo_polygon},current.id);
+        if(!active()||!card(current.id)||JSON.stringify(expected(card(current.id)))!==JSON.stringify(expected(current)))break;
+        const blocked=new Set([...preview.ignored,...(preview.retired||[]),...preview.conflicts.map(c=>c.id)]);
+        const old=new Set(current.address_ids||[]);
+        // Never give a new address in two boundaries to whichever card happens to run first.
+        const neighbors=cards.filter(c=>c.id!==current.id);
+        const additions=preview.addresses.filter(a=>!blocked.has(a.id)&&!old.has(a.id)&&!neighbors.some(c=>this.pointInside([a.lng,a.lat],c.geo_polygon))).map(a=>a.id);
+        if(!additions.length){skipped++;}
+        else{
+          const stamp=this.draftStamp(false);
+          await mutate('geo.assign',{card_id:current.id,address_ids:[...old,...additions],polygon:current.geo_polygon,auto_expected:expected(current)},{close:false,autosave:true,synchronize:(_response,snapshot)=>this.syncWrite(stamp,()=>{if(this.target===current.id){const saved=card(current.id);this.ids=new Set(saved.address_ids||[]);this.polygon=saved.geo_polygon.map(p=>p.slice());this.suggestedOutline=null;this.streetApproval=null;}},undefined,snapshot)});
+          updated++;
+        }
+        this.bulkAutoProgress.done++;
+        if(active())render();
+      }
+    }finally{
+      const done=this.bulkAutoProgress.done;
+      this.bulkAutoBusy=false;this.bulkAutoProgress=null;
+      if(active()){this.setNotice('{updated} kort opdateret · {skipped} sprunget over · {remaining} ikke behandlet.',{updated,skipped,remaining:cards.length-done});render();}
+    }
+  },
   async handle(action,id){
+    if(this.bulkAutoBusy)return;
     switch(action){
       case 'street-lines':StreetSuggestions.open();break;
+      case 'imported-points':await this.selectPreview({mode:'imported_points'});break;
       case 'data':case 'road':{const f=el('geoRangeForm');if(f){this.rangeRoad=f.elements.road.value;this.rangePost=f.elements.postcode.value;}this.dataDialog();break;}
       case 'open-map':if(!this.canLeave())return;closeDialog();page='Kortopsætning';render();break;
       case 'pause':await api('/api/geo/pause',{job_id:this.job});break;
@@ -302,6 +360,7 @@ const GeoUI={
       case 'choose':case 'draw':case 'move':case 'insert':case 'erase':this.clearStaleFeedback();this.mode=action;if(action==='draw'&&this.polygon.length&&window.confirm(I18n.text('Vil du begynde en ny grænse? Vælg Annuller for at tilføje hjørner til den eksisterende.'))){this.polygon=[];this.dirty=true;}this.drawBoundary();this.updatePanel();break;
       case 'undo':this.clearStaleFeedback();this.polygon.pop();this.dirty=true;this.drawBoundary();this.updatePanel();break;
       case 'suggest-outline':await this.selectPreview({address_ids:[...this.ids],suggest_outline:true});break;
+      case 'auto-all':await this.autoAll();break;
       case 'auto':if(this.polygon.length<3)throw Error(I18n.text('Tegn mindst tre hjørner først.'));await this.selectPreview({mode:'polygon',polygon:this.polygon});break;
       case 'clear':this.clearStaleFeedback();this.ids.clear();this.dirty=true;this.drawLayers();this.updatePanel();break;
       case 'remove':this.clearStaleFeedback();this.ids.delete(id);this.dirty=true;this.drawLayers();this.updatePanel();break;
