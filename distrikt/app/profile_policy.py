@@ -69,8 +69,6 @@ POST={
  '/api/address-source/diagnose':('connections.manage',), '/api/address-source/disconnect':('connections.manage',),
  '/api/geo/download':('geo.view','geo.edit','connections.manage'), '/api/geo/pause':('geo.edit',),
  '/api/photo/read':('ib.view','ib.edit'), '/api/photo/cancel':('ib.view','ib.edit'),
- '/api/territory-helper/begin':('connections.manage','cards.view','cards.edit','geo.view','geo.edit'),
- '/api/territory-helper/preview':('connections.manage','cards.view','cards.edit','geo.view','geo.edit'),
  '/api/open-data':('settings.manage',), '/api/shutdown':('settings.manage',),
 }
 
@@ -106,6 +104,7 @@ GROUPS={
  ('backup.export',):'backup.record backup.snooze',
  ('cards.view','cards.edit','geo.view'):'setup.card-import.inspect setup.card-import.preview setup.card-import.apply',
  HISTORY_IMPORT_PERMISSIONS:'setup.history-import.preview setup.history-import.apply',
+ HISTORY_IMPORT_PERMISSIONS+('geo.view','geo.edit','ib.view','ib.edit','notes.view','notes.edit','settings.manage'):'setup.territory-helper.preview setup.territory-helper.apply',
 }
 ACTIONS={action:frozenset(rights) for rights,actions in GROUPS.items() for action in actions.split()}
 CASCADE=frozenset(('cards.view','cards.edit','loans.view','loans.manage','history.view','history.edit','ib.view','ib.edit','notes.view','notes.edit','geo.view','geo.edit'))
@@ -168,12 +167,12 @@ def mutation(user,action,data,store):
     if (action=='revision.approve' and data.get('side')=='back') or (action=='revision.approve_many' and isinstance(data.get('entries'),list) and any(isinstance(e,dict) and e.get('side')=='back' for e in data['entries'])):require(user['permissions'],('ib.view',))
     if action in ('loan.finish','completion.record') and data.get('note'):require(user['permissions'],('notes.view','notes.edit'))
 
-CARD_FIELDS=set('id number internal_number internal_name name kind area_id map_color temporary planned in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon planning_reference planning_date interim_transfer'.split())
+CARD_FIELDS=set('id number internal_number internal_name name kind area_id map_color temporary planned in_folder archived last_completed created front_revision back_revision front_approved back_approved front_print_token back_print_token front_labels_token front_label_unmatched addresses front_addresses address_ids geo_addresses imported_addresses geo_polygon geo_outline_source geo_updated polygon import_note planning_reference planning_date interim_transfer'.split())
 FIELDS={
  'cards':CARD_FIELDS,'archived_cards':CARD_FIELDS,
  'publishers':{'id','name','group','group_role','pioneer','aliases'},
  'loans':set('id card_id publisher_id assigned cycle_start returned initial'.split()),
- 'ib':set('id card_id address_id road number date date_text postcode missing_fields'.split()),
+ 'ib':set('id card_id address_id road number date date_text postcode missing_fields import_note'.split()),
  'notes':set('id card_id loan_id completion_id text date created resolved resolved_at task ignored recurrence task_history assignee_id followup_key images'.split()),
  'completions':set('id card_id loan_id date assigned previous_completed visits visits_unknown'.split()),
  'visits':{'id','date','note'},
@@ -184,13 +183,15 @@ CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimu
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
-    result['territory_helper_available']=bool(raw.get('territory_helper_available'))
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]}
                         for row in raw[module] if module!='notes' or not is_ib_review(row)] if right in p else []
     # Follow-up identity without exposing the full private task/notes module.
     visible_cards={c['id'] for c in result['cards']}
     result['ib_reviews']=[deepcopy(row) for row in raw.get('ib_reviews',[]) if row.get('card_id') in visible_cards] if {'cards.view','ib.view'}<=p and not user.get('desk_only') else []
+    if 'notes.view' not in p:
+        for card in result['cards']+result['archived_cards']:
+            card.pop('import_note',None)
     if user.get('desk_only'):
         for card in result['cards']+result['archived_cards']:
             for field in ('geo_polygon','polygon','geo_addresses','address_ids','planning_reference','interim_transfer'):

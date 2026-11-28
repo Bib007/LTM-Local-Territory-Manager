@@ -2,7 +2,7 @@
 
 ## 1.15.0-beta.4 · 2026-11-28
 
-- Importér ét dansk distriktskort fra Territory Helper i desktop-betaen. Se grænsen før kortet gemmes som Under opbygning.
+- Importér Territory Helper-eksporter i opsætningsguiden. Kontrollér og gem hvert kort med grænse, lokationer, IB og tildelinger.
 
 ## 1.15.0-beta.3 · 2026-11-27
 

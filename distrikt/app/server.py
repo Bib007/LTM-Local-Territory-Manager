@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local desktop or authenticated private LAN server. Only approved PNGs leave it."""
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -29,7 +30,6 @@ from access import Access, LOGIN, private_client, write_private
 from portable import Restores, write_snapshot, archive_limit_error, MAX_ARCHIVE
 from sharing import Publications
 from address_source import Datafordeler
-from territory_helper import CALLBACK as TH_CALLBACK, TerritoryHelperImport
 from address_schedule import AddressSchedule
 from setup_jobs import SetupJobs
 from photo_ocr import PhotoOCR
@@ -75,8 +75,6 @@ class Server(ThreadingHTTPServer):
         # A listener bound to one LAN interface cannot be reached through loopback.
         self.origin='http://%s:%s'%('127.0.0.1' if self.server_name=='0.0.0.0' else self.server_name,self.server_port)
         self.access=Access(store.root,password) if access_host else None
-        self.territory_helper=TerritoryHelperImport(os.environ.get('LTM_TERRITORY_HELPER_CLIENT_ID','').strip(),
-            'http://127.0.0.1:%s'%self.server_port+TH_CALLBACK)
         self.hosts={'127.0.0.1:%s'%self.server_port}
         self.public_url=self.origin
         if access_host:
@@ -113,7 +111,6 @@ class Server(ThreadingHTTPServer):
             result=self.store.state()
             result.update(version=VERSION,beta=self.beta,public_maps=self.sharing.front_links(),address_task=self.address_schedule.status())
             result['runtime_status']=self.runtime_status.status()
-            result['territory_helper_available']=self.beta and self.access is None
             if self.profiles.enabled:
                 if profile_token is None:raise PermissionError('Profile session required')
                 return self.profiles.state(profile_token,result)
@@ -197,40 +194,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         # It never waits for Store/accounts, reads data, or permits mutations.
         if path=='/api/runtime/probe':
             return self.runtime_probe()
-        if path==TH_CALLBACK:
-            if not self.allowed(public=True):return
-            if not self.territory_helper_local():return self.send({'error':'Siden findes ikke.'},status=404)
-            page=(b'<!doctype html><html lang="da"><meta charset="utf-8"><meta name="referrer" content="no-referrer">'
-                  b'<title>LTM Beta</title><script src="/territory-helper-ui.js" referrerpolicy="no-referrer" defer></script>'
-                  b'<p>G&aring; tilbage til LTM Beta. / Return to LTM Beta.</p></html>')
-            return self.send(page,'text/html')
-        if path=='/territory-helper-ui.js' and self.territory_helper_local():
-            if not self.allowed(public=True):return
-            return self.send((APP/'territory-helper-ui.js').read_bytes(),'text/javascript')
         with self.profile_scope() as permitted:
             if permitted:self._get()
         self.send_pending_archive()
-    def territory_helper_local(self):
-        return (self.server.beta and self.server.access is None and self.client_address[0]=='127.0.0.1'
-                and self.headers.get('Host','').lower()=='127.0.0.1:%s'%self.server.server_port)
-
-    def finish_territory_helper_preview(self):
-        try:
-            result=self.server.territory_helper.preview(self.territory_helper_work)
-            status=200
-        except ValueError as error:
-            result,status=error_payload(error),400
-        except Exception:
-            result,status={'error':'Territory Helper returnerede et ugyldigt svar.'},502
-        finally:
-            self.territory_helper_work=None
-        # A session or permission can change during the external requests.
-        with self.profile_scope(post=True) as permitted:
-            if not permitted or not self.allowed(token=True):return
-            if self.profile_user and self.profile_user.get('desk_only'):
-                return self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
-            self.send(result,status=status)
-
     def runtime_probe(self):
         if (self.client_address[0]!='127.0.0.1'
                 or self.headers.get('Host','').lower() not in self.server.hosts
@@ -390,11 +356,9 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             except (ValueError,OSError):
                 self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
             self.geo_preview_work=None
-            self.territory_helper_work=None
             with self.profile_scope(post=True) as permitted:
                 if permitted:self._post(restore_upload=upload)
             if self.geo_preview_work is not None:self.finish_geo_preview()
-            if self.territory_helper_work is not None:self.finish_territory_helper_preview()
             self.send_pending_archive()
         finally:
             if upload:upload.close()
@@ -424,15 +388,15 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
             if self.path=='/api/mutate' and data.get('action')=='geo.preview':
                 return self.prepare_geo_preview(data.get('data',{}))
-            if self.path in ('/api/territory-helper/begin','/api/territory-helper/preview'):
-                if not self.territory_helper_local() or (self.profile_user and self.profile_user.get('desk_only')):
+            if self.path=='/api/mutate' and data.get('action') in (
+                    'setup.territory-helper.preview','setup.territory-helper.apply'):
+                if not self.server.beta or (self.profile_user and self.profile_user.get('desk_only')):
                     raise PermissionError()
-                owner=self.profile_token() if self.server.profiles.enabled else self.server.token
-                pilot=self.server.territory_helper
-                if self.path.endswith('/begin'):
-                    return self.send(pilot.begin(owner,data.get('number'),data.get('congregation')))
-                self.territory_helper_work=pilot.claim(owner,data.get('state'),data.get('code'))
-                return
+                payload=data.get('data')
+                if not isinstance(payload,dict):raise ValueError('Ugyldige data.')
+                identity=self.profile_token() if self.server.profiles.enabled else self.headers.get('Cookie','')
+                owner=hmac.new(self.server.token.encode(),identity.encode(),hashlib.sha256).hexdigest()
+                data['data']={**payload,'_owner':owner}
             if self.profile_post(self.path,data):return
             if self.path=='/api/runtime/test':return self.send(self.server.runtime_status.test_notification())
             if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))

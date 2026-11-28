@@ -1,18 +1,11 @@
-# Territory Helper i LTM Beta
+# Import fra Territory Helper
 
-Piloten henter ét dansk distriktskort ad gangen i den lokale desktop-beta. Den viser kortnummer, navn og geografisk grænse til kontrol. Bekræftelsen gemmer kortet som **Under opbygning**. Find kortet under **Distriktskort**, og kontrollér grænsen og vejlisterne, før du fjerner markeringen.
+1. Åbn **Importér / Eksportér** i Territory Helper.
+2. Under **Eksportér til CSV** henter du **Distrikter**, **Lokationer**, **IB**, **Forkyndere** og **Tildelinger → Altid**.
+3. Hent **Distrikter** som **JSON** eller **KML** for at tilføje polygongrænser. JSON kan også bruges til at oprette kortlisten.
+4. I LTM Beta åbner du **Opsætningsguide → Kort → Importér fra Territory Helper** og vælger de filer, du vil bruge.
+5. Tryk **Forhåndsvis kort**. Vælg et kort og kontrollér dets grænse, lokationer, IB og tildelinger. Brug **Godkend og gem dette kort** for hvert kort, du ønsker at flytte.
 
-## Forbered live-testen
+Importen er lokal. Rækker uden entydigt kort vises særskilt. Et eksisterende kort med samme nummer overskrives ikke. En afleveringsdato registreres kun som en gennemgang, hvis eksporten udtrykkeligt angiver en gennemgang. LTM’s indstillede historikperiode gælder også ved import. Forkyndernavne bruges til godkendte tildelinger. Kontaktfelter fra forkyndereksporten importeres ikke.
 
-1. Få Territory Helper til at oprette en OAuth-klient til LTM Beta med **Authorization Code (PKCE)** og **S256**. Registrér `http://127.0.0.1:8788/territory-helper-return` eller den tilsvarende returadresse med den port, betaen bruger lokalt.
-2. Sæt miljøvariablen `LTM_TERRITORY_HELPER_CLIENT_ID` til det tildelte klient-id, og start betaen lokalt. På Mac kan den installerede beta startes fra Terminal med `LTM_TERRITORY_HELPER_CLIENT_ID=DIT_KLIENT_ID "/Applications/LTM Beta.app/Contents/MacOS/LTM"`. Luk en allerede åben beta først, og åbn appen på `127.0.0.1`.
-3. Brug en Territory Helper-testmenighed og en bruger med adgang til distrikterne. Med LTM-profiler kræver piloten adgang til at administrere forbindelser og læse og redigere kort og geodata.
-4. Åbn **Distriktskort → Kortværktøjer → Importér fra Territory Helper**. Indtast testmenighedens id og et entydigt kortnummer. Godkend login i Territory Helpers eget vindue, og sammenlign forhåndsvisningen med testkortet.
-5. Gem kortet. Åbn det i LTM, kontrollér grænsen og prøv samme import igen for at kontrollere, at eksisterende kortnummer bevares.
-
-Importen laver et enkelt opslag hos Territory Helper og beholder kun de tre kortfelter. OAuth-tokenet bruges under opslaget og gemmes hverken i backup eller browserlager. Betaen henter ikke adresser, forkyndere eller udleveringshistorik.
-
-API-referencer:
-
-- [Territory Helper REST API](https://territoryhelper.com/Help/GeneralApi)
-- [Authorization Code (PKCE) og territorie-endpoints](https://territoryhelper.com/Api)
+[KML-eksport i Territory Helper](https://www.territoryhelper.com/Help/TerritoryExport)

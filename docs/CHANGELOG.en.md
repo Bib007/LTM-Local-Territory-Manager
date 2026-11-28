@@ -2,7 +2,7 @@
 
 ## 1.15.0-beta.4 · 2026-11-28
 
-- Import one Danish territory from Territory Helper in the desktop beta. Review its boundary before saving it as Under construction.
+- Import Territory Helper exports in the setup guide. Review and save each territory with its boundary, locations, do-not-call entries and assignments.
 
 ## 1.15.0-beta.3 · 2026-11-27
 
