@@ -1,6 +1,6 @@
 # Installation and updates
 
-[Project website](https://localterritorymanager.netlify.app) · [Fictional browser demo](https://bib007.github.io/LTM-Local-Territory-Manager/)
+[Project website](https://localterritorymanager.com) · [Fictional browser demo](https://bib007.github.io/LTM-Local-Territory-Manager/)
 
 ## Local computer or private server
 
