@@ -242,6 +242,16 @@ const formContract=markup=>(markup.match(/(?:name|value|type|max|maxlength|data-
  }
  const packed=JSON.parse(run('JSON.stringify(ReportMap.labels(labelFixtures,90,60))'));
  assert(packed.some(l=>l.overflow),'Overcrowded viewports must report numbers without room instead of painting overlapping labels');
+ const beforePlanned=run('JSON.stringify(state)');
+ const expectedReport=run("JSON.stringify(Workspace.reportInventory(...Workspace.periodBounds('service')))");
+ run("state.cards.push({id:'planned',number:'PLANNED-999',planned:true,geo_polygon:[[1,1],[2,1],[2,2]]});state.completions.push({card_id:'planned',date:state.today});");
+ assert.equal(run("JSON.stringify(Workspace.reportInventory(...Workspace.periodBounds('service')))"),expectedReport);
+ assert.equal(run("ReportMap.cards().some(c=>c.id==='planned')"),false);
+ assert.doesNotMatch(run("s13Appendix('service')"),/PLANNED-999/);
+ run("state.cards.find(c=>c.id==='planned').planned=false");
+ assert.equal(run("ReportMap.cards().some(c=>c.id==='planned')"),true);
+ assert.match(run("s13Appendix('service')"),/PLANNED-999/);
+ c.beforePlanned=beforePlanned;run('state=JSON.parse(beforePlanned)');
  const savedCards=run('JSON.stringify(state.cards)');
  run("state.cards=[{id:'escaped',number:'<unsafe>',geo_polygon:[[10,10],[11,10],[11,100]]}]");
  const overlay=run('ReportMap.overlays(p=>p,320,260,new Set())');

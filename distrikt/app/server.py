@@ -29,6 +29,7 @@ from access import Access, LOGIN, private_client, write_private
 from portable import Restores, write_snapshot, archive_limit_error, MAX_ARCHIVE
 from sharing import Publications
 from address_source import Datafordeler
+from territory_helper import CALLBACK as TH_CALLBACK, TerritoryHelperImport
 from address_schedule import AddressSchedule
 from setup_jobs import SetupJobs
 from photo_ocr import PhotoOCR
@@ -41,7 +42,7 @@ from update_notice import UpdateChecker
 from connection_backup import export as export_connections,restore as restore_connections
 
 APP=app_dir()
-VERSION='1.15.0-beta.3'
+VERSION='1.15.0-beta.4'
 DEFAULT_DATA=(Path.home()/'Library'/'Application Support'/'Distrikt' if sys.platform=='darwin' else Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'.local'/'share')))/'Distrikt')
 
 if '-beta.' in VERSION:DEFAULT_DATA=DEFAULT_DATA.with_name('Distrikt-beta')
@@ -74,6 +75,8 @@ class Server(ThreadingHTTPServer):
         # A listener bound to one LAN interface cannot be reached through loopback.
         self.origin='http://%s:%s'%('127.0.0.1' if self.server_name=='0.0.0.0' else self.server_name,self.server_port)
         self.access=Access(store.root,password) if access_host else None
+        self.territory_helper=TerritoryHelperImport(os.environ.get('LTM_TERRITORY_HELPER_CLIENT_ID','').strip(),
+            'http://127.0.0.1:%s'%self.server_port+TH_CALLBACK)
         self.hosts={'127.0.0.1:%s'%self.server_port}
         self.public_url=self.origin
         if access_host:
@@ -110,11 +113,13 @@ class Server(ThreadingHTTPServer):
             result=self.store.state()
             result.update(version=VERSION,beta=self.beta,public_maps=self.sharing.front_links(),address_task=self.address_schedule.status())
             result['runtime_status']=self.runtime_status.status()
+            result['territory_helper_available']=self.beta and self.access is None
             if self.profiles.enabled:
                 if profile_token is None:raise PermissionError('Profile session required')
                 return self.profiles.state(profile_token,result)
             from profile_features import summaries
-            result['dashboard_summary']=summaries(result);result['report_summary']=result['dashboard_summary']
+            result['dashboard_summary']=summaries(result)
+            result['report_summary']=summaries(result,exclude_planned=True)
             result['boundary_report']=self.store.boundary_report()
             result['profiles_available']=True
             return result
@@ -192,9 +197,40 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
         # It never waits for Store/accounts, reads data, or permits mutations.
         if path=='/api/runtime/probe':
             return self.runtime_probe()
+        if path==TH_CALLBACK:
+            if not self.allowed(public=True):return
+            if not self.territory_helper_local():return self.send({'error':'Siden findes ikke.'},status=404)
+            page=(b'<!doctype html><html lang="da"><meta charset="utf-8"><meta name="referrer" content="no-referrer">'
+                  b'<title>LTM Beta</title><script src="/territory-helper-ui.js" referrerpolicy="no-referrer" defer></script>'
+                  b'<p>G&aring; tilbage til LTM Beta. / Return to LTM Beta.</p></html>')
+            return self.send(page,'text/html')
+        if path=='/territory-helper-ui.js' and self.territory_helper_local():
+            if not self.allowed(public=True):return
+            return self.send((APP/'territory-helper-ui.js').read_bytes(),'text/javascript')
         with self.profile_scope() as permitted:
             if permitted:self._get()
         self.send_pending_archive()
+    def territory_helper_local(self):
+        return (self.server.beta and self.server.access is None and self.client_address[0]=='127.0.0.1'
+                and self.headers.get('Host','').lower()=='127.0.0.1:%s'%self.server.server_port)
+
+    def finish_territory_helper_preview(self):
+        try:
+            result=self.server.territory_helper.preview(self.territory_helper_work)
+            status=200
+        except ValueError as error:
+            result,status=error_payload(error),400
+        except Exception:
+            result,status={'error':'Territory Helper returnerede et ugyldigt svar.'},502
+        finally:
+            self.territory_helper_work=None
+        # A session or permission can change during the external requests.
+        with self.profile_scope(post=True) as permitted:
+            if not permitted or not self.allowed(token=True):return
+            if self.profile_user and self.profile_user.get('desk_only'):
+                return self.send({'error':'Du har ikke rettighed til denne handling.'},status=403)
+            self.send(result,status=status)
+
     def runtime_probe(self):
         if (self.client_address[0]!='127.0.0.1'
                 or self.headers.get('Host','').lower() not in self.server.hosts
@@ -235,7 +271,7 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
                 if self.server.beta and '<b>LTM</b>' in html:html=html.replace('<b>LTM</b>','<b>LTM Beta</b>').replace('<body>','<body class="betaChannel">')
                 if self.server.access or profile:html=html.replace('<button class="stop" data-action="stop" data-ui="Luk den lokale app">Luk den lokale app</button>','<button class="stop" data-action="logout" data-ui="Log ud">Log ud</button>')
                 return self.send(html.encode(),'text/html')
-            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/overdue-loans.js','/usage-stats.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/ktm-report-ui.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
+            if path in ('/profile-backup-ui.js','/profile-review-ui.js','/profiles-ui.js','/profile-guide.js','/profiles-ui.css','/theme.js','/theme.css','/updates.css','/updates.js','/app.js','/overdue-loans.js','/usage-stats.js','/front-label-ui.js','/i18n.js','/welcome.js','/onboarding.js','/column-import-ui.js','/card-import-ui.js','/territory-helper-ui.js','/publisher-import-ui.js','/photo-import-ui.js','/history-import-ui.js','/history-grid.js','/history-grid.css','/workspace.js','/ktm-report-ui.js','/split-suggestions.js','/setup-ui.js','/overview-map.js','/login.js','/transfer-ui.js','/readable-export-ui.js','/connection-backup-ui.js','/address-source-ui.js','/share-ui.js','/navigation.js','/ib-ui.js','/basemaps.js','/geo.js','/street-suggestions.js','/road-search.js','/publisher-search.js','/map-export.js','/s12-layout.js','/printing.js','/admin.js','/territory-numbering-ui.js','/district-map.js','/main-boundary.js','/boundary-import.js','/s13-template.js','/report-print.js','/report-map.js','/style.css','/workspace.css'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
             if path in ('/vendor/leaflet.js','/vendor/leaflet.css','/vendor/connection-crypto.js'):
                 return self.send((APP/path[1:]).read_bytes(),'text/javascript' if path.endswith('.js') else 'text/css')
@@ -354,9 +390,11 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             except (ValueError,OSError):
                 self.send({'error':'Forespørgslen blev ikke modtaget fuldt. Ingen ændring er udført.'},status=408);return
             self.geo_preview_work=None
+            self.territory_helper_work=None
             with self.profile_scope(post=True) as permitted:
                 if permitted:self._post(restore_upload=upload)
             if self.geo_preview_work is not None:self.finish_geo_preview()
+            if self.territory_helper_work is not None:self.finish_territory_helper_preview()
             self.send_pending_archive()
         finally:
             if upload:upload.close()
@@ -386,6 +424,15 @@ class Handler(ProfileRoutes,BaseHTTPRequestHandler):
             if not isinstance(data,dict):raise ValueError('Ugyldige data.')
             if self.path=='/api/mutate' and data.get('action')=='geo.preview':
                 return self.prepare_geo_preview(data.get('data',{}))
+            if self.path in ('/api/territory-helper/begin','/api/territory-helper/preview'):
+                if not self.territory_helper_local() or (self.profile_user and self.profile_user.get('desk_only')):
+                    raise PermissionError()
+                owner=self.profile_token() if self.server.profiles.enabled else self.server.token
+                pilot=self.server.territory_helper
+                if self.path.endswith('/begin'):
+                    return self.send(pilot.begin(owner,data.get('number'),data.get('congregation')))
+                self.territory_helper_work=pilot.claim(owner,data.get('state'),data.get('code'))
+                return
             if self.profile_post(self.path,data):return
             if self.path=='/api/runtime/test':return self.send(self.server.runtime_status.test_notification())
             if self.path=='/api/photo/read':return self.send(self.server.photo_ocr.start(data))

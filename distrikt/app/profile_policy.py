@@ -69,6 +69,8 @@ POST={
  '/api/address-source/diagnose':('connections.manage',), '/api/address-source/disconnect':('connections.manage',),
  '/api/geo/download':('geo.view','geo.edit','connections.manage'), '/api/geo/pause':('geo.edit',),
  '/api/photo/read':('ib.view','ib.edit'), '/api/photo/cancel':('ib.view','ib.edit'),
+ '/api/territory-helper/begin':('connections.manage','cards.view','cards.edit','geo.view','geo.edit'),
+ '/api/territory-helper/preview':('connections.manage','cards.view','cards.edit','geo.view','geo.edit'),
  '/api/open-data':('settings.manage',), '/api/shutdown':('settings.manage',),
 }
 
@@ -182,6 +184,7 @@ CONFIG_FIELDS=set('id schema congregation folder_minimum rural_mode rural_minimu
 
 def state_for(raw,user):
     p=user['permissions'];result={k:deepcopy(raw[k]) for k in ('version','beta','today','revision')}
+    result['territory_helper_available']=bool(raw.get('territory_helper_available'))
     for module,right in MODULE_RIGHT.items():
         result[module]=[{k:deepcopy(v) for k,v in row.items() if k in FIELDS[module]}
                         for row in raw[module] if module!='notes' or not is_ib_review(row)] if right in p else []
@@ -256,12 +259,12 @@ def state_for(raw,user):
         result['runtime_status']=deepcopy(raw.get('runtime_status',{}))
     if 'backup.notify' in p:result['backup_last_day']=raw['backup_last_day']
     if READ_ALL|WRITE_ALL|{'backup.restore'}<=p:result['recovery']=deepcopy(raw['recovery'])
-    summary=summaries(raw) if {'dashboard.view','reports.view'}&p else None
-    if summary and 'ib.view' not in p:
-        for field in ('ib_total','ib_on_current_cards','cards_with_ib'):
-            summary['territory_totals'].pop(field,None)
-    result['dashboard_summary']=deepcopy(summary) if 'dashboard.view' in p else None
-    result['report_summary']=deepcopy(summary) if 'reports.view' in p else None
+    for key,permission in (('dashboard_summary','dashboard.view'),('report_summary','reports.view')):
+        summary=summaries(raw,exclude_planned=key=='report_summary') if permission in p else None
+        if summary and 'ib.view' not in p:
+            for field in ('ib_total','ib_on_current_cards','cards_with_ib'):
+                summary['territory_totals'].pop(field,None)
+        result[key]=summary
     result['profile']={'desk_only':bool(user.get('desk_only')),'language':user.get('language',''),'user':{'id':user['id'],'name':user['name'],'onboarded':user['onboarded']},'permissions':sorted(p),'auth_revision':user['revision'],'capabilities':capability_catalog()}
     return result
 

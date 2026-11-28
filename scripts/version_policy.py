@@ -15,6 +15,9 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 FORMAT=re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-beta\.([1-9]\d*))?$")
 LEGACY_STABLE=(1,12,35)  # One-time bridge: old Beta used 1.12.19-beta.N.
+# Owner-approved report hotfix. Other versions keep the published Beta requirement.
+REPORT_HOTFIX=(1,14,4)
+REPORT_HOTFIX_BASE=(1,14,3)
 
 
 @dataclass(frozen=True)
@@ -94,8 +97,12 @@ def validate(channel,current,stable_baseline,tags,tag_shas,head,main_synced=True
                 raise ValueError("Stable must increment patch, minor or major from the last published Stable.")
         if current.base!=LEGACY_STABLE:
             matches=[v for v in known.values() if v.beta is not None and v.base==current.base]
-            if not matches:raise ValueError("Stable needs a published Beta with exactly the same X.Y.Z base.")
-            if not source_matches:raise ValueError("Stable app differs from the latest Beta source; publish a new Beta first.")
+            if not matches:
+                predecessor=max((v.base for v in published_stable if v.base<current.base),default=None)
+                if current.base!=REPORT_HOTFIX or predecessor!=REPORT_HOTFIX_BASE:
+                    raise ValueError("Stable needs a published Beta with exactly the same X.Y.Z base.")
+            elif not source_matches:
+                raise ValueError("Stable app differs from the latest Beta source; publish a new Beta first.")
     else:
         raise ValueError("Channel must be beta or stable.")
     return current
