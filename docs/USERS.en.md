@@ -23,7 +23,7 @@ Under **Settings → Users and roles**, you can grant folder moves, issuing card
 
 ## Help and getting started
 
-The step-by-step guide is available to all account types under **Help** in the LTM navigation and opens the language-matched guide on the [LTM website](https://localterritorymanager.netlify.app/en/guide/). Personal introduction tours and login-based release-news tours are no longer shown or scheduled. Existing account data and previous guide progress are left untouched.
+The step-by-step guide is available to all account types under **Help** in the LTM navigation and opens the language-matched guide on the [LTM website](https://localterritorymanager.com/en/guide/). Personal introduction tours and login-based release-news tours are no longer shown or scheduled. Existing account data and previous guide progress are left untouched.
 
 The shared first-run installation setup remains available separately for configuring a new installation.
 

@@ -2,7 +2,7 @@
 
 Free, unofficial territory administration on your own computer or Home Assistant system. Keep track of physical territory cards, assignments, returns and recorded completions. Add addresses, maps, do-not-call records and printing when you need them.
 
-[Website](https://localterritorymanager.netlify.app) · [Fictional demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [English installation guide](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.en.md) · [Dansk](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md)
+[Website](https://localterritorymanager.com) · [Fictional demo](https://bib007.github.io/LTM-Local-Territory-Manager/) · [English installation guide](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.en.md) · [Dansk](https://github.com/Bib007/LTM-Local-Territory-Manager/blob/main/docs/INSTALL.md)
 
 ## First start
 
